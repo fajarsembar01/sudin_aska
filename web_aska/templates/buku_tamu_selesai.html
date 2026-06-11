@@ -7,6 +7,8 @@
 
 {% set names = summary.names if summary and summary.names else [] %}
 {% set count = summary.count if summary and summary.count else 0 %}
+{% set configured_bubbles = guest_chat_bubbles if guest_chat_bubbles else [] %}
+{% set limit_bubble = guest_chat_limit_bubble if guest_chat_limit_bubble else {} %}
 
 {% block chat_header %}
 <div class="chat-header">
@@ -34,6 +36,41 @@
 
 {% block chat_box %}
 <div class="chat-box" id="chat-box" role="log" aria-live="polite" aria-relevant="additions">
+    {% if configured_bubbles %}
+    {% for bubble in configured_bubbles %}
+    <div class="chat-message bot-message onboarding-message{% if not bubble.message_text and (bubble.media_type != 'none' and bubble.media_src) and not bubble.links %} onboarding-media-only{% endif %}" data-initial="1" data-bubble-id="{{ bubble.id }}">
+        {% if bubble.message_text %}
+        <div class="onboarding-text">{{ bubble.message_text|replace('<br />', '\n')|replace('<br/>', '\n')|replace('<br>', '\n')|e|replace('\n', '<br>')|safe }}</div>
+        {% endif %}
+        {% if bubble.media_type != 'none' and bubble.media_src %}
+        <div class="onboarding-media">
+            {% if bubble.media_type == 'image' %}
+            <img src="{{ bubble.media_src }}" alt="Media bubble ASKA" loading="lazy">
+            {% elif bubble.media_type == 'video' %}
+            <video {% if not bubble.media_autoplay %}controls="controls"{% endif %} playsinline="playsinline" webkit-playsinline="webkit-playsinline" preload="auto"
+                {% if bubble.media_loop %}loop="loop"{% endif %}
+                {% if bubble.media_autoplay %}autoplay="autoplay" muted="muted" data-autoplay-lock="1"{% elif bubble.video_muted %}muted="muted"{% endif %}>
+                <source src="{{ bubble.media_src }}">
+            </video>
+            {% elif bubble.media_type == 'audio' %}
+            <audio {% if not bubble.media_autoplay %}controls="controls"{% endif %} preload="auto"
+                {% if bubble.media_loop %}loop="loop"{% endif %}
+                {% if bubble.media_autoplay %}autoplay="autoplay" muted="muted" data-autoplay-lock="1"{% endif %}>
+                <source src="{{ bubble.media_src }}">
+            </audio>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+    {% if can_chat and remaining > 0 and bubble.quick_questions %}
+    <div class="suggestions" aria-label="Contoh pertanyaan cepat">
+        {% for item in bubble.quick_questions %}
+        <button type="button" class="suggestion-chip">{{ item.question_text }}</button>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endfor %}
+    {% else %}
     <div class="chat-message bot-message onboarding-message" data-initial="1">
         <p><strong>Laporan buku tamu:</strong> Data kunjungan kamu sudah tersimpan untuk
             <strong>{{ school.name if school else 'sekolah' }}</strong>.</p>
@@ -67,6 +104,34 @@
         <button type="button" class="suggestion-chip">Apa email SDN ....?</button>
     </div>
     {% endif %}
+    {% endif %}
+
+    {% if can_chat and remaining <= 0 and (limit_bubble.message_text or (limit_bubble.media_type != 'none' and limit_bubble.media_src)) %}
+    <div class="chat-message bot-message onboarding-message{% if not limit_bubble.message_text and (limit_bubble.media_type != 'none' and limit_bubble.media_src) and not limit_bubble.links %} onboarding-media-only{% endif %}" data-limit-bubble="1">
+        {% if limit_bubble.message_text %}
+        <div class="onboarding-text">{{ limit_bubble.message_text|replace('<br />', '\n')|replace('<br/>', '\n')|replace('<br>', '\n')|e|replace('\n', '<br>')|safe }}</div>
+        {% endif %}
+        {% if limit_bubble.media_type != 'none' and limit_bubble.media_src %}
+        <div class="onboarding-media">
+            {% if limit_bubble.media_type == 'image' %}
+            <img src="{{ limit_bubble.media_src }}" alt="Media bubble limit chat ASKA" loading="lazy">
+            {% elif limit_bubble.media_type == 'video' %}
+            <video {% if not limit_bubble.media_autoplay %}controls="controls"{% endif %} playsinline="playsinline" webkit-playsinline="webkit-playsinline" preload="auto"
+                {% if limit_bubble.media_loop %}loop="loop"{% endif %}
+                {% if limit_bubble.media_autoplay %}autoplay="autoplay" muted="muted" data-autoplay-lock="1"{% elif limit_bubble.video_muted %}muted="muted"{% endif %}>
+                <source src="{{ limit_bubble.media_src }}">
+            </video>
+            {% elif limit_bubble.media_type == 'audio' %}
+            <audio {% if not limit_bubble.media_autoplay %}controls="controls"{% endif %} preload="auto"
+                {% if limit_bubble.media_loop %}loop="loop"{% endif %}
+                {% if limit_bubble.media_autoplay %}autoplay="autoplay" muted="muted" data-autoplay-lock="1"{% endif %}>
+                <source src="{{ limit_bubble.media_src }}">
+            </audio>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
 </div>
 {% endblock %}
 
@@ -87,7 +152,9 @@
         Login
     </button>
 </form>
-{% if review_pending and not can_chat %}
+{% if preview_mode %}
+
+{% elif review_pending and not can_chat %}
 <div class="status-banner mt-3">
     <div class="status-banner-title">Review pelayanan wajib diisi dulu</div>
     <p class="status-banner-message">Kasih rating bintang dulu untuk menyimpan penilaian pelayanan.</p>
@@ -110,6 +177,17 @@
     (function () {
         var canChat = {{ 'true' if can_chat else 'false' }};
         var remaining = {{ remaining or 0 }};
+        var previewMode = {{ 'true' if preview_mode else 'false' }};
+        var introBubbles = {{ (configured_bubbles if configured_bubbles else [])|tojson }};
+        var limitBubble = {
+            message: {{ (limit_bubble.message_text if limit_bubble and limit_bubble.message_text else '')|tojson }},
+            mediaType: {{ (limit_bubble.media_type if limit_bubble and limit_bubble.media_type else 'none')|tojson }},
+            mediaSrc: {{ (limit_bubble.media_src if limit_bubble and limit_bubble.media_src else '')|tojson }},
+            links: {{ (limit_bubble.links if limit_bubble and limit_bubble.links else [])|tojson }},
+            mediaLoop: {{ 'true' if limit_bubble and limit_bubble.media_loop else 'false' }},
+            mediaAutoplay: {{ 'true' if limit_bubble and limit_bubble.media_autoplay else 'false' }},
+            videoMuted: {{ 'true' if limit_bubble and limit_bubble.video_muted else 'false' }}
+        };
         var chatBox = document.getElementById('chat-box');
         var chatForm = document.getElementById('chat-form');
         var messageInput = document.getElementById('message-input');
@@ -332,6 +410,47 @@
             return wrapper;
         }
 
+        function buildConfiguredLinkButtons(configuredLinks) {
+            if (!Array.isArray(configuredLinks) || !configuredLinks.length) return null;
+            var links = [];
+            var seen = {};
+            configuredLinks.forEach(function (item) {
+                if (!item || typeof item !== 'object') return;
+                var label = String(item.label || '').trim();
+                var url = String(item.url || '').trim();
+                if (!label || !url) return;
+                var normalized = normalizeUrl(url);
+                if (!normalized || seen[normalized]) return;
+                var platform = platformFromUrl(normalized);
+                var meta = platformMeta(platform, normalized);
+                links.push({
+                    url: normalized,
+                    platform: platform,
+                    label: label || meta.label,
+                    icon: meta.icon
+                });
+                seen[normalized] = true;
+            });
+            if (!links.length) return null;
+
+            var wrapper = document.createElement('div');
+            wrapper.className = 'link-buttons';
+            links.forEach(function (link, idx) {
+                var btn = document.createElement('a');
+                btn.href = link.url;
+                btn.target = '_blank';
+                btn.rel = 'noopener';
+                btn.className = 'link-button';
+                btn.dataset.platform = link.platform;
+                btn.innerHTML = '<i class="bi ' + link.icon + '"></i><span>' + link.label + '</span>';
+                if (links.length % 2 === 1 && idx === links.length - 1) {
+                    btn.classList.add('full-span');
+                }
+                wrapper.appendChild(btn);
+            });
+            return wrapper;
+        }
+
         function stripLinkLines(text) {
             if (!text) return '';
             var lines = String(text).replace(/\r\n/g, '\n').split('\n');
@@ -386,6 +505,108 @@
             return html;
         }
 
+        function normalizeBubbleText(text) {
+            return String(text || '')
+                .replace(/\r\n/g, '\n')
+                .replace(/\r/g, '\n')
+                .replace(/<br\s*\/?>/gi, '\n');
+        }
+
+        function isIOSLikeDevice() {
+            var ua = navigator.userAgent || '';
+            var platform = navigator.platform || '';
+            return /iPhone|iPad|iPod/i.test(ua) || (platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        }
+
+        function primeAutoplayMedia(mediaEl) {
+            if (!mediaEl) return;
+            mediaEl.controls = false;
+            mediaEl.style.pointerEvents = 'none';
+            mediaEl.setAttribute('tabindex', '-1');
+            mediaEl.setAttribute('controlslist', 'nodownload nofullscreen noremoteplayback');
+            mediaEl.setAttribute('disablepictureinpicture', '');
+            mediaEl.setAttribute('disableremoteplayback', '');
+            mediaEl.autoplay = true;
+            mediaEl.setAttribute('autoplay', 'autoplay');
+            mediaEl.muted = true;
+            mediaEl.defaultMuted = true;
+            mediaEl.setAttribute('muted', 'muted');
+
+            if ((mediaEl.tagName || '').toLowerCase() === 'video') {
+                mediaEl.playsInline = true;
+                mediaEl.setAttribute('playsinline', 'playsinline');
+                mediaEl.setAttribute('webkit-playsinline', 'webkit-playsinline');
+            }
+        }
+
+        function enforceAutoplayLock(mediaEl) {
+            if (!mediaEl || mediaEl.getAttribute('data-autoplay-lock') !== '1') return;
+            primeAutoplayMedia(mediaEl);
+            if (mediaEl.getAttribute('data-autoplay-bound') === '1') {
+                if (typeof mediaEl.__askaReplayAutoplay === 'function') {
+                    mediaEl.__askaReplayAutoplay(isIOSLikeDevice());
+                }
+                return;
+            }
+            mediaEl.setAttribute('data-autoplay-bound', '1');
+
+            var replay = function (allowMuteFallback) {
+                primeAutoplayMedia(mediaEl);
+                if (mediaEl.readyState === 0 && mediaEl.getAttribute('data-autoplay-load-tried') !== '1') {
+                    mediaEl.setAttribute('data-autoplay-load-tried', '1');
+                    if (typeof mediaEl.load === 'function') {
+                        try { mediaEl.load(); } catch (err) {}
+                    }
+                }
+                var playPromise;
+                try {
+                    playPromise = mediaEl.play();
+                } catch (err) {
+                    return;
+                }
+                if (playPromise && typeof playPromise.catch === 'function') {
+                    playPromise.catch(function () {
+                        if (!allowMuteFallback) return;
+                        if ((mediaEl.tagName || '').toLowerCase() !== 'video') return;
+                        // Pastikan muted via JS property, lalu retry play()
+                        mediaEl.muted = true;
+                        mediaEl.defaultMuted = true;
+                        var retryPromise = mediaEl.play();
+                        if (retryPromise && typeof retryPromise.catch === 'function') {
+                            retryPromise.catch(function () {});
+                        }
+                    });
+                }
+            };
+            mediaEl.__askaReplayAutoplay = replay;
+
+            mediaEl.addEventListener('pause', function () {
+                replay(false);
+            });
+            mediaEl.addEventListener('ended', function () {
+                if (mediaEl.loop) return;
+                replay(false);
+            });
+            mediaEl.addEventListener('loadedmetadata', function () { replay(true); });
+            mediaEl.addEventListener('canplay', function () { replay(true); });
+            mediaEl.addEventListener('loadeddata', function () { replay(true); });
+
+            // iOS Safari butuh trigger play() eksplisit
+            var isIOS = isIOSLikeDevice();
+            replay(isIOS);
+            setTimeout(function () { replay(isIOS); }, 100);
+            setTimeout(function () { replay(isIOS); }, 400);
+            setTimeout(function () { if (mediaEl.paused) replay(isIOS); }, 1000);
+            setTimeout(function () { if (mediaEl.paused) replay(isIOS); }, 2500);
+        }
+
+        function hydrateAutoplayLocks(root) {
+            var scope = root || document;
+            scope.querySelectorAll('video[data-autoplay-lock="1"], audio[data-autoplay-lock="1"]').forEach(function (mediaEl) {
+                enforceAutoplayLock(mediaEl);
+            });
+        }
+
         function appendMessage(text, sender) {
             var msg = document.createElement('div');
             var isUser = sender === 'user';
@@ -400,6 +621,152 @@
                 if (linkButtons) msg.appendChild(linkButtons);
             }
             chatBox.appendChild(msg);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function hydrateIntroBubbleLinks() {
+            if (!chatBox || !Array.isArray(introBubbles) || !introBubbles.length) return;
+            var linkByBubbleId = {};
+            var messageByBubbleId = {};
+            introBubbles.forEach(function (item) {
+                if (!item || typeof item !== 'object') return;
+                var bubbleId = String(item.id || '').trim();
+                if (!bubbleId) return;
+                linkByBubbleId[bubbleId] = Array.isArray(item.links) ? item.links : [];
+                messageByBubbleId[bubbleId] = String(item.message_text || '');
+            });
+
+            chatBox.querySelectorAll('.onboarding-message[data-bubble-id]').forEach(function (node) {
+                if (!node || node.getAttribute('data-intro-hydrated') === '1') return;
+                var bubbleId = String(node.getAttribute('data-bubble-id') || '').trim();
+                var links = linkByBubbleId[bubbleId] || [];
+                var textEl = node.querySelector('.onboarding-text');
+                if (textEl) {
+                    var rawText = normalizeBubbleText(messageByBubbleId[bubbleId] || textEl.textContent || '');
+                    textEl.innerHTML = renderBotHtml(rawText);
+                }
+                var buttons = buildConfiguredLinkButtons(links);
+                if (buttons) {
+                    var mediaEl = node.querySelector('.onboarding-media');
+                    if (mediaEl) {
+                        node.insertBefore(buttons, mediaEl);
+                    } else {
+                        node.appendChild(buttons);
+                    }
+                }
+                hydrateAutoplayLocks(node);
+                node.setAttribute('data-intro-hydrated', '1');
+            });
+        }
+
+        function buildLimitBubbleElement() {
+            if (!limitBubble) return null;
+            var hasText = String(limitBubble.message || '').trim().length > 0;
+            var mediaType = String(limitBubble.mediaType || 'none').toLowerCase();
+            var mediaSrc = String(limitBubble.mediaSrc || '').trim();
+            var hasMedia = mediaSrc && ['image', 'video', 'audio'].indexOf(mediaType) >= 0;
+            if (!hasText && !hasMedia) return null;
+
+            var wrapper = document.createElement('div');
+            wrapper.className = 'chat-message bot-message onboarding-message';
+            wrapper.setAttribute('data-limit-bubble', '1');
+
+            var text = normalizeBubbleText(limitBubble.message || '');
+            var configuredButtons = buildConfiguredLinkButtons(limitBubble.links);
+            var linkButtons = configuredButtons || buildLinkButtons(text);
+            var rawText = configuredButtons ? text : (linkButtons ? stripLinkLines(text) : text);
+            if (!hasText && !linkButtons && hasMedia) {
+                wrapper.classList.add('onboarding-media-only');
+            }
+
+            if (hasText) {
+                var textEl = document.createElement('div');
+                textEl.className = 'onboarding-text';
+                textEl.innerHTML = renderBotHtml(rawText);
+                wrapper.appendChild(textEl);
+            }
+            if (linkButtons) wrapper.appendChild(linkButtons);
+
+            if (hasMedia) {
+                var mediaWrap = document.createElement('div');
+                mediaWrap.className = 'onboarding-media';
+
+                if (mediaType === 'image') {
+                    var img = document.createElement('img');
+                    img.src = mediaSrc;
+                    img.alt = 'Media bubble limit chat ASKA';
+                    img.loading = 'lazy';
+                    mediaWrap.appendChild(img);
+                } else if (mediaType === 'video') {
+                    var video = document.createElement('video');
+                    video.setAttribute('playsinline', 'playsinline');
+                    video.setAttribute('webkit-playsinline', 'webkit-playsinline');
+                    video.preload = 'auto';
+                    if (limitBubble.mediaLoop) video.setAttribute('loop', 'loop');
+                    if (limitBubble.mediaAutoplay) {
+                        video.setAttribute('autoplay', 'autoplay');
+                        video.setAttribute('muted', 'muted');
+                        video.setAttribute('data-autoplay-lock', '1');
+                        video.muted = true;
+                    } else {
+                        video.controls = true;
+                        if (limitBubble.videoMuted) {
+                            video.setAttribute('muted', 'muted');
+                            video.muted = true;
+                        }
+                    }
+                    var source = document.createElement('source');
+                    source.src = mediaSrc;
+                    video.appendChild(source);
+                    mediaWrap.appendChild(video);
+                } else if (mediaType === 'audio') {
+                    var audio = document.createElement('audio');
+                    audio.preload = 'auto';
+                    if (limitBubble.mediaLoop) audio.setAttribute('loop', 'loop');
+                    if (limitBubble.mediaAutoplay) {
+                        audio.setAttribute('autoplay', 'autoplay');
+                        audio.setAttribute('muted', 'muted');
+                        audio.setAttribute('data-autoplay-lock', '1');
+                        audio.muted = true;
+                    } else {
+                        audio.controls = true;
+                    }
+                    var sourceAudio = document.createElement('source');
+                    sourceAudio.src = mediaSrc;
+                    audio.appendChild(sourceAudio);
+                    mediaWrap.appendChild(audio);
+                }
+
+                wrapper.appendChild(mediaWrap);
+            }
+            return wrapper;
+        }
+
+        function hydrateExistingLimitBubble() {
+            if (!chatBox) return;
+            var existing = chatBox.querySelector('[data-limit-bubble="1"]');
+            if (!existing) return;
+            if (existing.getAttribute('data-limit-hydrated') === '1') return;
+            var fresh = buildLimitBubbleElement();
+            if (!fresh) return;
+            fresh.setAttribute('data-limit-hydrated', '1');
+            existing.replaceWith(fresh);
+            hydrateAutoplayLocks(fresh);
+        }
+
+        function appendLimitReachedBubbleIfNeeded() {
+            if (!canChat || remaining > 0) return;
+            if (!limitBubble) return;
+            var existing = chatBox.querySelector('[data-limit-bubble="1"]');
+            if (existing) {
+                hydrateExistingLimitBubble();
+                return;
+            }
+            var wrapper = buildLimitBubbleElement();
+            if (!wrapper) return;
+            wrapper.setAttribute('data-limit-hydrated', '1');
+            chatBox.appendChild(wrapper);
+            hydrateAutoplayLocks(wrapper);
             chatBox.scrollTop = chatBox.scrollHeight;
         }
 
@@ -447,6 +814,7 @@
                     sendButton.hidden = false;
                 }
             }
+            appendLimitReachedBubbleIfNeeded();
         }
 
         document.querySelectorAll('.suggestion-chip').forEach(function (btn) {
@@ -464,6 +832,17 @@
             if (!message) return;
             appendMessage(message, 'user');
             messageInput.value = '';
+            if (previewMode) {
+                remaining = Math.max(0, Number(remaining || 0) - 1);
+                if (remaining > 0) {
+                    appendMessage('Mode preview aktif: simulasi jawaban ASKA.', 'bot');
+                } else {
+                    appendMessage('Mode preview aktif: limit chat simulasi sudah tercapai.', 'bot');
+                }
+                updateRemaining();
+                if (remaining > 0 && messageInput) messageInput.focus();
+                return;
+            }
             sendButton.disabled = true;
             showTypingIndicator();
             try {
@@ -501,7 +880,70 @@
             });
         }
 
+        // Retry autoplay saat pertama kali ada interaksi user (Safari iOS membutuhkan ini)
+        var retriedByGesture = false;
+        function retryAutoplayOnFirstGesture() {
+            if (retriedByGesture) return;
+            retriedByGesture = true;
+            // Pada iOS, gesture user membuka izin play — langsung panggil play() pada semua video autoplay
+            document.querySelectorAll('video[data-autoplay-lock="1"], audio[data-autoplay-lock="1"]').forEach(function (mediaEl) {
+                mediaEl.muted = true;
+                mediaEl.defaultMuted = true;
+                try {
+                    var p = mediaEl.play();
+                    if (p && typeof p.catch === 'function') p.catch(function () {});
+                } catch (e) {}
+            });
+            hydrateAutoplayLocks(chatBox);
+        }
+        document.addEventListener('touchstart', retryAutoplayOnFirstGesture, { passive: true, once: true });
+        document.addEventListener('click', retryAutoplayOnFirstGesture, { passive: true, once: true });
+        document.addEventListener('touchend', function () {
+            document.querySelectorAll('video[data-autoplay-lock="1"]').forEach(function (v) {
+                if (v.paused) { v.muted = true; try { v.play(); } catch(e) {} }
+            });
+        }, { passive: true, once: true });
+        window.addEventListener('pageshow', function (e) {
+            // bfcache Safari: force reload media agar tidak stall
+            var delays = [40, 200, 500, 1000];
+            delays.forEach(function (d) {
+                setTimeout(function () { hydrateAutoplayLocks(chatBox); }, d);
+            });
+            if (e.persisted) {
+                // Halaman dari back-forward cache Safari — reload semua video
+                document.querySelectorAll('video[data-autoplay-lock="1"]').forEach(function (v) {
+                    v.muted = true;
+                    v.defaultMuted = true;
+                    try { v.load(); } catch (e) {}
+                    setTimeout(function () {
+                        try { v.play(); } catch (e) {}
+                    }, 100);
+                });
+            }
+        });
+        document.addEventListener('visibilitychange', function () {
+            if (!document.hidden) {
+                hydrateAutoplayLocks(chatBox);
+                document.querySelectorAll('video[data-autoplay-lock="1"]').forEach(function (v) {
+                    if (v.paused) { v.muted = true; try { v.play(); } catch(e) {} }
+                });
+            }
+        });
+        window.addEventListener('load', function () {
+            [120, 520, 1200, 2500].forEach(function (d) {
+                setTimeout(function () { hydrateAutoplayLocks(chatBox); }, d);
+            });
+        });
+        // Safari iOS: fokus window setelah kembali dari app lain
+        window.addEventListener('focus', function () {
+            document.querySelectorAll('video[data-autoplay-lock="1"]').forEach(function (v) {
+                if (v.paused) { v.muted = true; try { v.play(); } catch(e) {} }
+            });
+        });
+
         updateRemaining();
+        hydrateIntroBubbleLinks();
+        hydrateAutoplayLocks(chatBox);
     })();
 </script>
 {% endblock %}

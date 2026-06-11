@@ -140,6 +140,26 @@ def _apply_period_filter(
         params.append(period_id)
 
 
+def _normalize_school_status_filter(value: Optional[str]) -> Optional[str]:
+    """Normalize school status filter for portal_schools.status."""
+    normalized = (value or "").strip().lower()
+    if normalized in {"negeri", "swasta"}:
+        return normalized.upper()
+    return None
+
+
+def _apply_school_status_filter(
+    clauses: List[str],
+    params: List[Any],
+    school_status: Optional[str] = None,
+    column: str = "s.status",
+) -> None:
+    normalized = _normalize_school_status_filter(school_status)
+    if normalized:
+        clauses.append(f"UPPER(COALESCE({column}, '')) = %s")
+        params.append(normalized)
+
+
 def normalize_portal_undo_window_seconds(
     value: Any,
     *,
@@ -1154,6 +1174,7 @@ def fetch_random_photos(
     order: str = "random",
     staff_ids: Optional[List[int]] = None,
     restrict_to_staff: bool = False,
+    school_status: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
     """Fetch photos for stats gallery, with room score summary.
     
@@ -1176,6 +1197,7 @@ def fetch_random_photos(
         placeholders = ",".join(["%s"] * len(staff_ids))
         clauses.append(f"a.staff_id IN ({placeholders})")
         params.extend(staff_ids)
+    _apply_school_status_filter(clauses, params, school_status=school_status, column="s.status")
     where = "WHERE " + " AND ".join(clauses)
     
     score_pct_expr = _score_pct_sql("sc2.score", "a.score_scale_max")
@@ -1460,18 +1482,26 @@ def get_assessment_room_score_pct(assessment_id: int, school_room_id: int) -> fl
         return float(_normalize_score_pct(avg, score_scale_max))
 
 
-def submit_assessment(assessment_id: int) -> bool:
-    """Submit an assessment and calculate total score from saved aspect scores."""
+def submit_assessment(assessment_id: int, expected_staff_id: Optional[int] = None) -> bool:
+    """Submit an assessment without changing the original staff owner."""
     with get_cursor(commit=True) as cur:
         cur.execute(
             """
-            SELECT COALESCE(score_scale_max, %s) AS score_scale_max
+            SELECT
+                COALESCE(score_scale_max, %s) AS score_scale_max,
+                staff_id
             FROM portal_assessments
             WHERE id = %s
             """,
             (PORTAL_LEGACY_SCORE_SCALE_MAX, assessment_id),
         )
         assessment = cur.fetchone() or {}
+        if expected_staff_id is not None:
+            try:
+                if int(assessment.get("staff_id") or 0) != int(expected_staff_id):
+                    return False
+            except (TypeError, ValueError):
+                return False
         score_scale_max = _normalize_score_scale_max(assessment.get("score_scale_max"))
         default_score = PORTAL_NEW_SCORE_MIN if score_scale_max == PORTAL_NEW_SCORE_SCALE_MAX else PORTAL_LEGACY_SCORE_MIN
 
@@ -1554,10 +1584,12 @@ def submit_assessment(assessment_id: int) -> bool:
                 total_score = %s,
                 submitted_at = NOW(),
                 updated_at = NOW()
-            WHERE id = %s AND status = 'draft'
+            WHERE id = %s
+              AND status = 'draft'
+              AND (%s IS NULL OR staff_id = %s)
             RETURNING id
             """,
-            (avg_score, assessment_id),
+            (avg_score, assessment_id, expected_staff_id, expected_staff_id),
         )
         return cur.fetchone() is not None
 
@@ -2601,6 +2633,7 @@ def fetch_portal_stats(
     period_id: Optional[int] = None,
     period_ids: Optional[List[int]] = None,
     staff_ids: Optional[List[int]] = None,
+    school_status: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Get aggregate statistics for portal assessments.
     
@@ -2613,6 +2646,7 @@ def fetch_portal_stats(
                 "total": 0,
                 "drafts": 0,
                 "submitted": 0,
+                "schools_assessed": 0,
                 "avg_score": None,
                 "avg_score_pct": None,
             },
@@ -2636,6 +2670,7 @@ def fetch_portal_stats(
         period_ids=period_ids,
         column="a.period_id",
     )
+    _apply_school_status_filter(assess_conditions, assess_params, school_status=school_status, column="s.status")
     
     where_clause = f"WHERE {' AND '.join(assess_conditions)}" if assess_conditions else ""
 
@@ -2654,13 +2689,19 @@ def fetch_portal_stats(
                 assess_params,
             )
         else:
+            school_conditions: List[str] = []
+            school_params: List[Any] = []
+            _apply_school_status_filter(school_conditions, school_params, school_status=school_status, column="status")
+            school_where = f"WHERE {' AND '.join(school_conditions)}" if school_conditions else ""
             cur.execute(
-                """
+                f"""
                 SELECT 
                     COUNT(*) as total_schools,
                     COUNT(*) FILTER (WHERE active) as active_schools
                 FROM portal_schools
-                """
+                {school_where}
+                """,
+                school_params,
             )
         schools = dict(cur.fetchone())
         
@@ -2668,12 +2709,14 @@ def fetch_portal_stats(
             f"""
             SELECT 
                 COUNT(*) as total,
-                COUNT(*) FILTER (WHERE status = 'draft') as drafts,
-                COUNT(*) FILTER (WHERE status IN ('submitted', 'verified')) as submitted,
-                AVG(total_score) FILTER (WHERE status IN ('submitted', 'verified')) as avg_score,
+                COUNT(*) FILTER (WHERE a.status = 'draft') as drafts,
+                COUNT(*) FILTER (WHERE a.status IN ('submitted', 'verified')) as submitted,
+                COUNT(DISTINCT a.school_id) FILTER (WHERE a.status IN ('submitted', 'verified')) as schools_assessed,
+                AVG(a.total_score) FILTER (WHERE a.status IN ('submitted', 'verified')) as avg_score,
                 AVG({_score_pct_sql("a.total_score", "a.score_scale_max")})
-                    FILTER (WHERE status IN ('submitted', 'verified') AND total_score IS NOT NULL) as avg_score_pct
+                    FILTER (WHERE a.status IN ('submitted', 'verified') AND a.total_score IS NOT NULL) as avg_score_pct
             FROM portal_assessments a
+            JOIN portal_schools s ON s.id = a.school_id
             {where_clause}
             """,
             assess_params,
@@ -2690,23 +2733,30 @@ def fetch_score_distribution(
     period_id: Optional[int] = None,
     period_ids: Optional[List[int]] = None,
     staff_ids: Optional[List[int]] = None,
+    school_status: Optional[str] = None,
 ) -> List[int]:
     """Calculate score distribution (9 bins: <60, 60-65, ..., 95-100)."""
     if staff_ids is not None and len(staff_ids) == 0:
         return [0] * 9
     
-    conditions = ["status IN ('submitted', 'verified')", "total_score IS NOT NULL"]
+    conditions = ["a.status IN ('submitted', 'verified')", "a.total_score IS NOT NULL"]
     params: List[Any] = []
     
-    _apply_period_filter(conditions, params, period_id=period_id, period_ids=period_ids, column="period_id")
+    _apply_period_filter(conditions, params, period_id=period_id, period_ids=period_ids, column="a.period_id")
     
     if staff_ids:
         placeholders = ",".join(["%s"] * len(staff_ids))
-        conditions.append(f"staff_id IN ({placeholders})")
+        conditions.append(f"a.staff_id IN ({placeholders})")
         params.extend(staff_ids)
+    _apply_school_status_filter(conditions, params, school_status=school_status, column="s.status")
         
     where_clause = "WHERE " + " AND ".join(conditions)
-    query = f"SELECT total_score, score_scale_max FROM portal_assessments {where_clause}"
+    query = f"""
+        SELECT a.total_score, a.score_scale_max
+        FROM portal_assessments a
+        JOIN portal_schools s ON s.id = a.school_id
+        {where_clause}
+    """
     
     distribution = [0] * 9  # 9 Buckets
     
@@ -2811,6 +2861,7 @@ def fetch_map_data(
     period_id: Optional[int] = None,
     period_ids: Optional[List[int]] = None,
     staff_ids: Optional[List[int]] = None,
+    school_status: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
     """Fetch school locations and status for the map.
     
@@ -2821,15 +2872,16 @@ def fetch_map_data(
     if staff_ids is not None and len(staff_ids) == 0:
         return []
     
-    conditions = ["status IN ('submitted', 'verified')"]
+    conditions = ["portal_assessments.status IN ('submitted', 'verified')"]
     params: List[Any] = []
     
-    _apply_period_filter(conditions, params, period_id=period_id, period_ids=period_ids, column="period_id")
+    _apply_period_filter(conditions, params, period_id=period_id, period_ids=period_ids, column="portal_assessments.period_id")
     
     if staff_ids:
         placeholders = ",".join(["%s"] * len(staff_ids))
-        conditions.append(f"staff_id IN ({placeholders})")
+        conditions.append(f"portal_assessments.staff_id IN ({placeholders})")
         params.extend(staff_ids)
+    _apply_school_status_filter(conditions, params, school_status=school_status, column="s.status")
     
     filter_clause = "WHERE " + " AND ".join(conditions)
     score_pct_expr = _score_pct_sql("a2.total_score", "a2.score_scale_max")
@@ -2837,7 +2889,9 @@ def fetch_map_data(
     # Subquery to get most recent photo with GPS per school
     query = f"""
         WITH filtered AS (
-            SELECT * FROM portal_assessments
+            SELECT portal_assessments.*
+            FROM portal_assessments
+            JOIN portal_schools s ON s.id = portal_assessments.school_id
             {filter_clause}
         )
         SELECT 
@@ -2925,6 +2979,7 @@ def fetch_top_schools(
     offset: int = 0,
     period_id: Optional[int] = None,
     period_ids: Optional[List[int]] = None,
+    school_status: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
     """Fetch top performing schools based on their latest assessment."""
     where = "WHERE a.status IN ('submitted', 'verified')"
@@ -2933,6 +2988,10 @@ def fetch_top_schools(
     _apply_period_filter(period_clauses, params, period_id=period_id, period_ids=period_ids, column="a.period_id")
     if period_clauses:
         where += " AND " + " AND ".join(period_clauses)
+    school_clauses: List[str] = []
+    _apply_school_status_filter(school_clauses, params, school_status=school_status, column="s.status")
+    if school_clauses:
+        where += " AND " + " AND ".join(school_clauses)
     
     params.append(limit)
     params.append(offset)
@@ -3037,6 +3096,7 @@ def fetch_bottom_schools(
     offset: int = 0,
     period_id: Optional[int] = None,
     period_ids: Optional[List[int]] = None,
+    school_status: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
     """Fetch lowest performing schools based on their latest assessment."""
     where = "WHERE a.status IN ('submitted', 'verified')"
@@ -3045,6 +3105,10 @@ def fetch_bottom_schools(
     _apply_period_filter(period_clauses, params, period_id=period_id, period_ids=period_ids, column="a.period_id")
     if period_clauses:
         where += " AND " + " AND ".join(period_clauses)
+    school_clauses: List[str] = []
+    _apply_school_status_filter(school_clauses, params, school_status=school_status, column="s.status")
+    if school_clauses:
+        where += " AND " + " AND ".join(school_clauses)
     
     params.append(limit)
     params.append(offset)
@@ -3080,6 +3144,7 @@ def list_recent_assessments(
     jenjang: Optional[str] = None,
     order: str = "recent",
     staff_ids: Optional[List[int]] = None,
+    school_status: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
     """List recent submitted assessments for admin dashboard."""
     if staff_ids is not None and len(staff_ids) == 0:
@@ -3098,6 +3163,10 @@ def list_recent_assessments(
         placeholders = ",".join(["%s"] * len(staff_ids))
         where += f" AND a.staff_id IN ({placeholders})"
         params.extend(staff_ids)
+    school_clauses: List[str] = []
+    _apply_school_status_filter(school_clauses, params, school_status=school_status, column="s.status")
+    if school_clauses:
+        where += " AND " + " AND ".join(school_clauses)
     params.append(limit)
 
     order_clause = "submitted_at DESC"
@@ -3162,6 +3231,7 @@ def list_staff_latest_assessments(
     period_id: Optional[int] = None,
     period_ids: Optional[List[int]] = None,
     staff_ids: Optional[List[int]] = None,
+    school_status: Optional[str] = None,
     limit: int = 100,
 ) -> List[Dict[str, Any]]:
     """List staff/coordinator members with their latest submitted assessment."""
@@ -3171,6 +3241,7 @@ def list_staff_latest_assessments(
     latest_filters = ["a.staff_id = u.id", "a.status IN ('submitted', 'verified')"]
     latest_params: List[Any] = []
     _apply_period_filter(latest_filters, latest_params, period_id=period_id, period_ids=period_ids, column="a.period_id")
+    _apply_school_status_filter(latest_filters, latest_params, school_status=school_status, column="s.status")
     latest_where = " AND ".join(latest_filters)
 
     staff_where = "WHERE u.role IN ('staff', 'coordinator') AND u.account_status = 'approved'"
@@ -3199,6 +3270,7 @@ def list_staff_latest_assessments(
         LEFT JOIN LATERAL (
             SELECT COUNT(DISTINCT a.school_id) AS total_visited_schools
             FROM portal_assessments a
+            JOIN portal_schools s ON s.id = a.school_id
             WHERE {latest_where}
         ) visited ON TRUE
         LEFT JOIN LATERAL (
@@ -3234,30 +3306,261 @@ def list_staff_latest_assessments(
         return [dict(row) for row in cur.fetchall()]
 
 
+def list_draft_assessments(
+    period_id: Optional[int] = None,
+    period_ids: Optional[List[int]] = None,
+    staff_ids: Optional[List[int]] = None,
+    staff_id: Optional[int] = None,
+    school_status: Optional[str] = None,
+    query_text: Optional[str] = None,
+) -> List[Dict[str, Any]]:
+    """List draft assessments with staff, school, area, and period context."""
+    if staff_ids is not None and len(staff_ids) == 0:
+        return []
+
+    clauses = ["a.status = 'draft'"]
+    params: List[Any] = []
+    _apply_period_filter(clauses, params, period_id=period_id, period_ids=period_ids, column="a.period_id")
+
+    if staff_ids:
+        placeholders = ",".join(["%s"] * len(staff_ids))
+        clauses.append(f"a.staff_id IN ({placeholders})")
+        params.extend(staff_ids)
+    if staff_id:
+        clauses.append("a.staff_id = %s")
+        params.append(staff_id)
+
+    _apply_school_status_filter(clauses, params, school_status=school_status, column="s.status")
+
+    search = (query_text or "").strip()
+    if search:
+        like = f"%{search}%"
+        clauses.append(
+            """
+            (
+                s.name ILIKE %s
+                OR s.npsn ILIKE %s
+                OR u.full_name ILIKE %s
+                OR u.email ILIKE %s
+                OR k.name ILIKE %s
+                OR l.name ILIKE %s
+                OR p.name ILIKE %s
+            )
+            """
+        )
+        params.extend([like] * 7)
+
+    where_clause = "WHERE " + " AND ".join(clauses)
+    query = f"""
+        SELECT
+            a.id,
+            a.school_id,
+            a.staff_id,
+            a.period_id,
+            a.assessment_date,
+            a.status,
+            a.total_score,
+            a.score_scale_max,
+            a.created_at,
+            a.updated_at,
+            p.name AS period_name,
+            p.start_date AS period_start_date,
+            p.end_date AS period_end_date,
+            s.name AS school_name,
+            s.npsn AS school_npsn,
+            s.jenjang AS school_jenjang,
+            s.status AS school_status,
+            l.name AS kelurahan_name,
+            k.name AS kecamatan_name,
+            u.full_name AS staff_name,
+            u.email AS staff_email,
+            u.role AS staff_role,
+            previous_done.total_submitted,
+            previous_done.latest_submitted_at
+        FROM portal_assessments a
+        JOIN portal_schools s ON s.id = a.school_id
+        LEFT JOIN portal_assessment_periods p ON p.id = a.period_id
+        LEFT JOIN portal_kelurahan l ON l.id = s.kelurahan_id
+        LEFT JOIN portal_kecamatan k ON k.id = l.kecamatan_id
+        LEFT JOIN dashboard_users u ON u.id = a.staff_id
+        LEFT JOIN LATERAL (
+            SELECT
+                COUNT(*)::INT AS total_submitted,
+                MAX(done.submitted_at) AS latest_submitted_at
+            FROM portal_assessments done
+            WHERE done.school_id = a.school_id
+              AND done.staff_id = a.staff_id
+              AND done.status IN ('submitted', 'verified')
+        ) previous_done ON TRUE
+        {where_clause}
+        ORDER BY COALESCE(a.updated_at, a.created_at) DESC NULLS LAST, a.id DESC
+    """
+    with get_cursor() as cur:
+        cur.execute(query, params)
+        return [dict(row) for row in cur.fetchall()]
+
+
+def get_draft_assessment_inputs(assessment_ids: Sequence[int]) -> Dict[str, Dict[int, List[Dict[str, Any]]]]:
+    """Return score, photo, and room-note rows grouped by assessment id."""
+    ids = [int(assessment_id) for assessment_id in assessment_ids if assessment_id]
+    grouped: Dict[str, Dict[int, List[Dict[str, Any]]]] = {
+        "scores": {},
+        "photos": {},
+        "notes": {},
+    }
+    if not ids:
+        return grouped
+
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT
+                sc.assessment_id,
+                sc.school_room_id,
+                sc.aspect_id,
+                sc.score,
+                sc.notes,
+                sc.updated_at,
+                r.name AS room_name,
+                pa.name AS aspect_name
+            FROM portal_assessment_scores sc
+            JOIN portal_school_rooms sr ON sr.id = sc.school_room_id
+            JOIN portal_rooms r ON r.id = sr.room_id
+            JOIN portal_aspects pa ON pa.id = sc.aspect_id
+            WHERE sc.assessment_id = ANY(%s)
+            ORDER BY sc.assessment_id, r.sort_order, pa.sort_order, pa.id
+            """,
+            (ids,),
+        )
+        for row in cur.fetchall():
+            item = dict(row)
+            grouped["scores"].setdefault(item["assessment_id"], []).append(item)
+
+        cur.execute(
+            """
+            SELECT
+                assessment_id,
+                school_room_id,
+                COUNT(*)::INT AS photo_count,
+                MAX(COALESCE(captured_at, created_at)) AS latest_photo_at
+            FROM portal_assessment_photos
+            WHERE assessment_id = ANY(%s)
+            GROUP BY assessment_id, school_room_id
+            ORDER BY assessment_id, school_room_id
+            """,
+            (ids,),
+        )
+        for row in cur.fetchall():
+            item = dict(row)
+            grouped["photos"].setdefault(item["assessment_id"], []).append(item)
+
+        cur.execute(
+            """
+            SELECT
+                assessment_id,
+                school_room_id,
+                notes,
+                updated_at
+            FROM portal_assessment_room_details
+            WHERE assessment_id = ANY(%s)
+              AND NULLIF(BTRIM(COALESCE(notes, '')), '') IS NOT NULL
+            ORDER BY assessment_id, updated_at DESC NULLS LAST
+            """,
+            (ids,),
+        )
+        for row in cur.fetchall():
+            item = dict(row)
+            grouped["notes"].setdefault(item["assessment_id"], []).append(item)
+
+    return grouped
+
+
+def list_draft_assessment_staff_options(
+    period_id: Optional[int] = None,
+    period_ids: Optional[List[int]] = None,
+    staff_ids: Optional[List[int]] = None,
+    school_status: Optional[str] = None,
+    query_text: Optional[str] = None,
+) -> List[Dict[str, Any]]:
+    """List staff/coordinators/admins that currently own drafts under the selected filters."""
+    if staff_ids is not None and len(staff_ids) == 0:
+        return []
+
+    clauses = ["a.status = 'draft'"]
+    params: List[Any] = []
+    _apply_period_filter(clauses, params, period_id=period_id, period_ids=period_ids, column="a.period_id")
+    if staff_ids:
+        placeholders = ",".join(["%s"] * len(staff_ids))
+        clauses.append(f"a.staff_id IN ({placeholders})")
+        params.extend(staff_ids)
+    _apply_school_status_filter(clauses, params, school_status=school_status, column="s.status")
+
+    search = (query_text or "").strip()
+    if search:
+        like = f"%{search}%"
+        clauses.append(
+            """
+            (
+                s.name ILIKE %s
+                OR s.npsn ILIKE %s
+                OR u.full_name ILIKE %s
+                OR u.email ILIKE %s
+                OR k.name ILIKE %s
+                OR l.name ILIKE %s
+                OR p.name ILIKE %s
+            )
+            """
+        )
+        params.extend([like] * 7)
+
+    query = f"""
+        SELECT DISTINCT
+            u.id,
+            u.full_name,
+            u.email,
+            u.role
+        FROM portal_assessments a
+        JOIN portal_schools s ON s.id = a.school_id
+        LEFT JOIN portal_assessment_periods p ON p.id = a.period_id
+        LEFT JOIN portal_kelurahan l ON l.id = s.kelurahan_id
+        LEFT JOIN portal_kecamatan k ON k.id = l.kecamatan_id
+        LEFT JOIN dashboard_users u ON u.id = a.staff_id
+        WHERE {" AND ".join(clauses)}
+          AND u.id IS NOT NULL
+        ORDER BY u.full_name ASC NULLS LAST, u.email ASC
+    """
+    with get_cursor() as cur:
+        cur.execute(query, params)
+        return [dict(row) for row in cur.fetchall()]
+
+
 def fetch_school_avg_scores(
     period_id: Optional[int] = None,
     period_ids: Optional[List[int]] = None,
     staff_ids: Optional[List[int]] = None,
+    school_status: Optional[str] = None,
 ) -> Dict[int, float]:
     """Return map {school_id: avg_score_pct} for submitted assessments."""
     if staff_ids is not None and len(staff_ids) == 0:
         return {}
     
     params: List[Any] = []
-    where_clauses = ["status IN ('submitted', 'verified')"]
-    _apply_period_filter(where_clauses, params, period_id=period_id, period_ids=period_ids, column="period_id")
+    where_clauses = ["a.status IN ('submitted', 'verified')"]
+    _apply_period_filter(where_clauses, params, period_id=period_id, period_ids=period_ids, column="a.period_id")
     if staff_ids:
         placeholders = ",".join(["%s"] * len(staff_ids))
-        where_clauses.append(f"staff_id IN ({placeholders})")
+        where_clauses.append(f"a.staff_id IN ({placeholders})")
         params.extend(staff_ids)
+    _apply_school_status_filter(where_clauses, params, school_status=school_status, column="s.status")
     where = "WHERE " + " AND ".join(where_clauses)
     
     query = f"""
-        SELECT school_id,
-               AVG({_score_pct_sql("total_score", "score_scale_max")})::DECIMAL(5,2) as avg_score_pct
-        FROM portal_assessments
+        SELECT a.school_id,
+               AVG({_score_pct_sql("a.total_score", "a.score_scale_max")})::DECIMAL(5,2) as avg_score_pct
+        FROM portal_assessments a
+        JOIN portal_schools s ON s.id = a.school_id
         {where}
-        GROUP BY school_id
+        GROUP BY a.school_id
     """
     with get_cursor() as cur:
         cur.execute(query, params)
@@ -4001,40 +4304,75 @@ def get_portal_schools_paginated(
         "per_page": per_page
     }
 
-def fetch_export_data(period_id: Optional[int] = None) -> List[Dict[str, Any]]:
-    """Fetch all assessment data for Excel export."""
-    where_clause = "WHERE a.status IN ('submitted', 'verified')"
-    params = []
-    
-    if period_id:
-        where_clause += " AND a.period_id = %s"
-        params.append(period_id)
-        
-    query = f"""
-        SELECT 
-            a.submitted_at::DATE as tanggal,
-            s.name as sekolah,
-            s.npsn,
-            s.jenjang,
-            k.name as kecamatan,
-            l.name as kelurahan,
-            r.name as ruangan,
-            asp.name as aspek,
-            sc.score as nilai,
-            sc.notes as catatan,
-            u.full_name as penilai
-        FROM portal_assessment_scores sc
-        JOIN portal_assessments a ON sc.assessment_id = a.id
-        JOIN portal_schools s ON a.school_id = s.id
-        LEFT JOIN portal_kelurahan l ON s.kelurahan_id = l.id
-        LEFT JOIN portal_kecamatan k ON l.kecamatan_id = k.id
-        JOIN portal_school_rooms sr ON sc.school_room_id = sr.id
-        JOIN portal_rooms r ON sr.room_id = r.id
-        JOIN portal_aspects asp ON sc.aspect_id = asp.id
-        LEFT JOIN dashboard_users u ON a.staff_id = u.id
-        {where_clause}
-        ORDER BY s.name, r.name, asp.sort_order
-    """
+def fetch_export_data(
+    group_by: str,
+    period_id: Optional[int] = None,
+    period_ids: Optional[List[int]] = None,
+    staff_ids: Optional[List[int]] = None,
+    school_status: Optional[str] = None,
+) -> List[Dict[str, Any]]:
+    """Fetch final assessment summaries for Excel export."""
+    if group_by not in {"staff", "school"}:
+        raise ValueError("Unsupported export grouping")
+    if staff_ids is not None and len(staff_ids) == 0:
+        return []
+
+    conditions = [
+        "a.status IN ('submitted', 'verified')",
+        "a.total_score IS NOT NULL",
+    ]
+    params: List[Any] = []
+    _apply_period_filter(conditions, params, period_id=period_id, period_ids=period_ids, column="a.period_id")
+    if staff_ids:
+        placeholders = ",".join(["%s"] * len(staff_ids))
+        conditions.append(f"a.staff_id IN ({placeholders})")
+        params.extend(staff_ids)
+    _apply_school_status_filter(conditions, params, school_status=school_status, column="s.status")
+    where_clause = "WHERE " + " AND ".join(conditions)
+
+    score_pct_expr = _score_pct_sql("a.total_score", "a.score_scale_max")
+    if group_by == "staff":
+        query = f"""
+            SELECT
+                COALESCE(NULLIF(TRIM(u.full_name), ''), u.email, 'Staff Tidak Diketahui') AS "Staff",
+                u.email AS "Email",
+                COUNT(DISTINCT a.school_id)::INT AS "Jumlah Sekolah",
+                COUNT(*)::INT AS "Jumlah Penilaian",
+                ROUND(AVG({score_pct_expr})::NUMERIC, 2) AS "Nilai Final Rata-rata (Persen)",
+                MAX(a.submitted_at)::DATE AS "Penilaian Terakhir"
+            FROM portal_assessments a
+            JOIN portal_schools s ON a.school_id = s.id
+            LEFT JOIN dashboard_users u ON a.staff_id = u.id
+            {where_clause}
+            GROUP BY a.staff_id, u.full_name, u.email
+            ORDER BY "Staff"
+        """
+    else:
+        query = f"""
+            SELECT
+                s.name AS "Sekolah",
+                s.npsn AS "NPSN",
+                s.jenjang AS "Jenjang",
+                k.name AS "Kecamatan",
+                l.name AS "Kelurahan",
+                COUNT(DISTINCT a.staff_id)::INT AS "Jumlah Staff",
+                STRING_AGG(
+                    DISTINCT COALESCE(NULLIF(TRIM(u.full_name), ''), u.email, 'Staff Tidak Diketahui'),
+                    ', '
+                    ORDER BY COALESCE(NULLIF(TRIM(u.full_name), ''), u.email, 'Staff Tidak Diketahui')
+                ) AS "Nama Staff",
+                COUNT(*)::INT AS "Jumlah Penilaian",
+                ROUND(AVG({score_pct_expr})::NUMERIC, 2) AS "Nilai Final Rata-rata (Persen)",
+                MAX(a.submitted_at)::DATE AS "Penilaian Terakhir"
+            FROM portal_assessments a
+            JOIN portal_schools s ON a.school_id = s.id
+            LEFT JOIN dashboard_users u ON a.staff_id = u.id
+            LEFT JOIN portal_kelurahan l ON s.kelurahan_id = l.id
+            LEFT JOIN portal_kecamatan k ON l.kecamatan_id = k.id
+            {where_clause}
+            GROUP BY s.id, s.name, s.npsn, s.jenjang, k.name, l.name
+            ORDER BY s.name
+        """
     
     with get_cursor() as cur:
         cur.execute(query, params)
@@ -4175,6 +4513,7 @@ def fetch_kecamatan_avg_scores(
     period_id: Optional[int] = None,
     period_ids: Optional[List[int]] = None,
     staff_ids: Optional[List[int]] = None,
+    school_status: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
     """Fetch average assessment scores grouped by kecamatan (0-100 scale)."""
     if staff_ids is not None and len(staff_ids) == 0:
@@ -4187,6 +4526,7 @@ def fetch_kecamatan_avg_scores(
         placeholders = ",".join(["%s"] * len(staff_ids))
         conditions.append(f"a.staff_id IN ({placeholders})")
         params.extend(staff_ids)
+    _apply_school_status_filter(conditions, params, school_status=school_status, column="s.status")
     
     where = "WHERE " + " AND ".join(conditions)
     
@@ -4429,21 +4769,77 @@ def assign_staff_to_school(
         return dict(cur.fetchone())
 
 
-def get_staff_assigned_schools(staff_id: int, period_id: Optional[int] = None) -> List[Dict[str, Any]]:
-    """Get all schools assigned to a staff member.
+def get_staff_assigned_schools(
+    staff_id: int,
+    period_id: Optional[int] = None,
+    include_history: bool = False,
+) -> List[Dict[str, Any]]:
+    """Get schools assigned to a staff member, optionally including assessment history.
 
     If ``period_id`` is provided, draft/last assessment status is scoped to
     that period.  Additionally, ``old_draft_id`` / ``old_draft_period_name``
     return the most recent draft from a *different* period so the UI can show
     a secondary "Lanjutkan draft <bulan>" link.
     """
+    assignment_source = """
+        SELECT
+            ssa.id AS assignment_id,
+            ssa.assigned_at,
+            ssa.notes,
+            ssa.school_id,
+            ssa.assigned_by,
+            TRUE AS is_active_assignment,
+            NULL::INTEGER AS history_assessment_id,
+            NULL::TEXT AS history_assessment_status,
+            NULL::INTEGER AS history_period_id
+        FROM staff_school_assignments ssa
+        WHERE ssa.staff_id = %s
+    """
+    assignment_source_params: List[Any] = [staff_id]
+    if include_history:
+        assignment_source += """
+            UNION ALL
+            SELECT
+                NULL::INTEGER AS assignment_id,
+                NULL::TIMESTAMPTZ AS assigned_at,
+                NULL::TEXT AS notes,
+                history.school_id,
+                NULL::INTEGER AS assigned_by,
+                FALSE AS is_active_assignment,
+                history.id AS history_assessment_id,
+                history.status AS history_assessment_status,
+                history.period_id AS history_period_id
+            FROM (
+                SELECT DISTINCT ON (a.school_id)
+                    a.school_id,
+                    a.id,
+                    a.status,
+                    a.period_id
+                FROM portal_assessments a
+                WHERE a.staff_id = %s
+                ORDER BY a.school_id, a.created_at DESC, a.id DESC
+            ) history
+            WHERE NOT EXISTS (
+                SELECT 1
+                FROM staff_school_assignments active_assignment
+                WHERE active_assignment.staff_id = %s
+                  AND active_assignment.school_id = history.school_id
+            )
+        """
+        assignment_source_params.extend([staff_id, staff_id])
+
     with get_cursor() as cur:
         cur.execute(
-            """
+            f"""
             SELECT 
-                ssa.id as assignment_id,
+                ssa.assignment_id,
                 ssa.assigned_at,
                 ssa.notes,
+                ssa.is_active_assignment,
+                ssa.history_assessment_id,
+                ssa.history_assessment_status,
+                ssa.history_period_id,
+                history_period.name as history_period_name,
                 s.id as school_id,
                 s.npsn,
                 s.name as school_name,
@@ -4561,13 +4957,14 @@ def get_staff_assigned_schools(staff_id: int, period_id: Optional[int] = None) -
                         LIMIT 1
                     )
                 ) as last_period_name
-            FROM staff_school_assignments ssa
+            FROM ({assignment_source}) ssa
             JOIN portal_schools s ON ssa.school_id = s.id
             LEFT JOIN portal_kelurahan l ON s.kelurahan_id = l.id
             LEFT JOIN portal_kecamatan k ON l.kecamatan_id = k.id
             LEFT JOIN dashboard_users u ON ssa.assigned_by = u.id
-            WHERE ssa.staff_id = %s AND s.active = TRUE
-            ORDER BY k.name, s.name
+            LEFT JOIN portal_assessment_periods history_period ON history_period.id = ssa.history_period_id
+            WHERE s.active = TRUE
+            ORDER BY ssa.is_active_assignment DESC, k.name, s.name
             """,
             (
                 staff_id, period_id, period_id,
@@ -4580,7 +4977,7 @@ def get_staff_assigned_schools(staff_id: int, period_id: Optional[int] = None) -
                 staff_id, period_id, period_id,
                 staff_id,
                 staff_id, period_id, period_id,
-                staff_id,
+                *assignment_source_params,
             )
         )
         return [dict(row) for row in cur.fetchall()]
@@ -4663,6 +5060,20 @@ def delete_staff_assignments_by_ids(assignment_ids: list[int]) -> int:
             (assignment_ids,),
         )
         return len(cur.fetchall())
+
+
+def reset_staff_school_assignments(staff_id: int) -> List[Dict[str, Any]]:
+    """Delete every active school assignment for a staff member."""
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            DELETE FROM staff_school_assignments
+            WHERE staff_id = %s
+            RETURNING id, school_id
+            """,
+            (staff_id,),
+        )
+        return [dict(row) for row in cur.fetchall()]
 
 
 def get_schools_assigned_to_staff_ids(staff_id: int) -> List[int]:
@@ -5273,7 +5684,7 @@ def ensure_classroom_rooms_for_school(school_id: int) -> None:
                     INSERT INTO portal_school_room_aspects (school_room_id, aspect_id)
                     SELECT sr.id, a.id
                     FROM portal_school_rooms sr
-                    JOIN portal_aspects a ON a.room_id = sr.room_id AND a.is_required = TRUE
+                    JOIN portal_aspects a ON a.room_id = sr.room_id AND a.active = TRUE
                     WHERE sr.school_id = %s AND sr.room_id = %s
                     ON CONFLICT DO NOTHING
                     """,
@@ -5557,13 +5968,13 @@ def ensure_classroom_rooms_for_school(school_id: int) -> None:
                 """,
                 (school_id, target_room_id, quantity_val, notes_val),
             )
-            # Ensure required aspects are marked enabled for this school room
+            # Classroom variants inherit every active aspect from their template.
             cur.execute(
                 """
                 INSERT INTO portal_school_room_aspects (school_room_id, aspect_id)
                 SELECT sr.id, a.id
                 FROM portal_school_rooms sr
-                JOIN portal_aspects a ON a.room_id = sr.room_id AND a.is_required = TRUE
+                JOIN portal_aspects a ON a.room_id = sr.room_id AND a.active = TRUE
                 WHERE sr.school_id = %s AND sr.room_id = %s
                 ON CONFLICT DO NOTHING
                 """,
@@ -5882,6 +6293,7 @@ def fetch_team_top_schools(
     period_ids: Optional[List[int]] = None,
     limit: int = 5,
     offset: int = 0,
+    school_status: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
     """Fetch top scoring schools assessed by team members."""
     if not staff_ids:
@@ -5893,6 +6305,9 @@ def fetch_team_top_schools(
         period_clauses: List[str] = []
         _apply_period_filter(period_clauses, params, period_id=period_id, period_ids=period_ids, column="a.period_id")
         period_filter = f" AND {' AND '.join(period_clauses)}" if period_clauses else ""
+        school_clauses: List[str] = []
+        _apply_school_status_filter(school_clauses, params, school_status=school_status, column="s.status")
+        school_filter = f" AND {' AND '.join(school_clauses)}" if school_clauses else ""
         params.extend([limit, offset])
         
         cur.execute(
@@ -5915,6 +6330,7 @@ def fetch_team_top_schools(
                   AND a.status IN ('submitted', 'verified')
                   AND a.total_score IS NOT NULL
                   {period_filter}
+                  {school_filter}
                 ORDER BY a.school_id, a.submitted_at DESC NULLS LAST, a.id DESC
             )
             SELECT * FROM latest
@@ -5933,6 +6349,7 @@ def fetch_team_bottom_schools(
     period_ids: Optional[List[int]] = None,
     limit: int = 5,
     offset: int = 0,
+    school_status: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
     """Fetch lowest scoring schools assessed by team members."""
     if not staff_ids:
@@ -5944,6 +6361,9 @@ def fetch_team_bottom_schools(
         period_clauses: List[str] = []
         _apply_period_filter(period_clauses, params, period_id=period_id, period_ids=period_ids, column="a.period_id")
         period_filter = f" AND {' AND '.join(period_clauses)}" if period_clauses else ""
+        school_clauses: List[str] = []
+        _apply_school_status_filter(school_clauses, params, school_status=school_status, column="s.status")
+        school_filter = f" AND {' AND '.join(school_clauses)}" if school_clauses else ""
         params.extend([limit, offset])
         
         cur.execute(
@@ -5966,6 +6386,7 @@ def fetch_team_bottom_schools(
                   AND a.status IN ('submitted', 'verified')
                   AND a.total_score IS NOT NULL
                   {period_filter}
+                  {school_filter}
                 ORDER BY a.school_id, a.submitted_at DESC NULLS LAST, a.id DESC
             )
             SELECT * FROM latest

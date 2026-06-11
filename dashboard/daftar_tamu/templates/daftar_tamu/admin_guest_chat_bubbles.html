@@ -1,0 +1,1047 @@
+{% extends "daftar_tamu/base_daftar_tamu.html" %}
+{% set page_title = "Bubble Chat Buku Tamu" %}
+{% set active_tab = active_tab if active_tab in ['intro', 'limit'] else 'intro' %}
+
+{% block portal_content %}
+<section class="mb-4">
+    <div class="card portal-hero border-0 shadow-sm">
+        <div class="card-body">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+                <div class="d-flex align-items-start gap-3">
+                    <span class="icon-badge feature-icon text-primary">
+                        <i class="bi bi-chat-square-text"></i>
+                    </span>
+                    <div>
+                        <h1 class="h3 fw-bold page-title mb-1">Bubble Chat Buku Tamu</h1>
+                        <p class="page-subtitle mb-0">
+                            Kelola bubble intro, pertanyaan cepat, limit chat, dan bubble saat limit habis.
+                        </p>
+                        <div class="small text-muted mt-2">
+                            Placeholder teks: <code>{{'{{school_name}}'}}</code>, <code>{{'{{guest_count}}'}}</code>, <code>{{'{{guest_names}}'}}</code>
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="{{ url_for('daftar_tamu.admin_dashboard') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-speedometer2 me-1"></i>Dashboard
+                    </a>
+                    <a href="{{ url_for('daftar_tamu.admin_public_transactions') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-people me-1"></i>Tamu Umum
+                    </a>
+                    <a href="{{ url_for('main.admin_select_role') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-grid me-1"></i>Pilih Menu
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="card border-0 shadow-sm mb-3">
+    <div class="card-body">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+            <h2 class="h6 fw-bold mb-0">Preview Persis Web ASKA</h2>
+            <div class="d-flex flex-wrap gap-2">
+                <a href="{{ guest_chat_preview_url }}" target="_blank" rel="noopener" class="btn btn-primary">
+                    <i class="bi bi-box-arrow-up-right me-1"></i>Preview Normal
+                </a>
+                <a href="{{ guest_chat_preview_limit_url }}" target="_blank" rel="noopener" class="btn btn-outline-primary">
+                    <i class="bi bi-hourglass-split me-1"></i>Preview Limit Habis
+                </a>
+            </div>
+        </div>
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">NPSN untuk preview</label>
+                <input type="text" name="preview_npsn" class="form-control" value="{{ preview_npsn }}" maxlength="16">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-outline-secondary w-100">Set NPSN</button>
+            </div>
+            <div class="col-md-6 small text-muted">
+                Preview akan membuka route web_aska langsung, jadi tampilannya sama dengan halaman publik.
+            </div>
+        </form>
+    </div>
+</section>
+
+<section class="mb-3">
+    <div class="d-flex flex-wrap gap-2">
+        <a href="{{ url_for('daftar_tamu.admin_guest_chat_bubbles_intro', preview_npsn=preview_npsn) }}"
+            class="btn {% if active_tab == 'intro' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+            <i class="bi bi-chat-left-text me-1"></i>Bubble Intro
+        </a>
+        <a href="{{ url_for('daftar_tamu.admin_guest_chat_bubbles_limit', preview_npsn=preview_npsn) }}"
+            class="btn {% if active_tab == 'limit' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+            <i class="bi bi-chat-left-quote me-1"></i>Limit Chat & Bubble Limit
+        </a>
+    </div>
+</section>
+
+{% if active_tab == 'limit' %}
+<section class="card border-0 shadow-sm mb-3">
+    <div class="card-body">
+        <h2 class="h6 fw-bold mb-3">Pengaturan Limit Chat Buku Tamu</h2>
+        <form method="post" action="{{ url_for('daftar_tamu.admin_update_guest_chat_settings') }}" enctype="multipart/form-data"
+            class="vstack gap-2 js-limit-settings-form">
+            <div class="row g-2">
+                <div class="col-md-3">
+                    <label class="form-label">Limit chat per sesi</label>
+                    <input type="number" name="chat_limit" class="form-control" min="1" max="50" step="1"
+                        value="{{ settings.chat_limit }}" required>
+                </div>
+                <div class="col-md-9">
+                    <label class="form-label">Bubble saat limit habis</label>
+                    <textarea name="limit_reached_message" class="form-control" rows="3" maxlength="4000" required>{{ settings.limit_reached_message }}</textarea>
+                    <div class="small text-muted mt-2">
+                        Teks bubble ini bebas. Format: <code>**teks**</code> untuk bold, <code>*teks*</code> untuk miring.
+                        Tombol direct link diatur terpisah lewat form Label + URL di bawah.
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-2">
+                <div class="col-md-3">
+                    <label class="form-label">Sumber media bubble limit</label>
+                    <select name="limit_reached_media_source" class="form-select js-limit-media-source">
+                        <option value="keep" selected>Pertahankan media sekarang</option>
+                        <option value="none">Tanpa media</option>
+                        <option value="url">Ganti dengan URL media</option>
+                        <option value="upload">Ganti dengan upload file</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Tipe media</label>
+                    <select name="limit_reached_media_type" class="form-select js-limit-media-type">
+                        <option value="none" {% if settings.limit_reached_media_type == 'none' %}selected{% endif %}>Tanpa media</option>
+                        <option value="image" {% if settings.limit_reached_media_type == 'image' %}selected{% endif %}>Gambar</option>
+                        <option value="video" {% if settings.limit_reached_media_type == 'video' %}selected{% endif %}>Video</option>
+                        <option value="audio" {% if settings.limit_reached_media_type == 'audio' %}selected{% endif %}>Audio</option>
+                    </select>
+                </div>
+                <div class="col-md-2 js-limit-loop-wrap d-none">
+                    <div class="form-check form-switch mt-4">
+                        <input class="form-check-input" type="checkbox" id="limitLoop" name="limit_reached_media_loop" value="true"
+                            {% if settings.limit_reached_media_loop %}checked{% endif %}>
+                        <label class="form-check-label" for="limitLoop">Loop media</label>
+                    </div>
+                </div>
+                <div class="col-md-2 js-limit-autoplay-wrap d-none">
+                    <div class="form-check form-switch mt-4">
+                        <input class="form-check-input" type="checkbox" id="limitAutoplay" name="limit_reached_media_autoplay" value="true"
+                            {% if settings.limit_reached_media_autoplay %}checked{% endif %}>
+                        <label class="form-check-label" for="limitAutoplay">Autoplay</label>
+                    </div>
+                </div>
+                <div class="col-md-2 js-limit-muted-wrap d-none">
+                    <div class="form-check form-switch mt-4">
+                        <input class="form-check-input" type="checkbox" id="limitMuted" name="limit_reached_video_muted" value="true"
+                            {% if settings.limit_reached_video_muted %}checked{% endif %}>
+                        <label class="form-check-label" for="limitMuted">Video tanpa suara</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="js-limit-url-group d-none">
+                <label class="form-label">URL media bubble limit</label>
+                <input type="url" name="limit_reached_media_url" class="form-control"
+                    value="{{ settings.limit_reached_media_url or '' }}" placeholder="https://...">
+            </div>
+            <div class="js-limit-file-group d-none">
+                <label class="form-label">Upload media bubble limit</label>
+                <input type="file" name="limit_reached_media_file" class="form-control"
+                    accept=".jpg,.jpeg,.png,.webp,.gif,.mp4,.webm,.ogg,.mov,.mp3,.wav,.m4a,.aac,.opus">
+            </div>
+
+            <div class="limit-links-box">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <label class="form-label mb-0">Tombol Direct Link (Opsional)</label>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="addLimitLinkRow">
+                        <i class="bi bi-plus-lg me-1"></i>Tambah Link
+                    </button>
+                </div>
+                <div id="limitLinkRows" class="vstack gap-2">
+                    {% for item in settings_link_rows %}
+                    <div class="row g-2 align-items-center limit-link-row">
+                        <div class="col-md-4">
+                            <input type="text" name="limit_link_label[]" class="form-control" maxlength="60"
+                                placeholder="Label tombol (contoh: Website Sekolah)" value="{{ item.label or '' }}">
+                        </div>
+                        <div class="col-md-7">
+                            <input type="text" name="limit_link_url[]" class="form-control" maxlength="600"
+                                placeholder="https://..." value="{{ item.url or '' }}">
+                        </div>
+                        <div class="col-md-1 text-end">
+                            <button type="button" class="btn btn-sm btn-outline-danger js-remove-limit-link" title="Hapus baris">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="small text-muted mt-2">
+                    Maksimal 12 tombol. URL tanpa <code>https://</code> akan otomatis ditambahkan.
+                </div>
+            </div>
+
+            <div class="limit-preview-box">
+                <div class="small text-muted mb-1">Preview bubble limit saat ini:</div>
+                <div class="limit-preview-text">{{ settings.limit_reached_message_preview }}</div>
+                {% if settings.limit_reached_links %}
+                <div class="d-flex flex-wrap gap-2 mt-2">
+                    {% for link in settings.limit_reached_links %}
+                    <span class="badge text-bg-primary-subtle text-primary border">{{ link.label }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% set limit_media_src = settings.limit_reached_media_preview_url or settings.limit_reached_media_url %}
+                {% if settings.limit_reached_media_type != 'none' and limit_media_src %}
+                <div class="preview-media mt-2 js-deferred-media"
+                    data-media-type="{{ settings.limit_reached_media_type }}"
+                    data-media-src="{{ limit_media_src }}"
+                    data-controls="{{ '1' if not settings.limit_reached_media_autoplay else '0' }}"
+                    data-loop="{{ '1' if settings.limit_reached_media_loop else '0' }}"
+                    data-autoplay="{{ '1' if settings.limit_reached_media_autoplay else '0' }}"
+                    data-muted="{{ '1' if settings.limit_reached_video_muted or settings.limit_reached_media_autoplay else '0' }}">
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="button" class="btn btn-sm btn-outline-primary js-preview-media-btn">
+                            <i class="bi bi-play-circle me-1"></i>Klik Preview Media
+                        </button>
+                        <a href="{{ limit_media_src }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-box-arrow-up-right me-1"></i>Buka di Tab Baru
+                        </a>
+                    </div>
+                    <div class="js-preview-media-target mt-2 d-none"></div>
+                </div>
+                {% endif %}
+            </div>
+
+            <div>
+                <button type="submit" class="btn btn-primary">Simpan Pengaturan Limit</button>
+            </div>
+        </form>
+    </div>
+</section>
+{% endif %}
+
+{% if active_tab == 'intro' %}
+<section class="row g-3 mb-3">
+    <div class="col-lg-12">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <h2 class="h6 fw-bold mb-3">Tambah Bubble Intro Baru</h2>
+                <form method="post" action="{{ url_for('daftar_tamu.admin_create_guest_chat_bubble') }}" enctype="multipart/form-data"
+                    class="vstack gap-2 js-bubble-form">
+                    <div>
+                        <label class="form-label">Teks Bubble</label>
+                        <textarea name="message_text" class="form-control" rows="4" maxlength="4000"></textarea>
+                        <div class="small text-muted mt-1">
+                            Opsional. Bisa kosong jika bubble hanya media atau direct link.
+                            Format: <code>**teks**</code> untuk bold, <code>*teks*</code> untuk miring.
+                        </div>
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-md-2">
+                            <label class="form-label">Urutan</label>
+                            <input type="number" name="sort_order" class="form-control" value="10" step="1">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Sumber Media</label>
+                            <select name="media_source" class="form-select js-media-source">
+                                <option value="none" selected>Tanpa media</option>
+                                <option value="url">URL media</option>
+                                <option value="upload">Upload file</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Tipe Media</label>
+                            <select name="media_type" class="form-select js-media-type">
+                                <option value="none" selected>Tanpa media</option>
+                                <option value="image">Gambar</option>
+                                <option value="video">Video</option>
+                                <option value="audio">Audio</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 js-media-loop-wrap d-none">
+                            <div class="form-check form-switch mt-4">
+                                <input class="form-check-input" type="checkbox" id="addBubbleLoop" name="media_loop" value="true">
+                                <label class="form-check-label" for="addBubbleLoop">Loop</label>
+                            </div>
+                        </div>
+                        <div class="col-md-2 js-media-autoplay-wrap d-none">
+                            <div class="form-check form-switch mt-4">
+                                <input class="form-check-input" type="checkbox" id="addBubbleAutoplay" name="media_autoplay" value="true">
+                                <label class="form-check-label" for="addBubbleAutoplay">Autoplay</label>
+                            </div>
+                        </div>
+                        <div class="col-md-2 js-video-muted-wrap d-none">
+                            <div class="form-check form-switch mt-4">
+                                <input class="form-check-input" type="checkbox" id="addBubbleMuted" name="video_muted" value="true">
+                                <label class="form-check-label" for="addBubbleMuted">Mute video</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="js-media-url-group d-none">
+                        <label class="form-label">URL Media</label>
+                        <input type="url" name="media_url" class="form-control" placeholder="https://...">
+                    </div>
+                    <div class="js-media-file-group d-none">
+                        <label class="form-label">Upload Media</label>
+                        <input type="file" name="media_file" class="form-control" accept=".jpg,.jpeg,.png,.webp,.gif,.mp4,.webm,.ogg,.mov,.mp3,.wav,.m4a,.aac,.opus">
+                    </div>
+                    <div class="bubble-links-box js-bubble-links-box">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <label class="form-label mb-0">Tombol Direct Link (Opsional)</label>
+                            <button type="button" class="btn btn-sm btn-outline-secondary js-add-bubble-link">
+                                <i class="bi bi-plus-lg me-1"></i>Tambah Link
+                            </button>
+                        </div>
+                        <div class="vstack gap-2 js-bubble-link-rows">
+                            <div class="row g-2 align-items-center bubble-link-row">
+                                <div class="col-md-4">
+                                    <input type="text" name="bubble_link_label[]" class="form-control" maxlength="60"
+                                        placeholder="Label tombol (contoh: Website Sekolah)">
+                                </div>
+                                <div class="col-md-7">
+                                    <input type="text" name="bubble_link_url[]" class="form-control" maxlength="600"
+                                        placeholder="https://...">
+                                </div>
+                                <div class="col-md-1 text-end">
+                                    <button type="button" class="btn btn-sm btn-outline-danger js-remove-bubble-link" title="Hapus baris">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="small text-muted mt-2">
+                            Maksimal 12 tombol. URL tanpa <code>https://</code> akan otomatis ditambahkan.
+                        </div>
+                    </div>
+                    <div class="form-check form-switch mt-1">
+                        <input class="form-check-input" type="checkbox" id="addBubbleActive" name="active" value="true" checked>
+                        <label class="form-check-label" for="addBubbleActive">Aktif</label>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Tambah Bubble</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="vstack gap-3">
+    {% for row in rows %}
+    <div class="card border-0 shadow-sm" id="bubble-{{ row.id }}">
+        <div class="card-body">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                <div>
+                    <h3 class="h6 fw-bold mb-0">Bubble #{{ row.id }}</h3>
+                    <div class="small text-muted">Dibuat: {{ row.created_at|jakarta('%d %b %Y %H:%M') if row.created_at else '-' }}</div>
+                </div>
+                <div>
+                    {% if row.active %}
+                    <span class="badge text-bg-success">Aktif</span>
+                    {% else %}
+                    <span class="badge text-bg-secondary">Nonaktif</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <form method="post" action="{{ url_for('daftar_tamu.admin_update_guest_chat_bubble', bubble_id=row.id) }}"
+                enctype="multipart/form-data" class="vstack gap-2 js-bubble-form">
+                <div>
+                    <label class="form-label">Teks Bubble</label>
+                    <textarea name="message_text" class="form-control" rows="3" maxlength="4000">{{ row.message_text }}</textarea>
+                    <div class="small text-muted mt-1">
+                        Opsional. Bisa kosong jika bubble hanya media atau direct link.
+                        Format: <code>**teks**</code> untuk bold, <code>*teks*</code> untuk miring.
+                    </div>
+                </div>
+                <div class="row g-2">
+                    <div class="col-md-2">
+                        <label class="form-label">Urutan</label>
+                        <input type="number" name="sort_order" class="form-control" value="{{ row.sort_order }}" step="1">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Sumber Media</label>
+                        <select name="media_source" class="form-select js-media-source">
+                            <option value="keep" selected>Pertahankan media sekarang</option>
+                            <option value="none">Tanpa media</option>
+                            <option value="url">Ganti dengan URL media</option>
+                            <option value="upload">Ganti dengan upload file</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Tipe Media</label>
+                        <select name="media_type" class="form-select js-media-type">
+                            <option value="none" {% if row.media_type == 'none' %}selected{% endif %}>Tanpa media</option>
+                            <option value="image" {% if row.media_type == 'image' %}selected{% endif %}>Gambar</option>
+                            <option value="video" {% if row.media_type == 'video' %}selected{% endif %}>Video</option>
+                            <option value="audio" {% if row.media_type == 'audio' %}selected{% endif %}>Audio</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 js-media-loop-wrap d-none">
+                        <div class="form-check form-switch mt-4">
+                            <input class="form-check-input" type="checkbox" id="loop{{ row.id }}" name="media_loop" value="true" {% if row.media_loop %}checked{% endif %}>
+                            <label class="form-check-label" for="loop{{ row.id }}">Loop</label>
+                        </div>
+                    </div>
+                    <div class="col-md-2 js-media-autoplay-wrap d-none">
+                        <div class="form-check form-switch mt-4">
+                            <input class="form-check-input" type="checkbox" id="autoplay{{ row.id }}" name="media_autoplay" value="true" {% if row.media_autoplay %}checked{% endif %}>
+                            <label class="form-check-label" for="autoplay{{ row.id }}">Autoplay</label>
+                        </div>
+                    </div>
+                    <div class="col-md-2 js-video-muted-wrap d-none">
+                        <div class="form-check form-switch mt-4">
+                            <input class="form-check-input" type="checkbox" id="muted{{ row.id }}" name="video_muted" value="true" {% if row.video_muted %}checked{% endif %}>
+                            <label class="form-check-label" for="muted{{ row.id }}">Mute video</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="js-media-url-group d-none">
+                    <label class="form-label">URL Media</label>
+                    <input type="url" name="media_url" class="form-control" value="{{ row.media_url or '' }}" placeholder="https://...">
+                </div>
+                <div class="js-media-file-group d-none">
+                    <label class="form-label">Upload Media</label>
+                    <input type="file" name="media_file" class="form-control" accept=".jpg,.jpeg,.png,.webp,.gif,.mp4,.webm,.ogg,.mov,.mp3,.wav,.m4a,.aac,.opus">
+                </div>
+                <div class="bubble-links-box js-bubble-links-box">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label class="form-label mb-0">Tombol Direct Link (Opsional)</label>
+                        <button type="button" class="btn btn-sm btn-outline-secondary js-add-bubble-link">
+                            <i class="bi bi-plus-lg me-1"></i>Tambah Link
+                        </button>
+                    </div>
+                    <div class="vstack gap-2 js-bubble-link-rows">
+                        {% for link in row.direct_link_rows %}
+                        <div class="row g-2 align-items-center bubble-link-row">
+                            <div class="col-md-4">
+                                <input type="text" name="bubble_link_label[]" class="form-control" maxlength="60"
+                                    placeholder="Label tombol (contoh: Website Sekolah)" value="{{ link.label or '' }}">
+                            </div>
+                            <div class="col-md-7">
+                                <input type="text" name="bubble_link_url[]" class="form-control" maxlength="600"
+                                    placeholder="https://..." value="{{ link.url or '' }}">
+                            </div>
+                            <div class="col-md-1 text-end">
+                                <button type="button" class="btn btn-sm btn-outline-danger js-remove-bubble-link" title="Hapus baris">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="small text-muted mt-2">
+                        Maksimal 12 tombol. URL tanpa <code>https://</code> akan otomatis ditambahkan.
+                    </div>
+                </div>
+
+                {% if row.media_type != 'none' %}
+                {% set row_media_src = row.media_preview_url or row.media_url %}
+                <div class="current-media-box">
+                    <div class="small text-muted mb-1">Media saat ini:</div>
+                    {% if row_media_src %}
+                    <div class="preview-media js-deferred-media"
+                        data-media-type="{{ row.media_type }}"
+                        data-media-src="{{ row_media_src }}"
+                        data-controls="{{ '1' if not row.media_autoplay else '0' }}"
+                        data-loop="{{ '1' if row.media_loop else '0' }}"
+                        data-autoplay="{{ '1' if row.media_autoplay else '0' }}"
+                        data-muted="{{ '1' if row.video_muted or row.media_autoplay else '0' }}">
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="button" class="btn btn-sm btn-outline-primary js-preview-media-btn">
+                                <i class="bi bi-play-circle me-1"></i>Klik Preview Media
+                            </button>
+                            <a href="{{ row_media_src }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-box-arrow-up-right me-1"></i>Buka di Tab Baru
+                            </a>
+                        </div>
+                        <div class="js-preview-media-target mt-2 d-none"></div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+                {% if row.direct_links %}
+                <div class="small text-muted">
+                    Link saat ini:
+                    {% for link in row.direct_links %}
+                    <span class="badge text-bg-primary-subtle text-primary border">{{ link.label }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <div class="row g-2 align-items-center">
+                    <div class="col-md-2">
+                        <div class="form-check form-switch mt-2">
+                            <input class="form-check-input" type="checkbox" id="active{{ row.id }}" name="active" value="true" {% if row.active %}checked{% endif %}>
+                            <label class="form-check-label" for="active{{ row.id }}">Aktif</label>
+                        </div>
+                    </div>
+                    <div class="col-md-10 text-end">
+                        <button type="submit" class="btn btn-sm btn-primary">Simpan Bubble</button>
+                    </div>
+                </div>
+            </form>
+
+            <hr>
+            <details class="quick-questions-details js-quick-questions-details"
+                data-bubble-id="{{ row.id }}"
+                data-fetch-url="{{ url_for('daftar_tamu.admin_list_guest_chat_quick_questions', bubble_id=row.id) }}">
+                <summary class="d-flex justify-content-between align-items-center">
+                    <span class="h6 fw-bold mb-0">Pertanyaan Cepat</span>
+                    <span class="badge text-bg-light js-quick-count" data-bubble-id="{{ row.id }}">{{ row.quick_questions_count or 0 }} item</span>
+                </summary>
+                <div class="mt-3 js-quick-questions-container" data-bubble-id="{{ row.id }}">
+                    <div class="small text-muted">Buka panel ini untuk memuat pertanyaan cepat.</div>
+                </div>
+            </details>
+
+            <div class="d-flex justify-content-end mt-3">
+                <form method="post" action="{{ url_for('daftar_tamu.admin_delete_guest_chat_bubble', bubble_id=row.id) }}"
+                    onsubmit="return confirm('Hapus bubble ini beserta semua pertanyaan cepatnya?');">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Hapus Bubble</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="card border-0 shadow-sm">
+        <div class="card-body text-muted">Belum ada bubble chat.</div>
+    </div>
+    {% endfor %}
+</section>
+{% endif %}
+
+<style>
+    .preview-media img,
+    .preview-media video,
+    .current-media-box img,
+    .current-media-box video {
+        width: 100%;
+        border-radius: 10px;
+        display: block;
+    }
+
+    .preview-media audio,
+    .current-media-box audio {
+        width: 100%;
+    }
+
+    .current-media-box,
+    .limit-preview-box,
+    .limit-links-box,
+    .bubble-links-box {
+        border: 1px dashed rgba(0, 0, 0, 0.2);
+        border-radius: 12px;
+        padding: 10px;
+    }
+
+    .limit-preview-text {
+        white-space: pre-wrap;
+        line-height: 1.45;
+    }
+
+    .quick-questions-details summary {
+        cursor: pointer;
+        list-style: none;
+    }
+
+    .quick-questions-details summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .quick-questions-details[open] summary {
+        margin-bottom: 0.5rem;
+    }
+</style>
+
+<script>
+    (function () {
+        function applyVisibility(form) {
+            var source = form.querySelector('.js-media-source');
+            var mediaType = form.querySelector('.js-media-type');
+            var urlGroup = form.querySelector('.js-media-url-group');
+            var fileGroup = form.querySelector('.js-media-file-group');
+            var loopWrap = form.querySelector('.js-media-loop-wrap');
+            var autoplayWrap = form.querySelector('.js-media-autoplay-wrap');
+            var mutedWrap = form.querySelector('.js-video-muted-wrap');
+
+            if (!source || !mediaType) return;
+
+            var sourceValue = String(source.value || '').toLowerCase();
+            var mediaTypeValue = String(mediaType.value || '').toLowerCase();
+            var hasMedia = sourceValue !== 'none' && mediaTypeValue !== 'none';
+
+            if (urlGroup) {
+                urlGroup.classList.toggle('d-none', sourceValue !== 'url');
+            }
+            if (fileGroup) {
+                fileGroup.classList.toggle('d-none', sourceValue !== 'upload');
+            }
+            if (loopWrap) {
+                var showLoop = hasMedia && (mediaTypeValue === 'video' || mediaTypeValue === 'audio');
+                loopWrap.classList.toggle('d-none', !showLoop);
+            }
+            if (autoplayWrap) {
+                var showAutoplay = hasMedia && (mediaTypeValue === 'video' || mediaTypeValue === 'audio');
+                autoplayWrap.classList.toggle('d-none', !showAutoplay);
+            }
+            if (mutedWrap) {
+                var showMuted = hasMedia && mediaTypeValue === 'video';
+                mutedWrap.classList.toggle('d-none', !showMuted);
+            }
+
+            // Jika autoplay ON → mute wajib ON dan disabled
+            var autoplayChk = autoplayWrap ? autoplayWrap.querySelector('input[type=checkbox]') : null;
+            var mutedChk = mutedWrap ? mutedWrap.querySelector('input[type=checkbox]') : null;
+            if (autoplayChk && mutedChk) {
+                if (autoplayChk.checked) {
+                    mutedChk.checked = true;
+                    mutedChk.disabled = true;
+                } else {
+                    mutedChk.disabled = false;
+                }
+                autoplayChk.addEventListener('change', function () {
+                    if (autoplayChk.checked) {
+                        mutedChk.checked = true;
+                        mutedChk.disabled = true;
+                    } else {
+                        mutedChk.disabled = false;
+                    }
+                });
+            }
+        }
+
+        function bindBubbleLinkRows(form) {
+            if (!form) return;
+            var addBtn = form.querySelector('.js-add-bubble-link');
+            var rowsWrap = form.querySelector('.js-bubble-link-rows');
+            if (!rowsWrap) return;
+
+            function bindRemove(btn) {
+                if (!btn) return;
+                btn.addEventListener('click', function () {
+                    var row = btn.closest('.bubble-link-row');
+                    if (!row) return;
+                    row.remove();
+                    if (rowsWrap.querySelectorAll('.bubble-link-row').length > 0) return;
+                    addBubbleLinkRow();
+                });
+            }
+
+            function addBubbleLinkRow() {
+                if (rowsWrap.querySelectorAll('.bubble-link-row').length >= 12) return;
+                var row = document.createElement('div');
+                row.className = 'row g-2 align-items-center bubble-link-row';
+                row.innerHTML = ''
+                    + '<div class=\"col-md-4\">'
+                    + '  <input type=\"text\" name=\"bubble_link_label[]\" class=\"form-control\" maxlength=\"60\" placeholder=\"Label tombol (contoh: Website Sekolah)\">'
+                    + '</div>'
+                    + '<div class=\"col-md-7\">'
+                    + '  <input type=\"text\" name=\"bubble_link_url[]\" class=\"form-control\" maxlength=\"600\" placeholder=\"https://...\">'
+                    + '</div>'
+                    + '<div class=\"col-md-1 text-end\">'
+                    + '  <button type=\"button\" class=\"btn btn-sm btn-outline-danger js-remove-bubble-link\" title=\"Hapus baris\"><i class=\"bi bi-trash\"></i></button>'
+                    + '</div>';
+                rowsWrap.appendChild(row);
+                bindRemove(row.querySelector('.js-remove-bubble-link'));
+            }
+
+            if (addBtn) {
+                addBtn.addEventListener('click', function () {
+                    addBubbleLinkRow();
+                });
+            }
+            rowsWrap.querySelectorAll('.js-remove-bubble-link').forEach(function (btn) {
+                bindRemove(btn);
+            });
+        }
+
+        function applyLimitVisibility(form) {
+            var source = form.querySelector('.js-limit-media-source');
+            var mediaType = form.querySelector('.js-limit-media-type');
+            var urlGroup = form.querySelector('.js-limit-url-group');
+            var fileGroup = form.querySelector('.js-limit-file-group');
+            var loopWrap = form.querySelector('.js-limit-loop-wrap');
+            var autoplayWrap = form.querySelector('.js-limit-autoplay-wrap');
+            var mutedWrap = form.querySelector('.js-limit-muted-wrap');
+
+            if (!source || !mediaType) return;
+
+            var sourceValue = String(source.value || '').toLowerCase();
+            var mediaTypeValue = String(mediaType.value || '').toLowerCase();
+            var hasMedia = sourceValue !== 'none' && mediaTypeValue !== 'none';
+
+            if (urlGroup) {
+                urlGroup.classList.toggle('d-none', sourceValue !== 'url');
+            }
+            if (fileGroup) {
+                fileGroup.classList.toggle('d-none', sourceValue !== 'upload');
+            }
+            if (loopWrap) {
+                var showLoop = hasMedia && (mediaTypeValue === 'video' || mediaTypeValue === 'audio');
+                loopWrap.classList.toggle('d-none', !showLoop);
+            }
+            if (autoplayWrap) {
+                var showAutoplay = hasMedia && (mediaTypeValue === 'video' || mediaTypeValue === 'audio');
+                autoplayWrap.classList.toggle('d-none', !showAutoplay);
+            }
+            if (mutedWrap) {
+                var showMuted = hasMedia && mediaTypeValue === 'video';
+                mutedWrap.classList.toggle('d-none', !showMuted);
+            }
+
+            // Jika autoplay ON → mute wajib ON dan disabled
+            var autoplayChk = autoplayWrap ? autoplayWrap.querySelector('input[type=checkbox]') : null;
+            var mutedChk = mutedWrap ? mutedWrap.querySelector('input[type=checkbox]') : null;
+            if (autoplayChk && mutedChk) {
+                if (autoplayChk.checked) {
+                    mutedChk.checked = true;
+                    mutedChk.disabled = true;
+                } else {
+                    mutedChk.disabled = false;
+                }
+                autoplayChk.addEventListener('change', function () {
+                    if (autoplayChk.checked) {
+                        mutedChk.checked = true;
+                        mutedChk.disabled = true;
+                    } else {
+                        mutedChk.disabled = false;
+                    }
+                });
+            }
+        }
+
+        function isFlagOne(value) {
+            return String(value || '').trim() === '1';
+        }
+
+        function createDeferredPreviewMediaElement(wrapper) {
+            if (!wrapper) return null;
+            var mediaType = String(wrapper.getAttribute('data-media-type') || '').trim().toLowerCase();
+            var mediaSrc = String(wrapper.getAttribute('data-media-src') || '').trim();
+            if (!mediaSrc) return null;
+
+            if (mediaType === 'image') {
+                var img = document.createElement('img');
+                img.src = mediaSrc;
+                img.alt = 'Preview media bubble';
+                img.loading = 'lazy';
+                return img;
+            }
+
+            if (mediaType === 'video') {
+                var video = document.createElement('video');
+                video.setAttribute('playsinline', 'playsinline');
+                video.preload = 'metadata';
+                if (isFlagOne(wrapper.getAttribute('data-controls'))) {
+                    video.setAttribute('controls', 'controls');
+                }
+                if (isFlagOne(wrapper.getAttribute('data-loop'))) {
+                    video.setAttribute('loop', 'loop');
+                    video.loop = true;
+                }
+                if (isFlagOne(wrapper.getAttribute('data-autoplay'))) {
+                    video.setAttribute('autoplay', 'autoplay');
+                    video.autoplay = true;
+                }
+                if (isFlagOne(wrapper.getAttribute('data-muted'))) {
+                    video.setAttribute('muted', 'muted');
+                    video.muted = true;
+                }
+                var videoSource = document.createElement('source');
+                videoSource.src = mediaSrc;
+                video.appendChild(videoSource);
+                return video;
+            }
+
+            if (mediaType === 'audio') {
+                var audio = document.createElement('audio');
+                audio.preload = 'metadata';
+                if (isFlagOne(wrapper.getAttribute('data-controls'))) {
+                    audio.setAttribute('controls', 'controls');
+                }
+                if (isFlagOne(wrapper.getAttribute('data-loop'))) {
+                    audio.setAttribute('loop', 'loop');
+                    audio.loop = true;
+                }
+                if (isFlagOne(wrapper.getAttribute('data-autoplay'))) {
+                    audio.setAttribute('autoplay', 'autoplay');
+                    audio.autoplay = true;
+                }
+                if (isFlagOne(wrapper.getAttribute('data-muted'))) {
+                    audio.setAttribute('muted', 'muted');
+                    audio.muted = true;
+                }
+                var audioSource = document.createElement('source');
+                audioSource.src = mediaSrc;
+                audio.appendChild(audioSource);
+                return audio;
+            }
+
+            return null;
+        }
+
+        function setDeferredPreviewButtonLabel(button, isVisible) {
+            if (!button) return;
+            if (isVisible) {
+                button.innerHTML = '<i class="bi bi-eye-slash me-1"></i>Sembunyikan Preview';
+            } else {
+                button.innerHTML = '<i class="bi bi-play-circle me-1"></i>Tampilkan Preview';
+            }
+        }
+
+        function bindDeferredMediaPreview() {
+            document.querySelectorAll('.js-deferred-media').forEach(function (wrapper) {
+                var button = wrapper.querySelector('.js-preview-media-btn');
+                var target = wrapper.querySelector('.js-preview-media-target');
+                if (!button || !target) return;
+
+                setDeferredPreviewButtonLabel(button, false);
+
+                button.addEventListener('click', function () {
+                    var isLoaded = wrapper.getAttribute('data-preview-loaded') === '1';
+                    if (!isLoaded) {
+                        var mediaEl = createDeferredPreviewMediaElement(wrapper);
+                        if (!mediaEl) return;
+                        target.innerHTML = '';
+                        target.appendChild(mediaEl);
+                        wrapper.setAttribute('data-preview-loaded', '1');
+                    }
+
+                    var isHidden = target.classList.contains('d-none');
+                    if (isHidden) {
+                        target.classList.remove('d-none');
+                        setDeferredPreviewButtonLabel(button, true);
+                    } else {
+                        target.classList.add('d-none');
+                        setDeferredPreviewButtonLabel(button, false);
+                    }
+                });
+            });
+        }
+
+        function escapeHtml(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function quickQuestionActionUrl(bubbleId, questionId, action) {
+            return '/daftar-tamu/admin/chat-bubbles/' + bubbleId + '/quick-questions/' + questionId + '/' + action;
+        }
+
+        function renderQuickQuestionsPanel(detailsEl, items) {
+            if (!detailsEl) return;
+            var bubbleId = parseInt(detailsEl.getAttribute('data-bubble-id') || '0', 10);
+            if (!bubbleId) return;
+
+            var container = detailsEl.querySelector('.js-quick-questions-container');
+            if (!container) return;
+
+            var safeItems = Array.isArray(items) ? items : [];
+            var countBadge = detailsEl.querySelector('.js-quick-count');
+            if (countBadge) {
+                countBadge.textContent = safeItems.length + ' item';
+            }
+
+            var html = [];
+            html.push('<form method="post" action="/daftar-tamu/admin/chat-bubbles/' + bubbleId + '/quick-questions" class="row g-2 align-items-end mb-2">');
+            html.push('  <div class="col-md-7">');
+            html.push('      <label class="form-label">Tambah Pertanyaan Cepat</label>');
+            html.push('      <input type="text" name="question_text" class="form-control" maxlength="255" placeholder="Contoh: Cara daftar siswa baru?" required>');
+            html.push('  </div>');
+            html.push('  <div class="col-md-2">');
+            html.push('      <label class="form-label">Urutan</label>');
+            html.push('      <input type="number" name="sort_order" class="form-control" value="10" step="1">');
+            html.push('  </div>');
+            html.push('  <div class="col-md-2">');
+            html.push('      <div class="form-check form-switch mt-4">');
+            html.push('          <input class="form-check-input" type="checkbox" id="newQActiveLazy' + bubbleId + '" name="active" value="true" checked>');
+            html.push('          <label class="form-check-label" for="newQActiveLazy' + bubbleId + '">Aktif</label>');
+            html.push('      </div>');
+            html.push('  </div>');
+            html.push('  <div class="col-md-1 text-end">');
+            html.push('      <button type="submit" class="btn btn-sm btn-success">Tambah</button>');
+            html.push('  </div>');
+            html.push('</form>');
+
+            html.push('<div class="table-responsive">');
+            html.push('<table class="table table-sm align-middle mb-0">');
+            html.push('<thead><tr><th>Pertanyaan</th><th style="width: 100px;">Urutan</th><th style="width: 100px;">Aktif</th><th class="text-end" style="width: 170px;">Aksi</th></tr></thead>');
+            html.push('<tbody>');
+
+            if (!safeItems.length) {
+                html.push('<tr><td colspan="4" class="text-muted small">Belum ada pertanyaan cepat untuk bubble ini.</td></tr>');
+            } else {
+                safeItems.forEach(function (item) {
+                    var questionId = parseInt(item.id || 0, 10);
+                    if (!questionId) return;
+                    var updateFormId = 'quickUpdateLazy' + bubbleId + '_' + questionId;
+                    html.push('<tr>');
+                    html.push('<td>');
+                    html.push('<form method="post" action="' + quickQuestionActionUrl(bubbleId, questionId, 'update') + '" id="' + updateFormId + '"></form>');
+                    html.push('<input type="text" name="question_text" class="form-control form-control-sm" value="' + escapeHtml(item.question_text || '') + '" maxlength="255" required form="' + updateFormId + '">');
+                    html.push('</td>');
+                    html.push('<td>');
+                    html.push('<input type="number" name="sort_order" class="form-control form-control-sm" value="' + escapeHtml(item.sort_order || 0) + '" step="1" form="' + updateFormId + '">');
+                    html.push('</td>');
+                    html.push('<td>');
+                    html.push('<div class="form-check form-switch">');
+                    html.push('<input class="form-check-input" type="checkbox" name="active" value="true" id="quickActiveLazy' + questionId + '"' + (item.active ? ' checked' : '') + ' form="' + updateFormId + '">');
+                    html.push('<label class="form-check-label" for="quickActiveLazy' + questionId + '"></label>');
+                    html.push('</div>');
+                    html.push('</td>');
+                    html.push('<td class="text-end">');
+                    html.push('<button type="submit" class="btn btn-sm btn-primary" form="' + updateFormId + '">Simpan</button>');
+                    html.push('<form method="post" action="' + quickQuestionActionUrl(bubbleId, questionId, 'delete') + '" class="d-inline" onsubmit="return confirm(&quot;Hapus pertanyaan cepat ini?&quot;);">');
+                    html.push('<button type="submit" class="btn btn-sm btn-outline-danger">Hapus</button>');
+                    html.push('</form>');
+                    html.push('</td>');
+                    html.push('</tr>');
+                });
+            }
+
+            html.push('</tbody></table></div>');
+            container.innerHTML = html.join('');
+            detailsEl.setAttribute('data-loaded', '1');
+        }
+
+        function loadQuickQuestions(detailsEl) {
+            if (!detailsEl || detailsEl.getAttribute('data-loading') === '1') return;
+            var alreadyLoaded = detailsEl.getAttribute('data-loaded') === '1';
+            if (alreadyLoaded) return;
+            var fetchUrl = String(detailsEl.getAttribute('data-fetch-url') || '').trim();
+            if (!fetchUrl) return;
+
+            var container = detailsEl.querySelector('.js-quick-questions-container');
+            if (container) {
+                container.innerHTML = '<div class="small text-muted">Memuat pertanyaan cepat...</div>';
+            }
+            detailsEl.setAttribute('data-loading', '1');
+
+            fetch(fetchUrl, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+                .then(function (response) {
+                    return response.json().then(function (payload) {
+                        return { ok: response.ok, payload: payload };
+                    });
+                })
+                .then(function (result) {
+                    if (!result.ok || !result.payload || !result.payload.success) {
+                        throw new Error((result.payload && result.payload.message) || 'Gagal memuat pertanyaan cepat.');
+                    }
+                    renderQuickQuestionsPanel(detailsEl, result.payload.items || []);
+                })
+                .catch(function (err) {
+                    if (container) {
+                        container.innerHTML = '<div class="small text-danger">' + escapeHtml(err.message || 'Gagal memuat pertanyaan cepat.') + '</div>';
+                    }
+                })
+                .finally(function () {
+                    detailsEl.removeAttribute('data-loading');
+                });
+        }
+
+        function bindQuickQuestionLazyLoad() {
+            document.querySelectorAll('.js-quick-questions-details').forEach(function (detailsEl) {
+                detailsEl.addEventListener('toggle', function () {
+                    if (!detailsEl.open) return;
+                    loadQuickQuestions(detailsEl);
+                });
+            });
+        }
+
+        var forms = document.querySelectorAll('.js-bubble-form');
+        forms.forEach(function (form) {
+            var source = form.querySelector('.js-media-source');
+            var mediaType = form.querySelector('.js-media-type');
+            if (source) {
+                source.addEventListener('change', function () {
+                    applyVisibility(form);
+                });
+            }
+            if (mediaType) {
+                mediaType.addEventListener('change', function () {
+                    applyVisibility(form);
+                });
+            }
+            applyVisibility(form);
+            bindBubbleLinkRows(form);
+        });
+
+        var limitForm = document.querySelector('.js-limit-settings-form');
+        if (limitForm) {
+            var limitSource = limitForm.querySelector('.js-limit-media-source');
+            var limitType = limitForm.querySelector('.js-limit-media-type');
+            var addLimitLinkRowBtn = document.getElementById('addLimitLinkRow');
+            var limitRowsWrap = document.getElementById('limitLinkRows');
+            if (limitSource) {
+                limitSource.addEventListener('change', function () {
+                    applyLimitVisibility(limitForm);
+                });
+            }
+            if (limitType) {
+                limitType.addEventListener('change', function () {
+                    applyLimitVisibility(limitForm);
+                });
+            }
+
+            function bindLimitLinkRemove(btn) {
+                if (!btn) return;
+                btn.addEventListener('click', function () {
+                    var row = btn.closest('.limit-link-row');
+                    if (!row) return;
+                    row.remove();
+                    if (!limitRowsWrap || limitRowsWrap.children.length > 0) return;
+                    addLimitLinkRow();
+                });
+            }
+
+            function addLimitLinkRow() {
+                if (!limitRowsWrap) return;
+                if (limitRowsWrap.querySelectorAll('.limit-link-row').length >= 12) return;
+                var row = document.createElement('div');
+                row.className = 'row g-2 align-items-center limit-link-row';
+                row.innerHTML = ''
+                    + '<div class=\"col-md-4\">'
+                    + '  <input type=\"text\" name=\"limit_link_label[]\" class=\"form-control\" maxlength=\"60\" placeholder=\"Label tombol (contoh: Website Sekolah)\">'
+                    + '</div>'
+                    + '<div class=\"col-md-7\">'
+                    + '  <input type=\"text\" name=\"limit_link_url[]\" class=\"form-control\" maxlength=\"600\" placeholder=\"https://...\">'
+                    + '</div>'
+                    + '<div class=\"col-md-1 text-end\">'
+                    + '  <button type=\"button\" class=\"btn btn-sm btn-outline-danger js-remove-limit-link\" title=\"Hapus baris\"><i class=\"bi bi-trash\"></i></button>'
+                    + '</div>';
+                limitRowsWrap.appendChild(row);
+                bindLimitLinkRemove(row.querySelector('.js-remove-limit-link'));
+            }
+
+            if (addLimitLinkRowBtn) {
+                addLimitLinkRowBtn.addEventListener('click', function () {
+                    addLimitLinkRow();
+                });
+            }
+
+            if (limitRowsWrap) {
+                limitRowsWrap.querySelectorAll('.js-remove-limit-link').forEach(function (btn) {
+                    bindLimitLinkRemove(btn);
+                });
+            }
+
+            applyLimitVisibility(limitForm);
+        }
+
+        bindDeferredMediaPreview();
+        bindQuickQuestionLazyLoad();
+    })();
+</script>
+{% endblock %}

@@ -1,5 +1,5 @@
 {% extends "base_cc.html" %}
-{% set page_title = "Chat — " ~ (conversation.display_name or conversation.wa_user_id) %}
+{% set page_title = "Chat — " ~ (conversation.display_name or conversation.wa_user_id_raw or conversation.wa_user_id) %}
 
 {% block head_extra %}
 <style>
@@ -17,6 +17,7 @@
         flex-shrink: 0;
         display: flex;
         flex-direction: column;
+        min-height: 0;
         border: 1px solid var(--bs-border-color);
         border-radius: .75rem;
         overflow: hidden;
@@ -28,8 +29,15 @@
         background: var(--bs-tertiary-bg);
     }
 
+    .cc-sidebar-footer {
+        padding: .55rem .75rem;
+        border-top: 1px solid var(--bs-border-color);
+        background: var(--bs-tertiary-bg);
+    }
+
     .cc-conv-list {
         flex: 1;
+        min-height: 0;
         overflow-y: auto;
     }
 
@@ -37,17 +45,33 @@
         display: flex;
         align-items: center;
         gap: .6rem;
-        padding: .6rem .75rem;
+        padding: .6rem .75rem .6rem .65rem;
         border-bottom: 1px solid var(--bs-border-color);
+        border-left: 3px solid transparent;
         text-decoration: none;
         color: inherit;
         transition: background .15s;
         font-size: .85rem;
     }
 
-    .cc-conv-item:hover,
+    .cc-conv-item:hover {
+        background: var(--bs-primary-bg-subtle);
+    }
+
     .cc-conv-item.active {
         background: var(--bs-primary-bg-subtle);
+        border-left-color: var(--bs-primary);
+        box-shadow: inset 0 0 0 1px rgba(var(--bs-primary-rgb), .28);
+    }
+
+    .cc-conv-item.active .cc-conv-name {
+        font-weight: 700;
+    }
+
+    .cc-conv-item.active .cc-conv-time,
+    .cc-conv-item.active .cc-conv-submeta,
+    .cc-conv-item.active .cc-conv-preview {
+        color: var(--bs-body-color);
     }
 
     .cc-conv-avatar {
@@ -83,6 +107,11 @@
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+    }
+
+    .cc-conv-submeta {
+        font-size: .68rem;
+        color: var(--bs-secondary-color);
     }
 
     .cc-conv-meta {
@@ -181,6 +210,79 @@
         color: rgba(255, 255, 255, .9);
     }
 
+    .cc-bubble-text {
+        white-space: pre-wrap;
+    }
+
+    .cc-bubble-edited {
+        display: inline-block;
+        margin-left: .25rem;
+        font-size: .68rem;
+        opacity: .72;
+    }
+
+    .cc-bubble-actions {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: .25rem;
+    }
+
+    .cc-bubble-action {
+        width: 28px;
+        height: 28px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        border-radius: .5rem;
+        border: 0;
+        background: rgba(255, 255, 255, .18);
+        color: inherit;
+    }
+
+    .cc-bubble-action:hover {
+        background: rgba(255, 255, 255, .28);
+        color: inherit;
+    }
+
+    .cc-bubble-media {
+        margin-bottom: .45rem;
+    }
+
+    .cc-bubble-media img {
+        display: block;
+        max-width: min(280px, 100%);
+        max-height: 360px;
+        width: auto;
+        height: auto;
+        border-radius: .7rem;
+        object-fit: contain;
+        background: var(--bs-body-bg);
+    }
+
+    .cc-bubble-file {
+        display: inline-flex;
+        align-items: center;
+        gap: .45rem;
+        max-width: 100%;
+        padding: .45rem .55rem;
+        border-radius: .6rem;
+        background: rgba(0, 0, 0, .06);
+        color: inherit;
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+    .cc-bubble-out .cc-bubble-file {
+        background: rgba(255, 255, 255, .16);
+    }
+
+    .cc-bubble-file span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
     /* ── Input bar ── */
     .cc-input-bar {
         padding: .75rem 1rem;
@@ -191,6 +293,13 @@
 
     .cc-input-bar .input-group {
         gap: .5rem;
+    }
+
+    .cc-input-bar .btn-attach {
+        width: 42px;
+        height: 42px;
+        border-radius: .75rem;
+        flex: 0 0 auto;
     }
 
     .cc-input-bar textarea {
@@ -204,6 +313,26 @@
     .cc-input-bar .btn-send {
         border-radius: .75rem;
         padding: .5rem 1.25rem;
+    }
+
+    .cc-attachment-preview {
+        display: inline-flex;
+        align-items: center;
+        gap: .45rem;
+        max-width: 100%;
+        margin-bottom: .5rem;
+        padding: .35rem .55rem;
+        border: 1px solid var(--bs-border-color);
+        border-radius: .6rem;
+        background: var(--bs-body-bg);
+        font-size: .78rem;
+    }
+
+    .cc-attachment-preview span {
+        max-width: 280px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     /* ── Draft panel ── */
@@ -337,21 +466,60 @@
 {% endblock %}
 
 {% block portal_content %}
+{% set bridge_query = bridge_filter if bridge_filter != 'all' else None %}
+{% set status_query = status_filter if status_filter != 'all' else None %}
+{% set search_query = search or None %}
 <div class="cc-container">
     <!-- Sidebar (mini) -->
     <div class="cc-sidebar">
         <div class="cc-sidebar-header">
-            <a href="{{ url_for('call_center.inbox') }}" class="btn btn-outline-secondary btn-sm w-100">
+            <a href="{{ url_for('call_center.inbox', bridge=bridge_query, status=status_query, search=search_query) }}" class="btn btn-outline-secondary btn-sm w-100">
                 <i class="bi bi-arrow-left me-1"></i>Semua Chat
             </a>
+            <form method="get" class="mt-2">
+                {% if status_filter != 'all' %}
+                <input type="hidden" name="status" value="{{ status_filter }}">
+                {% endif %}
+                <div class="input-group input-group-sm">
+                    <input type="text" name="search" class="form-control" placeholder="Cari nama/isi chat..."
+                        value="{{ search }}">
+                    <button type="submit" class="btn btn-primary" title="Cari">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
+                <select name="bridge" class="form-select form-select-sm mt-2" onchange="this.form.submit()">
+                    <option value="all" {{ 'selected' if bridge_filter == 'all' else '' }}>Semua bridge</option>
+                    {% for acc in bridge_accounts %}
+                    <option value="{{ acc.bridge_key }}" {{ 'selected' if bridge_filter == acc.bridge_key else '' }}>
+                        {{ acc.display_name or acc.bridge_key }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </form>
+            <div class="btn-group btn-group-sm w-100 mt-2" role="group">
+                <a href="{{ url_for('call_center.thread', conv_id=conversation.id, bridge=bridge_query, search=search_query, page=1) }}"
+                    class="btn btn-outline-secondary {% if status_filter == 'all' %}active{% endif %}">Semua</a>
+                <a href="{{ url_for('call_center.thread', conv_id=conversation.id, status='unread', bridge=bridge_query, search=search_query, page=1) }}"
+                    class="btn btn-outline-secondary {% if status_filter == 'unread' %}active{% endif %}">Unread</a>
+                <a href="{{ url_for('call_center.thread', conv_id=conversation.id, status='open', bridge=bridge_query, search=search_query, page=1) }}"
+                    class="btn btn-outline-secondary {% if status_filter == 'open' %}active{% endif %}">Open</a>
+                <a href="{{ url_for('call_center.thread', conv_id=conversation.id, status='closed', bridge=bridge_query, search=search_query, page=1) }}"
+                    class="btn btn-outline-secondary {% if status_filter == 'closed' %}active{% endif %}">Closed</a>
+            </div>
         </div>
         <div class="cc-conv-list">
             {% for c in conversations %}
-            <a href="{{ url_for('call_center.thread', conv_id=c.id) }}"
+            <a href="{{ url_for('call_center.thread', conv_id=c.id, bridge=bridge_query, status=status_query, search=search_query, page=sidebar_page) }}"
                 class="cc-conv-item {% if c.id == conversation.id %}active{% endif %}">
-                <div class="cc-conv-avatar">{{ (c.display_name or c.wa_user_id)[:1].upper() }}</div>
+                <div class="cc-conv-avatar">{{ (c.display_name or c.wa_user_id_raw or c.wa_user_id)[:1].upper() }}</div>
                 <div class="cc-conv-info">
-                    <div class="cc-conv-name">{{ c.display_name or c.wa_user_id }}</div>
+                    <div class="cc-conv-name">{{ c.display_name or ('+' ~ (c.wa_user_id_raw or c.wa_user_id)) }}</div>
+                    <div class="cc-conv-submeta">
+                        +{{ c.wa_user_id_raw or c.wa_user_id }}
+                        {% if c.bridge_key and c.bridge_key != 'main' %}
+                        <span class="badge text-bg-secondary ms-1">{{ c.bridge_key }}</span>
+                        {% endif %}
+                    </div>
                     <div class="cc-conv-preview">{{ c.last_message_preview or '—' }}</div>
                 </div>
                 <div class="cc-conv-meta">
@@ -367,21 +535,44 @@
             </a>
             {% endfor %}
         </div>
+        {% if sidebar_total_pages > 1 %}
+        <div class="cc-sidebar-footer d-flex justify-content-between align-items-center">
+            {% if sidebar_page > 1 %}
+            <a href="{{ url_for('call_center.thread', conv_id=conversation.id, bridge=bridge_query, status=status_query, search=search_query, page=sidebar_page-1) }}"
+                class="btn btn-sm btn-outline-secondary">&laquo;</a>
+            {% else %}
+            <span></span>
+            {% endif %}
+            <small>{{ sidebar_page }} / {{ sidebar_total_pages }}</small>
+            {% if sidebar_page < sidebar_total_pages %}
+            <a href="{{ url_for('call_center.thread', conv_id=conversation.id, bridge=bridge_query, status=status_query, search=search_query, page=sidebar_page+1) }}"
+                class="btn btn-sm btn-outline-secondary">&raquo;</a>
+            {% else %}
+            <span></span>
+            {% endif %}
+        </div>
+        {% endif %}
     </div>
 
     <!-- Chat area -->
     <div class="cc-chat">
         <div class="cc-chat-header">
             <div class="cc-chat-header-info">
-                <a href="{{ url_for('call_center.inbox') }}" class="d-lg-none btn btn-sm btn-outline-secondary">
+                <a href="{{ url_for('call_center.inbox', bridge=bridge_query, status=status_query, search=search_query) }}" class="d-lg-none btn btn-sm btn-outline-secondary">
                     <i class="bi bi-arrow-left"></i>
                 </a>
-                <div class="cc-conv-avatar">{{ (conversation.display_name or conversation.wa_user_id)[:1].upper() }}
+                <div class="cc-conv-avatar">{{ (conversation.display_name or conversation.wa_user_id_raw or conversation.wa_user_id)[:1].upper() }}
                 </div>
                 <div>
-                    <div class="fw-bold" style="font-size:.92rem">{{ conversation.display_name or
-                        conversation.wa_user_id }}</div>
-                    <small class="text-secondary">{{ conversation.wa_user_id }}</small>
+                    <div class="fw-bold" style="font-size:.92rem">
+                        {{ conversation.display_name or ('+' ~ (conversation.wa_user_id_raw or conversation.wa_user_id)) }}
+                    </div>
+                    <small class="text-secondary">
+                        +{{ conversation.wa_user_id_raw or conversation.wa_user_id }}
+                        {% if conversation.bridge_key and conversation.bridge_key != 'main' %}
+                        <span class="badge text-bg-secondary ms-1">{{ conversation.bridge_key }}</span>
+                        {% endif %}
+                    </small>
                 </div>
             </div>
             <div class="d-flex gap-2">
@@ -412,13 +603,37 @@
         <div class="cc-chat-messages" id="chatMessages">
             {% for m in messages %}
             <div class="cc-bubble {% if m.direction == 'inbound' %}cc-bubble-in{% else %}cc-bubble-out{% endif %}"
-                data-msg-id="{{ m.id }}">
-                <div class="cc-bubble-text">{{ m.message_text }}</div>
+                data-msg-id="{{ m.id }}" data-message-text="{{ m.message_text|e }}">
+                {% if m.media_path %}
+                <div class="cc-bubble-media">
+                    {% if (m.media_mime_type or '').startswith('image/') %}
+                    <a href="{{ url_for('call_center.media_file', filename=m.media_path) }}" target="_blank" rel="noopener">
+                        <img src="{{ url_for('call_center.media_file', filename=m.media_path) }}"
+                            alt="{{ m.media_filename or 'Gambar WhatsApp' }}">
+                    </a>
+                    {% else %}
+                    <a class="cc-bubble-file" href="{{ url_for('call_center.media_file', filename=m.media_path) }}"
+                        target="_blank" rel="noopener">
+                        <i class="bi bi-paperclip"></i>
+                        <span>{{ m.media_filename or 'Lampiran WhatsApp' }}</span>
+                    </a>
+                    {% endif %}
+                </div>
+                {% endif %}
+                <div class="cc-bubble-text">{{ m.message_text }}{% if m.edited_at %}<span class="cc-bubble-edited">(diedit)</span>{% endif %}</div>
                 <div class="cc-bubble-meta">
-                    {{ m.created_at|jakarta('%H:%M') }}
+                    {{ m.created_at|jakarta('%d/%m/%Y %H:%M') }} WIB
                 </div>
                 {% if m.direction == 'outbound' and m.admin_display_name %}
                 <div class="cc-bubble-admin"><i class="bi bi-person-fill me-1"></i>{{ m.admin_display_name }}</div>
+                {% endif %}
+                {% if m.direction == 'outbound' %}
+                <div class="cc-bubble-actions">
+                    <button type="button" class="cc-bubble-action" data-message-action="edit"
+                        data-message-id="{{ m.id }}" title="Edit pesan">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                </div>
                 {% endif %}
             </div>
             {% endfor %}
@@ -426,7 +641,21 @@
 
         {% if conversation.status == 'open' %}
         <div class="cc-input-bar">
+            <div class="cc-attachment-preview d-none" id="attachmentPreview">
+                <i class="bi bi-paperclip"></i>
+                <span id="attachmentName"></span>
+                <button class="btn btn-link btn-sm p-0 text-secondary" id="btnRemoveAttachment" type="button"
+                    title="Hapus lampiran">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
             <div class="input-group">
+                <input type="file" class="d-none" id="mediaInput"
+                    accept="*/*">
+                <button class="btn btn-outline-secondary btn-attach" id="btnAttach" type="button"
+                    title="Lampirkan file">
+                    <i class="bi bi-paperclip"></i>
+                </button>
                 <textarea class="form-control" id="msgInput" placeholder="Ketik pesan…" rows="1"></textarea>
                 <button class="btn btn-primary btn-send" id="btnSend" type="button">
                     <i class="bi bi-send-fill me-1"></i>Kirim
@@ -464,6 +693,26 @@
             </div>
         </div>
     </aside>
+</div>
+
+<!-- Message edit modal -->
+<div class="modal fade" id="messageEditModal" tabindex="-1" aria-labelledby="messageEditModalTitle" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="messageEditModalTitle">Edit Pesan</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <label for="editMessageInput" class="form-label">Pesan</label>
+                <textarea id="editMessageInput" class="form-control" rows="4"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-primary" id="btnSaveMessageEdit">Simpan</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Draft panel (mobile) -->
@@ -517,6 +766,19 @@
                     <label for="draftMessageInput" class="form-label">Isi Draft</label>
                     <textarea id="draftMessageInput" class="form-control" placeholder="Tulis template balasan di sini..."></textarea>
                 </div>
+                <div class="mt-3">
+                    <label for="draftMediaInput" class="form-label">Lampiran</label>
+                    <input type="file" class="form-control" id="draftMediaInput"
+                        accept="*/*">
+                    <div class="cc-attachment-preview mt-2 d-none" id="draftAttachmentPreview">
+                        <i class="bi bi-paperclip"></i>
+                        <span id="draftAttachmentName"></span>
+                        <button class="btn btn-link btn-sm p-0 text-secondary" id="btnRemoveDraftAttachment"
+                            type="button" title="Hapus lampiran draft">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </div>
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
@@ -531,13 +793,23 @@
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         var chatBox = document.getElementById('chatMessages');
+        var sidebarConvList = document.querySelector('.cc-sidebar .cc-conv-list');
+        var sidebarSearch = {{ search|tojson }};
+        var sidebarScrollKey = 'cc-thread-sidebar-scroll:{{ (status_filter or "all") }}:{{ bridge_filter or "all" }}:{{ sidebar_page }}:' + sidebarSearch;
         var msgInput = document.getElementById('msgInput');
         var btnSend = document.getElementById('btnSend');
+        var btnAttach = document.getElementById('btnAttach');
+        var mediaInput = document.getElementById('mediaInput');
+        var attachmentPreview = document.getElementById('attachmentPreview');
+        var attachmentName = document.getElementById('attachmentName');
+        var btnRemoveAttachment = document.getElementById('btnRemoveAttachment');
         var convId = {{ conversation.id }};
     var draftsApiUrl = '{{ url_for("call_center.api_drafts") }}';
     var draftDetailApiBase = '{{ url_for("call_center.api_draft_detail", draft_id=0) }}';
     var draftUseApiBase = '{{ url_for("call_center.api_draft_use", draft_id=0) }}';
     var draftPinApiBase = '{{ url_for("call_center.api_draft_pin", draft_id=0) }}';
+    var messageEditApiUrl = '{{ url_for("call_center.message_edit") }}';
+    var mediaUrlBase = '{{ url_for("call_center.media_file", filename="__PATH__") }}';
     var csrfToken = '{{ csrf_token() }}';
     var lastMsgId = 0;
     var selectedDraftCategory = 'all';
@@ -549,14 +821,59 @@
     var draftTitleInput = document.getElementById('draftTitleInput');
     var draftCategoryInput = document.getElementById('draftCategoryInput');
     var draftMessageInput = document.getElementById('draftMessageInput');
+    var draftMediaInput = document.getElementById('draftMediaInput');
+    var draftAttachmentPreview = document.getElementById('draftAttachmentPreview');
+    var draftAttachmentName = document.getElementById('draftAttachmentName');
+    var btnRemoveDraftAttachment = document.getElementById('btnRemoveDraftAttachment');
     var btnSaveDraft = document.getElementById('btnSaveDraft');
     var draftModalTitle = document.getElementById('draftModalTitle');
+    var pendingDraftId = null;
+    var draftRemoveMedia = false;
+    var editingMessageId = null;
+    var messageEditModalEl = document.getElementById('messageEditModal');
+    var messageEditModal = (messageEditModalEl && window.bootstrap) ? new window.bootstrap.Modal(messageEditModalEl) : null;
+    var editMessageInput = document.getElementById('editMessageInput');
+    var btnSaveMessageEdit = document.getElementById('btnSaveMessageEdit');
 
     // Scroll to bottom
     function scrollBottom() {
         if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
     }
     scrollBottom();
+
+    function restoreSidebarScroll() {
+        if (!sidebarConvList) return;
+        try {
+            var saved = sessionStorage.getItem(sidebarScrollKey);
+            if (saved !== null) {
+                var pos = parseInt(saved, 10);
+                if (!Number.isNaN(pos) && pos >= 0) {
+                    sidebarConvList.scrollTop = pos;
+                    return;
+                }
+            }
+        } catch (_) { }
+        var activeItem = sidebarConvList.querySelector('.cc-conv-item.active');
+        if (activeItem && typeof activeItem.scrollIntoView === 'function') {
+            activeItem.scrollIntoView({ block: 'nearest' });
+        }
+    }
+
+    function persistSidebarScroll() {
+        if (!sidebarConvList) return;
+        try {
+            sessionStorage.setItem(sidebarScrollKey, String(sidebarConvList.scrollTop || 0));
+        } catch (_) { }
+    }
+
+    if (sidebarConvList) {
+        restoreSidebarScroll();
+        sidebarConvList.addEventListener('scroll', persistSidebarScroll, { passive: true });
+        window.addEventListener('beforeunload', persistSidebarScroll);
+        sidebarConvList.addEventListener('click', function (event) {
+            if (event.target.closest('.cc-conv-item')) persistSidebarScroll();
+        });
+    }
 
     // Get last message ID
     var allBubbles = chatBox ? chatBox.querySelectorAll('.cc-bubble') : [];
@@ -566,30 +883,44 @@
 
     // Send message
     function sendMessage(draftId) {
-        if (!msgInput || !msgInput.value.trim()) return;
+        if (!msgInput) return;
+        var mediaFile = mediaInput && mediaInput.files && mediaInput.files.length ? mediaInput.files[0] : null;
+        var effectiveDraftId = draftId || pendingDraftId;
+        if (!msgInput.value.trim() && !mediaFile && !effectiveDraftId) return;
         var text = msgInput.value.trim();
         btnSend.disabled = true;
         msgInput.disabled = true;
+        if (btnAttach) btnAttach.disabled = true;
+        if (mediaInput) mediaInput.disabled = true;
 
-        var payload = { conversation_id: convId, message: text };
-        if (draftId) {
-            payload.draft_id = draftId;
+        var payload = new FormData();
+        payload.append('conversation_id', String(convId));
+        payload.append('message', text);
+        if (effectiveDraftId) {
+            payload.append('draft_id', String(effectiveDraftId));
+        }
+        if (mediaFile) {
+            payload.append('media', mediaFile, mediaFile.name);
         }
 
         fetch('{{ url_for("call_center.api_send") }}', {
             method: 'POST',
+            cache: 'no-store',
             headers: {
-                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
                 'X-CSRFToken': csrfToken
             },
-            body: JSON.stringify(payload)
+            body: payload
         })
-            .then(function (r) { return r.json(); })
+            .then(parseApiResponse)
             .then(function (data) {
                 if (data.error) {
                     alert('Gagal kirim: ' + data.error);
                 } else {
                     msgInput.value = '';
+                    clearAttachment();
+                    pendingDraftId = null;
                     pollMessages(); // immediate refresh
                 }
             })
@@ -597,6 +928,8 @@
             .finally(function () {
                 btnSend.disabled = false;
                 msgInput.disabled = false;
+                if (btnAttach) btnAttach.disabled = false;
+                if (mediaInput) mediaInput.disabled = false;
                 msgInput.focus();
             });
     }
@@ -618,7 +951,209 @@
         });
     }
 
+    function formatBytes(size) {
+        if (!size) return '0 B';
+        var units = ['B', 'KB', 'MB'];
+        var value = Number(size);
+        var index = 0;
+        while (value >= 1024 && index < units.length - 1) {
+            value = value / 1024;
+            index += 1;
+        }
+        return (index === 0 ? String(value) : value.toFixed(1)) + ' ' + units[index];
+    }
+
+    function validateAttachment(file, options) {
+        if (!file) return null;
+        var name = String(file.name || '').toLowerCase();
+        var ext = name.indexOf('.') !== -1 ? name.slice(name.lastIndexOf('.')) : '';
+        var mime = String(file.type || '').toLowerCase();
+        var imageExts = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.heic', '.heif', '.bmp', '.tif', '.tiff'];
+        var imageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif', 'image/heic', 'image/heif', 'image/bmp', 'image/tiff'];
+        var isImage = imageTypes.indexOf(mime) !== -1 || imageExts.indexOf(ext) !== -1;
+        var isPdf = ext === '.pdf' || mime === 'application/pdf';
+        var allowedDocs = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.txt', '.csv'];
+        if (isImage) {
+            return null;
+        }
+        if (isPdf) {
+            return null;
+        }
+        if (mime.indexOf('image/') === 0) {
+            return 'Tipe gambar belum didukung. Gunakan JPG, PNG, WebP, GIF, HEIC, BMP, atau TIFF.';
+        }
+        if (allowedDocs.indexOf(ext) === -1) {
+            return 'Tipe file belum didukung.';
+        }
+        // Limit ukuran sengaja tidak diterapkan. Jika perlu lagi, aktifkan cek file.size di sini.
+        return null;
+    }
+
+    function clearAttachment() {
+        if (mediaInput) mediaInput.value = '';
+        if (attachmentPreview) attachmentPreview.classList.add('d-none');
+        if (attachmentName) attachmentName.textContent = '';
+        pendingDraftId = null;
+    }
+
+    if (btnAttach && mediaInput) {
+        btnAttach.addEventListener('click', function () {
+            mediaInput.click();
+        });
+        mediaInput.addEventListener('change', function () {
+            var file = this.files && this.files.length ? this.files[0] : null;
+            var error = validateAttachment(file);
+            if (error) {
+                alert(error);
+                clearAttachment();
+                return;
+            }
+            if (file && attachmentPreview && attachmentName) {
+                pendingDraftId = null;
+                attachmentName.textContent = file.name + ' · ' + formatBytes(file.size);
+                attachmentPreview.classList.remove('d-none');
+            } else {
+                clearAttachment();
+            }
+        });
+    }
+    if (btnRemoveAttachment) {
+        btnRemoveAttachment.addEventListener('click', clearAttachment);
+    }
+
     // Poll for new messages
+    function buildMediaUrl(mediaPath) {
+        var encodedPath = String(mediaPath || '')
+            .split('/')
+            .map(function (part) { return encodeURIComponent(part); })
+            .join('/');
+        return mediaUrlBase.replace('__PATH__', encodedPath);
+    }
+
+    function buildMessageMediaHtml(m) {
+        if (!m.media_path) return '';
+        var url = buildMediaUrl(m.media_path);
+        var filename = escapeHtml(m.media_filename || 'Lampiran WhatsApp');
+        var mime = String(m.media_mime_type || '').toLowerCase();
+        if (mime.indexOf('image/') === 0) {
+            var alt = escapeHtml(m.media_filename || 'Gambar WhatsApp');
+            return '<div class="cc-bubble-media"><a href="' + url + '" target="_blank" rel="noopener">'
+                + '<img src="' + url + '" alt="' + alt + '"></a></div>';
+        }
+        return '<div class="cc-bubble-media"><a class="cc-bubble-file" href="' + url + '" target="_blank" rel="noopener">'
+            + '<i class="bi bi-paperclip"></i><span>' + filename + '</span></a></div>';
+    }
+
+    function buildMessageTextHtml(messageText, editedAt) {
+        var html = '<div class="cc-bubble-text">' + escapeHtml(messageText || '');
+        if (editedAt) {
+            html += '<span class="cc-bubble-edited">(diedit)</span>';
+        }
+        return html + '</div>';
+    }
+
+    function buildMessageActionsHtml(m) {
+        if (!m || m.direction !== 'outbound') return '';
+        return '<div class="cc-bubble-actions">'
+            + '<button type="button" class="cc-bubble-action" data-message-action="edit" data-message-id="' + m.id + '" title="Edit pesan">'
+            + '<i class="bi bi-pencil"></i></button></div>';
+    }
+
+    function formatMessageTimestamp(value) {
+        if (!value) return '';
+        try {
+            var d = new Date(value);
+            return d.toLocaleString('id-ID', {
+                timeZone: 'Asia/Jakarta',
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            }).replace(',', '') + ' WIB';
+        } catch (_) {
+            return '';
+        }
+    }
+
+    function updateMessageBubble(message) {
+        if (!message || !chatBox) return;
+        var bubble = chatBox.querySelector('.cc-bubble[data-msg-id="' + message.id + '"]');
+        if (!bubble) return;
+        bubble.setAttribute('data-message-text', message.message_text || '');
+        var textEl = bubble.querySelector('.cc-bubble-text');
+        if (textEl) {
+            textEl.outerHTML = buildMessageTextHtml(message.message_text || '', message.edited_at);
+        } else {
+            var metaEl = bubble.querySelector('.cc-bubble-meta');
+            var wrapper = document.createElement('div');
+            wrapper.innerHTML = buildMessageTextHtml(message.message_text || '', message.edited_at);
+            if (metaEl) {
+                bubble.insertBefore(wrapper.firstChild, metaEl);
+            } else {
+                bubble.appendChild(wrapper.firstChild);
+            }
+        }
+    }
+
+    function openMessageEditModal(messageId) {
+        if (!messageEditModal || !editMessageInput || !chatBox) return;
+        var bubble = chatBox.querySelector('.cc-bubble[data-msg-id="' + messageId + '"]');
+        if (!bubble) return;
+        editingMessageId = messageId;
+        editMessageInput.value = bubble.getAttribute('data-message-text') || '';
+        messageEditModal.show();
+        setTimeout(function () {
+            editMessageInput.focus();
+            editMessageInput.selectionStart = editMessageInput.value.length;
+            editMessageInput.selectionEnd = editMessageInput.value.length;
+        }, 80);
+    }
+
+    function saveMessageEdit() {
+        if (!editingMessageId || !editMessageInput || !btnSaveMessageEdit) return;
+        var text = (editMessageInput.value || '').trim();
+        if (!text) {
+            alert('Pesan wajib diisi.');
+            editMessageInput.focus();
+            return;
+        }
+        var originalButtonHtml = btnSaveMessageEdit.innerHTML;
+        btnSaveMessageEdit.disabled = true;
+        btnSaveMessageEdit.innerHTML = '<span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>Menyimpan';
+        var payload = new FormData();
+        payload.append('message_id', String(editingMessageId));
+        payload.append('message', text);
+        payload.append('csrf_token', csrfToken);
+        fetch(messageEditApiUrl, {
+            method: 'POST',
+            cache: 'no-store',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': csrfToken
+            },
+            body: payload
+        })
+            .then(parseApiResponse)
+            .then(function (data) {
+                if (data.error) throw new Error(data.error);
+                updateMessageBubble(data.message);
+                if (messageEditModal) messageEditModal.hide();
+                if (data.wa_edit_warning) {
+                    alert(data.wa_edit_warning);
+                }
+            })
+            .catch(function (err) {
+                alert('Gagal edit pesan: ' + (err.message || 'Unknown error'));
+            })
+            .finally(function () {
+                btnSaveMessageEdit.disabled = false;
+                btnSaveMessageEdit.innerHTML = originalButtonHtml;
+            });
+    }
+
     function pollMessages() {
         fetch('{{ url_for("call_center.api_messages", conv_id=conversation.id) }}?after_id=' + lastMsgId)
             .then(function (r) { return r.json(); })
@@ -631,16 +1166,15 @@
                     var div = document.createElement('div');
                     div.className = 'cc-bubble ' + (m.direction === 'inbound' ? 'cc-bubble-in' : 'cc-bubble-out');
                     div.setAttribute('data-msg-id', m.id);
-                    var time = '';
-                    try {
-                        var d = new Date(m.created_at);
-                        time = d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-                    } catch (_) { }
-                    var html = '<div class="cc-bubble-text">' + escapeHtml(m.message_text) + '</div>';
+                    div.setAttribute('data-message-text', m.message_text || '');
+                    var time = formatMessageTimestamp(m.created_at);
+                    var html = buildMessageMediaHtml(m);
+                    html += buildMessageTextHtml(m.message_text, m.edited_at);
                     html += '<div class="cc-bubble-meta">' + time + '</div>';
                     if (m.direction === 'outbound' && m.admin_display_name) {
                         html += '<div class="cc-bubble-admin"><i class="bi bi-person-fill me-1"></i>' + escapeHtml(m.admin_display_name) + '</div>';
                     }
+                    html += buildMessageActionsHtml(m);
                     div.innerHTML = html;
                     chatBox.appendChild(div);
                 });
@@ -671,7 +1205,9 @@
         }
         return response.text().then(function (text) {
             var cleaned = (text || '').replace(/\s+/g, ' ').trim();
-            throw new Error(cleaned.slice(0, 180) || ('HTTP ' + response.status));
+            var url = response.url || 'request';
+            var prefix = 'HTTP ' + response.status + ' dari ' + url;
+            throw new Error(cleaned ? (prefix + ': ' + cleaned.slice(0, 180)) : prefix);
         });
     }
 
@@ -717,6 +1253,32 @@
         });
     }
 
+    function draftAttachmentText(draft) {
+        if (!draft || !draft.media_path) return '';
+        return (draft.media_filename || 'Lampiran draft') + (draft.media_size ? ' · ' + formatBytes(draft.media_size) : '');
+    }
+
+    function showDraftEditorAttachment(text) {
+        if (!draftAttachmentPreview || !draftAttachmentName) return;
+        draftAttachmentName.textContent = text || 'Lampiran draft';
+        draftAttachmentPreview.classList.remove('d-none');
+    }
+
+    function clearDraftEditorAttachment(markRemove) {
+        if (draftMediaInput) draftMediaInput.value = '';
+        if (draftAttachmentPreview) draftAttachmentPreview.classList.add('d-none');
+        if (draftAttachmentName) draftAttachmentName.textContent = '';
+        draftRemoveMedia = !!markRemove;
+    }
+
+    function showActiveDraftAttachment(draft) {
+        if (!draft || !draft.media_path || !attachmentPreview || !attachmentName) return;
+        if (mediaInput) mediaInput.value = '';
+        pendingDraftId = draft.id;
+        attachmentName.textContent = draftAttachmentText(draft);
+        attachmentPreview.classList.remove('d-none');
+    }
+
     function renderDraftLists() {
         var canUseDraft = !!msgInput;
         document.querySelectorAll('.js-draft-list').forEach(function (container) {
@@ -731,6 +1293,10 @@
                 var title = escapeHtml(draft.title || '');
                 var category = escapeHtml(draft.category || 'Umum');
                 var isPinned = !!draft.pinned;
+                var attachmentText = escapeHtml(draftAttachmentText(draft));
+                var attachmentHtml = attachmentText
+                    ? '<div class="cc-draft-item-preview"><i class="bi bi-paperclip me-1"></i>' + attachmentText + '</div>'
+                    : '';
                 html += ''
                     + '<div class="cc-draft-item' + (isPinned ? ' pinned' : '') + '" data-draft-id="' + draft.id + '">'
                     + '<div class="cc-draft-item-title">' + title + '</div>'
@@ -740,7 +1306,8 @@
                     + '<i class="bi ' + (isPinned ? 'bi-pin-fill text-warning' : 'bi-pin') + '"></i>'
                     + '</button>'
                     + '</div>'
-                    + '<div class="cc-draft-item-preview">' + preview + '</div>'
+                    + (preview ? '<div class="cc-draft-item-preview">' + preview + '</div>' : '')
+                    + attachmentHtml
                     + '<div class="cc-draft-item-actions">'
                     + '<button type="button" class="btn btn-primary btn-sm flex-fill" data-draft-action="use" data-draft-id="' + draft.id + '"' + (canUseDraft ? '' : ' disabled') + '><i class="bi bi-chat-left-text me-1"></i>Isi</button>'
                     + '<button type="button" class="btn btn-success btn-sm flex-fill" data-draft-action="send" data-draft-id="' + draft.id + '"' + (canUseDraft ? '' : ' disabled') + '><i class="bi bi-send-fill me-1"></i>Kirim</button>'
@@ -785,6 +1352,13 @@
         draftTitleInput.value = draft ? (draft.title || '') : '';
         draftCategoryInput.value = draft ? (draft.category || '') : (selectedDraftCategory !== 'all' ? selectedDraftCategory : '');
         draftMessageInput.value = draft ? (draft.message_text || '') : '';
+        draftRemoveMedia = false;
+        if (draftMediaInput) draftMediaInput.value = '';
+        if (draft && draft.media_path) {
+            showDraftEditorAttachment(draftAttachmentText(draft));
+        } else {
+            clearDraftEditorAttachment(false);
+        }
         draftModal.show();
         setTimeout(function () {
             draftTitleInput.focus();
@@ -798,33 +1372,50 @@
         var title = (draftTitleInput.value || '').trim();
         var category = (draftCategoryInput.value || '').trim() || 'Umum';
         var messageText = (draftMessageInput.value || '').trim();
+        var draftFile = draftMediaInput && draftMediaInput.files && draftMediaInput.files.length ? draftMediaInput.files[0] : null;
+        var existingDraft = editingDraftId !== null
+            ? draftItems.find(function (item) { return item.id === editingDraftId; })
+            : null;
         if (!title) {
             alert('Judul draft wajib diisi.');
             draftTitleInput.focus();
             return;
         }
-        if (!messageText) {
-            alert('Isi draft wajib diisi.');
+        if (!messageText && !draftFile && !(existingDraft && existingDraft.media_path && !draftRemoveMedia)) {
+            alert('Isi draft atau lampiran wajib diisi.');
             draftMessageInput.focus();
             return;
+        }
+
+        if (draftFile) {
+            var fileError = validateAttachment(draftFile);
+            if (fileError) {
+                alert(fileError);
+                return;
+            }
         }
 
         var isEdit = editingDraftId !== null;
         var url = isEdit ? draftDetailUrl(editingDraftId) : draftsApiUrl;
         var method = isEdit ? 'PUT' : 'POST';
+        var payload = new FormData();
+        payload.append('title', title);
+        payload.append('category', category);
+        payload.append('message_text', messageText);
+        if (draftFile) {
+            payload.append('media', draftFile, draftFile.name);
+        }
+        if (draftRemoveMedia) {
+            payload.append('remove_media', '1');
+        }
         btnSaveDraft.disabled = true;
 
         fetch(url, {
             method: method,
             headers: {
-                'Content-Type': 'application/json',
                 'X-CSRFToken': csrfToken
             },
-            body: JSON.stringify({
-                title: title,
-                category: category,
-                message_text: messageText
-            })
+            body: payload
         })
             .then(parseApiResponse)
             .then(function (data) {
@@ -887,7 +1478,7 @@
             return;
         }
         var draftText = draft.message_text || '';
-        if (!draftText.trim()) return;
+        if (!draftText.trim() && !draft.media_path) return;
         fetch(draftUseUrl(draftId), {
             method: 'POST',
             headers: { 'X-CSRFToken': csrfToken }
@@ -898,6 +1489,10 @@
             msgInput.value = draftText;
         }
         msgInput.dispatchEvent(new Event('input'));
+        pendingDraftId = draft.id;
+        if (draft.media_path) {
+            showActiveDraftAttachment(draft);
+        }
         msgInput.focus();
 
         var offcanvasEl = document.getElementById('ccDraftsOffcanvas');
@@ -913,13 +1508,17 @@
         var draft = draftItems.find(function (item) { return item.id === draftId; });
         if (!draft) return;
         var draftText = (draft.message_text || '').trim();
-        if (!draftText) return;
+        if (!draftText && !draft.media_path) return;
         if (!msgInput || !btnSend) {
             alert('Percakapan sedang ditutup. Buka kembali chat untuk mengirim draft.');
             return;
         }
 
         msgInput.value = draftText;
+        pendingDraftId = draft.id;
+        if (draft.media_path) {
+            showActiveDraftAttachment(draft);
+        }
         sendMessage(draftId);
 
         var offcanvasEl = document.getElementById('ccDraftsOffcanvas');
@@ -977,8 +1576,61 @@
     if (btnSaveDraft) {
         btnSaveDraft.addEventListener('click', saveDraft);
     }
+    if (btnSaveMessageEdit) {
+        btnSaveMessageEdit.addEventListener('click', saveMessageEdit);
+    }
+    if (editMessageInput) {
+        editMessageInput.addEventListener('keydown', function (evt) {
+            if ((evt.ctrlKey || evt.metaKey) && evt.key === 'Enter') {
+                evt.preventDefault();
+                saveMessageEdit();
+            }
+        });
+    }
+    if (messageEditModalEl) {
+        messageEditModalEl.addEventListener('hidden.bs.modal', function () {
+            editingMessageId = null;
+        });
+    }
+    if (draftMediaInput) {
+        draftMediaInput.addEventListener('change', function () {
+            var file = this.files && this.files.length ? this.files[0] : null;
+            var error = validateAttachment(file);
+            if (error) {
+                alert(error);
+                clearDraftEditorAttachment(false);
+                return;
+            }
+            if (file) {
+                draftRemoveMedia = false;
+                showDraftEditorAttachment(file.name + ' · ' + formatBytes(file.size));
+            } else if (editingDraftId !== null) {
+                var draft = draftItems.find(function (item) { return item.id === editingDraftId; });
+                if (draft && draft.media_path) {
+                    showDraftEditorAttachment(draftAttachmentText(draft));
+                } else {
+                    clearDraftEditorAttachment(false);
+                }
+            }
+        });
+    }
+    if (btnRemoveDraftAttachment) {
+        btnRemoveDraftAttachment.addEventListener('click', function () {
+            clearDraftEditorAttachment(editingDraftId !== null);
+        });
+    }
 
     document.addEventListener('click', function (evt) {
+        var messageActionBtn = evt.target.closest('[data-message-action]');
+        if (messageActionBtn) {
+            var messageAction = messageActionBtn.getAttribute('data-message-action');
+            var messageId = parseInt(messageActionBtn.getAttribute('data-message-id') || '0', 10);
+            if (messageAction === 'edit' && messageId) {
+                openMessageEditModal(messageId);
+            }
+            return;
+        }
+
         var actionBtn = evt.target.closest('[data-draft-action]');
         if (!actionBtn) return;
         var action = actionBtn.getAttribute('data-draft-action');

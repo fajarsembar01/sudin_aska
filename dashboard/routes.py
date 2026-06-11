@@ -27,6 +27,7 @@ from flask import (
 from werkzeug.datastructures import MultiDict
 
 from .auth import current_user, role_required
+from reporting_flags import qa_only_mode_enabled
 from utils import current_jakarta_time, to_jakarta
 from .queries import (
     BULLYING_STATUSES,
@@ -99,6 +100,9 @@ def _env_flag(name: str, default: str = "false") -> bool:
 
 
 def _reporting_enabled(kind: Optional[str] = None) -> bool:
+    if qa_only_mode_enabled():
+        return False
+
     global_enabled = bool(current_app.config.get("ASKA_REPORTING_ENABLED", False))
     if not global_enabled:
         return False
@@ -528,6 +532,14 @@ def admin_select_role() -> Response:
             "icon": "bi-newspaper",
             "href": url_for("cms.dashboard"),
         },
+        {
+            "title": "Adiwiyata",
+            "description": "Pantau laporan progres atau kondisi pelestarian lingkungan sekolah.",
+            "icon": "bi-buildings",
+            "icon_secondary": "bi-tree-fill",
+            "href": "/portal/admin/adiwiyata",
+            "col_class": "col-lg-6 col-md-8 col-12",
+        },
     ]
     # Layout fleksibel: desktop 3 kolom, tablet 2 kolom, mobile 1 kolom
     n = len(cards)
@@ -547,6 +559,7 @@ def admin_select_role() -> Response:
         header_subtitle="Silakan pilih layanan yang ingin Anda akses",
         cards=cards,
         default_col_class=default_col_class,
+        enable_odd_center=True,
         show_logout=True,
     )
 
@@ -560,7 +573,7 @@ def dashboard() -> Response:
     activity_long = fetch_daily_activity(days=365)
     incoming_activity_long = fetch_daily_activity(days=365, role="user")
     recent_questions = fetch_recent_questions(limit=8)
-    top_users = fetch_top_users(limit=5)
+    top_users = fetch_top_users(limit=200)
     top_keywords = fetch_top_keywords(limit=10, days=30)
 
     chart_days: list[str] = []

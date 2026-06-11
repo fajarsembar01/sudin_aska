@@ -115,6 +115,9 @@ server {
     listen 80;
     server_name dashboard.domainmu.com;
 
+    # Izinkan upload file hingga 50 MB (sesuaikan dengan DASHBOARD_MAX_UPLOAD_MB)
+    client_max_body_size 50M;
+
     location /static/ {
         alias /opt/ai-agent-sekolah/dashboard/static/;
         access_log off;

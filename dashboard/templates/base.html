@@ -222,8 +222,19 @@
                         </a>
                         <ul class="dropdown-menu">
                             <li>
+                                <a class="dropdown-item" href="{{ url_for('portal.schools') }}">
+                                    <i class="bi bi-list-check me-2"></i>Penilaian PANBERSS
+                                </a>
+                            </li>
+                            <li>
                                 <a class="dropdown-item" href="{{ url_for('portal.admin_stats') }}">
                                     <i class="bi bi-bar-chart me-2"></i>Statistik Penilaian
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if request.endpoint == 'portal.admin_draft_analysis' %}active{% endif %}"
+                                    href="{{ url_for('portal.admin_draft_analysis') }}">
+                                    <i class="bi bi-clipboard-data me-2"></i>Cek Draft
                                 </a>
                             </li>
                             <li>
@@ -248,6 +259,12 @@
                     </li>
                     {% endif %}
                     {% if current_role in ['coordinator', 'staff'] %}
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint in ['portal.coordinator_assessments', 'portal.staff_assignments', 'portal.assess', 'portal.view_assessment'] %}active{% endif %}"
+                            href="{{ url_for('portal.coordinator_assessments') if current_role == 'coordinator' else url_for('portal.staff_assignments') }}">
+                            <i class="bi bi-list-check nav-icon"></i>Penilaian PANBERSS
+                        </a>
+                    </li>
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'auth.view_my_team' %}active{% endif %}"
                             href="{{ url_for('auth.view_my_team') }}">

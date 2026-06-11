@@ -25,15 +25,29 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'call_center.stats' %}active{% endif %}"
+                        href="{{ url_for('call_center.stats') }}">
+                        <i class="bi bi-bar-chart-line nav-icon"></i>Statistik
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link {% if request.endpoint == 'call_center.settings_wa' %}active{% endif %}"
                         href="{{ url_for('call_center.settings_wa') }}">
                         <i class="bi bi-whatsapp nav-icon"></i>WhatsApp
+                        <span id="cc-bridge-nav-dot" class="d-none ms-1" title="Bridge tidak aktif"
+                              style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#dc3545;vertical-align:middle;"></span>
                     </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link {% if request.endpoint == 'call_center.settings_telegram' %}active{% endif %}"
                         href="{{ url_for('call_center.settings_telegram') }}">
                         <i class="bi bi-telegram nav-icon"></i>Telegram
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'call_center.media_manager' %}active{% endif %}"
+                        href="{{ url_for('call_center.media_manager') }}">
+                        <i class="bi bi-folder2-open nav-icon"></i>Media Manager
                     </a>
                 </li>
             </ul>
@@ -65,5 +79,83 @@
         </div>
     </div>
 </nav>
+
+<!-- Bridge Status Banner -->
+<div id="cc-bridge-alert" class="d-none">
+    <div class="alert alert-warning alert-dismissible mb-0 rounded-0 border-0 border-bottom py-2 px-3" role="alert"
+         style="font-size:0.875rem;">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <strong>WhatsApp Bridge tidak aktif</strong> —
+        <span id="cc-bridge-alert-msg">Pesan WhatsApp tidak akan masuk.</span>
+        <a href="{{ url_for('call_center.settings_wa') }}" class="alert-link ms-1">
+            Buka pengaturan &rarr;
+        </a>
+        <button type="button" class="btn-close btn-sm py-2" data-bs-dismiss="alert"
+                id="cc-bridge-alert-close" aria-label="Tutup"></button>
+    </div>
+</div>
+
+<script>
+(function () {
+    const POLL_INTERVAL_MS = 60000; // cek setiap 60 detik
+    const STATUS_URL = "{{ url_for('call_center.bridge_status') }}";
+    const alertEl = document.getElementById('cc-bridge-alert');
+    const alertMsgEl = document.getElementById('cc-bridge-alert-msg');
+    const navDotEl = document.getElementById('cc-bridge-nav-dot');
+    const closeBtn = document.getElementById('cc-bridge-alert-close');
+
+    let dismissedUntil = 0; // timestamp epoch ms, banner tidak muncul sampai ini
+
+    if (closeBtn) {
+        closeBtn.addEventListener('click', function () {
+            // Sembunyikan selama 5 menit setelah dismiss
+            dismissedUntil = Date.now() + 5 * 60 * 1000;
+        });
+    }
+
+    function stateLabel(state) {
+        const labels = {
+            stopped: 'Bridge dihentikan.',
+            disconnected: 'Bridge terputus dari WhatsApp.',
+            auth_failure: 'Sesi WhatsApp expired, perlu scan QR ulang.',
+            starting: 'Bridge sedang inisialisasi...',
+            error: 'Bridge mengalami error.',
+        };
+        return labels[state] || 'Pesan WhatsApp tidak akan masuk.';
+    }
+
+    function checkBridgeStatus() {
+        var sep = STATUS_URL.indexOf('?') >= 0 ? '&' : '?';
+        fetch(STATUS_URL + sep + '_ts=' + Date.now(), {
+            credentials: 'same-origin',
+            cache: 'no-store',
+            headers: { 'Cache-Control': 'no-cache' },
+        })
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (data) {
+                if (!data) return;
+                const isReady = data.isRunning && data.state === 'ready';
+                if (isReady) {
+                    // Bridge OK — sembunyikan banner & dot
+                    alertEl.classList.add('d-none');
+                    if (navDotEl) navDotEl.classList.add('d-none');
+                } else {
+                    // Bridge tidak OK — tampilkan dot di nav
+                    if (navDotEl) navDotEl.classList.remove('d-none');
+                    // Tampilkan banner kecuali baru di-dismiss
+                    if (Date.now() > dismissedUntil) {
+                        if (alertMsgEl) alertMsgEl.textContent = stateLabel(data.state);
+                        alertEl.classList.remove('d-none');
+                    }
+                }
+            })
+            .catch(function () { /* abaikan error jaringan */ });
+    }
+
+    // Cek langsung saat load, lalu setiap interval
+    checkBridgeStatus();
+    setInterval(checkBridgeStatus, POLL_INTERVAL_MS);
+})();
+</script>
 
 {% endblock %}

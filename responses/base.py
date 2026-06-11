@@ -1,7 +1,9 @@
 ﻿# responses/base.py
+from .rate_limit import RATE_LIMIT_RESPONSES
+
 ASKA_NO_DATA_RESPONSE = (
-    "😅 Maaf nih, *ASKA* belum nemu jawabannya di data sekolah.\n"
-    "☎️ Coba hubungi langsung sekolah ya di (021) 4406363."
+    "😅 Maaf nih, *ASKA* belum nemu jawabannya di data sudin.\n"
+    "☎️ Coba hubungi Posko SPMB Jakarta Utara 2 via WhatsApp 081320006875."
 )
 
 ASKA_TECHNICAL_ISSUE_RESPONSE = (
@@ -10,6 +12,5 @@ ASKA_TECHNICAL_ISSUE_RESPONSE = (
 )
 
 ASKA_RATE_LIMIT_RESPONSE = (
-    "🚦 Server lagi penuh jadi *ASKA* ke-limit sementara.\n"
-    "⏳ Tunggu sebentar lalu coba chat lagi ya, makasih sudah sabar 🙏"
+    RATE_LIMIT_RESPONSES[0]
 )

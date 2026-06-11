@@ -257,6 +257,17 @@
             transform: translateY(-2px);
         }
 
+        .btn-whatsapp {
+            background-color: #25D366;
+            color: #fff;
+        }
+
+        .btn-whatsapp:hover {
+            background-color: #1fb457;
+            color: #fff;
+            transform: translateY(-2px);
+        }
+
         .btn-twitter {
             background-color: #1DA1F2;
             color: #fff;
@@ -417,8 +428,14 @@
 
                 <div class="separator">atau</div>
 
+                <a href="{{ whatsapp_login_url }}" class="btn btn-custom btn-whatsapp mb-3" target="_blank"
+                    rel="noopener" data-bs-toggle="tooltip" data-bs-placement="top"
+                    title="Chat ASKA via WhatsApp dengan pesan pembuka otomatis.">
+                    <i class="fab fa-whatsapp" aria-hidden="true"></i>
+                    Akses via WhatsApp
+                </a>
                 <a href="https://t.me/tanyaaska_bot" class="btn btn-custom btn-telegram" target="_blank"
-                    data-bs-toggle="tooltip" data-bs-placement="top"
+                    rel="noopener" data-bs-toggle="tooltip" data-bs-placement="top"
                     title="Akses penuh tanpa batasan chat via Telegram @tanyaaska_bot.">
                     <i class="fab fa-telegram" aria-hidden="true"></i>
                     Akses via Telegram

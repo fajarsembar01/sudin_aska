@@ -87,6 +87,8 @@
             color: var(--text-main);
             text-decoration: none;
             gap: 16px;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: rgba(13, 110, 253, 0.14);
         }
 
         .selection-card:hover {
@@ -113,6 +115,24 @@
         .selection-card:hover .icon-wrapper {
             background: #0d6efd;
             color: white;
+        }
+
+        .selection-card .icon-wrapper.icon-combo {
+            position: relative;
+        }
+
+        .selection-card .icon-wrapper.icon-combo .icon-primary {
+            position: absolute;
+            left: 13px;
+            bottom: 12px;
+            font-size: 25px;
+        }
+
+        .selection-card .icon-wrapper.icon-combo .icon-secondary {
+            position: absolute;
+            right: 12px;
+            top: 12px;
+            font-size: 19px;
         }
 
         .selection-card h3 {
@@ -187,6 +207,18 @@
                 flex: 0 0 42px;
             }
 
+            .selection-card .icon-wrapper.icon-combo .icon-primary {
+                left: 8px;
+                bottom: 8px;
+                font-size: 18px;
+            }
+
+            .selection-card .icon-wrapper.icon-combo .icon-secondary {
+                right: 8px;
+                top: 8px;
+                font-size: 14px;
+            }
+
             .selection-card .selection-copy {
                 min-width: 0;
                 flex: 1;
@@ -247,9 +279,14 @@
                 <div class="row g-3 role-selection-row{% if enable_odd_center %} odd-center-enabled{% endif %}">
                     {% for card in cards %}
                     <div class="{{ card.col_class or default_col_class }}{% if enable_odd_center and is_odd_count and loop.last %} odd-card-center{% endif %}">
-                        <a href="{{ card.href }}" class="selection-card">
-                            <div class="icon-wrapper">
+                        <a href="{{ card.href }}" class="selection-card" data-nav-href="{{ card.href }}">
+                            <div class="icon-wrapper{% if card.icon_secondary %} icon-combo{% endif %}">
+                                {% if card.icon_secondary %}
+                                <i class="bi {{ card.icon }} icon-primary"></i>
+                                <i class="bi {{ card.icon_secondary }} icon-secondary"></i>
+                                {% else %}
                                 <i class="bi {{ card.icon }}"></i>
+                                {% endif %}
                             </div>
                             <div class="selection-copy">
                                 <h3>{{ card.title }}</h3>
@@ -269,6 +306,25 @@
             {% endif %}
         </div>
     </div>
+    <script>
+        (function () {
+            function getCardHref(card) {
+                if (!card) return '';
+                return (card.getAttribute('data-nav-href') || card.getAttribute('href') || '').trim();
+            }
+
+            document.addEventListener('click', function (event) {
+                var card = event.target.closest('.selection-card[data-nav-href]');
+                if (!card) return;
+                if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+                if (typeof event.button === 'number' && event.button !== 0) return;
+                var href = getCardHref(card);
+                if (!href) return;
+                event.preventDefault();
+                window.location.assign(href);
+            }, true);
+        })();
+    </script>
 </body>
 
 </html>

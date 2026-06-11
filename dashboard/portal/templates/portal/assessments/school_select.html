@@ -15,6 +15,33 @@
         </div>
     </div>
 
+    <div class="alert alert-info d-flex flex-wrap align-items-center gap-3 mb-4">
+        <i class="bi bi-calendar-event fs-4 text-primary"></i>
+        <div class="flex-grow-1">
+            <div class="fw-semibold">Pilih periode untuk penilaian baru</div>
+            <div class="small text-muted">
+                {% if active_period_id %}
+                Periode ini akan dipakai saat admin membuat atau melanjutkan draft penilaian.
+                {% else %}
+                Tidak ada periode aktif, pilih periode sebelum mulai penilaian.
+                {% endif %}
+            </div>
+        </div>
+        <div style="min-width: 240px;">
+            <select id="periodSelect" class="form-select form-select-sm border-primary text-primary"
+                aria-label="Periode penilaian">
+                <option value="" {% if not selected_period_id %}selected{% endif %}>
+                    {% if active_period_id %}Periode aktif (default){% else %}-- Pilih periode --{% endif %}
+                </option>
+                {% for p in periods|default([]) | sort(attribute='start_date') %}
+                <option value="{{ p.id }}" {% if selected_period_id and selected_period_id == p.id %}selected{% endif %}>
+                    {{ p.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
     <div class="row g-3">
         <div class="col-lg-4 col-md-5">
             <div class="card border-0 shadow-sm sticky-top" style="top: 80px; z-index: 0;">
@@ -30,20 +57,23 @@
                         {% if jenjang %}
                         <input type="hidden" name="jenjang" value="{{ jenjang }}">
                         {% endif %}
+                        {% if selected_period_id %}
+                        <input type="hidden" name="period_id" value="{{ selected_period_id }}">
+                        {% endif %}
                     </form>
 
                     <div>
                         <label class="form-label small fw-semibold">Filter Jenjang</label>
                         <div class="d-flex flex-wrap gap-2">
-                            <a href="{{ url_for('portal.schools', q=search) }}"
+                            <a href="{{ url_for('portal.schools', q=search, period_id=selected_period_id) }}"
                                 class="btn btn-sm {% if not jenjang %}btn-primary{% else %}btn-outline-secondary{% endif %}">Semua</a>
-                            <a href="{{ url_for('portal.schools', jenjang='SD', q=search) }}"
+                            <a href="{{ url_for('portal.schools', jenjang='SD', q=search, period_id=selected_period_id) }}"
                                 class="btn btn-sm {% if jenjang == 'SD' %}btn-primary{% else %}btn-outline-secondary{% endif %}">SD</a>
-                            <a href="{{ url_for('portal.schools', jenjang='SMP', q=search) }}"
+                            <a href="{{ url_for('portal.schools', jenjang='SMP', q=search, period_id=selected_period_id) }}"
                                 class="btn btn-sm {% if jenjang == 'SMP' %}btn-primary{% else %}btn-outline-secondary{% endif %}">SMP</a>
-                            <a href="{{ url_for('portal.schools', jenjang='SMA', q=search) }}"
+                            <a href="{{ url_for('portal.schools', jenjang='SMA', q=search, period_id=selected_period_id) }}"
                                 class="btn btn-sm {% if jenjang == 'SMA' %}btn-primary{% else %}btn-outline-secondary{% endif %}">SMA</a>
-                            <a href="{{ url_for('portal.schools', jenjang='SMK', q=search) }}"
+                            <a href="{{ url_for('portal.schools', jenjang='SMK', q=search, period_id=selected_period_id) }}"
                                 class="btn btn-sm {% if jenjang == 'SMK' %}btn-primary{% else %}btn-outline-secondary{% endif %}">SMK</a>
                         </div>
                     </div>
@@ -56,7 +86,7 @@
                 {% if schools %}
                 <div class="list-group mb-4">
                     {% for s in schools %}
-                    <a href="{{ url_for('portal.assess', school_id=s.id) }}"
+                    <a href="{{ url_for('portal.assess', school_id=s.id, period_id=selected_period_id) }}"
                         class="school-card list-group-item list-group-item-action d-flex align-items-center gap-3 py-3 border-0 shadow-sm mb-2 rounded-3">
                         <div class="school-icon bg-light text-primary rounded-circle p-2">
                             <i class="bi bi-building fs-5"></i>
@@ -85,7 +115,7 @@
                     <ul class="pagination justify-content-center">
                         <li class="page-item {% if pagination.current_page == 1 %}disabled{% endif %}">
                             <a class="page-link"
-                                href="{{ url_for('portal.schools', page=pagination.current_page - 1, q=search, jenjang=jenjang) }}">Previous</a>
+                                href="{{ url_for('portal.schools', page=pagination.current_page - 1, q=search, jenjang=jenjang, period_id=selected_period_id) }}">Previous</a>
                         </li>
 
                         {% for p in range(1, pagination.pages + 1) %}
@@ -93,7 +123,7 @@
                             pagination.current_page + 2) %} <li
                             class="page-item {% if p == pagination.current_page %}active{% endif %}">
                             <a class="page-link"
-                                href="{{ url_for('portal.schools', page=p, q=search, jenjang=jenjang) }}">{{ p }}</a>
+                                href="{{ url_for('portal.schools', page=p, q=search, jenjang=jenjang, period_id=selected_period_id) }}">{{ p }}</a>
                             </li>
                             {% elif p == pagination.current_page - 3 or p == pagination.current_page + 3 %}
                             <li class="page-item disabled"><span class="page-link">...</span></li>
@@ -103,7 +133,7 @@
                             <li
                                 class="page-item {% if pagination.current_page == pagination.pages %}disabled{% endif %}">
                                 <a class="page-link"
-                                    href="{{ url_for('portal.schools', page=pagination.current_page + 1, q=search, jenjang=jenjang) }}">Next</a>
+                                    href="{{ url_for('portal.schools', page=pagination.current_page + 1, q=search, jenjang=jenjang, period_id=selected_period_id) }}">Next</a>
                             </li>
                     </ul>
                 </nav>
@@ -117,7 +147,7 @@
                         {% if search or jenjang %}
                         <small>Coba ubah kata kunci pencarian atau filter jenjang</small>
                         <br>
-                        <a href="{{ url_for('portal.schools') }}" class="btn btn-outline-primary btn-sm mt-3">Reset
+                        <a href="{{ url_for('portal.schools', period_id=selected_period_id) }}" class="btn btn-outline-primary btn-sm mt-3">Reset
                             Filter</a>
                         {% else %}
                         <small>Hubungi admin untuk menambahkan data sekolah</small>
@@ -132,5 +162,21 @@
 {% endblock %}
 
 {% block portal_scripts %}
-<!-- No client-side search script needed -->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const periodSelect = document.getElementById('periodSelect');
+        if (!periodSelect) return;
+        periodSelect.addEventListener('change', function () {
+            const url = new URL(window.location.href);
+            const periodId = (this.value || '').trim();
+            if (periodId) {
+                url.searchParams.set('period_id', periodId);
+            } else {
+                url.searchParams.delete('period_id');
+            }
+            url.searchParams.delete('page');
+            window.location.href = url.toString();
+        });
+    });
+</script>
 {% endblock %}

@@ -36,16 +36,42 @@
     <div class="card border-0 shadow-sm">
         <div class="card-body py-3">
             <form method="get" class="row g-2 align-items-end">
-                <div class="col-md-5">
-                    <label class="form-label small text-muted mb-1">Cari Sekolah / NPSN / Staff</label>
+                <div class="col-md-3">
+                    <label class="form-label small text-muted mb-1">Cari Sekolah / Staff</label>
                     <div class="input-group input-group-sm">
                         <span class="input-group-text"><i class="bi bi-search"></i></span>
-                        <input type="text" name="q" class="form-control" placeholder="Ketik nama sekolah, NPSN, atau staff..."
+                        <input type="text" name="q" class="form-control" placeholder="Pencarian..."
                                value="{{ search_query }}">
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label small text-muted mb-1">Status</label>
+                <div class="col-md-2">
+                    <label class="form-label small text-muted mb-1">Kecamatan</label>
+                    <select name="kecamatan" class="form-select form-select-sm">
+                        <option value="">Semua</option>
+                        {% for k in kecamatan_options %}
+                        <option value="{{ k }}" {% if kecamatan_filter == k %}selected{% endif %}>{{ k }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small text-muted mb-1">Jenjang</label>
+                    <select name="jenjang" class="form-select form-select-sm">
+                        <option value="">Semua</option>
+                        {% for j in jenjang_options %}
+                        <option value="{{ j }}" {% if jenjang_filter == j %}selected{% endif %}>{{ j }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small text-muted mb-1">Negeri/Swasta</label>
+                    <select name="school_status" class="form-select form-select-sm">
+                        <option value="">Semua</option>
+                        <option value="NEGERI" {% if school_status_filter == 'NEGERI' %}selected{% endif %}>Negeri</option>
+                        <option value="SWASTA" {% if school_status_filter == 'SWASTA' %}selected{% endif %}>Swasta</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small text-muted mb-1">Status Penilaian</label>
                     <select name="status" class="form-select form-select-sm">
                         <option value="">Semua Status</option>
                         <option value="draft" {% if status_filter == 'draft' %}selected{% endif %}>Draft</option>
@@ -54,14 +80,20 @@
                         <option value="reopened" {% if status_filter == 'reopened' %}selected{% endif %}>Reopened</option>
                     </select>
                 </div>
-                <div class="col-md-2">
-                    <button type="submit" class="btn btn-primary btn-sm w-100">
-                        <i class="bi bi-funnel me-1"></i>Filter
-                    </button>
+                <div class="col-md-1">
+                    <label class="form-label small text-muted mb-1">Tampil</label>
+                    <select name="per_page" class="form-select form-select-sm">
+                        <option value="25" {% if per_page == 25 %}selected{% endif %}>25</option>
+                        <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+                        <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+                    </select>
                 </div>
-                <div class="col-md-2">
-                    <a href="{{ url_for('hospitality.admin_all_assessments') }}" class="btn btn-outline-secondary btn-sm w-100">
-                        <i class="bi bi-x-circle me-1"></i>Reset
+                <div class="col-md-2 d-flex gap-1">
+                    <button type="submit" class="btn btn-primary btn-sm flex-grow-1">
+                        <i class="bi bi-funnel"></i>
+                    </button>
+                    <a href="{{ url_for('hospitality.admin_all_assessments') }}" class="btn btn-outline-secondary btn-sm flex-grow-1">
+                        <i class="bi bi-x-circle"></i>
                     </a>
                 </div>
             </form>

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 import random
 import re
@@ -996,6 +997,371 @@ def list_guestbook_contact_priorities(*, active_only: bool = True) -> List[str]:
         )
         rows = cur.fetchall() or []
     return [row.get("contact_key") for row in rows if row.get("contact_key")]
+
+
+_GUEST_CHAT_MEDIA_TYPES = {"none", "image", "video", "audio"}
+_GUEST_CHAT_SCHEMA_READY = False
+
+
+def _normalize_guest_chat_media_type(media_type: Optional[str]) -> str:
+    clean = (media_type or "none").strip().lower()
+    if clean not in _GUEST_CHAT_MEDIA_TYPES:
+        return "none"
+    return clean
+
+
+def _sanitize_guest_chat_links(raw_links: Any) -> List[Dict[str, Any]]:
+    if isinstance(raw_links, str):
+        try:
+            raw_links = json.loads(raw_links)
+        except json.JSONDecodeError:
+            raw_links = []
+    if not isinstance(raw_links, list):
+        return []
+
+    cleaned: List[Dict[str, Any]] = []
+    for idx, item in enumerate(raw_links, start=1):
+        if not isinstance(item, dict):
+            continue
+        label = str(item.get("label") or "").strip()
+        url = str(item.get("url") or "").strip()
+        if not label or not url:
+            continue
+        cleaned.append(
+            {
+                "label": label[:60],
+                "url": url[:600],
+                "sort_order": int(item.get("sort_order") or idx * 10),
+            }
+        )
+        if len(cleaned) >= 12:
+            break
+    cleaned.sort(key=lambda x: (int(x.get("sort_order") or 0), str(x.get("label") or "").lower()))
+    return cleaned
+
+
+def _ensure_guest_chat_bubble_schema(*, force_refresh: bool = False) -> None:
+    global _GUEST_CHAT_SCHEMA_READY
+    if _GUEST_CHAT_SCHEMA_READY and not force_refresh:
+        return
+
+    _ensure_guestbook_general_schema()
+    with conn.cursor() as cur:
+        # Gunakan advisory lock untuk mencegah deadlock saat gunicorn workers melakukan CREATE/ALTER TABLE bersamaan
+        cur.execute("SELECT pg_advisory_xact_lock(777123)")
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS daftar_tamu_guest_chat_bubbles (
+                id BIGSERIAL PRIMARY KEY,
+                message_text TEXT NOT NULL,
+                sort_order INTEGER NOT NULL DEFAULT 0,
+                active BOOLEAN NOT NULL DEFAULT TRUE,
+                media_type TEXT NOT NULL DEFAULT 'none' CHECK (media_type IN ('none', 'image', 'video', 'audio')),
+                media_url TEXT,
+                media_path TEXT,
+                direct_links JSONB NOT NULL DEFAULT '[]'::jsonb,
+                media_loop BOOLEAN NOT NULL DEFAULT FALSE,
+                media_autoplay BOOLEAN NOT NULL DEFAULT FALSE,
+                video_muted BOOLEAN NOT NULL DEFAULT FALSE,
+                created_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_dt_guest_chat_bubbles_order
+            ON daftar_tamu_guest_chat_bubbles (active, sort_order, id);
+            """
+        )
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS daftar_tamu_guest_chat_quick_questions (
+                id BIGSERIAL PRIMARY KEY,
+                bubble_id BIGINT NOT NULL REFERENCES daftar_tamu_guest_chat_bubbles(id) ON DELETE CASCADE,
+                question_text TEXT NOT NULL,
+                sort_order INTEGER NOT NULL DEFAULT 0,
+                active BOOLEAN NOT NULL DEFAULT TRUE,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_dt_guest_chat_quick_questions_bubble
+            ON daftar_tamu_guest_chat_quick_questions (bubble_id, active, sort_order, id);
+            """
+        )
+        cur.execute(
+            """
+            ALTER TABLE daftar_tamu_guest_chat_bubbles
+            ADD COLUMN IF NOT EXISTS direct_links JSONB NOT NULL DEFAULT '[]'::jsonb
+            """
+        )
+        cur.execute(
+            """
+            ALTER TABLE daftar_tamu_guest_chat_bubbles
+            ADD COLUMN IF NOT EXISTS media_autoplay BOOLEAN NOT NULL DEFAULT FALSE
+            """
+        )
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS daftar_tamu_guest_chat_settings (
+                id INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+                chat_limit INTEGER NOT NULL DEFAULT 2 CHECK (chat_limit BETWEEN 1 AND 50),
+                limit_reached_message TEXT NOT NULL DEFAULT 'Batas chat buku tamu sudah habis. Silakan login untuk lanjut chat dengan ASKA.',
+                limit_reached_media_type TEXT NOT NULL DEFAULT 'none' CHECK (limit_reached_media_type IN ('none', 'image', 'video', 'audio')),
+                limit_reached_media_url TEXT,
+                limit_reached_media_path TEXT,
+                limit_reached_links JSONB NOT NULL DEFAULT '[]'::jsonb,
+                limit_reached_media_loop BOOLEAN NOT NULL DEFAULT FALSE,
+                limit_reached_media_autoplay BOOLEAN NOT NULL DEFAULT FALSE,
+                limit_reached_video_muted BOOLEAN NOT NULL DEFAULT FALSE,
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL
+            );
+            """
+        )
+        cur.execute(
+            """
+            ALTER TABLE daftar_tamu_guest_chat_settings
+            ADD COLUMN IF NOT EXISTS limit_reached_links JSONB NOT NULL DEFAULT '[]'::jsonb
+            """
+        )
+        cur.execute(
+            """
+            ALTER TABLE daftar_tamu_guest_chat_settings
+            ADD COLUMN IF NOT EXISTS limit_reached_media_autoplay BOOLEAN NOT NULL DEFAULT FALSE
+            """
+        )
+        cur.execute("SELECT COUNT(*) FROM daftar_tamu_guest_chat_bubbles")
+        total = int(cur.fetchone()[0] or 0)
+        if total == 0:
+            cur.execute(
+                """
+                INSERT INTO daftar_tamu_guest_chat_bubbles (
+                    message_text,
+                    sort_order,
+                    active,
+                    media_type,
+                    media_url,
+                    media_path,
+                    media_loop,
+                    media_autoplay,
+                    video_muted,
+                    created_by
+                )
+                VALUES (%s, %s, TRUE, 'none', NULL, NULL, FALSE, FALSE, FALSE, NULL)
+                RETURNING id
+                """,
+                (
+                    (
+                        "Laporan buku tamu: data kunjungan kamu sudah tersimpan untuk {{school_name}}.\n"
+                        "{{guest_count}} tamu tercatat: {{guest_names}}.\n"
+                        "Kalau masih bingung, drop pertanyaanmu di sini ya."
+                    ),
+                    10,
+                ),
+            )
+            first_row = cur.fetchone()
+            first_bubble_id = int(first_row[0]) if first_row else 0
+
+            cur.execute(
+                """
+                INSERT INTO daftar_tamu_guest_chat_bubbles (
+                    message_text,
+                    sort_order,
+                    active,
+                    media_type,
+                    media_url,
+                    media_path,
+                    media_loop,
+                    media_autoplay,
+                    video_muted,
+                    created_by
+                )
+                VALUES (%s, %s, TRUE, 'none', NULL, NULL, FALSE, FALSE, FALSE, NULL)
+                """,
+                ("ASKA bisa bantu info libur semester, PPDB, KJP, kontak sekolah, dan layanan lainnya.", 20),
+            )
+
+            if first_bubble_id > 0:
+                defaults = [
+                    "Kapan liburan semester?",
+                    "Cara daftar siswa baru?",
+                    "Syarat KJP terbaru?",
+                    "Apa email sekolah?",
+                ]
+                for idx, question_text in enumerate(defaults, start=1):
+                    cur.execute(
+                        """
+                        INSERT INTO daftar_tamu_guest_chat_quick_questions (
+                            bubble_id,
+                            question_text,
+                            sort_order,
+                            active
+                        )
+                        VALUES (%s, %s, %s, TRUE)
+                        """,
+                        (first_bubble_id, question_text, idx * 10),
+                    )
+        cur.execute(
+            """
+            INSERT INTO daftar_tamu_guest_chat_settings (
+                id,
+                chat_limit,
+                limit_reached_message,
+                limit_reached_media_type,
+                limit_reached_media_url,
+                limit_reached_media_path,
+                limit_reached_links,
+                limit_reached_media_loop,
+                limit_reached_media_autoplay,
+                limit_reached_video_muted,
+                updated_by
+            )
+            VALUES (
+                1,
+                2,
+                'Batas chat buku tamu sudah habis. Silakan login untuk lanjut chat dengan ASKA.',
+                'none',
+                NULL,
+                NULL,
+                '[]'::jsonb,
+                FALSE,
+                FALSE,
+                FALSE,
+                NULL
+            )
+            ON CONFLICT (id) DO NOTHING
+            """
+        )
+    conn.commit()
+    _GUEST_CHAT_SCHEMA_READY = True
+
+
+def list_public_guest_chat_bubbles(*, active_only: bool = True) -> List[Dict[str, Any]]:
+    _ensure_guest_chat_bubble_schema()
+    where_sql = "WHERE b.active = TRUE" if active_only else ""
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute(
+            f"""
+            SELECT
+                b.id,
+                b.message_text,
+                b.sort_order,
+                b.active,
+                b.media_type,
+                b.media_url,
+                b.media_path,
+                b.direct_links,
+                b.media_loop,
+                b.media_autoplay,
+                b.video_muted
+            FROM daftar_tamu_guest_chat_bubbles b
+            {where_sql}
+            ORDER BY b.sort_order ASC, b.id ASC
+            """
+        )
+        bubble_rows = [dict(row) for row in cur.fetchall() or []]
+
+        if not bubble_rows:
+            return []
+
+        bubble_ids = [int(item["id"]) for item in bubble_rows]
+        question_where = "AND q.active = TRUE" if active_only else ""
+        cur.execute(
+            f"""
+            SELECT
+                q.id,
+                q.bubble_id,
+                q.question_text,
+                q.sort_order,
+                q.active
+            FROM daftar_tamu_guest_chat_quick_questions q
+            WHERE q.bubble_id = ANY(%s)
+            {question_where}
+            ORDER BY q.bubble_id ASC, q.sort_order ASC, q.id ASC
+            """,
+            (bubble_ids,),
+        )
+        question_rows = [dict(row) for row in cur.fetchall() or []]
+
+    by_id = {int(item["id"]): item for item in bubble_rows}
+    for bubble in bubble_rows:
+        bubble["media_type"] = _normalize_guest_chat_media_type(bubble.get("media_type"))
+        bubble["direct_links"] = _sanitize_guest_chat_links(bubble.get("direct_links"))
+        bubble["media_loop"] = bool(bubble.get("media_loop"))
+        bubble["media_autoplay"] = bool(bubble.get("media_autoplay"))
+        bubble["video_muted"] = bool(bubble.get("video_muted"))
+        bubble["quick_questions"] = []
+
+    for row in question_rows:
+        bubble_id = int(row.get("bubble_id") or 0)
+        target = by_id.get(bubble_id)
+        if not target:
+            continue
+        target["quick_questions"].append(
+            {
+                "id": int(row.get("id") or 0),
+                "question_text": (row.get("question_text") or "").strip(),
+                "sort_order": int(row.get("sort_order") or 0),
+                "active": bool(row.get("active")),
+            }
+        )
+    return bubble_rows
+
+
+def get_public_guest_chat_settings() -> Dict[str, Any]:
+    _ensure_guest_chat_bubble_schema()
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute(
+            """
+            SELECT
+                id,
+                chat_limit,
+                limit_reached_message,
+                limit_reached_media_type,
+                limit_reached_media_url,
+                limit_reached_media_path,
+                limit_reached_links,
+                limit_reached_media_loop,
+                limit_reached_media_autoplay,
+                limit_reached_video_muted,
+                updated_at
+            FROM daftar_tamu_guest_chat_settings
+            WHERE id = 1
+            LIMIT 1
+            """
+        )
+        row = dict(cur.fetchone() or {})
+
+    if not row:
+        row = {
+            "id": 1,
+            "chat_limit": 2,
+            "limit_reached_message": "Batas chat buku tamu sudah habis. Silakan login untuk lanjut chat dengan ASKA.",
+            "limit_reached_media_type": "none",
+            "limit_reached_media_url": None,
+            "limit_reached_media_path": None,
+            "limit_reached_links": [],
+            "limit_reached_media_loop": False,
+            "limit_reached_media_autoplay": False,
+            "limit_reached_video_muted": False,
+            "updated_at": None,
+        }
+    row["chat_limit"] = max(1, min(int(row.get("chat_limit") or 2), 50))
+    row["limit_reached_message"] = (row.get("limit_reached_message") or "").strip()
+    row["limit_reached_media_type"] = _normalize_guest_chat_media_type(row.get("limit_reached_media_type"))
+    row["limit_reached_media_loop"] = bool(row.get("limit_reached_media_loop"))
+    row["limit_reached_media_autoplay"] = bool(row.get("limit_reached_media_autoplay"))
+    row["limit_reached_video_muted"] = bool(row.get("limit_reached_video_muted"))
+    row["limit_reached_links"] = _sanitize_guest_chat_links(row.get("limit_reached_links"))
+    if row["limit_reached_media_type"] != "video":
+        row["limit_reached_video_muted"] = False
+    return row
 
 
 def list_school_classroom_options(school_id: int) -> List[str]:

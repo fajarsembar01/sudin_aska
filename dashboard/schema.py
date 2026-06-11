@@ -1087,6 +1087,52 @@ CREATE INDEX IF NOT EXISTS idx_cc_conversations_status ON cc_conversations (stat
 CREATE INDEX IF NOT EXISTS idx_cc_conversations_last_msg ON cc_conversations (last_message_at DESC NULLS LAST);
 """
 
+_CC_WA_ROUTING_SQL = """
+CREATE TABLE IF NOT EXISTS cc_wa_routing (
+    id SERIAL PRIMARY KEY,
+    wa_user_id TEXT UNIQUE NOT NULL,
+    display_name TEXT,
+    route_mode TEXT NOT NULL DEFAULT 'manual' CHECK (route_mode IN ('manual','ai')),
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    notes TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_by INTEGER
+);
+"""
+
+_CC_WA_ROUTING_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_cc_wa_routing_mode_active
+ON cc_wa_routing (route_mode, is_active);
+CREATE INDEX IF NOT EXISTS idx_cc_wa_routing_updated_at
+ON cc_wa_routing (updated_at DESC);
+"""
+
+_CC_WA_BRIDGE_ACCOUNTS_SQL = """
+CREATE TABLE IF NOT EXISTS cc_wa_bridge_accounts (
+    id SERIAL PRIMARY KEY,
+    bridge_key TEXT UNIQUE NOT NULL,
+    display_name TEXT NOT NULL,
+    wa_number_hint TEXT,
+    client_id TEXT NOT NULL,
+    http_port INTEGER NOT NULL UNIQUE,
+    session_path TEXT NOT NULL,
+    status_path TEXT NOT NULL,
+    pid_path TEXT NOT NULL,
+    log_path TEXT NOT NULL,
+    internal_url TEXT,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_by INTEGER
+);
+"""
+
+_CC_WA_BRIDGE_ACCOUNTS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_cc_wa_bridge_accounts_active
+ON cc_wa_bridge_accounts (is_active, bridge_key);
+"""
+
 _CC_MESSAGES_SQL = """
 CREATE TABLE IF NOT EXISTS cc_messages (
     id SERIAL PRIMARY KEY,
@@ -1096,6 +1142,13 @@ CREATE TABLE IF NOT EXISTS cc_messages (
     admin_user_id INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
     admin_display_name TEXT,
     wa_message_id TEXT,
+    media_path TEXT,
+    media_mime_type TEXT,
+    media_filename TEXT,
+    media_size INTEGER,
+    original_message_text TEXT,
+    edited_at TIMESTAMPTZ,
+    edited_by_admin_user_id INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 """
@@ -1143,6 +1196,17 @@ CREATE TABLE IF NOT EXISTS cc_telegram_groups (
 );
 """
 
+_CC_PUBLIC_WHATSAPP_CTA_SETTINGS_SQL = """
+CREATE TABLE IF NOT EXISTS cc_public_whatsapp_cta_settings (
+    id INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+    wa_number TEXT,
+    opening_message TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL
+);
+"""
+
 _CC_MESSAGE_DRAFTS_SQL = """
 CREATE TABLE IF NOT EXISTS cc_message_drafts (
     id SERIAL PRIMARY KEY,
@@ -1150,6 +1214,10 @@ CREATE TABLE IF NOT EXISTS cc_message_drafts (
     title TEXT NOT NULL,
     category TEXT NOT NULL DEFAULT 'Umum',
     message_text TEXT NOT NULL,
+    media_path TEXT,
+    media_mime_type TEXT,
+    media_filename TEXT,
+    media_size INTEGER,
     pinned BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -1409,11 +1477,28 @@ def ensure_dashboard_schema() -> None:
         # ===== Call Center tables =====
         _CC_CONVERSATIONS_SQL,
         _CC_CONVERSATIONS_INDEX_SQL,
+        _CC_WA_ROUTING_SQL,
+        _CC_WA_ROUTING_INDEX_SQL,
+        _CC_WA_BRIDGE_ACCOUNTS_SQL,
+        "ALTER TABLE cc_wa_bridge_accounts ADD COLUMN IF NOT EXISTS wa_number_hint TEXT",
+        _CC_WA_BRIDGE_ACCOUNTS_INDEX_SQL,
         _CC_MESSAGES_SQL,
+        "ALTER TABLE cc_messages ADD COLUMN IF NOT EXISTS media_path TEXT",
+        "ALTER TABLE cc_messages ADD COLUMN IF NOT EXISTS media_mime_type TEXT",
+        "ALTER TABLE cc_messages ADD COLUMN IF NOT EXISTS media_filename TEXT",
+        "ALTER TABLE cc_messages ADD COLUMN IF NOT EXISTS media_size INTEGER",
+        "ALTER TABLE cc_messages ADD COLUMN IF NOT EXISTS original_message_text TEXT",
+        "ALTER TABLE cc_messages ADD COLUMN IF NOT EXISTS edited_at TIMESTAMPTZ",
+        "ALTER TABLE cc_messages ADD COLUMN IF NOT EXISTS edited_by_admin_user_id INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL",
         _CC_MESSAGES_INDEX_SQL,
         _CC_TELEGRAM_SETTINGS_SQL,
         _CC_TELEGRAM_GROUPS_SQL,
+        _CC_PUBLIC_WHATSAPP_CTA_SETTINGS_SQL,
         _CC_MESSAGE_DRAFTS_SQL,
+        "ALTER TABLE cc_message_drafts ADD COLUMN IF NOT EXISTS media_path TEXT",
+        "ALTER TABLE cc_message_drafts ADD COLUMN IF NOT EXISTS media_mime_type TEXT",
+        "ALTER TABLE cc_message_drafts ADD COLUMN IF NOT EXISTS media_filename TEXT",
+        "ALTER TABLE cc_message_drafts ADD COLUMN IF NOT EXISTS media_size INTEGER",
         _CC_MESSAGE_DRAFTS_INDEX_SQL,
     )
     

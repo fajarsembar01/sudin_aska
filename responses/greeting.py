@@ -25,7 +25,7 @@ GREETING_KEYWORDS = (
     "halo", "hallo", "helo",
     "hello", "hey", "heyy", "heyyy",
     "hi", "hii", "hiya",
-    "yo", "yow", "oy", "oi", "oii", "woy", "hoi",
+    "yo", "yoo", "yooo", "yoooo", "yow", "oy", "oi", "oii", "woy", "hoi",
     "cuy", "cui",
     "bro", "sis", "gan", "min",
     "permisi", "p",
@@ -75,6 +75,14 @@ GREETING_RESPONSES = [
     "Hey {user_name}, jangan sungkan sama ASKA, ya. 🙅‍♀️\n\nMau laporin hal serius kayak bullying atau cuma nanya info receh, semuanya penting buat aku. Your voice matters! 🤝❤️",
     "Hai tim sukses! *ASKA* siap jadi co-pilotmu hari ini 🛫🧭\n\nApapun kebutuhan kamu, {user_name}—info akademis 📚, mental support ❤️‍🩹, atau sekadar iseng nanya 🤔—aku, ASKA, siap bantu.\n\nKamu itu prioritas! 🌟👑",
     "Welcome, {user_name}! 🎉 Aku ASKA, sobat digital kamu. 🤖\n\nDari A sampai Z soal sekolah, dari info SPMB sampe butuh nasihat, *I got your back!* Kasih tau aja apa yang kamu butuhin. 🚀💯",
+]
+
+QA_ONLY_GREETING_RESPONSES = [
+    "Yooo, {user_name}! *ASKA* standby buat bantu info sekolah dan SPMB ya 🤖✨",
+    "Halo {user_name}! Mau cek data sekolah, jadwal, atau SPMB? Spill aja ke *ASKA* 🔎📚",
+    "Hai {user_name}! *ASKA* online. Tanya info resmi sekolah? Gaskeun 💬✅",
+    "Yo {user_name}! Aku *ASKA*, fokus bantu jawab dari data resmi sekolah biar nggak ngarang 😄📌",
+    "Wassup {user_name}! Ada yang mau dicek soal sekolah/SPMB? *ASKA* siap bantu sat-set 🚀",
 ]
 
 
@@ -278,4 +286,9 @@ def is_greeting_message(text: str) -> bool:
 # 6) Ambil respons sapaan generik (kompatibilitas lama)
 def get_greeting_response(user_name: Optional[str] = None) -> str:
     response = random.choice(GREETING_RESPONSES)
+    return response.format(user_name=user_name or 'bestie')
+
+
+def get_qa_only_greeting_response(user_name: Optional[str] = None) -> str:
+    response = random.choice(QA_ONLY_GREETING_RESPONSES)
     return response.format(user_name=user_name or 'bestie')

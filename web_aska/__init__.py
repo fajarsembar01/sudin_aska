@@ -8,6 +8,7 @@ import secrets
 import re
 from pathlib import Path
 from datetime import datetime, timezone
+from urllib.parse import parse_qs, quote, urlparse
 from flask import Flask, request, jsonify, render_template, session, redirect, url_for, flash, send_from_directory, abort, make_response
 from authlib.integrations.flask_client import OAuth
 from dotenv import dotenv_values
@@ -33,11 +34,22 @@ from db import (
     find_general_guest_by_phone,
     list_guestbook_purpose_keywords,
     list_guestbook_contact_priorities,
+    list_public_guest_chat_bubbles,
+    get_public_guest_chat_settings,
 )
 from account_status import BLOCKING_STATUSES, build_status_notice, ACCOUNT_STATUS_ACTIVE
 from responses import detect_bullying_category, is_corruption_report_intent
 from reporting_flags import reporting_enabled
 from utils import current_jakarta_time, normalize_input, replace_bot_mentions, to_jakarta
+
+try:
+    from dashboard.call_center.queries import (
+        fetch_cc_public_whatsapp_cta_settings,
+        get_cc_wa_bridge_account,
+    )
+except Exception:
+    fetch_cc_public_whatsapp_cta_settings = None
+    get_cc_wa_bridge_account = None
 
 LIMIT_BLOCK_MESSAGE = (
     f"Ups! Kuota {DEFAULT_LIMITED_QUOTA} chat untuk akses Gmail sudah habis. "
@@ -46,6 +58,11 @@ LIMIT_BLOCK_MESSAGE = (
 GMAIL_ALLOWED_DOMAINS = {"gmail.com", "googlemail.com"}
 WEB_BOT_USERNAME = "ASKA_WEB"
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+DEFAULT_WHATSAPP_NUMBER = "082143646463"
+WHATSAPP_LOGIN_MESSAGE = (
+    "Halo ASKA! Aku mau tanya-tanya soal info SPMB nih. "
+    "Bantu aku cari jawaban yang paling update, jelas, dan sat set ya. Thanks bestie!"
+)
 
 
 def _env_value(name: str, default: str = "") -> str:
@@ -56,6 +73,13 @@ def _env_value(name: str, default: str = "") -> str:
         return str(dotenv_values(PROJECT_ROOT / ".env").get(name) or default)
     except Exception:
         return default
+
+
+def _cc_inbound_media_max_bytes() -> int:
+    try:
+        return max(1, int(_env_value("ASKA_CC_INBOUND_MEDIA_MAX_BYTES", "307200")))
+    except ValueError:
+        return 300 * 1024
 
 
 def _run_async(coro):
@@ -142,6 +166,50 @@ def create_app() -> Flask:
         if raw.endswith("/portal/register"):
             return raw
         return f"{raw}/portal/register"
+
+    def _normalize_whatsapp_number(raw_value: str) -> str:
+        clean = (raw_value or "").strip()
+        digits = ""
+        if clean:
+            parse_target = clean
+            if not parse_target.startswith(("http://", "https://")):
+                parse_target = f"https://{parse_target}"
+            parsed = urlparse(parse_target)
+            host = (parsed.netloc or "").lower()
+            if "api.whatsapp.com" in host:
+                phone_values = parse_qs(parsed.query).get("phone") or []
+                digits = "".join(ch for ch in (phone_values[0] if phone_values else "") if ch.isdigit())
+            elif "wa.me" in host:
+                digits = "".join(ch for ch in parsed.path.strip("/").split("/")[0] if ch.isdigit())
+            if not digits:
+                digits = "".join(ch for ch in clean if ch.isdigit())
+        if not digits:
+            digits = "".join(ch for ch in DEFAULT_WHATSAPP_NUMBER if ch.isdigit())
+        if digits.startswith("0"):
+            digits = f"62{digits[1:]}"
+        return digits
+
+    def _whatsapp_login_url() -> str:
+        settings = {}
+        if fetch_cc_public_whatsapp_cta_settings:
+            try:
+                settings = fetch_cc_public_whatsapp_cta_settings()
+            except Exception:
+                settings = {}
+        bridge_account = {}
+        if get_cc_wa_bridge_account:
+            try:
+                bridge_account = get_cc_wa_bridge_account("main") or {}
+            except Exception:
+                bridge_account = {}
+        raw_number = (
+            settings.get("wa_number")
+            or bridge_account.get("wa_number_hint")
+            or _env_value("ASKA_WHATSAPP_URL", DEFAULT_WHATSAPP_NUMBER)
+        )
+        opening_message = settings.get("opening_message") or WHATSAPP_LOGIN_MESSAGE
+        number = _normalize_whatsapp_number(raw_number)
+        return f"https://wa.me/{number}?text={quote(opening_message, safe='')}"
 
     def _normalize_url(value: str) -> str:
         clean = (value or "").strip()
@@ -244,6 +312,199 @@ def create_app() -> Flask:
                 break
         return buttons
 
+    def _guest_chat_names(summary: dict | None) -> list[str]:
+        if not isinstance(summary, dict):
+            return []
+        raw = summary.get("names")
+        if not isinstance(raw, list):
+            return []
+        names: list[str] = []
+        for item in raw:
+            text = str(item or "").strip()
+            if text:
+                names.append(text)
+        return names
+
+    def _guest_chat_normalize_message_text(text: str) -> str:
+        raw = str(text or "")
+        raw = raw.replace("\r\n", "\n").replace("\r", "\n")
+        return re.sub(r"(?i)<br\s*/?>", "\n", raw)
+
+    def _render_guest_chat_message_template(
+        text: str,
+        *,
+        school: dict | None,
+        summary: dict | None,
+    ) -> str:
+        clean = _guest_chat_normalize_message_text(text).strip()
+        if not clean:
+            return ""
+
+        names = _guest_chat_names(summary)
+        count = len(names)
+        school_name = (school or {}).get("name") or "sekolah"
+        names_joined = ", ".join(names) if names else "-"
+        replacements = {
+            "{{school_name}}": str(school_name),
+            "{school_name}": str(school_name),
+            "{{guest_count}}": str(count),
+            "{guest_count}": str(count),
+            "{{guest_names}}": names_joined,
+            "{guest_names}": names_joined,
+        }
+        rendered = clean
+        for key, value in replacements.items():
+            rendered = rendered.replace(key, value)
+        return rendered
+
+    def _guest_chat_media_public_url(media_path: str) -> str:
+        normalized = str(media_path or "").strip().replace("\\", "/").lstrip("/")
+        if normalized.startswith("uploads/portal/"):
+            normalized = normalized.split("uploads/portal/", 1)[1]
+        if normalized.startswith("portal/uploads/"):
+            normalized = normalized.split("portal/uploads/", 1)[1]
+        if normalized.startswith("daftar_tamu/"):
+            normalized = normalized.split("daftar_tamu/", 1)[1]
+        if not normalized:
+            return ""
+        return url_for("portal_daftar_tamu_uploaded_file", filename=normalized)
+
+    def _build_guest_chat_bubbles_for_render(*, school: dict | None, summary: dict | None) -> list[dict]:
+        rows = list_public_guest_chat_bubbles(active_only=True)
+        bubbles: list[dict] = []
+        for row in rows:
+            media_type = (row.get("media_type") or "none").strip().lower()
+            media_url = (row.get("media_url") or "").strip()
+            media_path = (row.get("media_path") or "").strip()
+            media_src = media_url
+            if not media_src and media_path:
+                media_src = _guest_chat_media_public_url(media_path)
+            if media_type not in {"image", "video", "audio"}:
+                media_type = "none"
+                media_src = ""
+
+            questions: list[dict] = []
+            for item in row.get("quick_questions") or []:
+                question_text = str(item.get("question_text") or "").strip()
+                if not question_text:
+                    continue
+                questions.append(
+                    {
+                        "id": int(item.get("id") or 0),
+                        "question_text": question_text,
+                        "sort_order": int(item.get("sort_order") or 0),
+                        "active": bool(item.get("active", True)),
+                    }
+                )
+            questions.sort(key=lambda q: (q["sort_order"], q["id"]))
+            raw_links = row.get("direct_links")
+            if not isinstance(raw_links, list):
+                raw_links = []
+            links: list[dict] = []
+            for idx, item in enumerate(raw_links, start=1):
+                if not isinstance(item, dict):
+                    continue
+                label = str(item.get("label") or "").strip()
+                url = str(item.get("url") or "").strip()
+                if not label or not url:
+                    continue
+                links.append(
+                    {
+                        "label": label[:60],
+                        "url": url[:600],
+                        "sort_order": int(item.get("sort_order") or idx * 10),
+                    }
+                )
+                if len(links) >= 12:
+                    break
+            links.sort(key=lambda x: (int(x.get("sort_order") or 0), str(x.get("label") or "").lower()))
+
+            bubbles.append(
+                {
+                    "id": int(row.get("id") or 0),
+                    "message_text": _render_guest_chat_message_template(
+                        row.get("message_text") or "",
+                        school=school,
+                        summary=summary,
+                    ),
+                    "media_type": media_type,
+                    "media_src": media_src,
+                    "media_loop": bool(row.get("media_loop")),
+                    "media_autoplay": bool(row.get("media_autoplay")),
+                    "video_muted": bool(row.get("video_muted")),
+                    "links": links,
+                    "quick_questions": [q for q in questions if q.get("active")],
+                    "sort_order": int(row.get("sort_order") or 0),
+                    "active": bool(row.get("active", True)),
+                }
+            )
+        bubbles.sort(key=lambda b: (b["sort_order"], b["id"]))
+        return bubbles
+
+    def _get_guest_chat_settings() -> dict:
+        settings = get_public_guest_chat_settings() or {}
+        chat_limit = int(settings.get("chat_limit") or 2)
+        chat_limit = max(1, min(chat_limit, 50))
+        settings["chat_limit"] = chat_limit
+        settings["limit_reached_message"] = str(settings.get("limit_reached_message") or "").strip()
+        media_type = str(settings.get("limit_reached_media_type") or "none").strip().lower()
+        if media_type not in {"image", "video", "audio"}:
+            media_type = "none"
+        settings["limit_reached_media_type"] = media_type
+        settings["limit_reached_media_loop"] = bool(settings.get("limit_reached_media_loop"))
+        settings["limit_reached_media_autoplay"] = bool(settings.get("limit_reached_media_autoplay"))
+        settings["limit_reached_video_muted"] = bool(settings.get("limit_reached_video_muted"))
+        raw_links = settings.get("limit_reached_links")
+        if not isinstance(raw_links, list):
+            raw_links = []
+        links: list[dict] = []
+        for idx, item in enumerate(raw_links, start=1):
+            if not isinstance(item, dict):
+                continue
+            label = str(item.get("label") or "").strip()
+            url = str(item.get("url") or "").strip()
+            if not label or not url:
+                continue
+            links.append(
+                {
+                    "label": label[:60],
+                    "url": url[:600],
+                    "sort_order": int(item.get("sort_order") or idx * 10),
+                }
+            )
+            if len(links) >= 12:
+                break
+        links.sort(key=lambda x: (int(x.get("sort_order") or 0), str(x.get("label") or "").lower()))
+        settings["limit_reached_links"] = links
+        if media_type != "video":
+            settings["limit_reached_video_muted"] = False
+        return settings
+
+    def _build_guest_chat_limit_bubble_for_render(*, school: dict | None, summary: dict | None, settings: dict | None) -> dict:
+        data = settings or _get_guest_chat_settings()
+        media_type = str(data.get("limit_reached_media_type") or "none").strip().lower()
+        media_url = str(data.get("limit_reached_media_url") or "").strip()
+        media_path = str(data.get("limit_reached_media_path") or "").strip()
+        media_src = media_url
+        if not media_src and media_path:
+            media_src = _guest_chat_media_public_url(media_path)
+        if media_type not in {"image", "video", "audio"}:
+            media_type = "none"
+            media_src = ""
+        return {
+            "message_text": _render_guest_chat_message_template(
+                data.get("limit_reached_message") or "",
+                school=school,
+                summary=summary,
+            ),
+            "media_type": media_type,
+            "media_src": media_src,
+            "links": data.get("limit_reached_links") or [],
+            "media_loop": bool(data.get("limit_reached_media_loop")),
+            "media_autoplay": bool(data.get("limit_reached_media_autoplay")),
+            "video_muted": bool(data.get("limit_reached_video_muted")) if media_type == "video" else False,
+        }
+
     def _guestbook_grade_options(jenjang: str | None) -> list[str]:
         if not jenjang:
             return [str(i) for i in range(1, 13)]
@@ -283,8 +544,9 @@ def create_app() -> Flask:
 
     def _activate_guest_chat_session(review: dict, summary: dict | None) -> None:
         transaction_id = review.get("transaction_id")
+        chat_settings = _get_guest_chat_settings()
         session["guest_chat_tx_id"] = transaction_id
-        session["guest_chat_remaining"] = 2
+        session["guest_chat_remaining"] = int(chat_settings.get("chat_limit") or 2)
         session["guest_chat_npsn"] = review.get("npsn")
         session["guest_chat_summary"] = summary or {"names": [], "count": 0}
         session["guest_chat_name"] = _guestbook_review_primary_name(summary)
@@ -403,7 +665,13 @@ def create_app() -> Flask:
     def login_page():
         if session.get("user"):
             return redirect(url_for("index"))
-        response = make_response(render_template("login.html", portal_register_url=_portal_register_url()))
+        response = make_response(
+            render_template(
+                "login.html",
+                portal_register_url=_portal_register_url(),
+                whatsapp_login_url=_whatsapp_login_url(),
+            )
+        )
         return _add_no_cache_headers(response)
 
     @app.route('/login')
@@ -511,6 +779,15 @@ def create_app() -> Flask:
 
         logos_dir = Path(__file__).resolve().parent.parent / "uploads" / "portal" / "logos"
         return send_from_directory(logos_dir, str(requested_path))
+
+    @app.route("/portal/uploads/daftar_tamu/<path:filename>")
+    def portal_daftar_tamu_uploaded_file(filename: str):
+        requested_path = Path(filename)
+        if requested_path.is_absolute() or ".." in requested_path.parts:
+            abort(404)
+
+        media_dir = Path(__file__).resolve().parent.parent / "uploads" / "portal" / "daftar_tamu"
+        return send_from_directory(media_dir, str(requested_path))
 
     @app.route("/buku-tamu/<npsn>", methods=["GET", "POST"])
     def buku_tamu(npsn: str):
@@ -797,16 +1074,74 @@ def create_app() -> Flask:
         if tx_id_int and session.get("guest_chat_tx_id") == tx_id_int:
             can_chat = True
             remaining = int(session.get("guest_chat_remaining") or 0)
+        chat_settings = _get_guest_chat_settings()
         if not can_chat and review_redirect:
             return redirect(review_redirect)
+        guest_chat_bubbles = _build_guest_chat_bubbles_for_render(
+            school=school,
+            summary=summary,
+        )
+        guest_chat_limit_bubble = _build_guest_chat_limit_bubble_for_render(
+            school=school,
+            summary=summary,
+            settings=chat_settings,
+        )
         return render_template(
             "buku_tamu_selesai.html",
             school=school,
             can_chat=can_chat,
             remaining=remaining,
             summary=summary,
+            guest_chat_bubbles=guest_chat_bubbles,
+            guest_chat_settings=chat_settings,
+            guest_chat_limit_bubble=guest_chat_limit_bubble,
+            preview_mode=False,
             review_pending=bool(session.get("guest_review_tx_id") and session.get("guest_review_token")),
             review_url=review_redirect,
+        )
+
+    @app.route("/buku-tamu/<npsn>/preview-chat")
+    def buku_tamu_selesai_preview(npsn: str):
+        school = get_portal_school_by_npsn(npsn) or {
+            "npsn": npsn,
+            "name": "Sekolah Contoh",
+            "active": True,
+        }
+        chat_settings = _get_guest_chat_settings()
+        summary = {
+            "names": ["Nama Tamu"],
+            "count": 1,
+        }
+        remaining = int(chat_settings.get("chat_limit") or 2)
+        remaining = max(0, remaining)
+        remaining_raw = (request.args.get("remaining") or "").strip()
+        if remaining_raw:
+            try:
+                remaining = int(remaining_raw)
+            except (TypeError, ValueError):
+                pass
+            remaining = max(0, min(remaining, int(chat_settings.get("chat_limit") or 2)))
+        guest_chat_bubbles = _build_guest_chat_bubbles_for_render(
+            school=school,
+            summary=summary,
+        )
+        guest_chat_limit_bubble = _build_guest_chat_limit_bubble_for_render(
+            school=school,
+            summary=summary,
+            settings=chat_settings,
+        )
+        return render_template(
+            "buku_tamu_selesai.html",
+            school=school,
+            can_chat=True,
+            remaining=remaining,
+            summary=summary,
+            guest_chat_bubbles=guest_chat_bubbles,
+            guest_chat_settings=chat_settings,
+            guest_chat_limit_bubble=guest_chat_limit_bubble,
+            preview_mode=True,
+            review_pending=False,
+            review_url=None,
         )
 
     @app.route("/api/guest-chat", methods=["POST"])
@@ -935,8 +1270,6 @@ def create_app() -> Flask:
         username = (data.get("username") or raw_user_id).strip()[:120]
         message = (data.get("message") or "").strip()
         message_id = data.get("message_id") or None
-        if not message:
-            return jsonify({"error": "message required"}), 400
 
         try:
             from dashboard.call_center.queries import (
@@ -944,6 +1277,32 @@ def create_app() -> Flask:
                 save_cc_message,
                 send_cc_telegram_notification,
             )
+            from dashboard.call_center.media import (
+                call_center_media_label,
+                save_call_center_media,
+            )
+
+            media_payload = data.get("media") or {}
+            # Tanpa limit ukuran secara default. Jika perlu diaktifkan lagi:
+            # inbound_limit = _cc_inbound_media_max_bytes()
+            # media_meta = save_call_center_media(
+            #     media_payload,
+            #     message_id=message_id,
+            #     max_image_bytes=inbound_limit,
+            #     max_pdf_bytes=inbound_limit,
+            #     max_file_bytes=inbound_limit,
+            # )
+            media_meta = save_call_center_media(
+                media_payload,
+                message_id=message_id,
+            )
+            if not message and (media_payload or media_meta):
+                message = call_center_media_label(
+                    media_meta.get("media_mime_type")
+                    or (media_payload.get("mimetype") if isinstance(media_payload, dict) else None)
+                )
+            if not message:
+                return jsonify({"error": "message required"}), 400
 
             conv = upsert_cc_conversation(wa_user_id=raw_user_id, display_name=username)
             msg = save_cc_message(
@@ -951,6 +1310,7 @@ def create_app() -> Flask:
                 direction="inbound",
                 message_text=message,
                 wa_message_id=message_id,
+                **media_meta,
             )
 
             if not msg.get("duplicate"):
@@ -999,6 +1359,10 @@ def create_app() -> Flask:
                 upsert_cc_conversation,
                 save_cc_message,
             )
+            from dashboard.call_center.media import (
+                call_center_media_label,
+                save_call_center_media,
+            )
 
             saved = 0
             duplicates = 0
@@ -1013,7 +1377,30 @@ def create_app() -> Flask:
                 raw_user_id = str(item.get("user_id") or "").strip()
                 message = str(item.get("message") or "").strip()
                 direction = str(item.get("direction") or "inbound").strip().lower()
-                if not raw_user_id or not message or direction not in {"inbound", "outbound"}:
+                if not raw_user_id or direction not in {"inbound", "outbound"}:
+                    skipped += 1
+                    continue
+
+                media_payload = item.get("media") or {}
+                # Tanpa limit ukuran secara default. Jika perlu diaktifkan lagi:
+                # inbound_limit = _cc_inbound_media_max_bytes()
+                # media_meta = save_call_center_media(
+                #     media_payload,
+                #     message_id=item.get("message_id") or None,
+                #     max_image_bytes=inbound_limit,
+                #     max_pdf_bytes=inbound_limit,
+                #     max_file_bytes=inbound_limit,
+                # )
+                media_meta = save_call_center_media(
+                    media_payload,
+                    message_id=item.get("message_id") or None,
+                )
+                if not message and (media_payload or media_meta):
+                    message = call_center_media_label(
+                        media_meta.get("media_mime_type")
+                        or (media_payload.get("mimetype") if isinstance(media_payload, dict) else None)
+                    )
+                if not message:
                     skipped += 1
                     continue
 
@@ -1038,6 +1425,7 @@ def create_app() -> Flask:
                     wa_message_id=message_id,
                     created_at=created_at,
                     increment_unread=False,
+                    **media_meta,
                 )
                 conversations.add(conv["id"])
                 if msg.get("duplicate"):

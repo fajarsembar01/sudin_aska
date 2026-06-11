@@ -14,6 +14,7 @@ from responses import (
     is_teacher_stop,
     pick_question,
 )
+from reporting_flags import teacher_mode_enabled
 from utils import send_typing_once
 
 
@@ -35,6 +36,9 @@ async def handle_teacher(
 
     Returns True if handled.
     """
+    if not teacher_mode_enabled():
+        return False
+
     now_ts = time.time()
     teacher_sessions = context.chat_data.setdefault("teacher_sessions", {})
     teacher_session = teacher_sessions.get(storage_key)

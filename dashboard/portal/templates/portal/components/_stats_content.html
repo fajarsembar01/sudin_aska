@@ -13,6 +13,7 @@
 {% set teams = monev_teams|default([]) %}
 {% set selected_year = current_period_year|default(None) %}
 {% set selected_month = current_period_month|default(None) %}
+{% set selected_school_status = school_status_filter|default('') %}
 {% set periods_sorted = periods|default([]) | sort(attribute='start_date') %}
 {% from "portal/components/_color_macros.html" import get_score_bootstrap_class %}
 
@@ -40,13 +41,15 @@
             <i class="bi bi-map"></i>
             <span>Sidak Planner</span>
           </a>
-          <a
-            href="{{ url_for('portal.export_excel', period_id=current_period_id) }}"
+          <button
+            type="button"
             class="btn btn-outline-success d-inline-flex align-items-center gap-2"
+            data-bs-toggle="modal"
+            data-bs-target="#exportExcelModal"
           >
             <i class="bi bi-file-earmark-excel"></i>
             <span>Export Excel</span>
-          </a>
+          </button>
           {% endif %}
           <form method="get" class="d-inline-flex align-items-center gap-2">
             {% if is_admin %}
@@ -99,6 +102,16 @@
               </option>
               {% endfor %}
             </select>
+            <select
+              name="school_status"
+              class="form-select border-primary text-primary fw-medium"
+              onchange="this.form.submit()"
+              style="min-width: 150px"
+            >
+              <option value="">Semua Sekolah</option>
+              <option value="negeri" {% if selected_school_status=='negeri' %}selected{% endif %}>Negeri</option>
+              <option value="swasta" {% if selected_school_status=='swasta' %}selected{% endif %}>Swasta</option>
+            </select>
             {% else %}
             <form method="get" class="d-inline-flex align-items-center gap-2">
               <select
@@ -123,6 +136,44 @@
     </div>
   </div>
 </section>
+
+{% if is_admin %}
+<div class="modal fade" id="exportExcelModal" tabindex="-1" aria-labelledby="exportExcelModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <form method="get" action="{{ url_for('portal.export_excel') }}" class="modal-content">
+      <input type="hidden" name="period_id" value="{{ current_period_id or '' }}" />
+      <input type="hidden" name="year" value="{{ selected_year or '' }}" />
+      <input type="hidden" name="month" value="{{ selected_month or '' }}" />
+      <input type="hidden" name="team_id" value="{{ current_team_id or '' }}" />
+      <input type="hidden" name="school_status" value="{{ selected_school_status }}" />
+      <div class="modal-header">
+        <h5 class="modal-title" id="exportExcelModalLabel">
+          <i class="bi bi-file-earmark-excel me-2 text-success"></i>Download Excel
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted small">
+          Pilih ringkasan data yang ingin didownload. File menggunakan nilai final penilaian, bukan nilai per ruangan.
+        </p>
+        <div class="d-grid gap-2">
+          <button type="submit" name="group_by" value="staff" class="btn btn-outline-primary text-start p-3">
+            <span class="d-block fw-semibold"><i class="bi bi-people me-2"></i>Data per Staff</span>
+            <span class="d-block small text-muted mt-1">Jumlah sekolah, jumlah penilaian, dan rata-rata nilai final setiap staff.</span>
+          </button>
+          <button type="submit" name="group_by" value="school" class="btn btn-outline-success text-start p-3">
+            <span class="d-block fw-semibold"><i class="bi bi-building me-2"></i>Data per Sekolah</span>
+            <span class="d-block small text-muted mt-1">Jumlah staff, jumlah penilaian, dan rata-rata nilai final setiap sekolah.</span>
+          </button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
 
 <section class="row g-3 mb-4">
   <div class="col-lg-3 col-md-6">
@@ -150,17 +201,17 @@
     <div class="card border-0 shadow-sm h-100">
       <div class="card-body">
         <div class="d-flex align-items-center gap-2 mb-3">
-          <span class="icon-badge stat-icon text-warning">
-            <i class="bi bi-pencil"></i>
+          <span class="icon-badge stat-icon text-success">
+            <i class="bi bi-check-circle"></i>
           </span>
           <span class="text-secondary text-uppercase small fw-semibold"
-            >Draft</span
+            >Sekolah Sudah Dinilai</span
           >
         </div>
         <h2 class="display-6 fw-bold mb-1">
-          {{ stats.assessments.drafts or 0 }}
+          {{ stats.assessments.schools_assessed or 0 }}
         </h2>
-        <p class="text-muted small mb-0">Belum disubmit</p>
+        <p class="text-muted small mb-0">Penilaian sudah disubmit</p>
       </div>
     </div>
   </div>
@@ -213,13 +264,14 @@
             >Rata-rata Skor</span
           >
         </div>
+        {% set avg_score_pct = stats.assessments.get('avg_score_pct') %}
         <h2 class="display-6 fw-bold mb-1">
-          {% if stats.assessments.avg_score_pct is not none %} {{
-          "%.1f"|format(stats.assessments.avg_score_pct) }}% {% else %} - {%
+          {% if avg_score_pct is not none %} {{
+          "%.1f"|format(avg_score_pct) }}% {% else %} - {%
           endif %}
         </h2>
         <p class="text-muted small mb-0">
-          {% if stats.assessments.avg_score_pct is not none %} Basis
+          {% if avg_score_pct is not none %} Basis
           normalisasi skala dari {{ stats.assessments.submitted or 0 }}
           penilaian {% else %} dari {{ stats.assessments.submitted or 0 }}
           penilaian {% endif %}
@@ -517,7 +569,7 @@
         <div class="d-flex flex-wrap align-items-center gap-2">
           {% if is_admin or stats_role == 'coordinator' %}
           <a
-            href="{{ url_for(gallery_endpoint, period_id=current_period_id, team_id=current_team_id) }}"
+            href="{{ url_for(gallery_endpoint, period_id=current_period_id, team_id=current_team_id, school_status=selected_school_status) }}"
             class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-2"
             target="_blank"
             rel="noopener"
@@ -534,19 +586,19 @@
           >
             <a
               class="btn btn-outline-primary {% if photo_order=='random' %}active{% endif %}"
-              href="{{ url_for(stats_endpoint, period_id=current_period_id, team_id=current_team_id, jenjang=jenjang_filter, order=order, photo_order='random') }}#galleryTitle"
+              href="{{ url_for(stats_endpoint, period_id=current_period_id, year=selected_year, month=selected_month, team_id=current_team_id, school_status=selected_school_status, jenjang=jenjang_filter, order=order, photo_order='random') }}#galleryTitle"
             >
               Random
             </a>
             <a
               class="btn btn-outline-primary {% if photo_order=='newest' %}active{% endif %}"
-              href="{{ url_for(stats_endpoint, period_id=current_period_id, team_id=current_team_id, jenjang=jenjang_filter, order=order, photo_order='newest') }}#galleryTitle"
+              href="{{ url_for(stats_endpoint, period_id=current_period_id, year=selected_year, month=selected_month, team_id=current_team_id, school_status=selected_school_status, jenjang=jenjang_filter, order=order, photo_order='newest') }}#galleryTitle"
             >
               Terbaru
             </a>
             <a
               class="btn btn-outline-primary {% if photo_order=='lowest' %}active{% endif %}"
-              href="{{ url_for(stats_endpoint, period_id=current_period_id, team_id=current_team_id, jenjang=jenjang_filter, order=order, photo_order='lowest') }}#galleryTitle"
+              href="{{ url_for(stats_endpoint, period_id=current_period_id, year=selected_year, month=selected_month, team_id=current_team_id, school_status=selected_school_status, jenjang=jenjang_filter, order=order, photo_order='lowest') }}#galleryTitle"
             >
               Terendah
             </a>
@@ -575,6 +627,7 @@
           {% if current_team_id %}
           <input type="hidden" name="team_id" value="{{ current_team_id }}" />
           {% endif %}
+          <input type="hidden" name="school_status" value="{{ selected_school_status }}" />
           <div class="col-md-4">
             <div class="input-group">
               <span class="input-group-text">
@@ -608,7 +661,7 @@
             </button>
             <a
               class="btn btn-light"
-              href="{{ url_for(stats_endpoint, period_id=current_period_id, year=selected_year, month=selected_month, team_id=current_team_id, _anchor='recent-assessments') }}"
+              href="{{ url_for(stats_endpoint, period_id=current_period_id, year=selected_year, month=selected_month, team_id=current_team_id, school_status=selected_school_status, _anchor='recent-assessments') }}"
               >Reset</a
             >
           </div>
@@ -620,7 +673,8 @@
               <tr>
                 {% set base_period = current_period_id or '' %} {% set
                 base_jenjang = jenjang_filter or '' %} {% set base_team =
-                current_team_id %} {% set anchor = 'recent-assessments' %} {%
+                current_team_id %} {% set base_school_status =
+                selected_school_status %} {% set anchor = 'recent-assessments' %} {%
                 set name_order = 'name_desc' if order == 'name_asc' else
                 'name_asc' %} {% set staff_order = 'staff_asc' if order ==
                 'staff_desc' else 'staff_desc' %} {% set avg_order = 'score_asc'
@@ -628,7 +682,7 @@
                 = 'date_asc' if order == 'date_desc' else 'date_desc' %}
                 <th class="border-0 ps-3">
                   <a
-                    href="{{ url_for(stats_endpoint, period_id=base_period, year=selected_year, month=selected_month, jenjang=base_jenjang, order=name_order, team_id=base_team, _anchor=anchor) }}"
+                    href="{{ url_for(stats_endpoint, period_id=base_period, year=selected_year, month=selected_month, jenjang=base_jenjang, order=name_order, team_id=base_team, school_status=base_school_status, _anchor=anchor) }}"
                     class="text-decoration-none d-flex align-items-center gap-1"
                   >
                     Sekolah
@@ -639,7 +693,7 @@
                 </th>
                 <th class="border-0">
                   <a
-                    href="{{ url_for(stats_endpoint, period_id=base_period, year=selected_year, month=selected_month, jenjang=base_jenjang, order=staff_order, team_id=base_team, _anchor=anchor) }}"
+                    href="{{ url_for(stats_endpoint, period_id=base_period, year=selected_year, month=selected_month, jenjang=base_jenjang, order=staff_order, team_id=base_team, school_status=base_school_status, _anchor=anchor) }}"
                     class="text-decoration-none d-flex align-items-center gap-1"
                   >
                     Staff
@@ -650,7 +704,7 @@
                 </th>
                 <th class="border-0">
                   <a
-                    href="{{ url_for(stats_endpoint, period_id=base_period, year=selected_year, month=selected_month, jenjang=base_jenjang, order=avg_order, team_id=base_team, _anchor=anchor) }}"
+                    href="{{ url_for(stats_endpoint, period_id=base_period, year=selected_year, month=selected_month, jenjang=base_jenjang, order=avg_order, team_id=base_team, school_status=base_school_status, _anchor=anchor) }}"
                     class="text-decoration-none d-flex align-items-center gap-1"
                   >
                     Average
@@ -661,7 +715,7 @@
                 </th>
                 <th class="border-0">
                   <a
-                    href="{{ url_for(stats_endpoint, period_id=base_period, year=selected_year, month=selected_month, jenjang=base_jenjang, order=date_order, team_id=base_team, _anchor=anchor) }}"
+                    href="{{ url_for(stats_endpoint, period_id=base_period, year=selected_year, month=selected_month, jenjang=base_jenjang, order=date_order, team_id=base_team, school_status=base_school_status, _anchor=anchor) }}"
                     class="text-decoration-none d-flex align-items-center gap-1"
                   >
                     Tanggal
@@ -924,6 +978,7 @@
       const CURRENT_PERIOD_YEAR = "{{ selected_year or '' }}";
       const CURRENT_PERIOD_MONTH = "{{ selected_month or '' }}";
       const CURRENT_TEAM_ID = "{{ current_team_id if current_team_id is not none else (team.id if team else '') }}";
+      const CURRENT_SCHOOL_STATUS = "{{ selected_school_status }}";
       // Legend text is now static in the HTML, no dynamic update needed
 
       document.addEventListener('DOMContentLoaded', function () {
@@ -944,6 +999,7 @@
           if (periodYear) mapParams.set('year', periodYear);
           if (periodMonth) mapParams.set('month', periodMonth);
           if (teamId) mapParams.set('team_id', teamId);
+          if (CURRENT_SCHOOL_STATUS) mapParams.set('school_status', CURRENT_SCHOOL_STATUS);
           fetch(`{{ url_for(map_data_endpoint) }}?${mapParams.toString()}`)
               .then(response => response.json())
               .then(data => {
@@ -1165,6 +1221,7 @@
               if (CURRENT_PERIOD_YEAR) params.set('year', CURRENT_PERIOD_YEAR);
               if (CURRENT_PERIOD_MONTH) params.set('month', CURRENT_PERIOD_MONTH);
               if (CURRENT_TEAM_ID) params.set('team_id', CURRENT_TEAM_ID);
+              if (CURRENT_SCHOOL_STATUS) params.set('school_status', CURRENT_SCHOOL_STATUS);
               if (Number.isFinite(count)) params.set('count', String(count));
               const targetUrl = `${negeriDetailBaseUrl}?${params.toString()}`;
               window.open(targetUrl, '_blank', 'noopener');
@@ -1241,6 +1298,7 @@
           if (periodYear) params.set('year', periodYear);
           if (periodMonth) params.set('month', periodMonth);
           if (teamId) params.set('team_id', teamId);
+          if (CURRENT_SCHOOL_STATUS) params.set('school_status', CURRENT_SCHOOL_STATUS);
 
           fetch(`${rankingsEndpoint}?${params.toString()}`)
               .then(response => response.json())
