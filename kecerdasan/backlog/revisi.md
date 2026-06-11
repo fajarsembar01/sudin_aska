@@ -159,3 +159,25 @@ Langkah-langkah:
 2. Pilih jenjang pendidikan.
 3. Pilih jalur pendaftaran.
 4. Buka menu **Aturan dan Prosedur** untuk melihat persyaratan dan berkas yang diperlukan.
+
+## Nilai TKA belum muncul di akun SPMB untuk pendaftaran SMP. Apakah nanti akan muncul otomatis?
+
+Nilai TKA tidak perlu diinput secara manual oleh calon murid. Nilai TKA akan muncul secara otomatis pada akun SPMB setelah data hasil TKA terintegrasi dan diproses oleh sistem.
+
+Apabila nilai TKA belum tampil, calon murid dapat menunggu proses sinkronisasi data dan secara berkala memeriksa akun SPMB. Jika nilai TKA masih belum muncul mendekati jadwal pendaftaran, silakan menghubungi Helpdesk SPMB DKI Jakarta atau sekolah asal untuk memastikan data TKA telah terkirim dan tervalidasi pada sistem.
+
+## Upload Poster Rapor Pendidikan Sekolah pada SIDANIRA
+
+Yang dimaksud dengan Poster Rapor Pendidikan Sekolah adalah dokumen ringkasan capaian mutu pendidikan sekolah yang bersumber dari platform Rapor Pendidikan Kementerian Pendidikan Dasar dan Menengah. Dokumen ini biasanya berbentuk poster satu halaman yang memuat berbagai indikator kualitas pendidikan di sekolah.
+
+Dokumen yang diunggah bukan sampul rapor siswa, bukan rapor hasil belajar peserta didik, dan bukan brosur atau profil sekolah.
+
+Poster Rapor Pendidikan Sekolah diperoleh dari sekolah asal. Apabila calon murid belum memiliki dokumen tersebut, silakan meminta Poster Rapor Pendidikan Sekolah kepada pihak sekolah asal untuk kemudian diunggah pada saat proses prapendaftaran SIDANIRA.
+
+## Penambahan Nilai TKA pada SIDANIRA/SPMB
+
+Nilai TKA tidak dapat ditambahkan atau diinput secara manual oleh calon murid melalui akun SIDANIRA maupun SPMB.
+
+Nilai TKA akan terintegrasi dan tampil secara otomatis pada sistem setelah data hasil TKA diproses dan disinkronkan. Oleh karena itu, calon murid tidak perlu melakukan perubahan data untuk menambahkan nilai TKA.
+
+Apabila nilai TKA belum muncul pada akun, silakan menunggu proses sinkronisasi data. Jika nilai TKA masih belum tampil mendekati jadwal pendaftaran, calon murid dapat menghubungi Helpdesk SPMB DKI Jakarta atau sekolah asal untuk memastikan data TKA telah tercatat dan tervalidasi dalam sistem.
