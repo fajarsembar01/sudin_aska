@@ -46,6 +46,11 @@ def create_app() -> Flask:
     csrf.exempt(call_center_api_bp)
     app.register_blueprint(call_center_api_bp)
     app.register_blueprint(cms_bp)
+    
+    # Exempt public API endpoints from CSRF
+    from .portal.routes import api_adiwiyata_likes
+    csrf.exempt(api_adiwiyata_likes)
+    
     init_oauth(app)
 
     if os.getenv("ASKA_DASHBOARD_AUTO_INIT", "0").strip().lower() in {"1", "true", "yes"}:
