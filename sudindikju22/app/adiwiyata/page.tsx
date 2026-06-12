@@ -64,7 +64,18 @@ const portalUrl = (path: string) => {
 const toPortalAssetUrl = (value?: string | null) => {
   const clean = (value || '').trim()
   if (!clean) return ''
-  if (/^https?:\/\//i.test(clean)) return clean
+  if (/^https?:\/\//i.test(clean)) {
+    try {
+      const parsed = new URL(clean)
+      const isInternalPortalHost = ['127.0.0.1', 'localhost'].includes(parsed.hostname)
+      if (isInternalPortalHost && parsed.pathname.startsWith('/portal/')) {
+        return portalUrl(`${parsed.pathname}${parsed.search}${parsed.hash}`)
+      }
+    } catch {
+      return clean
+    }
+    return clean
+  }
   if (clean.startsWith('/portal/uploads/')) return `${PORTAL_API_BASE}${clean}`
   if (clean.startsWith('/uploads/')) return `${PORTAL_API_BASE}/portal${clean}`
   if (clean.startsWith('portal/uploads/')) return `${PORTAL_API_BASE}/${clean}`
