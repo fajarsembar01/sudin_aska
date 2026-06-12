@@ -1,0 +1,275 @@
+{% extends "portal/base_portal.html" %}
+{% set page_title = "Admin Adiwiyata – Semua Post" %}
+
+{% block portal_nav %}
+    {% include "portal/admin/_adiwiyata_nav.html" %}
+{% endblock %}
+
+{% block head_extra %}
+<style>
+/* ─── Posts Grid ─── */
+.posts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; }
+@media (max-width: 480px) { .posts-grid { grid-template-columns: 1fr 1fr; gap: 10px; } }
+
+.post-card {
+    background: var(--bg-surface);
+    border-radius: 14px;
+    border: 1px solid var(--border-soft);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow .18s, transform .18s;
+    display: flex; flex-direction: column;
+}
+.post-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+
+.post-thumb { position: relative; aspect-ratio: 1; overflow: hidden; background: var(--bg-subtle); cursor: pointer; }
+.post-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .3s; }
+.post-card:hover .post-thumb img { transform: scale(1.04); }
+.media-badge {
+    position: absolute; top: 8px; left: 8px;
+    padding: 3px 9px; border-radius: 999px; font-size: 0.65rem; font-weight: 800;
+    backdrop-filter: blur(4px);
+}
+.like-pill {
+    position: absolute; bottom: 8px; right: 8px;
+    background: rgba(0,0,0,0.55); color: white;
+    padding: 3px 8px; border-radius: 999px; font-size: 0.65rem; font-weight: 800;
+    display: flex; align-items: center; gap: 4px;
+}
+.play-overlay {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.4); color: white; font-size: 2rem;
+}
+
+.post-meta { padding: 10px 12px; flex: 1; display: flex; flex-direction: column; gap: 3px; }
+.post-school { font-size: 0.78rem; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.post-desc { font-size: 0.72rem; color: var(--text-muted); line-height: 1.45; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; flex: 1; }
+.post-date, .post-author { font-size: 0.65rem; color: var(--text-muted); font-weight: 600; }
+
+.post-actions { padding: 8px 12px; border-top: 1px solid var(--border-soft); display: flex; gap: 6px; }
+
+/* ─── Category badge colors ─── */
+.cat-sampah { background: rgba(209,250,229,0.9); color: #065f46; }
+.cat-energi { background: rgba(254,243,199,0.9); color: #92400e; }
+.cat-air { background: rgba(219,234,254,0.9); color: #1e40af; }
+.cat-sanitasi { background: rgba(243,232,255,0.9); color: #6b21a8; }
+.cat-kompos { background: rgba(252,231,243,0.9); color: #9d174d; }
+.cat-tanaman { background: rgba(236,253,245,0.9); color: #047857; }
+.cat-default { background: var(--bg-subtle); color: var(--text-muted); }
+
+/* ─── Lightbox ─── */
+.lbx-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity .2s; }
+.lbx-overlay.open { opacity: 1; pointer-events: all; }
+.lbx-img { max-width: 90vw; max-height: 86vh; border-radius: 12px; object-fit: contain; }
+.lbx-close { position: absolute; top: 16px; right: 16px; font-size: 1.6rem; color: white; cursor: pointer; background: rgba(255,255,255,0.15); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
+
+/* ─── Pagination ─── */
+.pagination { margin-bottom: 0; }
+.page-link { color: var(--text-main); font-weight: 600; font-size: 0.85rem; border-color: var(--border-soft); background: var(--bg-surface); }
+.page-item.active .page-link { background-color: var(--bs-success); border-color: var(--bs-success); color: white; }
+.page-link:hover { background-color: var(--bg-subtle); color: var(--bs-success); border-color: var(--border-soft); }
+</style>
+{% endblock %}
+
+{% block portal_content %}
+<!-- Header -->
+<div class="mb-4">
+    <h1 class="h4 fw-bold mb-1">Semua Postingan Adiwiyata</h1>
+    <p class="text-muted small">Kelola dan filter konten unggahan dari seluruh sekolah.</p>
+</div>
+
+<!-- Filter Box -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label small text-muted fw-bold mb-1">Cari Post</label>
+                <input type="text" name="q" class="form-control form-control-sm" value="{{ search }}" placeholder="Sekolah, deskripsi...">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small text-muted fw-bold mb-1">Sekolah</label>
+                <select name="school_id" class="form-select form-select-sm">
+                    <option value="">Semua Sekolah</option>
+                    {% for s in schools_filter %}
+                    <option value="{{ s.id }}" {{ 'selected' if selected_school_id == s.id }}>{{ s.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small text-muted fw-bold mb-1">Kategori</label>
+                <select name="category" class="form-select form-select-sm">
+                    <option value="">Semua Kategori</option>
+                    {% for key, label in category_titles.items() %}
+                    <option value="{{ key }}" {{ 'selected' if selected_category == key }}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small text-muted fw-bold mb-1">Tipe Media</label>
+                <select name="media_type" class="form-select form-select-sm">
+                    <option value="">Semua Media</option>
+                    <option value="image" {{ 'selected' if selected_media_type == 'image' }}>Foto</option>
+                    <option value="video_link" {{ 'selected' if selected_media_type == 'video_link' }}>Video</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small text-muted fw-bold mb-1">Urutkan</label>
+                <select name="sort" class="form-select form-select-sm">
+                    <option value="newest" {{ 'selected' if sort == 'newest' }}>Terbaru</option>
+                    <option value="oldest" {{ 'selected' if sort == 'oldest' }}>Terlama</option>
+                    <option value="most_liked" {{ 'selected' if sort == 'most_liked' }}>Paling Disukai</option>
+                    <option value="least_liked" {{ 'selected' if sort == 'least_liked' }}>Paling Sedikit Like</option>
+                </select>
+            </div>
+            <div class="col-md-1 d-flex gap-1">
+                <button type="submit" class="btn btn-success btn-sm w-100 fw-bold"><i class="bi bi-search"></i></button>
+                <a href="{{ url_for('portal.admin_adiwiyata_posts') }}" class="btn btn-light btn-sm w-100 border text-muted"><i class="bi bi-arrow-clockwise"></i></a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="text-muted small fw-semibold">
+        Menampilkan <span class="text-success">{{ posts|length }}</span> dari <span class="text-success">{{ total }}</span> post
+        {% if search %} — pencarian "<em>{{ search }}</em>"{% endif %}
+    </div>
+    <div class="text-muted small fw-semibold">Halaman {{ page }} / {{ total_pages }}</div>
+</div>
+
+{% if posts %}
+<div class="posts-grid">
+    {% for post in posts %}
+    {% set cat_class = {
+        'pengelolaan-sampah': 'cat-sampah',
+        'konservasi-energi': 'cat-energi',
+        'konservasi-air': 'cat-air',
+        'kebersihan-sanitasi-drainase': 'cat-sanitasi',
+        'kompos': 'cat-kompos',
+        'tanaman': 'cat-tanaman',
+    }.get(post.category, 'cat-default') %}
+    <div class="post-card">
+        <div class="post-thumb" onclick="openLightbox('{{ post.cover_url or '' }}', '{{ post.media_type }}', '{{ post.description | replace("'", "\\'") | truncate(80) }}')">
+            {% if post.cover_url %}
+            <img src="{{ post.cover_url }}" alt="{{ post.description or 'Post' }}" loading="lazy">
+            {% else %}
+            <div class="play-overlay"><i class="bi bi-play-circle-fill"></i></div>
+            {% endif %}
+            <span class="media-badge {{ cat_class }}">{{ category_titles.get(post.category, post.category) }}</span>
+            {% if post.likes %}
+            <span class="like-pill"><i class="bi bi-heart-fill text-danger me-1"></i>{{ post.likes }}</span>
+            {% endif %}
+        </div>
+        <div class="post-meta">
+            <div class="post-school text-truncate" title="{{ post.school_name }}">{{ post.school_name }}</div>
+            <div class="post-date">{{ post.created_at_str }}</div>
+            {% if post.description %}
+            <div class="post-desc">{{ post.description }}</div>
+            {% endif %}
+            {% if post.author_name %}
+            <div class="post-author"><i class="bi bi-person me-1"></i>{{ post.author_name }}</div>
+            {% endif %}
+        </div>
+        <div class="post-actions">
+            <a href="{{ url_for('portal.admin_adiwiyata_school_detail', school_id=post.school_id) }}" class="btn btn-sm btn-outline-success flex-grow-1" style="font-size: 0.75rem;">
+                <i class="bi bi-buildings"></i> Sekolah
+            </a>
+            <button type="button" class="btn btn-sm btn-outline-danger" onclick="confirmDelete({{ post.id }}, 'posts', '{{ post.school_name | replace("'", "\\'") }}')" title="Hapus">
+                <i class="bi bi-trash3"></i>
+            </button>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if total_pages > 1 %}
+<nav aria-label="Page navigation" class="mt-4 d-flex justify-content-center">
+    <ul class="pagination pagination-sm">
+        {% set base_args = {'q': search, 'school_id': selected_school_id, 'category': selected_category, 'media_type': selected_media_type, 'sort': sort} %}
+        <li class="page-item {{ 'disabled' if page <= 1 }}">
+            <a class="page-link" href="{{ url_for('portal.admin_adiwiyata_posts', **dict(base_args, page=1)) }}"><i class="bi bi-chevron-double-left"></i></a>
+        </li>
+        <li class="page-item {{ 'disabled' if page <= 1 }}">
+            <a class="page-link" href="{{ url_for('portal.admin_adiwiyata_posts', **dict(base_args, page=page-1)) }}"><i class="bi bi-chevron-left"></i></a>
+        </li>
+        {% for p in range([1, page-2]|max, [total_pages+1, page+3]|min) %}
+        <li class="page-item {{ 'active' if p == page }}">
+            <a class="page-link" href="{{ url_for('portal.admin_adiwiyata_posts', **dict(base_args, page=p)) }}">{{ p }}</a>
+        </li>
+        {% endfor %}
+        <li class="page-item {{ 'disabled' if page >= total_pages }}">
+            <a class="page-link" href="{{ url_for('portal.admin_adiwiyata_posts', **dict(base_args, page=page+1)) }}"><i class="bi bi-chevron-right"></i></a>
+        </li>
+        <li class="page-item {{ 'disabled' if page >= total_pages }}">
+            <a class="page-link" href="{{ url_for('portal.admin_adiwiyata_posts', **dict(base_args, page=total_pages)) }}"><i class="bi bi-chevron-double-right"></i></a>
+        </li>
+    </ul>
+</nav>
+{% endif %}
+
+{% else %}
+<div class="card border-0 shadow-sm mt-3">
+    <div class="card-body text-center py-5">
+        <i class="bi bi-images text-muted" style="font-size: 3rem;"></i>
+        <p class="text-muted mt-3 mb-0">Tidak ada post yang sesuai filter.</p>
+    </div>
+</div>
+{% endif %}
+
+<!-- Lightbox -->
+<div class="lbx-overlay" id="lbxOverlay" onclick="closeLightbox()">
+    <span class="lbx-close" onclick="closeLightbox()"><i class="bi bi-x"></i></span>
+    <img class="lbx-img" id="lbxImg" src="" alt="" onclick="event.stopPropagation()">
+</div>
+
+<!-- Delete Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-body text-center p-4">
+                <div class="bg-danger-subtle text-danger rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 60px; height: 60px; font-size: 1.5rem;">
+                    <i class="bi bi-trash3-fill"></i>
+                </div>
+                <h5 class="fw-bold">Hapus Post?</h5>
+                <p class="text-muted small mb-4" id="delModalDesc">Post ini akan dihapus permanen.</p>
+                <form id="delForm" method="post" class="d-flex gap-2">
+                    <input type="hidden" name="redirect_to" id="delRedirectTo" value="posts">
+                    <button type="button" class="btn btn-light w-50 fw-bold" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-danger w-50 fw-bold">Hapus</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block portal_scripts %}
+<script>
+function openLightbox(src, type, desc) {
+    if (!src || type === 'video_link') return;
+    document.getElementById('lbxImg').src = src;
+    document.getElementById('lbxImg').alt = desc;
+    document.getElementById('lbxOverlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+}
+function closeLightbox() {
+    document.getElementById('lbxOverlay').classList.remove('open');
+    document.getElementById('lbxImg').src = '';
+    document.body.style.overflow = '';
+}
+
+function confirmDelete(postId, redirectTo, schoolName) {
+    const form = document.getElementById('delForm');
+    form.action = `/portal/admin/adiwiyata/post/${postId}/delete`;
+    document.getElementById('delRedirectTo').value = redirectTo;
+    document.getElementById('delModalDesc').textContent = `Post dari "${schoolName}" akan dihapus permanen.`;
+    const bsModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    bsModal.show();
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeLightbox();
+});
+</script>
+{% endblock %}
