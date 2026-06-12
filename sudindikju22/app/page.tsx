@@ -3,6 +3,8 @@
 
 import React, { useEffect, useState, useRef } from 'react'
 
+const dashboardUrl = process.env.NEXT_PUBLIC_DASHBOARD_URL || 'https://admin.sudindikju2.com'
+
 export default function Page() {
   const [isLoaded, setIsLoaded] = useState(true)
   const askaButtonRef = useRef<HTMLAnchorElement>(null)
@@ -72,7 +74,7 @@ export default function Page() {
           </a>
 
           <a
-            href="http://127.0.0.1:5002/"
+            href={dashboardUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="relative inline-flex items-center gap-2 group/btn px-5 py-2.5 overflow-hidden rounded-full bg-gradient-to-r from-sky-600 to-blue-600 text-white font-bold text-xs shadow-lg shadow-sky-500/30 hover:shadow-sky-500/50 hover:scale-105 active:scale-95 transition-all duration-300 ring-1 ring-white/20"
@@ -88,7 +90,7 @@ export default function Page() {
         {/* Mobile: only Portal Kepegawaian icon button */}
         <div className="sm:hidden">
           <a
-            href="http://127.0.0.1:5002/"
+            href={dashboardUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="relative inline-flex items-center gap-1.5 px-3 py-2 overflow-hidden rounded-full bg-gradient-to-r from-sky-600 to-blue-600 text-white font-bold text-xs shadow-lg shadow-sky-500/30 active:scale-95 transition-all duration-300 ring-1 ring-white/20"
