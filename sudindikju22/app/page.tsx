@@ -3,7 +3,7 @@
 
 import React, { useEffect, useState, useRef } from 'react'
 
-const dashboardUrl = process.env.NEXT_PUBLIC_DASHBOARD_URL || '/portal'
+const dashboardUrl = process.env.NEXT_PUBLIC_DASHBOARD_URL || 'https://admin.sudindikju2.com'
 
 export default function Page() {
   const [isLoaded, setIsLoaded] = useState(true)
