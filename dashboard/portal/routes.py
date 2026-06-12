@@ -2227,21 +2227,26 @@ def list_random_adiwiyata_photos(limit: int = 12) -> list[dict]:
     for raw in raw_rows:
         row = dict(raw)
         val = row.get("media_path") or ""
-        url = None
+        urls = []
         if val.strip().startswith("[") and val.strip().endswith("]"):
             try:
                 paths = json.loads(val)
                 if isinstance(paths, list) and paths:
-                    url = url_for("portal.uploaded_file", filename=paths[0], _external=True)
+                    urls = [
+                        url_for("portal.uploaded_file", filename=path, _external=True)
+                        for path in paths
+                        if path
+                    ]
             except Exception:
                 pass
-        if not url and val:
-            url = url_for("portal.uploaded_file", filename=val, _external=True)
-        if url:
+        if not urls and val:
+            urls = [url_for("portal.uploaded_file", filename=val, _external=True)]
+        if urls:
             created_at = row.get("created_at")
             rows.append({
                 "id": row["id"],
-                "url": url,
+                "url": urls[0],
+                "media_urls": urls,
                 "school_id": row.get("school_id"),
                 "school_name": row.get("school_name", ""),
                 "school_logo_url": _build_school_logo_url(row.get("school_logo_url"), external=True),
