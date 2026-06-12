@@ -1916,6 +1916,52 @@ def schools() -> Response:
 
 # ===== Adiwiyata Posts Operations =====
 
+_ADIWIYATA_SHARE_PROMPT_SESSION_KEY = "adiwiyata_share_prompt"
+
+
+def _adiwiyata_public_share_base_url() -> str:
+    value = os.getenv("ADIWIYATA_PUBLIC_URL", "").strip()
+    return (value or "https://sudindikju2.com/adiwiyata").rstrip("/")
+
+
+def _adiwiyata_public_share_url(post_id: int | None = None) -> str:
+    base_url = _adiwiyata_public_share_base_url()
+    if post_id:
+        return f"{base_url}#post-{post_id}"
+    return base_url
+
+
+def _adiwiyata_category_title(category: str) -> str:
+    category_titles = {
+        "pengelolaan-sampah": "Pengelolaan Sampah",
+        "konservasi-energi": "Konservasi Energi",
+        "konservasi-air": "Konservasi Air",
+        "kebersihan-sanitasi-drainase": "Kebersihan, Sanitasi, Drainase",
+        "kompos": "Kompos",
+        "tanaman": "Tanaman",
+    }
+    return category_titles.get(category, category.replace("-", " ").title())
+
+
+def _queue_adiwiyata_share_prompt(post: dict | None, school: dict, category: str, title: str, post_kind: str) -> None:
+    if not post:
+        return
+
+    post_id = post.get("id") if hasattr(post, "get") else None
+    if not post_id:
+        return
+
+    session[_ADIWIYATA_SHARE_PROMPT_SESSION_KEY] = {
+        "post_id": int(post_id),
+        "school_id": int(school["id"]),
+        "school_name": school.get("name") or "Sekolah",
+        "category": category,
+        "category_title": title,
+        "post_kind": post_kind,
+        "share_url": _adiwiyata_public_share_url(int(post_id)),
+    }
+
+
 def create_adiwiyata_post(school_id: int, category: str, media_path: str, media_type: str, description: str, user_id: int) -> dict | None:
     with get_cursor(commit=True) as cur:
         cur.execute(
@@ -2533,15 +2579,12 @@ def sekolah_adiwiyata_feed(category: str) -> Response:
 
     posts = list_adiwiyata_posts(school["id"], category)
     
-    category_titles = {
-        "pengelolaan-sampah": "Pengelolaan Sampah",
-        "konservasi-energi": "Konservasi Energi",
-        "konservasi-air": "Konservasi Air",
-        "kebersihan-sanitasi-drainase": "Kebersihan, Sanitasi, Drainase",
-        "kompos": "Kompos",
-        "tanaman": "Tanaman",
-    }
-    title = category_titles.get(category, category.replace("-", " ").title())
+    title = _adiwiyata_category_title(category)
+    share_prompt = session.pop(_ADIWIYATA_SHARE_PROMPT_SESSION_KEY, None)
+    if share_prompt and (
+        share_prompt.get("school_id") != school["id"] or share_prompt.get("category") != category
+    ):
+        share_prompt = None
     
     return render_template(
         "portal/sekolah/adiwiyata_feed.html",
@@ -2549,7 +2592,9 @@ def sekolah_adiwiyata_feed(category: str) -> Response:
         category=category,
         title=title,
         school=school,
-        is_public=False
+        is_public=False,
+        adiwiyata_share_base_url=_adiwiyata_public_share_base_url(),
+        share_prompt=share_prompt,
     )
 
 
@@ -2562,15 +2607,7 @@ def public_sekolah_adiwiyata_feed(school_id: int, category: str) -> Response:
 
     posts = list_adiwiyata_posts(school_id, category)
     
-    category_titles = {
-        "pengelolaan-sampah": "Pengelolaan Sampah",
-        "konservasi-energi": "Konservasi Energi",
-        "konservasi-air": "Konservasi Air",
-        "kebersihan-sanitasi-drainase": "Kebersihan, Sanitasi, Drainase",
-        "kompos": "Kompos",
-        "tanaman": "Tanaman",
-    }
-    title = category_titles.get(category, category.replace("-", " ").title())
+    title = _adiwiyata_category_title(category)
     
     return render_template(
         "portal/sekolah/adiwiyata_feed.html",
@@ -2578,7 +2615,9 @@ def public_sekolah_adiwiyata_feed(school_id: int, category: str) -> Response:
         category=category,
         title=title,
         school=school,
-        is_public=True
+        is_public=True,
+        adiwiyata_share_base_url=_adiwiyata_public_share_base_url(),
+        share_prompt=None,
     )
 
 @portal_bp.route("/api/public/sekolah/<int:school_id>/adiwiyata/<category>")
@@ -2589,15 +2628,7 @@ def api_public_sekolah_adiwiyata_feed(school_id: int, category: str) -> Response
 
     posts = list_adiwiyata_posts(school_id, category)
     
-    category_titles = {
-        "pengelolaan-sampah": "Pengelolaan Sampah",
-        "konservasi-energi": "Konservasi Energi",
-        "konservasi-air": "Konservasi Air",
-        "kebersihan-sanitasi-drainase": "Kebersihan, Sanitasi, Drainase",
-        "kompos": "Kompos",
-        "tanaman": "Tanaman",
-    }
-    title = category_titles.get(category, category.replace("-", " ").title())
+    title = _adiwiyata_category_title(category)
     
     # posts is a list of dicts/RealDictRow. Let's make sure it's fully JSON serializable
     serialized_posts = []
@@ -2624,22 +2655,17 @@ def sekolah_adiwiyata_feed(category: str) -> Response:
 
     posts = list_adiwiyata_posts(school["id"], category)
     
-    category_titles = {
-        "pengelolaan-sampah": "Pengelolaan Sampah",
-        "konservasi-energi": "Konservasi Energi",
-        "konservasi-air": "Konservasi Air",
-        "kebersihan-sanitasi-drainase": "Kebersihan, Sanitasi, Drainase",
-        "kompos": "Kompos",
-        "tanaman": "Tanaman",
-    }
-    title = category_titles.get(category, category.replace("-", " ").title())
+    title = _adiwiyata_category_title(category)
     
     return render_template(
         "portal/sekolah/adiwiyata_feed.html",
         posts=posts,
         category=category,
         title=title,
-        school=school
+        school=school,
+        is_public=False,
+        adiwiyata_share_base_url=_adiwiyata_public_share_base_url(),
+        share_prompt=None,
     )
 
 @portal_bp.route("/sekolah/adiwiyata/<category>/add", methods=["POST"])
@@ -2652,6 +2678,7 @@ def sekolah_adiwiyata_add(category: str) -> Response:
 
     description = request.form.get("description", "").strip()
     post_type = request.form.get("post_type", "image")  # "image" or "video_link"
+    title = _adiwiyata_category_title(category)
 
     if post_type == "video_link":
         video_url = request.form.get("video_url", "").strip()
@@ -2669,7 +2696,8 @@ def sekolah_adiwiyata_add(category: str) -> Response:
             # Store raw URL for iframe src
             embed_url = video_url
 
-        create_adiwiyata_post(school["id"], category, embed_url, "video_link", description, user["id"])
+        created_post = create_adiwiyata_post(school["id"], category, embed_url, "video_link", description, user["id"])
+        _queue_adiwiyata_share_prompt(created_post, school, category, title, "video")
         flash("Link video berhasil diposting.", "success")
         return redirect(url_for("portal.sekolah_adiwiyata_feed", category=category))
 
@@ -2737,7 +2765,8 @@ def sekolah_adiwiyata_add(category: str) -> Response:
         saved_paths.append(media_path)
 
     if saved_paths:
-        create_adiwiyata_post(school["id"], category, json.dumps(saved_paths), "image", description, user["id"])
+        created_post = create_adiwiyata_post(school["id"], category, json.dumps(saved_paths), "image", description, user["id"])
+        _queue_adiwiyata_share_prompt(created_post, school, category, title, "foto")
         flash(f"{len(saved_paths)} Foto berhasil diposting.", "success")
     else:
         flash("Gagal mengunggah foto.", "danger")

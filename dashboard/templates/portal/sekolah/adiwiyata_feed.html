@@ -680,6 +680,253 @@
         /* Edit inline form in lightbox */
         .lbx-edit-form { display: none; }
         .lbx-edit-form.show { display: block; }
+        .lbx-share-row {
+            margin-top: 16px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+        }
+        .lbx-share-btn {
+            width: 100%;
+            min-height: 40px;
+            border: 0;
+            border-radius: 10px;
+            background: var(--green-1);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            font-size: 0.82rem;
+            font-weight: 850;
+            cursor: pointer;
+            transition: transform .15s, opacity .15s;
+        }
+        .lbx-share-btn:hover { transform: translateY(-1px); opacity: .92; }
+        .lbx-public-link {
+            min-height: 36px;
+            border: 1px solid var(--border-soft, #e5e7eb);
+            border-radius: 10px;
+            color: var(--text-main, #111827);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            text-decoration: none;
+            font-size: 0.78rem;
+            font-weight: 800;
+            background: var(--bg-page, #f9fafb);
+        }
+        .lbx-public-link:hover { color: var(--green-1); border-color: var(--green-1); background: var(--green-light); }
+
+        /* ─── Share Modal ─── */
+        .share-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 1200;
+            background: rgba(15, 23, 42, .72);
+            backdrop-filter: blur(8px);
+            align-items: center;
+            justify-content: center;
+            padding: 18px;
+        }
+        .share-overlay.open { display: flex; }
+        .share-modal {
+            width: min(100%, 520px);
+            max-height: min(90vh, 760px);
+            overflow-y: auto;
+            border-radius: 18px;
+            background: var(--bg-surface, #fff);
+            border: 1px solid var(--border-soft, #e5e7eb);
+            box-shadow: 0 24px 70px rgba(15, 23, 42, .28);
+        }
+        .share-head {
+            padding: 18px 20px 14px;
+            border-bottom: 1px solid var(--border-soft, #e5e7eb);
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+        .share-head-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            background: var(--green-light);
+            color: var(--green-1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+        .share-title {
+            margin: 0;
+            color: var(--text-main, #111827);
+            font-size: 1rem;
+            font-weight: 900;
+            line-height: 1.25;
+        }
+        .share-subtitle {
+            margin: 4px 0 0;
+            color: var(--text-muted, #6b7280);
+            font-size: 0.8rem;
+            line-height: 1.45;
+            font-weight: 650;
+        }
+        .share-close {
+            margin-left: auto;
+            width: 32px;
+            height: 32px;
+            border-radius: 999px;
+            border: 1px solid var(--border-soft, #e5e7eb);
+            background: var(--bg-page, #f9fafb);
+            color: var(--text-muted, #6b7280);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .share-close:hover { color: #dc2626; border-color: #fecaca; background: #fef2f2; }
+        .share-body { padding: 18px 20px 20px; }
+        .share-preview {
+            border: 1px solid var(--border-soft, #e5e7eb);
+            border-radius: 14px;
+            padding: 12px;
+            background: var(--bg-page, #f9fafb);
+            margin-bottom: 14px;
+        }
+        .share-preview-label {
+            display: block;
+            color: var(--text-muted, #6b7280);
+            font-size: 0.68rem;
+            font-weight: 850;
+            letter-spacing: .2px;
+            margin-bottom: 7px;
+            text-transform: uppercase;
+        }
+        .share-message {
+            margin: 0;
+            color: var(--text-main, #111827);
+            font-size: 0.82rem;
+            line-height: 1.55;
+            white-space: pre-line;
+        }
+        .share-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 9px;
+        }
+        .share-option {
+            min-height: 44px;
+            border: 1px solid var(--border-soft, #e5e7eb);
+            border-radius: 12px;
+            background: var(--bg-surface, #fff);
+            color: var(--text-main, #111827);
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 9px 11px;
+            font-size: 0.8rem;
+            font-weight: 850;
+            cursor: pointer;
+            text-decoration: none;
+            transition: border-color .15s, transform .15s, background .15s;
+            position: relative;
+        }
+        .share-option:hover { transform: translateY(-1px); border-color: var(--share-color, var(--green-1)); background: color-mix(in srgb, var(--share-color, #0d6efd) 9%, white); }
+        .share-option i {
+            width: 24px;
+            height: 24px;
+            border-radius: 8px;
+            color: var(--share-color, var(--green-1));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+        .share-option-label {
+            flex: 1;
+            text-align: left;
+        }
+        .share-option-badge {
+            font-size: 0.62rem;
+            font-weight: 900;
+            padding: 2px 7px;
+            border-radius: 999px;
+            letter-spacing: .15px;
+            background: color-mix(in srgb, var(--share-color, #0d6efd) 14%, white);
+            color: var(--share-color, #0d6efd);
+            border: 1px solid color-mix(in srgb, var(--share-color, #0d6efd) 28%, white);
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .share-ig-note {
+            margin-top: 2px;
+            padding: 9px 11px;
+            border-radius: 10px;
+            background: #fff7ed;
+            border: 1px solid #fed7aa;
+            font-size: 0.74rem;
+            color: #92400e;
+            display: flex;
+            align-items: flex-start;
+            gap: 7px;
+            line-height: 1.5;
+        }
+        .share-ig-note i { flex-shrink: 0; margin-top: 1px; color: #f97316; }
+        .share-section-label {
+            font-size: 0.68rem;
+            font-weight: 900;
+            letter-spacing: .25px;
+            text-transform: uppercase;
+            color: var(--text-muted, #6b7280);
+            margin: 14px 0 7px;
+        }
+        .share-copy-row {
+            margin-top: 12px;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 8px;
+        }
+        .share-url-input {
+            min-width: 0;
+            border: 1px solid var(--border-soft, #e5e7eb);
+            border-radius: 10px;
+            background: var(--bg-page, #f9fafb);
+            color: var(--text-muted, #6b7280);
+            padding: 9px 10px;
+            font-size: 0.78rem;
+            font-weight: 700;
+        }
+        .share-copy-btn {
+            border: 0;
+            border-radius: 10px;
+            background: var(--text-main, #111827);
+            color: white;
+            padding: 9px 12px;
+            font-size: 0.78rem;
+            font-weight: 850;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .share-status {
+            min-height: 18px;
+            margin: 9px 0 0;
+            color: var(--green-2);
+            font-size: 0.74rem;
+            font-weight: 800;
+        }
+        @media (max-width: 520px) {
+            .share-grid { grid-template-columns: 1fr; }
+            .share-copy-row { grid-template-columns: 1fr; }
+            .share-copy-btn { justify-content: center; }
+        }
 
         @media (max-width: 720px) {
             .lbx-inner {
@@ -951,6 +1198,7 @@
                 {% set post_urls = [] %}
             {% endif %}
             <div class="gallery-item"
+                id="post-{{ post.id }}"
                 data-id="{{ post.id }}"
                 data-type="{{ post.media_type }}"
                 data-src="{{ post_urls[0] if post.media_type == 'image' and post_urls else post.media_path }}"
@@ -958,6 +1206,8 @@
                 data-ts="{{ post.created_at.strftime('%d %B %Y • %H:%M') }} WIB"
                 data-author="{{ post.author_name or '' }}"
                 data-school="{{ school.name if school and school.name else 'Sekolah' }}"
+                data-category-title="{{ title }}"
+                data-share-url="{{ adiwiyata_share_base_url | default('https://sudindikju2.com/adiwiyata') }}#post-{{ post.id }}"
                 {% if post.media_type == 'image' %}data-urls='{{ post_urls | tojson }}'{% endif %}
                 onclick="openLightbox(this)">
 
@@ -1015,6 +1265,14 @@
             </div>
             <p class="lbx-desc" id="lbxDesc"></p>
             <p class="lbx-author" id="lbxAuthor"></p>
+            <div class="lbx-share-row">
+                <button type="button" class="lbx-share-btn" onclick="openCurrentShareModal()">
+                    <i class="bi bi-share-fill"></i> Bagikan untuk ajak like
+                </button>
+                <a href="#" class="lbx-public-link" id="lbxPublicLink" target="_blank" rel="noopener noreferrer">
+                    <i class="bi bi-box-arrow-up-right"></i> Buka halaman publik
+                </a>
+            </div>
             <div class="lbx-actions" {% if is_public %}style="display: none;"{% endif %}>
                 <button class="lbx-edit-btn" id="lbxEditToggle" onclick="toggleEdit()">
                     <i class="bi bi-pencil"></i> Edit
@@ -1040,9 +1298,99 @@
     </div>
 </div>
 
+<!-- ─── Share Recommendation Modal ─── -->
+<div class="share-overlay" id="shareOverlay" onclick="closeShareIfBg(event)" aria-hidden="true">
+    <div class="share-modal" role="dialog" aria-modal="true" aria-labelledby="shareModalTitle">
+        <div class="share-head">
+            <div class="share-head-icon"><i class="bi bi-megaphone-fill"></i></div>
+            <div>
+                <h3 class="share-title" id="shareModalTitle">Bagikan postingan ini</h3>
+                <p class="share-subtitle" id="shareModalSubtitle">Ajak orang lain membuka postingan dan memberi like.</p>
+            </div>
+            <button type="button" class="share-close" onclick="closeShareModal()" aria-label="Tutup">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <div class="share-body">
+            <!-- Platform populer di Indonesia --> 
+            <div class="share-grid">
+
+                <button type="button" class="share-option" style="--share-color:#0d6efd" data-share-platform="native">
+                    <i class="bi bi-share-fill"></i>
+                    <span class="share-option-label">Share Perangkat</span>
+                </button>
+                <button type="button" class="share-option" style="--share-color:#111827" onclick="copyShareCaption()">
+                    <i class="bi bi-clipboard-fill"></i>
+                    <span class="share-option-label">Salin Caption</span>
+                </button>
+                <button type="button" class="share-option" style="--share-color:#25d366" data-share-platform="whatsapp">
+                    <i class="bi bi-whatsapp"></i>
+                    <span class="share-option-label">WhatsApp</span>
+                </button>
+                <button type="button" class="share-option" style="--share-color:#e1306c" data-share-platform="instagram">
+                    <i class="bi bi-instagram"></i>
+                    <span class="share-option-label">Instagram</span>
+                    <span class="share-option-badge share-ig-badge" style="--share-color:#e1306c">Story / Salin</span>
+                </button>
+                <button type="button" class="share-option" style="--share-color:#229ed9" data-share-platform="telegram">
+                    <i class="bi bi-telegram"></i>
+                    <span class="share-option-label">Telegram</span>
+                </button>
+                <button type="button" class="share-option" style="--share-color:#1877f2" data-share-platform="facebook">
+                    <i class="bi bi-facebook"></i>
+                    <span class="share-option-label">Facebook</span>
+                </button>
+                <button type="button" class="share-option" style="--share-color:#111827" data-share-platform="threads">
+                    <i class="bi bi-threads"></i>
+                    <span class="share-option-label">Threads</span>
+                </button>
+                <button type="button" class="share-option" style="--share-color:#06c755" data-share-platform="line">
+                    <i class="bi bi-chat-dots-fill"></i>
+                    <span class="share-option-label">LINE</span>
+                </button>
+                <button type="button" class="share-option" style="--share-color:#111827" data-share-platform="x">
+                    <i class="bi bi-twitter-x"></i>
+                    <span class="share-option-label">X / Twitter</span>
+                </button>
+                <button type="button" class="share-option" style="--share-color:#0a66c2" data-share-platform="linkedin">
+                    <i class="bi bi-linkedin"></i>
+                    <span class="share-option-label">LinkedIn</span>
+                </button>
+                <button type="button" class="share-option" style="--share-color:#ea4335" data-share-platform="email">
+                    <i class="bi bi-envelope-fill"></i>
+                    <span class="share-option-label">Email</span>
+                </button>
+            </div>
+
+            <!-- Catatan Instagram -->
+            <div class="share-ig-note" id="shareIgNote" style="display:none">
+                <i class="bi bi-info-circle-fill"></i>
+                <span id="shareIgNoteText">Instagram tidak mendukung berbagi link secara langsung. Caption &amp; link sudah disalin — buka Instagram, buat postingan, lalu tempel teksnya.</span>
+            </div>
+
+            <div class="share-copy-row">
+                <input type="text" class="share-url-input" id="shareUrlInput" readonly value="">
+                <button type="button" class="share-copy-btn" onclick="copyShareLink()">
+                    <i class="bi bi-link-45deg"></i> Salin link
+                </button>
+            </div>
+            <p class="share-status" id="shareStatus" aria-live="polite"></p>
+        </div>
+    </div>
+</div>
+
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+const AUTO_SHARE_PROMPT = {{ share_prompt | tojson }};
+const SHARE_DEFAULTS = {
+    schoolName: {{ (school.name if school and school.name else 'Sekolah') | tojson }},
+    categoryTitle: {{ title | tojson }},
+    baseUrl: {{ (adiwiyata_share_base_url | default('https://sudindikju2.com/adiwiyata')) | tojson }}
+};
+let currentSharePayload = null;
+
 // ─── Tab Switch ───
 function switchTab(tab) {
     document.getElementById('tabPhoto').classList.toggle('active', tab === 'photo');
@@ -1240,6 +1588,370 @@ function switchTab(tab) {
     }
 })();
 
+// ─── Share Recommendation ───
+function buildSharePayload(input) {
+    const data = input || {};
+    const postId = data.post_id || data.postId || data.id || currentPostId || '';
+    const baseUrl = (SHARE_DEFAULTS.baseUrl || 'https://sudindikju2.com/adiwiyata').replace(/\/+$/, '');
+    const shareUrl = data.share_url || data.shareUrl || data.url || (postId ? `${baseUrl}#post-${postId}` : baseUrl);
+    const schoolName = data.school_name || data.schoolName || SHARE_DEFAULTS.schoolName || 'Sekolah';
+    const categoryTitle = data.category_title || data.categoryTitle || SHARE_DEFAULTS.categoryTitle || 'Adiwiyata';
+    const postKind = data.post_kind || data.postKind || 'postingan';
+    const imageUrl = data.image_url || data.imageUrl || data.imgUrl || null;
+    const title = `Dokumentasi Adiwiyata ${schoolName}`;
+    const text = `Ayo dukung ${postKind} Adiwiyata ${categoryTitle} dari ${schoolName}.\nBuka link ini dan bantu beri like pada postingannya.`;
+
+    return {
+        postId,
+        schoolName,
+        categoryTitle,
+        postKind,
+        imageUrl,
+        title,
+        text,
+        url: shareUrl,
+        fullText: `${text}\n${shareUrl}`
+    };
+}
+
+// ─── Generate Instagram Story Share Card (Canvas) ───
+function generateIgStoryCard(payload) {
+    return new Promise((resolve, reject) => {
+        const W = 1080, H = 1920;
+        const canvas = document.createElement('canvas');
+        canvas.width = W;
+        canvas.height = H;
+        const ctx = canvas.getContext('2d');
+
+        function drawCard(bgImage) {
+            // ── Background ──
+            if (bgImage) {
+                // Blurred background fill
+                ctx.filter = 'blur(40px) brightness(0.45)';
+                const scale = Math.max(W / bgImage.width, H / bgImage.height);
+                const dw = bgImage.width * scale, dh = bgImage.height * scale;
+                ctx.drawImage(bgImage, (W - dw) / 2, (H - dh) / 2, dw, dh);
+                ctx.filter = 'none';
+
+                // Dark overlay gradient
+                const grad = ctx.createLinearGradient(0, 0, 0, H);
+                grad.addColorStop(0, 'rgba(0,0,0,0.35)');
+                grad.addColorStop(0.5, 'rgba(0,0,0,0.15)');
+                grad.addColorStop(1, 'rgba(0,0,0,0.72)');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, W, H);
+
+                // Center photo card
+                const cardW = 920, cardH = 920;
+                const cardX = (W - cardW) / 2, cardY = (H - cardH) / 2 - 120;
+                ctx.save();
+                ctx.beginPath();
+                ctx.roundRect(cardX, cardY, cardW, cardH, 60);
+                ctx.clip();
+                const imgScale = Math.max(cardW / bgImage.width, cardH / bgImage.height);
+                const imgW = bgImage.width * imgScale, imgH = bgImage.height * imgScale;
+                ctx.filter = 'none';
+                ctx.drawImage(bgImage, cardX + (cardW - imgW) / 2, cardY + (cardH - imgH) / 2, imgW, imgH);
+                ctx.restore();
+
+                // Card shadow
+                ctx.save();
+                ctx.shadowColor = 'rgba(0,0,0,0.45)';
+                ctx.shadowBlur = 60;
+                ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.roundRect(cardX, cardY, cardW, cardH, 60);
+                ctx.stroke();
+                ctx.restore();
+            } else {
+                // Gradient background when no image
+                const grad = ctx.createLinearGradient(0, 0, W, H);
+                grad.addColorStop(0, '#064e3b');
+                grad.addColorStop(1, '#065f46');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, W, H);
+            }
+
+            // ── Top pill badge ──
+            const badgeY = bgImage ? 220 : H / 2 - 200;
+            ctx.save();
+            ctx.fillStyle = 'rgba(255,255,255,0.15)';
+            ctx.beginPath();
+            ctx.roundRect(W / 2 - 200, badgeY - 42, 400, 64, 32);
+            ctx.fill();
+            ctx.restore();
+            ctx.fillStyle = 'rgba(255,255,255,0.9)';
+            ctx.font = 'bold 32px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('🌿  Adiwiyata Sekolah', W / 2, badgeY);
+
+            // ── Bottom info area ──
+            const infoY = bgImage ? H - 480 : H / 2 + 60;
+
+            // School name
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 72px sans-serif';
+            ctx.textAlign = 'center';
+            const maxW = W - 120;
+            let schoolText = payload.schoolName || 'Sekolah';
+            while (ctx.measureText(schoolText).width > maxW && schoolText.length > 4) {
+                schoolText = schoolText.slice(0, -4) + '...';
+            }
+            ctx.fillText(schoolText, W / 2, infoY);
+
+            // Category
+            ctx.fillStyle = 'rgba(255,255,255,0.72)';
+            ctx.font = '400 46px sans-serif';
+            ctx.fillText(payload.categoryTitle || 'Adiwiyata', W / 2, infoY + 72);
+
+            // Description line
+            if (payload.postKind) {
+                ctx.fillStyle = 'rgba(255,255,255,0.55)';
+                ctx.font = '400 36px sans-serif';
+                ctx.fillText(`Dokumentasi ${payload.postKind}`, W / 2, infoY + 132);
+            }
+
+            // ── URL pill at bottom ──
+            const urlY = H - 160;
+            ctx.save();
+            ctx.fillStyle = 'rgba(255,255,255,0.18)';
+            ctx.beginPath();
+            ctx.roundRect(W / 2 - 340, urlY - 46, 680, 72, 36);
+            ctx.fill();
+            ctx.restore();
+            ctx.fillStyle = 'rgba(255,255,255,0.85)';
+            ctx.font = '400 32px sans-serif';
+            ctx.textAlign = 'center';
+            const shortUrl = (payload.url || '').replace(/^https?:\/\//, '');
+            ctx.fillText(shortUrl.length > 40 ? shortUrl.slice(0, 40) + '…' : shortUrl, W / 2, urlY);
+
+            // ── Watermark ──
+            ctx.fillStyle = 'rgba(255,255,255,0.35)';
+            ctx.font = '400 28px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('sudindikju2.com/adiwiyata', W / 2, H - 60);
+
+            canvas.toBlob(blob => {
+                if (blob) resolve(blob);
+                else reject(new Error('Canvas toBlob gagal'));
+            }, 'image/png');
+        }
+
+        if (payload.imageUrl) {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => drawCard(img);
+            img.onerror = () => drawCard(null);
+            img.src = payload.imageUrl;
+        } else {
+            drawCard(null);
+        }
+    });
+}
+
+function setShareStatus(message) {
+    const status = document.getElementById('shareStatus');
+    if (status) status.textContent = message || '';
+}
+
+function openShareModal(input) {
+    currentSharePayload = buildSharePayload(input);
+
+    const overlay = document.getElementById('shareOverlay');
+    const titleEl = document.getElementById('shareModalTitle');
+    const subtitleEl = document.getElementById('shareModalSubtitle');
+    const messageEl = document.getElementById('shareMessage');
+    const urlInput = document.getElementById('shareUrlInput');
+
+    if (titleEl) titleEl.textContent = 'Bagikan postingan ini';
+    if (subtitleEl) {
+        subtitleEl.textContent = `Ajak orang lain memberi like untuk ${currentSharePayload.schoolName}.`;
+    }
+    if (messageEl) messageEl.textContent = currentSharePayload.fullText;
+    if (urlInput) urlInput.value = currentSharePayload.url;
+    setShareStatus('');
+
+    // Sesuaikan badge & note Instagram berdasarkan device
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const igBadge = document.querySelector('.share-ig-badge');
+    const igNoteText = document.getElementById('shareIgNoteText');
+    if (igBadge) igBadge.textContent = isMobile ? 'Story / Salin' : 'Salin Caption';
+    if (igNoteText) {
+        igNoteText.textContent = isMobile
+            ? 'Di mobile: share sheet akan muncul. Pilih Instagram → Add to Story untuk langsung posting sebagai story!'
+            : 'Instagram tidak mendukung berbagi link secara langsung. Caption & link sudah disalin — buka Instagram, buat postingan, lalu tempel teksnya.';
+    }
+
+    if (overlay) {
+        overlay.classList.add('open');
+        overlay.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function openCurrentShareModal() {
+    openShareModal(currentSharePayload || null);
+}
+
+function closeShareModal() {
+    const overlay = document.getElementById('shareOverlay');
+    if (overlay) {
+        overlay.classList.remove('open');
+        overlay.setAttribute('aria-hidden', 'true');
+    }
+    // Reset notif Instagram & status saat modal ditutup
+    const igNote = document.getElementById('shareIgNote');
+    if (igNote) igNote.style.display = 'none';
+    setShareStatus('');
+    const lbxOpen = document.getElementById('lbxOverlay')?.classList.contains('open');
+    if (!lbxOpen) document.body.style.overflow = '';
+}
+
+function closeShareIfBg(event) {
+    if (event.target === document.getElementById('shareOverlay')) closeShareModal();
+}
+
+function copyToClipboard(text) {
+    if (navigator.clipboard && window.isSecureContext) {
+        return navigator.clipboard.writeText(text);
+    }
+
+    return new Promise((resolve, reject) => {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.setAttribute('readonly', '');
+        textarea.style.position = 'fixed';
+        textarea.style.top = '-9999px';
+        document.body.appendChild(textarea);
+        textarea.select();
+        try {
+            document.execCommand('copy') ? resolve() : reject(new Error('copy failed'));
+        } catch (err) {
+            reject(err);
+        } finally {
+            textarea.remove();
+        }
+    });
+}
+
+function copyShareLink() {
+    const payload = currentSharePayload || buildSharePayload(null);
+    return copyToClipboard(payload.url)
+        .then(() => setShareStatus('Link postingan sudah disalin.'))
+        .catch(() => setShareStatus('Link belum bisa disalin otomatis.'));
+}
+
+function copyShareCaption() {
+    const payload = currentSharePayload || buildSharePayload(null);
+    return copyToClipboard(payload.fullText)
+        .then(() => setShareStatus('✓ Caption & link berhasil disalin ke clipboard.'))
+        .catch(() => setShareStatus('Caption belum bisa disalin otomatis.'));
+}
+
+
+function shareToPlatform(platform) {
+    const payload = currentSharePayload || buildSharePayload(null);
+    const encodedUrl = encodeURIComponent(payload.url);
+    const encodedText = encodeURIComponent(payload.text);
+    const encodedFullText = encodeURIComponent(payload.fullText);
+    let targetUrl = '';
+
+    if (platform === 'native') {
+        if (navigator.share) {
+            navigator.share({
+                title: payload.title,
+                text: payload.text,
+                url: payload.url
+            }).then(() => setShareStatus('Postingan siap dibagikan.')).catch(() => {});
+        } else {
+            copyToClipboard(payload.fullText).then(() => setShareStatus('Caption dan link disalin.')).catch(() => setShareStatus('Share perangkat belum tersedia.'));
+        }
+        return;
+    }
+
+    if (platform === 'whatsapp') {
+        targetUrl = `https://wa.me/?text=${encodedFullText}`;
+    } else if (platform === 'telegram') {
+        targetUrl = `https://t.me/share/url?url=${encodedUrl}&text=${encodedText}`;
+    } else if (platform === 'facebook') {
+        targetUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`;
+    } else if (platform === 'x') {
+        targetUrl = `https://twitter.com/intent/tweet?text=${encodedText}&url=${encodedUrl}`;
+    } else if (platform === 'linkedin') {
+        targetUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`;
+    } else if (platform === 'threads') {
+        targetUrl = `https://www.threads.net/intent/post?text=${encodedFullText}`;
+    } else if (platform === 'line') {
+        targetUrl = `https://social-plugins.line.me/lineit/share?url=${encodedUrl}`;
+    } else if (platform === 'email') {
+        targetUrl = `mailto:?subject=${encodeURIComponent(payload.title)}&body=${encodedFullText}`;
+    } else if (platform === 'instagram') {
+        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+        const canShareFiles = isMobile && navigator.canShare && typeof File !== 'undefined';
+
+        if (canShareFiles) {
+            // Mobile: generate share card dan buka native share sheet (IG Story support)
+            setShareStatus('⏳ Membuat kartu berbagi…');
+            generateIgStoryCard(payload)
+                .then(blob => {
+                    const file = new File([blob], 'adiwiyata-share.png', { type: 'image/png' });
+                    if (navigator.canShare({ files: [file] })) {
+                        return navigator.share({
+                            files: [file],
+                            title: payload.title,
+                            text: payload.fullText
+                        });
+                    } else {
+                        throw new Error('share files not supported');
+                    }
+                })
+                .then(() => {
+                    setShareStatus('✓ Berhasil! Pilih Instagram → Add to Story di share sheet.');
+                })
+                .catch(err => {
+                    if (err && err.name === 'AbortError') {
+                        setShareStatus('');
+                        return;
+                    }
+                    // Fallback: copy caption
+                    copyToClipboard(payload.fullText)
+                        .then(() => {
+                            setShareStatus('Caption & link disalin. Buka Instagram dan tempel di caption.');
+                            const igNote = document.getElementById('shareIgNote');
+                            if (igNote) igNote.style.display = 'flex';
+                        })
+                        .catch(() => setShareStatus('Salin link secara manual dari kotak di bawah.'));
+                });
+        } else {
+            // Desktop / tidak support: copy caption
+            copyToClipboard(payload.fullText)
+                .then(() => {
+                    setShareStatus('✓ Caption & link berhasil disalin! Tempel di caption Instagram-mu.');
+                    const igNote = document.getElementById('shareIgNote');
+                    if (igNote) igNote.style.display = 'flex';
+                })
+                .catch(() => setShareStatus('Caption belum bisa disalin otomatis. Salin manual dari kotak di bawah.'));
+        }
+        return;
+    }
+
+    if (targetUrl) {
+        window.open(targetUrl, '_blank', 'noopener,noreferrer,width=720,height=640');
+        setShareStatus('Jendela berbagi sudah dibuka.');
+    }
+}
+
+document.querySelectorAll('[data-share-platform]').forEach(button => {
+    button.addEventListener('click', () => {
+        const igNote = document.getElementById('shareIgNote');
+        if (igNote && button.dataset.sharePlatform !== 'instagram') {
+            igNote.style.display = 'none';
+        }
+        shareToPlatform(button.dataset.sharePlatform);
+    });
+});
+
 // ─── Lightbox ───
 let currentPostId = null;
 let currentMediaUrls = [];
@@ -1379,6 +2091,16 @@ function openLightbox(el) {
     document.getElementById('lbxTs').textContent = d.ts;
     document.getElementById('lbxDesc').textContent = d.desc || '(Tanpa deskripsi)';
     document.getElementById('lbxAuthor').textContent = d.author ? 'Diunggah oleh: ' + d.author : '';
+    currentSharePayload = buildSharePayload({
+        postId: d.id,
+        shareUrl: d.shareUrl,
+        schoolName: d.school,
+        categoryTitle: d.categoryTitle,
+        postKind: d.type === 'video_link' ? 'video' : 'foto',
+        imageUrl: d.type === 'image' && currentMediaUrls.length ? currentMediaUrls[0] : null
+    });
+    const publicLink = document.getElementById('lbxPublicLink');
+    if (publicLink) publicLink.href = currentSharePayload.url;
 
     // Edit & delete forms
     document.getElementById('editFormEl').action = EDIT_URLS[currentPostId] || '#';
@@ -1417,8 +2139,26 @@ setTimeout(() => {
     });
 }, 4000);
 
+function openAutoSharePrompt() {
+    if (AUTO_SHARE_PROMPT) {
+        window.setTimeout(() => openShareModal(AUTO_SHARE_PROMPT), 550);
+    }
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', openAutoSharePrompt);
+} else {
+    openAutoSharePrompt();
+}
+
 // Keyboard controls for lightbox
 document.addEventListener('keydown', e => {
+    const shareOverlay = document.getElementById('shareOverlay');
+    if (shareOverlay && shareOverlay.classList.contains('open')) {
+        if (e.key === 'Escape') closeShareModal();
+        return;
+    }
+
     const overlay = document.getElementById('lbxOverlay');
     if (!overlay || !overlay.classList.contains('open')) return;
 

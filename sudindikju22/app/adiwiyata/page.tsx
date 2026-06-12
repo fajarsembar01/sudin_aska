@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useEffect, useState, useRef, useCallback } from 'react'
+import Link from 'next/link'
 
 interface Post {
   id: number;
@@ -243,8 +244,33 @@ export default function AdiwiyataPage() {
   const [isLoaded, setIsLoaded] = useState(false)
   const [fetchError, setFetchError] = useState('')
   const [visiblePosts, setVisiblePosts] = useState<Set<number>>(new Set())
+  const [highlightedPostId, setHighlightedPostId] = useState<number | null>(null)
   const postRefs = useRef<Map<number, HTMLDivElement>>(new Map())
   const observerRef = useRef<IntersectionObserver | null>(null)
+  const hashScrollDoneRef = useRef(false)
+
+  function fetchPosts(pageNumber: number) {
+    setIsLoading(true)
+    setFetchError('')
+    fetch(portalUrl(`/portal/api/public/adiwiyata/posts?page=${pageNumber}&per_page=10`))
+      .then(res => res.json())
+      .then(data => {
+        if (data?.posts) {
+          const normalizedPosts = data.posts.map(normalizePost)
+          setPosts(prev => pageNumber === 1 ? normalizedPosts : [...prev, ...normalizedPosts])
+          setVisiblePosts(prev => new Set([
+            ...Array.from(prev),
+            ...normalizedPosts.map((post: Post) => post.id),
+          ]))
+          setHasMore(data.has_more)
+        }
+      })
+      .catch(err => {
+        console.error(err)
+        setFetchError('Data Adiwiyata belum bisa dimuat. Pastikan server portal aktif dan URL API benar.')
+      })
+      .finally(() => setIsLoading(false))
+  }
 
   useEffect(() => {
     setTimeout(() => setIsLoaded(true), 100)
@@ -254,7 +280,8 @@ export default function AdiwiyataPage() {
       .then(data => { if (data?.photos) setPhotos(data.photos.map(normalizePhoto)) })
       .catch(console.error)
 
-    fetchPosts(1)
+    const initialPostsTimer = window.setTimeout(() => fetchPosts(1), 0)
+    return () => window.clearTimeout(initialPostsTimer)
   }, [])
 
   useEffect(() => {
@@ -279,28 +306,27 @@ export default function AdiwiyataPage() {
     }
   }, [])
 
-  const fetchPosts = (pageNumber: number) => {
-    setIsLoading(true)
-    setFetchError('')
-    fetch(portalUrl(`/portal/api/public/adiwiyata/posts?page=${pageNumber}&per_page=10`))
-      .then(res => res.json())
-      .then(data => {
-        if (data?.posts) {
-          const normalizedPosts = data.posts.map(normalizePost)
-          setPosts(prev => pageNumber === 1 ? normalizedPosts : [...prev, ...normalizedPosts])
-          setVisiblePosts(prev => new Set([
-            ...Array.from(prev),
-            ...normalizedPosts.map((post: Post) => post.id),
-          ]))
-          setHasMore(data.has_more)
-        }
-      })
-      .catch(err => {
-        console.error(err)
-        setFetchError('Data Adiwiyata belum bisa dimuat. Pastikan server portal aktif dan URL API benar.')
-      })
-      .finally(() => setIsLoading(false))
-  }
+  useEffect(() => {
+    if (typeof window === 'undefined' || hashScrollDoneRef.current || !posts.length) return
+
+    const match = window.location.hash.match(/^#post-(\d+)$/)
+    if (!match) return
+
+    const postId = Number(match[1])
+    const targetEl = postRefs.current.get(postId) || document.getElementById(`post-${postId}`)
+    if (!targetEl) return
+
+    hashScrollDoneRef.current = true
+    setVisiblePosts(prev => new Set([...Array.from(prev), postId]))
+    setHighlightedPostId(postId)
+
+    window.setTimeout(() => {
+      targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }, 250)
+    window.setTimeout(() => {
+      setHighlightedPostId(prev => prev === postId ? null : prev)
+    }, 4200)
+  }, [posts])
 
   const loadMore = () => {
     if (!isLoading && hasMore) {
@@ -314,7 +340,6 @@ export default function AdiwiyataPage() {
     setLightboxUrls(urls)
     setLightboxIndex(idx)
     setActivePost(post)
-    document.body.style.overflow = 'hidden'
   }
 
   const openPhotoLightbox = (photo: Photo) => {
@@ -339,8 +364,14 @@ export default function AdiwiyataPage() {
   const closeLightbox = () => {
     setLightboxIndex(-1)
     setActivePost(null)
-    document.body.style.overflow = ''
   }
+
+  useEffect(() => {
+    document.body.style.overflow = lightboxIndex >= 0 ? 'hidden' : ''
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [lightboxIndex])
 
   const formatDate = (iso: string) => {
     const d = new Date(iso)
@@ -499,7 +530,7 @@ export default function AdiwiyataPage() {
       {/* ── NAVBAR ── */}
       <nav className={`sticky top-0 w-full z-50 transition-all duration-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
         <div className="bg-white/90 backdrop-blur-xl border-b border-slate-200 px-4 sm:px-8 py-4 flex items-center justify-between shadow-sm">
-          <a href="/" className="flex items-center gap-3 group">
+          <Link href="/" className="flex items-center gap-3 group">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
               <span className="text-lg">🌿</span>
             </div>
@@ -507,16 +538,16 @@ export default function AdiwiyataPage() {
               <p className="text-sm font-black text-slate-900 leading-tight">Portal Adiwiyata</p>
               <p className="text-[10px] font-semibold text-emerald-600 uppercase tracking-widest">Sudin Pendidikan JU 2</p>
             </div>
-          </a>
+          </Link>
           <div className="flex items-center gap-3">
             <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200">
               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               <span className="text-xs font-bold text-emerald-700">{posts.length} Postingan</span>
             </div>
-            <a href="/" className="flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900 text-sm font-semibold transition-all border border-slate-200">
+            <Link href="/" className="flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900 text-sm font-semibold transition-all border border-slate-200">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
               Kembali
-            </a>
+            </Link>
           </div>
         </div>
       </nav>
@@ -716,9 +747,10 @@ export default function AdiwiyataPage() {
                 return (
                   <div
                     key={post.id}
+                    id={`post-${post.id}`}
                     ref={el => registerPostRef(el, post.id)}
                     data-postid={post.id}
-                    className={`rounded-3xl bg-white border border-slate-200 overflow-hidden hover:border-emerald-200 hover:shadow-lg transition-all duration-700 shadow-sm ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+                    className={`rounded-3xl bg-white border border-slate-200 overflow-hidden hover:border-emerald-200 hover:shadow-lg transition-all duration-700 shadow-sm ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'} ${highlightedPostId === post.id ? 'ring-4 ring-emerald-300 shadow-xl shadow-emerald-100' : ''}`}
                     style={{ transitionDelay: `${Math.min(idx * 50, 300)}ms` }}
                   >
                     {/* Post Header */}
