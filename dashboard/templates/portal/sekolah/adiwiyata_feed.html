@@ -22,9 +22,9 @@
     </script>
     <style>
         :root {
-            --green-1: #16a34a;
-            --green-2: #15803d;
-            --green-light: #dcfce7;
+            --green-1: #0d6efd;
+            --green-2: #0a58ca;
+            --green-light: #e7f1ff;
         }
         * { box-sizing: border-box; }
         body {
@@ -878,7 +878,7 @@
                     <div class="preview-box" id="previewBox">
                         <div class="preview-grid" id="previewGrid"></div>
                         <div class="preview-footer">
-                            <i class="bi bi-image text-success"></i>
+                            <i class="bi bi-image text-primary"></i>
                             <span class="preview-fname" id="prevFname">Foto pertama tampil sebagai sampul</span>
                             <button type="button" class="preview-add" id="addMoreFiles" title="Tambah foto"><i class="bi bi-plus-lg"></i></button>
                             <button type="button" class="preview-clear" id="clearFile" title="Hapus"><i class="bi bi-x-circle-fill"></i></button>
@@ -903,7 +903,7 @@
                     <label class="field-label" for="videoUrl"><i class="bi bi-link-45deg me-1"></i>Link Video</label>
                     <input type="url" name="video_url" id="videoUrl" class="url-input"
                         placeholder="https://youtube.com/watch?v=..." required>
-                    <p class="url-hint"><i class="bi bi-info-circle"></i> Mendukung YouTube, Google Drive, atau URL video lainnya.</p>
+                    <p class="url-hint"><i class="bi bi-info-circle"></i> Mendukung link YouTube, Google Drive, TikTok, Reels Instagram.</p>
 
                     <!-- YT thumbnail preview -->
                     <div class="url-preview-thumb" id="ytThumbWrap">
@@ -925,7 +925,7 @@
     <!-- ┌── Gallery ──┐ -->
     <main>
         <div class="gallery-header">
-            <h2><i class="bi bi-grid-3x3-gap me-2 text-success"></i>Galeri Dokumentasi</h2>
+            <h2><i class="bi bi-grid-3x3-gap me-2 text-primary"></i>Galeri Dokumentasi</h2>
             {% if posts %}
             <span class="post-count-badge">{{ posts|length }} Postingan</span>
             {% endif %}
@@ -1182,21 +1182,48 @@ function switchTab(tab) {
     }
 })();
 
-// ─── YouTube Link Preview ───
+// ─── Video Link Preview ───
 (function () {
     const urlInput = document.getElementById('videoUrl');
     const thumbWrap = document.getElementById('ytThumbWrap');
-    const thumb = document.getElementById('ytThumb');
 
     if (urlInput) {
         urlInput.addEventListener('input', function () {
             const val = this.value.trim();
-            const m = val.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([A-Za-z0-9_-]{11})/);
-            if (m) {
-                if (thumb) thumb.src = `https://img.youtube.com/vi/${m[1]}/hqdefault.jpg`;
-                if (thumbWrap) thumbWrap.classList.add('show');
-            } else {
-                if (thumbWrap) thumbWrap.classList.remove('show');
+            
+            // Platform matchers
+            const ytMatch = val.match(/(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/i);
+            const ttMatch = val.match(/(?:tiktok\.com\/.*\/video\/|tiktok\.com\/v\/|vt\.tiktok\.com\/)([\w\d]+)/i);
+            const igMatch = val.match(/instagram\.com\/(?:p|reel|tv)\/([A-Za-z0-9_-]+)/i);
+            const gdMatch = val.match(/drive\.google\.com\/(?:file\/d\/|open\?id=)([\w-]+)/i);
+
+            if (thumbWrap) {
+                if (ytMatch) {
+                    thumbWrap.innerHTML = `<img id="ytThumb" src="https://img.youtube.com/vi/${ytMatch[1]}/hqdefault.jpg" alt="Preview" style="width:100%;height:100%;object-fit:cover;">`;
+                    thumbWrap.classList.add('show');
+                    thumbWrap.style.background = '';
+                    thumbWrap.style.border = '';
+                } else if (ttMatch) {
+                    thumbWrap.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:white;"><i class="bi bi-tiktok" style="font-size:2rem;margin-bottom:0.5rem;"></i><span style="font-weight:bold;">TikTok Video</span></div>`;
+                    thumbWrap.classList.add('show');
+                    thumbWrap.style.background = '#010101';
+                    thumbWrap.style.border = '';
+                } else if (igMatch) {
+                    thumbWrap.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:white;"><i class="bi bi-instagram" style="font-size:2rem;margin-bottom:0.5rem;"></i><span style="font-weight:bold;">Instagram Post</span></div>`;
+                    thumbWrap.classList.add('show');
+                    thumbWrap.style.background = 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)';
+                    thumbWrap.style.border = '';
+                } else if (gdMatch) {
+                    thumbWrap.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#1A73E8;"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="bi bi-google" viewBox="0 0 16 16" style="margin-bottom:0.5rem;"><path d="M15.545 6.558a9.42 9.42 0 0 1 .139 1.626c0 2.434-.87 4.492-2.384 5.885h.002C11.978 15.292 10.158 16 8 16A8 8 0 1 1 8 0a7.689 7.689 0 0 1 5.352 2.082l-2.284 2.284A4.347 4.347 0 0 0 8 3.166c-2.087 0-3.86 1.408-4.492 3.304a4.792 4.792 0 0 0 0 3.063h.003c.635 1.893 2.405 3.301 4.492 3.301 1.078 0 2.004-.276 2.722-.764h-.003a3.702 3.702 0 0 0 1.599-2.431H8v-3.08h7.545z"/></svg><span style="font-weight:bold;">Google Drive</span></div>`;
+                    thumbWrap.classList.add('show');
+                    thumbWrap.style.background = '#f8f9fa';
+                    thumbWrap.style.border = '1px solid #dee2e6';
+                } else {
+                    thumbWrap.classList.remove('show');
+                    thumbWrap.innerHTML = '';
+                    thumbWrap.style.background = '';
+                    thumbWrap.style.border = '';
+                }
             }
         });
     }

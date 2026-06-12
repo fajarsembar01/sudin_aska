@@ -393,8 +393,7 @@ export default function AdiwiyataPage() {
                   />
                   <div className="min-w-0">
                     <a
-                      href={`http://127.0.0.1:5002/portal/public/sekolah/${activePost.school_id}/adiwiyata/${activePost.category}`}
-                      target="_blank" rel="noopener noreferrer"
+                      href={`/sekolah/${activePost.school_id}/adiwiyata/${activePost.category}`}
                       className="font-bold text-sm text-slate-900 hover:text-emerald-600 transition-colors line-clamp-2 leading-snug"
                     >
                       {activePost.school_name}
@@ -416,8 +415,7 @@ export default function AdiwiyataPage() {
                 </div>
 
                 <a
-                  href={`http://127.0.0.1:5002/portal/public/sekolah/${activePost.school_id}/adiwiyata/${activePost.category}`}
-                  target="_blank" rel="noopener noreferrer"
+                  href={`/sekolah/${activePost.school_id}/adiwiyata/${activePost.category}`}
                   className="mt-4 flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold text-sm hover:opacity-90 transition-all hover:scale-[1.02] shadow-lg shadow-emerald-500/25"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
@@ -603,8 +601,7 @@ export default function AdiwiyataPage() {
                   return (
                     <a
                       key={i}
-                      href={`http://127.0.0.1:5002/portal/public/sekolah/${schoolPost.school_id}/adiwiyata/${schoolPost.category}`}
-                      target="_blank" rel="noopener noreferrer"
+                      href={`/sekolah/${schoolPost.school_id}/adiwiyata/${schoolPost.category}`}
                       className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-emerald-50 transition-colors group cursor-pointer"
                     >
                       <SchoolLogoAvatar
@@ -658,8 +655,7 @@ export default function AdiwiyataPage() {
                       />
                       <div className="flex-1 min-w-0">
                         <a
-                          href={`http://127.0.0.1:5002/portal/public/sekolah/${post.school_id}/adiwiyata/${post.category}`}
-                          target="_blank" rel="noopener noreferrer"
+                          href={`/sekolah/${post.school_id}/adiwiyata/${post.category}`}
                           className="block font-black text-sm sm:text-base text-slate-900 hover:text-emerald-600 transition-colors truncate leading-tight"
                         >
                           {post.school_name}
@@ -743,12 +739,11 @@ export default function AdiwiyataPage() {
                     <div className="px-5 py-3.5 flex items-center justify-between border-t border-slate-100 bg-white">
                       <span className="text-[11px] text-slate-400 font-medium">{formatTime(post.created_at)}</span>
                       <a
-                        href={`http://127.0.0.1:5002/portal/public/sekolah/${post.school_id}/adiwiyata/${post.category}`}
-                        target="_blank" rel="noopener noreferrer"
+                        href={`/sekolah/${post.school_id}/adiwiyata/${post.category}`}
                         className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-600 hover:text-emerald-700 transition-colors"
                       >
                         Lihat Profil Adiwiyata
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
                       </a>
                     </div>
                     

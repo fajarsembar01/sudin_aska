@@ -2575,6 +2575,40 @@ def public_sekolah_adiwiyata_feed(school_id: int, category: str) -> Response:
         school=school,
         is_public=True
     )
+
+@portal_bp.route("/api/public/sekolah/<int:school_id>/adiwiyata/<category>")
+def api_public_sekolah_adiwiyata_feed(school_id: int, category: str) -> Response:
+    school = _fetch_public_school_profile(school_id)
+    if not school:
+        return jsonify({"success": False, "message": "Sekolah tidak ditemukan."}), 404
+
+    posts = list_adiwiyata_posts(school_id, category)
+    
+    category_titles = {
+        "pengelolaan-sampah": "Pengelolaan Sampah",
+        "konservasi-energi": "Konservasi Energi",
+        "konservasi-air": "Konservasi Air",
+        "kebersihan-sanitasi-drainase": "Kebersihan, Sanitasi, Drainase",
+        "kompos": "Kompos",
+        "tanaman": "Tanaman",
+    }
+    title = category_titles.get(category, category.replace("-", " ").title())
+    
+    # posts is a list of dicts/RealDictRow. Let's make sure it's fully JSON serializable
+    serialized_posts = []
+    for p in posts:
+        post_dict = dict(p)
+        if "created_at" in post_dict and post_dict["created_at"]:
+            post_dict["created_at"] = post_dict["created_at"].isoformat()
+        serialized_posts.append(post_dict)
+        
+    return jsonify({
+        "success": True,
+        "school": dict(school),
+        "posts": serialized_posts,
+        "category": category,
+        "title": title
+    })
 @role_required("sekolah")
 def sekolah_adiwiyata_feed(category: str) -> Response:
     user = current_user()
@@ -6181,6 +6215,49 @@ def sekolah_profile() -> Response:
         kelurahan_list=kelurahan_list,
     )
 
+
+@portal_bp.route("/api/sekolah/profile", methods=["GET", "POST"])
+@_portal_access_required
+def api_sekolah_profile() -> Response:
+    """API for Next.js to view/update school profile data."""
+    user = current_user()
+    if user.get("role") != "sekolah":
+        return jsonify({"success": False, "message": "Hanya akun sekolah yang dapat mengakses ini."}), 403
+
+    school = _fetch_user_school(user["id"])
+    if not school:
+        return jsonify({"success": False, "message": "Akun belum terhubung dengan sekolah."}), 400
+
+    if request.method == "POST":
+        payload = _build_profile_payload(request.get_json() or {})
+        form_errors = _validate_profile_data(payload, jenjang=school.get("jenjang"))
+        if form_errors:
+            return jsonify({"success": False, "errors": form_errors}), 400
+        
+        _save_school_profile(school["id"], payload)
+        return jsonify({"success": True, "message": "Profil sekolah berhasil diperbarui."})
+
+    meta = _normalize_metadata(school.get("metadata"))
+    kecamatan_list = [dict(k) for k in list_kecamatan()]
+    kelurahan_list = [dict(l) for l in list_kelurahan()]
+    
+    return jsonify({
+        "success": True,
+        "school": {
+            "id": school["id"],
+            "name": school["name"],
+            "npsn": school["npsn"],
+            "jenjang": school["jenjang"],
+            "alamat": school.get("alamat"),
+            "kecamatan_id": school.get("kecamatan_id"),
+            "kelurahan_id": school.get("kelurahan_id"),
+            "logo_url": school.get("logo_url")
+        },
+        "meta": meta,
+        "kecamatan_list": kecamatan_list,
+        "kelurahan_list": kelurahan_list,
+        "missing_fields": _compute_missing_profile_fields(school)
+    })
 
 @portal_bp.route("/sekolah/password", methods=["GET", "POST"])
 @_portal_access_required

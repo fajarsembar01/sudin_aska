@@ -36,6 +36,11 @@ def create_app() -> Flask:
     app.config["MAX_CONTENT_LENGTH"] = _max_upload_mb * 1024 * 1024
     
     csrf = CSRFProtect(app)
+    from flask_cors import CORS
+    CORS(app, supports_credentials=True, resources={
+        r"/api/*": {"origins": ["http://localhost:3000", "http://127.0.0.1:3000"]},
+        r"/portal/api/*": {"origins": ["http://localhost:3000", "http://127.0.0.1:3000"]}
+    })
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
