@@ -54,7 +54,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   'tanaman': 'from-green-400 to-emerald-600',
 }
 
-const PORTAL_API_BASE = (process.env.NEXT_PUBLIC_PORTAL_API_BASE || '').replace(/\/+$/, '')
+const PORTAL_API_BASE = (process.env.NEXT_PUBLIC_PORTAL_API_BASE || 'https://admin.sudindikju2.com').replace(/\/+$/, '')
 
 const portalUrl = (path: string) => {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`
