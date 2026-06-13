@@ -1132,8 +1132,11 @@
                         </div>
                     </div>
 
-                    <label class="field-label" for="descPhoto"><i class="bi bi-card-text me-1"></i>Deskripsi</label>
-                    <textarea id="descPhoto" name="description" class="desc-area" rows="3" placeholder="Tulis deskripsi kegiatan pengelolaan sampah..."></textarea>
+                    <label class="field-label" for="descPhoto">
+                        <i class="bi bi-card-text me-1"></i>Deskripsi <span class="text-danger">*</span>
+                    </label>
+                    <textarea id="descPhoto" name="description" class="desc-area" rows="3" placeholder="Tulis deskripsi kegiatan pengelolaan sampah..." required minlength="100"></textarea>
+                    <p class="url-hint mt-1 text-danger mb-3"><i class="bi bi-exclamation-circle"></i> Wajib diisi, minimal 100 karakter.</p>
 
                     <button type="submit" class="btn-post" id="btnPhoto">
                         <i class="bi bi-send-fill"></i> Posting Foto
@@ -1157,8 +1160,11 @@
                         <img id="ytThumb" src="" alt="Preview">
                     </div>
 
-                    <label class="field-label" for="descVideo"><i class="bi bi-card-text me-1"></i>Deskripsi</label>
-                    <textarea id="descVideo" name="description" class="desc-area" rows="3" placeholder="Tulis deskripsi kegiatan dalam video ini..."></textarea>
+                    <label class="field-label" for="descVideo">
+                        <i class="bi bi-card-text me-1"></i>Deskripsi <span class="text-danger">*</span>
+                    </label>
+                    <textarea id="descVideo" name="description" class="desc-area" rows="3" placeholder="Tulis deskripsi kegiatan dalam video ini..." required minlength="100"></textarea>
+                    <p class="url-hint mt-1 text-danger mb-3"><i class="bi bi-exclamation-circle"></i> Wajib diisi, minimal 100 karakter.</p>
 
                     <button type="submit" class="btn-post" id="btnVideo">
                         <i class="bi bi-play-circle-fill"></i> Posting Video
@@ -1219,12 +1225,30 @@
                     </div>
                     {% endif %}
                 {% elif post.media_type == 'video_link' %}
+                    {%- set link = post.media_path -%}
                     {%- set yt_id = '' -%}
-                    {%- if 'youtube.com/embed/' in post.media_path -%}
-                        {%- set yt_id = post.media_path.split('youtube.com/embed/')[-1].split('?')[0] -%}
+                    {%- if 'youtube.com/watch?v=' in link -%}
+                        {%- set yt_id = link.split('v=')[-1].split('&')[0] -%}
+                    {%- elif 'youtu.be/' in link -%}
+                        {%- set yt_id = link.split('youtu.be/')[-1].split('?')[0] -%}
+                    {%- elif 'youtube.com/embed/' in link -%}
+                        {%- set yt_id = link.split('youtube.com/embed/')[-1].split('?')[0] -%}
                     {%- endif -%}
+
                     {% if yt_id %}
                     <img class="yt-thumb" src="https://img.youtube.com/vi/{{ yt_id }}/hqdefault.jpg" alt="Thumbnail Video" loading="lazy">
+                    {% elif 'tiktok.com' in link|lower %}
+                    <div style="width:100%;height:100%;background:#010101;display:flex;align-items:center;justify-content:center;">
+                        <i class="bi bi-tiktok text-white" style="font-size:2.5rem;"></i>
+                    </div>
+                    {% elif 'instagram.com' in link|lower %}
+                    <div style="width:100%;height:100%;background:linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);display:flex;align-items:center;justify-content:center;">
+                        <i class="bi bi-instagram text-white" style="font-size:2.5rem;"></i>
+                    </div>
+                    {% elif 'drive.google.com' in link|lower %}
+                    <div style="width:100%;height:100%;background:#f8f9fa;display:flex;align-items:center;justify-content:center;">
+                        <i class="bi bi-google text-primary" style="font-size:2.5rem;"></i>
+                    </div>
                     {% else %}
                     <div style="width:100%;height:100%;background:#1a1a2e;display:flex;align-items:center;justify-content:center;">
                         <i class="bi bi-play-circle text-white" style="font-size:2.5rem;"></i>
@@ -1288,7 +1312,8 @@
             <div class="lbx-edit-form mt-3" id="lbxEditForm">
                 <form id="editFormEl" method="POST">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <textarea name="description" class="desc-area" rows="4" id="editDescEl"></textarea>
+                    <textarea name="description" class="desc-area" rows="4" id="editDescEl" required minlength="100"></textarea>
+                    <p class="url-hint mt-1" style="color:#ef4444;"><i class="bi bi-exclamation-circle"></i> Wajib diisi, minimal 100 karakter.</p>
                     <button type="submit" class="btn-post mt-2" style="width:100%;">
                         <i class="bi bi-check-lg me-1"></i> Simpan
                     </button>
@@ -2076,12 +2101,39 @@ function openLightbox(el) {
     } else if (d.type === 'video_link') {
         currentMediaUrls = [];
         currentMediaIndex = 0;
-        const iframe = document.createElement('iframe');
-        iframe.src = d.src;
-        iframe.allowFullscreen = true;
-        iframe.allow = 'autoplay; encrypted-media';
-        iframe.style.cssText = 'width:100%;height:100%;min-height:320px;border:none;display:block;';
-        media.appendChild(iframe);
+        const url = d.src;
+        const ytMatch = url.match(/(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/i);
+        const ttMatch = url.match(/(?:tiktok\.com\/.*\/video\/|tiktok\.com\/v\/|vt\.tiktok\.com\/)([\w\d]+)/i);
+        const igMatch = url.match(/instagram\.com\/(?:p|reel|tv)\/([A-Za-z0-9_-]+)/i);
+        const gdMatch = url.match(/drive\.google\.com\/(?:file\/d\/|open\?id=)([\w-]+)/i);
+
+        if (ytMatch) {
+            const iframe = document.createElement('iframe');
+            iframe.src = `https://www.youtube.com/embed/${ytMatch[1]}`;
+            iframe.allowFullscreen = true;
+            iframe.allow = 'autoplay; encrypted-media';
+            iframe.style.cssText = 'width:100%;height:100%;min-height:320px;border:none;display:block;';
+            media.appendChild(iframe);
+        } else if (ttMatch) {
+            const iframe = document.createElement('iframe');
+            iframe.src = `https://www.tiktok.com/embed/v2/${ttMatch[1]}`;
+            iframe.allowFullscreen = true;
+            iframe.style.cssText = 'width:min(100%, 400px);height:100%;min-height:320px;border:none;display:block;margin:0 auto;';
+            media.appendChild(iframe);
+        } else if (igMatch) {
+            const iframe = document.createElement('iframe');
+            iframe.src = `https://www.instagram.com/p/${igMatch[1]}/embed`;
+            iframe.style.cssText = 'width:min(100%, 400px);height:100%;min-height:320px;border:none;display:block;margin:0 auto;background:white;';
+            media.appendChild(iframe);
+        } else if (gdMatch) {
+            const iframe = document.createElement('iframe');
+            iframe.src = `https://drive.google.com/file/d/${gdMatch[1]}/preview`;
+            iframe.allowFullscreen = true;
+            iframe.style.cssText = 'width:100%;height:100%;min-height:320px;border:none;display:block;';
+            media.appendChild(iframe);
+        } else {
+            media.innerHTML = `<div style="text-align:center;padding:2rem;color:white;"><p style="margin-bottom:1rem;font-size:1.1rem;">Tautan video eksternal</p><a href="${url}" target="_blank" style="display:inline-block;padding:10px 20px;background:#0d6efd;color:white;text-decoration:none;border-radius:8px;font-weight:bold;">Buka di Tab Baru</a></div>`;
+        }
     }
 
     // Set info
