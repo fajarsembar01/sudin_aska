@@ -62,6 +62,10 @@ const portalUrl = (path: string) => {
   return PORTAL_API_BASE ? `${PORTAL_API_BASE}${normalizedPath}` : normalizedPath
 }
 
+const localSchoolProfileUrl = (schoolId: number, category: string) => (
+  `/profil-sekolah?school_id=${schoolId}&category=${encodeURIComponent(category)}`
+)
+
 const toPortalAssetUrl = (value?: string | null) => {
   const clean = (value || '').trim()
   if (!clean) return ''
@@ -508,7 +512,7 @@ export default function AdiwiyataPage() {
                   />
                   <div className="min-w-0">
                     <a
-                      href={portalUrl(`/portal/public/sekolah/${activePost.school_id}/adiwiyata/${activePost.category}`)}
+                      href={localSchoolProfileUrl(activePost.school_id, activePost.category)}
                       target="_blank" rel="noopener noreferrer"
                       className="font-bold text-sm text-slate-900 hover:text-emerald-600 transition-colors line-clamp-2 leading-snug"
                     >
@@ -531,7 +535,7 @@ export default function AdiwiyataPage() {
                 </div>
 
                 <a
-                  href={portalUrl(`/portal/public/sekolah/${activePost.school_id}/adiwiyata/${activePost.category}`)}
+                  href={localSchoolProfileUrl(activePost.school_id, activePost.category)}
                   target="_blank" rel="noopener noreferrer"
                   className="mt-4 flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold text-sm hover:opacity-90 transition-all hover:scale-[1.02] shadow-lg shadow-emerald-500/25"
                 >
@@ -718,7 +722,7 @@ export default function AdiwiyataPage() {
                   return (
                     <a
                       key={i}
-                      href={portalUrl(`/portal/public/sekolah/${schoolPost.school_id}/adiwiyata/${schoolPost.category}`)}
+                      href={localSchoolProfileUrl(schoolPost.school_id, schoolPost.category)}
                       target="_blank" rel="noopener noreferrer"
                       className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-emerald-50 transition-colors group cursor-pointer"
                     >
@@ -780,7 +784,7 @@ export default function AdiwiyataPage() {
                       />
                       <div className="flex-1 min-w-0">
                         <a
-                          href={portalUrl(`/portal/public/sekolah/${post.school_id}/adiwiyata/${post.category}`)}
+                          href={localSchoolProfileUrl(post.school_id, post.category)}
                           target="_blank" rel="noopener noreferrer"
                           className="block font-black text-sm sm:text-base text-slate-900 hover:text-emerald-600 transition-colors truncate leading-tight"
                         >
@@ -899,7 +903,7 @@ export default function AdiwiyataPage() {
                     <div className="px-5 py-3.5 flex items-center justify-between border-t border-slate-100 bg-white">
                       <span className="text-[11px] text-slate-400 font-medium">{formatTime(post.created_at)}</span>
                       <a
-                        href={portalUrl(`/portal/public/sekolah/${post.school_id}/adiwiyata/${post.category}`)}
+                        href={localSchoolProfileUrl(post.school_id, post.category)}
                         target="_blank" rel="noopener noreferrer"
                         className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-600 hover:text-emerald-700 transition-colors"
                       >
