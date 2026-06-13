@@ -90,6 +90,12 @@ export default function PublicSchoolAdiwiyataPage({ params }: { params: Promise<
     return d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB'
   }
 
+  const getYoutubeId = (url: string) => {
+    if (!url) return null
+    const match = url.match(/(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/i)
+    return match ? match[1] : null
+  }
+
   const getFullUrl = (url: string | null) => {
     if (!url) return '';
     if (url.startsWith('http://') || url.startsWith('https://')) return url;
