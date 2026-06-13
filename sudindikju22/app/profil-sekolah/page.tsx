@@ -12,6 +12,13 @@ const CATEGORY_LABELS: Record<string, string> = {
   tanaman: 'Tanaman',
 }
 
+const PORTAL_API_BASE = (process.env.NEXT_PUBLIC_PORTAL_API_BASE || 'https://admin.sudindikju2.com').replace(/\/+$/, '')
+
+const portalUrl = (path: string) => {
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`
+  return `${PORTAL_API_BASE}${normalizedPath}`
+}
+
 interface PublicStat {
   label: string
   value: string | number
@@ -80,16 +87,19 @@ function resolvePortalUrl(value?: string | null) {
     try {
       const parsed = new URL(clean)
       if (['127.0.0.1', 'localhost'].includes(parsed.hostname) && parsed.pathname.startsWith('/portal/')) {
-        return `${parsed.pathname}${parsed.search}${parsed.hash}`
+        return portalUrl(`${parsed.pathname}${parsed.search}${parsed.hash}`)
       }
     } catch {
       return clean
     }
     return clean
   }
-  if (clean.startsWith('/')) return clean
-  if (clean.startsWith('portal/')) return `/${clean}`
-  return `/portal/uploads/${clean}`
+  if (clean.startsWith('/portal/')) return portalUrl(clean)
+  if (clean.startsWith('/uploads/')) return portalUrl(`/portal${clean}`)
+  if (clean.startsWith('portal/')) return portalUrl(`/${clean}`)
+  if (clean.startsWith('uploads/portal/')) return portalUrl(`/portal/uploads/${clean.slice('uploads/portal/'.length)}`)
+  if (clean.startsWith('uploads/')) return portalUrl(`/portal/${clean}`)
+  return portalUrl(`/portal/uploads/${clean}`)
 }
 
 function resolveMediaUrls(post: PublicPost) {
@@ -222,7 +232,7 @@ export default function ProfilSekolahPage() {
     }
 
     try {
-      const res = await fetch(`/portal/api/public/sekolah/${schoolId}/adiwiyata/${selectedCategory}`)
+      const res = await fetch(portalUrl(`/portal/api/public/sekolah/${schoolId}/adiwiyata/${selectedCategory}`))
       const data: PublicProfileResponse = await res.json()
 
       if (!data.success || !data.school) {
