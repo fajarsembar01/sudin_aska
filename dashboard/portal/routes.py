@@ -1916,6 +1916,52 @@ def schools() -> Response:
 
 # ===== Adiwiyata Posts Operations =====
 
+_ADIWIYATA_SHARE_PROMPT_SESSION_KEY = "adiwiyata_share_prompt"
+
+
+def _adiwiyata_public_share_base_url() -> str:
+    value = os.getenv("ADIWIYATA_PUBLIC_URL", "").strip()
+    return (value or "https://sudindikju2.com/adiwiyata").rstrip("/")
+
+
+def _adiwiyata_public_share_url(post_id: int | None = None) -> str:
+    base_url = _adiwiyata_public_share_base_url()
+    if post_id:
+        return f"{base_url}#post-{post_id}"
+    return base_url
+
+
+def _adiwiyata_category_title(category: str) -> str:
+    category_titles = {
+        "pengelolaan-sampah": "Pengelolaan Sampah",
+        "konservasi-energi": "Konservasi Energi",
+        "konservasi-air": "Konservasi Air",
+        "kebersihan-sanitasi-drainase": "Kebersihan, Sanitasi, Drainase",
+        "kompos": "Kompos",
+        "tanaman": "Tanaman",
+    }
+    return category_titles.get(category, category.replace("-", " ").title())
+
+
+def _queue_adiwiyata_share_prompt(post: dict | None, school: dict, category: str, title: str, post_kind: str) -> None:
+    if not post:
+        return
+
+    post_id = post.get("id") if hasattr(post, "get") else None
+    if not post_id:
+        return
+
+    session[_ADIWIYATA_SHARE_PROMPT_SESSION_KEY] = {
+        "post_id": int(post_id),
+        "school_id": int(school["id"]),
+        "school_name": school.get("name") or "Sekolah",
+        "category": category,
+        "category_title": title,
+        "post_kind": post_kind,
+        "share_url": _adiwiyata_public_share_url(int(post_id)),
+    }
+
+
 def create_adiwiyata_post(school_id: int, category: str, media_path: str, media_type: str, description: str, user_id: int) -> dict | None:
     with get_cursor(commit=True) as cur:
         cur.execute(
@@ -2227,21 +2273,26 @@ def list_random_adiwiyata_photos(limit: int = 12) -> list[dict]:
     for raw in raw_rows:
         row = dict(raw)
         val = row.get("media_path") or ""
-        url = None
+        urls = []
         if val.strip().startswith("[") and val.strip().endswith("]"):
             try:
                 paths = json.loads(val)
                 if isinstance(paths, list) and paths:
-                    url = url_for("portal.uploaded_file", filename=paths[0], _external=True)
+                    urls = [
+                        url_for("portal.uploaded_file", filename=path, _external=True)
+                        for path in paths
+                        if path
+                    ]
             except Exception:
                 pass
-        if not url and val:
-            url = url_for("portal.uploaded_file", filename=val, _external=True)
-        if url:
+        if not urls and val:
+            urls = [url_for("portal.uploaded_file", filename=val, _external=True)]
+        if urls:
             created_at = row.get("created_at")
             rows.append({
                 "id": row["id"],
-                "url": url,
+                "url": urls[0],
+                "media_urls": urls,
                 "school_id": row.get("school_id"),
                 "school_name": row.get("school_name", ""),
                 "school_logo_url": _build_school_logo_url(row.get("school_logo_url"), external=True),
@@ -2251,6 +2302,453 @@ def list_random_adiwiyata_photos(limit: int = 12) -> list[dict]:
             })
     return rows
 
+
+# ===== Admin Adiwiyata Routes =====
+
+def _get_adiwiyata_admin_stats() -> dict:
+    """Statistik ringkasan untuk dashboard admin adiwiyata."""
+    with get_cursor() as cur:
+        cur.execute("SELECT COUNT(*) FROM portal_adiwiyata_posts")
+        total_posts = int((cur.fetchone() or {}).get("count") or 0)
+
+        cur.execute(
+            """
+            SELECT COUNT(DISTINCT school_id)
+            FROM portal_adiwiyata_posts
+            """
+        )
+        total_schools = int((cur.fetchone() or {}).get("count") or 0)
+
+        cur.execute(
+            """
+            SELECT COUNT(*) FROM portal_adiwiyata_posts
+            WHERE created_at >= NOW() - INTERVAL '30 days'
+            """
+        )
+        posts_30d = int((cur.fetchone() or {}).get("count") or 0)
+
+        cur.execute(
+            """
+            SELECT COUNT(*) FROM adiwiyata_post_likes WHERE action = 'like'
+            """
+        )
+        total_likes = int((cur.fetchone() or {}).get("count") or 0)
+
+        cur.execute(
+            """
+            SELECT category, COUNT(*) as cnt
+            FROM portal_adiwiyata_posts
+            GROUP BY category
+            ORDER BY cnt DESC
+            """
+        )
+        category_stats = [dict(r) for r in cur.fetchall()]
+
+        cur.execute(
+            """
+            SELECT DATE(created_at AT TIME ZONE 'Asia/Jakarta') as day, COUNT(*) as cnt
+            FROM portal_adiwiyata_posts
+            WHERE created_at >= NOW() - INTERVAL '30 days'
+            GROUP BY day
+            ORDER BY day
+            """
+        )
+        daily_activity = []
+        for r in cur.fetchall():
+            d = dict(r)
+            if d.get("day") and hasattr(d["day"], "isoformat"):
+                d["day"] = d["day"].isoformat()
+            daily_activity.append(d)
+
+        cur.execute(
+            """
+            SELECT s.id, s.name, s.npsn, COUNT(p.id) as post_count
+            FROM portal_schools s
+            JOIN portal_adiwiyata_posts p ON p.school_id = s.id
+            GROUP BY s.id, s.name, s.npsn
+            ORDER BY post_count DESC
+            LIMIT 10
+            """
+        )
+        top_schools = [dict(r) for r in cur.fetchall()]
+
+        cur.execute(
+            """
+            SELECT p.id, p.school_id, p.category, p.media_path, p.media_type,
+                   p.description, p.created_at, s.name AS school_name,
+                   COALESCE(lk.likes, 0) AS likes
+            FROM portal_adiwiyata_posts p
+            LEFT JOIN portal_schools s ON p.school_id = s.id
+            LEFT JOIN (
+                SELECT post_id, COUNT(*) AS likes
+                FROM adiwiyata_post_likes WHERE action='like' GROUP BY post_id
+            ) lk ON lk.post_id = p.id
+            ORDER BY p.created_at DESC
+            LIMIT 6
+            """
+        )
+        recent_posts = []
+        for raw in cur.fetchall():
+            row = dict(raw)
+            _enrich_adiwiyata_row(row)
+            recent_posts.append(row)
+
+    return {
+        "total_posts": total_posts,
+        "total_schools": total_schools,
+        "posts_30d": posts_30d,
+        "total_likes": total_likes,
+        "category_stats": category_stats,
+        "daily_activity": daily_activity,
+        "top_schools": top_schools,
+        "recent_posts": recent_posts,
+    }
+
+
+def _enrich_adiwiyata_row(row: dict) -> None:
+    """Enrich satu baris post adiwiyata: resolve media_urls dan created_at string."""
+    import json as _json
+    if row.get("media_type") == "image":
+        val = row.get("media_path") or ""
+        if val.strip().startswith("[") and val.strip().endswith("]"):
+            try:
+                paths = _json.loads(val)
+                if isinstance(paths, list):
+                    row["media_urls"] = [url_for("portal.uploaded_file", filename=p) for p in paths]
+                    if paths:
+                        row["cover_url"] = url_for("portal.uploaded_file", filename=paths[0])
+                    return
+            except Exception:
+                pass
+        if val:
+            row["cover_url"] = url_for("portal.uploaded_file", filename=val)
+            row["media_urls"] = [row["cover_url"]]
+        else:
+            row["cover_url"] = None
+            row["media_urls"] = []
+    else:
+        row["cover_url"] = None
+        row["media_urls"] = []
+    if row.get("created_at") and hasattr(row["created_at"], "isoformat"):
+        row["created_at_str"] = row["created_at"].strftime("%d %b %Y")
+    else:
+        row["created_at_str"] = str(row.get("created_at") or "")
+
+
+def _list_adiwiyata_posts_admin(
+    school_id: int | None = None,
+    category: str | None = None,
+    media_type: str | None = None,
+    search: str | None = None,
+    sort: str = "newest",
+    page: int = 1,
+    per_page: int = 20,
+) -> tuple[list[dict], int]:
+    """List semua post adiwiyata dengan filter, pagination, dan like count."""
+    conditions = ["1=1"]
+    params: list = []
+    if school_id:
+        conditions.append("p.school_id = %s")
+        params.append(school_id)
+    if category:
+        conditions.append("p.category = %s")
+        params.append(category)
+    if media_type:
+        conditions.append("p.media_type = %s")
+        params.append(media_type)
+    if search:
+        conditions.append("(p.description ILIKE %s OR s.name ILIKE %s OR s.npsn ILIKE %s)")
+        like = f"%{search}%"
+        params.extend([like, like, like])
+
+    where = " AND ".join(conditions)
+    order = "p.created_at DESC"
+    if sort == "oldest":
+        order = "p.created_at ASC"
+    elif sort == "most_liked":
+        order = "COALESCE(lk.likes, 0) DESC, p.created_at DESC"
+    elif sort == "least_liked":
+        order = "COALESCE(lk.likes, 0) ASC, p.created_at DESC"
+
+    with get_cursor() as cur:
+        cur.execute(
+            f"""
+            SELECT COUNT(*)
+            FROM portal_adiwiyata_posts p
+            LEFT JOIN portal_schools s ON p.school_id = s.id
+            WHERE {where}
+            """,
+            params,
+        )
+        total = int((cur.fetchone() or {}).get("count") or 0)
+
+        offset = (page - 1) * per_page
+        cur.execute(
+            f"""
+            SELECT p.id, p.school_id, p.category, p.media_path, p.media_type,
+                   p.description, p.created_at, p.updated_at,
+                   s.name AS school_name, s.npsn AS school_npsn,
+                   u.full_name AS author_name,
+                   COALESCE(lk.likes, 0) AS likes,
+                   COALESCE(dk.dislikes, 0) AS dislikes
+            FROM portal_adiwiyata_posts p
+            LEFT JOIN portal_schools s ON p.school_id = s.id
+            LEFT JOIN dashboard_users u ON p.created_by = u.id
+            LEFT JOIN (
+                SELECT post_id, COUNT(*) AS likes FROM adiwiyata_post_likes
+                WHERE action='like' GROUP BY post_id
+            ) lk ON lk.post_id = p.id
+            LEFT JOIN (
+                SELECT post_id, COUNT(*) AS dislikes FROM adiwiyata_post_likes
+                WHERE action='dislike' GROUP BY post_id
+            ) dk ON dk.post_id = p.id
+            WHERE {where}
+            ORDER BY {order}
+            LIMIT %s OFFSET %s
+            """,
+            params + [per_page, offset],
+        )
+        rows = []
+        for raw in cur.fetchall():
+            row = dict(raw)
+            _enrich_adiwiyata_row(row)
+            rows.append(row)
+    return rows, total
+
+
+def _list_schools_with_adiwiyata() -> list[dict]:
+    """List sekolah + ringkasan post adiwiyata per kategori."""
+    categories = [
+        "pengelolaan-sampah", "konservasi-energi", "konservasi-air",
+        "kebersihan-sanitasi-drainase", "kompos", "tanaman",
+    ]
+    cat_case = " ".join(
+        f"SUM(CASE WHEN p.category = '{c}' THEN 1 ELSE 0 END) AS \"{c}\""
+        for c in categories
+    )
+    with get_cursor() as cur:
+        cur.execute(
+            f"""
+            SELECT s.id, s.name, s.npsn, s.jenjang,
+                   COUNT(p.id) AS total_posts,
+                   MAX(p.created_at) AS last_post_at,
+                   COALESCE(lk.total_likes, 0) AS total_likes,
+                   {cat_case}
+            FROM portal_schools s
+            JOIN portal_adiwiyata_posts p ON p.school_id = s.id
+            LEFT JOIN (
+                SELECT pp.school_id, COUNT(pl.id) AS total_likes
+                FROM portal_adiwiyata_posts pp
+                JOIN adiwiyata_post_likes pl ON pl.post_id = pp.id AND pl.action = 'like'
+                GROUP BY pp.school_id
+            ) lk ON lk.school_id = s.id
+            GROUP BY s.id, s.name, s.npsn, s.jenjang, lk.total_likes
+            ORDER BY total_posts DESC, s.name
+            """
+        )
+        rows = [dict(r) for r in cur.fetchall()]
+    for row in rows:
+        lp = row.get("last_post_at")
+        row["last_post_str"] = lp.strftime("%d %b %Y") if lp and hasattr(lp, "strftime") else ""
+        row["category_counts"] = {c: int(row.get(c) or 0) for c in categories}
+    return rows
+
+
+@portal_bp.route("/admin/adiwiyata")
+@role_required("admin")
+def admin_adiwiyata_dashboard() -> Response:
+    """Admin Adiwiyata — halaman dashboard ringkasan."""
+    stats = _get_adiwiyata_admin_stats()
+    category_titles = {
+        "pengelolaan-sampah": "Pengelolaan Sampah",
+        "konservasi-energi": "Konservasi Energi",
+        "konservasi-air": "Konservasi Air",
+        "kebersihan-sanitasi-drainase": "Kebersihan & Sanitasi",
+        "kompos": "Kompos",
+        "tanaman": "Tanaman",
+    }
+    for row in stats.get("category_stats", []):
+        row["title"] = category_titles.get(row.get("category", ""), row.get("category", ""))
+    return render_template(
+        "portal/admin/adiwiyata_dashboard.html",
+        stats=stats,
+        category_titles=category_titles,
+        active_nav="dashboard",
+    )
+
+
+@portal_bp.route("/admin/adiwiyata/posts")
+@role_required("admin")
+def admin_adiwiyata_posts() -> Response:
+    """Admin Adiwiyata — daftar semua post dengan filter & delete."""
+    school_id = request.args.get("school_id", type=int)
+    category = request.args.get("category", "").strip() or None
+    media_type = request.args.get("media_type", "").strip() or None
+    search = request.args.get("q", "").strip() or None
+    sort = request.args.get("sort", "newest")
+    page = max(1, request.args.get("page", 1, type=int))
+    per_page = 24
+
+    posts, total = _list_adiwiyata_posts_admin(
+        school_id=school_id,
+        category=category,
+        media_type=media_type,
+        search=search,
+        sort=sort,
+        page=page,
+        per_page=per_page,
+    )
+    total_pages = max(1, -(-total // per_page))
+
+    # Sekolah list untuk dropdown filter
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT DISTINCT s.id, s.name FROM portal_schools s
+            JOIN portal_adiwiyata_posts p ON p.school_id = s.id
+            ORDER BY s.name
+            """
+        )
+        schools_filter = [dict(r) for r in cur.fetchall()]
+
+    category_titles = {
+        "pengelolaan-sampah": "Pengelolaan Sampah",
+        "konservasi-energi": "Konservasi Energi",
+        "konservasi-air": "Konservasi Air",
+        "kebersihan-sanitasi-drainase": "Kebersihan & Sanitasi",
+        "kompos": "Kompos",
+        "tanaman": "Tanaman",
+    }
+    return render_template(
+        "portal/admin/adiwiyata_posts.html",
+        posts=posts,
+        total=total,
+        page=page,
+        total_pages=total_pages,
+        per_page=per_page,
+        schools_filter=schools_filter,
+        category_titles=category_titles,
+        selected_school_id=school_id,
+        selected_category=category,
+        selected_media_type=media_type,
+        search=search or "",
+        sort=sort,
+        active_nav="posts",
+    )
+
+
+@portal_bp.route("/admin/adiwiyata/schools")
+@role_required("admin")
+def admin_adiwiyata_schools() -> Response:
+    """Admin Adiwiyata — ringkasan per sekolah."""
+    search = request.args.get("q", "").strip().lower()
+    rows = _list_schools_with_adiwiyata()
+    if search:
+        rows = [r for r in rows if search in (r.get("name") or "").lower()
+                or search in (r.get("npsn") or "").lower()]
+    category_titles = {
+        "pengelolaan-sampah": "Sampah",
+        "konservasi-energi": "Energi",
+        "konservasi-air": "Air",
+        "kebersihan-sanitasi-drainase": "Sanitasi",
+        "kompos": "Kompos",
+        "tanaman": "Tanaman",
+    }
+    return render_template(
+        "portal/admin/adiwiyata_schools.html",
+        schools=rows,
+        search=search,
+        category_titles=category_titles,
+        active_nav="schools",
+    )
+
+
+@portal_bp.route("/admin/adiwiyata/schools/<int:school_id>")
+@role_required("admin")
+def admin_adiwiyata_school_detail(school_id: int) -> Response:
+    """Admin Adiwiyata — detail galeri per sekolah."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT s.id, s.name, s.npsn, s.jenjang, s.alamat,
+                   COUNT(p.id) AS total_posts,
+                   COALESCE(lk.total_likes, 0) AS total_likes
+            FROM portal_schools s
+            LEFT JOIN portal_adiwiyata_posts p ON p.school_id = s.id
+            LEFT JOIN (
+                SELECT pp.school_id, COUNT(pl.id) AS total_likes
+                FROM portal_adiwiyata_posts pp
+                JOIN adiwiyata_post_likes pl ON pl.post_id = pp.id AND pl.action='like'
+                GROUP BY pp.school_id
+            ) lk ON lk.school_id = s.id
+            WHERE s.id = %s
+            GROUP BY s.id, s.name, s.npsn, s.jenjang, s.alamat, lk.total_likes
+            """,
+            (school_id,),
+        )
+        school = cur.fetchone()
+    if not school:
+        flash("Sekolah tidak ditemukan.", "danger")
+        return redirect(url_for("portal.admin_adiwiyata_schools"))
+    school = dict(school)
+
+    category = request.args.get("category", "").strip() or None
+    page = max(1, request.args.get("page", 1, type=int))
+    per_page = 24
+
+    posts, total = _list_adiwiyata_posts_admin(
+        school_id=school_id,
+        category=category,
+        page=page,
+        per_page=per_page,
+    )
+    total_pages = max(1, -(-total // per_page))
+
+    category_titles = {
+        "pengelolaan-sampah": "Pengelolaan Sampah",
+        "konservasi-energi": "Konservasi Energi",
+        "konservasi-air": "Konservasi Air",
+        "kebersihan-sanitasi-drainase": "Kebersihan & Sanitasi",
+        "kompos": "Kompos",
+        "tanaman": "Tanaman",
+    }
+    return render_template(
+        "portal/admin/adiwiyata_school_detail.html",
+        school=school,
+        posts=posts,
+        total=total,
+        page=page,
+        total_pages=total_pages,
+        per_page=per_page,
+        selected_category=category,
+        category_titles=category_titles,
+        active_nav="schools",
+    )
+
+
+@portal_bp.route("/admin/adiwiyata/post/<int:post_id>/delete", methods=["POST"])
+@role_required("admin")
+def admin_adiwiyata_delete_post(post_id: int) -> Response:
+    """Admin delete satu post adiwiyata."""
+    post = get_adiwiyata_post(post_id)
+    if not post:
+        flash("Post tidak ditemukan.", "danger")
+        return redirect(url_for("portal.admin_adiwiyata_posts"))
+    school_id = post.get("school_id")
+    ok = delete_adiwiyata_post(post_id)
+    if ok:
+        flash("Post berhasil dihapus.", "success")
+    else:
+        flash("Gagal menghapus post.", "danger")
+    # Kembali ke halaman asal
+    ref = request.form.get("redirect_to") or ""
+    if ref == "school_detail" and school_id:
+        return redirect(url_for("portal.admin_adiwiyata_school_detail", school_id=school_id))
+    if ref == "posts":
+        return redirect(url_for("portal.admin_adiwiyata_posts"))
+    return redirect(url_for("portal.admin_adiwiyata_posts"))
+
+# ===== End Admin Adiwiyata Routes =====
 
 def make_cors_response(response_or_dict, status_code=200):
     from flask import jsonify, make_response
@@ -2528,15 +3026,12 @@ def sekolah_adiwiyata_feed(category: str) -> Response:
 
     posts = list_adiwiyata_posts(school["id"], category)
     
-    category_titles = {
-        "pengelolaan-sampah": "Pengelolaan Sampah",
-        "konservasi-energi": "Konservasi Energi",
-        "konservasi-air": "Konservasi Air",
-        "kebersihan-sanitasi-drainase": "Kebersihan, Sanitasi, Drainase",
-        "kompos": "Kompos",
-        "tanaman": "Tanaman",
-    }
-    title = category_titles.get(category, category.replace("-", " ").title())
+    title = _adiwiyata_category_title(category)
+    share_prompt = session.pop(_ADIWIYATA_SHARE_PROMPT_SESSION_KEY, None)
+    if share_prompt and (
+        share_prompt.get("school_id") != school["id"] or share_prompt.get("category") != category
+    ):
+        share_prompt = None
     
     return render_template(
         "portal/sekolah/adiwiyata_feed.html",
@@ -2544,7 +3039,9 @@ def sekolah_adiwiyata_feed(category: str) -> Response:
         category=category,
         title=title,
         school=school,
-        is_public=False
+        is_public=False,
+        adiwiyata_share_base_url=_adiwiyata_public_share_base_url(),
+        share_prompt=share_prompt,
     )
 
 
@@ -2557,15 +3054,7 @@ def public_sekolah_adiwiyata_feed(school_id: int, category: str) -> Response:
 
     posts = list_adiwiyata_posts(school_id, category)
     
-    category_titles = {
-        "pengelolaan-sampah": "Pengelolaan Sampah",
-        "konservasi-energi": "Konservasi Energi",
-        "konservasi-air": "Konservasi Air",
-        "kebersihan-sanitasi-drainase": "Kebersihan, Sanitasi, Drainase",
-        "kompos": "Kompos",
-        "tanaman": "Tanaman",
-    }
-    title = category_titles.get(category, category.replace("-", " ").title())
+    title = _adiwiyata_category_title(category)
     
     return render_template(
         "portal/sekolah/adiwiyata_feed.html",
@@ -2573,7 +3062,9 @@ def public_sekolah_adiwiyata_feed(school_id: int, category: str) -> Response:
         category=category,
         title=title,
         school=school,
-        is_public=True
+        is_public=True,
+        adiwiyata_share_base_url=_adiwiyata_public_share_base_url(),
+        share_prompt=None,
     )
 
 @portal_bp.route("/api/public/sekolah/<int:school_id>/adiwiyata/<category>")
@@ -2584,15 +3075,7 @@ def api_public_sekolah_adiwiyata_feed(school_id: int, category: str) -> Response
 
     posts = list_adiwiyata_posts(school_id, category)
     
-    category_titles = {
-        "pengelolaan-sampah": "Pengelolaan Sampah",
-        "konservasi-energi": "Konservasi Energi",
-        "konservasi-air": "Konservasi Air",
-        "kebersihan-sanitasi-drainase": "Kebersihan, Sanitasi, Drainase",
-        "kompos": "Kompos",
-        "tanaman": "Tanaman",
-    }
-    title = category_titles.get(category, category.replace("-", " ").title())
+    title = _adiwiyata_category_title(category)
     
     # posts is a list of dicts/RealDictRow. Let's make sure it's fully JSON serializable
     serialized_posts = []
@@ -2619,22 +3102,17 @@ def sekolah_adiwiyata_feed(category: str) -> Response:
 
     posts = list_adiwiyata_posts(school["id"], category)
     
-    category_titles = {
-        "pengelolaan-sampah": "Pengelolaan Sampah",
-        "konservasi-energi": "Konservasi Energi",
-        "konservasi-air": "Konservasi Air",
-        "kebersihan-sanitasi-drainase": "Kebersihan, Sanitasi, Drainase",
-        "kompos": "Kompos",
-        "tanaman": "Tanaman",
-    }
-    title = category_titles.get(category, category.replace("-", " ").title())
+    title = _adiwiyata_category_title(category)
     
     return render_template(
         "portal/sekolah/adiwiyata_feed.html",
         posts=posts,
         category=category,
         title=title,
-        school=school
+        school=school,
+        is_public=False,
+        adiwiyata_share_base_url=_adiwiyata_public_share_base_url(),
+        share_prompt=None,
     )
 
 @portal_bp.route("/sekolah/adiwiyata/<category>/add", methods=["POST"])
@@ -2651,6 +3129,7 @@ def sekolah_adiwiyata_add(category: str) -> Response:
         return redirect(url_for("portal.sekolah_adiwiyata_feed", category=category))
 
     post_type = request.form.get("post_type", "image")  # "image" or "video_link"
+    title = _adiwiyata_category_title(category)
 
     if post_type == "video_link":
         video_url = request.form.get("video_url", "").strip()
@@ -2668,7 +3147,8 @@ def sekolah_adiwiyata_add(category: str) -> Response:
             # Store raw URL for iframe src
             embed_url = video_url
 
-        create_adiwiyata_post(school["id"], category, embed_url, "video_link", description, user["id"])
+        created_post = create_adiwiyata_post(school["id"], category, embed_url, "video_link", description, user["id"])
+        _queue_adiwiyata_share_prompt(created_post, school, category, title, "video")
         flash("Link video berhasil diposting.", "success")
         return redirect(url_for("portal.sekolah_adiwiyata_feed", category=category))
 
@@ -2736,7 +3216,8 @@ def sekolah_adiwiyata_add(category: str) -> Response:
         saved_paths.append(media_path)
 
     if saved_paths:
-        create_adiwiyata_post(school["id"], category, json.dumps(saved_paths), "image", description, user["id"])
+        created_post = create_adiwiyata_post(school["id"], category, json.dumps(saved_paths), "image", description, user["id"])
+        _queue_adiwiyata_share_prompt(created_post, school, category, title, "foto")
         flash(f"{len(saved_paths)} Foto berhasil diposting.", "success")
     else:
         flash("Gagal mengunggah foto.", "danger")
