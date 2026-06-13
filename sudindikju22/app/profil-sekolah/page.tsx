@@ -232,7 +232,7 @@ export default function ProfilSekolahPage() {
     }
 
     try {
-      const res = await fetch(portalUrl(`/portal/api/public/sekolah/${schoolId}/adiwiyata/${selectedCategory}`))
+      const res = await fetch(`/api/profil-sekolah?school_id=${schoolId}&category=${encodeURIComponent(selectedCategory)}`)
       const data: PublicProfileResponse = await res.json()
 
       if (!data.success || !data.school) {
