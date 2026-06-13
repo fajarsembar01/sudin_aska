@@ -285,10 +285,17 @@ export default function AdiwiyataPage() {
     return d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB'
   }
 
-  const getYoutubeId = (url: string) => {
-    if (!url) return null
-    const m = url.match(/(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/i)
-    return m ? m[1] : null
+  const getPlatformInfo = (url: string) => {
+    if (!url) return { type: 'unknown', id: null };
+    const ytMatch = url.match(/(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/i);
+    if (ytMatch) return { type: 'youtube', id: ytMatch[1] };
+    const ttMatch = url.match(/(?:tiktok\.com\/.*\/video\/|tiktok\.com\/v\/|vt\.tiktok\.com\/)([\w\d]+)/i);
+    if (ttMatch) return { type: 'tiktok', id: ttMatch[1] };
+    const igMatch = url.match(/instagram\.com\/(?:p|reel|tv)\/([A-Za-z0-9_-]+)/i);
+    if (igMatch) return { type: 'instagram', id: igMatch[1] };
+    const gdMatch = url.match(/drive\.google\.com\/(?:file\/d\/|open\?id=)([\w-]+)/i);
+    if (gdMatch) return { type: 'gdrive', id: gdMatch[1] };
+    return { type: 'unknown', id: null };
   }
 
   // Count posts per category
@@ -336,13 +343,23 @@ export default function AdiwiyataPage() {
             {/* Media */}
             <div className="bg-black flex-1 relative flex items-center justify-center min-h-[42vh] lg:min-h-0">
               {activePost?.media_type === 'video_link' ? (
-                <iframe
-                  className="w-full h-full min-h-[300px] lg:min-h-[560px]"
-                  src={`https://www.youtube.com/embed/${getYoutubeId(lightboxUrls[0])}`}
-                  title="YouTube video"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
+                <div className="w-full h-full min-h-[300px] lg:min-h-[560px] flex items-center justify-center">
+                  {(() => {
+                    const info = getPlatformInfo(lightboxUrls[0]);
+                    if (info.type === 'youtube') return <iframe className="w-full h-full border-0" src={`https://www.youtube.com/embed/${info.id}`} allowFullScreen />;
+                    if (info.type === 'tiktok') return <iframe className="w-[min(100%,400px)] h-full border-0" src={`https://www.tiktok.com/embed/v2/${info.id}`} allowFullScreen />;
+                    if (info.type === 'instagram') return <iframe className="w-[min(100%,400px)] h-full border-0 bg-white" src={`https://www.instagram.com/p/${info.id}/embed`} />;
+                    if (info.type === 'gdrive') return <iframe className="w-full h-full border-0" src={`https://drive.google.com/file/d/${info.id}/preview`} allowFullScreen />;
+                    return (
+                      <div className="text-white text-center p-6">
+                        <p className="mb-4 text-lg font-semibold">Tautan video eksternal</p>
+                        <a href={lightboxUrls[0]} target="_blank" rel="noopener noreferrer" className="inline-block px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 rounded-xl text-white font-bold transition-colors">
+                          Buka di Tab Baru
+                        </a>
+                      </div>
+                    );
+                  })()}
+                </div>
               ) : (
                 <img
                   src={lightboxUrls[lightboxIndex]}
@@ -708,30 +725,64 @@ export default function AdiwiyataPage() {
                         className="relative aspect-video cursor-pointer group overflow-hidden"
                         onClick={() => openLightbox([post.media_path!], 0, post)}
                       >
-                        {getYoutubeId(post.media_path) ? (
-                          <>
-                            <img
-                              src={`https://img.youtube.com/vi/${getYoutubeId(post.media_path)}/maxresdefault.jpg`}
-                              alt="Video"
-                              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                              onError={e => { (e.target as HTMLImageElement).src = `https://img.youtube.com/vi/${getYoutubeId(post.media_path!)}/hqdefault.jpg` }}
-                            />
-                            <div className="absolute inset-0 bg-black/30 group-hover:bg-black/50 transition-colors flex items-center justify-center">
-                              <div className="w-16 h-16 rounded-full bg-red-600 flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform">
-                                <svg className="w-7 h-7 text-white ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                        {(() => {
+                          const info = getPlatformInfo(post.media_path);
+                          if (info.type === 'youtube') {
+                            return (
+                              <>
+                                <img
+                                  src={`https://img.youtube.com/vi/${info.id}/maxresdefault.jpg`}
+                                  alt="Video"
+                                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                                  onError={e => { (e.target as HTMLImageElement).src = `https://img.youtube.com/vi/${info.id}/hqdefault.jpg` }}
+                                />
+                                <div className="absolute inset-0 bg-black/30 group-hover:bg-black/50 transition-colors flex items-center justify-center">
+                                  <div className="w-16 h-16 rounded-full bg-red-600 flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform">
+                                    <svg className="w-7 h-7 text-white ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                                  </div>
+                                </div>
+                              </>
+                            )
+                          } else if (info.type === 'tiktok') {
+                            return (
+                              <div className="w-full h-full bg-[#010101] flex items-center justify-center transition-transform duration-700 group-hover:scale-105">
+                                <div className="text-center text-white">
+                                  <svg className="w-12 h-12 mx-auto mb-3" viewBox="0 0 448 512" fill="currentColor"><path d="M448 209.91a210.06 210.06 0 0 1-122.77-39.25V349.38A162.55 162.55 0 1 1 185 188.31v89.89a74.62 74.62 0 1 0 52.23 71.18V0l88 0a121.18 121.18 0 0 0 1.86 22.17h0A122.18 122.18 0 0 0 381 102.39a121.43 121.43 0 0 0 67 20.14Z"/></svg>
+                                  <span className="font-bold tracking-wide">TikTok Video</span>
+                                </div>
                               </div>
-                            </div>
-                          </>
-                        ) : (
-                          <div className="w-full h-full bg-slate-900 flex items-center justify-center">
-                            <div className="text-center">
-                              <div className="w-16 h-16 rounded-full bg-sky-600 flex items-center justify-center mx-auto mb-3 shadow-lg">
-                                <svg className="w-7 h-7 text-white ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                            )
+                          } else if (info.type === 'instagram') {
+                            return (
+                              <div className="w-full h-full bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 flex items-center justify-center transition-transform duration-700 group-hover:scale-105">
+                                <div className="text-center text-white">
+                                  <svg className="w-12 h-12 mx-auto mb-3" viewBox="0 0 448 512" fill="currentColor"><path d="M224.1 141c-63.6 0-114.9 51.3-114.9 114.9s51.3 114.9 114.9 114.9S339 319.5 339 255.9 287.7 141 224.1 141zm0 189.6c-41.1 0-74.7-33.5-74.7-74.7s33.5-74.7 74.7-74.7 74.7 33.5 74.7 74.7-33.6 74.7-74.7 74.7zm146.4-194.3c0 14.9-12 26.8-26.8 26.8-14.9 0-26.8-12-26.8-26.8s12-26.8 26.8-26.8 26.8 12 26.8 26.8zm76.1 27.2c-1.7-35.9-9.9-67.7-36.2-93.9-26.2-26.2-58-34.4-93.9-36.2-37-2.1-147.9-2.1-184.9 0-35.8 1.7-67.6 9.9-93.9 36.1s-34.4 58-36.2 93.9c-2.1 37-2.1 147.9 0 184.9 1.7 35.9 9.9 67.7 36.2 93.9s58 34.4 93.9 36.2c37 2.1 147.9 2.1 184.9 0 35.9-1.7 67.7-9.9 93.9-36.2 26.2-26.2 34.4-58 36.2-93.9 2.1-37 2.1-147.8 0-184.8zM398.8 388c-7.8 19.6-22.9 34.7-42.6 42.6-29.5 11.7-99.5 9-132.1 9s-102.7 2.6-132.1-9c-19.6-7.8-34.7-22.9-42.6-42.6-11.7-29.5-9-99.5-9-132.1s-2.6-102.7 9-132.1c7.8-19.6 22.9-34.7 42.6-42.6 29.5-11.7 99.5-9 132.1-9s102.7-2.6 132.1 9c19.6 7.8 34.7 22.9 42.6 42.6 11.7 29.5 9 99.5 9 132.1s2.7 102.7-9 132.1z"/></svg>
+                                  <span className="font-bold tracking-wide">Instagram</span>
+                                </div>
                               </div>
-                              <p className="text-white text-sm font-bold">Putar Video</p>
-                            </div>
-                          </div>
-                        )}
+                            )
+                          } else if (info.type === 'gdrive') {
+                            return (
+                              <div className="w-full h-full bg-slate-100 flex items-center justify-center transition-transform duration-700 group-hover:scale-105">
+                                <div className="text-center text-[#1A73E8]">
+                                  <svg className="w-12 h-12 mx-auto mb-3" viewBox="0 0 512 512" fill="currentColor"><path d="M339 314.9L175.4 32h161.2l163.6 282.9H339zm-137.5 23.6L120.9 480h310.5L512 338.5H201.5zM154.1 67.4L0 338.5 82.6 480 236.7 208.8 154.1 67.4z"/></svg>
+                                  <span className="font-bold tracking-wide">Google Drive</span>
+                                </div>
+                              </div>
+                            )
+                          } else {
+                            return (
+                              <div className="w-full h-full bg-slate-900 flex items-center justify-center transition-transform duration-700 group-hover:scale-105">
+                                <div className="text-center">
+                                  <div className="w-16 h-16 rounded-full bg-sky-600 flex items-center justify-center mx-auto mb-3 shadow-lg">
+                                    <svg className="w-7 h-7 text-white ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                                  </div>
+                                  <p className="text-white text-sm font-bold">Putar Video</p>
+                                </div>
+                              </div>
+                            )
+                          }
+                        })()}
                       </div>
                     )}
 

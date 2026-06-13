@@ -2646,6 +2646,10 @@ def sekolah_adiwiyata_add(category: str) -> Response:
         return redirect(url_for("portal.sekolah_adiwiyata"))
 
     description = request.form.get("description", "").strip()
+    if len(description) < 100:
+        flash("Deskripsi wajib diisi dan minimal 100 karakter.", "warning")
+        return redirect(url_for("portal.sekolah_adiwiyata_feed", category=category))
+
     post_type = request.form.get("post_type", "image")  # "image" or "video_link"
 
     if post_type == "video_link":
@@ -2752,6 +2756,10 @@ def sekolah_adiwiyata_edit(post_id: int) -> Response:
         return redirect(url_for("portal.sekolah_adiwiyata"))
         
     description = request.form.get("description", "").strip()
+    if len(description) < 100:
+        flash("Deskripsi wajib diisi dan minimal 100 karakter.", "warning")
+        return redirect(url_for("portal.sekolah_adiwiyata_feed", category=post["category"]))
+        
     update_adiwiyata_post(post_id, description)
     
     flash("Postingan berhasil diperbarui.", "success")

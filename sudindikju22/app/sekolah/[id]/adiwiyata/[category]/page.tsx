@@ -345,22 +345,7 @@ export default function PublicSchoolAdiwiyataPage({ params }: { params: Promise<
                       </>
                     )}
                     
-                    {post.media_type === 'video_link' && post.media_path && (
-                      <>
-                        {getYoutubeId(post.media_path) ? (
-                          <img src={`https://img.youtube.com/vi/${getYoutubeId(post.media_path)}/hqdefault.jpg`} alt="Video Thumbnail" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" />
-                        ) : (
-                          <div className="w-full h-full bg-[#1a1a2e] flex items-center justify-center">
-                            <div className="text-white">Video</div>
-                          </div>
-                        )}
-                        <div className="absolute inset-0 bg-black/30 flex items-center justify-center transition-colors group-hover:bg-black/40">
-                          <div className="w-11 h-11 rounded-full bg-white/90 flex items-center justify-center text-green-600 text-xl pl-1">
-                            ▶
-                          </div>
-                        </div>
-                      </>
-                    )}
+
                     
                     <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2.5 pt-6 translate-y-full transition-transform duration-250 ease-out group-hover:translate-y-0">
                       {post.description && (
