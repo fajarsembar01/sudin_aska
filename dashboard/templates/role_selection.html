@@ -98,6 +98,23 @@
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
         }
 
+        .selection-card.disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .selection-card.disabled:hover {
+            border-color: var(--border-soft) !important;
+            background-color: var(--bg-surface) !important;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        .selection-card.disabled .icon-wrapper {
+            background: rgba(120, 120, 120, 0.1) !important;
+            color: var(--text-muted) !important;
+        }
+
         .selection-card .icon-wrapper {
             width: 64px;
             height: 64px;
@@ -284,6 +301,25 @@
                 <div class="row g-3 role-selection-row{% if enable_odd_center %} odd-center-enabled{% endif %}">
                     {% for card in cards %}
                     <div class="{{ card.col_class or default_col_class }}{% if enable_odd_center and is_odd_count and loop.last %} odd-card-center{% endif %}">
+                        {% if card.disabled %}
+                        <div class="selection-card disabled" style="position: relative;">
+                            {% if card.badge_text %}
+                            <span class="badge position-absolute" style="top: -12px; left: -2px; padding: 6px 12px; border-radius: 12px 12px 12px 0; font-size: 0.75rem; font-weight: 600; background-color: #e4e4e4; color: #8a8a8a;">{{ card.badge_text }}</span>
+                            {% endif %}
+                            <div class="icon-wrapper{% if card.icon_secondary %} icon-combo{% endif %}" style="background-color: #d8d8d8; color: #a1a1a1;">
+                                {% if card.icon_secondary %}
+                                <i class="bi {{ card.icon }} icon-primary"></i>
+                                <i class="bi {{ card.icon_secondary }} icon-secondary"></i>
+                                {% else %}
+                                <i class="bi {{ card.icon }}"></i>
+                                {% endif %}
+                            </div>
+                            <div class="selection-copy">
+                                <h3>{{ card.title }}</h3>
+                                <p>{{ card.description }}</p>
+                            </div>
+                        </div>
+                        {% else %}
                         <a href="{{ card.href }}" class="selection-card{% if card.badge_type == 'primary' %} border-primary{% endif %}" data-nav-href="{{ card.href }}" style="position: relative;">
                             {% if card.badge_text %}
                             <span class="badge position-absolute" style="top: -12px; left: -2px; padding: 6px 12px; border-radius: 12px 12px 12px 0; font-size: 0.75rem; font-weight: 600; {% if card.badge_type == 'primary' %}background-color: #0084ff; color: white;{% else %}background-color: #e4e4e4; color: #8a8a8a;{% endif %}">{{ card.badge_text }}</span>
@@ -301,6 +337,7 @@
                                 <p>{{ card.description }}</p>
                             </div>
                         </a>
+                        {% endif %}
                     </div>
                     {% endfor %}
                 </div>
