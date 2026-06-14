@@ -78,6 +78,10 @@ ASKA_CC_HTTP_PORT=3100
 # ASKA_CC_WHATSAPP_SESSION_PATH=.wa_cc_session
 # ASKA_CC_WHATSAPP_CLIENT_ID=cc-main
 # ASKA_CC_WHATSAPP_STATUS_PATH=runtime/whatsapp_cc_status.json
+
+# (Opsional darurat) — jangan diisi kecuali QR bermasalah karena perubahan WhatsApp Web
+# ASKA_CC_WHATSAPP_WEB_VERSION=2.3000.xxxxx
+# ASKA_CC_WHATSAPP_WEB_CACHE_TYPE=local
 ```
 
 > ⚠️ **Jangan gunakan port 5002** untuk `ASKA_CC_WHATSAPP_INTERNAL_URL` di produksi. Port 5002 adalah Flask development server. Di produksi, dashboard berjalan di Gunicorn pada port **8000**.
@@ -252,6 +256,28 @@ echo "ASKA_CC_WHATSAPP_INTERNAL_URL=http://127.0.0.1:8000/api/callcenter/inbound
 # atau kill manual lalu restart:
 fuser -k 3100/tcp && pkill -f "\.wa_cc_session" && sleep 2 && npm run wa:cc
 ```
+
+---
+
+### ❌ Saat scan QR muncul "Saat ini tidak bisa menautkan perangkat baru"
+
+Penyebab umum:
+- Session/QR dibuat dari WhatsApp Web cache lama.
+- Akun WhatsApp sudah mencapai batas linked device.
+- WhatsApp sedang membatasi penautan sementara untuk akun tersebut.
+
+Langkah perbaikan:
+
+```bash
+# Pastikan proses bridge lama berhenti dan lock Chromium bersih
+fuser -k 3100/tcp
+pkill -f whatsapp_bridge_cc
+pkill -f "\.wa_cc_session"
+rm -f /opt/sudin_aska/runtime/whatsapp_cc.pid
+rm -f /opt/sudin_aska/.wa_cc_session/session-cc-main/SingletonLock
+```
+
+Lalu buka dashboard dan klik **Generate QR** lagi. Jika masih gagal, buka WhatsApp di HP -> **Perangkat tertaut**, hapus perangkat lama yang tidak dipakai, lalu scan QR baru.
 
 ---
 
