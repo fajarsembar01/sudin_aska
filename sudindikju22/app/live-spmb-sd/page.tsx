@@ -90,6 +90,15 @@ interface Statistik {
   [key: string]: unknown
 }
 
+interface OfficialSPMBResponse {
+  sekolah?: Sekolah[]
+  statistik?: {
+    data?: Record<string, Statistik>
+    [key: string]: unknown
+  } | Record<string, Statistik>
+  error?: string
+}
+
 interface KecamatanStats {
   [key: string]: {
     total_sekolah: number
@@ -133,8 +142,9 @@ const KECAMATAN_NPSN_MAP: { [key: string]: string[] } = {
 
 // Helper function to get kecamatan from NPSN
 const getKecamatanFromNpsn = (npsn: string): string | null => {
+  const normalizedNpsn = String(npsn)
   for (const [kecamatan, npsns] of Object.entries(KECAMATAN_NPSN_MAP)) {
-    if (npsns.includes(npsn)) {
+    if (npsns.includes(normalizedNpsn)) {
       return kecamatan
     }
   }
@@ -157,22 +167,23 @@ export default function LiveSPMBSD() {
       setLoading(true)
       setError(null)
 
-      // Fetch data sekolah
-      const sekolahRes = await fetch(
-        'https://arsip.spmb.id/2025/jakarta/sekolah/1-sd-zonasi.json'
-      )
-      if (!sekolahRes.ok) throw new Error('Gagal fetch data sekolah')
-      const sekolahData: Sekolah[] = await sekolahRes.json()
+      const response = await fetch('/api/live-spmb-sd', { cache: 'no-store' })
+      const officialData: OfficialSPMBResponse = await response.json()
 
-      // Fetch data statistik
-      const statistikRes = await fetch(
-        'https://arsip.spmb.id/2025/jakarta/statistik/1-sd-zonasi.json'
-      )
-      if (!statistikRes.ok) throw new Error('Gagal fetch data statistik')
-      const statistikResponse: { data?: Record<string, Statistik> } = await statistikRes.json()
+      if (!response.ok || officialData.error) {
+        throw new Error(officialData.error || 'Gagal fetch data SPMB Jakarta')
+      }
+
+      const sekolahData = Array.isArray(officialData.sekolah) ? officialData.sekolah : []
+      const statistikResponse = officialData.statistik || {}
       
       // Create statistik map for quick lookup
-      const statistikMap = new Map(Object.entries(statistikResponse.data || {}))
+      const statistikEntries = Object.entries(
+        'data' in statistikResponse ? statistikResponse.data || {} : statistikResponse
+      ) as Array<[string, Statistik]>
+      const statistikMap = new Map<string, Statistik>(
+        statistikEntries
+      )
 
       // Helper function to extract usia termuda from rekap array
       // Rekap format: [[" 6 th 9 bl 12 hr", "10 th 1 bl 30 hr", ...]] (nested array)
@@ -210,11 +221,18 @@ export default function LiveSPMBSD() {
             if (typeof firstAge === 'string') {
               return parseStr(firstAge)
             }
+            if (typeof firstAge === 'number') {
+              return { totalHari: firstAge, usiaTahun: 0, teks: String(firstAge) }
+            }
           }
           
           // If rekap[0] is a string directly
           if (typeof ageArray === 'string') {
             return parseStr(ageArray)
+          }
+
+          if (typeof ageArray === 'number') {
+            return { totalHari: ageArray, usiaTahun: 0, teks: String(ageArray) }
           }
         }
         
@@ -225,9 +243,9 @@ export default function LiveSPMBSD() {
       const kecamatanMap: { [key: string]: Array<Sekolah & { totalHari: number, usiaTahun: number, teks: string }> } = {}
       
       sekolahData.forEach(sekolah => {
-        const kecamatan = getKecamatanFromNpsn(sekolah.npsn)
+        const kecamatan = getKecamatanFromNpsn(String(sekolah.npsn))
         if (kecamatan) {
-          const stat = statistikMap.get(sekolah.sekolah_id)
+          const stat = statistikMap.get(String(sekolah.sekolah_id))
           const usiaData = stat ? extractUsiaTermuda(stat.rekap) : { totalHari: 0, usiaTahun: 0, teks: 'N/A' }
           
           if (!kecamatanMap[kecamatan]) {
@@ -254,7 +272,7 @@ export default function LiveSPMBSD() {
           sekolah: kecamatanSekolah
             .map(s => ({
               nama: (s.nama || 'N/A').replace(/^SDN\s+/i, ''),
-              npsn: s.npsn || 'N/A',
+              npsn: String(s.npsn || 'N/A'),
               usia_termuda: s.usiaTahun,
               usia_termuda_teks: s.teks,
               _sortHari: s.totalHari

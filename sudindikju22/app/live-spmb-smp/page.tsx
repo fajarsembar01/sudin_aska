@@ -87,6 +87,21 @@ interface Statistik {
   [key: string]: unknown
 }
 
+interface StatistikResponse {
+  data?: Record<string, Statistik>
+  [key: string]: unknown
+}
+
+interface OfficialSPMBSmpResponse {
+  smpSekolah?: Sekolah[]
+  smpAkademik?: StatistikResponse
+  smpNonAkademik?: StatistikResponse
+  smaSekolah?: Sekolah[]
+  smaAkademik?: StatistikResponse
+  smaMpmAkademik?: StatistikResponse
+  error?: string
+}
+
 interface SekolahNilai {
   nama: string
   npsn: string
@@ -103,8 +118,6 @@ interface KecamatanStats {
     sma: SekolahNilai[]
   }
 }
-
-const SPMB_BASE_URL = 'https://arsip.spmb.id/2025/jakarta'
 
 const KECAMATAN_NPSN_MAP: { [key: string]: string[] } = {
   Cilincing: [
@@ -125,15 +138,17 @@ const SMA_KECAMATAN_NPSN_MAP: { [key: string]: string[] } = {
 }
 
 const getKecamatanFromNpsn = (npsn: string): string | null => {
+  const normalizedNpsn = String(npsn)
   for (const [kecamatan, npsns] of Object.entries(KECAMATAN_NPSN_MAP)) {
-    if (npsns.includes(npsn)) return kecamatan
+    if (npsns.includes(normalizedNpsn)) return kecamatan
   }
   return null
 }
 
 const getSmaKecamatanFromNpsn = (npsn: string): string | null => {
+  const normalizedNpsn = String(npsn)
   for (const [kecamatan, npsns] of Object.entries(SMA_KECAMATAN_NPSN_MAP)) {
-    if (npsns.includes(npsn)) return kecamatan
+    if (npsns.includes(normalizedNpsn)) return kecamatan
   }
   return null
 }
@@ -169,7 +184,7 @@ export default function LiveSPMBSMP() {
   const [kecamatanStats, setKecamatanStats] = useState<KecamatanStats>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [lastUpdate, setLastUpdate] = useState<Date>(new Date())
+  const [, setLastUpdate] = useState<Date>(new Date())
   const [isLoaded] = useState(true)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [countdown, setCountdown] = useState(60)
@@ -195,48 +210,35 @@ export default function LiveSPMBSMP() {
       setLoading(true)
       setError(null)
 
-      const [sekolahRes, prestasiRes, nonPrestasiRes, smaSekolahRes, smaPrestasiRes, smaNonPrestasiRes] = await Promise.all([
-        fetch(`${SPMB_BASE_URL}/sekolah/1-smp-prestasi.json`),
-        fetch(`${SPMB_BASE_URL}/statistik/1-smp-prestasi.json`),
-        fetch(`${SPMB_BASE_URL}/statistik/1-smp-prestasinonakademik.json`),
-        fetch(`${SPMB_BASE_URL}/sekolah/1-sma-prestasi.json`),
-        fetch(`${SPMB_BASE_URL}/statistik/1-sma-prestasi.json`),
-        fetch(`${SPMB_BASE_URL}/statistik/1-sma-prestasinonakademik.json`)
-      ])
+      const response = await fetch('/api/live-spmb-smp', { cache: 'no-store' })
+      const officialData: OfficialSPMBSmpResponse = await response.json()
 
-      if (!sekolahRes.ok) throw new Error('Gagal fetch data sekolah SMP')
-      if (!prestasiRes.ok) throw new Error('Gagal fetch data prestasi akademik')
-      if (!nonPrestasiRes.ok) throw new Error('Gagal fetch data prestasi non akademik')
-      if (!smaSekolahRes.ok) throw new Error('Gagal fetch data sekolah SMA')
-      if (!smaPrestasiRes.ok) throw new Error('Gagal fetch data prestasi akademik SMA')
-      if (!smaNonPrestasiRes.ok) throw new Error('Gagal fetch data prestasi non akademik SMA')
+      if (!response.ok || officialData.error) {
+        throw new Error(officialData.error || 'Gagal fetch data SPMB Jakarta SMP/SMA')
+      }
 
-      const sekolahData: Sekolah[] = await sekolahRes.json()
-      const prestasiResponse = await prestasiRes.json()
-      const nonPrestasiResponse = await nonPrestasiRes.json()
-      const smaSekolahData: Sekolah[] = await smaSekolahRes.json()
-      const smaPrestasiResponse = await smaPrestasiRes.json()
-      const smaNonPrestasiResponse = await smaNonPrestasiRes.json()
-
-      const prestasiMap = new Map<string, Statistik>(Object.entries(prestasiResponse.data || {}))
-      const nonPrestasiMap = new Map<string, Statistik>(Object.entries(nonPrestasiResponse.data || {}))
-      const smaPrestasiMap = new Map<string, Statistik>(Object.entries(smaPrestasiResponse.data || {}))
-      const smaNonPrestasiMap = new Map<string, Statistik>(Object.entries(smaNonPrestasiResponse.data || {}))
+      const sekolahData = Array.isArray(officialData.smpSekolah) ? officialData.smpSekolah : []
+      const smaSekolahData = Array.isArray(officialData.smaSekolah) ? officialData.smaSekolah : []
+      const prestasiMap = new Map<string, Statistik>(Object.entries(officialData.smpAkademik?.data || {}))
+      const nonPrestasiMap = new Map<string, Statistik>(Object.entries(officialData.smpNonAkademik?.data || {}))
+      const smaPrestasiMap = new Map<string, Statistik>(Object.entries(officialData.smaAkademik?.data || {}))
+      const smaNonPrestasiMap = new Map<string, Statistik>(Object.entries(officialData.smaMpmAkademik?.data || {}))
       const kecamatanMap: { [key: string]: { smp: SekolahNilai[]; sma: SekolahNilai[] } } = {}
 
       sekolahData.forEach(sekolah => {
-        const kecamatan = getKecamatanFromNpsn(sekolah.npsn)
+        const kecamatan = getKecamatanFromNpsn(String(sekolah.npsn))
         if (!kecamatan) return
 
-        const prestasi = getLowestScore(prestasiMap.get(sekolah.sekolah_id))
-        const nonPrestasi = getLowestScore(nonPrestasiMap.get(sekolah.sekolah_id))
+        const sekolahId = String(sekolah.sekolah_id)
+        const prestasi = getLowestScore(prestasiMap.get(sekolahId))
+        const nonPrestasi = getLowestScore(nonPrestasiMap.get(sekolahId))
         const terbaikValues = [prestasi.value, nonPrestasi.value].filter((value): value is number => value !== null)
 
         if (!kecamatanMap[kecamatan]) kecamatanMap[kecamatan] = { smp: [], sma: [] }
 
         kecamatanMap[kecamatan].smp.push({
           nama: formatSchoolName(sekolah.nama),
-          npsn: sekolah.npsn || 'N/A',
+          npsn: String(sekolah.npsn || 'N/A'),
           prestasi: prestasi.label,
           prestasiValue: prestasi.value,
           nonPrestasi: nonPrestasi.label,
@@ -246,18 +248,19 @@ export default function LiveSPMBSMP() {
       })
 
       smaSekolahData.forEach(sekolah => {
-        const kecamatan = getSmaKecamatanFromNpsn(sekolah.npsn)
+        const kecamatan = getSmaKecamatanFromNpsn(String(sekolah.npsn))
         if (!kecamatan) return
 
-        const prestasi = getLowestScore(smaPrestasiMap.get(sekolah.sekolah_id))
-        const nonPrestasi = getLowestScore(smaNonPrestasiMap.get(sekolah.sekolah_id))
+        const sekolahId = String(sekolah.sekolah_id)
+        const prestasi = getLowestScore(smaPrestasiMap.get(sekolahId))
+        const nonPrestasi = getLowestScore(smaNonPrestasiMap.get(sekolahId))
         const terbaikValues = [prestasi.value, nonPrestasi.value].filter((value): value is number => value !== null)
 
         if (!kecamatanMap[kecamatan]) kecamatanMap[kecamatan] = { smp: [], sma: [] }
 
         kecamatanMap[kecamatan].sma.push({
           nama: formatSchoolName(sekolah.nama),
-          npsn: sekolah.npsn || 'N/A',
+          npsn: String(sekolah.npsn || 'N/A'),
           prestasi: prestasi.label,
           prestasiValue: prestasi.value,
           nonPrestasi: nonPrestasi.label,
@@ -406,7 +409,7 @@ export default function LiveSPMBSMP() {
               </h1>
               <p className="text-xs sm:text-sm text-slate-500 leading-tight whitespace-nowrap">
                 <span className="block">Nilai terendah</span>
-                <span className="block">akademik &amp; non akademik</span>
+                <span className="block">akademik, non akademik &amp; MPM</span>
               </p>
             </div>
 
@@ -547,7 +550,7 @@ export default function LiveSPMBSMP() {
                                   </div>
                                   <div className="rounded-md bg-white/75 border border-sky-100 px-1.5 py-0.5 min-w-[74px] flex items-center justify-center gap-1">
                                     <span className="text-[15px] font-extrabold text-sky-700 leading-none">{sekolah.nonPrestasi}</span>
-                                    <span className="text-[7px] font-semibold text-slate-500 uppercase leading-[0.55rem]">NON<br />AKAD</span>
+                                    <span className="text-[7px] font-semibold text-slate-500 uppercase leading-[0.55rem]">MPM<br />AKAD</span>
                                   </div>
                                 </div>
                               </div>

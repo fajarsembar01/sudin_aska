@@ -1,16 +1,15 @@
 // File: src/app/page.tsx
 'use client'
 
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useRef } from 'react'
 
 const dashboardUrl = process.env.NEXT_PUBLIC_DASHBOARD_URL || 'https://admin.sudindikju2.com'
 
 export default function Page() {
-  const [isLoaded, setIsLoaded] = useState(true)
+  const isLoaded = true
   const askaButtonRef = useRef<HTMLAnchorElement>(null)
 
   useEffect(() => {
-    setIsLoaded(true)
     const timer = setTimeout(() => {
       askaButtonRef.current?.focus()
     }, 800)
@@ -53,15 +52,17 @@ export default function Page() {
 
         {/* Desktop nav buttons */}
         <div className="hidden sm:flex items-center gap-3">
-          <span
-            className="relative inline-flex items-center gap-2 px-4 py-2 overflow-hidden rounded-full bg-slate-100 text-slate-400 font-bold text-xs shadow-sm ring-1 ring-slate-200 cursor-not-allowed select-none opacity-60"
-            title="Sementara tidak tersedia"
+          <a
+            href="/live-spmb"
+            className="relative inline-flex items-center gap-2 group/btn px-4 py-2 overflow-hidden rounded-full bg-white text-emerald-600 font-bold text-xs shadow-sm hover:shadow-md hover:scale-105 active:scale-95 transition-all duration-300 ring-1 ring-emerald-500/30"
           >
+            <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-emerald-100/70 to-transparent -translate-x-full group-hover/btn:animate-[shine_1.5s_infinite]" />
             <span className="relative flex h-2 w-2">
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-slate-400"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
             </span>
             <span className="relative">Live SPMB</span>
-          </span>
+          </a>
 
           <a
             href="/adiwiyata"
@@ -158,16 +159,17 @@ export default function Page() {
                   <span className="relative">Adiwiyata</span>
                 </a>
 
-                {/* SPMB SD Button - Disabled */}
-                <span
-                  className="relative flex-1 inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl bg-slate-200 text-slate-400 font-bold text-xs sm:text-sm cursor-not-allowed select-none opacity-60 ring-1 ring-slate-300"
-                  title="Sementara tidak tersedia"
+                {/* SPMB Button */}
+                <a
+                  href="/live-spmb"
+                  className="relative flex-1 inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 sm:py-3 overflow-hidden rounded-xl bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold text-xs sm:text-sm shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 hover:scale-105 active:scale-95 transition-all duration-300 group/spmb ring-1 ring-white/20"
                 >
-                  <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/spmb:animate-[shine_1.5s_infinite]" />
+                  <svg className="relative w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
-                  <span className="hidden xs:inline">Live </span><span>SPMB SD</span>
-                </span>
+                  <span className="relative">Live SPMB</span>
+                </a>
               </div>
             </div>
 
