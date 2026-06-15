@@ -54,7 +54,6 @@ const indikatorOptions: Array<{
 ]
 
 export default function EvaluasiSPMB() {
-  const [pelayananOptions, setPelayananOptions] = useState(defaultPelayananOptions)
   const [pelayanan, setPelayanan] = useState(defaultPelayananOptions[0])
   const [nomorMeja, setNomorMeja] = useState(mejaOptions[0])
   const [indikator, setIndikator] = useState<Indikator>('baik')
@@ -87,14 +86,9 @@ export default function EvaluasiSPMB() {
               .filter(Boolean)
           : []
         if (nextOptions.length === 0) return
-        setPelayananOptions(nextOptions)
         setPelayanan(current => nextOptions.includes(current) ? current : nextOptions[0])
       })
-      .catch(() => {
-        if (!cancelled) {
-          setPelayananOptions(defaultPelayananOptions)
-        }
-      })
+      .catch(() => undefined)
 
     return () => {
       cancelled = true
@@ -171,35 +165,32 @@ export default function EvaluasiSPMB() {
 
         <div className="grid min-h-0 flex-1 gap-3 lg:grid-cols-[0.95fr_1.35fr]">
           <form onSubmit={handleSubmit} className="flex min-h-0 flex-col rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="mb-3 flex items-center gap-2">
-              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-900 text-white">
-                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6M7 4h10a2 2 0 012 2v14l-3-2-3 2-3-2-3 2V6a2 2 0 012-2z" />
-                </svg>
-              </span>
-              <div>
-                <h2 className="text-base font-extrabold">Input Evaluasi</h2>
-                <p className="text-xs font-semibold text-slate-500">Isi data pelayanan dan indikator.</p>
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-2">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-900 text-white">
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6M7 4h10a2 2 0 012 2v14l-3-2-3 2-3-2-3 2V6a2 2 0 012-2z" />
+                  </svg>
+                </span>
+                <div className="min-w-0">
+                  <h2 className="truncate text-base font-extrabold">Input Evaluasi</h2>
+                  <p className="truncate text-xs font-semibold text-slate-500">Isi data pelayanan dan indikator.</p>
+                </div>
               </div>
+              <button
+                type="submit"
+                className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 text-sm font-extrabold text-white shadow-sm transition hover:bg-slate-800"
+              >
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                </svg>
+                Simpan
+              </button>
             </div>
 
             <div className="grid gap-3">
-              <div>
-                <label htmlFor="pelayanan" className="mb-1 block text-xs font-bold uppercase text-slate-500">Pelayanan</label>
-                <select
-                  id="pelayanan"
-                  value={pelayanan}
-                  onChange={event => setPelayanan(event.target.value)}
-                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm font-semibold outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
-                >
-                  {pelayananOptions.map(option => (
-                    <option key={option} value={option}>{option}</option>
-                  ))}
-                </select>
-              </div>
-
               <fieldset>
-                <legend className="mb-1 text-xs font-bold uppercase text-slate-500">Nomor Meja</legend>
+                <legend className="mb-1 text-xs font-bold uppercase text-slate-500">Operator</legend>
                 <div className="grid grid-cols-4 gap-2">
                   {mejaOptions.map(option => {
                     const selected = nomorMeja === option
