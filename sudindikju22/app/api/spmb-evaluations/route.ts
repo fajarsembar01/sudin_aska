@@ -8,6 +8,22 @@ const dashboardBaseUrl = () => (
   'http://localhost:5002'
 ).trim().replace(/\/$/, '')
 
+const readDashboardJson = async (response: Response) => {
+  const text = await response.text()
+  if (!text) return {}
+
+  try {
+    return JSON.parse(text)
+  } catch {
+    return {
+      success: false,
+      data: [],
+      message: 'Dashboard API mengembalikan HTML, bukan JSON. Cek DASHBOARD_BASE_URL dan restart dashboard.',
+      upstreamStatus: response.status
+    }
+  }
+}
+
 export async function GET() {
   try {
     const response = await fetch(`${dashboardBaseUrl()}/api/spmb-evaluations?limit=100`, {
@@ -17,7 +33,7 @@ export async function GET() {
       }
     })
 
-    const payload = await response.json().catch(() => ({}))
+    const payload = await readDashboardJson(response)
     return NextResponse.json(payload, { status: response.ok ? 200 : response.status })
   } catch (error) {
     console.error('Gagal mengambil riwayat evaluasi SPMB:', error)
@@ -39,7 +55,7 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify(payload)
     })
 
-    const responsePayload = await response.json().catch(() => ({}))
+    const responsePayload = await readDashboardJson(response)
     return NextResponse.json(responsePayload, { status: response.ok ? 200 : response.status })
   } catch (error) {
     console.error('Gagal menyimpan evaluasi SPMB:', error)

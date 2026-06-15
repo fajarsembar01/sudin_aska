@@ -25,6 +25,17 @@ const defaultPelayananOptions = [
 
 const mejaOptions = Array.from({ length: 12 }, (_, index) => String(index + 1))
 
+const readJsonResponse = async (response: Response) => {
+  const text = await response.text()
+  if (!text) return {}
+
+  try {
+    return JSON.parse(text)
+  } catch {
+    throw new Error('API evaluasi belum mengembalikan JSON. Cek DASHBOARD_BASE_URL dan pastikan dashboard sudah direstart.')
+  }
+}
+
 const indikatorOptions: Array<{
   value: Indikator
   label: string
@@ -65,11 +76,14 @@ export default function EvaluasiSPMB() {
     setIsHistoryLoading(true)
     try {
       const response = await fetch('/api/spmb-evaluations', { cache: 'no-store' })
-      const payload = await response.json()
+      const payload = await readJsonResponse(response)
       const rows = Array.isArray(payload?.data) ? payload.data : []
+      if (!response.ok) {
+        throw new Error(payload?.error || payload?.message || 'Gagal memuat riwayat evaluasi.')
+      }
       setEntries(rows)
-    } catch {
-      setSavedMessage('Gagal memuat riwayat evaluasi.')
+    } catch (error) {
+      setSavedMessage(error instanceof Error ? error.message : 'Gagal memuat riwayat evaluasi.')
     } finally {
       setIsHistoryLoading(false)
     }
@@ -79,7 +93,7 @@ export default function EvaluasiSPMB() {
     let cancelled = false
 
     fetch('/api/spmb-service-types', { cache: 'no-store' })
-      .then(response => response.ok ? response.json() : null)
+      .then(response => response.ok ? readJsonResponse(response) : null)
       .then(payload => {
         if (cancelled) return
         const nextOptions = Array.isArray(payload?.data)
@@ -120,7 +134,7 @@ export default function EvaluasiSPMB() {
           catatan: catatan.trim()
         })
       })
-      const payload = await response.json()
+      const payload = await readJsonResponse(response)
       if (!response.ok || !payload?.success) {
         throw new Error(payload?.message || 'Gagal menyimpan evaluasi.')
       }

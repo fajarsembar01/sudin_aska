@@ -11,6 +11,12 @@ const fallbackServiceTypes = [
   'Lainnya'
 ]
 
+const readDashboardJson = async (response: Response) => {
+  const text = await response.text()
+  if (!text) return {}
+  return JSON.parse(text)
+}
+
 export async function GET() {
   const dashboardBaseUrl = (process.env.DASHBOARD_BASE_URL || process.env.NEXT_PUBLIC_DASHBOARD_BASE_URL || '').trim().replace(/\/$/, '')
 
@@ -37,7 +43,7 @@ export async function GET() {
       throw new Error(`Dashboard API returned ${response.status}`)
     }
 
-    const payload = await response.json()
+    const payload = await readDashboardJson(response)
     const rows = Array.isArray(payload?.data) ? payload.data : []
 
     return NextResponse.json({
