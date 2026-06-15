@@ -2387,6 +2387,80 @@ def save_spmb_table_assignments(
                 )
 
 
+def claim_spmb_table_assignment(
+    *,
+    assignment_date: Any,
+    table_number: int,
+    user_id: int,
+) -> Dict[str, Any]:
+    ensure_spmb_table_assignments_schema()
+    if table_number < 1 or table_number > 12:
+        return {"success": False, "message": "Nomor meja tidak valid."}
+
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            SELECT
+                a.officer_user_id,
+                u.full_name AS officer_name,
+                u.email AS officer_email
+            FROM spmb_table_assignments a
+            LEFT JOIN dashboard_users u ON u.id = a.officer_user_id
+            WHERE a.assignment_date = %s AND a.table_number = %s
+            FOR UPDATE OF a
+            """,
+            (assignment_date, table_number),
+        )
+        existing = cur.fetchone()
+        if existing and existing["officer_user_id"] and int(existing["officer_user_id"]) != int(user_id):
+            officer_label = existing["officer_name"] or existing["officer_email"] or "petugas lain"
+            return {
+                "success": False,
+                "message": f"Meja {table_number} sudah diklaim oleh {officer_label}.",
+            }
+
+        cur.execute(
+            """
+            DELETE FROM spmb_table_assignments
+            WHERE assignment_date = %s
+              AND officer_user_id = %s
+              AND table_number <> %s
+            """,
+            (assignment_date, user_id, table_number),
+        )
+        cur.execute(
+            """
+            INSERT INTO spmb_table_assignments
+                (assignment_date, table_number, officer_user_id, updated_by, updated_at)
+            VALUES (%s, %s, %s, %s, NOW())
+            ON CONFLICT (assignment_date, table_number) DO UPDATE
+            SET officer_user_id = EXCLUDED.officer_user_id,
+                updated_by = EXCLUDED.updated_by,
+                updated_at = NOW()
+            """,
+            (assignment_date, table_number, user_id, user_id),
+        )
+
+    return {"success": True, "message": f"Meja {table_number} berhasil diklaim."}
+
+
+def release_spmb_table_assignment(
+    *,
+    assignment_date: Any,
+    user_id: int,
+) -> int:
+    ensure_spmb_table_assignments_schema()
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            DELETE FROM spmb_table_assignments
+            WHERE assignment_date = %s AND officer_user_id = %s
+            """,
+            (assignment_date, user_id),
+        )
+        return cur.rowcount or 0
+
+
 def ensure_spmb_evaluations_schema() -> None:
     """Create public SPMB evaluation storage."""
     with get_cursor(commit=True) as cur:

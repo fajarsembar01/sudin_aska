@@ -79,6 +79,8 @@ from .queries import (
     list_spmb_table_officers,
     list_spmb_table_assignments,
     save_spmb_table_assignments,
+    claim_spmb_table_assignment,
+    release_spmb_table_assignment,
     create_spmb_evaluation,
     list_spmb_evaluations,
     record_admin_action,
@@ -836,6 +838,68 @@ def spmb_table_assignments() -> Response:
         selected_date=selected_date,
         assignments=assignments,
         officers=officers,
+    )
+
+
+@main_bp.route("/spmb-table-claim", methods=["GET", "POST"])
+@role_required("admin", "coordinator", "staff")
+def spmb_table_claim() -> Response:
+    user = current_user() or {}
+    selected_date = _parse_date_only(request.form.get("assignment_date") or request.args.get("date"))
+
+    if request.method == "POST":
+        action = (request.form.get("action") or "claim").strip()
+        try:
+            if action == "release":
+                deleted_count = release_spmb_table_assignment(
+                    assignment_date=selected_date,
+                    user_id=int(user.get("id")),
+                )
+                if deleted_count:
+                    flash("Klaim meja berhasil dilepas.", "success")
+                else:
+                    flash("Belum ada meja yang diklaim pada tanggal ini.", "info")
+            else:
+                table_number = int(request.form.get("table_number") or 0)
+                result = claim_spmb_table_assignment(
+                    assignment_date=selected_date,
+                    table_number=table_number,
+                    user_id=int(user.get("id")),
+                )
+                flash(result["message"], "success" if result.get("success") else "warning")
+
+            record_admin_action(
+                user_id=user.get("id"),
+                feature_key="aska_insight",
+                action="UPDATE",
+                target_type="SPMB_TABLE_CLAIM",
+                target_name=selected_date.isoformat(),
+                metadata={
+                    "assignment_date": selected_date.isoformat(),
+                    "action": action,
+                    "table_number": request.form.get("table_number"),
+                    "role": user.get("role"),
+                },
+            )
+        except Exception as exc:
+            current_app.logger.exception("Failed to process SPMB table claim")
+            flash(f"Gagal memproses klaim meja: {exc}", "danger")
+        return redirect(url_for("main.spmb_table_claim", date=selected_date.isoformat()))
+
+    assignments = list_spmb_table_assignments(selected_date)
+    my_assignment = next(
+        (
+            item
+            for item in assignments
+            if item.get("officer_user_id") and int(item["officer_user_id"]) == int(user.get("id"))
+        ),
+        None,
+    )
+    return render_template(
+        "spmb_table_claim.html",
+        selected_date=selected_date,
+        assignments=assignments,
+        my_assignment=my_assignment,
     )
 
 

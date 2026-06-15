@@ -962,6 +962,12 @@
                             <i class="bi bi-list-check nav-icon"></i>Penilaian Saya
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'main.spmb_table_claim' %}active{% endif %}"
+                            href="{{ url_for('main.spmb_table_claim') }}">
+                            <i class="bi bi-person-check nav-icon"></i>Penugasan
+                        </a>
+                    </li>
                     {% endif %}
 
                     {% if current_user and current_user.role == 'staff' %}
@@ -981,6 +987,12 @@
                             <span class="badge rounded-pill text-bg-danger ms-2{% if follow_up_badge <= 0 %} d-none{% endif %}">
                                 {{ follow_up_badge }}
                             </span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'main.spmb_table_claim' %}active{% endif %}"
+                            href="{{ url_for('main.spmb_table_claim') }}">
+                            <i class="bi bi-person-check nav-icon"></i>Penugasan
                         </a>
                     </li>
                     <li class="nav-item">

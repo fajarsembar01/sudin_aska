@@ -1796,6 +1796,13 @@ def home() -> Response:
                 "href": url_for("daftar_tamu.user_guestbook_history"),
                 "col_class": "col-md-6 col-12",
             },
+            {
+                "title": "Penugasan",
+                "description": "Klaim nomor operator evaluasi SPMB sesuai tanggal layanan.",
+                "icon": "bi-person-check",
+                "href": url_for("main.spmb_table_claim"),
+                "col_class": "col-md-6 col-12",
+            },
         ]
         return render_template(
             "role_selection.html",
@@ -1829,6 +1836,13 @@ def home() -> Response:
                 "description": "Pantau dashboard buku tamu pribadi untuk sekolah negeri.",
                 "icon": "bi-person-vcard",
                 "href": url_for("daftar_tamu.coordinator_dashboard"),
+                "col_class": "col-md-6 col-12",
+            },
+            {
+                "title": "Penugasan",
+                "description": "Klaim nomor operator evaluasi SPMB sesuai tanggal layanan.",
+                "icon": "bi-person-check",
+                "href": url_for("main.spmb_table_claim"),
                 "col_class": "col-md-6 col-12",
             },
         ]
