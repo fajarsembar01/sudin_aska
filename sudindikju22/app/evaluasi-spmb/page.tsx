@@ -1,20 +1,18 @@
 'use client'
 
 import Link from 'next/link'
-import { FormEvent, useEffect, useMemo, useState } from 'react'
+import { FormEvent, useEffect, useState } from 'react'
 
 type Indikator = 'baik' | 'sedang' | 'buruk'
 
 interface EvaluasiEntry {
-  id: string
+  id: string | number
   pelayanan: string
   nomorMeja: string
   indikator: Indikator
   catatan: string
   createdAt: string
 }
-
-const STORAGE_KEY = 'sudindikju22:evaluasi-spmb'
 
 const defaultPelayananOptions = [
   'Informasi SPMB',
@@ -58,20 +56,24 @@ export default function EvaluasiSPMB() {
   const [nomorMeja, setNomorMeja] = useState(mejaOptions[0])
   const [indikator, setIndikator] = useState<Indikator>('baik')
   const [catatan, setCatatan] = useState('')
-  const [entries, setEntries] = useState<EvaluasiEntry[]>(() => {
-    if (typeof window === 'undefined') return []
-
-    const rawEntries = window.localStorage.getItem(STORAGE_KEY)
-    if (!rawEntries) return []
-
-    try {
-      const parsedEntries = JSON.parse(rawEntries)
-      return Array.isArray(parsedEntries) ? parsedEntries : []
-    } catch {
-      return []
-    }
-  })
+  const [entries, setEntries] = useState<EvaluasiEntry[]>([])
   const [savedMessage, setSavedMessage] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
+  const [isHistoryLoading, setIsHistoryLoading] = useState(true)
+
+  const loadEntries = async () => {
+    setIsHistoryLoading(true)
+    try {
+      const response = await fetch('/api/spmb-evaluations', { cache: 'no-store' })
+      const payload = await response.json()
+      const rows = Array.isArray(payload?.data) ? payload.data : []
+      setEntries(rows)
+    } catch {
+      setSavedMessage('Gagal memuat riwayat evaluasi.')
+    } finally {
+      setIsHistoryLoading(false)
+    }
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -95,43 +97,44 @@ export default function EvaluasiSPMB() {
     }
   }, [])
 
-  const summary = useMemo(() => {
-    return entries.reduce(
-      (acc, entry) => {
-        acc[entry.indikator] += 1
-        return acc
-      },
-      { baik: 0, sedang: 0, buruk: 0 }
-    )
-  }, [entries])
+  useEffect(() => {
+    const timer = window.setTimeout(loadEntries, 0)
+    return () => window.clearTimeout(timer)
+  }, [])
 
-  const saveEntries = (nextEntries: EvaluasiEntry[]) => {
-    setEntries(nextEntries)
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextEntries))
-  }
-
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    if (isSaving) return
 
-    const nextEntry: EvaluasiEntry = {
-      id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
-      pelayanan,
-      nomorMeja,
-      indikator,
-      catatan: catatan.trim(),
-      createdAt: new Date().toISOString()
+    setIsSaving(true)
+    try {
+      const response = await fetch('/api/spmb-evaluations', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify({
+          pelayanan,
+          nomorMeja,
+          indikator,
+          catatan: catatan.trim()
+        })
+      })
+      const payload = await response.json()
+      if (!response.ok || !payload?.success) {
+        throw new Error(payload?.message || 'Gagal menyimpan evaluasi.')
+      }
+
+      const savedEntry = payload.item as EvaluasiEntry
+      setEntries(prev => [savedEntry, ...prev].slice(0, 100))
+      setCatatan('')
+      setSavedMessage('Evaluasi tersimpan di database.')
+    } catch (error) {
+      setSavedMessage(error instanceof Error ? error.message : 'Gagal menyimpan evaluasi.')
+    } finally {
+      setIsSaving(false)
+      window.setTimeout(() => setSavedMessage(''), 3000)
     }
-
-    saveEntries([nextEntry, ...entries].slice(0, 100))
-    setCatatan('')
-    setSavedMessage('Evaluasi tersimpan di perangkat ini.')
-    window.setTimeout(() => setSavedMessage(''), 3000)
-  }
-
-  const handleClear = () => {
-    saveEntries([])
-    setSavedMessage('Riwayat evaluasi di perangkat ini sudah dikosongkan.')
-    window.setTimeout(() => setSavedMessage(''), 3000)
   }
 
   return (
@@ -146,20 +149,6 @@ export default function EvaluasiSPMB() {
               Kembali
             </Link>
             <h1 className="truncate text-2xl font-extrabold tracking-normal sm:text-3xl">Evaluasi Pelayanan SPMB</h1>
-          </div>
-          <div className="grid grid-cols-3 gap-2 text-center">
-            <div className="rounded-lg border border-emerald-200 bg-white px-4 py-2">
-              <div className="text-xl font-extrabold text-emerald-700">{summary.baik}</div>
-              <div className="text-xs font-semibold text-slate-500">Baik</div>
-            </div>
-            <div className="rounded-lg border border-amber-200 bg-white px-4 py-2">
-              <div className="text-xl font-extrabold text-amber-700">{summary.sedang}</div>
-              <div className="text-xs font-semibold text-slate-500">Sedang</div>
-            </div>
-            <div className="rounded-lg border border-rose-200 bg-white px-4 py-2">
-              <div className="text-xl font-extrabold text-rose-700">{summary.buruk}</div>
-              <div className="text-xs font-semibold text-slate-500">Buruk</div>
-            </div>
           </div>
         </header>
 
@@ -179,12 +168,13 @@ export default function EvaluasiSPMB() {
               </div>
               <button
                 type="submit"
+                disabled={isSaving}
                 className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 text-sm font-extrabold text-white shadow-sm transition hover:bg-slate-800"
               >
                 <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                 </svg>
-                Simpan
+                {isSaving ? 'Menyimpan' : 'Simpan'}
               </button>
             </div>
 
@@ -250,12 +240,13 @@ export default function EvaluasiSPMB() {
             <div className="mt-auto pt-3">
               <button
                 type="submit"
-                className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 text-sm font-extrabold text-white shadow-sm transition hover:bg-slate-800"
+                disabled={isSaving}
+                className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 text-sm font-extrabold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                 </svg>
-                Simpan Evaluasi
+                {isSaving ? 'Menyimpan...' : 'Simpan Evaluasi'}
               </button>
               {savedMessage && (
                 <p className="mt-2 rounded-lg bg-sky-50 px-3 py-2 text-xs font-semibold text-sky-800">{savedMessage}</p>
@@ -266,21 +257,25 @@ export default function EvaluasiSPMB() {
           <section className="flex min-h-0 flex-col rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
             <div className="mb-3 flex items-center justify-between gap-3">
               <div>
-                <h2 className="text-base font-extrabold">Riwayat Perangkat</h2>
+                <h2 className="text-base font-extrabold">Riwayat Evaluasi</h2>
                 <p className="text-xs font-semibold text-slate-500">{entries.length} evaluasi tersimpan</p>
               </div>
               <button
                 type="button"
-                onClick={handleClear}
-                disabled={entries.length === 0}
+                onClick={loadEntries}
+                disabled={isHistoryLoading}
                 className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
               >
-                Kosongkan
+                {isHistoryLoading ? 'Memuat' : 'Muat ulang'}
               </button>
             </div>
 
             <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
-              {entries.length > 0 ? (
+              {isHistoryLoading ? (
+                <div className="flex h-full min-h-[180px] items-center justify-center rounded-lg border border-dashed border-slate-300 text-center">
+                  <p className="text-sm font-semibold text-slate-500">Memuat riwayat evaluasi...</p>
+                </div>
+              ) : entries.length > 0 ? (
                 entries.map(entry => (
                   <article key={entry.id} className="rounded-lg border border-slate-200 px-3 py-2">
                     <div className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-start">
