@@ -18,15 +18,18 @@ const readDashboardJson = async (response: Response) => {
     return {
       success: false,
       data: [],
-      message: 'Dashboard API mengembalikan HTML, bukan JSON. Cek DASHBOARD_BASE_URL dan restart dashboard.',
-      upstreamStatus: response.status
+      message: 'Dashboard API mengembalikan HTML, bukan JSON. Cek DASHBOARD_BASE_URL dan pastikan kode dashboard terbaru sudah terdeploy.',
+      upstreamStatus: response.status,
+      upstreamContentType: response.headers.get('content-type') || '',
+      upstreamPreview: text.slice(0, 180)
     }
   }
 }
 
 export async function GET() {
   try {
-    const response = await fetch(`${dashboardBaseUrl()}/api/spmb-evaluations?limit=100`, {
+    const upstreamUrl = `${dashboardBaseUrl()}/api/spmb-evaluations?limit=100`
+    const response = await fetch(upstreamUrl, {
       cache: 'no-store',
       headers: {
         accept: 'application/json'
@@ -34,6 +37,9 @@ export async function GET() {
     })
 
     const payload = await readDashboardJson(response)
+    if (payload && typeof payload === 'object') {
+      payload.upstreamUrl = upstreamUrl
+    }
     return NextResponse.json(payload, { status: response.ok ? 200 : response.status })
   } catch (error) {
     console.error('Gagal mengambil riwayat evaluasi SPMB:', error)
@@ -44,7 +50,8 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const payload = await request.json()
-    const response = await fetch(`${dashboardBaseUrl()}/api/spmb-evaluations`, {
+    const upstreamUrl = `${dashboardBaseUrl()}/api/spmb-evaluations`
+    const response = await fetch(upstreamUrl, {
       method: 'POST',
       cache: 'no-store',
       headers: {
@@ -56,6 +63,9 @@ export async function POST(request: NextRequest) {
     })
 
     const responsePayload = await readDashboardJson(response)
+    if (responsePayload && typeof responsePayload === 'object') {
+      responsePayload.upstreamUrl = upstreamUrl
+    }
     return NextResponse.json(responsePayload, { status: response.ok ? 200 : response.status })
   } catch (error) {
     console.error('Gagal menyimpan evaluasi SPMB:', error)
