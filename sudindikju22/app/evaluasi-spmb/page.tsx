@@ -39,26 +39,30 @@ const readJsonResponse = async (response: Response) => {
 const indikatorOptions: Array<{
   value: Indikator
   label: string
+  emoji: string
   description: string
   className: string
 }> = [
   {
     value: 'baik',
     label: 'Baik',
+    emoji: '😀',
     description: 'Pelayanan cepat, jelas, dan membantu.',
-    className: 'border-emerald-200 bg-emerald-50 text-emerald-800 peer-checked:border-emerald-500 peer-checked:bg-emerald-100 peer-checked:ring-2 peer-checked:ring-emerald-200'
+    className: 'border-emerald-300 bg-emerald-100 text-emerald-950 peer-checked:border-emerald-700 peer-checked:bg-emerald-600 peer-checked:text-white peer-checked:ring-4 peer-checked:ring-emerald-200'
   },
   {
     value: 'sedang',
     label: 'Sedang',
+    emoji: '😐',
     description: 'Pelayanan cukup, masih perlu diperbaiki.',
-    className: 'border-amber-200 bg-amber-50 text-amber-800 peer-checked:border-amber-500 peer-checked:bg-amber-100 peer-checked:ring-2 peer-checked:ring-amber-200'
+    className: 'border-amber-300 bg-amber-100 text-amber-950 peer-checked:border-amber-700 peer-checked:bg-amber-500 peer-checked:text-slate-950 peer-checked:ring-4 peer-checked:ring-amber-200'
   },
   {
     value: 'buruk',
     label: 'Buruk',
+    emoji: '😟',
     description: 'Pelayanan belum sesuai harapan.',
-    className: 'border-rose-200 bg-rose-50 text-rose-800 peer-checked:border-rose-500 peer-checked:bg-rose-100 peer-checked:ring-2 peer-checked:ring-rose-200'
+    className: 'border-rose-300 bg-rose-100 text-rose-950 peer-checked:border-rose-700 peer-checked:bg-rose-600 peer-checked:text-white peer-checked:ring-4 peer-checked:ring-rose-200'
   }
 ]
 
@@ -247,8 +251,9 @@ export default function EvaluasiSPMB() {
                         onChange={() => setIndikator(option.value)}
                         className="peer sr-only"
                       />
-                      <span className={`flex h-11 items-center justify-center rounded-lg border px-2 text-sm font-extrabold transition ${option.className}`}>
-                        {option.label}
+                      <span className={`flex h-11 items-center justify-center gap-2 rounded-lg border px-2 text-sm font-extrabold transition ${option.className}`}>
+                        <span className="text-lg leading-none" aria-hidden="true">{option.emoji}</span>
+                        <span>{option.label}</span>
                       </span>
                     </label>
                   ))}
