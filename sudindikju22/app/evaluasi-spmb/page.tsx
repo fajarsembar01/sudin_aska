@@ -69,6 +69,7 @@ export default function EvaluasiSPMB() {
   const [catatan, setCatatan] = useState('')
   const [entries, setEntries] = useState<EvaluasiEntry[]>([])
   const [savedMessage, setSavedMessage] = useState('')
+  const [messageTone, setMessageTone] = useState<'success' | 'error'>('success')
   const [isSaving, setIsSaving] = useState(false)
   const [isHistoryLoading, setIsHistoryLoading] = useState(true)
 
@@ -83,6 +84,7 @@ export default function EvaluasiSPMB() {
       }
       setEntries(rows)
     } catch (error) {
+      setMessageTone('error')
       setSavedMessage(error instanceof Error ? error.message : 'Gagal memuat riwayat evaluasi.')
     } finally {
       setIsHistoryLoading(false)
@@ -142,8 +144,10 @@ export default function EvaluasiSPMB() {
       const savedEntry = payload.item as EvaluasiEntry
       setEntries(prev => [savedEntry, ...prev].slice(0, 100))
       setCatatan('')
-      setSavedMessage('Evaluasi tersimpan di database.')
+      setMessageTone('success')
+      setSavedMessage('Berhasil disimpan.')
     } catch (error) {
+      setMessageTone('error')
       setSavedMessage(error instanceof Error ? error.message : 'Gagal menyimpan evaluasi.')
     } finally {
       setIsSaving(false)
@@ -191,6 +195,19 @@ export default function EvaluasiSPMB() {
                 {isSaving ? 'Menyimpan' : 'Simpan'}
               </button>
             </div>
+
+            {savedMessage && (
+              <div
+                className={`mb-3 rounded-lg border px-3 py-2 text-sm font-bold ${
+                  messageTone === 'success'
+                    ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+                    : 'border-rose-200 bg-rose-50 text-rose-800'
+                }`}
+                role="status"
+              >
+                {savedMessage}
+              </div>
+            )}
 
             <div className="grid gap-3">
               <fieldset>
@@ -262,9 +279,6 @@ export default function EvaluasiSPMB() {
                 </svg>
                 {isSaving ? 'Menyimpan...' : 'Simpan Evaluasi'}
               </button>
-              {savedMessage && (
-                <p className="mt-2 rounded-lg bg-sky-50 px-3 py-2 text-xs font-semibold text-sky-800">{savedMessage}</p>
-              )}
             </div>
           </form>
 
