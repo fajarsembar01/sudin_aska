@@ -6,45 +6,65 @@ import { useRouter } from 'next/navigation'
 
 const MIX_DURATION = 3 * 60 * 1000
 
-const AutoScrollList = ({ children, isScrollable }: { children: React.ReactNode, isScrollable: boolean }) => {
+const AutoScrollList = ({
+  children,
+  isScrollable,
+  isAutoPaused
+}: {
+  children: React.ReactNode
+  isScrollable: boolean
+  isAutoPaused: boolean
+}) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const isUserScrollingRef = useRef(false);
+  const userScrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const holdAutoScrollForManualScroll = () => {
+    isUserScrollingRef.current = true;
+    if (userScrollTimeoutRef.current) {
+      clearTimeout(userScrollTimeoutRef.current);
+    }
+    userScrollTimeoutRef.current = setTimeout(() => {
+      isUserScrollingRef.current = false;
+    }, 2500);
+  };
   
   useEffect(() => {
-    if (!isScrollable) return;
+    if (!isScrollable || isAutoPaused) return;
     
     let animationFrameId: number;
-    let timeoutId: NodeJS.Timeout;
+    let timeoutId: ReturnType<typeof setTimeout>;
     let direction = 1;
-    let isPaused = true;
+    let isEdgePaused = true;
     
     const startScrolling = () => {
       if (!containerRef.current) return;
       const el = containerRef.current;
       const maxScroll = el.scrollHeight - el.clientHeight;
       
-      if (!isPaused) {
+      if (!isEdgePaused && !isUserScrollingRef.current) {
         el.scrollTop += 0.5 * direction; // kecepatan scroll
         
         // Cek apakah sudah sampai bawah atau atas
         if (direction === 1 && Math.ceil(el.scrollTop) >= maxScroll) {
-          isPaused = true;
+          isEdgePaused = true;
           direction = -1;
           el.scrollTop = maxScroll;
           
           timeoutId = setTimeout(() => {
-            isPaused = false;
+            isEdgePaused = false;
             animationFrameId = requestAnimationFrame(startScrolling);
           }, 2000); // stop 2 detik di bawah
           return;
         }
 
         if (direction === -1 && el.scrollTop <= 0) {
-          isPaused = true;
+          isEdgePaused = true;
           direction = 1;
           el.scrollTop = 0;
 
           timeoutId = setTimeout(() => {
-            isPaused = false;
+            isEdgePaused = false;
             animationFrameId = requestAnimationFrame(startScrolling);
           }, 2000); // stop 2 detik di atas
           return;
@@ -56,7 +76,7 @@ const AutoScrollList = ({ children, isScrollable }: { children: React.ReactNode,
     
     // Stop awal selama 2 detik sebelum mulai
     timeoutId = setTimeout(() => {
-      isPaused = false;
+      isEdgePaused = false;
       animationFrameId = requestAnimationFrame(startScrolling);
     }, 2000);
     
@@ -64,15 +84,91 @@ const AutoScrollList = ({ children, isScrollable }: { children: React.ReactNode,
       cancelAnimationFrame(animationFrameId);
       clearTimeout(timeoutId);
     };
-  }, [isScrollable]);
+  }, [isScrollable, isAutoPaused]);
+
+  useEffect(() => {
+    return () => {
+      if (userScrollTimeoutRef.current) {
+        clearTimeout(userScrollTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return (
-    <div 
-      ref={containerRef} 
-      className={`space-y-3 ${isScrollable ? 'overflow-y-hidden' : ''}`}
+    <div
+      ref={containerRef}
+      onWheel={holdAutoScrollForManualScroll}
+      onTouchStart={holdAutoScrollForManualScroll}
+      onPointerDown={holdAutoScrollForManualScroll}
+      className={`space-y-3 ${isScrollable ? 'overflow-y-auto overscroll-contain pr-1 touch-pan-y' : ''}`}
       style={{ maxHeight: isScrollable ? '470px' : 'none' }}
     >
       {children}
+    </div>
+  )
+}
+
+const KecamatanCard = ({
+  kecamatan,
+  data,
+  idx,
+  isLoaded
+}: {
+  kecamatan: string
+  data: KecamatanStats[string]
+  idx: number
+  isLoaded: boolean
+}) => {
+  const [isAutoPaused, setIsAutoPaused] = useState(false)
+  const isScrollable = data.sekolah.length > 8
+
+  return (
+    <div
+      className={`bg-white/60 backdrop-blur-sm rounded-xl p-6 border border-white/50 shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 ${
+        isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+      }`}
+      style={{
+        transitionDelay: isLoaded ? `${300 + idx * 100}ms` : undefined
+      }}
+    >
+      {/* Header */}
+      <div className="mb-4 pb-4 border-b border-slate-200/50 flex flex-wrap items-center justify-between gap-2">
+        <h3 className="text-lg font-bold text-slate-900 truncate">
+          {kecamatan}
+        </h3>
+        {isScrollable && (
+          <button
+            type="button"
+            onClick={() => setIsAutoPaused(prev => !prev)}
+            className="inline-flex items-center gap-1.5 rounded-full border border-orange-200 bg-white/80 px-3 py-1 text-[11px] font-bold text-orange-700 shadow-sm transition-colors hover:bg-orange-50"
+            title={isAutoPaused ? 'Lanjutkan scroll otomatis' : 'Pause scroll otomatis untuk scroll manual'}
+          >
+            <span aria-hidden="true">{isAutoPaused ? '▶' : 'Ⅱ'}</span>
+            {isAutoPaused ? 'Lanjut' : 'Pause'}
+          </button>
+        )}
+      </div>
+
+      {/* Sekolah List */}
+      <AutoScrollList isScrollable={isScrollable} isAutoPaused={isAutoPaused}>
+        {data.sekolah.length > 0 ? (
+          data.sekolah.map((sekolah, i) => (
+            <div
+              key={i}
+              className="px-3 py-2 bg-gradient-to-br from-orange-50 to-red-50 rounded-lg border border-orange-100/50 hover:border-orange-300 transition-colors flex items-center justify-between gap-3"
+            >
+              <p className="text-sm font-semibold text-slate-900 line-clamp-2 flex-1">
+                {sekolah.nama}
+              </p>
+              <span className="inline-flex items-center px-3 py-1 bg-orange-100 rounded text-sm font-bold text-orange-700 shrink-0 whitespace-nowrap">
+                {sekolah.usia_termuda_teks}
+              </span>
+            </div>
+          ))
+        ) : (
+          <p className="text-xs text-slate-500 italic">Tidak ada data</p>
+        )}
+      </AutoScrollList>
     </div>
   )
 }
@@ -458,45 +554,13 @@ export default function LiveSPMBSD() {
           {!loading && (
             <div className="grid md:grid-cols-3 gap-6">
               {Object.entries(kecamatanStats).map(([kecamatan, data], idx) => (
-                <div
+                <KecamatanCard
                   key={kecamatan}
-                  className={`bg-white/60 backdrop-blur-sm rounded-xl p-6 border border-white/50 shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 ${
-                    isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-                  }`}
-                  style={{
-                    transitionDelay: isLoaded ? `${300 + idx * 100}ms` : undefined
-                  }}
-                >
-                  {/* Header */}
-                  <div className="mb-4 pb-4 border-b border-slate-200/50 flex flex-wrap items-center justify-between gap-2">
-                    <h3 className="text-lg font-bold text-slate-900 truncate">
-                      {kecamatan}
-                    </h3>
-                  </div>
-
-                  {/* Sekolah List */}
-                  <AutoScrollList isScrollable={data.sekolah.length > 8}>
-                    {data.sekolah.length > 0 ? (
-                      data.sekolah.map((sekolah, i) => (
-                        <div
-                          key={i}
-                          className="px-3 py-2 bg-gradient-to-br from-orange-50 to-red-50 rounded-lg border border-orange-100/50 hover:border-orange-300 transition-colors flex items-center justify-between gap-3"
-                        >
-                          <p className="text-sm font-semibold text-slate-900 line-clamp-2 flex-1">
-                            {sekolah.nama}
-                          </p>
-                          <span className="inline-flex items-center px-3 py-1 bg-orange-100 rounded text-sm font-bold text-orange-700 shrink-0 whitespace-nowrap">
-                            {sekolah.usia_termuda_teks}
-                          </span>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-xs text-slate-500 italic">Tidak ada data</p>
-                    )}
-                  </AutoScrollList>
-
-
-                </div>
+                  kecamatan={kecamatan}
+                  data={data}
+                  idx={idx}
+                  isLoaded={isLoaded}
+                />
               ))}
             </div>
           )}
