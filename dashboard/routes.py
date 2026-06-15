@@ -568,7 +568,20 @@ def admin_select_role() -> Response:
             "icon": "bi-buildings",
             "icon_secondary": "bi-tree-fill",
             "href": "/portal/admin/adiwiyata",
-            "col_class": "col-lg-6 col-md-8 col-12",
+        },
+        {
+            "title": "Monev Keuangan",
+            "description": "Segera Hadir",
+            "icon": "bi-cash-coin",
+            "href": "#",
+            "disabled": True,
+        },
+        {
+            "title": "CRM",
+            "description": "Segera Hadir",
+            "icon": "bi-chat-heart",
+            "href": "#",
+            "disabled": True,
         },
     ]
     # Layout fleksibel: desktop 3 kolom, tablet 2 kolom, mobile 1 kolom
