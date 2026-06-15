@@ -54,7 +54,9 @@ def create_app() -> Flask:
     
     # Exempt public API endpoints from CSRF
     from .portal.routes import api_adiwiyata_likes
+    from .routes import api_spmb_evaluations
     csrf.exempt(api_adiwiyata_likes)
+    csrf.exempt(api_spmb_evaluations)
     
     init_oauth(app)
 

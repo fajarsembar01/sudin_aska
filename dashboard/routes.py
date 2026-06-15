@@ -25,6 +25,7 @@ from flask import (
     send_from_directory,
 )
 from werkzeug.datastructures import MultiDict
+from psycopg2 import IntegrityError
 
 from .auth import current_user, role_required
 from reporting_flags import qa_only_mode_enabled
@@ -70,6 +71,16 @@ from .queries import (
     fetch_twitter_worker_logs,
     update_no_tester_preference,
     fetch_whatsapp_link_settings,
+    list_spmb_service_types,
+    create_spmb_service_type,
+    update_spmb_service_type,
+    toggle_spmb_service_type,
+    delete_spmb_service_type,
+    list_spmb_table_officers,
+    list_spmb_table_assignments,
+    save_spmb_table_assignments,
+    create_spmb_evaluation,
+    list_spmb_evaluations,
     record_admin_action,
     fetch_aska_knowledge_history,
 )
@@ -141,6 +152,23 @@ def _normalize_whatsapp_link(raw_value: str) -> str:
     if digits.startswith("0"):
         digits = f"62{digits[1:]}"
     return f"https://wa.me/{digits}"
+
+
+def _parse_sort_order(value: Optional[str], default: int = 0) -> int:
+    try:
+        return int(str(value or "").strip())
+    except (TypeError, ValueError):
+        return default
+
+
+def _parse_date_only(value: Optional[str]):
+    clean = (value or "").strip()
+    if not clean:
+        return current_jakarta_time().date()
+    try:
+        return datetime.strptime(clean, "%Y-%m-%d").date()
+    except ValueError:
+        return current_jakarta_time().date()
 
 
 def _resolve_runtime_path(value: Optional[str], default: str) -> Path:
@@ -561,6 +589,253 @@ def admin_select_role() -> Response:
         default_col_class=default_col_class,
         enable_odd_center=True,
         show_logout=True,
+    )
+
+
+@main_bp.route("/api/spmb-service-types")
+def api_spmb_service_types() -> Response:
+    service_types = list_spmb_service_types(include_inactive=False)
+    return jsonify(
+        {
+            "data": [
+                {
+                    "id": item.get("id"),
+                    "name": item.get("name"),
+                    "description": item.get("description"),
+                    "sort_order": item.get("sort_order"),
+                }
+                for item in service_types
+            ]
+        }
+    )
+
+
+def _serialize_spmb_evaluation(item: dict) -> dict:
+    created_at = item.get("created_at")
+    created_at_value = created_at.isoformat() if hasattr(created_at, "isoformat") else str(created_at or "")
+    return {
+        "id": item.get("id"),
+        "pelayanan": item.get("service_type"),
+        "nomorMeja": str(item.get("table_number") or ""),
+        "indikator": item.get("indicator"),
+        "catatan": item.get("note") or "",
+        "createdAt": created_at_value,
+    }
+
+
+@main_bp.route("/api/spmb-evaluations", methods=["GET", "POST"])
+def api_spmb_evaluations() -> Response:
+    if request.method == "POST":
+        payload = request.get_json(silent=True) or {}
+        try:
+            item = create_spmb_evaluation(
+                service_type=str(payload.get("pelayanan") or payload.get("service_type") or "Informasi SPMB"),
+                table_number=int(payload.get("nomorMeja") or payload.get("table_number") or 0),
+                indicator=str(payload.get("indikator") or payload.get("indicator") or ""),
+                note=str(payload.get("catatan") or payload.get("note") or ""),
+                client_ip=request.headers.get("X-Forwarded-For", request.remote_addr or "").split(",")[0].strip(),
+                user_agent=request.headers.get("User-Agent"),
+            )
+        except ValueError as exc:
+            return jsonify({"success": False, "message": str(exc)}), 400
+        except Exception as exc:
+            current_app.logger.exception("Failed to save SPMB evaluation")
+            return jsonify({"success": False, "message": f"Gagal menyimpan evaluasi: {exc}"}), 500
+
+        return jsonify({"success": True, "item": _serialize_spmb_evaluation(item)})
+
+    try:
+        limit = int(request.args.get("limit") or 100)
+    except ValueError:
+        limit = 100
+    try:
+        items = list_spmb_evaluations(limit=limit)
+    except Exception as exc:
+        current_app.logger.exception("Failed to fetch SPMB evaluations")
+        return jsonify({"data": [], "error": f"Gagal mengambil riwayat evaluasi: {exc}"}), 500
+    return jsonify({"data": [_serialize_spmb_evaluation(item) for item in items]})
+
+
+@main_bp.route("/spmb-service-types", methods=["GET", "POST"])
+@role_required("admin")
+def spmb_service_types() -> Response:
+    user = current_user() or {}
+    if request.method == "POST":
+        name = request.form.get("name", "")
+        description = request.form.get("description", "")
+        sort_order = _parse_sort_order(request.form.get("sort_order"))
+        active = request.form.get("active") == "1"
+
+        try:
+            item = create_spmb_service_type(
+                name=name,
+                description=description,
+                sort_order=sort_order,
+                active=active,
+                user_id=user.get("id"),
+            )
+            record_admin_action(
+                user_id=user.get("id"),
+                feature_key="aska_insight",
+                action="CREATE",
+                target_type="SPMB_SERVICE_TYPE",
+                target_id=item.get("id"),
+                target_name=item.get("name"),
+                metadata={"description": item.get("description"), "sort_order": item.get("sort_order"), "active": item.get("active")},
+            )
+            flash("Jenis pelayanan berhasil ditambahkan.", "success")
+        except IntegrityError:
+            flash("Nama jenis pelayanan sudah terdaftar.", "warning")
+        except ValueError as exc:
+            flash(str(exc), "warning")
+        except Exception as exc:
+            current_app.logger.exception("Failed to create SPMB service type")
+            flash(f"Gagal menambahkan jenis pelayanan: {exc}", "danger")
+        return redirect(url_for("main.spmb_service_types"))
+
+    service_types = list_spmb_service_types(include_inactive=True)
+    active_count = sum(1 for item in service_types if item.get("active"))
+    return render_template(
+        "spmb_service_types.html",
+        service_types=service_types,
+        active_count=active_count,
+    )
+
+
+@main_bp.route("/spmb-service-types/<int:service_type_id>/update", methods=["POST"])
+@role_required("admin")
+def update_spmb_service_type_route(service_type_id: int) -> Response:
+    user = current_user() or {}
+    name = request.form.get("name", "")
+    description = request.form.get("description", "")
+    sort_order = _parse_sort_order(request.form.get("sort_order"))
+    active = request.form.get("active") == "1"
+
+    try:
+        item = update_spmb_service_type(
+            service_type_id=service_type_id,
+            name=name,
+            description=description,
+            sort_order=sort_order,
+            active=active,
+            user_id=user.get("id"),
+        )
+        if not item:
+            flash("Jenis pelayanan tidak ditemukan.", "warning")
+        else:
+            record_admin_action(
+                user_id=user.get("id"),
+                feature_key="aska_insight",
+                action="UPDATE",
+                target_type="SPMB_SERVICE_TYPE",
+                target_id=item.get("id"),
+                target_name=item.get("name"),
+                metadata={"description": item.get("description"), "sort_order": item.get("sort_order"), "active": item.get("active")},
+            )
+            flash("Jenis pelayanan berhasil diperbarui.", "success")
+    except IntegrityError:
+        flash("Nama jenis pelayanan sudah terdaftar.", "warning")
+    except ValueError as exc:
+        flash(str(exc), "warning")
+    except Exception as exc:
+        current_app.logger.exception("Failed to update SPMB service type")
+        flash(f"Gagal memperbarui jenis pelayanan: {exc}", "danger")
+    return redirect(url_for("main.spmb_service_types"))
+
+
+@main_bp.route("/spmb-service-types/<int:service_type_id>/toggle", methods=["POST"])
+@role_required("admin")
+def toggle_spmb_service_type_route(service_type_id: int) -> Response:
+    user = current_user() or {}
+    try:
+        item = toggle_spmb_service_type(service_type_id, user_id=user.get("id"))
+        if not item:
+            flash("Jenis pelayanan tidak ditemukan.", "warning")
+        else:
+            record_admin_action(
+                user_id=user.get("id"),
+                feature_key="aska_insight",
+                action="TOGGLE",
+                target_type="SPMB_SERVICE_TYPE",
+                target_id=item.get("id"),
+                target_name=item.get("name"),
+                metadata={"active": item.get("active")},
+            )
+            flash("Status jenis pelayanan berhasil diperbarui.", "success")
+    except Exception as exc:
+        current_app.logger.exception("Failed to toggle SPMB service type")
+        flash(f"Gagal mengubah status jenis pelayanan: {exc}", "danger")
+    return redirect(url_for("main.spmb_service_types"))
+
+
+@main_bp.route("/spmb-service-types/<int:service_type_id>/delete", methods=["POST"])
+@role_required("admin")
+def delete_spmb_service_type_route(service_type_id: int) -> Response:
+    user = current_user() or {}
+    try:
+        item = delete_spmb_service_type(service_type_id)
+        if not item:
+            flash("Jenis pelayanan tidak ditemukan.", "warning")
+        else:
+            record_admin_action(
+                user_id=user.get("id"),
+                feature_key="aska_insight",
+                action="DELETE",
+                target_type="SPMB_SERVICE_TYPE",
+                target_id=item.get("id"),
+                target_name=item.get("name"),
+            )
+            flash("Jenis pelayanan berhasil dihapus.", "success")
+    except Exception as exc:
+        current_app.logger.exception("Failed to delete SPMB service type")
+        flash(f"Gagal menghapus jenis pelayanan: {exc}", "danger")
+    return redirect(url_for("main.spmb_service_types"))
+
+
+@main_bp.route("/spmb-table-assignments", methods=["GET", "POST"])
+@role_required("admin")
+def spmb_table_assignments() -> Response:
+    user = current_user() or {}
+
+    if request.method == "POST":
+        selected_date = _parse_date_only(request.form.get("assignment_date"))
+        assignments: dict[int, Optional[int]] = {}
+        for table_number in range(1, 13):
+            raw_user_id = (request.form.get(f"officer_{table_number}") or "").strip()
+            try:
+                assignments[table_number] = int(raw_user_id) if raw_user_id else None
+            except ValueError:
+                assignments[table_number] = None
+
+        try:
+            save_spmb_table_assignments(
+                assignment_date=selected_date,
+                assignments=assignments,
+                updated_by=user.get("id"),
+            )
+            assigned_count = sum(1 for value in assignments.values() if value)
+            record_admin_action(
+                user_id=user.get("id"),
+                feature_key="aska_insight",
+                action="UPDATE",
+                target_type="SPMB_TABLE_ASSIGNMENT",
+                target_name=selected_date.isoformat(),
+                metadata={"assignment_date": selected_date.isoformat(), "assigned_count": assigned_count},
+            )
+            flash("Petugas meja SPMB berhasil disimpan.", "success")
+        except Exception as exc:
+            current_app.logger.exception("Failed to save SPMB table assignments")
+            flash(f"Gagal menyimpan petugas meja: {exc}", "danger")
+        return redirect(url_for("main.spmb_table_assignments", date=selected_date.isoformat()))
+
+    selected_date = _parse_date_only(request.args.get("date"))
+    assignments = list_spmb_table_assignments(selected_date)
+    officers = list_spmb_table_officers()
+    return render_template(
+        "spmb_table_assignments.html",
+        selected_date=selected_date,
+        assignments=assignments,
+        officers=officers,
     )
 
 

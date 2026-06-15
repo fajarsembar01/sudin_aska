@@ -293,6 +293,80 @@ CREATE TABLE IF NOT EXISTS whatsapp_link_settings (
 );
 """
 
+_SPMB_SERVICE_TYPES_SQL = """
+CREATE TABLE IF NOT EXISTS spmb_service_types (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE,
+    description TEXT,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    updated_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_SPMB_SERVICE_TYPES_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_spmb_service_types_active_order
+ON spmb_service_types (active, sort_order, id);
+"""
+
+_SPMB_SERVICE_TYPES_SEED_SQL = """
+INSERT INTO spmb_service_types (name, description, sort_order, active)
+VALUES
+    ('Informasi SPMB', 'Pertanyaan umum alur dan informasi SPMB.', 10, TRUE),
+    ('Verifikasi Berkas', 'Pemeriksaan atau validasi berkas pendaftaran.', 20, TRUE),
+    ('Bantuan Akun', 'Bantuan login, akun, atau akses aplikasi.', 30, TRUE),
+    ('Perubahan Data', 'Bantuan koreksi atau penyesuaian data.', 40, TRUE),
+    ('Pengaduan', 'Keluhan atau kendala selama layanan SPMB.', 50, TRUE),
+    ('Lainnya', 'Jenis pelayanan lain di luar kategori utama.', 60, TRUE)
+ON CONFLICT (name) DO NOTHING;
+"""
+
+_SPMB_TABLE_ASSIGNMENTS_SQL = """
+CREATE TABLE IF NOT EXISTS spmb_table_assignments (
+    id SERIAL PRIMARY KEY,
+    assignment_date DATE NOT NULL,
+    table_number INTEGER NOT NULL CHECK (table_number BETWEEN 1 AND 12),
+    officer_user_id INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    note TEXT,
+    updated_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (assignment_date, table_number)
+);
+"""
+
+_SPMB_TABLE_ASSIGNMENTS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_spmb_table_assignments_date
+ON spmb_table_assignments (assignment_date, table_number);
+CREATE INDEX IF NOT EXISTS idx_spmb_table_assignments_officer
+ON spmb_table_assignments (officer_user_id);
+"""
+
+_SPMB_EVALUATIONS_SQL = """
+CREATE TABLE IF NOT EXISTS spmb_evaluations (
+    id SERIAL PRIMARY KEY,
+    service_type TEXT NOT NULL,
+    table_number INTEGER NOT NULL CHECK (table_number BETWEEN 1 AND 12),
+    indicator TEXT NOT NULL CHECK (indicator IN ('baik', 'sedang', 'buruk')),
+    note TEXT,
+    client_ip TEXT,
+    user_agent TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_SPMB_EVALUATIONS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_spmb_evaluations_created
+ON spmb_evaluations (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_spmb_evaluations_indicator
+ON spmb_evaluations (indicator);
+CREATE INDEX IF NOT EXISTS idx_spmb_evaluations_table_created
+ON spmb_evaluations (table_number, created_at DESC);
+"""
+
 _TELEGRAM_ADMIN_ACCOUNTS_SQL = """
 CREATE TABLE IF NOT EXISTS telegram_admin_accounts (
     id SERIAL PRIMARY KEY,
@@ -1305,6 +1379,13 @@ def ensure_dashboard_schema() -> None:
         _WHATSAPP_USERS_INDEX_STATUS,
         _TELEGRAM_NOTIFICATION_SETTINGS_SQL,
         _WHATSAPP_LINK_SETTINGS_SQL,
+        _SPMB_SERVICE_TYPES_SQL,
+        _SPMB_SERVICE_TYPES_INDEX_SQL,
+        _SPMB_SERVICE_TYPES_SEED_SQL,
+        _SPMB_TABLE_ASSIGNMENTS_SQL,
+        _SPMB_TABLE_ASSIGNMENTS_INDEX_SQL,
+        _SPMB_EVALUATIONS_SQL,
+        _SPMB_EVALUATIONS_INDEX_SQL,
         _TELEGRAM_ADMIN_ACCOUNTS_SQL,
         _TELEGRAM_ADMIN_ACCOUNTS_INDEX_USER,
         _TELEGRAM_ADMIN_SCOPE_MIGRATION,

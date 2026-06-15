@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+{% block title %}Jenis Pelayanan SPMB - ASKA Insights{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+    <div>
+        <div class="text-muted small fw-semibold text-uppercase mb-1">ASKA Insight</div>
+        <h1 class="h4 fw-bold mb-1">Jenis Pelayanan SPMB</h1>
+        <p class="text-muted mb-0">Kelola opsi pelayanan yang dipakai pada halaman evaluasi SPMB.</p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <span class="badge rounded-pill text-bg-light border">
+            <i class="bi bi-list-check text-primary me-1"></i>{{ service_types|length }} total
+        </span>
+        <span class="badge rounded-pill text-bg-success">
+            <i class="bi bi-check-circle me-1"></i>{{ active_count }} aktif
+        </span>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm" style="position: sticky; top: 80px;">
+            <div class="card-body">
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <span class="icon-badge section-icon text-primary"><i class="bi bi-plus-lg"></i></span>
+                    <div>
+                        <h2 class="h6 fw-bold mb-0">Tambah Jenis Pelayanan</h2>
+                        <div class="text-muted small">Opsi aktif muncul di evaluasi publik.</div>
+                    </div>
+                </div>
+
+                <form method="post" action="{{ url_for('main.spmb_service_types') }}" class="vstack gap-3">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <div>
+                        <label class="form-label fw-semibold">Nama</label>
+                        <input type="text" name="name" class="form-control" placeholder="Contoh: Verifikasi Jalur Domisili" required>
+                    </div>
+                    <div>
+                        <label class="form-label fw-semibold">Deskripsi</label>
+                        <textarea name="description" class="form-control" rows="3" placeholder="Keterangan singkat, opsional"></textarea>
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <label class="form-label fw-semibold">Urutan</label>
+                            <input type="number" name="sort_order" class="form-control" value="{{ (service_types|length + 1) * 10 }}">
+                        </div>
+                        <div class="col-6 d-flex align-items-end">
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" role="switch" id="newActive" name="active" value="1" checked>
+                                <label class="form-check-label" for="newActive">Aktif</label>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save me-1"></i>Simpan
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+                    <div>
+                        <h2 class="h6 fw-bold mb-0">Daftar Jenis Pelayanan</h2>
+                        <div class="text-muted small">Edit langsung pada baris data.</div>
+                    </div>
+                    <input type="search" class="form-control form-control-sm" id="serviceTypeSearch" placeholder="Cari pelayanan..." style="max-width: 240px;">
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th style="width: 72px;">Urutan</th>
+                                <th>Nama & Deskripsi</th>
+                                <th style="width: 96px;">Status</th>
+                                <th style="width: 210px;">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="serviceTypeRows">
+                            {% for item in service_types %}
+                            <tr data-search="{{ (item.name ~ ' ' ~ (item.description or ''))|lower }}">
+                                <td>
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" form="editServiceType{{ item.id }}" />
+                                    <input type="number" name="sort_order" class="form-control form-control-sm" value="{{ item.sort_order }}" form="editServiceType{{ item.id }}">
+                                </td>
+                                <td>
+                                    <input type="text" name="name" class="form-control form-control-sm fw-semibold mb-2" value="{{ item.name }}" required form="editServiceType{{ item.id }}">
+                                    <textarea name="description" class="form-control form-control-sm" rows="2" placeholder="Deskripsi opsional" form="editServiceType{{ item.id }}">{{ item.description or '' }}</textarea>
+                                    <div class="small text-muted mt-1">
+                                        Diperbarui {{ item.updated_at|jakarta }}
+                                        {% if item.updated_by_name %}oleh {{ item.updated_by_name }}{% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" role="switch" id="active{{ item.id }}" name="active" value="1" {% if item.active %}checked{% endif %} form="editServiceType{{ item.id }}">
+                                        <label class="form-check-label small" for="active{{ item.id }}">
+                                            {% if item.active %}Aktif{% else %}Nonaktif{% endif %}
+                                        </label>
+                                    </div>
+                                </td>
+                                <td>
+                                    <form method="post" action="{{ url_for('main.update_spmb_service_type_route', service_type_id=item.id) }}" id="editServiceType{{ item.id }}"></form>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <button type="submit" form="editServiceType{{ item.id }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-save me-1"></i>Simpan
+                                        </button>
+                                        <form method="post" action="{{ url_for('main.toggle_spmb_service_type_route', service_type_id=item.id) }}">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                            <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                                {% if item.active %}
+                                                <i class="bi bi-pause-circle me-1"></i>Nonaktif
+                                                {% else %}
+                                                <i class="bi bi-play-circle me-1"></i>Aktif
+                                                {% endif %}
+                                            </button>
+                                        </form>
+                                        <form method="post" action="{{ url_for('main.delete_spmb_service_type_route', service_type_id=item.id) }}" onsubmit="return confirm('Hapus jenis pelayanan {{ item.name }}?');">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-5">Belum ada jenis pelayanan.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const search = document.getElementById('serviceTypeSearch');
+    const rows = Array.from(document.querySelectorAll('#serviceTypeRows tr[data-search]'));
+    if (!search) return;
+
+    search.addEventListener('input', function () {
+        const query = search.value.trim().toLowerCase();
+        rows.forEach(function (row) {
+            row.style.display = !query || (row.dataset.search || '').includes(query) ? '' : 'none';
+        });
+    });
+});
+</script>
+{% endblock %}

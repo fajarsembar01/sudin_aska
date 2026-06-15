@@ -2089,6 +2089,396 @@ def upsert_whatsapp_link_settings(wa_link: Optional[str], updated_by: Optional[i
         return True
 
 
+DEFAULT_SPMB_SERVICE_TYPES: Tuple[Tuple[str, str, int], ...] = (
+    ("Informasi SPMB", "Pertanyaan umum alur dan informasi SPMB.", 10),
+    ("Verifikasi Berkas", "Pemeriksaan atau validasi berkas pendaftaran.", 20),
+    ("Bantuan Akun", "Bantuan login, akun, atau akses aplikasi.", 30),
+    ("Perubahan Data", "Bantuan koreksi atau penyesuaian data.", 40),
+    ("Pengaduan", "Keluhan atau kendala selama layanan SPMB.", 50),
+    ("Lainnya", "Jenis pelayanan lain di luar kategori utama.", 60),
+)
+
+
+def ensure_spmb_service_types_schema() -> None:
+    """Create and seed SPMB service type options used by the evaluation page."""
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS spmb_service_types (
+                id SERIAL PRIMARY KEY,
+                name TEXT NOT NULL UNIQUE,
+                description TEXT,
+                sort_order INTEGER NOT NULL DEFAULT 0,
+                active BOOLEAN NOT NULL DEFAULT TRUE,
+                created_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+                updated_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_spmb_service_types_active_order
+            ON spmb_service_types (active, sort_order, id)
+            """
+        )
+        for name, description, sort_order in DEFAULT_SPMB_SERVICE_TYPES:
+            cur.execute(
+                """
+                INSERT INTO spmb_service_types (name, description, sort_order, active)
+                VALUES (%s, %s, %s, TRUE)
+                ON CONFLICT (name) DO NOTHING
+                """,
+                (name, description, sort_order),
+            )
+
+
+def list_spmb_service_types(*, include_inactive: bool = True) -> List[Dict[str, Any]]:
+    ensure_spmb_service_types_schema()
+    where_sql = "" if include_inactive else "WHERE active = TRUE"
+    with get_cursor() as cur:
+        cur.execute(
+            f"""
+            SELECT
+                s.id,
+                s.name,
+                s.description,
+                s.sort_order,
+                s.active,
+                s.created_at,
+                s.updated_at,
+                s.created_by,
+                s.updated_by,
+                cu.full_name AS created_by_name,
+                uu.full_name AS updated_by_name
+            FROM spmb_service_types s
+            LEFT JOIN dashboard_users cu ON cu.id = s.created_by
+            LEFT JOIN dashboard_users uu ON uu.id = s.updated_by
+            {where_sql}
+            ORDER BY s.sort_order ASC, LOWER(s.name) ASC, s.id ASC
+            """
+        )
+        rows = cur.fetchall()
+    return [dict(row) for row in rows]
+
+
+def create_spmb_service_type(
+    *,
+    name: str,
+    description: Optional[str],
+    sort_order: int,
+    active: bool,
+    user_id: Optional[int],
+) -> Dict[str, Any]:
+    ensure_spmb_service_types_schema()
+    clean_name = (name or "").strip()
+    clean_description = (description or "").strip() or None
+    if not clean_name:
+        raise ValueError("Nama jenis pelayanan wajib diisi.")
+
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            INSERT INTO spmb_service_types
+                (name, description, sort_order, active, created_by, updated_by, updated_at)
+            VALUES (%s, %s, %s, %s, %s, %s, NOW())
+            RETURNING id, name, description, sort_order, active
+            """,
+            (clean_name, clean_description, sort_order, active, user_id, user_id),
+        )
+        row = cur.fetchone()
+    return dict(row)
+
+
+def update_spmb_service_type(
+    *,
+    service_type_id: int,
+    name: str,
+    description: Optional[str],
+    sort_order: int,
+    active: bool,
+    user_id: Optional[int],
+) -> Optional[Dict[str, Any]]:
+    ensure_spmb_service_types_schema()
+    clean_name = (name or "").strip()
+    clean_description = (description or "").strip() or None
+    if not clean_name:
+        raise ValueError("Nama jenis pelayanan wajib diisi.")
+
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE spmb_service_types
+            SET name = %s,
+                description = %s,
+                sort_order = %s,
+                active = %s,
+                updated_by = %s,
+                updated_at = NOW()
+            WHERE id = %s
+            RETURNING id, name, description, sort_order, active
+            """,
+            (clean_name, clean_description, sort_order, active, user_id, service_type_id),
+        )
+        row = cur.fetchone()
+    return dict(row) if row else None
+
+
+def toggle_spmb_service_type(service_type_id: int, *, user_id: Optional[int]) -> Optional[Dict[str, Any]]:
+    ensure_spmb_service_types_schema()
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE spmb_service_types
+            SET active = NOT active,
+                updated_by = %s,
+                updated_at = NOW()
+            WHERE id = %s
+            RETURNING id, name, active
+            """,
+            (user_id, service_type_id),
+        )
+        row = cur.fetchone()
+    return dict(row) if row else None
+
+
+def delete_spmb_service_type(service_type_id: int) -> Optional[Dict[str, Any]]:
+    ensure_spmb_service_types_schema()
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            DELETE FROM spmb_service_types
+            WHERE id = %s
+            RETURNING id, name
+            """,
+            (service_type_id,),
+        )
+        row = cur.fetchone()
+    return dict(row) if row else None
+
+
+def ensure_spmb_table_assignments_schema() -> None:
+    """Create table assignment storage for daily SPMB service desks."""
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS spmb_table_assignments (
+                id SERIAL PRIMARY KEY,
+                assignment_date DATE NOT NULL,
+                table_number INTEGER NOT NULL CHECK (table_number BETWEEN 1 AND 12),
+                officer_user_id INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+                note TEXT,
+                updated_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                UNIQUE (assignment_date, table_number)
+            )
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_spmb_table_assignments_date
+            ON spmb_table_assignments (assignment_date, table_number)
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_spmb_table_assignments_officer
+            ON spmb_table_assignments (officer_user_id)
+            """
+        )
+
+
+def list_spmb_table_officers() -> List[Dict[str, Any]]:
+    ensure_spmb_table_assignments_schema()
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT
+                id,
+                full_name,
+                email,
+                role,
+                jabatan,
+                COALESCE(account_status, 'approved') AS account_status
+            FROM dashboard_users
+            WHERE COALESCE(account_status, 'approved') = 'approved'
+            ORDER BY
+                CASE role
+                    WHEN 'admin' THEN 1
+                    WHEN 'coordinator' THEN 2
+                    WHEN 'staff' THEN 3
+                    WHEN 'sekolah' THEN 4
+                    ELSE 5
+                END,
+                LOWER(full_name) ASC,
+                LOWER(email) ASC
+            """
+        )
+        rows = cur.fetchall()
+    return [dict(row) for row in rows]
+
+
+def list_spmb_table_assignments(assignment_date: Any) -> List[Dict[str, Any]]:
+    ensure_spmb_table_assignments_schema()
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            WITH tables AS (
+                SELECT generate_series(1, 12) AS table_number
+            )
+            SELECT
+                t.table_number,
+                a.id,
+                a.assignment_date,
+                a.officer_user_id,
+                a.note,
+                a.updated_at,
+                a.updated_by,
+                officer.full_name AS officer_name,
+                officer.email AS officer_email,
+                officer.role AS officer_role,
+                updater.full_name AS updated_by_name
+            FROM tables t
+            LEFT JOIN spmb_table_assignments a
+                ON a.table_number = t.table_number
+               AND a.assignment_date = %s
+            LEFT JOIN dashboard_users officer ON officer.id = a.officer_user_id
+            LEFT JOIN dashboard_users updater ON updater.id = a.updated_by
+            ORDER BY t.table_number ASC
+            """,
+            (assignment_date,),
+        )
+        rows = cur.fetchall()
+    return [dict(row) for row in rows]
+
+
+def save_spmb_table_assignments(
+    *,
+    assignment_date: Any,
+    assignments: Dict[int, Optional[int]],
+    updated_by: Optional[int],
+) -> None:
+    ensure_spmb_table_assignments_schema()
+    with get_cursor(commit=True) as cur:
+        for table_number in range(1, 13):
+            officer_user_id = assignments.get(table_number)
+            if officer_user_id:
+                cur.execute(
+                    """
+                    INSERT INTO spmb_table_assignments
+                        (assignment_date, table_number, officer_user_id, updated_by, updated_at)
+                    VALUES (%s, %s, %s, %s, NOW())
+                    ON CONFLICT (assignment_date, table_number) DO UPDATE
+                    SET officer_user_id = EXCLUDED.officer_user_id,
+                        updated_by = EXCLUDED.updated_by,
+                        updated_at = NOW()
+                    """,
+                    (assignment_date, table_number, officer_user_id, updated_by),
+                )
+            else:
+                cur.execute(
+                    """
+                    DELETE FROM spmb_table_assignments
+                    WHERE assignment_date = %s AND table_number = %s
+                    """,
+                    (assignment_date, table_number),
+                )
+
+
+def ensure_spmb_evaluations_schema() -> None:
+    """Create public SPMB evaluation storage."""
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS spmb_evaluations (
+                id SERIAL PRIMARY KEY,
+                service_type TEXT NOT NULL,
+                table_number INTEGER NOT NULL CHECK (table_number BETWEEN 1 AND 12),
+                indicator TEXT NOT NULL CHECK (indicator IN ('baik', 'sedang', 'buruk')),
+                note TEXT,
+                client_ip TEXT,
+                user_agent TEXT,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_spmb_evaluations_created
+            ON spmb_evaluations (created_at DESC)
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_spmb_evaluations_indicator
+            ON spmb_evaluations (indicator)
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_spmb_evaluations_table_created
+            ON spmb_evaluations (table_number, created_at DESC)
+            """
+        )
+
+
+def create_spmb_evaluation(
+    *,
+    service_type: str,
+    table_number: int,
+    indicator: str,
+    note: Optional[str],
+    client_ip: Optional[str],
+    user_agent: Optional[str],
+) -> Dict[str, Any]:
+    ensure_spmb_evaluations_schema()
+    clean_service_type = (service_type or "").strip() or "Informasi SPMB"
+    clean_indicator = (indicator or "").strip().lower()
+    if table_number < 1 or table_number > 12:
+        raise ValueError("Nomor operator harus 1 sampai 12.")
+    if clean_indicator not in {"baik", "sedang", "buruk"}:
+        raise ValueError("Indikator tidak valid.")
+
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            INSERT INTO spmb_evaluations
+                (service_type, table_number, indicator, note, client_ip, user_agent)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            RETURNING id, service_type, table_number, indicator, note, created_at
+            """,
+            (
+                clean_service_type,
+                table_number,
+                clean_indicator,
+                (note or "").strip() or None,
+                (client_ip or "").strip() or None,
+                (user_agent or "").strip()[:500] or None,
+            ),
+        )
+        row = cur.fetchone()
+    return dict(row)
+
+
+def list_spmb_evaluations(*, limit: int = 100) -> List[Dict[str, Any]]:
+    ensure_spmb_evaluations_schema()
+    safe_limit = max(1, min(int(limit or 100), 300))
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT id, service_type, table_number, indicator, note, created_at
+            FROM spmb_evaluations
+            ORDER BY created_at DESC, id DESC
+            LIMIT %s
+            """,
+            (safe_limit,),
+        )
+        rows = cur.fetchall()
+    return [dict(row) for row in rows]
+
+
 def list_telegram_admin_accounts(scope: str = "default") -> List[Dict[str, Any]]:
     """List Telegram admin username mappings. scope: 'default' (umum) or 'call_center'."""
     with get_cursor() as cur:
