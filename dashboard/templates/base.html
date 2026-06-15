@@ -280,12 +280,6 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'main.spmb_table_claim' %}active{% endif %}"
-                            href="{{ url_for('main.spmb_table_claim') }}">
-                            <i class="bi bi-person-check nav-icon"></i>Penugasan
-                        </a>
-                    </li>
-                    <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'auth.view_my_team' %}active{% endif %}"
                             href="{{ url_for('auth.view_my_team') }}">
                             <i class="bi bi-people nav-icon"></i>Tim Saya
