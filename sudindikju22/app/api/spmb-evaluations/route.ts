@@ -2,11 +2,21 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
-const dashboardBaseUrl = () => (
-  process.env.DASHBOARD_BASE_URL ||
-  process.env.NEXT_PUBLIC_DASHBOARD_BASE_URL ||
-  'http://127.0.0.1:8000'
-).trim().replace(/\/$/, '')
+const dashboardBaseUrls = () => {
+  const configured = (
+    process.env.DASHBOARD_BASE_URL ||
+    process.env.NEXT_PUBLIC_DASHBOARD_BASE_URL ||
+    ''
+  ).trim().replace(/\/$/, '')
+
+  if (configured) return [configured]
+
+  return [
+    'http://127.0.0.1:8000',
+    'http://127.0.0.1:8001',
+    'http://127.0.0.1:5001'
+  ]
+}
 
 const readDashboardJson = async (response: Response) => {
   const text = await response.text()
@@ -27,48 +37,112 @@ const readDashboardJson = async (response: Response) => {
 }
 
 export async function GET() {
-  try {
-    const upstreamUrl = `${dashboardBaseUrl()}/api/spmb-evaluations?limit=100`
-    const response = await fetch(upstreamUrl, {
-      cache: 'no-store',
-      headers: {
-        accept: 'application/json'
-      }
-    })
+  const attemptedUrls: string[] = []
 
-    const payload = await readDashboardJson(response)
-    if (payload && typeof payload === 'object') {
-      payload.upstreamUrl = upstreamUrl
+  try {
+    let lastPayload: Record<string, unknown> | null = null
+    let lastStatus = 502
+
+    for (const baseUrl of dashboardBaseUrls()) {
+      const upstreamUrl = `${baseUrl}/api/spmb-evaluations?limit=100`
+      attemptedUrls.push(upstreamUrl)
+
+      try {
+        const response = await fetch(upstreamUrl, {
+          cache: 'no-store',
+          headers: {
+            accept: 'application/json'
+          }
+        })
+
+        const payload = await readDashboardJson(response)
+        if (payload && typeof payload === 'object') {
+          payload.upstreamUrl = upstreamUrl
+          payload.attemptedUrls = attemptedUrls
+        }
+        if (response.ok) {
+          return NextResponse.json(payload, { status: 200 })
+        }
+        lastPayload = payload
+        lastStatus = response.status
+      } catch (error) {
+        lastPayload = {
+          data: [],
+          error: error instanceof Error ? error.message : 'Gagal menghubungi Dashboard API.'
+        }
+      }
     }
-    return NextResponse.json(payload, { status: response.ok ? 200 : response.status })
+
+    return NextResponse.json({
+      ...(lastPayload || {}),
+      data: Array.isArray(lastPayload?.data) ? lastPayload.data : [],
+      error: String(lastPayload?.error || lastPayload?.message || 'Gagal mengambil riwayat evaluasi dari server.'),
+      attemptedUrls
+    }, { status: lastStatus })
   } catch (error) {
     console.error('Gagal mengambil riwayat evaluasi SPMB:', error)
-    return NextResponse.json({ data: [], error: 'Gagal mengambil riwayat evaluasi dari server.' }, { status: 502 })
+    return NextResponse.json({
+      data: [],
+      error: 'Gagal mengambil riwayat evaluasi dari server.',
+      attemptedUrls
+    }, { status: 502 })
   }
 }
 
 export async function POST(request: NextRequest) {
+  const attemptedUrls: string[] = []
+
   try {
     const payload = await request.json()
-    const upstreamUrl = `${dashboardBaseUrl()}/api/spmb-evaluations`
-    const response = await fetch(upstreamUrl, {
-      method: 'POST',
-      cache: 'no-store',
-      headers: {
-        accept: 'application/json',
-        'content-type': 'application/json',
-        'user-agent': request.headers.get('user-agent') || 'sudindikju22-evaluasi-spmb'
-      },
-      body: JSON.stringify(payload)
-    })
+    let lastPayload: Record<string, unknown> | null = null
+    let lastStatus = 502
 
-    const responsePayload = await readDashboardJson(response)
-    if (responsePayload && typeof responsePayload === 'object') {
-      responsePayload.upstreamUrl = upstreamUrl
+    for (const baseUrl of dashboardBaseUrls()) {
+      const upstreamUrl = `${baseUrl}/api/spmb-evaluations`
+      attemptedUrls.push(upstreamUrl)
+
+      try {
+        const response = await fetch(upstreamUrl, {
+          method: 'POST',
+          cache: 'no-store',
+          headers: {
+            accept: 'application/json',
+            'content-type': 'application/json',
+            'user-agent': request.headers.get('user-agent') || 'sudindikju22-evaluasi-spmb'
+          },
+          body: JSON.stringify(payload)
+        })
+
+        const responsePayload = await readDashboardJson(response)
+        if (responsePayload && typeof responsePayload === 'object') {
+          responsePayload.upstreamUrl = upstreamUrl
+          responsePayload.attemptedUrls = attemptedUrls
+        }
+        if (response.ok) {
+          return NextResponse.json(responsePayload, { status: 200 })
+        }
+        lastPayload = responsePayload
+        lastStatus = response.status
+      } catch (error) {
+        lastPayload = {
+          success: false,
+          message: error instanceof Error ? error.message : 'Gagal menghubungi Dashboard API.'
+        }
+      }
     }
-    return NextResponse.json(responsePayload, { status: response.ok ? 200 : response.status })
+
+    return NextResponse.json({
+      ...(lastPayload || {}),
+      success: false,
+      message: String(lastPayload?.message || 'Gagal menyimpan evaluasi ke server.'),
+      attemptedUrls
+    }, { status: lastStatus })
   } catch (error) {
     console.error('Gagal menyimpan evaluasi SPMB:', error)
-    return NextResponse.json({ success: false, message: 'Gagal menyimpan evaluasi ke server.' }, { status: 502 })
+    return NextResponse.json({
+      success: false,
+      message: 'Gagal menyimpan evaluasi ke server.',
+      attemptedUrls
+    }, { status: 502 })
   }
 }
