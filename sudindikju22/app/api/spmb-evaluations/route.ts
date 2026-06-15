@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic'
 const dashboardBaseUrl = () => (
   process.env.DASHBOARD_BASE_URL ||
   process.env.NEXT_PUBLIC_DASHBOARD_BASE_URL ||
-  'http://localhost:5002'
+  'http://127.0.0.1:8000'
 ).trim().replace(/\/$/, '')
 
 const readDashboardJson = async (response: Response) => {

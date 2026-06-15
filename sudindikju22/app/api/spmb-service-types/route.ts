@@ -18,7 +18,7 @@ const readDashboardJson = async (response: Response) => {
 }
 
 export async function GET() {
-  const dashboardBaseUrl = (process.env.DASHBOARD_BASE_URL || process.env.NEXT_PUBLIC_DASHBOARD_BASE_URL || '').trim().replace(/\/$/, '')
+  const dashboardBaseUrl = (process.env.DASHBOARD_BASE_URL || process.env.NEXT_PUBLIC_DASHBOARD_BASE_URL || 'http://127.0.0.1:8000').trim().replace(/\/$/, '')
 
   if (!dashboardBaseUrl) {
     return NextResponse.json({
