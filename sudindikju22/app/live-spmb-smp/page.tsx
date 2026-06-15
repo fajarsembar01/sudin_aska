@@ -355,6 +355,17 @@ export default function LiveSPMBSMP() {
         </div>
       )}
 
+      <Link
+        href="/evaluasi-spmb"
+        title="Evaluasi pelayanan SPMB"
+        className="fixed bottom-5 left-5 z-50 inline-flex h-11 items-center gap-2 rounded-full border border-emerald-200/70 bg-white/90 px-4 text-sm font-extrabold text-slate-800 shadow-lg backdrop-blur-sm transition-all duration-200 hover:scale-105 hover:bg-white hover:shadow-xl"
+      >
+        <svg className="h-5 w-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6M7 4h10a2 2 0 012 2v14l-3-2-3 2-3-2-3 2V6a2 2 0 012-2z" />
+        </svg>
+        Evaluasi
+      </Link>
+
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-0 left-1/4 w-[400px] h-[400px] bg-gradient-to-br from-emerald-200/30 to-cyan-300/20 rounded-full blur-3xl animate-float" />
         <div className="absolute bottom-0 right-1/4 w-[350px] h-[350px] bg-gradient-to-br from-cyan-200/25 to-sky-300/15 rounded-full blur-3xl animate-float-delayed" />
