@@ -68,13 +68,14 @@ const indikatorOptions: Array<{
 
 export default function EvaluasiSPMB() {
   const [pelayanan, setPelayanan] = useState(defaultPelayananOptions[0])
-  const [nomorMeja, setNomorMeja] = useState(mejaOptions[0])
-  const [indikator, setIndikator] = useState<Indikator>('baik')
+  const [nomorMeja, setNomorMeja] = useState('')
+  const [indikator, setIndikator] = useState<Indikator | ''>('')
   const [catatan, setCatatan] = useState('')
   const [entries, setEntries] = useState<EvaluasiEntry[]>([])
   const [savedMessage, setSavedMessage] = useState('')
   const [messageTone, setMessageTone] = useState<'success' | 'error'>('success')
   const [isSaving, setIsSaving] = useState(false)
+  const [isSubmitted, setIsSubmitted] = useState(false)
   const [isHistoryLoading, setIsHistoryLoading] = useState(true)
 
   const loadEntries = async () => {
@@ -124,7 +125,7 @@ export default function EvaluasiSPMB() {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    if (isSaving) return
+    if (isSaving || isSubmitted || !nomorMeja || !indikator) return
 
     setIsSaving(true)
     try {
@@ -147,7 +148,10 @@ export default function EvaluasiSPMB() {
 
       const savedEntry = payload.item as EvaluasiEntry
       setEntries(prev => [savedEntry, ...prev].slice(0, 100))
+      setNomorMeja('')
+      setIndikator('')
       setCatatan('')
+      setIsSubmitted(true)
       setMessageTone('success')
       setSavedMessage('Berhasil disimpan.')
     } catch (error) {
@@ -155,9 +159,19 @@ export default function EvaluasiSPMB() {
       setSavedMessage(error instanceof Error ? error.message : 'Gagal menyimpan evaluasi.')
     } finally {
       setIsSaving(false)
-      window.setTimeout(() => setSavedMessage(''), 3000)
     }
   }
+
+  const resetForm = () => {
+    setNomorMeja('')
+    setIndikator('')
+    setCatatan('')
+    setSavedMessage('')
+    setMessageTone('success')
+    setIsSubmitted(false)
+  }
+
+  const isSubmitDisabled = isSaving || isSubmitted || !nomorMeja || !indikator
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900 lg:h-screen lg:overflow-hidden">
@@ -190,13 +204,13 @@ export default function EvaluasiSPMB() {
               </div>
               <button
                 type="submit"
-                disabled={isSaving}
-                className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 text-sm font-extrabold text-white shadow-sm transition hover:bg-slate-800"
+                disabled={isSubmitDisabled}
+                className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 text-sm font-extrabold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                 </svg>
-                {isSaving ? 'Menyimpan' : 'Simpan'}
+                {isSaving ? 'Menyimpan' : isSubmitted ? 'Tersimpan' : 'Simpan'}
               </button>
             </div>
 
@@ -210,6 +224,15 @@ export default function EvaluasiSPMB() {
                 role="status"
               >
                 {savedMessage}
+                {isSubmitted && (
+                  <button
+                    type="button"
+                    onClick={resetForm}
+                    className="ms-3 rounded-md border border-emerald-300 bg-white px-2 py-1 text-xs font-extrabold text-emerald-900 hover:bg-emerald-100"
+                  >
+                    Isi Baru
+                  </button>
+                )}
               </div>
             )}
 
@@ -223,12 +246,13 @@ export default function EvaluasiSPMB() {
                       <button
                         key={option}
                         type="button"
+                        disabled={isSubmitted}
                         onClick={() => setNomorMeja(option)}
                         className={`flex h-10 items-center justify-center rounded-lg border text-sm font-extrabold transition ${
                           selected
                             ? 'border-slate-900 bg-slate-900 text-white shadow-sm'
                             : 'border-slate-200 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-50'
-                        }`}
+                        } disabled:cursor-not-allowed disabled:opacity-45`}
                         aria-pressed={selected}
                       >
                         {option}
@@ -248,10 +272,11 @@ export default function EvaluasiSPMB() {
                         name="indikator"
                         value={option.value}
                         checked={indikator === option.value}
+                        disabled={isSubmitted}
                         onChange={() => setIndikator(option.value)}
                         className="peer sr-only"
                       />
-                      <span className={`flex h-11 items-center justify-center gap-2 rounded-lg border px-2 text-sm font-extrabold transition ${option.className}`}>
+                      <span className={`flex h-11 items-center justify-center gap-2 rounded-lg border px-2 text-sm font-extrabold transition peer-disabled:cursor-not-allowed peer-disabled:opacity-45 ${option.className}`}>
                         <span className="text-lg leading-none" aria-hidden="true">{option.emoji}</span>
                         <span>{option.label}</span>
                       </span>
@@ -265,10 +290,11 @@ export default function EvaluasiSPMB() {
                 <textarea
                   id="catatan"
                   value={catatan}
+                  disabled={isSubmitted}
                   onChange={event => setCatatan(event.target.value)}
                   rows={3}
                   placeholder="Opsional"
-                  className="w-full resize-none rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
+                  className="w-full resize-none rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:opacity-60"
                 />
               </div>
             </div>
@@ -276,13 +302,13 @@ export default function EvaluasiSPMB() {
             <div className="mt-auto pt-3">
               <button
                 type="submit"
-                disabled={isSaving}
+                disabled={isSubmitDisabled}
                 className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 text-sm font-extrabold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                 </svg>
-                {isSaving ? 'Menyimpan...' : 'Simpan Evaluasi'}
+                {isSaving ? 'Menyimpan...' : isSubmitted ? 'Evaluasi Tersimpan' : 'Simpan Evaluasi'}
               </button>
             </div>
           </form>
