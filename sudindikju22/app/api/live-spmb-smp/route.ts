@@ -97,9 +97,8 @@ export async function GET() {
     })
   } catch (error) {
     console.error('Gagal fetch data resmi SPMB SMP/SMA:', error)
-    return NextResponse.json(
-      { error: 'Gagal mengambil data resmi SPMB Jakarta untuk SMP/SMA' },
-      { status: 502 }
-    )
+    return NextResponse.json({
+      error: 'Gagal mengambil data resmi SPMB Jakarta untuk SMP/SMA'
+    })
   }
 }

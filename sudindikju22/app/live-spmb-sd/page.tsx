@@ -6,6 +6,17 @@ import { useRouter } from 'next/navigation'
 
 const MIX_DURATION = 3 * 60 * 1000
 
+const readJsonResponse = async (response: Response) => {
+  const text = await response.text()
+  if (!text) return {}
+
+  try {
+    return JSON.parse(text)
+  } catch {
+    throw new Error('API live SPMB belum mengembalikan JSON. Cek build/restart aplikasi dan response /api/live-spmb-sd.')
+  }
+}
+
 const AutoScrollList = ({
   children,
   isScrollable,
@@ -264,7 +275,7 @@ export default function LiveSPMBSD() {
       setError(null)
 
       const response = await fetch('/api/live-spmb-sd', { cache: 'no-store' })
-      const officialData: OfficialSPMBResponse = await response.json()
+      const officialData = await readJsonResponse(response) as OfficialSPMBResponse
 
       if (!response.ok || officialData.error) {
         throw new Error(officialData.error || 'Gagal fetch data SPMB Jakarta')

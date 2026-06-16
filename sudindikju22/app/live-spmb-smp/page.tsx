@@ -6,6 +6,17 @@ import { useRouter } from 'next/navigation'
 
 const MIX_DURATION = 3 * 60 * 1000
 
+const readJsonResponse = async (response: Response) => {
+  const text = await response.text()
+  if (!text) return {}
+
+  try {
+    return JSON.parse(text)
+  } catch {
+    throw new Error('API live SPMB belum mengembalikan JSON. Cek build/restart aplikasi dan response /api/live-spmb-smp.')
+  }
+}
+
 const AutoScrollList = ({ children, isScrollable, maxHeight = '260px' }: { children: React.ReactNode, isScrollable: boolean, maxHeight?: string }) => {
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -211,7 +222,7 @@ export default function LiveSPMBSMP() {
       setError(null)
 
       const response = await fetch('/api/live-spmb-smp', { cache: 'no-store' })
-      const officialData: OfficialSPMBSmpResponse = await response.json()
+      const officialData = await readJsonResponse(response) as OfficialSPMBSmpResponse
 
       if (!response.ok || officialData.error) {
         throw new Error(officialData.error || 'Gagal fetch data SPMB Jakarta SMP/SMA')

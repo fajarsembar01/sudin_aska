@@ -83,7 +83,6 @@ export async function GET() {
     {
       error: 'Gagal mengambil data resmi SPMB Jakarta untuk /010101/sekilas',
       source: `${OFFICIAL_BASE}/010101/sekilas`,
-    },
-    { status: 502 }
+    }
   )
 }
