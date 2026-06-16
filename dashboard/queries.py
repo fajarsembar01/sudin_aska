@@ -2553,6 +2553,82 @@ def list_spmb_evaluations(*, limit: int = 100) -> List[Dict[str, Any]]:
     return [dict(row) for row in rows]
 
 
+def ensure_spmb_queue_counters_schema() -> None:
+    """Create daily SPMB queue counter storage."""
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS spmb_queue_counters (
+                id SERIAL PRIMARY KEY,
+                service_date DATE NOT NULL UNIQUE,
+                current_number INTEGER NOT NULL DEFAULT 0 CHECK (current_number >= 0),
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_spmb_queue_counters_date
+            ON spmb_queue_counters (service_date DESC)
+            """
+        )
+
+
+def get_spmb_queue_counter(service_date: Any) -> Dict[str, Any]:
+    ensure_spmb_queue_counters_schema()
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            INSERT INTO spmb_queue_counters (service_date, current_number)
+            VALUES (%s, 0)
+            ON CONFLICT (service_date) DO NOTHING
+            """,
+            (service_date,),
+        )
+        cur.execute(
+            """
+            SELECT id, service_date, current_number, created_at, updated_at
+            FROM spmb_queue_counters
+            WHERE service_date = %s
+            """,
+            (service_date,),
+        )
+        row = cur.fetchone()
+    return dict(row)
+
+
+def update_spmb_queue_counter(*, service_date: Any, delta: int) -> Dict[str, Any]:
+    ensure_spmb_queue_counters_schema()
+    clean_delta = int(delta or 0)
+    if clean_delta == 0:
+        return get_spmb_queue_counter(service_date)
+    if clean_delta not in {-1, 1}:
+        raise ValueError("Perubahan nomor antrian tidak valid.")
+
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            INSERT INTO spmb_queue_counters (service_date, current_number)
+            VALUES (%s, 0)
+            ON CONFLICT (service_date) DO NOTHING
+            """,
+            (service_date,),
+        )
+        cur.execute(
+            """
+            UPDATE spmb_queue_counters
+            SET current_number = GREATEST(0, current_number + %s),
+                updated_at = NOW()
+            WHERE service_date = %s
+            RETURNING id, service_date, current_number, created_at, updated_at
+            """,
+            (clean_delta, service_date),
+        )
+        row = cur.fetchone()
+    return dict(row)
+
+
 def list_telegram_admin_accounts(scope: str = "default") -> List[Dict[str, Any]]:
     """List Telegram admin username mappings. scope: 'default' (umum) or 'call_center'."""
     with get_cursor() as cur:

@@ -23,7 +23,8 @@ const dashboardBaseUrls = () => {
   return [
     'http://127.0.0.1:8000',
     'http://127.0.0.1:8001',
-    'http://127.0.0.1:5001'
+    'http://127.0.0.1:5001',
+    'http://127.0.0.1:5002'
   ]
 }
 
@@ -68,7 +69,9 @@ export async function GET() {
         upstreamUrl
       })
     } catch (error) {
-      console.error(`Gagal mengambil jenis pelayanan SPMB dari dashboard ${upstreamUrl}:`, error)
+      if (attemptedUrls.length === 1) {
+        console.error(`Gagal mengambil jenis pelayanan SPMB dari dashboard ${upstreamUrl}:`, error)
+      }
     }
   }
 

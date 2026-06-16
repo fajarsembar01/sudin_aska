@@ -28,8 +28,7 @@ const readDashboardJson = async (response: Response) => {
   } catch {
     return {
       success: false,
-      data: [],
-      message: 'Dashboard API mengembalikan HTML, bukan JSON. Cek DASHBOARD_BASE_URL dan pastikan kode dashboard terbaru sudah terdeploy.',
+      message: 'Dashboard API mengembalikan HTML, bukan JSON. Cek DASHBOARD_BASE_URL dan restart dashboard.',
       upstreamStatus: response.status,
       upstreamContentType: response.headers.get('content-type') || '',
       upstreamPreview: text.slice(0, 180)
@@ -45,17 +44,14 @@ export async function GET() {
     let lastStatus = 502
 
     for (const baseUrl of dashboardBaseUrls()) {
-      const upstreamUrl = `${baseUrl}/api/spmb-evaluations?limit=100`
+      const upstreamUrl = `${baseUrl}/api/spmb-queue`
       attemptedUrls.push(upstreamUrl)
 
       try {
         const response = await fetch(upstreamUrl, {
           cache: 'no-store',
-          headers: {
-            accept: 'application/json'
-          }
+          headers: { accept: 'application/json' }
         })
-
         const payload = await readDashboardJson(response)
         if (payload && typeof payload === 'object') {
           payload.upstreamUrl = upstreamUrl
@@ -68,23 +64,23 @@ export async function GET() {
         lastStatus = response.status
       } catch (error) {
         lastPayload = {
-          data: [],
-          error: error instanceof Error ? error.message : 'Gagal menghubungi Dashboard API.'
+          success: false,
+          message: error instanceof Error ? error.message : 'Gagal menghubungi Dashboard API.'
         }
       }
     }
 
     return NextResponse.json({
       ...(lastPayload || {}),
-      data: Array.isArray(lastPayload?.data) ? lastPayload.data : [],
-      error: String(lastPayload?.error || lastPayload?.message || 'Gagal mengambil riwayat evaluasi dari server.'),
+      success: false,
+      message: String(lastPayload?.message || 'Gagal mengambil nomor antrian dari server.'),
       attemptedUrls
     }, { status: lastStatus })
   } catch (error) {
-    console.error('Gagal mengambil riwayat evaluasi SPMB:', error)
+    console.error('Gagal mengambil nomor antrian SPMB:', error)
     return NextResponse.json({
-      data: [],
-      error: 'Gagal mengambil riwayat evaluasi dari server.',
+      success: false,
+      message: 'Gagal mengambil nomor antrian dari server.',
       attemptedUrls
     }, { status: 502 })
   }
@@ -99,7 +95,7 @@ export async function POST(request: NextRequest) {
     let lastStatus = 502
 
     for (const baseUrl of dashboardBaseUrls()) {
-      const upstreamUrl = `${baseUrl}/api/spmb-evaluations`
+      const upstreamUrl = `${baseUrl}/api/spmb-queue`
       attemptedUrls.push(upstreamUrl)
 
       try {
@@ -109,7 +105,7 @@ export async function POST(request: NextRequest) {
           headers: {
             accept: 'application/json',
             'content-type': 'application/json',
-            'user-agent': request.headers.get('user-agent') || 'sudindikju22-evaluasi-spmb'
+            'user-agent': request.headers.get('user-agent') || 'sudindikju22-spmb-queue'
           },
           body: JSON.stringify(payload)
         })
@@ -135,14 +131,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       ...(lastPayload || {}),
       success: false,
-      message: String(lastPayload?.message || 'Gagal menyimpan evaluasi ke server.'),
+      message: String(lastPayload?.message || 'Gagal memperbarui nomor antrian.'),
       attemptedUrls
     }, { status: lastStatus })
   } catch (error) {
-    console.error('Gagal menyimpan evaluasi SPMB:', error)
+    console.error('Gagal memperbarui nomor antrian SPMB:', error)
     return NextResponse.json({
       success: false,
-      message: 'Gagal menyimpan evaluasi ke server.',
+      message: 'Gagal memperbarui nomor antrian.',
       attemptedUrls
     }, { status: 502 })
   }

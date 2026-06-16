@@ -83,6 +83,8 @@ from .queries import (
     release_spmb_table_assignment,
     create_spmb_evaluation,
     list_spmb_evaluations,
+    get_spmb_queue_counter,
+    update_spmb_queue_counter,
     record_admin_action,
     fetch_aska_knowledge_history,
 )
@@ -638,6 +640,17 @@ def _serialize_spmb_evaluation(item: dict) -> dict:
     }
 
 
+def _serialize_spmb_queue_counter(item: dict) -> dict:
+    service_date = item.get("service_date")
+    updated_at = item.get("updated_at")
+    return {
+        "id": item.get("id"),
+        "serviceDate": service_date.isoformat() if hasattr(service_date, "isoformat") else str(service_date or ""),
+        "currentNumber": int(item.get("current_number") or 0),
+        "updatedAt": updated_at.isoformat() if hasattr(updated_at, "isoformat") else str(updated_at or ""),
+    }
+
+
 @main_bp.route("/api/spmb-evaluations", methods=["GET", "POST"])
 def api_spmb_evaluations() -> Response:
     if request.method == "POST":
@@ -669,6 +682,35 @@ def api_spmb_evaluations() -> Response:
         current_app.logger.exception("Failed to fetch SPMB evaluations")
         return jsonify({"data": [], "error": f"Gagal mengambil riwayat evaluasi: {exc}"}), 500
     return jsonify({"data": [_serialize_spmb_evaluation(item) for item in items]})
+
+
+@main_bp.route("/api/spmb-queue", methods=["GET", "POST"])
+def api_spmb_queue() -> Response:
+    service_date = current_jakarta_time().date()
+
+    if request.method == "POST":
+        payload = request.get_json(silent=True) or {}
+        action = str(payload.get("action") or "").strip().lower()
+        delta = 1 if action in {"increment", "plus", "tambah"} else -1 if action in {"decrement", "minus", "kurang"} else 0
+        if delta == 0:
+            return jsonify({"success": False, "message": "Aksi nomor antrian tidak valid."}), 400
+
+        try:
+            item = update_spmb_queue_counter(service_date=service_date, delta=delta)
+        except ValueError as exc:
+            return jsonify({"success": False, "message": str(exc)}), 400
+        except Exception as exc:
+            current_app.logger.exception("Failed to update SPMB queue counter")
+            return jsonify({"success": False, "message": f"Gagal memperbarui nomor antrian: {exc}"}), 500
+
+        return jsonify({"success": True, "item": _serialize_spmb_queue_counter(item)})
+
+    try:
+        item = get_spmb_queue_counter(service_date)
+    except Exception as exc:
+        current_app.logger.exception("Failed to fetch SPMB queue counter")
+        return jsonify({"success": False, "message": f"Gagal mengambil nomor antrian: {exc}"}), 500
+    return jsonify({"success": True, "item": _serialize_spmb_queue_counter(item)})
 
 
 @main_bp.route("/spmb-service-types", methods=["GET", "POST"])

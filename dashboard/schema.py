@@ -367,6 +367,21 @@ CREATE INDEX IF NOT EXISTS idx_spmb_evaluations_table_created
 ON spmb_evaluations (table_number, created_at DESC);
 """
 
+_SPMB_QUEUE_COUNTERS_SQL = """
+CREATE TABLE IF NOT EXISTS spmb_queue_counters (
+    id SERIAL PRIMARY KEY,
+    service_date DATE NOT NULL UNIQUE,
+    current_number INTEGER NOT NULL DEFAULT 0 CHECK (current_number >= 0),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_SPMB_QUEUE_COUNTERS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_spmb_queue_counters_date
+ON spmb_queue_counters (service_date DESC);
+"""
+
 _TELEGRAM_ADMIN_ACCOUNTS_SQL = """
 CREATE TABLE IF NOT EXISTS telegram_admin_accounts (
     id SERIAL PRIMARY KEY,
@@ -1386,6 +1401,8 @@ def ensure_dashboard_schema() -> None:
         _SPMB_TABLE_ASSIGNMENTS_INDEX_SQL,
         _SPMB_EVALUATIONS_SQL,
         _SPMB_EVALUATIONS_INDEX_SQL,
+        _SPMB_QUEUE_COUNTERS_SQL,
+        _SPMB_QUEUE_COUNTERS_INDEX_SQL,
         _TELEGRAM_ADMIN_ACCOUNTS_SQL,
         _TELEGRAM_ADMIN_ACCOUNTS_INDEX_USER,
         _TELEGRAM_ADMIN_SCOPE_MIGRATION,
