@@ -2553,6 +2553,28 @@ def list_spmb_evaluations(*, limit: int = 100) -> List[Dict[str, Any]]:
     return [dict(row) for row in rows]
 
 
+def get_spmb_evaluation_counts(*, day_start: datetime, day_end: datetime) -> Dict[str, int]:
+    ensure_spmb_evaluations_schema()
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT
+                COUNT(*)::int AS total_count,
+                COUNT(*) FILTER (
+                    WHERE created_at >= %s AND created_at < %s
+                )::int AS today_count
+            FROM spmb_evaluations
+            """,
+            (day_start, day_end),
+        )
+        row = cur.fetchone()
+    row_data = dict(row or {})
+    return {
+        "today_count": int(row_data.get("today_count") or 0),
+        "total_count": int(row_data.get("total_count") or 0),
+    }
+
+
 def ensure_spmb_queue_counters_schema() -> None:
     """Create daily SPMB queue counter storage."""
     with get_cursor(commit=True) as cur:

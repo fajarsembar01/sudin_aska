@@ -13,6 +13,12 @@ interface EvaluasiEntry {
   createdAt: string
 }
 
+interface EvaluationSummary {
+  today: number
+  total: number
+  date: string
+}
+
 interface QueueCounter {
   id: string | number
   serviceDate: string
@@ -285,6 +291,11 @@ export default function EvaluasiSPMB() {
   const [indikator, setIndikator] = useState<Indikator | ''>('')
   const [catatan, setCatatan] = useState('')
   const [entries, setEntries] = useState<EvaluasiEntry[]>([])
+  const [evaluationSummary, setEvaluationSummary] = useState<EvaluationSummary>({
+    today: 0,
+    total: 0,
+    date: ''
+  })
   const [spmbSummary, setSpmbSummary] = useState<SPMBGroup[]>([])
   const [summaryPausedByKecamatan, setSummaryPausedByKecamatan] = useState<Record<KecName, boolean>>({
     Koja: false,
@@ -311,6 +322,14 @@ export default function EvaluasiSPMB() {
         throw new Error(payload?.error || payload?.message || 'Gagal memuat riwayat evaluasi.')
       }
       setEntries(rows)
+      const summary = payload?.summary || {}
+      const todayCount = Number(summary?.today)
+      const totalCount = Number(summary?.total)
+      setEvaluationSummary({
+        today: Number.isFinite(todayCount) ? todayCount : rows.length,
+        total: Number.isFinite(totalCount) ? totalCount : rows.length,
+        date: typeof summary?.date === 'string' ? summary.date : ''
+      })
     } catch (error) {
       setMessageTone('error')
       setSavedMessage(error instanceof Error ? error.message : 'Gagal memuat riwayat evaluasi.')
@@ -579,6 +598,11 @@ export default function EvaluasiSPMB() {
 
       const savedEntry = payload.item as EvaluasiEntry
       setEntries(prev => [savedEntry, ...prev].slice(0, 100))
+      setEvaluationSummary(prev => ({
+        ...prev,
+        today: prev.today + 1,
+        total: prev.total + 1
+      }))
       setNomorMeja('')
       setIndikator('')
       setCatatan('')
@@ -753,7 +777,10 @@ export default function EvaluasiSPMB() {
             <div className="mb-3 flex items-center justify-between gap-3">
               <div>
                 <h2 className="text-base font-extrabold">Riwayat Evaluasi</h2>
-                <p className="text-xs font-semibold text-slate-500">{entries.length} evaluasi tersimpan</p>
+                <div className="mt-1 flex flex-wrap gap-1.5 text-[11px] font-extrabold text-slate-600">
+                  <span className="rounded-full bg-slate-100 px-2 py-0.5">Hari ini {evaluationSummary.today}</span>
+                  <span className="rounded-full bg-slate-100 px-2 py-0.5">Seluruh {evaluationSummary.total}</span>
+                </div>
               </div>
               <button
                 type="button"

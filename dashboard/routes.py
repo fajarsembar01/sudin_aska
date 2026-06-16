@@ -83,6 +83,7 @@ from .queries import (
     release_spmb_table_assignment,
     create_spmb_evaluation,
     list_spmb_evaluations,
+    get_spmb_evaluation_counts,
     get_spmb_queue_counter,
     update_spmb_queue_counter,
     record_admin_action,
@@ -677,11 +678,22 @@ def api_spmb_evaluations() -> Response:
     except ValueError:
         limit = 100
     try:
+        jakarta_now = current_jakarta_time()
+        day_start = jakarta_now.replace(hour=0, minute=0, second=0, microsecond=0)
+        day_end = day_start + timedelta(days=1)
         items = list_spmb_evaluations(limit=limit)
+        counts = get_spmb_evaluation_counts(day_start=day_start, day_end=day_end)
     except Exception as exc:
         current_app.logger.exception("Failed to fetch SPMB evaluations")
         return jsonify({"data": [], "error": f"Gagal mengambil riwayat evaluasi: {exc}"}), 500
-    return jsonify({"data": [_serialize_spmb_evaluation(item) for item in items]})
+    return jsonify({
+        "data": [_serialize_spmb_evaluation(item) for item in items],
+        "summary": {
+            "today": counts["today_count"],
+            "total": counts["total_count"],
+            "date": day_start.date().isoformat(),
+        },
+    })
 
 
 @main_bp.route("/api/spmb-queue", methods=["GET", "POST"])
