@@ -326,6 +326,12 @@ export default function EvaluasiSPMB() {
   const [queueCounter, setQueueCounter] = useState<QueueCounter | null>(null)
   const [isQueueLoading, setIsQueueLoading] = useState(true)
   const [isQueueUpdating, setIsQueueUpdating] = useState(false)
+  const [editingEntry, setEditingEntry] = useState<EvaluasiEntry | null>(null)
+  const [editNomorMeja, setEditNomorMeja] = useState('')
+  const [editIndikator, setEditIndikator] = useState<Indikator | ''>('')
+  const [editCatatan, setEditCatatan] = useState('')
+  const [isEditingEntry, setIsEditingEntry] = useState(false)
+  const [isDeletingEntry, setIsDeletingEntry] = useState(false)
   const stopSpmbSummaryFetchRef = useRef(false)
 
   const loadEntries = async () => {
@@ -643,6 +649,86 @@ export default function EvaluasiSPMB() {
     setIsSubmitted(false)
   }
 
+  const openEditModal = (entry: EvaluasiEntry) => {
+    setEditingEntry(entry)
+    setEditNomorMeja(entry.nomorMeja)
+    setEditIndikator(entry.indikator)
+    setEditCatatan(entry.catatan)
+  }
+
+  const closeEditModal = () => {
+    if (isEditingEntry || isDeletingEntry) return
+    setEditingEntry(null)
+    setEditNomorMeja('')
+    setEditIndikator('')
+    setEditCatatan('')
+  }
+
+  const handleUpdateEntry = async () => {
+    if (!editingEntry || !editNomorMeja || !editIndikator || isEditingEntry) return
+
+    setIsEditingEntry(true)
+    try {
+      const response = await fetch(`/api/spmb-evaluations/${editingEntry.id}`, {
+        method: 'PUT',
+        headers: {
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify({
+          pelayanan: editingEntry.pelayanan || pelayanan,
+          nomorMeja: editNomorMeja,
+          indikator: editIndikator,
+          catatan: editCatatan.trim()
+        })
+      })
+      const payload = await readJsonResponse(response)
+      if (!response.ok || !payload?.success) {
+        throw new Error(payload?.message || 'Gagal memperbarui evaluasi.')
+      }
+
+      await loadEntries()
+      setMessageTone('success')
+      setSavedMessage('Perubahan evaluasi berhasil disimpan.')
+      setEditingEntry(null)
+      setEditNomorMeja('')
+      setEditIndikator('')
+      setEditCatatan('')
+    } catch (error) {
+      setMessageTone('error')
+      setSavedMessage(error instanceof Error ? error.message : 'Gagal memperbarui evaluasi.')
+    } finally {
+      setIsEditingEntry(false)
+    }
+  }
+
+  const handleDeleteEntry = async () => {
+    if (!editingEntry || isDeletingEntry) return
+
+    setIsDeletingEntry(true)
+    try {
+      const response = await fetch(`/api/spmb-evaluations/${editingEntry.id}`, {
+        method: 'DELETE'
+      })
+      const payload = await readJsonResponse(response)
+      if (!response.ok || !payload?.success) {
+        throw new Error(payload?.message || 'Gagal menghapus evaluasi.')
+      }
+
+      await loadEntries()
+      setMessageTone('success')
+      setSavedMessage('Evaluasi berhasil dihapus.')
+      setEditingEntry(null)
+      setEditNomorMeja('')
+      setEditIndikator('')
+      setEditCatatan('')
+    } catch (error) {
+      setMessageTone('error')
+      setSavedMessage(error instanceof Error ? error.message : 'Gagal menghapus evaluasi.')
+    } finally {
+      setIsDeletingEntry(false)
+    }
+  }
+
   const isSubmitDisabled = isSaving || isSubmitted || !nomorMeja || !indikator
   const hasSpmbSummaryData = spmbSummary.some(item => item.sd.length > 0 || item.smpSma.length > 0)
 
@@ -861,15 +947,28 @@ export default function EvaluasiSPMB() {
                             {new Date(entry.createdAt).toLocaleString('id-ID')}
                           </p>
                         </div>
-                        <span className={`rounded-full px-3 py-1 text-xs font-extrabold ${
-                          entry.indikator === 'baik'
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : entry.indikator === 'sedang'
-                              ? 'bg-amber-100 text-amber-800'
-                              : 'bg-rose-100 text-rose-800'
-                        }`}>
-                          {entry.indikator.toUpperCase()}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => openEditModal(entry)}
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-slate-900"
+                            aria-label={`Edit evaluasi meja ${entry.nomorMeja}`}
+                            title="Edit evaluasi"
+                          >
+                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536M9 11l6.768-6.768a2.5 2.5 0 113.536 3.536L12.536 14.536A4 4 0 0110.121 15.95L7 17l1.05-3.121A4 4 0 019 11z" />
+                            </svg>
+                          </button>
+                          <span className={`rounded-full px-3 py-1 text-xs font-extrabold ${
+                            entry.indikator === 'baik'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : entry.indikator === 'sedang'
+                                ? 'bg-amber-100 text-amber-800'
+                                : 'bg-rose-100 text-rose-800'
+                          }`}>
+                            {entry.indikator.toUpperCase()}
+                          </span>
+                        </div>
                       </div>
                     </article>
                   ))
@@ -949,6 +1048,117 @@ export default function EvaluasiSPMB() {
           </div>
           )}
         </div>
+
+        {editingEntry ? (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/30 p-4">
+            <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl">
+              <div className="mb-4 flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-base font-extrabold text-slate-900">Edit Evaluasi</h3>
+                  <p className="mt-1 text-xs font-semibold text-slate-500">
+                    {new Date(editingEntry.createdAt).toLocaleString('id-ID')}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={closeEditModal}
+                  disabled={isEditingEntry || isDeletingEntry}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:bg-slate-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40"
+                  aria-label="Tutup popup edit evaluasi"
+                >
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <fieldset>
+                  <legend className="mb-1 text-xs font-bold uppercase text-slate-500">Operator</legend>
+                  <div className="grid grid-cols-4 gap-2">
+                    {mejaOptions.map(option => (
+                      <button
+                        key={`edit-${option}`}
+                        type="button"
+                        onClick={() => setEditNomorMeja(option)}
+                        disabled={isEditingEntry || isDeletingEntry}
+                        className={`flex h-10 items-center justify-center rounded-lg border text-sm font-extrabold transition ${
+                          editNomorMeja === option
+                            ? 'border-slate-900 bg-slate-900 text-white'
+                            : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+                        } disabled:cursor-not-allowed disabled:opacity-50`}
+                      >
+                        {option}
+                      </button>
+                    ))}
+                  </div>
+                </fieldset>
+
+                <fieldset>
+                  <legend className="mb-1 text-xs font-bold uppercase text-slate-500">Indikator</legend>
+                  <div className="grid grid-cols-3 gap-2">
+                    {indikatorOptions.map(option => (
+                      <button
+                        key={`edit-indikator-${option.value}`}
+                        type="button"
+                        onClick={() => setEditIndikator(option.value)}
+                        disabled={isEditingEntry || isDeletingEntry}
+                        className={`flex h-11 items-center justify-center gap-2 rounded-lg border px-2 text-sm font-extrabold transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                          editIndikator === option.value ? option.className : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+                        }`}
+                      >
+                        <span className="text-lg leading-none" aria-hidden="true">{option.emoji}</span>
+                        <span>{option.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </fieldset>
+
+                <div>
+                  <label htmlFor="edit-catatan" className="mb-1 block text-xs font-bold uppercase text-slate-500">Catatan</label>
+                  <textarea
+                    id="edit-catatan"
+                    value={editCatatan}
+                    disabled={isEditingEntry || isDeletingEntry}
+                    onChange={event => setEditCatatan(event.target.value)}
+                    rows={3}
+                    placeholder="Opsional"
+                    className="w-full resize-none rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:opacity-60"
+                  />
+                </div>
+              </div>
+
+              <div className="mt-4 flex items-center justify-between gap-2">
+                <button
+                  type="button"
+                  onClick={handleDeleteEntry}
+                  disabled={isEditingEntry || isDeletingEntry}
+                  className="inline-flex h-10 items-center justify-center rounded-lg border border-rose-200 bg-rose-50 px-4 text-sm font-extrabold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isDeletingEntry ? 'Menghapus...' : 'Hapus'}
+                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={closeEditModal}
+                    disabled={isEditingEntry || isDeletingEntry}
+                    className="inline-flex h-10 items-center justify-center rounded-lg border border-slate-200 bg-white px-4 text-sm font-extrabold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleUpdateEntry}
+                    disabled={isEditingEntry || isDeletingEntry || !editNomorMeja || !editIndikator}
+                    className="inline-flex h-10 items-center justify-center rounded-lg bg-slate-900 px-4 text-sm font-extrabold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {isEditingEntry ? 'Menyimpan...' : 'Simpan'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </div>
     </main>
   )

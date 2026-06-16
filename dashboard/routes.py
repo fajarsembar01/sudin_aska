@@ -84,6 +84,8 @@ from .queries import (
     create_spmb_evaluation,
     list_spmb_evaluations,
     get_spmb_evaluation_counts,
+    update_spmb_evaluation,
+    delete_spmb_evaluation,
     get_spmb_queue_counter,
     update_spmb_queue_counter,
     record_admin_action,
@@ -694,6 +696,41 @@ def api_spmb_evaluations() -> Response:
             "date": day_start.date().isoformat(),
         },
     })
+
+
+@main_bp.route("/api/spmb-evaluations/<int:evaluation_id>", methods=["PUT", "DELETE"])
+def api_spmb_evaluation_item(evaluation_id: int) -> Response:
+    if request.method == "PUT":
+        payload = request.get_json(silent=True) or {}
+        try:
+            item = update_spmb_evaluation(
+                evaluation_id,
+                service_type=str(payload.get("pelayanan") or payload.get("service_type") or "Informasi SPMB"),
+                table_number=int(payload.get("nomorMeja") or payload.get("table_number") or 0),
+                indicator=str(payload.get("indikator") or payload.get("indicator") or ""),
+                note=str(payload.get("catatan") or payload.get("note") or ""),
+            )
+        except ValueError as exc:
+            return jsonify({"success": False, "message": str(exc)}), 400
+        except Exception as exc:
+            current_app.logger.exception("Failed to update SPMB evaluation")
+            return jsonify({"success": False, "message": f"Gagal memperbarui evaluasi: {exc}"}), 500
+
+        if not item:
+            return jsonify({"success": False, "message": "Data evaluasi tidak ditemukan."}), 404
+
+        return jsonify({"success": True, "item": _serialize_spmb_evaluation(item)})
+
+    try:
+        item = delete_spmb_evaluation(evaluation_id)
+    except Exception as exc:
+        current_app.logger.exception("Failed to delete SPMB evaluation")
+        return jsonify({"success": False, "message": f"Gagal menghapus evaluasi: {exc}"}), 500
+
+    if not item:
+        return jsonify({"success": False, "message": "Data evaluasi tidak ditemukan."}), 404
+
+    return jsonify({"success": True, "item": _serialize_spmb_evaluation(item)})
 
 
 @main_bp.route("/api/spmb-queue", methods=["GET", "POST"])

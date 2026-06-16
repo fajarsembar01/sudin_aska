@@ -2575,6 +2575,60 @@ def get_spmb_evaluation_counts(*, day_start: datetime, day_end: datetime) -> Dic
     }
 
 
+def update_spmb_evaluation(
+    evaluation_id: int,
+    *,
+    service_type: str,
+    table_number: int,
+    indicator: str,
+    note: Optional[str],
+) -> Optional[Dict[str, Any]]:
+    ensure_spmb_evaluations_schema()
+    clean_service_type = (service_type or "").strip() or "Informasi SPMB"
+    clean_indicator = (indicator or "").strip().lower()
+    if table_number < 1 or table_number > 12:
+        raise ValueError("Nomor operator harus 1 sampai 12.")
+    if clean_indicator not in {"baik", "sedang", "buruk"}:
+        raise ValueError("Indikator tidak valid.")
+
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE spmb_evaluations
+            SET service_type = %s,
+                table_number = %s,
+                indicator = %s,
+                note = %s
+            WHERE id = %s
+            RETURNING id, service_type, table_number, indicator, note, created_at
+            """,
+            (
+                clean_service_type,
+                table_number,
+                clean_indicator,
+                (note or "").strip() or None,
+                int(evaluation_id),
+            ),
+        )
+        row = cur.fetchone()
+    return dict(row) if row else None
+
+
+def delete_spmb_evaluation(evaluation_id: int) -> Optional[Dict[str, Any]]:
+    ensure_spmb_evaluations_schema()
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            DELETE FROM spmb_evaluations
+            WHERE id = %s
+            RETURNING id, service_type, table_number, indicator, note, created_at
+            """,
+            (int(evaluation_id),),
+        )
+        row = cur.fetchone()
+    return dict(row) if row else None
+
+
 def ensure_spmb_queue_counters_schema() -> None:
     """Create daily SPMB queue counter storage."""
     with get_cursor(commit=True) as cur:
