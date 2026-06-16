@@ -6,7 +6,13 @@ import { promisify } from 'node:util'
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
-const OFFICIAL_BASE = 'https://spmb.jakarta.go.id'
+const OFFICIAL_BASES = [
+  process.env.SPMB_OFFICIAL_BASE,
+  'https://jakarta.spmb.id',
+  'https://spmb.jakarta.go.id'
+]
+  .map(base => String(base || '').trim().replace(/\/$/, ''))
+  .filter((base, index, list) => base && list.indexOf(base) === index)
 const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0 Safari/537.36'
 const execFileAsync = promisify(execFile)
 
@@ -15,16 +21,17 @@ const ROUTE_CANDIDATES = [
 ]
 
 interface FetchAttempt {
+  baseUrl: string
   path: string
   method: 'https' | 'curl'
   ok: boolean
   error?: string
 }
 
-async function fetchJsonViaHttps(path: string) {
+async function fetchJsonViaHttps(baseUrl: string, path: string) {
   return new Promise<unknown>((resolve, reject) => {
     const request = https.request(
-      `${OFFICIAL_BASE}${path}`,
+      `${baseUrl}${path}`,
       {
         method: 'GET',
         family: 4,
@@ -32,7 +39,7 @@ async function fetchJsonViaHttps(path: string) {
         headers: {
           accept: 'application/json',
           'accept-language': 'id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7',
-          referer: `${OFFICIAL_BASE}/010101/sekilas`,
+          referer: `${baseUrl}/010101/sekilas`,
           'user-agent': USER_AGENT,
         },
       },
@@ -68,9 +75,10 @@ async function fetchJsonViaHttps(path: string) {
   })
 }
 
-async function fetchJsonViaCurl(path: string) {
+async function fetchJsonViaCurl(baseUrl: string, path: string) {
   const { stdout } = await execFileAsync('curl', [
     '--fail',
+    '--ipv4',
     '--silent',
     '--show-error',
     '--location',
@@ -81,42 +89,47 @@ async function fetchJsonViaCurl(path: string) {
     '-H',
     'accept-language: id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7',
     '-H',
-    `referer: ${OFFICIAL_BASE}/010101/sekilas`,
+    `referer: ${baseUrl}/010101/sekilas`,
     '-H',
     `user-agent: ${USER_AGENT}`,
-    `${OFFICIAL_BASE}${path}`
+    `${baseUrl}${path}`
   ], { maxBuffer: 10 * 1024 * 1024 })
 
   return JSON.parse(stdout)
 }
 
 async function fetchJson(path: string, attempts: FetchAttempt[]) {
-  try {
-    const data = await fetchJsonViaHttps(path)
-    attempts.push({ path, method: 'https', ok: true })
-    return data
-  } catch (error) {
-    attempts.push({
-      path,
-      method: 'https',
-      ok: false,
-      error: error instanceof Error ? error.message : String(error)
-    })
+  for (const baseUrl of OFFICIAL_BASES) {
+    try {
+      const data = await fetchJsonViaHttps(baseUrl, path)
+      attempts.push({ baseUrl, path, method: 'https', ok: true })
+      return data
+    } catch (error) {
+      attempts.push({
+        baseUrl,
+        path,
+        method: 'https',
+        ok: false,
+        error: error instanceof Error ? error.message : String(error)
+      })
+    }
+
+    try {
+      const data = await fetchJsonViaCurl(baseUrl, path)
+      attempts.push({ baseUrl, path, method: 'curl', ok: true })
+      return data
+    } catch (error) {
+      attempts.push({
+        baseUrl,
+        path,
+        method: 'curl',
+        ok: false,
+        error: error instanceof Error ? error.message : String(error)
+      })
+    }
   }
 
-  try {
-    const data = await fetchJsonViaCurl(path)
-    attempts.push({ path, method: 'curl', ok: true })
-    return data
-  } catch (error) {
-    attempts.push({
-      path,
-      method: 'curl',
-      ok: false,
-      error: error instanceof Error ? error.message : String(error)
-    })
-    return null
-  }
+  return null
 }
 
 export async function GET() {
@@ -130,7 +143,7 @@ export async function GET() {
 
     if (sekolah && statistik) {
       return NextResponse.json({
-        source: `${OFFICIAL_BASE}/010101/sekilas`,
+        source: `${OFFICIAL_BASES[0]}/010101/sekilas`,
         routeKey,
         sekolah,
         statistik,
@@ -141,7 +154,7 @@ export async function GET() {
   return NextResponse.json(
     {
       error: 'Gagal mengambil data resmi SPMB Jakarta untuk /010101/sekilas',
-      source: `${OFFICIAL_BASE}/010101/sekilas`,
+      source: `${OFFICIAL_BASES[0]}/010101/sekilas`,
       attempts,
     }
   )
