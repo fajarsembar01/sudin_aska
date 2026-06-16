@@ -255,6 +255,22 @@ const readJsonResponse = async (response: Response) => {
   }
 }
 
+const getJakartaDateKey = (value: Date | string) => {
+  const date = value instanceof Date ? value : new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Jakarta',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).format(date)
+}
+
+const countTodayEntries = (rows: EvaluasiEntry[]) => {
+  const todayKey = getJakartaDateKey(new Date())
+  return rows.filter(entry => getJakartaDateKey(entry.createdAt) === todayKey).length
+}
+
 const indikatorOptions: Array<{
   value: Indikator
   label: string
@@ -325,8 +341,9 @@ export default function EvaluasiSPMB() {
       const summary = payload?.summary || {}
       const todayCount = Number(summary?.today)
       const totalCount = Number(summary?.total)
+      const fallbackTodayCount = countTodayEntries(rows)
       setEvaluationSummary({
-        today: Number.isFinite(todayCount) ? todayCount : rows.length,
+        today: Number.isFinite(todayCount) ? todayCount : fallbackTodayCount,
         total: Number.isFinite(totalCount) ? totalCount : rows.length,
         date: typeof summary?.date === 'string' ? summary.date : ''
       })
