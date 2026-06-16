@@ -291,7 +291,6 @@ export default function EvaluasiSPMB() {
     Cilincing: false,
     'Kelapa Gading': false
   })
-  const [summaryError, setSummaryError] = useState('')
   const [savedMessage, setSavedMessage] = useState('')
   const [messageTone, setMessageTone] = useState<'success' | 'error'>('success')
   const [isSaving, setIsSaving] = useState(false)
@@ -365,7 +364,6 @@ export default function EvaluasiSPMB() {
 
   const loadSpmbSummary = async () => {
     try {
-      setSummaryError('')
       const [sdResponse, smpResponse] = await Promise.all([
         fetch('/api/live-spmb-sd', { cache: 'no-store' }),
         fetch('/api/live-spmb-smp', { cache: 'no-store' })
@@ -499,12 +497,8 @@ export default function EvaluasiSPMB() {
       if (!sdOk && !smpOk) {
         throw new Error('Gagal memuat ringkasan live SPMB.')
       }
-      if (!sdOk || !smpOk) {
-        setSummaryError('Sebagian ringkasan live belum tersedia.')
-      }
     } catch {
       setSpmbSummary([])
-      setSummaryError('Ringkasan live belum tersedia.')
     }
   }
 
@@ -605,6 +599,7 @@ export default function EvaluasiSPMB() {
   }
 
   const isSubmitDisabled = isSaving || isSubmitted || !nomorMeja || !indikator
+  const hasSpmbSummaryData = spmbSummary.some(item => item.sd.length > 0 || item.smpSma.length > 0)
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900 lg:h-screen lg:overflow-hidden">
@@ -613,7 +608,7 @@ export default function EvaluasiSPMB() {
           <h1 className="sr-only">Evaluasi Pelayanan SPMB</h1>
         </header>
 
-        <div className="grid min-h-0 flex-1 gap-3 lg:grid-cols-[5fr_3fr_3fr] lg:items-stretch">
+        <div className={`grid min-h-0 flex-1 gap-3 lg:items-stretch ${hasSpmbSummaryData ? 'lg:grid-cols-[5fr_3fr_3fr]' : 'lg:grid-cols-[5fr_3fr]'}`}>
           <form onSubmit={handleSubmit} className="flex min-h-0 flex-col rounded-lg border border-slate-200 bg-white p-4 shadow-sm lg:h-full">
             <div className="mb-3 flex items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-2">
@@ -839,80 +834,72 @@ export default function EvaluasiSPMB() {
             </div>
           </section>
 
+          {hasSpmbSummaryData && (
           <div className="flex min-h-0 flex-col gap-2 lg:h-full">
-            {spmbSummary.length > 0 ? (
-              spmbSummary.map(item => {
-                const schools = [
-                  ...item.sd.map(sekolah => ({ ...sekolah, jenjang: 'SD' as const })),
-                  ...item.smpSma
-                ]
-                const isSummaryPaused = summaryPausedByKecamatan[item.kecamatan]
+            {spmbSummary.map(item => {
+              const schools = [
+                ...item.sd.map(sekolah => ({ ...sekolah, jenjang: 'SD' as const })),
+                ...item.smpSma
+              ]
+              const isSummaryPaused = summaryPausedByKecamatan[item.kecamatan]
 
-                return (
-                  <section key={item.kecamatan} className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-orange-100 bg-[#fff8f0] p-2.5 shadow-sm">
-                    <div className="mb-1.5 flex h-6 items-center justify-between gap-2">
-                      <h3 className="truncate text-xs font-extrabold uppercase text-slate-900">{item.kecamatan}</h3>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSummaryPausedByKecamatan(prev => ({
-                            ...prev,
-                            [item.kecamatan]: !prev[item.kecamatan]
-                          }))
-                        }}
-                        className="inline-flex h-6 items-center gap-1 rounded-full border border-orange-200 bg-white px-2 text-[10px] font-extrabold text-orange-700 shadow-sm transition hover:bg-orange-50"
-                      >
-                        <span aria-hidden="true">{isSummaryPaused ? '▶' : 'Ⅱ'}</span>
-                        {isSummaryPaused ? 'Lanjut' : 'Pause'}
-                      </button>
-                    </div>
-                    {schools.length > 0 ? (
-                      <AutoScrollList isScrollable={schools.length > 5} isPaused={isSummaryPaused}>
-                        <div className="divide-y divide-orange-100 overflow-hidden rounded-xl border border-orange-100 bg-white shadow-sm">
-                          {schools.map(sekolah => (
-                            <div key={`${item.kecamatan}-${sekolah.jenjang}-${sekolah.npsn}`} className="flex min-h-7 items-center justify-between gap-2 px-2.5 py-1">
-                              <div className="min-w-0">
-                                <div className="truncate text-xs font-bold text-slate-900">{sekolah.nama}</div>
-                              </div>
-                              <div className="flex shrink-0 items-center gap-1.5">
-                                <span className="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] font-black uppercase text-slate-500">
-                                  {sekolah.jenjang}
+              if (schools.length === 0) return null
+
+              return (
+                <section key={item.kecamatan} className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-orange-100 bg-[#fff8f0] p-2.5 shadow-sm">
+                  <div className="mb-1.5 flex h-6 items-center justify-between gap-2">
+                    <h3 className="truncate text-xs font-extrabold uppercase text-slate-900">{item.kecamatan}</h3>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSummaryPausedByKecamatan(prev => ({
+                          ...prev,
+                          [item.kecamatan]: !prev[item.kecamatan]
+                        }))
+                      }}
+                      className="inline-flex h-6 items-center gap-1 rounded-full border border-orange-200 bg-white px-2 text-[10px] font-extrabold text-orange-700 shadow-sm transition hover:bg-orange-50"
+                    >
+                      <span aria-hidden="true">{isSummaryPaused ? '▶' : 'Ⅱ'}</span>
+                      {isSummaryPaused ? 'Lanjut' : 'Pause'}
+                    </button>
+                  </div>
+                  <AutoScrollList isScrollable={schools.length > 5} isPaused={isSummaryPaused}>
+                    <div className="divide-y divide-orange-100 overflow-hidden rounded-xl border border-orange-100 bg-white shadow-sm">
+                      {schools.map(sekolah => (
+                        <div key={`${item.kecamatan}-${sekolah.jenjang}-${sekolah.npsn}`} className="flex min-h-7 items-center justify-between gap-2 px-2.5 py-1">
+                          <div className="min-w-0">
+                            <div className="truncate text-xs font-bold text-slate-900">{sekolah.nama}</div>
+                          </div>
+                          <div className="flex shrink-0 items-center gap-1.5">
+                            <span className="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] font-black uppercase text-slate-500">
+                              {sekolah.jenjang}
+                            </span>
+                            {sekolah.jenjang === 'SD' ? (
+                              <span className="min-w-[64px] rounded bg-[#fde7c6] px-1.5 py-0.5 text-center text-[11px] font-black text-[#d94a00]">
+                                {sekolah.usiaTermuda}
+                              </span>
+                            ) : (
+                              <div className="flex items-center gap-1">
+                                <span className="flex min-w-[50px] items-center justify-center gap-1 rounded bg-[#fde7c6] px-1 py-0.5 text-[#d94a00]">
+                                  <span className="text-[8px] font-black text-orange-500">AK</span>
+                                  <span className="text-[11px] font-black">{sekolah.nilaiAkademik}</span>
                                 </span>
-                                {sekolah.jenjang === 'SD' ? (
-                                  <span className="min-w-[64px] rounded bg-[#fde7c6] px-1.5 py-0.5 text-center text-[11px] font-black text-[#d94a00]">
-                                    {sekolah.usiaTermuda}
-                                  </span>
-                                ) : (
-                                  <div className="flex items-center gap-1">
-                                    <span className="flex min-w-[50px] items-center justify-center gap-1 rounded bg-[#fde7c6] px-1 py-0.5 text-[#d94a00]">
-                                      <span className="text-[8px] font-black text-orange-500">AK</span>
-                                      <span className="text-[11px] font-black">{sekolah.nilaiAkademik}</span>
-                                    </span>
-                                    <span className="flex min-w-[54px] items-center justify-center gap-1 rounded bg-[#fff1d8] px-1 py-0.5 text-[#b45309]">
-                                      <span className="text-[8px] font-black text-amber-600">{sekolah.labelNonAkademik}</span>
-                                      <span className="text-[11px] font-black">{sekolah.nilaiNonAkademik}</span>
-                                    </span>
-                                  </div>
-                                )}
+                                <span className="flex min-w-[54px] items-center justify-center gap-1 rounded bg-[#fff1d8] px-1 py-0.5 text-[#b45309]">
+                                  <span className="text-[8px] font-black text-amber-600">{sekolah.labelNonAkademik}</span>
+                                  <span className="text-[11px] font-black">{sekolah.nilaiNonAkademik}</span>
+                                </span>
                               </div>
-                            </div>
-                          ))}
+                            )}
+                          </div>
                         </div>
-                      </AutoScrollList>
-                    ) : (
-                      <div className="flex min-h-[120px] items-center justify-center rounded-xl border border-dashed border-orange-200 bg-white/60 px-3 text-center text-sm font-semibold text-slate-500">
-                        Ringkasan live belum tersedia.
-                      </div>
-                    )}
-                  </section>
-                )
-              })
-            ) : (
-              <div className="rounded-lg border border-dashed border-slate-300 px-3 py-6 text-center text-sm font-semibold text-slate-500">
-                {summaryError || 'Ringkasan live belum tersedia.'}
-              </div>
-            )}
+                      ))}
+                    </div>
+                  </AutoScrollList>
+                </section>
+              )
+            })}
           </div>
+          )}
         </div>
       </div>
     </main>
