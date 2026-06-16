@@ -299,6 +299,7 @@ export default function EvaluasiSPMB() {
   const [queueCounter, setQueueCounter] = useState<QueueCounter | null>(null)
   const [isQueueLoading, setIsQueueLoading] = useState(true)
   const [isQueueUpdating, setIsQueueUpdating] = useState(false)
+  const stopSpmbSummaryFetchRef = useRef(false)
 
   const loadEntries = async () => {
     setIsHistoryLoading(true)
@@ -363,6 +364,8 @@ export default function EvaluasiSPMB() {
   }
 
   const loadSpmbSummary = async () => {
+    if (stopSpmbSummaryFetchRef.current) return
+
     try {
       const [sdResponse, smpResponse] = await Promise.all([
         fetch('/api/live-spmb-sd', { cache: 'no-store' }),
@@ -498,6 +501,7 @@ export default function EvaluasiSPMB() {
         throw new Error('Gagal memuat ringkasan live SPMB.')
       }
     } catch {
+      stopSpmbSummaryFetchRef.current = true
       setSpmbSummary([])
     }
   }
