@@ -19,13 +19,6 @@ interface EvaluationSummary {
   date: string
 }
 
-interface QueueCounter {
-  id: string | number
-  serviceDate: string
-  currentNumber: number
-  updatedAt: string
-}
-
 interface QueueCall {
   id: string | number
   serviceDate: string
@@ -335,7 +328,6 @@ export default function EvaluasiSPMB() {
   const [isSaving, setIsSaving] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [isHistoryLoading, setIsHistoryLoading] = useState(true)
-  const [queueCounter, setQueueCounter] = useState<QueueCounter | null>(null)
   const [lastQueueCall, setLastQueueCall] = useState<QueueCall | null>(null)
   const [queueAudioEnabled, setQueueAudioEnabled] = useState(false)
   const [queueAudioMessage, setQueueAudioMessage] = useState('Suara belum aktif')
@@ -385,7 +377,6 @@ export default function EvaluasiSPMB() {
       if (!response.ok || !payload?.success) {
         throw new Error(payload?.message || 'Gagal memuat nomor antrian.')
       }
-      setQueueCounter(payload.item as QueueCounter)
       const nextCall = payload?.lastCall ? payload.lastCall as QueueCall : null
       setLastQueueCall(nextCall)
       if (nextCall?.id) {
@@ -966,33 +957,26 @@ export default function EvaluasiSPMB() {
               </div>
             </div>
 
-            <div className="flex min-h-0 flex-1 flex-col gap-3">
-              <div className="flex flex-[1] flex-col justify-center rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-                <div className="flex min-h-0 items-center justify-between gap-3">
-                  <p className="max-w-[120px] text-[11px] font-black uppercase leading-tight tracking-wide text-slate-500">Nomor antrian tersedia</p>
-                  <div className="text-right text-9xl font-black leading-none text-slate-950">
-                    {isQueueLoading && !queueCounter ? '...' : queueCounter?.currentNumber ?? 0}
-                  </div>
-                </div>
-                <div className="mt-2 rounded-lg border border-slate-200 bg-white px-3 py-2">
-                  <div className="text-[11px] font-black uppercase tracking-wide text-slate-500">Panggilan terakhir</div>
+            <div className="flex min-h-0 flex-1 flex-col">
+              <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
+                <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
                   {lastQueueCall ? (
-                    <div className="mt-1 flex items-end justify-between gap-3">
-                      <div>
-                        <div className="text-sm font-extrabold text-slate-900">Antrian {lastQueueCall.queueNumber}</div>
-                        <div className="text-xs font-semibold text-slate-500">Meja {lastQueueCall.tableNumber}</div>
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="min-w-0 shrink-0">
+                        <div className="text-[11px] font-black uppercase leading-tight tracking-wide text-slate-500">Panggilan terakhir</div>
+                        <div className="mt-1 text-xl font-extrabold text-slate-900">Meja {lastQueueCall.tableNumber}</div>
+                        <span className="mt-2 inline-flex rounded-full bg-emerald-100 px-2 py-1 text-[10px] font-black uppercase text-emerald-700">
+                          {lastQueueCall.status.replace('_', ' ')}
+                        </span>
                       </div>
-                      <div className="rounded-full bg-emerald-100 px-2 py-1 text-[11px] font-black uppercase text-emerald-700">
-                        {lastQueueCall.status.replace('_', ' ')}
+                      <div className="min-w-0 flex-1 text-right text-8xl font-black leading-none text-slate-950">
+                        {lastQueueCall.queueNumber}
                       </div>
                     </div>
                   ) : (
                     <div className="mt-1 text-xs font-semibold text-slate-500">Belum ada panggilan.</div>
                   )}
                 </div>
-              </div>
-
-              <div className="min-h-0 flex-[4] space-y-2 overflow-y-auto pr-1">
                 {isHistoryLoading ? (
                   <div className="flex h-full min-h-[180px] items-center justify-center rounded-lg border border-dashed border-slate-300 text-center">
                     <p className="text-sm font-semibold text-slate-500">Memuat riwayat evaluasi...</p>
