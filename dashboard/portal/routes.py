@@ -1797,10 +1797,10 @@ def home() -> Response:
                 "col_class": "col-md-6 col-12",
             },
             {
-                "title": "Penugasan",
-                "description": "Klaim nomor operator evaluasi SPMB sesuai tanggal layanan.",
-                "icon": "bi-person-check",
-                "href": url_for("main.spmb_table_claim"),
+                "title": "Pilih Antrian",
+                "description": "Panggil nomor antrian SPMB dari meja operator yang sudah diklaim.",
+                "icon": "bi-megaphone",
+                "href": url_for("penugasan.spmb_queue_picker"),
                 "col_class": "col-md-6 col-12",
             },
         ]
@@ -1839,10 +1839,10 @@ def home() -> Response:
                 "col_class": "col-md-6 col-12",
             },
             {
-                "title": "Penugasan",
-                "description": "Klaim nomor operator evaluasi SPMB sesuai tanggal layanan.",
-                "icon": "bi-person-check",
-                "href": url_for("main.spmb_table_claim"),
+                "title": "Pilih Antrian",
+                "description": "Panggil nomor antrian SPMB dari meja operator yang sudah diklaim.",
+                "icon": "bi-megaphone",
+                "href": url_for("penugasan.spmb_queue_picker"),
                 "col_class": "col-md-6 col-12",
             },
         ]

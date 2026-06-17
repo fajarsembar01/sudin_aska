@@ -12,6 +12,7 @@ from .portal.routes import portal_bp
 from .hospitality import hospitality_bp
 from .daftar_tamu.routes import daftar_tamu_bp
 from .call_center import call_center_api_bp, call_center_bp
+from .penugasan import penugasan_bp
 from .cms.routes import cms_bp
 from .db_access import shutdown_pool
 from .queries import fetch_pending_bullying_count, fetch_pending_psych_count, fetch_pending_corruption_count
@@ -47,6 +48,7 @@ def create_app() -> Flask:
     app.register_blueprint(portal_bp)
     app.register_blueprint(hospitality_bp)
     app.register_blueprint(daftar_tamu_bp)
+    app.register_blueprint(penugasan_bp)
     app.register_blueprint(call_center_bp)
     csrf.exempt(call_center_api_bp)
     app.register_blueprint(call_center_api_bp)

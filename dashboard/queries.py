@@ -2705,6 +2705,231 @@ def update_spmb_queue_counter(*, service_date: Any, delta: int) -> Dict[str, Any
     return dict(row)
 
 
+def ensure_spmb_queue_calls_schema() -> None:
+    """Create daily SPMB queue call storage."""
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS spmb_queue_calls (
+                id SERIAL PRIMARY KEY,
+                service_date DATE NOT NULL,
+                queue_number INTEGER NOT NULL CHECK (queue_number > 0),
+                table_number INTEGER NOT NULL CHECK (table_number BETWEEN 1 AND 12),
+                status TEXT NOT NULL DEFAULT 'sedang_dilayani',
+                officer_user_id INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+                called_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                UNIQUE (service_date, queue_number)
+            )
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_spmb_queue_calls_date_status
+            ON spmb_queue_calls (service_date, status, queue_number)
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_spmb_queue_calls_called
+            ON spmb_queue_calls (service_date, called_at DESC, id DESC)
+            """
+        )
+
+
+def get_spmb_table_claim_for_user(*, assignment_date: Any, user_id: int) -> Optional[Dict[str, Any]]:
+    ensure_spmb_table_assignments_schema()
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT
+                a.id,
+                a.assignment_date,
+                a.table_number,
+                a.officer_user_id,
+                u.full_name AS officer_name,
+                u.email AS officer_email
+            FROM spmb_table_assignments a
+            LEFT JOIN dashboard_users u ON u.id = a.officer_user_id
+            WHERE a.assignment_date = %s
+              AND a.officer_user_id = %s
+            ORDER BY a.table_number ASC
+            LIMIT 1
+            """,
+            (assignment_date, int(user_id)),
+        )
+        row = cur.fetchone()
+    return dict(row) if row else None
+
+
+def list_spmb_queue_numbers(*, service_date: Any) -> List[Dict[str, Any]]:
+    counter = get_spmb_queue_counter(service_date)
+    ensure_spmb_queue_calls_schema()
+    current_number = int(counter.get("current_number") or 0)
+    if current_number <= 0:
+        return []
+
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            WITH numbers AS (
+                SELECT generate_series(1, %s) AS queue_number
+            ),
+            latest_calls AS (
+                SELECT DISTINCT ON (queue_number)
+                    id,
+                    queue_number,
+                    table_number,
+                    status,
+                    officer_user_id,
+                    called_at,
+                    updated_at
+                FROM spmb_queue_calls
+                WHERE service_date = %s
+                ORDER BY queue_number, called_at DESC, id DESC
+            )
+            SELECT
+                n.queue_number,
+                c.id AS call_id,
+                c.table_number,
+                c.status,
+                c.officer_user_id,
+                c.called_at,
+                c.updated_at,
+                u.full_name AS officer_name,
+                u.email AS officer_email
+            FROM numbers n
+            LEFT JOIN latest_calls c ON c.queue_number = n.queue_number
+            LEFT JOIN dashboard_users u ON u.id = c.officer_user_id
+            ORDER BY n.queue_number DESC
+            """,
+            (current_number, service_date),
+        )
+        rows = cur.fetchall()
+    return [dict(row) for row in rows]
+
+
+def list_spmb_staff_queue_status(*, service_date: Any) -> List[Dict[str, Any]]:
+    ensure_spmb_table_assignments_schema()
+    ensure_spmb_queue_calls_schema()
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            WITH tables AS (
+                SELECT generate_series(1, 12) AS table_number
+            ),
+            latest_officer_calls AS (
+                SELECT DISTINCT ON (officer_user_id)
+                    id,
+                    queue_number,
+                    table_number,
+                    status,
+                    officer_user_id,
+                    called_at,
+                    updated_at
+                FROM spmb_queue_calls
+                WHERE service_date = %s
+                  AND officer_user_id IS NOT NULL
+                ORDER BY officer_user_id, called_at DESC, id DESC
+            )
+            SELECT
+                t.table_number,
+                a.officer_user_id,
+                officer.full_name AS officer_name,
+                officer.email AS officer_email,
+                officer.role AS officer_role,
+                c.id AS call_id,
+                c.queue_number,
+                c.status,
+                c.called_at,
+                c.updated_at
+            FROM tables t
+            LEFT JOIN spmb_table_assignments a
+                ON a.table_number = t.table_number
+               AND a.assignment_date = %s
+            LEFT JOIN dashboard_users officer ON officer.id = a.officer_user_id
+            LEFT JOIN latest_officer_calls c ON c.officer_user_id = a.officer_user_id
+            ORDER BY t.table_number ASC
+            """,
+            (service_date, service_date),
+        )
+        rows = cur.fetchall()
+    return [dict(row) for row in rows]
+
+
+def call_spmb_queue_number(
+    *,
+    service_date: Any,
+    queue_number: int,
+    table_number: int,
+    officer_user_id: int,
+) -> Dict[str, Any]:
+    get_spmb_queue_counter(service_date)
+    ensure_spmb_queue_calls_schema()
+    clean_queue_number = int(queue_number or 0)
+    clean_table_number = int(table_number or 0)
+    if clean_queue_number < 1 or clean_queue_number > 9999:
+        raise ValueError("Nomor antrian harus 1 sampai 9999.")
+    if clean_table_number < 1 or clean_table_number > 12:
+        raise ValueError("Nomor meja tidak valid.")
+
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE spmb_queue_counters
+            SET current_number = GREATEST(current_number, %s),
+                updated_at = NOW()
+            WHERE service_date = %s
+            """,
+            (clean_queue_number, service_date),
+        )
+        cur.execute(
+            """
+            INSERT INTO spmb_queue_calls
+                (service_date, queue_number, table_number, status, officer_user_id, called_at, updated_at)
+            VALUES (%s, %s, %s, 'sedang_dilayani', %s, NOW(), NOW())
+            ON CONFLICT (service_date, queue_number) DO UPDATE
+            SET table_number = EXCLUDED.table_number,
+                status = 'sedang_dilayani',
+                officer_user_id = EXCLUDED.officer_user_id,
+                called_at = NOW(),
+                updated_at = NOW()
+            RETURNING id, service_date, queue_number, table_number, status, officer_user_id, called_at, updated_at
+            """,
+            (service_date, clean_queue_number, clean_table_number, int(officer_user_id)),
+        )
+        row = cur.fetchone()
+    return dict(row)
+
+
+def get_latest_spmb_queue_call(service_date: Any) -> Optional[Dict[str, Any]]:
+    ensure_spmb_queue_calls_schema()
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT
+                c.id,
+                c.service_date,
+                c.queue_number,
+                c.table_number,
+                c.status,
+                c.officer_user_id,
+                c.called_at,
+                c.updated_at,
+                u.full_name AS officer_name,
+                u.email AS officer_email
+            FROM spmb_queue_calls c
+            LEFT JOIN dashboard_users u ON u.id = c.officer_user_id
+            WHERE c.service_date = %s
+            ORDER BY c.called_at DESC, c.id DESC
+            LIMIT 1
+            """,
+            (service_date,),
+        )
+        row = cur.fetchone()
+    return dict(row) if row else None
+
+
 def list_telegram_admin_accounts(scope: str = "default") -> List[Dict[str, Any]]:
     """List Telegram admin username mappings. scope: 'default' (umum) or 'call_center'."""
     with get_cursor() as cur:

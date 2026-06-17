@@ -382,6 +382,27 @@ CREATE INDEX IF NOT EXISTS idx_spmb_queue_counters_date
 ON spmb_queue_counters (service_date DESC);
 """
 
+_SPMB_QUEUE_CALLS_SQL = """
+CREATE TABLE IF NOT EXISTS spmb_queue_calls (
+    id SERIAL PRIMARY KEY,
+    service_date DATE NOT NULL,
+    queue_number INTEGER NOT NULL CHECK (queue_number > 0),
+    table_number INTEGER NOT NULL CHECK (table_number BETWEEN 1 AND 12),
+    status TEXT NOT NULL DEFAULT 'sedang_dilayani',
+    officer_user_id INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    called_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (service_date, queue_number)
+);
+"""
+
+_SPMB_QUEUE_CALLS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_spmb_queue_calls_date_status
+ON spmb_queue_calls (service_date, status, queue_number);
+CREATE INDEX IF NOT EXISTS idx_spmb_queue_calls_called
+ON spmb_queue_calls (service_date, called_at DESC, id DESC);
+"""
+
 _TELEGRAM_ADMIN_ACCOUNTS_SQL = """
 CREATE TABLE IF NOT EXISTS telegram_admin_accounts (
     id SERIAL PRIMARY KEY,
@@ -1403,6 +1424,8 @@ def ensure_dashboard_schema() -> None:
         _SPMB_EVALUATIONS_INDEX_SQL,
         _SPMB_QUEUE_COUNTERS_SQL,
         _SPMB_QUEUE_COUNTERS_INDEX_SQL,
+        _SPMB_QUEUE_CALLS_SQL,
+        _SPMB_QUEUE_CALLS_INDEX_SQL,
         _TELEGRAM_ADMIN_ACCOUNTS_SQL,
         _TELEGRAM_ADMIN_ACCOUNTS_INDEX_USER,
         _TELEGRAM_ADMIN_SCOPE_MIGRATION,

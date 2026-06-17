@@ -161,6 +161,29 @@
                     </li>
                     {% endif %}
 
+                    {% if current_role in ['admin', 'coordinator', 'staff'] %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle {% if request.endpoint and request.endpoint.startswith('penugasan.') %}active{% endif %}"
+                            href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-megaphone nav-icon"></i>Penugasan
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item {% if request.endpoint == 'penugasan.spmb_queue_picker' %}active{% endif %}"
+                                    href="{{ url_for('penugasan.spmb_queue_picker') }}">
+                                    <i class="bi bi-megaphone me-2 text-primary"></i>Pilih Antrian
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if request.endpoint == 'penugasan.spmb_table_claim' %}active{% endif %}"
+                                    href="{{ url_for('penugasan.spmb_table_claim') }}">
+                                    <i class="bi bi-person-check me-2 text-primary"></i>Klaim Operator
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    {% endif %}
+
                     {% if is_admin %}
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle {% if request.endpoint in ['auth.manage_users', 'auth.manage_aska_users', 'auth.manage_monev_teams', 'auth.telegram_notifications', 'auth.whatsapp_link_settings', 'auth.whatsapp_bridge_settings', 'main.admin_performance'] %}active{% endif %}"

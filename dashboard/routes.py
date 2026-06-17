@@ -87,6 +87,7 @@ from .queries import (
     update_spmb_evaluation,
     delete_spmb_evaluation,
     get_spmb_queue_counter,
+    get_latest_spmb_queue_call,
     update_spmb_queue_counter,
     record_admin_action,
     fetch_aska_knowledge_history,
@@ -654,6 +655,28 @@ def _serialize_spmb_queue_counter(item: dict) -> dict:
     }
 
 
+def _serialize_spmb_queue_call(item: Optional[dict]) -> Optional[dict]:
+    if not item:
+        return None
+    service_date = item.get("service_date")
+    called_at = item.get("called_at")
+    updated_at = item.get("updated_at")
+    return {
+        "id": item.get("id"),
+        "serviceDate": service_date.isoformat() if hasattr(service_date, "isoformat") else str(service_date or ""),
+        "queueNumber": int(item.get("queue_number") or 0),
+        "tableNumber": int(item.get("table_number") or 0),
+        "status": item.get("status") or "",
+        "officerName": item.get("officer_name") or item.get("officer_email") or "",
+        "calledAt": called_at.isoformat() if hasattr(called_at, "isoformat") else str(called_at or ""),
+        "updatedAt": updated_at.isoformat() if hasattr(updated_at, "isoformat") else str(updated_at or ""),
+        "announcement": (
+            f"Nomor antrian {int(item.get('queue_number') or 0)}, "
+            f"silakan menuju meja nomor {int(item.get('table_number') or 0)}."
+        ),
+    }
+
+
 @main_bp.route("/api/spmb-evaluations", methods=["GET", "POST"])
 def api_spmb_evaluations() -> Response:
     if request.method == "POST":
@@ -752,14 +775,24 @@ def api_spmb_queue() -> Response:
             current_app.logger.exception("Failed to update SPMB queue counter")
             return jsonify({"success": False, "message": f"Gagal memperbarui nomor antrian: {exc}"}), 500
 
-        return jsonify({"success": True, "item": _serialize_spmb_queue_counter(item)})
+        last_call = get_latest_spmb_queue_call(service_date)
+        return jsonify({
+            "success": True,
+            "item": _serialize_spmb_queue_counter(item),
+            "lastCall": _serialize_spmb_queue_call(last_call),
+        })
 
     try:
         item = get_spmb_queue_counter(service_date)
+        last_call = get_latest_spmb_queue_call(service_date)
     except Exception as exc:
         current_app.logger.exception("Failed to fetch SPMB queue counter")
         return jsonify({"success": False, "message": f"Gagal mengambil nomor antrian: {exc}"}), 500
-    return jsonify({"success": True, "item": _serialize_spmb_queue_counter(item)})
+    return jsonify({
+        "success": True,
+        "item": _serialize_spmb_queue_counter(item),
+        "lastCall": _serialize_spmb_queue_call(last_call),
+    })
 
 
 @main_bp.route("/spmb-service-types", methods=["GET", "POST"])
@@ -948,63 +981,10 @@ def spmb_table_assignments() -> Response:
 @main_bp.route("/spmb-table-claim", methods=["GET", "POST"])
 @role_required("admin", "coordinator", "staff")
 def spmb_table_claim() -> Response:
-    user = current_user() or {}
-    selected_date = _parse_date_only(request.form.get("assignment_date") or request.args.get("date"))
-
+    date_value = request.form.get("assignment_date") or request.args.get("date")
     if request.method == "POST":
-        action = (request.form.get("action") or "claim").strip()
-        try:
-            if action == "release":
-                deleted_count = release_spmb_table_assignment(
-                    assignment_date=selected_date,
-                    user_id=int(user.get("id")),
-                )
-                if deleted_count:
-                    flash("Klaim meja berhasil dilepas.", "success")
-                else:
-                    flash("Belum ada meja yang diklaim pada tanggal ini.", "info")
-            else:
-                table_number = int(request.form.get("table_number") or 0)
-                result = claim_spmb_table_assignment(
-                    assignment_date=selected_date,
-                    table_number=table_number,
-                    user_id=int(user.get("id")),
-                )
-                flash(result["message"], "success" if result.get("success") else "warning")
-
-            record_admin_action(
-                user_id=user.get("id"),
-                feature_key="aska_insight",
-                action="UPDATE",
-                target_type="SPMB_TABLE_CLAIM",
-                target_name=selected_date.isoformat(),
-                metadata={
-                    "assignment_date": selected_date.isoformat(),
-                    "action": action,
-                    "table_number": request.form.get("table_number"),
-                    "role": user.get("role"),
-                },
-            )
-        except Exception as exc:
-            current_app.logger.exception("Failed to process SPMB table claim")
-            flash(f"Gagal memproses klaim meja: {exc}", "danger")
-        return redirect(url_for("main.spmb_table_claim", date=selected_date.isoformat()))
-
-    assignments = list_spmb_table_assignments(selected_date)
-    my_assignment = next(
-        (
-            item
-            for item in assignments
-            if item.get("officer_user_id") and int(item["officer_user_id"]) == int(user.get("id"))
-        ),
-        None,
-    )
-    return render_template(
-        "spmb_table_claim.html",
-        selected_date=selected_date,
-        assignments=assignments,
-        my_assignment=my_assignment,
-    )
+        flash("Halaman klaim meja sudah dipindahkan ke menu Penugasan.", "info")
+    return redirect(url_for("penugasan.spmb_table_claim", date=date_value))
 
 
 @main_bp.route("/overview")
