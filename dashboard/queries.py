@@ -2926,6 +2926,17 @@ def cancel_spmb_queue_call(
             (service_date, clean_queue_number),
         )
         row = cur.fetchone()
+        if row:
+            cur.execute(
+                """
+                UPDATE spmb_queue_counters
+                SET current_number = GREATEST(0, current_number - 1),
+                    updated_at = NOW()
+                WHERE service_date = %s
+                  AND current_number = %s
+                """,
+                (service_date, clean_queue_number),
+            )
     return dict(row) if row else None
 
 
@@ -2948,6 +2959,7 @@ def get_latest_spmb_queue_call(service_date: Any) -> Optional[Dict[str, Any]]:
             FROM spmb_queue_calls c
             LEFT JOIN dashboard_users u ON u.id = c.officer_user_id
             WHERE c.service_date = %s
+              AND c.status = 'sedang_dilayani'
             ORDER BY c.called_at DESC, c.id DESC
             LIMIT 1
             """,
