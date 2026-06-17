@@ -827,41 +827,48 @@ export default function EvaluasiSPMB() {
                 role="status"
               >
                 {savedMessage}
-                {isSubmitted && (
-                  <button
-                    type="button"
-                    onClick={resetForm}
-                    className="ms-3 rounded-md border border-emerald-300 bg-white px-2 py-1 text-xs font-extrabold text-emerald-900 hover:bg-emerald-100"
-                  >
-                    Isi Baru
-                  </button>
-                )}
               </div>
             )}
 
             <div className="grid gap-3">
               <fieldset>
                 <legend className="mb-1 text-xs font-bold uppercase text-slate-500">Operator</legend>
-                <div className="grid grid-cols-4 gap-2">
-                  {mejaOptions.map(option => {
-                    const selected = nomorMeja === option
-                    return (
+                <div className="relative">
+                  <div className={`grid grid-cols-4 gap-2 transition ${isSubmitted ? 'opacity-30 pointer-events-none' : ''}`}>
+                    {mejaOptions.map(option => {
+                      const selected = nomorMeja === option
+                      return (
+                        <button
+                          key={option}
+                          type="button"
+                          disabled={isSubmitted}
+                          onClick={() => setNomorMeja(option)}
+                          className={`flex h-10 items-center justify-center rounded-lg border text-sm font-extrabold transition ${
+                            selected
+                              ? 'border-slate-900 bg-slate-900 text-white shadow-sm'
+                              : 'border-slate-200 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-50'
+                          } disabled:cursor-not-allowed`}
+                          aria-pressed={selected}
+                        >
+                          {option}
+                        </button>
+                      )
+                    })}
+                  </div>
+                  {isSubmitted && (
+                    <div className="absolute inset-0 flex items-center justify-center">
                       <button
-                        key={option}
                         type="button"
-                        disabled={isSubmitted}
-                        onClick={() => setNomorMeja(option)}
-                        className={`flex h-10 items-center justify-center rounded-lg border text-sm font-extrabold transition ${
-                          selected
-                            ? 'border-slate-900 bg-slate-900 text-white shadow-sm'
-                            : 'border-slate-200 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-50'
-                        } disabled:cursor-not-allowed disabled:opacity-45`}
-                        aria-pressed={selected}
+                        onClick={resetForm}
+                        className="inline-flex items-center gap-4 rounded-3xl border-3 border-sky-500 bg-sky-50 px-16 py-7 text-4xl font-black text-sky-700 shadow-2xl transition hover:bg-sky-100 hover:border-sky-600 hover:text-sky-900 active:scale-95"
                       >
-                        {option}
+                        <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 4v16m8-8H4" />
+                        </svg>
+                        Isi Baru
                       </button>
-                    )
-                  })}
+                    </div>
+                  )}
                 </div>
               </fieldset>
 

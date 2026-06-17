@@ -7,7 +7,7 @@ const portalApiBase = (
 ).replace(/\/+$/, "");
 
 const nextConfig: NextConfig = {
-  allowedDevOrigins: ["127.0.0.1", "localhost"],
+  allowedDevOrigins: ["127.0.0.1", "localhost", "192.168.0.132"],
   async rewrites() {
     return [
       {
