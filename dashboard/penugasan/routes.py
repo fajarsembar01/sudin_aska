@@ -133,7 +133,6 @@ def spmb_queue_picker() -> Response:
                 call = cancel_spmb_queue_call(
                     service_date=selected_date,
                     queue_number=queue_number,
-                    officer_user_id=int(user.get("id")),
                 )
                 if call:
                     record_admin_action(
@@ -153,7 +152,7 @@ def spmb_queue_picker() -> Response:
                     )
                     flash(f"Nomor antrian {call['queue_number']} dikembalikan tidak aktif.", "success")
                 else:
-                    flash("Panggilan aktif tidak ditemukan atau bukan milik meja Anda.", "warning")
+                    flash("Panggilan aktif tidak ditemukan.", "warning")
                 return redirect(url_for("penugasan.spmb_queue_picker", date=selected_date.isoformat()))
 
             call = call_spmb_queue_number(

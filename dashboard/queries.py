@@ -2766,8 +2766,7 @@ def list_spmb_queue_numbers(*, service_date: Any) -> List[Dict[str, Any]]:
     counter = get_spmb_queue_counter(service_date)
     ensure_spmb_queue_calls_schema()
     current_number = int(counter.get("current_number") or 0)
-    if current_number <= 0:
-        return []
+    max_number = max(1, current_number + 1)
 
     with get_cursor() as cur:
         cur.execute(
@@ -2803,7 +2802,7 @@ def list_spmb_queue_numbers(*, service_date: Any) -> List[Dict[str, Any]]:
             LEFT JOIN dashboard_users u ON u.id = c.officer_user_id
             ORDER BY n.queue_number DESC
             """,
-            (current_number, service_date),
+            (max_number, service_date),
         )
         rows = cur.fetchall()
     return [dict(row) for row in rows]
@@ -2907,7 +2906,6 @@ def cancel_spmb_queue_call(
     *,
     service_date: Any,
     queue_number: int,
-    officer_user_id: int,
 ) -> Optional[Dict[str, Any]]:
     ensure_spmb_queue_calls_schema()
     clean_queue_number = int(queue_number or 0)
@@ -2923,10 +2921,9 @@ def cancel_spmb_queue_call(
             WHERE service_date = %s
               AND queue_number = %s
               AND status = 'sedang_dilayani'
-              AND officer_user_id = %s
             RETURNING id, service_date, queue_number, table_number, status, officer_user_id, called_at, updated_at
             """,
-            (service_date, clean_queue_number, int(officer_user_id)),
+            (service_date, clean_queue_number),
         )
         row = cur.fetchone()
     return dict(row) if row else None

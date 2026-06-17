@@ -145,33 +145,47 @@
                                         <span class="badge text-bg-success">Aktif</span>
                                         {% endif %}
                                     </div>
-                                    <div class="small text-muted mb-2" style="min-height: 32px;">
+                                    <div class="small text-muted text-truncate mb-2" style="min-height: 20px;" title="{% if is_serving %}Meja {{ item.table_number }}{% if item.officer_name %} - {{ item.officer_name }}{% endif %}{% else %}Siap dipanggil{% endif %}">
                                         {% if is_serving %}
-                                        Meja {{ item.table_number }}{% if item.officer_name %}<br>{{ item.officer_name }}{% endif %}
+                                        Meja {{ item.table_number }}{% if item.officer_name %} - {{ item.officer_name }}{% endif %}
                                         {% else %}
                                         Siap dipanggil
                                         {% endif %}
                                     </div>
+                                    {% if is_serving %}
+                                    <div class="d-flex gap-1">
+                                        <form method="post" action="{{ url_for('penugasan.spmb_queue_picker') }}" class="flex-fill">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <input type="hidden" name="service_date" value="{{ selected_date.isoformat() }}">
+                                            <input type="hidden" name="action" value="call">
+                                            <input type="hidden" name="queue_number" value="{{ item.queue_number }}">
+                                            <button type="submit" class="btn btn-sm btn-success w-100"
+                                                {% if not my_assignment %}disabled{% endif %}
+                                                title="Panggil ulang">
+                                                <i class="bi bi-megaphone"></i>
+                                            </button>
+                                        </form>
+                                        <form method="post" action="{{ url_for('penugasan.spmb_queue_picker') }}" class="flex-fill">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <input type="hidden" name="service_date" value="{{ selected_date.isoformat() }}">
+                                            <input type="hidden" name="action" value="cancel">
+                                            <input type="hidden" name="queue_number" value="{{ item.queue_number }}">
+                                            <button type="submit" class="btn btn-sm btn-outline-secondary w-100"
+                                                {% if not my_assignment %}disabled{% endif %}
+                                                title="Kembalikan tidak aktif">
+                                                <i class="bi bi-arrow-counterclockwise"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                    {% else %}
                                     <form method="post" action="{{ url_for('penugasan.spmb_queue_picker') }}">
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                         <input type="hidden" name="service_date" value="{{ selected_date.isoformat() }}">
                                         <input type="hidden" name="action" value="call">
                                         <input type="hidden" name="queue_number" value="{{ item.queue_number }}">
-                                        <button type="submit" class="btn btn-sm {% if is_serving %}btn-success{% else %}btn-outline-primary{% endif %} w-100"
+                                        <button type="submit" class="btn btn-sm btn-outline-primary w-100"
                                             {% if not my_assignment %}disabled{% endif %}>
                                             <i class="bi bi-megaphone"></i>
-                                        </button>
-                                    </form>
-                                    {% if is_serving %}
-                                    <form method="post" action="{{ url_for('penugasan.spmb_queue_picker') }}" class="mt-1">
-                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                        <input type="hidden" name="service_date" value="{{ selected_date.isoformat() }}">
-                                        <input type="hidden" name="action" value="cancel">
-                                        <input type="hidden" name="queue_number" value="{{ item.queue_number }}">
-                                        <button type="submit" class="btn btn-sm btn-outline-secondary w-100"
-                                            {% if not my_assignment %}disabled{% endif %}
-                                            title="Kembalikan tidak aktif">
-                                            <i class="bi bi-arrow-counterclockwise"></i>
                                         </button>
                                     </form>
                                     {% endif %}
