@@ -8,6 +8,7 @@ from flask import Blueprint, Response, current_app, flash, redirect, render_temp
 from dashboard.auth import current_user, role_required
 from dashboard.queries import (
     call_spmb_queue_number,
+    cancel_spmb_queue_call,
     claim_spmb_table_assignment,
     get_spmb_queue_counter,
     get_spmb_table_claim_for_user,
@@ -125,8 +126,36 @@ def spmb_queue_picker() -> Response:
             return redirect(url_for("penugasan.spmb_table_claim", date=selected_date.isoformat()))
 
         try:
+            action = (request.form.get("action") or "call").strip().lower()
             queue_number = int(request.form.get("queue_number") or 0)
             table_number = int(my_assignment["table_number"])
+            if action == "cancel":
+                call = cancel_spmb_queue_call(
+                    service_date=selected_date,
+                    queue_number=queue_number,
+                    officer_user_id=int(user.get("id")),
+                )
+                if call:
+                    record_admin_action(
+                        user_id=user.get("id"),
+                        feature_key="aska_insight",
+                        action="UPDATE",
+                        target_type="SPMB_QUEUE_CALL",
+                        target_id=call.get("id"),
+                        target_name=f"{selected_date.isoformat()} #{call.get('queue_number')}",
+                        metadata={
+                            "service_date": selected_date.isoformat(),
+                            "queue_number": call.get("queue_number"),
+                            "table_number": call.get("table_number"),
+                            "status": call.get("status"),
+                            "action": "cancel",
+                        },
+                    )
+                    flash(f"Nomor antrian {call['queue_number']} dikembalikan tidak aktif.", "success")
+                else:
+                    flash("Panggilan aktif tidak ditemukan atau bukan milik meja Anda.", "warning")
+                return redirect(url_for("penugasan.spmb_queue_picker", date=selected_date.isoformat()))
+
             call = call_spmb_queue_number(
                 service_date=selected_date,
                 queue_number=queue_number,

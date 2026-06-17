@@ -155,12 +155,26 @@
                                     <form method="post" action="{{ url_for('penugasan.spmb_queue_picker') }}">
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                         <input type="hidden" name="service_date" value="{{ selected_date.isoformat() }}">
+                                        <input type="hidden" name="action" value="call">
                                         <input type="hidden" name="queue_number" value="{{ item.queue_number }}">
                                         <button type="submit" class="btn btn-sm {% if is_serving %}btn-success{% else %}btn-outline-primary{% endif %} w-100"
                                             {% if not my_assignment %}disabled{% endif %}>
                                             <i class="bi bi-megaphone"></i>
                                         </button>
                                     </form>
+                                    {% if is_serving %}
+                                    <form method="post" action="{{ url_for('penugasan.spmb_queue_picker') }}" class="mt-1">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <input type="hidden" name="service_date" value="{{ selected_date.isoformat() }}">
+                                        <input type="hidden" name="action" value="cancel">
+                                        <input type="hidden" name="queue_number" value="{{ item.queue_number }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary w-100"
+                                            {% if not my_assignment %}disabled{% endif %}
+                                            title="Kembalikan tidak aktif">
+                                            <i class="bi bi-arrow-counterclockwise"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
                                 </div>
                             </div>
                             {% endfor %}

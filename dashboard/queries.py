@@ -2830,6 +2830,7 @@ def list_spmb_staff_queue_status(*, service_date: Any) -> List[Dict[str, Any]]:
                 FROM spmb_queue_calls
                 WHERE service_date = %s
                   AND officer_user_id IS NOT NULL
+                  AND status = 'sedang_dilayani'
                 ORDER BY officer_user_id, called_at DESC, id DESC
             )
             SELECT
@@ -2900,6 +2901,35 @@ def call_spmb_queue_number(
         )
         row = cur.fetchone()
     return dict(row)
+
+
+def cancel_spmb_queue_call(
+    *,
+    service_date: Any,
+    queue_number: int,
+    officer_user_id: int,
+) -> Optional[Dict[str, Any]]:
+    ensure_spmb_queue_calls_schema()
+    clean_queue_number = int(queue_number or 0)
+    if clean_queue_number < 1:
+        raise ValueError("Nomor antrian tidak valid.")
+
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE spmb_queue_calls
+            SET status = 'batal',
+                updated_at = NOW()
+            WHERE service_date = %s
+              AND queue_number = %s
+              AND status = 'sedang_dilayani'
+              AND officer_user_id = %s
+            RETURNING id, service_date, queue_number, table_number, status, officer_user_id, called_at, updated_at
+            """,
+            (service_date, clean_queue_number, int(officer_user_id)),
+        )
+        row = cur.fetchone()
+    return dict(row) if row else None
 
 
 def get_latest_spmb_queue_call(service_date: Any) -> Optional[Dict[str, Any]]:
