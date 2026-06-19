@@ -1,0 +1,398 @@
+{% extends "laporan/base_laporan.html" %}
+{% set page_title = "Isi " ~ form.title %}
+
+{% block head_extra %}
+<style>
+    .form-field-card {
+        border: 1.5px solid var(--border-soft);
+        border-radius: 14px;
+        background: var(--bg-surface);
+        padding: 1.25rem 1.5rem;
+        margin-bottom: 1rem;
+    }
+    .field-label {
+        font-weight: 600;
+        font-size: 0.95rem;
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
+    }
+    .field-label .required-star {
+        color: #dc3545;
+        margin-left: 3px;
+    }
+    .rating-group {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    .rating-btn {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        border: 2px solid var(--border-soft);
+        background: var(--bg-subtle);
+        color: var(--text-primary);
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.15s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+    }
+    .rating-btn:hover, .rating-btn.active {
+        border-color: #f59e0b;
+        background: #f59e0b;
+        color: white;
+    }
+    .file-drop-zone {
+        border: 2px dashed var(--border-soft);
+        border-radius: 12px;
+        padding: 2rem;
+        text-align: center;
+        background: var(--bg-subtle);
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .file-drop-zone:hover, .file-drop-zone.drag-over {
+        border-color: var(--accent);
+        background: rgba(13,110,253,0.04);
+    }
+    .file-drop-zone i {
+        font-size: 2rem;
+        color: var(--text-muted);
+        display: block;
+        margin-bottom: 0.5rem;
+    }
+    .file-preview-list {
+        margin-top: 0.75rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    .file-preview-item {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: rgba(13,110,253,0.08);
+        color: #0d6efd;
+        border-radius: 8px;
+        padding: 4px 10px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    .submit-bar {
+        position: sticky;
+        bottom: 0;
+        background: var(--bg-surface);
+        border-top: 1px solid var(--border-soft);
+        padding: 1rem 1.5rem;
+        margin: 0 -1.5rem;
+        z-index: 100;
+        backdrop-filter: blur(8px);
+    }
+    .form-header-card {
+        background: linear-gradient(135deg, rgba(13,110,253,0.08), rgba(99,102,241,0.05));
+        border: 1.5px solid var(--border-soft);
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block portal_content %}
+<div class="form-header-card">
+    <a href="{{ url_for('laporan.sekolah_laporan_list') }}"
+        class="btn btn-sm btn-outline-secondary mb-3 d-inline-flex align-items-center gap-1">
+        <i class="bi bi-arrow-left"></i> Kembali ke Daftar Form
+    </a>
+    <h1 class="h4 fw-bold mb-1">{{ form.title }}</h1>
+    {% if form.description %}
+    <p class="text-muted mb-2">{{ form.description }}</p>
+    {% endif %}
+    <div class="d-flex flex-wrap gap-3 align-items-center text-muted small">
+        {% if school %}
+        <span><i class="bi bi-building me-1"></i>{{ school.name }}</span>
+        {% endif %}
+        {% if form.deadline_str %}
+        <span><i class="bi bi-calendar-event me-1"></i>Deadline: {{ form.deadline_str }}</span>
+        {% endif %}
+        <span><i class="bi bi-arrow-repeat me-1"></i>{{ form.repeat_policy_label }}</span>
+        {% if form.current_period_label %}
+        <span class="text-primary fw-semibold"><i class="bi bi-calendar-week me-1"></i>Periode: {{ form.current_period_label }}</span>
+        {% endif %}
+        {% if form.repeat_until_str %}
+        <span><i class="bi bi-calendar-check me-1"></i>Berlaku sampai {{ form.repeat_until_str }}</span>
+        {% endif %}
+        {% if already_submitted and form.repeat_policy == 'multiple' %}
+        <span class="text-warning fw-semibold"><i class="bi bi-info-circle me-1"></i>Anda sudah pernah mengisi form ini. Pengisian ulang diperbolehkan.</span>
+        {% endif %}
+    </div>
+</div>
+
+<form id="laporanForm" method="POST"
+    action="{{ url_for('laporan.sekolah_laporan_submit', form_id=form.id) }}"
+    enctype="multipart/form-data"
+    novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    {% if not fields %}
+    <div class="text-center py-5">
+        <p class="text-muted">Form ini belum memiliki pertanyaan. Hubungi admin.</p>
+    </div>
+    {% else %}
+    {% set ns = namespace(q_idx=0) %}
+    {% for field in fields %}
+    {% if field.field_type not in ('header', 'info') %}
+        {% set ns.q_idx = ns.q_idx + 1 %}
+    {% endif %}
+
+    <div class="form-field-card {% if field.field_type in ('header', 'info') %}border-0 bg-transparent px-0{% endif %}" id="field-card-{{ field.id }}">
+        
+        {% if field.field_type == 'header' %}
+        <div class="pt-3 pb-2 mb-3 border-bottom border-2 border-primary">
+            <h3 class="fw-bold text-primary mb-0">{{ field.label }}</h3>
+        </div>
+        
+        {% elif field.field_type == 'info' %}
+        <div class="alert alert-info border-0 bg-primary-subtle text-primary-emphasis mb-0" role="alert">
+            <i class="bi bi-info-circle-fill me-2"></i>{{ field.label }}
+        </div>
+        
+        {% else %}
+        <p class="field-label">
+            {{ ns.q_idx }}. {{ field.label }}
+            {% if field.required %}<span class="required-star">*</span>{% endif %}
+        </p>
+
+        {# Text #}
+        {% if field.field_type == 'text' %}
+        <input type="text" class="form-control" name="field_{{ field.id }}"
+            id="field_{{ field.id }}" placeholder="Tulis jawaban Anda..."
+            {% if field.required %}required{% endif %}>
+
+        {# Textarea #}
+        {% elif field.field_type == 'textarea' %}
+        <textarea class="form-control" name="field_{{ field.id }}" id="field_{{ field.id }}"
+            rows="4" placeholder="Tulis jawaban Anda di sini..."
+            {% if field.required %}required{% endif %}></textarea>
+
+        {# Radio #}
+        {% elif field.field_type == 'radio' %}
+        <div class="d-flex flex-column gap-2">
+            {% if field.options_json %}
+            {% for opt in field.options_json %}
+            <div class="form-check">
+                <input class="form-check-input" type="radio"
+                    name="field_{{ field.id }}" id="field_{{ field.id }}_{{ loop.index }}"
+                    value="{{ opt }}" {% if field.required and loop.first %}required{% endif %}>
+                <label class="form-check-label" for="field_{{ field.id }}_{{ loop.index }}">{{ opt }}</label>
+            </div>
+            {% endfor %}
+            {% endif %}
+        </div>
+
+        {# Checkbox #}
+        {% elif field.field_type == 'checkbox' %}
+        <div class="d-flex flex-column gap-2">
+            {% if field.options_json %}
+            {% for opt in field.options_json %}
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox"
+                    name="field_{{ field.id }}[]" id="field_{{ field.id }}_{{ loop.index }}"
+                    value="{{ opt }}">
+                <label class="form-check-label" for="field_{{ field.id }}_{{ loop.index }}">{{ opt }}</label>
+            </div>
+            {% endfor %}
+            {% endif %}
+        </div>
+        
+        {# Dropdown #}
+        {% elif field.field_type == 'dropdown' %}
+        <select class="form-select" name="field_{{ field.id }}" id="field_{{ field.id }}" {% if field.required %}required{% endif %}>
+            <option value="" disabled selected>Pilih salah satu...</option>
+            {% if field.options_json %}
+            {% for opt in field.options_json %}
+            <option value="{{ opt }}">{{ opt }}</option>
+            {% endfor %}
+            {% endif %}
+        </select>
+
+        {# File Upload #}
+        {% elif field.field_type == 'file' %}
+        <div class="file-drop-zone" onclick="document.getElementById('file_{{ field.id }}').click()"
+            id="dropzone_{{ field.id }}">
+            <i class="bi bi-cloud-arrow-up"></i>
+            <p class="mb-1 fw-semibold">Klik atau seret file ke sini</p>
+            <p class="text-muted small mb-0">JPG, PNG, PDF, DOCX, XLSX (maks. 10 MB per file)</p>
+        </div>
+        <input type="file" name="field_{{ field.id }}[]" id="file_{{ field.id }}"
+            class="d-none" multiple
+            accept=".jpg,.jpeg,.png,.webp,.pdf,.doc,.docx,.xls,.xlsx"
+            {% if field.required %}required{% endif %}
+            onchange="showFilePreviews(this, '{{ field.id }}')">
+        <div class="file-preview-list" id="preview_{{ field.id }}"></div>
+
+        {# Date #}
+        {% elif field.field_type == 'date' %}
+        <input type="date" class="form-control" name="field_{{ field.id }}"
+            id="field_{{ field.id }}" {% if field.required %}required{% endif %}>
+            
+        {# Time #}
+        {% elif field.field_type == 'time' %}
+        <input type="time" class="form-control" name="field_{{ field.id }}"
+            id="field_{{ field.id }}" {% if field.required %}required{% endif %}>
+            
+        {# Email #}
+        {% elif field.field_type == 'email' %}
+        <input type="email" class="form-control" name="field_{{ field.id }}"
+            id="field_{{ field.id }}" placeholder="contoh@email.com" {% if field.required %}required{% endif %}>
+
+        {# Number #}
+        {% elif field.field_type == 'number' %}
+        <input type="number" class="form-control" name="field_{{ field.id }}"
+            id="field_{{ field.id }}" placeholder="0"
+            data-field-key="{{ field.field_key }}" data-formula-source="1"
+            {% if field.required %}required{% endif %}>
+
+        {# Rating #}
+        {% elif field.field_type == 'rating' %}
+        <input type="hidden" name="field_{{ field.id }}" id="rating_val_{{ field.id }}" value=""
+            data-field-key="{{ field.field_key }}" data-formula-source="1"
+            {% if field.required %}required{% endif %}>
+        <div class="rating-group" id="rating_group_{{ field.id }}">
+            {% for i in range(1, 6) %}
+            <button type="button" class="rating-btn" data-field="{{ field.id }}" data-val="{{ i }}"
+                onclick="setRating({{ field.id }}, {{ i }})">
+                {{ i }}
+            </button>
+            {% endfor %}
+        </div>
+        <div class="mt-1 d-flex justify-content-between text-muted small px-1">
+            <span>Sangat Buruk</span>
+            <span>Sangat Baik</span>
+        </div>
+            
+        {# Formula #}
+        {% elif field.field_type == 'formula' %}
+        {% set formula_cfg = field.options_json or {} %}
+        <input type="text" class="form-control bg-body-secondary" name="field_{{ field.id }}"
+            id="field_{{ field.id }}" value="0" readonly tabindex="-1"
+            data-formula-field="1"
+            data-formula-source="1"
+            data-field-key="{{ field.field_key }}"
+            data-left-key="{{ formula_cfg.left_key or '' }}"
+            data-operator="{{ formula_cfg.operator or 'subtract' }}"
+            data-right-key="{{ formula_cfg.right_key or '' }}">
+        {% endif %}
+        {% endif %}
+    </div>
+    {% endfor %}
+
+    <div class="d-flex justify-content-between align-items-center mt-2 p-3 rounded-3"
+        style="background: var(--bg-subtle);">
+        <p class="text-muted small mb-0"><i class="bi bi-shield-check me-1"></i>Data Anda terenkripsi dan hanya dapat dilihat oleh Sudin Pendidikan.</p>
+        <button type="submit" class="btn btn-primary d-inline-flex align-items-center gap-2 px-4"
+            id="submitBtn">
+            <i class="bi bi-send-fill"></i>
+            <span>Kirim Laporan</span>
+        </button>
+    </div>
+    {% endif %}
+</form>
+{% endblock %}
+
+{% block portal_scripts %}
+<script>
+function showFilePreviews(input, fieldId) {
+    const preview = document.getElementById('preview_' + fieldId);
+    preview.innerHTML = '';
+    if (!input.files) return;
+    Array.from(input.files).forEach(function(file) {
+        const item = document.createElement('div');
+        item.className = 'file-preview-item';
+        item.innerHTML = '<i class="bi bi-paperclip"></i>' + file.name;
+        preview.appendChild(item);
+    });
+}
+
+function setRating(fieldId, val) {
+    document.getElementById('rating_val_' + fieldId).value = val;
+    const group = document.getElementById('rating_group_' + fieldId);
+    group.querySelectorAll('.rating-btn').forEach(function(btn) {
+        const btnVal = parseInt(btn.getAttribute('data-val'));
+        btn.classList.toggle('active', btnVal <= val);
+    });
+    recalculateFormulaFields();
+}
+
+function parseFormulaNumber(value) {
+    const raw = String(value || '').trim();
+    if (!raw) return 0;
+    const normalized = raw.includes(',') && !raw.includes('.') ? raw.replace(',', '.') : raw;
+    const parsed = Number(normalized);
+    return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function formatFormulaNumber(value) {
+    if (Math.abs(value - Math.round(value)) < 0.0000001) {
+        return String(Math.round(value));
+    }
+    return value.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
+}
+
+function recalculateFormulaFields() {
+    const valuesByKey = {};
+    document.querySelectorAll('[data-formula-source="1"]').forEach(function(input) {
+        const key = input.getAttribute('data-field-key');
+        if (key) valuesByKey[key] = input.value;
+    });
+
+    document.querySelectorAll('[data-formula-field="1"]').forEach(function(input) {
+        const left = parseFormulaNumber(valuesByKey[input.getAttribute('data-left-key')] || '');
+        const right = parseFormulaNumber(valuesByKey[input.getAttribute('data-right-key')] || '');
+        const operator = input.getAttribute('data-operator') || 'subtract';
+        let result = left - right;
+        if (operator === 'add') result = left + right;
+        if (operator === 'multiply') result = left * right;
+        if (operator === 'divide') result = right ? left / right : 0;
+        input.value = formatFormulaNumber(result);
+        const key = input.getAttribute('data-field-key');
+        if (key) valuesByKey[key] = input.value;
+    });
+}
+
+document.querySelectorAll('[data-formula-source="1"]').forEach(function(input) {
+    input.addEventListener('input', recalculateFormulaFields);
+    input.addEventListener('change', recalculateFormulaFields);
+});
+recalculateFormulaFields();
+
+// Drag & drop support
+document.querySelectorAll('.file-drop-zone').forEach(function(zone) {
+    zone.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        zone.classList.add('drag-over');
+    });
+    zone.addEventListener('dragleave', function() {
+        zone.classList.remove('drag-over');
+    });
+    zone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        zone.classList.remove('drag-over');
+        const fieldId = zone.id.replace('dropzone_', '');
+        const input = document.getElementById('file_' + fieldId);
+        input.files = e.dataTransfer.files;
+        showFilePreviews(input, fieldId);
+    });
+});
+
+// Prevent double submit
+document.getElementById('laporanForm').addEventListener('submit', function() {
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Mengirim...';
+});
+</script>
+{% endblock %}

@@ -583,11 +583,10 @@ def admin_select_role() -> Response:
             "disabled": True,
         },
         {
-            "title": "CRM",
-            "description": "Segera Hadir",
-            "icon": "bi-chat-heart",
-            "href": "#",
-            "disabled": True,
+            "title": "Laporan",
+            "description": "Kelola dan pantau form laporan dari sekolah.",
+            "icon": "bi-file-earmark-text",
+            "href": url_for("laporan.admin_laporan_list"),
         },
     ]
     # Layout fleksibel: desktop 3 kolom, tablet 2 kolom, mobile 1 kolom

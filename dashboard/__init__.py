@@ -14,9 +14,10 @@ from .daftar_tamu.routes import daftar_tamu_bp
 from .call_center import call_center_api_bp, call_center_bp
 from .penugasan import penugasan_bp
 from .cms.routes import cms_bp
+from .laporan import laporan_bp
 from .db_access import shutdown_pool
 from .queries import fetch_pending_bullying_count, fetch_pending_psych_count, fetch_pending_corruption_count
-from .schema import ensure_dashboard_schema
+from .schema import ensure_dashboard_schema, ensure_laporan_schema
 from utils import to_jakarta
 
 
@@ -53,6 +54,7 @@ def create_app() -> Flask:
     csrf.exempt(call_center_api_bp)
     app.register_blueprint(call_center_api_bp)
     app.register_blueprint(cms_bp)
+    app.register_blueprint(laporan_bp)
     
     # Exempt public API endpoints from CSRF
     from .portal.routes import api_adiwiyata_likes
@@ -67,6 +69,10 @@ def create_app() -> Flask:
     if os.getenv("ASKA_DASHBOARD_AUTO_INIT", "0").strip().lower() in {"1", "true", "yes"}:
         try:
             ensure_dashboard_schema()
+        except Exception:
+            pass
+        try:
+            ensure_laporan_schema()
         except Exception:
             pass
 
@@ -135,6 +141,12 @@ def create_app() -> Flask:
                 admin_pending = {"total": 0}
                 admin_notification_items = []
 
+        try:
+            from .portal.permissions import get_permission_summary
+            permissions = get_permission_summary(user) if user else get_permission_summary({})
+        except Exception:
+            permissions = {}
+
         return {
             "current_user": user,
             "pending_bullying_count": pending_count,
@@ -145,6 +157,7 @@ def create_app() -> Flask:
             "cc_unread_count": cc_unread_count,
             "admin_pending": admin_pending,
             "admin_notification_items": admin_notification_items,
+            "permissions": permissions,
         }
 
     @app.template_filter("jakarta")

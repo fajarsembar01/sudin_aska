@@ -1,0 +1,93 @@
+{% extends "laporan/base_laporan.html" %}
+{% set page_title = "Riwayat Laporan" %}
+
+{% block portal_content %}
+<section class="mb-4">
+    <div class="card portal-hero border-0 shadow-sm">
+        <div class="card-body">
+            <a href="{{ url_for('laporan.sekolah_laporan_list') }}"
+                class="btn btn-sm btn-outline-secondary mb-2 d-inline-flex align-items-center gap-1">
+                <i class="bi bi-arrow-left"></i> Kembali
+            </a>
+            <h1 class="h3 fw-bold page-title mb-1">Riwayat Laporan</h1>
+            {% if school %}
+            <p class="page-subtitle mb-0">{{ school.name }} &bull; NPSN {{ school.npsn }}</p>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+{% if not submissions %}
+<div class="text-center py-5">
+    <div class="mb-3" style="font-size:3rem;opacity:0.3;"><i class="bi bi-clock-history"></i></div>
+    <p class="text-muted">Belum ada laporan yang pernah dikirim.</p>
+    <a href="{{ url_for('laporan.sekolah_laporan_list') }}" class="btn btn-primary">Lihat Form Tersedia</a>
+</div>
+{% else %}
+<div class="card border-0 shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th class="ps-3">Form</th>
+                    <th>Status</th>
+                    <th>Waktu Kirim</th>
+                    <th class="pe-3 text-end">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sub in submissions %}
+                <tr>
+                    <td class="ps-3">
+                        <div class="fw-semibold">{{ sub.form_title }}</div>
+                        {% if sub.form_description %}
+                        <div class="text-muted small">{{ sub.form_description | truncate(60) }}</div>
+                        {% endif %}
+                        {% if sub.repeat_period_label %}
+                        <div class="text-primary small">
+                            <i class="bi bi-calendar-week me-1"></i>Periode: {{ sub.repeat_period_label }}
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if sub.status == 'submitted' %}
+                            {% if sub.is_late and sub.late_days > 3 %}
+                            <span class="badge bg-danger-subtle text-danger">
+                                <i class="bi bi-exclamation-octagon me-1"></i>Sangat Telat ({{ sub.late_days }} Hari)
+                            </span>
+                            {% elif sub.is_late %}
+                            <span class="badge bg-warning-subtle text-warning">
+                                <i class="bi bi-exclamation-triangle me-1"></i>Telat ({{ sub.late_days }} Hari)
+                            </span>
+                            {% else %}
+                            <span class="badge bg-success-subtle text-success">
+                                <i class="bi bi-check-circle-fill me-1"></i>Tepat Waktu
+                            </span>
+                            {% endif %}
+                        {% else %}
+                        <span class="badge bg-secondary-subtle text-secondary">Draft</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if sub.submitted_at %}
+                        <span class="text-muted small">
+                            {{ sub.submitted_at.strftime('%d %b %Y %H:%M') }}
+                        </span>
+                        {% else %}
+                        <span class="text-muted small">—</span>
+                        {% endif %}
+                    </td>
+                    <td class="pe-3 text-end">
+                        <a href="{{ url_for('laporan.sekolah_laporan_detail', submission_id=sub.id) }}"
+                            class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-eye me-1"></i>Lihat
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

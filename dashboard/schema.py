@@ -1667,6 +1667,22 @@ def ensure_dashboard_schema() -> None:
         "ALTER TABLE cc_message_drafts ADD COLUMN IF NOT EXISTS media_filename TEXT",
         "ALTER TABLE cc_message_drafts ADD COLUMN IF NOT EXISTS media_size INTEGER",
         _CC_MESSAGE_DRAFTS_INDEX_SQL,
+        # ===== Laporan (Form Reports) tables =====
+        _LAPORAN_FORMS_SQL,
+        _LAPORAN_FORMS_STATUS_MIGRATION_SQL,
+        _LAPORAN_REPEAT_POLICY_MIGRATION_SQL,
+        _LAPORAN_FORMS_INDEX_SQL,
+        _LAPORAN_FORM_TARGETS_SQL,
+        _LAPORAN_FORM_TARGETS_INDEX_SQL,
+        _LAPORAN_FORM_FIELDS_SQL,
+        _LAPORAN_FORM_FIELDS_INDEX_SQL,
+        _LAPORAN_SUBMISSIONS_SQL,
+        _LAPORAN_SUBMISSIONS_REPEAT_PERIOD_MIGRATION_SQL,
+        _LAPORAN_SUBMISSIONS_INDEX_SQL,
+        _LAPORAN_SUBMISSION_ANSWERS_SQL,
+        _LAPORAN_SUBMISSION_ANSWERS_INDEX_SQL,
+        _LAPORAN_SUBMISSION_FILES_SQL,
+        _LAPORAN_SUBMISSION_FILES_INDEX_SQL,
     )
     
     # Execute statements one by one to ensure partial success and better error reporting
@@ -1678,6 +1694,195 @@ def ensure_dashboard_schema() -> None:
         except Exception as e:
             # Log error but continue with other statements if possible
             print(f"Error executing schema statement #{i+1}: {e}")
+            print(f"Statement: {statement[:100]}...")
+
+
+# ===== Laporan Schema SQL =====
+
+_LAPORAN_FORMS_SQL = """
+CREATE TABLE IF NOT EXISTS laporan_forms (
+    id SERIAL PRIMARY KEY,
+    title TEXT NOT NULL,
+    description TEXT,
+    target_scope TEXT NOT NULL DEFAULT 'all' CHECK (target_scope IN ('all', 'jenjang', 'specific')),
+    target_jenjang TEXT,
+    allow_multiple BOOLEAN NOT NULL DEFAULT FALSE,
+    allow_late BOOLEAN NOT NULL DEFAULT FALSE,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    status TEXT NOT NULL DEFAULT 'published' CHECK (status IN ('draft', 'published')),
+    repeat_policy TEXT NOT NULL DEFAULT 'once' CHECK (repeat_policy IN ('once', 'multiple', 'daily', 'weekly', 'monthly')),
+    repeat_until_at TIMESTAMPTZ,
+    repeat_deadline_time TIME,
+    repeat_deadline_day INTEGER,
+    deadline_at TIMESTAMPTZ,
+    created_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    updated_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_LAPORAN_FORMS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_laporan_forms_active ON laporan_forms (is_active, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_laporan_forms_scope ON laporan_forms (target_scope);
+CREATE INDEX IF NOT EXISTS idx_laporan_forms_status ON laporan_forms (status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_laporan_forms_repeat_policy ON laporan_forms (repeat_policy, repeat_until_at);
+"""
+
+_LAPORAN_FORMS_STATUS_MIGRATION_SQL = """
+ALTER TABLE laporan_forms ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'published';
+DO $$
+BEGIN
+    ALTER TABLE laporan_forms
+    ADD CONSTRAINT laporan_forms_status_check
+    CHECK (status IN ('draft', 'published'));
+EXCEPTION
+    WHEN duplicate_object THEN NULL;
+END $$;
+UPDATE laporan_forms SET status = 'published' WHERE status IS NULL;
+"""
+
+_LAPORAN_REPEAT_POLICY_MIGRATION_SQL = """
+ALTER TABLE laporan_forms ADD COLUMN IF NOT EXISTS repeat_policy TEXT NOT NULL DEFAULT 'once';
+ALTER TABLE laporan_forms ADD COLUMN IF NOT EXISTS repeat_until_at TIMESTAMPTZ;
+ALTER TABLE laporan_forms ADD COLUMN IF NOT EXISTS repeat_deadline_time TIME;
+ALTER TABLE laporan_forms ADD COLUMN IF NOT EXISTS repeat_deadline_day INTEGER;
+DO $$
+BEGIN
+    ALTER TABLE laporan_forms
+    ADD CONSTRAINT laporan_forms_repeat_policy_check
+    CHECK (repeat_policy IN ('once', 'multiple', 'daily', 'weekly', 'monthly'));
+EXCEPTION
+    WHEN duplicate_object THEN NULL;
+END $$;
+UPDATE laporan_forms
+SET repeat_policy = CASE WHEN allow_multiple THEN 'multiple' ELSE 'once' END
+WHERE repeat_policy IS NULL OR (repeat_policy = 'once' AND allow_multiple = TRUE);
+"""
+
+_LAPORAN_FORM_TARGETS_SQL = """
+CREATE TABLE IF NOT EXISTS laporan_form_targets (
+    id SERIAL PRIMARY KEY,
+    form_id INTEGER NOT NULL REFERENCES laporan_forms(id) ON DELETE CASCADE,
+    school_id INTEGER NOT NULL REFERENCES portal_schools(id) ON DELETE CASCADE,
+    UNIQUE (form_id, school_id)
+);
+"""
+
+_LAPORAN_FORM_TARGETS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_laporan_form_targets_form ON laporan_form_targets (form_id);
+CREATE INDEX IF NOT EXISTS idx_laporan_form_targets_school ON laporan_form_targets (school_id);
+"""
+
+_LAPORAN_FORM_FIELDS_SQL = """
+CREATE TABLE IF NOT EXISTS laporan_form_fields (
+    id SERIAL PRIMARY KEY,
+    form_id INTEGER NOT NULL REFERENCES laporan_forms(id) ON DELETE CASCADE,
+    label TEXT NOT NULL,
+    field_type TEXT NOT NULL DEFAULT 'text' CHECK (field_type IN ('text', 'textarea', 'radio', 'checkbox', 'file', 'date', 'number', 'rating', 'dropdown', 'time', 'email', 'header', 'info')),
+    options_json JSONB,
+    required BOOLEAN NOT NULL DEFAULT TRUE,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_LAPORAN_FORM_FIELDS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_laporan_form_fields_form ON laporan_form_fields (form_id, sort_order);
+"""
+
+_LAPORAN_SUBMISSIONS_SQL = """
+CREATE TABLE IF NOT EXISTS laporan_submissions (
+    id SERIAL PRIMARY KEY,
+    form_id INTEGER NOT NULL REFERENCES laporan_forms(id) ON DELETE CASCADE,
+    school_id INTEGER NOT NULL REFERENCES portal_schools(id) ON DELETE CASCADE,
+    submitted_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    status TEXT NOT NULL DEFAULT 'submitted' CHECK (status IN ('draft', 'submitted')),
+    submitted_at TIMESTAMPTZ,
+    is_late BOOLEAN NOT NULL DEFAULT FALSE,
+    late_days INTEGER DEFAULT 0,
+    repeat_period_key TEXT,
+    repeat_period_label TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_LAPORAN_SUBMISSIONS_REPEAT_PERIOD_MIGRATION_SQL = """
+ALTER TABLE laporan_submissions ADD COLUMN IF NOT EXISTS repeat_period_key TEXT;
+ALTER TABLE laporan_submissions ADD COLUMN IF NOT EXISTS repeat_period_label TEXT;
+"""
+
+_LAPORAN_SUBMISSIONS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_laporan_submissions_form ON laporan_submissions (form_id, submitted_at DESC);
+CREATE INDEX IF NOT EXISTS idx_laporan_submissions_school ON laporan_submissions (school_id, form_id);
+CREATE INDEX IF NOT EXISTS idx_laporan_submissions_status ON laporan_submissions (status);
+CREATE INDEX IF NOT EXISTS idx_laporan_submissions_is_late ON laporan_submissions (is_late);
+CREATE INDEX IF NOT EXISTS idx_laporan_submissions_period ON laporan_submissions (form_id, school_id, repeat_period_key);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_laporan_submissions_period
+    ON laporan_submissions (form_id, school_id, repeat_period_key)
+    WHERE status = 'submitted' AND repeat_period_key IS NOT NULL;
+"""
+
+_LAPORAN_SUBMISSION_ANSWERS_SQL = """
+CREATE TABLE IF NOT EXISTS laporan_submission_answers (
+    id SERIAL PRIMARY KEY,
+    submission_id INTEGER NOT NULL REFERENCES laporan_submissions(id) ON DELETE CASCADE,
+    field_id INTEGER NOT NULL REFERENCES laporan_form_fields(id) ON DELETE CASCADE,
+    answer_text TEXT,
+    answer_json JSONB,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (submission_id, field_id)
+);
+"""
+
+_LAPORAN_SUBMISSION_ANSWERS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_laporan_answers_submission ON laporan_submission_answers (submission_id);
+CREATE INDEX IF NOT EXISTS idx_laporan_answers_field ON laporan_submission_answers (field_id);
+"""
+
+_LAPORAN_SUBMISSION_FILES_SQL = """
+CREATE TABLE IF NOT EXISTS laporan_submission_files (
+    id SERIAL PRIMARY KEY,
+    answer_id INTEGER NOT NULL REFERENCES laporan_submission_answers(id) ON DELETE CASCADE,
+    file_path TEXT NOT NULL,
+    original_name TEXT,
+    mime_type TEXT,
+    size_bytes INTEGER,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_LAPORAN_SUBMISSION_FILES_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_laporan_files_answer ON laporan_submission_files (answer_id);
+"""
+
+
+def ensure_laporan_schema() -> None:
+    """Create laporan (form reports) tables without touching unrelated schema."""
+    statements = (
+        _LAPORAN_FORMS_SQL,
+        _LAPORAN_FORMS_STATUS_MIGRATION_SQL,
+        _LAPORAN_REPEAT_POLICY_MIGRATION_SQL,
+        _LAPORAN_FORMS_INDEX_SQL,
+        _LAPORAN_FORM_TARGETS_SQL,
+        _LAPORAN_FORM_TARGETS_INDEX_SQL,
+        _LAPORAN_FORM_FIELDS_SQL,
+        _LAPORAN_FORM_FIELDS_INDEX_SQL,
+        _LAPORAN_SUBMISSIONS_SQL,
+        _LAPORAN_SUBMISSIONS_REPEAT_PERIOD_MIGRATION_SQL,
+        _LAPORAN_SUBMISSIONS_INDEX_SQL,
+        _LAPORAN_SUBMISSION_ANSWERS_SQL,
+        _LAPORAN_SUBMISSION_ANSWERS_INDEX_SQL,
+        _LAPORAN_SUBMISSION_FILES_SQL,
+        _LAPORAN_SUBMISSION_FILES_INDEX_SQL,
+    )
+    for i, statement in enumerate(statements):
+        try:
+            with get_cursor(commit=True) as cur:
+                cur.execute(statement)
+        except Exception as e:
+            print(f"Error executing laporan schema statement #{i + 1}: {e}")
             print(f"Statement: {statement[:100]}...")
 
 
@@ -1703,4 +1908,4 @@ def ensure_cms_artikel_schema() -> None:
             raise
 
 
-__all__ = ["ensure_dashboard_schema", "ensure_cms_artikel_schema"]
+__all__ = ["ensure_dashboard_schema", "ensure_cms_artikel_schema", "ensure_laporan_schema"]

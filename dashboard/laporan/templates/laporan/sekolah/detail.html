@@ -1,0 +1,65 @@
+{% extends "laporan/base_laporan.html" %}
+{% set page_title = "Detail Laporan" %}
+
+{% block portal_content %}
+<section class="mb-4">
+    <div class="card portal-hero border-0 shadow-sm">
+        <div class="card-body">
+            <a href="{{ url_for('laporan.sekolah_laporan_history') }}"
+                class="btn btn-sm btn-outline-secondary mb-2 d-inline-flex align-items-center gap-1">
+                <i class="bi bi-arrow-left"></i> Kembali ke Riwayat
+            </a>
+            <h1 class="h3 fw-bold page-title mb-1">Detail Laporan</h1>
+            <p class="page-subtitle mb-0">
+                Dikirim oleh {{ submission.submitted_by_name or 'Pengguna' }} &bull;
+                {% if submission.submitted_at %}{{ submission.submitted_at.strftime('%d %b %Y %H:%M') }}{% endif %}
+                {% if submission.repeat_period_label %}&bull; Periode: {{ submission.repeat_period_label }}{% endif %}
+            </p>
+        </div>
+    </div>
+</section>
+
+<div class="row g-3">
+    {% for ans in submission.answers %}
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <p class="fw-semibold text-muted small mb-1" style="text-transform:uppercase;letter-spacing:0.05em;">
+                    {{ loop.index }}. {{ ans.label }}
+                </p>
+                {% if ans.field_type == 'file' %}
+                    {% if ans.files %}
+                    <div class="d-flex flex-wrap gap-2 mt-1">
+                        {% for f in ans.files %}
+                        <a href="{{ url_for('laporan.laporan_serve_file', filepath=f.file_path) }}"
+                            class="btn btn-sm btn-outline-primary" target="_blank">
+                            <i class="bi bi-paperclip me-1"></i>{{ f.original_name }}
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted mb-0">—</p>
+                    {% endif %}
+                {% elif ans.field_type == 'rating' %}
+                    <div class="d-flex align-items-center gap-2 mt-1">
+                        {% set rv = ans.answer_text | int %}
+                        {% for i in range(1, 6) %}
+                        <span style="font-size:1.4rem; color: {% if i <= rv %}#f59e0b{% else %}#dee2e6{% endif %};">★</span>
+                        {% endfor %}
+                        <span class="text-muted small">({{ rv }}/5)</span>
+                    </div>
+                {% elif ans.field_type == 'checkbox' and ans.answer_json %}
+                    <div class="d-flex flex-wrap gap-1 mt-1">
+                        {% for v in ans.answer_json %}
+                        <span class="badge bg-primary-subtle text-primary">{{ v }}</span>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="mb-0" style="white-space:pre-wrap;">{{ ans.answer_text or '—' }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

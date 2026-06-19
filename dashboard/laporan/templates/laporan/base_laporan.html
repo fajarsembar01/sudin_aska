@@ -1,0 +1,144 @@
+{% extends "portal/base_portal.html" %}
+
+{#
+  base_laporan.html — Base template untuk semua halaman Sistem Laporan.
+  Overrides block portal_nav dengan navbar Laporan sendiri,
+  seragam dengan hospitality tapi menunya relevan untuk Laporan.
+#}
+
+{% block portal_nav %}
+<nav class="navbar navbar-expand-lg sticky-top">
+  <div class="container-fluid px-lg-4">
+
+    <!-- Brand -->
+    <a class="navbar-brand"
+       href="{{ url_for('laporan.admin_laporan_list') if current_user and current_user.role == 'admin' else url_for('laporan.sekolah_laporan_list') }}">
+      <span class="icon-badge brand-icon text-primary">
+        <i class="bi bi-file-earmark-text"></i>
+      </span>
+      <span class="fw-bold">Laporan</span>
+    </a>
+
+    <button class="navbar-toggler" type="button"
+            data-bs-toggle="collapse" data-bs-target="#laporanNavbar"
+            aria-controls="laporanNavbar" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="laporanNavbar">
+
+      <!-- ── Left nav items ── -->
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+
+        {# ──── ADMIN ──── #}
+        {% if current_user and current_user.role == 'admin' %}
+
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint == 'laporan.admin_laporan_list' %}active{% endif %}"
+             href="{{ url_for('laporan.admin_laporan_list') }}">
+            <i class="bi bi-list-ul nav-icon"></i>Semua Form
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint == 'laporan.admin_laporan_create' %}active{% endif %}"
+             href="{{ url_for('laporan.admin_laporan_create') }}">
+            <i class="bi bi-plus-circle nav-icon"></i>Buat Form
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint == 'laporan.admin_laporan_kpi' %}active{% endif %}"
+             href="{{ url_for('laporan.admin_laporan_kpi') }}">
+            <i class="bi bi-bar-chart-line nav-icon"></i>KPI Kepatuhan
+          </a>
+        </li>
+
+        {% endif %}
+
+        {# ──── SEKOLAH ──── #}
+        {% if current_user and current_user.role == 'sekolah' %}
+
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint == 'laporan.sekolah_laporan_list' %}active{% endif %}"
+             href="{{ url_for('laporan.sekolah_laporan_list') }}">
+            <i class="bi bi-file-earmark-check nav-icon"></i>Form Tersedia
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint in ['laporan.sekolah_laporan_history', 'laporan.sekolah_laporan_detail'] %}active{% endif %}"
+             href="{{ url_for('laporan.sekolah_laporan_history') }}">
+            <i class="bi bi-clock-history nav-icon"></i>Riwayat
+          </a>
+        </li>
+
+        {% endif %}
+
+      </ul>
+
+      <!-- ── Right-side navbar (sama dengan hospitality) ── -->
+      <div class="d-flex align-items-center gap-3 user-nav-actions">
+
+        <!-- Home Button -->
+        {% if current_user and current_user.role in ['admin', 'sekolah', 'staff', 'coordinator'] %}
+        <a href="{{ url_for('main.admin_select_role') if current_user.role == 'admin' else url_for('portal.home') }}"
+           class="btn btn-outline-secondary btn-sm text-nowrap oss-home-btn">
+          <i class="bi bi-house me-1"></i><span class="oss-home-label">Home</span>
+        </a>
+        {% endif %}
+
+        <!-- Theme Toggle -->
+        <div class="form-check form-switch mb-0">
+          <input class="form-check-input" type="checkbox" id="themeToggle" role="switch">
+          <label class="theme-toggle-label" for="themeToggle">
+            <i class="bi bi-sun-fill theme-icon theme-icon-sun"></i>
+            <i class="bi bi-moon-fill theme-icon theme-icon-moon"></i>
+          </label>
+        </div>
+
+        <!-- Notifikasi Admin -->
+        {% if current_user and current_user.role == 'admin' %}
+        {% set pending_total = admin_pending.total if admin_pending else 0 %}
+        {% set total_count = pending_total %}
+        {% set notification_items = admin_notification_items %}
+        {% set notification_extra_include = 'portal/components/_notification_admin_quick.html' %}
+        {% include "portal/components/_notification_dropdown.html" with context %}
+        {% endif %}
+
+        <!-- Notifikasi Sekolah -->
+        {% if current_user and current_user.role in ['staff', 'coordinator', 'sekolah'] %}
+        {% set user_notif_unread = user_app_notifications.unread_count if user_app_notifications else 0 %}
+        <div class="dropdown notification-menu" id="laporanUserNotifRoot"
+             data-list-url="{{ url_for('portal.user_app_notifications') }}"
+             data-read-url="{{ url_for('portal.user_app_notifications_mark_read') }}"
+             data-history-url="{% if current_user.role == 'sekolah' %}{{ url_for('laporan.sekolah_laporan_history') }}{% else %}{{ url_for('portal.home') }}{% endif %}">
+          <button class="notification-toggle" type="button" data-bs-toggle="dropdown"
+                  id="laporanUserNotifToggle" aria-expanded="false" aria-label="Notifikasi pengguna">
+            <i class="bi bi-bell"></i>
+            <span class="notification-badge{% if user_notif_unread == 0 %} d-none{% endif %}"
+                  id="laporanUserNotifBadge" data-count="{{ user_notif_unread }}">{{ user_notif_unread }}</span>
+          </button>
+          <div class="dropdown-menu dropdown-menu-end notification-dropdown">
+            <div class="notification-header">
+              <span class="fw-semibold">Notifikasi Saya</span>
+            </div>
+            <div id="laporanUserNotifEmpty"
+                 class="notification-empty text-muted small{% if user_notif_unread > 0 %} d-none{% endif %}">
+              Belum ada notifikasi terbaru.
+            </div>
+            <div class="notification-quick" id="laporanUserNotifList"></div>
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- User Menu (avatar + nama + dropdown) -->
+        {% include "portal/components/_user_menu.html" %}
+
+      </div>
+      <!-- ── end right-side navbar ── -->
+
+    </div>
+  </div>
+</nav>
+{% endblock %}

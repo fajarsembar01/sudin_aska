@@ -2935,6 +2935,13 @@ def sekolah_home() -> Response:
             "href": "/portal/sekolah/adiwiyata",
             "col_class": "col-md-6 col-12",
         },
+        {
+            "title": "Laporan",
+            "description": "Isi dan kirim form laporan yang ditetapkan oleh Sudin Pendidikan.",
+            "icon": "bi-file-earmark-text",
+            "href": url_for("laporan.sekolah_laporan_list"),
+            "col_class": "col-md-6 col-12",
+        },
     ]
     return render_template(
         "role_selection.html",
