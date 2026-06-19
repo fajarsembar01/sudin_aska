@@ -299,11 +299,17 @@ def set_form_targets(form_id: int, school_ids: list[int]) -> None:
 
 def replace_form_fields(form_id: int, fields: list[dict]) -> None:
     """
-    Replace all fields for a form.
-    Each field dict: {field_key, label, field_type, options_json, required, sort_order}
+    Replace/Update all fields for a form without wiping out existing database answers.
+    Fields with matching field_key are updated, deleted ones are removed, new ones are inserted.
     """
     with get_cursor(commit=True) as cur:
-        cur.execute("DELETE FROM laporan_form_fields WHERE form_id = %s", (form_id,))
+        # Get existing fields for this form
+        cur.execute("SELECT id, options_json->>'field_key' AS field_key FROM laporan_form_fields WHERE form_id = %s", (form_id,))
+        existing = {row["field_key"]: row["id"] for row in cur.fetchall() if row.get("field_key")}
+        
+        # Track which IDs are kept
+        kept_ids = []
+        
         for i, f in enumerate(fields):
             field_type = f.get("field_type", "text")
             db_field_type = "number" if field_type == "formula" else field_type
@@ -331,19 +337,56 @@ def replace_form_fields(form_id: int, fields: list[dict]) -> None:
             else:
                 options = {"field_key": field_key}
             options = json.dumps(options, ensure_ascii=False)
+            
+            existing_id = existing.get(field_key)
+            if existing_id:
+                # Update existing
+                cur.execute(
+                    """
+                    UPDATE laporan_form_fields
+                    SET label = %s, field_type = %s, options_json = %s::jsonb, required = %s, sort_order = %s
+                    WHERE id = %s
+                    """,
+                    (
+                        f["label"],
+                        db_field_type,
+                        options,
+                        f.get("required", True),
+                        f.get("sort_order", i),
+                        existing_id,
+                    ),
+                )
+                kept_ids.append(existing_id)
+            else:
+                # Insert new
+                cur.execute(
+                    """
+                    INSERT INTO laporan_form_fields (form_id, label, field_type, options_json, required, sort_order)
+                    VALUES (%s, %s, %s, %s::jsonb, %s, %s)
+                    RETURNING id
+                    """,
+                    (
+                        form_id,
+                        f["label"],
+                        db_field_type,
+                        options,
+                        f.get("required", True),
+                        f.get("sort_order", i),
+                    ),
+                )
+                new_id = cur.fetchone()["id"]
+                kept_ids.append(new_id)
+
+        # Delete fields that are no longer in the form
+        if kept_ids:
             cur.execute(
-                """
-                INSERT INTO laporan_form_fields (form_id, label, field_type, options_json, required, sort_order)
-                VALUES (%s, %s, %s, %s::jsonb, %s, %s)
-                """,
-                (
-                    form_id,
-                    f["label"],
-                    db_field_type,
-                    options,
-                    f.get("required", True),
-                    f.get("sort_order", i),
-                ),
+                "DELETE FROM laporan_form_fields WHERE form_id = %s AND id NOT IN %s",
+                (form_id, tuple(kept_ids)),
+            )
+        else:
+            cur.execute(
+                "DELETE FROM laporan_form_fields WHERE form_id = %s",
+                (form_id,),
             )
 
 
