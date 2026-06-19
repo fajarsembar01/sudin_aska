@@ -135,11 +135,11 @@
                     </p>
                 </div>
                 <div class="d-flex gap-2 flex-wrap">
-                    <a href="{{ url_for('laporan.admin_laporan_export', form_id=form.id, date=filter_date) }}"
+                    <a href="{{ url_for('laporan.admin_laporan_export', form_id=form.id, period=filter_period) }}"
                         class="btn btn-success d-inline-flex align-items-center gap-2">
                         <i class="bi bi-file-earmark-excel"></i> Download Excel
                     </a>
-                    <a href="{{ url_for('laporan.admin_laporan_export_no_submission', form_id=form.id, date=filter_date) }}"
+                    <a href="{{ url_for('laporan.admin_laporan_export_no_submission', form_id=form.id, period=filter_period) }}"
                         class="btn btn-danger d-inline-flex align-items-center gap-2">
                         <i class="bi bi-file-earmark-excel-fill"></i> Download Excel (Tidak Mengumpulkan)
                     </a>
@@ -153,28 +153,26 @@
     </div>
 </section>
 
-{# Date Filter Form #}
+{# Period Filter Form #}
+{% if is_periodic %}
 <div class="card border-0 shadow-sm mb-4">
     <div class="card-body py-3">
         <form method="GET" class="row g-2 align-items-center">
             <div class="col-auto">
-                <span class="fw-semibold text-muted small text-uppercase"><i class="bi bi-funnel-fill me-1"></i>Filter Tanggal:</span>
+                <span class="fw-semibold text-muted small text-uppercase"><i class="bi bi-funnel-fill me-1"></i>Filter Periode:</span>
             </div>
             <div class="col-auto">
-                <div class="form-check form-check-inline mb-0">
-                    <input class="form-check-input" type="checkbox" id="filterAll" name="date" value="all" {% if filter_date == 'all' %}checked{% endif %} onchange="toggleDateInput()">
-                    <label class="form-check-label small fw-semibold" for="filterAll">Semua Tanggal</label>
-                </div>
-            </div>
-            <div class="col-auto">
-                <input type="date" id="filterDateInput" name="date" class="form-control form-control-sm" style="width: 170px;" value="{{ filter_date_val }}" {% if filter_date == 'all' %}disabled{% endif %}>
-            </div>
-            <div class="col-auto">
-                <button type="submit" class="btn btn-sm btn-primary px-3">Filter</button>
+                <select name="period" class="form-select form-select-sm" style="width: 280px;" onchange="this.form.submit()">
+                    <option value="all" {% if filter_period == 'all' %}selected{% endif %}>Semua Periode</option>
+                    {% for pk, pl in periods %}
+                    <option value="{{ pk }}" {% if filter_period == pk %}selected{% endif %}>{{ pl }}</option>
+                    {% endfor %}
+                </select>
             </div>
         </form>
     </div>
 </div>
+{% endif %}
 
 {% if not submissions %}
 <div class="text-center py-5">
@@ -388,13 +386,6 @@
 
 {% block portal_scripts %}
 <script>
-function toggleDateInput() {
-    var allCheck = document.getElementById('filterAll');
-    var dateInput = document.getElementById('filterDateInput');
-    if (allCheck && dateInput) {
-        dateInput.disabled = allCheck.checked;
-    }
-}
 
 function toggleCard(header) {
     var body = header.nextElementSibling;

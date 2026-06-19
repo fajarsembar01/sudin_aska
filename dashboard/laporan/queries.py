@@ -675,25 +675,7 @@ def _answer_export_value(field: dict, answer: Optional[dict]) -> str:
     return answer.get("answer_text", "") or ""
 
 
-def _filter_submissions_by_date(submissions: list[dict], filter_date: Optional[str]) -> list[dict]:
-    if not filter_date or filter_date == "all":
-        return submissions
-    try:
-        from datetime import datetime
-        target_date = datetime.strptime(filter_date, "%Y-%m-%d").date()
-        filtered = []
-        for sub in submissions:
-            sub_dt = sub.get("submitted_at") or sub.get("created_at")
-            if sub_dt:
-                sub_date = sub_dt.astimezone(_JAKARTA_TZ).date()
-                if sub_date == target_date:
-                    filtered.append(sub)
-        return filtered
-    except ValueError:
-        return submissions
-
-
-def export_form_xlsx(form_id: int, filter_date: Optional[str] = None) -> tuple[str, bytes]:
+def export_form_xlsx(form_id: int, filter_period: Optional[str] = None) -> tuple[str, bytes]:
     """
     Export all submitted answers for a form as a styled Excel workbook.
     Returns (filename, xlsx_bytes).
@@ -708,7 +690,8 @@ def export_form_xlsx(form_id: int, filter_date: Optional[str] = None) -> tuple[s
 
     fields = [f for f in get_form_fields(form_id) if f.get("field_type") not in {"header", "info"}]
     submissions = list_form_submissions(form_id)
-    submissions = _filter_submissions_by_date(submissions, filter_date)
+    if filter_period and filter_period != "all":
+        submissions = [s for s in submissions if s.get("repeat_period_key") == filter_period]
     header = ["No", "Sekolah", "NPSN", "Jenjang", "Disubmit Oleh", "Periode", "Waktu Submit"]
     for f in fields:
         header.append(f["label"])
@@ -803,7 +786,7 @@ def export_form_csv(form_id: int) -> tuple[str, bytes]:
     return export_form_xlsx(form_id)
 
 
-def export_no_submissions_xlsx(form_id: int, filter_date: Optional[str] = None) -> tuple[str, bytes]:
+def export_no_submissions_xlsx(form_id: int, filter_period: Optional[str] = None) -> tuple[str, bytes]:
     """
     Export the list of schools that did not submit for a form as an Excel workbook.
     Returns (filename, xlsx_bytes).
@@ -819,7 +802,8 @@ def export_no_submissions_xlsx(form_id: int, filter_date: Optional[str] = None) 
 
     # Fetch submissions with status 'no_submission'
     submissions = list_form_submissions(form_id)
-    submissions = _filter_submissions_by_date(submissions, filter_date)
+    if filter_period and filter_period != "all":
+        submissions = [s for s in submissions if s.get("repeat_period_key") == filter_period]
     no_subs = [s for s in submissions if s.get("status") == "no_submission"]
 
     header = ["No", "Sekolah", "NPSN", "Jenjang", "Periode", "Status"]
