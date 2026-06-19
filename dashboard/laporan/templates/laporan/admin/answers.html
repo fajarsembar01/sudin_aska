@@ -134,10 +134,14 @@
                         {% elif form.deadline_at %}&bull; Deadline: {{ form.deadline_at.strftime('%d %b %Y %H:%M') }}{% endif %}
                     </p>
                 </div>
-                <div class="d-flex gap-2">
+                <div class="d-flex gap-2 flex-wrap">
                     <a href="{{ url_for('laporan.admin_laporan_export', form_id=form.id) }}"
                         class="btn btn-success d-inline-flex align-items-center gap-2">
                         <i class="bi bi-file-earmark-excel"></i> Download Excel
+                    </a>
+                    <a href="{{ url_for('laporan.admin_laporan_export_no_submission', form_id=form.id) }}"
+                        class="btn btn-danger d-inline-flex align-items-center gap-2">
+                        <i class="bi bi-file-earmark-excel-fill"></i> Download Excel (Tidak Mengumpulkan)
                     </a>
                     <a href="{{ url_for('laporan.admin_laporan_edit', form_id=form.id) }}"
                         class="btn btn-outline-secondary d-inline-flex align-items-center gap-2">
@@ -161,7 +165,7 @@
     <div class="col-6 col-md-3">
         <div class="card border-0 shadow-sm text-center p-3">
             <div class="h2 fw-bold text-primary mb-0">{{ submissions | length }}</div>
-            <div class="text-muted small">Total Jawaban</div>
+            <div class="text-muted small">Total Sasaran Laporan</div>
         </div>
     </div>
     <div class="col-6 col-md-3">
@@ -174,14 +178,16 @@
     </div>
     <div class="col-6 col-md-3">
         <div class="card border-0 shadow-sm text-center p-3">
-            <div class="h2 fw-bold text-info mb-0">{{ fields | length }}</div>
-            <div class="text-muted small">Jumlah Field</div>
+            <div class="h2 fw-bold text-danger mb-0">
+                {{ submissions | selectattr('status', 'equalto', 'no_submission') | list | length }}
+            </div>
+            <div class="text-muted small">Tidak Mengumpulkan</div>
         </div>
     </div>
     <div class="col-6 col-md-3">
         <div class="card border-0 shadow-sm text-center p-3">
             <div class="h2 fw-bold text-warning mb-0">
-                {{ submissions | map(attribute='school_name') | list | unique | list | length }}
+                {{ submissions | selectattr('status', 'equalto', 'submitted') | map(attribute='school_name') | list | unique | list | length }}
             </div>
             <div class="text-muted small">Sekolah Berbeda</div>
         </div>
@@ -267,12 +273,18 @@
 {# Answer Cards #}
 <div id="answersContainer">
 {% for sub in submissions %}
-<div class="answer-card" data-school="{{ (sub.school_name or '') | lower }}">
+<div class="answer-card {% if sub.status == 'no_submission' %}border-danger-subtle{% endif %}" data-school="{{ (sub.school_name or '') | lower }}">
     <div class="answer-card-header" onclick="toggleCard(this)">
         <div class="d-flex align-items-center gap-3">
+            {% if sub.status == 'no_submission' %}
+            <div style="width:40px;height:40px;border-radius:10px;background:rgba(220,53,69,0.1);color:#dc3545;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;">
+                <i class="bi bi-x-lg"></i>
+            </div>
+            {% else %}
             <div style="width:40px;height:40px;border-radius:10px;background:rgba(13,110,253,0.1);color:#0d6efd;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;">
                 {{ loop.index }}
             </div>
+            {% endif %}
             <div>
                 <div class="fw-semibold">{{ sub.school_name }}</div>
                 <div class="text-muted small">
@@ -283,7 +295,9 @@
             </div>
         </div>
         <div class="d-flex align-items-center gap-2">
-            {% if sub.is_very_late %}
+            {% if sub.status == 'no_submission' %}
+            <span class="badge bg-danger text-white">Tidak Mengumpulkan</span>
+            {% elif sub.is_very_late %}
             <span class="badge bg-danger-subtle text-danger">Sangat Terlambat ({{ sub.late_duration_label }})</span>
             {% elif sub.is_late %}
             <span class="badge bg-warning-subtle text-warning">Terlambat ({{ sub.late_duration_label }})</span>
@@ -294,7 +308,11 @@
         </div>
     </div>
     <div class="answer-card-body" style="display:none;">
-        {% if not sub.answers %}
+        {% if sub.status == 'no_submission' %}
+        <p class="text-danger mb-0 small fw-medium">
+            <i class="bi bi-x-circle-fill me-1"></i> Sekolah ini tidak mengirimkan laporan untuk periode ini hingga batas waktu yang ditentukan.
+        </p>
+        {% elif not sub.answers %}
         <p class="text-muted mb-0 small">Tidak ada jawaban tercatat.</p>
         {% else %}
         {% for ans in sub.answers %}

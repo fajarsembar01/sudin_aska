@@ -11,8 +11,12 @@
             </a>
             <h1 class="h3 fw-bold page-title mb-1">Detail Laporan</h1>
             <p class="page-subtitle mb-0">
+                {% if submission.status == 'no_submission' %}
+                <span class="text-danger fw-bold"><i class="bi bi-x-circle-fill me-1"></i> Tidak Mengumpulkan</span>
+                {% else %}
                 Dikirim oleh {{ submission.submitted_by_name or 'Pengguna' }} &bull;
                 {% if submission.submitted_at %}{{ submission.submitted_at.strftime('%d %b %Y %H:%M') }}{% endif %}
+                {% endif %}
                 {% if submission.repeat_period_label %}&bull; Periode: {{ submission.repeat_period_label }}{% endif %}
                 {% if submission.is_very_late %}&bull; Sangat Terlambat ({{ submission.late_duration_label }})
                 {% elif submission.is_late %}&bull; Terlambat ({{ submission.late_duration_label }}){% endif %}
@@ -22,48 +26,60 @@
 </section>
 
 <div class="row g-3">
-    {% for ans in submission.answers %}
-    {% if ans.field_type not in ('header', 'info') %}
+    {% if submission.status == 'no_submission' %}
     <div class="col-12">
-        <div class="card border-0 shadow-sm">
+        <div class="card border-0 shadow-sm text-center py-5">
             <div class="card-body">
-                <p class="fw-semibold text-muted small mb-1" style="text-transform:uppercase;letter-spacing:0.05em;">
-                    {{ loop.index }}. {{ ans.label }}
-                </p>
-                {% if ans.field_type == 'file' %}
-                    {% if ans.files %}
-                    <div class="d-flex flex-wrap gap-2 mt-1">
-                        {% for f in ans.files %}
-                        <a href="{{ url_for('laporan.laporan_serve_file', filepath=f.file_path) }}"
-                            class="btn btn-sm btn-outline-primary" target="_blank">
-                            <i class="bi bi-paperclip me-1"></i>{{ f.original_name }}
-                        </a>
-                        {% endfor %}
-                    </div>
-                    {% else %}
-                    <p class="text-muted mb-0">—</p>
-                    {% endif %}
-                {% elif ans.field_type == 'rating' %}
-                    <div class="d-flex align-items-center gap-2 mt-1">
-                        {% set rv = ans.answer_text | int %}
-                        {% for i in range(1, 6) %}
-                        <span style="font-size:1.4rem; color: {% if i <= rv %}#f59e0b{% else %}#dee2e6{% endif %};">★</span>
-                        {% endfor %}
-                        <span class="text-muted small">({{ rv }}/5)</span>
-                    </div>
-                {% elif ans.field_type == 'checkbox' and ans.answer_json %}
-                    <div class="d-flex flex-wrap gap-1 mt-1">
-                        {% for v in ans.answer_json %}
-                        <span class="badge bg-primary-subtle text-primary">{{ v }}</span>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    <p class="mb-0" style="white-space:pre-wrap;">{{ ans.answer_text or '—' }}</p>
-                {% endif %}
+                <div class="mb-3 text-danger" style="font-size:3rem;"><i class="bi bi-x-circle"></i></div>
+                <h5 class="fw-bold">Tidak Mengumpulkan</h5>
+                <p class="text-muted">Sekolah tidak mengirimkan laporan untuk periode ini hingga batas waktu yang ditentukan.</p>
             </div>
         </div>
     </div>
+    {% else %}
+        {% for ans in submission.answers %}
+        {% if ans.field_type not in ('header', 'info') %}
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <p class="fw-semibold text-muted small mb-1" style="text-transform:uppercase;letter-spacing:0.05em;">
+                        {{ loop.index }}. {{ ans.label }}
+                    </p>
+                    {% if ans.field_type == 'file' %}
+                        {% if ans.files %}
+                        <div class="d-flex flex-wrap gap-2 mt-1">
+                            {% for f in ans.files %}
+                            <a href="{{ url_for('laporan.laporan_serve_file', filepath=f.file_path) }}"
+                                class="btn btn-sm btn-outline-primary" target="_blank">
+                                <i class="bi bi-paperclip me-1"></i>{{ f.original_name }}
+                            </a>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <p class="text-muted mb-0">—</p>
+                        {% endif %}
+                    {% elif ans.field_type == 'rating' %}
+                        <div class="d-flex align-items-center gap-2 mt-1">
+                            {% set rv = ans.answer_text | int %}
+                            {% for i in range(1, 6) %}
+                            <span style="font-size:1.4rem; color: {% if i <= rv %}#f59e0b{% else %}#dee2e6{% endif %};">★</span>
+                            {% endfor %}
+                            <span class="text-muted small">({{ rv }}/5)</span>
+                        </div>
+                    {% elif ans.field_type == 'checkbox' and ans.answer_json %}
+                        <div class="d-flex flex-wrap gap-1 mt-1">
+                            {% for v in ans.answer_json %}
+                            <span class="badge bg-primary-subtle text-primary">{{ v }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="mb-0" style="white-space:pre-wrap;">{{ ans.answer_text or '—' }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        {% endfor %}
     {% endif %}
-    {% endfor %}
 </div>
 {% endblock %}

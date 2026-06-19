@@ -1800,7 +1800,7 @@ CREATE TABLE IF NOT EXISTS laporan_submissions (
     form_id INTEGER NOT NULL REFERENCES laporan_forms(id) ON DELETE CASCADE,
     school_id INTEGER NOT NULL REFERENCES portal_schools(id) ON DELETE CASCADE,
     submitted_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
-    status TEXT NOT NULL DEFAULT 'submitted' CHECK (status IN ('draft', 'submitted')),
+    status TEXT NOT NULL DEFAULT 'submitted' CHECK (status IN ('draft', 'submitted', 'no_submission')),
     submitted_at TIMESTAMPTZ,
     is_late BOOLEAN NOT NULL DEFAULT FALSE,
     late_days INTEGER DEFAULT 0,
@@ -1815,6 +1815,12 @@ CREATE TABLE IF NOT EXISTS laporan_submissions (
 _LAPORAN_SUBMISSIONS_REPEAT_PERIOD_MIGRATION_SQL = """
 ALTER TABLE laporan_submissions ADD COLUMN IF NOT EXISTS repeat_period_key TEXT;
 ALTER TABLE laporan_submissions ADD COLUMN IF NOT EXISTS repeat_period_label TEXT;
+"""
+
+_LAPORAN_SUBMISSIONS_STATUS_CHECK_MIGRATION_SQL = """
+ALTER TABLE laporan_submissions DROP CONSTRAINT IF EXISTS laporan_submissions_status_check;
+ALTER TABLE laporan_submissions ADD CONSTRAINT laporan_submissions_status_check 
+CHECK (status IN ('draft', 'submitted', 'no_submission'));
 """
 
 _LAPORAN_FORMS_LATE_MIGRATION_SQL = """
@@ -1900,6 +1906,7 @@ def ensure_laporan_schema() -> None:
         _LAPORAN_FIELDS_CONSTRAINT_MIGRATION_SQL,
         _LAPORAN_FORM_FIELDS_INDEX_SQL,
         _LAPORAN_SUBMISSIONS_SQL,
+        _LAPORAN_SUBMISSIONS_STATUS_CHECK_MIGRATION_SQL,
         _LAPORAN_SUBMISSIONS_REPEAT_PERIOD_MIGRATION_SQL,
         _LAPORAN_SUBMISSIONS_LATE_MIGRATION_SQL,
         _LAPORAN_SUBMISSIONS_INDEX_SQL,

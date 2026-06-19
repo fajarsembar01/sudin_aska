@@ -26,12 +26,10 @@ def list_all_forms(include_inactive: bool = False) -> list[dict]:
                    f.repeat_until_at, f.repeat_deadline_time, f.repeat_deadline_day,
                    f.deadline_at, f.created_at,
                    u.full_name AS created_by_name,
-                   COUNT(DISTINCT s.id) AS submission_count
+                   (SELECT COUNT(*) FROM laporan_submissions s WHERE s.form_id = f.id AND s.status = 'submitted') AS submission_count
             FROM laporan_forms f
             LEFT JOIN dashboard_users u ON u.id = f.created_by
-            LEFT JOIN laporan_submissions s ON s.form_id = f.id AND s.status = 'submitted'
             {where}
-            GROUP BY f.id, u.full_name
             ORDER BY f.created_at DESC
             """
         )
@@ -652,8 +650,8 @@ def list_form_submissions(form_id: int) -> list[dict]:
             JOIN laporan_forms f ON f.id = s.form_id
             JOIN portal_schools sc ON sc.id = s.school_id
             LEFT JOIN dashboard_users u ON u.id = s.submitted_by
-            WHERE s.form_id = %s AND s.status = 'submitted'
-            ORDER BY s.submitted_at DESC NULLS LAST
+            WHERE s.form_id = %s AND s.status IN ('submitted', 'no_submission')
+            ORDER BY s.repeat_period_key DESC NULLS LAST, s.submitted_at DESC NULLS LAST, s.created_at DESC, sc.name ASC
             """,
             (form_id,),
         )
@@ -710,15 +708,15 @@ def export_form_xlsx(form_id: int) -> tuple[str, bytes]:
 
     for idx, sub in enumerate(submissions, 1):
         sub_detail = get_submission_with_answers(sub["id"])
-        answers_map = {a["field_id"]: a for a in (sub_detail.get("answers") or [])}
+        answers_map = {a["field_id"]: a for a in (sub_detail.get("answers") or [])} if sub_detail else {}
         row = [
             idx,
             sub.get("school_name", ""),
             sub.get("npsn", ""),
             sub.get("jenjang", ""),
-            sub.get("submitted_by_name", ""),
-            sub.get("repeat_period_label", ""),
-            sub.get("submitted_at").strftime("%d/%m/%Y %H:%M") if sub.get("submitted_at") else "",
+            sub.get("submitted_by_name", "") or "",
+            sub.get("repeat_period_label", "") or "",
+            sub.get("submitted_at").strftime("%d/%m/%Y %H:%M") if sub.get("submitted_at") else ("Tidak Mengumpulkan" if sub.get("status") == "no_submission" else ""),
         ]
         for f in fields:
             row.append(_answer_export_value(f, answers_map.get(f["id"])))
@@ -737,23 +735,29 @@ def export_form_xlsx(form_id: int) -> tuple[str, bytes]:
             max_len = max(max_len, min(len(value), 60))
         ws.column_dimensions[get_column_letter(col_idx)].width = max(12, min(max_len + 2, 45))
 
+    submitted_subs = [s for s in submissions if s.get("status") == "submitted"]
+    no_subs = [s for s in submissions if s.get("status") == "no_submission"]
+
     summary = wb.create_sheet("Ringkasan")
     summary.append(["Form", form.get("title", "")])
-    summary.append(["Total jawaban", len(submissions)])
-    summary.append(["Sekolah berbeda", len({s.get("school_id") for s in submissions if s.get("school_id")} )])
-    summary.append(["Tepat waktu", sum(1 for s in submissions if not s.get("is_late"))])
-    summary.append(["Terlambat", sum(1 for s in submissions if s.get("is_late"))])
+    summary.append(["Total sasaran laporan", len(submissions)])
+    summary.append(["Terkirim", len(submitted_subs)])
+    summary.append(["Tidak mengumpulkan", len(no_subs)])
+    summary.append(["Sekolah berbeda (yang mengirim)", len({s.get("school_id") for s in submitted_subs if s.get("school_id")} )])
+    summary.append(["Tepat waktu (dari terkirim)", sum(1 for s in submitted_subs if not s.get("is_late"))])
+    summary.append(["Terlambat (dari terkirim)", sum(1 for s in submitted_subs if s.get("is_late"))])
     summary.append([])
     summary.append(["No", "Pertanyaan", "Tipe", "Terisi", "Kosong"])
-    for cell in summary[7]:
+    for cell in summary[9]:
         cell.fill = header_fill
         cell.font = header_font
     answer_counts = {f["id"]: 0 for f in fields}
     for sub in submissions:
         sub_detail = get_submission_with_answers(sub["id"])
-        for answer in sub_detail.get("answers") or []:
-            if answer.get("answer_text") or answer.get("answer_json") or answer.get("files"):
-                answer_counts[answer["field_id"]] = answer_counts.get(answer["field_id"], 0) + 1
+        if sub_detail:
+            for answer in sub_detail.get("answers") or []:
+                if answer.get("answer_text") or answer.get("answer_json") or answer.get("files"):
+                    answer_counts[answer["field_id"]] = answer_counts.get(answer["field_id"], 0) + 1
     for idx, field in enumerate(fields, 1):
         summary.append([
             idx,
@@ -778,6 +782,69 @@ def export_form_xlsx(form_id: int) -> tuple[str, bytes]:
 def export_form_csv(form_id: int) -> tuple[str, bytes]:
     """Backward-compatible alias; now returns a native Excel workbook."""
     return export_form_xlsx(form_id)
+
+
+def export_no_submissions_xlsx(form_id: int) -> tuple[str, bytes]:
+    """
+    Export the list of schools that did not submit for a form as an Excel workbook.
+    Returns (filename, xlsx_bytes).
+    """
+    from openpyxl import Workbook
+    from openpyxl.styles import Alignment, Font, PatternFill
+    from openpyxl.utils import get_column_letter
+    from io import BytesIO
+
+    form = get_form(form_id)
+    if not form:
+        return "tidak_mengumpulkan.xlsx", b""
+
+    # Fetch submissions with status 'no_submission'
+    submissions = list_form_submissions(form_id)
+    no_subs = [s for s in submissions if s.get("status") == "no_submission"]
+
+    header = ["No", "Sekolah", "NPSN", "Jenjang", "Periode", "Status"]
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Tidak Mengumpulkan"
+    ws.append(header)
+
+    header_fill = PatternFill("solid", fgColor="C00000")  # Dark red for "Tidak Mengumpulkan"
+    header_font = Font(color="FFFFFF", bold=True)
+    for cell in ws[1]:
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+
+    for idx, sub in enumerate(no_subs, 1):
+        row = [
+            idx,
+            sub.get("school_name", ""),
+            sub.get("npsn", ""),
+            sub.get("jenjang", ""),
+            sub.get("repeat_period_label", "Sekali isi") or "Sekali isi",
+            "Tidak Mengumpulkan",
+        ]
+        ws.append(row)
+
+    ws.freeze_panes = "A2"
+    ws.auto_filter.ref = ws.dimensions
+    for row in ws.iter_rows(min_row=2):
+        for cell in row:
+            cell.alignment = Alignment(vertical="top", wrap_text=True)
+
+    for col_idx, column_cells in enumerate(ws.columns, 1):
+        max_len = 0
+        for cell in column_cells:
+            value = str(cell.value or "")
+            max_len = max(max_len, min(len(value), 60))
+        ws.column_dimensions[get_column_letter(col_idx)].width = max(12, min(max_len + 2, 45))
+
+    safe_title = "".join(c if c.isalnum() or c in " _-" else "_" for c in (form["title"] or "laporan"))
+    filename = f"tidak_mengumpulkan_{safe_title[:40]}.xlsx"
+    output = BytesIO()
+    wb.save(output)
+    return filename, output.getvalue()
 
 
 # ─────────────────────────────────────────────

@@ -29,6 +29,7 @@ from ..auth import current_user, role_required
 from ..portal.routes import _fetch_user_school
 from ..portal.routes import inject_permissions as portal_inject_permissions
 from ..schema import ensure_laporan_schema
+from ..db_access import get_cursor
 from .queries import (
     list_all_forms,
     get_form,
@@ -50,6 +51,7 @@ from .queries import (
     get_last_submission_answers,
     list_form_submissions,
     export_form_xlsx,
+    export_no_submissions_xlsx,
     list_all_schools_simple,
     fetch_laporan_kpi_schools,
     can_school_access_form,
@@ -381,6 +383,136 @@ def _form_no_submission_cutoff(form: dict, now: datetime) -> Optional[datetime]:
     if not deadline:
         return None
     return deadline + timedelta(minutes=after_minutes)
+
+
+def sync_no_submissions(form_id: int, now: Optional[datetime] = None) -> None:
+    if now is None:
+        now = datetime.now(JAKARTA_TZ)
+
+    form = get_form(form_id)
+    if not form or not form.get("is_active") or form.get("status") != "published":
+        return
+
+    after_minutes = _no_submission_after_minutes(form)
+    if after_minutes is None or after_minutes <= 0:
+        return
+
+    policy = _form_repeat_policy(form)
+    created_at = form.get("created_at")
+    if not created_at:
+        return
+
+    closed_periods = {}  # key -> label
+    if policy == "once":
+        deadline_at = _as_jakarta_datetime(form.get("deadline_at"))
+        if deadline_at:
+            cutoff = deadline_at + timedelta(minutes=after_minutes)
+            if now > cutoff:
+                closed_periods[None] = None
+    else:
+        # periodic
+        repeat_until_at = _as_jakarta_datetime(form.get("repeat_until_at"))
+        curr_date = created_at.astimezone(JAKARTA_TZ).date()
+        end_date = now.date()
+        
+        limit_start_date = max(curr_date, (now - timedelta(days=90)).date())
+        
+        while limit_start_date <= end_date:
+            ctx = _current_period_context(policy, datetime.combine(limit_start_date, time(12, 0), tzinfo=JAKARTA_TZ), form)
+            if ctx.get("key") and ctx.get("deadline_at"):
+                if repeat_until_at and ctx["deadline_at"] > repeat_until_at:
+                    pass
+                else:
+                    cutoff = ctx["deadline_at"] + timedelta(minutes=after_minutes)
+                    if now > cutoff:
+                        closed_periods[ctx["key"]] = ctx["label"]
+            limit_start_date += timedelta(days=1)
+
+    if not closed_periods:
+        return
+
+    target_scope = form.get("target_scope") or "all"
+    target_jenjang = form.get("target_jenjang")
+    
+    schools = []
+    with get_cursor() as cur:
+        if target_scope == "all":
+            cur.execute("SELECT id, name, npsn, jenjang, status, metadata FROM portal_schools WHERE active=TRUE")
+            schools = [dict(r) for r in cur.fetchall()]
+        elif target_scope == "jenjang":
+            cur.execute("SELECT id, name, npsn, jenjang, status, metadata FROM portal_schools WHERE active=TRUE AND jenjang = %s", (target_jenjang,))
+            schools = [dict(r) for r in cur.fetchall()]
+        elif target_scope == "specific":
+            cur.execute(
+                """
+                SELECT sc.id, sc.name, sc.npsn, sc.jenjang, sc.status, sc.metadata 
+                FROM portal_schools sc
+                JOIN laporan_form_targets ft ON ft.school_id = sc.id
+                WHERE sc.active=TRUE AND ft.form_id = %s
+                """,
+                (form_id,),
+            )
+            schools = [dict(r) for r in cur.fetchall()]
+
+    eligible_school_ids = {s["id"] for s in schools if _school_subject_to_no_submission(form, s)}
+    with get_cursor(commit=True) as cur:
+        if eligible_school_ids:
+            cur.execute(
+                """
+                DELETE FROM laporan_submissions 
+                WHERE form_id = %s AND status = 'no_submission' AND school_id NOT IN %s
+                """,
+                (form_id, tuple(eligible_school_ids))
+            )
+        else:
+            cur.execute(
+                """
+                DELETE FROM laporan_submissions 
+                WHERE form_id = %s AND status = 'no_submission'
+                """,
+                (form_id,)
+            )
+
+    existing_subs = {}  # (school_id, period_key) -> (sub_id, status)
+    with get_cursor() as cur:
+        cur.execute(
+            "SELECT id, school_id, repeat_period_key, status FROM laporan_submissions WHERE form_id = %s",
+            (form_id,),
+        )
+        for r in cur.fetchall():
+            existing_subs[(r["school_id"], r["repeat_period_key"])] = (r["id"], r["status"])
+
+    inserts = []
+    updates = []
+    for school in schools:
+        if not _school_subject_to_no_submission(form, school):
+            continue
+        
+        for period_key, period_label in closed_periods.items():
+            lookup_key = (school["id"], period_key)
+            if lookup_key in existing_subs:
+                sub_id, status = existing_subs[lookup_key]
+                if status == "draft":
+                    updates.append(sub_id)
+            else:
+                inserts.append((form_id, school["id"], "no_submission", period_key, period_label))
+
+    if inserts or updates:
+        with get_cursor(commit=True) as cur:
+            if updates:
+                cur.execute(
+                    "UPDATE laporan_submissions SET status = 'no_submission', updated_at = NOW() WHERE id = ANY(%s)",
+                    (updates,)
+                )
+            if inserts:
+                cur.executemany(
+                    """
+                    INSERT INTO laporan_submissions (
+                        form_id, school_id, status, repeat_period_key, repeat_period_label, created_at, updated_at
+                    ) VALUES (%s, %s, %s, %s, %s, NOW(), NOW())
+                    """,
+                    inserts
+                )
 
 
 def _target_label(form: dict) -> str:
@@ -868,6 +1000,8 @@ def sekolah_laporan_list() -> Response:
 
     forms = list_forms_for_school(school["id"], jenjang=school.get("jenjang"))
     now = datetime.now(JAKARTA_TZ)
+    for f in forms:
+        sync_no_submissions(f["id"], now)
 
     for f in forms:
         repeat_state = _build_repeat_state(f, school["id"], now)
@@ -1173,6 +1307,11 @@ def sekolah_laporan_history() -> Response:
         flash("Akun belum terhubung dengan sekolah.", "warning")
         return redirect(url_for("portal.sekolah_home"))
 
+    forms = list_forms_for_school(school["id"], jenjang=school.get("jenjang"))
+    now = datetime.now(JAKARTA_TZ)
+    for f in forms:
+        sync_no_submissions(f["id"], now)
+
     submissions = list_school_submissions(school["id"])
     for submission in submissions:
         _annotate_late_submission(submission)
@@ -1242,6 +1381,7 @@ def admin_laporan_create() -> Response:
             very_late_after_minutes=DEFAULT_VERY_LATE_AFTER_MINUTES,
             no_submission_after_minutes=None,
             no_submission_jenjangs=None,
+            no_submission_statuses=None,
             is_active=False,
             deadline_at=None,
             created_by=user["id"],
@@ -1587,6 +1727,7 @@ def admin_laporan_preview(form_id: int) -> Response:
 @role_required("admin")
 def admin_laporan_answers(form_id: int) -> Response:
     """Admin: lihat semua jawaban yang masuk untuk form ini."""
+    sync_no_submissions(form_id)
     form = get_form(form_id)
     if not form:
         flash("Form tidak ditemukan.", "danger")
@@ -1618,12 +1759,32 @@ def admin_laporan_answers(form_id: int) -> Response:
 @role_required("admin")
 def admin_laporan_export(form_id: int) -> Response:
     """Admin: export semua jawaban ke Excel."""
+    sync_no_submissions(form_id)
     form = get_form(form_id)
     if not form:
         flash("Form tidak ditemukan.", "danger")
         return redirect(url_for("laporan.admin_laporan_list"))
 
     filename, xlsx_bytes = export_form_xlsx(form_id)
+    return send_file(
+        io.BytesIO(xlsx_bytes),
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        as_attachment=True,
+        download_name=filename,
+    )
+
+
+@laporan_bp.route("/admin/<int:form_id>/export-no-submission")
+@role_required("admin")
+def admin_laporan_export_no_submission(form_id: int) -> Response:
+    """Admin: export list sekolah yang tidak mengumpulkan ke Excel."""
+    sync_no_submissions(form_id)
+    form = get_form(form_id)
+    if not form:
+        flash("Form tidak ditemukan.", "danger")
+        return redirect(url_for("laporan.admin_laporan_list"))
+
+    filename, xlsx_bytes = export_no_submissions_xlsx(form_id)
     return send_file(
         io.BytesIO(xlsx_bytes),
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
