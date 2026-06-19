@@ -1734,8 +1734,38 @@ def admin_laporan_answers(form_id: int) -> Response:
         return redirect(url_for("laporan.admin_laporan_list"))
     _annotate_repeat_form(form, datetime.now(JAKARTA_TZ))
 
+    filter_date = request.args.get("date")
+    now_jakarta = datetime.now(JAKARTA_TZ)
+    today_str = now_jakarta.strftime("%Y-%m-%d")
+    if not filter_date:
+        filter_date = today_str
+
+    filter_date_val = ""
+    if filter_date != "all":
+        try:
+            datetime.strptime(filter_date, "%Y-%m-%d")
+            filter_date_val = filter_date
+        except ValueError:
+            filter_date = today_str
+            filter_date_val = today_str
+
     fields = get_form_fields(form_id)
     submissions = list_form_submissions(form_id)
+
+    # Filter by date
+    if filter_date != "all":
+        try:
+            target_date = datetime.strptime(filter_date, "%Y-%m-%d").date()
+            filtered = []
+            for sub in submissions:
+                sub_dt = sub.get("submitted_at") or sub.get("created_at")
+                if sub_dt:
+                    sub_date = sub_dt.astimezone(JAKARTA_TZ).date()
+                    if sub_date == target_date:
+                        filtered.append(sub)
+            submissions = filtered
+        except ValueError:
+            pass
 
     # Enrich submissions with their answers
     detailed = []
@@ -1752,6 +1782,8 @@ def admin_laporan_answers(form_id: int) -> Response:
         fields=fields,
         submissions=detailed,
         analytics=analytics,
+        filter_date=filter_date,
+        filter_date_val=filter_date_val,
     )
 
 
@@ -1765,7 +1797,8 @@ def admin_laporan_export(form_id: int) -> Response:
         flash("Form tidak ditemukan.", "danger")
         return redirect(url_for("laporan.admin_laporan_list"))
 
-    filename, xlsx_bytes = export_form_xlsx(form_id)
+    filter_date = request.args.get("date") or "all"
+    filename, xlsx_bytes = export_form_xlsx(form_id, filter_date)
     return send_file(
         io.BytesIO(xlsx_bytes),
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -1784,7 +1817,8 @@ def admin_laporan_export_no_submission(form_id: int) -> Response:
         flash("Form tidak ditemukan.", "danger")
         return redirect(url_for("laporan.admin_laporan_list"))
 
-    filename, xlsx_bytes = export_no_submissions_xlsx(form_id)
+    filter_date = request.args.get("date") or "all"
+    filename, xlsx_bytes = export_no_submissions_xlsx(form_id, filter_date)
     return send_file(
         io.BytesIO(xlsx_bytes),
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
