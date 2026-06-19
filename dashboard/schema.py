@@ -1813,6 +1813,21 @@ ALTER TABLE laporan_submissions ADD COLUMN IF NOT EXISTS repeat_period_key TEXT;
 ALTER TABLE laporan_submissions ADD COLUMN IF NOT EXISTS repeat_period_label TEXT;
 """
 
+_LAPORAN_FORMS_LATE_MIGRATION_SQL = """
+ALTER TABLE laporan_forms ADD COLUMN IF NOT EXISTS allow_late BOOLEAN NOT NULL DEFAULT FALSE;
+"""
+
+_LAPORAN_SUBMISSIONS_LATE_MIGRATION_SQL = """
+ALTER TABLE laporan_submissions ADD COLUMN IF NOT EXISTS is_late BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE laporan_submissions ADD COLUMN IF NOT EXISTS late_days INTEGER DEFAULT 0;
+"""
+
+_LAPORAN_FIELDS_CONSTRAINT_MIGRATION_SQL = """
+ALTER TABLE laporan_form_fields DROP CONSTRAINT IF EXISTS laporan_form_fields_field_type_check;
+ALTER TABLE laporan_form_fields ADD CONSTRAINT laporan_form_fields_field_type_check 
+CHECK (field_type IN ('text', 'textarea', 'radio', 'checkbox', 'file', 'date', 'number', 'rating', 'dropdown', 'time', 'email', 'header', 'info'));
+"""
+
 _LAPORAN_SUBMISSIONS_INDEX_SQL = """
 CREATE INDEX IF NOT EXISTS idx_laporan_submissions_form ON laporan_submissions (form_id, submitted_at DESC);
 CREATE INDEX IF NOT EXISTS idx_laporan_submissions_school ON laporan_submissions (school_id, form_id);
@@ -1864,13 +1879,16 @@ def ensure_laporan_schema() -> None:
         _LAPORAN_FORMS_SQL,
         _LAPORAN_FORMS_STATUS_MIGRATION_SQL,
         _LAPORAN_REPEAT_POLICY_MIGRATION_SQL,
+        _LAPORAN_FORMS_LATE_MIGRATION_SQL,
         _LAPORAN_FORMS_INDEX_SQL,
         _LAPORAN_FORM_TARGETS_SQL,
         _LAPORAN_FORM_TARGETS_INDEX_SQL,
         _LAPORAN_FORM_FIELDS_SQL,
+        _LAPORAN_FIELDS_CONSTRAINT_MIGRATION_SQL,
         _LAPORAN_FORM_FIELDS_INDEX_SQL,
         _LAPORAN_SUBMISSIONS_SQL,
         _LAPORAN_SUBMISSIONS_REPEAT_PERIOD_MIGRATION_SQL,
+        _LAPORAN_SUBMISSIONS_LATE_MIGRATION_SQL,
         _LAPORAN_SUBMISSIONS_INDEX_SQL,
         _LAPORAN_SUBMISSION_ANSWERS_SQL,
         _LAPORAN_SUBMISSION_ANSWERS_INDEX_SQL,
