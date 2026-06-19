@@ -8,6 +8,7 @@ from calendar import monthrange
 from datetime import date, datetime, time, timedelta
 from pathlib import Path
 from typing import Optional
+from urllib.parse import urlparse
 from zoneinfo import ZoneInfo
 
 from flask import (
@@ -46,6 +47,7 @@ from .queries import (
     save_file,
     get_submission_with_answers,
     list_school_submissions,
+    get_last_submission_answers,
     list_form_submissions,
     export_form_xlsx,
     list_all_schools_simple,
@@ -68,6 +70,11 @@ def inject_laporan_context():
     """Inject permissions + user_school so base_laporan.html (which extends base_portal.html) works correctly."""
     context = portal_inject_permissions() or {}
     context["laporan_date_input_value"] = _format_date_input_value
+    context["laporan_very_late_hours_value"] = _very_late_after_hours_value
+    context["laporan_no_submission_hours_value"] = _no_submission_hours_value
+    context["laporan_no_submission_minutes_value"] = _no_submission_minutes_value
+    context["laporan_selected_no_submission_jenjangs"] = _selected_no_submission_jenjangs
+    context["laporan_selected_no_submission_statuses"] = _selected_no_submission_statuses
     user = current_user() or {}
     if user.get("role") == "sekolah":
         try:
@@ -99,6 +106,7 @@ FORMULA_SOURCE_TYPES = {"number", "rating", "formula"}
 DISPLAY_ONLY_FIELD_TYPES = {"header", "info"}
 REPEAT_POLICIES = {"once", "multiple", "daily", "weekly", "monthly"}
 PERIODIC_REPEAT_POLICIES = {"daily", "weekly", "monthly"}
+DEFAULT_VERY_LATE_AFTER_MINUTES = 3 * 60
 MONTH_NAMES_ID = {
     1: "Januari",
     2: "Februari",
@@ -113,6 +121,7 @@ MONTH_NAMES_ID = {
     11: "November",
     12: "Desember",
 }
+DAY_NAMES_ID = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"]
 ALLOWED_FIELD_TYPES = {
     "text",
     "textarea",
@@ -127,6 +136,7 @@ ALLOWED_FIELD_TYPES = {
     "email",
     "header",
     "info",
+    "link",
     "formula",
 }
 
@@ -192,6 +202,250 @@ def _format_datetime_id(value: Optional[datetime]) -> Optional[str]:
     if not jakarta_value:
         return None
     return f"{_format_date_id(jakarta_value.date())} {jakarta_value:%H:%M}"
+
+
+def _format_late_duration(minutes: int, *, cap_minutes: Optional[int] = None) -> str:
+    minutes = max(int(minutes or 0), 0)
+    if cap_minutes and minutes > cap_minutes:
+        return f"lebih dari {_format_late_duration(cap_minutes)}"
+    if minutes == 0:
+        return "kurang dari 1 menit"
+    hours, mins = divmod(minutes, 60)
+    parts = []
+    if hours:
+        parts.append(f"{hours} jam")
+    if mins:
+        parts.append(f"{mins} menit")
+    return " ".join(parts) if parts else "kurang dari 1 menit"
+
+
+def _late_minutes_from_submission(submission: dict) -> int:
+    raw = submission.get("late_minutes")
+    if raw is None:
+        raw = (submission.get("late_days") or 0) * 24 * 60
+    try:
+        minutes = max(int(raw or 0), 0)
+    except (TypeError, ValueError):
+        minutes = 0
+
+    if submission.get("is_late") and minutes == 0:
+        submitted_at = submission.get("submitted_at")
+        if submitted_at:
+            submitted_at_jkt = _as_jakarta_datetime(submitted_at)
+            policy = submission.get("form_repeat_policy") or "once"
+            if policy in PERIODIC_REPEAT_POLICIES:
+                form_mock = {
+                    "repeat_deadline_time": submission.get("form_repeat_deadline_time"),
+                    "repeat_deadline_day": submission.get("form_repeat_deadline_day")
+                }
+                deadline = _period_deadline_at(policy, submitted_at_jkt.date(), form_mock)
+            else:
+                deadline = _as_jakarta_datetime(submission.get("form_deadline_at"))
+
+            if deadline and submitted_at_jkt > deadline:
+                late_delta = submitted_at_jkt - deadline
+                minutes = max(int((late_delta.total_seconds() + 59) // 60), 1)
+
+    return minutes
+
+
+def _annotate_late_submission(submission: dict) -> None:
+    late_minutes = _late_minutes_from_submission(submission)
+    threshold = _very_late_after_minutes(submission)
+    submission["late_minutes"] = late_minutes
+    submission["late_duration_label"] = _format_late_duration(late_minutes, cap_minutes=threshold)
+    submission["is_very_late"] = bool(
+        submission.get("is_late") and late_minutes > threshold
+    )
+
+
+def _very_late_after_minutes(form_or_submission: Optional[dict]) -> int:
+    if form_or_submission:
+        try:
+            value = int(form_or_submission.get("very_late_after_minutes") or 0)
+            if value > 0:
+                return value
+        except (TypeError, ValueError):
+            pass
+    return DEFAULT_VERY_LATE_AFTER_MINUTES
+
+
+def _very_late_after_hours_value(form: Optional[dict]) -> str:
+    minutes = _very_late_after_minutes(form)
+    if minutes % 60 == 0:
+        return str(minutes // 60)
+    return f"{minutes / 60:.2f}".rstrip("0").rstrip(".")
+
+
+def _parse_very_late_after_minutes() -> int:
+    raw = (request.form.get("very_late_after_hours") or "").strip().replace(",", ".")
+    try:
+        hours = float(raw)
+    except ValueError:
+        return DEFAULT_VERY_LATE_AFTER_MINUTES
+    if hours <= 0:
+        return DEFAULT_VERY_LATE_AFTER_MINUTES
+    minutes = int(round(hours * 60))
+    return min(max(minutes, 1), 30 * 24 * 60)
+
+
+def _no_submission_after_minutes(form: Optional[dict]) -> Optional[int]:
+    if form:
+        try:
+            value = int(form.get("no_submission_after_minutes") or 0)
+            if value > 0:
+                return value
+        except (TypeError, ValueError):
+            pass
+    return None
+
+
+def _no_submission_hours_value(form: Optional[dict]) -> str:
+    minutes = _no_submission_after_minutes(form)
+    return "" if minutes is None else str(minutes // 60)
+
+
+def _no_submission_minutes_value(form: Optional[dict]) -> str:
+    minutes = _no_submission_after_minutes(form)
+    return "" if minutes is None else str(minutes % 60)
+
+
+def _selected_no_submission_jenjangs(form: Optional[dict]) -> list[str]:
+    raw = (form or {}).get("no_submission_jenjangs") or ""
+    return [item.strip() for item in str(raw).split(",") if item.strip()]
+
+
+def _selected_no_submission_statuses(form: Optional[dict]) -> list[str]:
+    raw = (form or {}).get("no_submission_statuses") or ""
+    return [item.strip().upper() for item in str(raw).split(",") if item.strip()]
+
+
+def _parse_no_submission_after_minutes() -> Optional[int]:
+    try:
+        hours = int((request.form.get("no_submission_after_hours") or "0").strip() or 0)
+    except ValueError:
+        hours = 0
+    try:
+        minutes = int((request.form.get("no_submission_after_minutes") or "0").strip() or 0)
+    except ValueError:
+        minutes = 0
+    total = max(hours, 0) * 60 + min(max(minutes, 0), 59)
+    return min(total, 30 * 24 * 60) if total > 0 else None
+
+
+def _parse_no_submission_jenjangs() -> Optional[str]:
+    values = []
+    seen = set()
+    for raw in request.form.getlist("no_submission_jenjangs[]"):
+        value = raw.strip()
+        if value and value not in seen:
+            values.append(value)
+            seen.add(value)
+    return ",".join(values) if values else None
+
+
+def _parse_no_submission_statuses() -> Optional[str]:
+    raw = (request.form.get("no_submission_statuses") or "").strip().upper()
+    if raw in ("NEGERI", "SWASTA"):
+        return raw
+    # Default: NEGERI jika tidak ada pilihan (form baru atau tidak dipilih)
+    if not raw:
+        return "NEGERI"
+    return None  # nilai kosong eksplisit = semua
+
+
+def _available_jenjangs(schools: list[dict]) -> list[str]:
+    values = sorted({(school.get("jenjang") or "").strip() for school in schools if (school.get("jenjang") or "").strip()})
+    return values or ["SD", "SMP"]
+
+
+def _school_subject_to_no_submission(form: dict, school: Optional[dict]) -> bool:
+    selected_jenjangs = set(_selected_no_submission_jenjangs(form))
+    if selected_jenjangs:
+        if not (school and (school.get("jenjang") or "").strip() in selected_jenjangs):
+            return False
+    selected_statuses = set(_selected_no_submission_statuses(form))
+    if selected_statuses:
+        school_status = (school.get("status") or "").strip().upper() if school else ""
+        if school_status not in selected_statuses:
+            return False
+    return True
+
+
+
+def _form_no_submission_cutoff(form: dict, now: datetime) -> Optional[datetime]:
+    after_minutes = _no_submission_after_minutes(form)
+    if after_minutes is None:
+        return None
+    deadline = _form_deadline_for_request(form, now)
+    if not deadline:
+        return None
+    return deadline + timedelta(minutes=after_minutes)
+
+
+def _target_label(form: dict) -> str:
+    if form.get("target_scope") == "all":
+        return "Semua Sekolah"
+    if form.get("target_scope") == "jenjang":
+        return f"Jenjang {form.get('target_jenjang') or '-'}"
+    return "Sekolah Tertentu"
+
+
+def _share_repeat_label(form: dict) -> str:
+    policy = _form_repeat_policy(form)
+    label = form.get("repeat_policy_label") or _repeat_policy_label(policy)
+    deadline_time = _format_time_value(form.get("repeat_deadline_time"))
+    deadline_day = form.get("repeat_deadline_day")
+    detail = ""
+    if policy == "daily" and deadline_time:
+        detail = f" dengan batas pengisian setiap hari pukul {deadline_time} WIB"
+    elif policy == "weekly" and deadline_day is not None and deadline_time:
+        day_index = max(0, min(int(deadline_day), 6))
+        detail = f" dengan batas pengisian setiap minggu pada hari {DAY_NAMES_ID[day_index]} pukul {deadline_time} WIB"
+    elif policy == "monthly" and deadline_day is not None and deadline_time:
+        detail = f" dengan batas pengisian setiap bulan pada tanggal {int(deadline_day)} pukul {deadline_time} WIB"
+
+    until_detail = ""
+    if policy in PERIODIC_REPEAT_POLICIES and form.get("repeat_until_at"):
+        until_label = _format_date_id_from_datetime(form.get("repeat_until_at"))
+        if until_label:
+            until_detail = f" hingga {until_label}"
+    return f"{label}{detail}{until_detail}"
+
+
+def _build_form_share_caption(form: dict, now: datetime) -> str:
+    deadline = _form_deadline_for_request(form, now)
+    no_submission_cutoff = _form_no_submission_cutoff(form, now)
+    fill_url = url_for("laporan.sekolah_laporan_fill", form_id=form["id"], _external=True)
+    lines = [
+        "Yth. Bapak/Ibu Operator Sekolah,",
+        "",
+        "Mohon kesediaannya untuk mengisi form laporan berikut:",
+        f"Judul: {form.get('title') or '-'}",
+    ]
+    if form.get("description"):
+        lines.append(f"Keterangan: {form['description']}")
+    lines.extend(
+        [
+            f"Target: {_target_label(form)}",
+            f"Pengisian: {_share_repeat_label(form)}",
+        ]
+    )
+    if form.get("current_period_label"):
+        lines.append(f"Periode: {form['current_period_label']}")
+    if deadline:
+        lines.append(f"Deadline: {_format_datetime_id(deadline)} WIB")
+    if no_submission_cutoff:
+        lines.append(f"Batas tidak mengumpulkan: {_format_datetime_id(no_submission_cutoff)} WIB")
+    lines.extend(
+        [
+            "",
+            f"Link pengisian: {fill_url}",
+            "",
+            "Mohon Bapak/Ibu dapat mengisi sebelum batas waktu yang ditentukan. Terima kasih.",
+        ]
+    )
+    return "\n".join(lines)
 
 
 def _format_date_id_from_datetime(value: Optional[datetime]) -> Optional[str]:
@@ -390,6 +644,16 @@ def _repeat_deadline_errors(
     return errors
 
 
+def _field_publish_errors(fields: list[dict]) -> list[str]:
+    errors = []
+    for field in fields:
+        if field.get("field_type") == "link" and field.get("required"):
+            options = field.get("options_json") if isinstance(field.get("options_json"), dict) else {}
+            if not options.get("url"):
+                errors.append(f"Link wajib '{field.get('label')}' harus memiliki URL yang valid.")
+    return errors
+
+
 def _normalize_field_key(raw: str) -> str:
     clean = "".join(ch for ch in (raw or "").strip() if ch.isalnum() or ch in {"_", "-"})
     return clean[:80] if clean else f"f_{uuid.uuid4().hex[:12]}"
@@ -398,6 +662,18 @@ def _normalize_field_key(raw: str) -> str:
 def _normalize_field_ref(raw: str) -> str:
     clean = "".join(ch for ch in (raw or "").strip() if ch.isalnum() or ch in {"_", "-"})
     return clean[:80]
+
+
+def _normalize_link_url(raw: str) -> str:
+    clean = (raw or "").strip()
+    if not clean:
+        return ""
+    if "://" not in clean:
+        clean = f"https://{clean}"
+    parsed = urlparse(clean)
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        return ""
+    return clean
 
 
 def _parse_fields_from_form() -> list[dict]:
@@ -436,6 +712,11 @@ def _parse_fields_from_form() -> list[dict]:
                 "left_key": _normalize_field_ref(request.form.get(f"field_formula_left_{fid}", "")),
                 "operator": operator,
                 "right_key": _normalize_field_ref(request.form.get(f"field_formula_right_{fid}", "")),
+            }
+        elif ftype == "link":
+            options = {
+                "url": _normalize_link_url(request.form.get(f"field_link_url_{fid}", "")),
+                "button_text": request.form.get(f"field_link_text_{fid}", "").strip() or "Buka Link",
             }
         elif ftype in DISPLAY_ONLY_FIELD_TYPES:
             required = False
@@ -593,9 +874,19 @@ def sekolah_laporan_list() -> Response:
         dl = _form_deadline_for_request(f, now)
         f["is_expired"] = bool(dl and dl < now)
         f["deadline_str"] = _format_datetime_id(dl)
+        f["deadline_iso"] = dl.isoformat() if dl else None
         f["already_submitted"] = repeat_state["already_submitted"]
+        no_submission_cutoff = _form_no_submission_cutoff(f, now)
+        f["no_submission_cutoff_str"] = _format_datetime_id(no_submission_cutoff)
+        f["is_no_submission"] = bool(
+            no_submission_cutoff
+            and now > no_submission_cutoff
+            and not repeat_state["already_submitted"]
+            and _school_subject_to_no_submission(f, school)
+        )
         f["can_fill"] = (
             (not f["is_expired"] or f.get("allow_late"))
+            and not f["is_no_submission"]
             and not repeat_state["repeat_closed"]
             and not repeat_state["blocked_by_submission"]
         )
@@ -632,6 +923,16 @@ def sekolah_laporan_fill(form_id: int) -> Response:
     # Cek expired
     dl = _form_deadline_for_request(form, now)
     form["deadline_str"] = _format_datetime_id(dl)
+    form["deadline_iso"] = dl.isoformat() if dl else None
+    no_submission_cutoff = _form_no_submission_cutoff(form, now)
+    if (
+        no_submission_cutoff
+        and now > no_submission_cutoff
+        and not repeat_state["already_submitted"]
+        and _school_subject_to_no_submission(form, school)
+    ):
+        flash("Waktu pengisian form ini sudah melewati batas tidak mengumpulkan.", "warning")
+        return redirect(url_for("laporan.sekolah_laporan_list"))
     if dl:
         if dl < now and not form.get("allow_late"):
             flash("Deadline form ini sudah berakhir.", "warning")
@@ -658,6 +959,37 @@ def sekolah_laporan_fill(form_id: int) -> Response:
     )
 
 
+@laporan_bp.route("/sekolah/<int:form_id>/previous-answers")
+@role_required("sekolah")
+def sekolah_laporan_previous_answers(form_id: int) -> Response:
+    """API: Ambil jawaban submission terakhir sekolah di form ini (untuk prefill periode baru)."""
+    user = current_user()
+    school = _fetch_user_school(user.get("id"))
+    if not school:
+        return jsonify({"ok": False, "message": "Akun belum terhubung dengan sekolah."}), 403
+
+    form = get_form(form_id)
+    if not form or not form.get("is_active"):
+        return jsonify({"ok": False, "message": "Form tidak ditemukan."}), 404
+
+    if not can_school_access_form(form_id, school["id"], school.get("jenjang")):
+        return jsonify({"ok": False, "message": "Akses ditolak."}), 403
+
+    # Hanya untuk form periodik
+    if form.get("repeat_policy") not in ("daily", "weekly", "monthly"):
+        return jsonify({"ok": False, "message": "Fitur ini hanya tersedia untuk form periodik."}), 400
+
+    result = get_last_submission_answers(form_id, school["id"])
+    if not result:
+        return jsonify({"ok": False, "message": "Belum ada data dari periode sebelumnya."}), 404
+
+    return jsonify({
+        "ok": True,
+        "period_label": result["period_label"],
+        "answers": result["answers"],
+    })
+
+
 @laporan_bp.route("/sekolah/<int:form_id>/submit", methods=["POST"])
 @role_required("sekolah")
 def sekolah_laporan_submit(form_id: int) -> Response:
@@ -682,15 +1014,27 @@ def sekolah_laporan_submit(form_id: int) -> Response:
     # Cek expired
     dl = _form_deadline_for_request(form, now)
     form["deadline_str"] = _format_datetime_id(dl)
+    no_submission_cutoff = _form_no_submission_cutoff(form, now)
+    if (
+        no_submission_cutoff
+        and now > no_submission_cutoff
+        and not repeat_state["already_submitted"]
+        and _school_subject_to_no_submission(form, school)
+    ):
+        flash("Waktu pengisian form ini sudah melewati batas tidak mengumpulkan.", "warning")
+        return redirect(url_for("laporan.sekolah_laporan_list"))
     is_late = False
     late_days = 0
+    late_minutes = 0
     if dl:
         if dl < now:
             if not form.get("allow_late"):
                 flash("Deadline form ini sudah berakhir.", "warning")
                 return redirect(url_for("laporan.sekolah_laporan_list"))
             is_late = True
-            late_days = (now - dl).days
+            late_delta = now - dl
+            late_days = late_delta.days
+            late_minutes = max(int((late_delta.total_seconds() + 59) // 60), 1)
 
     if repeat_state["repeat_closed"]:
         flash("Masa pengisian ulang form ini sudah berakhir.", "warning")
@@ -725,6 +1069,10 @@ def sekolah_laporan_submit(form_id: int) -> Response:
             vals = request.form.getlist(f"field_{fid}[]")
             if not vals:
                 errors.append(f"Field '{f['label']}' wajib dipilih.")
+        elif ftype == "link":
+            val = request.form.get(f"field_{fid}", "").strip()
+            if val != "clicked":
+                errors.append(f"Link '{f['label']}' wajib dibuka terlebih dahulu.")
         elif ftype == "formula" or ftype in DISPLAY_ONLY_FIELD_TYPES:
             # These are display only, no value expected
             pass
@@ -746,6 +1094,7 @@ def sekolah_laporan_submit(form_id: int) -> Response:
             user["id"],
             is_late=is_late,
             late_days=late_days,
+            late_minutes=late_minutes,
             repeat_period_key=repeat_state["period"].get("key"),
             repeat_period_label=repeat_state["period"].get("label"),
         )
@@ -801,6 +1150,11 @@ def sekolah_laporan_submit(form_id: int) -> Response:
             if f.get("field_key"):
                 submitted_values_by_key[f["field_key"]] = val
 
+        elif ftype == "link":
+            val = request.form.get(f"field_{fid}", "").strip()
+            if val == "clicked":
+                save_answer(submission_id, fid, "Dibuka")
+
         else:
             val = request.form.get(f"field_{fid}", "").strip()
             save_answer(submission_id, fid, val)
@@ -820,6 +1174,8 @@ def sekolah_laporan_history() -> Response:
         return redirect(url_for("portal.sekolah_home"))
 
     submissions = list_school_submissions(school["id"])
+    for submission in submissions:
+        _annotate_late_submission(submission)
     return render_template(
         "laporan/sekolah/history.html",
         school=school,
@@ -841,6 +1197,7 @@ def sekolah_laporan_detail(submission_id: int) -> Response:
     if not sub or sub.get("school_id") != school["id"]:
         flash("Laporan tidak ditemukan atau bukan milik sekolah Anda.", "danger")
         return redirect(url_for("laporan.sekolah_laporan_history"))
+    _annotate_late_submission(sub)
 
     return render_template(
         "laporan/sekolah/detail.html",
@@ -862,6 +1219,8 @@ def admin_laporan_list() -> Response:
     now = datetime.now(JAKARTA_TZ)
     for form in forms:
         _annotate_repeat_form(form, now)
+        if form.get("status") != "draft":
+            form["share_caption"] = _build_form_share_caption(form, now)
     return render_template("laporan/admin/list.html", forms=forms)
 
 
@@ -880,6 +1239,9 @@ def admin_laporan_create() -> Response:
             target_jenjang=None,
             allow_multiple=False,
             allow_late=False,
+            very_late_after_minutes=DEFAULT_VERY_LATE_AFTER_MINUTES,
+            no_submission_after_minutes=None,
+            no_submission_jenjangs=None,
             is_active=False,
             deadline_at=None,
             created_by=user["id"],
@@ -905,6 +1267,10 @@ def admin_laporan_create() -> Response:
             repeat_deadline_day,
         ) = _parse_repeat_settings_from_request()
         allow_late = request.form.get("allow_late") == "1"
+        very_late_after_minutes = _parse_very_late_after_minutes()
+        no_submission_after_minutes = _parse_no_submission_after_minutes()
+        no_submission_jenjangs = _parse_no_submission_jenjangs()
+        no_submission_statuses = _parse_no_submission_statuses()
         is_active = request.form.get("is_active") == "1"
         deadline_raw = request.form.get("deadline_at", "").strip()
         deadline_at = _parse_deadline(deadline_raw)
@@ -921,6 +1287,7 @@ def admin_laporan_create() -> Response:
                 "laporan/admin/form_editor.html",
                 form=None,
                 all_schools=all_schools,
+                available_jenjangs=_available_jenjangs(all_schools),
                 target_school_ids=[],
                 fields=[],
             )
@@ -933,8 +1300,23 @@ def admin_laporan_create() -> Response:
                     "laporan/admin/form_editor.html",
                     form=None,
                     all_schools=all_schools,
+                    available_jenjangs=_available_jenjangs(all_schools),
                     target_school_ids=[],
                     fields=[],
+                )
+        fields = _parse_fields_from_form()
+        if status == "published":
+            field_errors = _field_publish_errors(fields)
+            if field_errors:
+                for err in field_errors:
+                    flash(err, "warning")
+                return render_template(
+                    "laporan/admin/form_editor.html",
+                    form=None,
+                    all_schools=all_schools,
+                    available_jenjangs=_available_jenjangs(all_schools),
+                    target_school_ids=[],
+                    fields=fields,
                 )
 
         user = current_user()
@@ -945,6 +1327,10 @@ def admin_laporan_create() -> Response:
             target_jenjang=target_jenjang if target_scope == "jenjang" else None,
             allow_multiple=allow_multiple,
             allow_late=allow_late,
+            very_late_after_minutes=very_late_after_minutes,
+            no_submission_after_minutes=no_submission_after_minutes,
+            no_submission_jenjangs=no_submission_jenjangs,
+            no_submission_statuses=no_submission_statuses,
             is_active=is_active,
             deadline_at=deadline_at,
             created_by=user["id"],
@@ -959,7 +1345,6 @@ def admin_laporan_create() -> Response:
         if target_scope == "specific" and specific_school_ids:
             set_form_targets(form_id, specific_school_ids)
 
-        fields = _parse_fields_from_form()
         if fields:
             replace_form_fields(form_id, fields)
 
@@ -974,6 +1359,7 @@ def admin_laporan_create() -> Response:
         "laporan/admin/form_editor.html",
         form=None,
         all_schools=all_schools,
+        available_jenjangs=_available_jenjangs(all_schools),
         target_school_ids=[],
         fields=[],
     )
@@ -1005,6 +1391,10 @@ def admin_laporan_edit(form_id: int) -> Response:
             repeat_deadline_day,
         ) = _parse_repeat_settings_from_request()
         allow_late = request.form.get("allow_late") == "1"
+        very_late_after_minutes = _parse_very_late_after_minutes()
+        no_submission_after_minutes = _parse_no_submission_after_minutes()
+        no_submission_jenjangs = _parse_no_submission_jenjangs()
+        no_submission_statuses = _parse_no_submission_statuses()
         is_active = request.form.get("is_active") == "1"
         deadline_raw = request.form.get("deadline_at", "").strip()
         deadline_at = _parse_deadline(deadline_raw)
@@ -1021,6 +1411,7 @@ def admin_laporan_edit(form_id: int) -> Response:
                 "laporan/admin/form_editor.html",
                 form=form,
                 all_schools=all_schools,
+                available_jenjangs=_available_jenjangs(all_schools),
                 target_school_ids=existing_target_ids,
                 fields=existing_fields,
             )
@@ -1033,8 +1424,23 @@ def admin_laporan_edit(form_id: int) -> Response:
                     "laporan/admin/form_editor.html",
                     form=form,
                     all_schools=all_schools,
+                    available_jenjangs=_available_jenjangs(all_schools),
                     target_school_ids=existing_target_ids,
                     fields=existing_fields,
+                )
+        fields = _parse_fields_from_form()
+        if status == "published":
+            field_errors = _field_publish_errors(fields)
+            if field_errors:
+                for err in field_errors:
+                    flash(err, "warning")
+                return render_template(
+                    "laporan/admin/form_editor.html",
+                    form=form,
+                    all_schools=all_schools,
+                    available_jenjangs=_available_jenjangs(all_schools),
+                    target_school_ids=existing_target_ids,
+                    fields=fields,
                 )
 
         user = current_user()
@@ -1046,6 +1452,10 @@ def admin_laporan_edit(form_id: int) -> Response:
             target_jenjang=target_jenjang if target_scope == "jenjang" else None,
             allow_multiple=allow_multiple,
             allow_late=allow_late,
+            very_late_after_minutes=very_late_after_minutes,
+            no_submission_after_minutes=no_submission_after_minutes,
+            no_submission_jenjangs=no_submission_jenjangs,
+            no_submission_statuses=no_submission_statuses,
             is_active=is_active,
             deadline_at=deadline_at,
             updated_by=user["id"],
@@ -1057,7 +1467,6 @@ def admin_laporan_edit(form_id: int) -> Response:
         )
 
         set_form_targets(form_id, specific_school_ids if target_scope == "specific" else [])
-        fields = _parse_fields_from_form()
         replace_form_fields(form_id, fields)
 
         if status == "draft":
@@ -1071,6 +1480,7 @@ def admin_laporan_edit(form_id: int) -> Response:
         "laporan/admin/form_editor.html",
         form=form,
         all_schools=all_schools,
+        available_jenjangs=_available_jenjangs(all_schools),
         target_school_ids=existing_target_ids,
         fields=existing_fields,
     )
@@ -1098,6 +1508,10 @@ def admin_laporan_autosave(form_id: int) -> Response:
         repeat_deadline_day,
     ) = _parse_repeat_settings_from_request()
     allow_late = request.form.get("allow_late") == "1"
+    very_late_after_minutes = _parse_very_late_after_minutes()
+    no_submission_after_minutes = _parse_no_submission_after_minutes()
+    no_submission_jenjangs = _parse_no_submission_jenjangs()
+    no_submission_statuses = _parse_no_submission_statuses()
     deadline_at = _parse_deadline(request.form.get("deadline_at", "").strip())
     specific_school_ids = [int(x) for x in request.form.getlist("target_schools[]") if x.isdigit()]
     user = current_user()
@@ -1110,6 +1524,10 @@ def admin_laporan_autosave(form_id: int) -> Response:
         target_jenjang=target_jenjang if target_scope == "jenjang" else None,
         allow_multiple=allow_multiple,
         allow_late=allow_late,
+        very_late_after_minutes=very_late_after_minutes,
+        no_submission_after_minutes=no_submission_after_minutes,
+        no_submission_jenjangs=no_submission_jenjangs,
+        no_submission_statuses=no_submission_statuses,
         is_active=False,
         deadline_at=deadline_at,
         updated_by=user["id"],
@@ -1132,6 +1550,39 @@ def admin_laporan_autosave(form_id: int) -> Response:
     )
 
 
+@laporan_bp.route("/admin/<int:form_id>/preview")
+@role_required("admin")
+def admin_laporan_preview(form_id: int) -> Response:
+    """Admin: preview form exactly as the school fill page sees it."""
+    form = get_form(form_id)
+    if not form:
+        flash("Form tidak ditemukan.", "danger")
+        return redirect(url_for("laporan.admin_laporan_list"))
+
+    now = datetime.now(JAKARTA_TZ)
+    _annotate_repeat_form(form, now)
+    dl = _form_deadline_for_request(form, now)
+    form["deadline_str"] = _format_datetime_id(dl)
+    form["deadline_iso"] = dl.isoformat() if dl else None
+    fields = get_form_fields(form_id)
+    preview_school = {
+        "id": 0,
+        "name": "Contoh Tampilan Sekolah",
+        "npsn": "PREVIEW",
+        "jenjang": form.get("target_jenjang") or "SD",
+    }
+
+    return render_template(
+        "laporan/sekolah/fill.html",
+        form=form,
+        fields=fields,
+        school=preview_school,
+        already_submitted=False,
+        repeat_state={"policy": form.get("repeat_policy"), "period": {}},
+        preview_mode=True,
+    )
+
+
 @laporan_bp.route("/admin/<int:form_id>/jawaban")
 @role_required("admin")
 def admin_laporan_answers(form_id: int) -> Response:
@@ -1150,6 +1601,7 @@ def admin_laporan_answers(form_id: int) -> Response:
     for sub in submissions:
         sub_detail = get_submission_with_answers(sub["id"])
         if sub_detail:
+            _annotate_late_submission(sub_detail)
             detailed.append(sub_detail)
     analytics = _build_laporan_analytics(fields, detailed)
 

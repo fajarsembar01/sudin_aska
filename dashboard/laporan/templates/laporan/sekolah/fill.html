@@ -1,5 +1,6 @@
 {% extends "laporan/base_laporan.html" %}
 {% set page_title = "Isi " ~ form.title %}
+{% set preview_mode = preview_mode | default(false) %}
 
 {% block head_extra %}
 <style>
@@ -98,14 +99,79 @@
         padding: 1.5rem;
         margin-bottom: 1.5rem;
     }
+    .deadline-countdown {
+        color: var(--text-primary);
+        font-weight: 700;
+    }
+    .deadline-countdown.is-warning { color: #f59e0b; }
+    .deadline-countdown.is-danger { color: #dc3545; }
+    .deadline-countdown.is-hidden { display: none; }
+    .deadline-countdown.is-blinking {
+        animation: deadlineBlink 0.8s ease-in-out infinite;
+    }
+    @keyframes deadlineBlink {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.28; }
+    }
+    .load-prev-btn {
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        padding: 0.45rem 1rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        white-space: nowrap;
+    }
+    .load-prev-btn:hover:not(:disabled) {
+        opacity: 0.88;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(99,102,241,0.35);
+    }
+    .load-prev-btn:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+        transform: none;
+    }
+    #prevAnswerToast {
+        position: fixed;
+        bottom: 1.5rem;
+        right: 1.5rem;
+        z-index: 2000;
+        min-width: 280px;
+        max-width: 380px;
+        border-radius: 14px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+        border: none;
+        animation: toastSlideUp 0.3s ease;
+    }
+    @keyframes toastSlideUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
 </style>
 {% endblock %}
 
 {% block portal_content %}
+{% if preview_mode %}
+<div class="alert alert-warning border-0 d-flex flex-wrap align-items-center justify-content-between gap-2" role="alert">
+    <div><i class="bi bi-eye-fill me-2"></i>Mode preview admin. Tampilan ini mensimulasikan sisi sekolah dan tidak akan mengirim jawaban.</div>
+    <a href="{{ url_for('laporan.admin_laporan_edit', form_id=form.id) }}"
+        class="btn btn-sm btn-outline-dark d-inline-flex align-items-center gap-1">
+        <i class="bi bi-pencil"></i>Kembali ke Editor
+    </a>
+</div>
+{% endif %}
+
 <div class="form-header-card">
-    <a href="{{ url_for('laporan.sekolah_laporan_list') }}"
+    <a href="{{ url_for('laporan.admin_laporan_edit', form_id=form.id) if preview_mode else url_for('laporan.sekolah_laporan_list') }}"
         class="btn btn-sm btn-outline-secondary mb-3 d-inline-flex align-items-center gap-1">
-        <i class="bi bi-arrow-left"></i> Kembali ke Daftar Form
+        <i class="bi bi-arrow-left"></i> {% if preview_mode %}Kembali ke Editor{% else %}Kembali ke Daftar Form{% endif %}
     </a>
     <h1 class="h4 fw-bold mb-1">{{ form.title }}</h1>
     {% if form.description %}
@@ -118,6 +184,11 @@
         {% if form.deadline_str %}
         <span><i class="bi bi-calendar-event me-1"></i>Deadline: {{ form.deadline_str }}</span>
         {% endif %}
+        {% if form.deadline_iso %}
+        <span class="deadline-countdown is-hidden" data-deadline="{{ form.deadline_iso }}">
+            <i class="bi bi-hourglass-split me-1"></i><span class="deadline-countdown-text"></span>
+        </span>
+        {% endif %}
         <span><i class="bi bi-arrow-repeat me-1"></i>{{ form.repeat_policy_label }}</span>
         {% if form.current_period_label %}
         <span class="text-primary fw-semibold"><i class="bi bi-calendar-week me-1"></i>Periode: {{ form.current_period_label }}</span>
@@ -129,10 +200,20 @@
         <span class="text-warning fw-semibold"><i class="bi bi-info-circle me-1"></i>Anda sudah pernah mengisi form ini. Pengisian ulang diperbolehkan.</span>
         {% endif %}
     </div>
+    {% if not preview_mode and form.repeat_policy in ('daily', 'weekly', 'monthly') %}
+    <div class="mt-3 pt-3 border-top border-1" style="border-color: var(--border-soft) !important;">
+        <button type="button" class="load-prev-btn" id="loadPrevBtn"
+            onclick="loadPreviousAnswers({{ form.id }})">
+            <i class="bi bi-clock-history"></i>
+            Isi dari Periode Lalu
+        </button>
+        <span class="text-muted small ms-2" id="loadPrevStatus"></span>
+    </div>
+    {% endif %}
 </div>
 
 <form id="laporanForm" method="POST"
-    action="{{ url_for('laporan.sekolah_laporan_submit', form_id=form.id) }}"
+    action="{% if preview_mode %}#{% else %}{{ url_for('laporan.sekolah_laporan_submit', form_id=form.id) }}{% endif %}"
     enctype="multipart/form-data"
     novalidate>
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -158,6 +239,25 @@
         {% elif field.field_type == 'info' %}
         <div class="alert alert-info border-0 bg-primary-subtle text-primary-emphasis mb-0" role="alert">
             <i class="bi bi-info-circle-fill me-2"></i>{{ field.label }}
+        </div>
+
+        {% elif field.field_type == 'link' %}
+        {% set link_cfg = field.options_json or {} %}
+        <div class="alert alert-info border-0 bg-primary-subtle text-primary-emphasis mb-0" role="alert">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                <div>
+                    <i class="bi bi-link-45deg me-2"></i>{{ ns.q_idx }}. {{ field.label }}
+                    {% if field.required %}<span class="required-star">*</span>{% endif %}
+                </div>
+                <input type="hidden" name="field_{{ field.id }}" id="link_clicked_{{ field.id }}" value="">
+                {% if link_cfg.url %}
+                <a class="btn btn-sm btn-primary d-inline-flex align-items-center gap-1"
+                    href="{{ link_cfg.url }}" target="_blank" rel="noopener noreferrer"
+                    onclick="markLinkOpened('{{ field.id }}')">
+                    <i class="bi bi-box-arrow-up-right"></i>{{ link_cfg.button_text or 'Buka Link' }}
+                </a>
+                {% endif %}
+            </div>
         </div>
         
         {% else %}
@@ -292,11 +392,11 @@
 
     <div class="d-flex justify-content-between align-items-center mt-2 p-3 rounded-3"
         style="background: var(--bg-subtle);">
-        <p class="text-muted small mb-0"><i class="bi bi-shield-check me-1"></i>Data Anda terenkripsi dan hanya dapat dilihat oleh Sudin Pendidikan.</p>
+        <p class="text-muted small mb-0"><i class="bi bi-shield-check me-1"></i>{% if preview_mode %}Mode preview: jawaban tidak disimpan.{% else %}Data Anda terenkripsi dan hanya dapat dilihat oleh Sudin Pendidikan.{% endif %}</p>
         <button type="submit" class="btn btn-primary d-inline-flex align-items-center gap-2 px-4"
-            id="submitBtn">
-            <i class="bi bi-send-fill"></i>
-            <span>Kirim Laporan</span>
+            id="submitBtn" {% if preview_mode %}disabled{% endif %}>
+            <i class="bi {% if preview_mode %}bi-eye{% else %}bi-send-fill{% endif %}"></i>
+            <span>{% if preview_mode %}Preview Tampilan Sekolah{% else %}Kirim Laporan{% endif %}</span>
         </button>
     </div>
     {% endif %}
@@ -325,6 +425,14 @@ function setRating(fieldId, val) {
         btn.classList.toggle('active', btnVal <= val);
     });
     recalculateFormulaFields();
+}
+
+function markLinkOpened(fieldId) {
+    const input = document.getElementById('link_clicked_' + fieldId);
+    if (input) {
+        input.value = 'clicked';
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+    }
 }
 
 function parseFormulaNumber(value) {
@@ -369,6 +477,70 @@ document.querySelectorAll('[data-formula-source="1"]').forEach(function(input) {
 });
 recalculateFormulaFields();
 
+(function() {
+    const countdowns = Array.from(document.querySelectorAll('[data-deadline]'));
+    if (!countdowns.length) return;
+
+    const ONE_DAY = 24 * 60 * 60 * 1000;
+    const THREE_HOURS = 3 * 60 * 60 * 1000;
+    const ONE_HOUR = 60 * 60 * 1000;
+    const FIFTEEN_MINUTES = 15 * 60 * 1000;
+    const SIX_HOURS = 6 * 60 * 60 * 1000;
+
+    function formatClock(ms) {
+        const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        return [hours, minutes, seconds].map(function(value) {
+            return String(value).padStart(2, '0');
+        }).join(':');
+    }
+
+    function updateCountdowns() {
+        const now = Date.now();
+        countdowns.forEach(function(el) {
+            const deadline = Date.parse(el.getAttribute('data-deadline') || '');
+            if (!Number.isFinite(deadline)) {
+                el.classList.add('is-hidden');
+                return;
+            }
+
+            const remaining = deadline - now;
+            el.classList.remove('is-warning', 'is-danger', 'is-blinking');
+
+            if (remaining <= 0) {
+                const overdue = Math.abs(remaining);
+                if (overdue > SIX_HOURS) {
+                    el.classList.add('is-hidden');
+                    return;
+                }
+                el.querySelector('.deadline-countdown-text').textContent = '-' + formatClock(overdue);
+                el.classList.remove('is-hidden');
+                el.classList.add('is-danger', 'is-blinking');
+                return;
+            }
+            if (remaining > ONE_DAY) {
+                el.classList.add('is-hidden');
+                return;
+            }
+
+            el.querySelector('.deadline-countdown-text').textContent = formatClock(remaining);
+            el.classList.remove('is-hidden');
+            if (remaining <= FIFTEEN_MINUTES) {
+                el.classList.add('is-danger', 'is-blinking');
+            } else if (remaining <= ONE_HOUR) {
+                el.classList.add('is-danger');
+            } else if (remaining <= THREE_HOURS) {
+                el.classList.add('is-warning');
+            }
+        });
+    }
+
+    updateCountdowns();
+    window.setInterval(updateCountdowns, 1000);
+})();
+
 // Drag & drop support
 document.querySelectorAll('.file-drop-zone').forEach(function(zone) {
     zone.addEventListener('dragover', function(e) {
@@ -389,10 +561,171 @@ document.querySelectorAll('.file-drop-zone').forEach(function(zone) {
 });
 
 // Prevent double submit
-document.getElementById('laporanForm').addEventListener('submit', function() {
+var laporanForm = document.getElementById('laporanForm');
+var laporanPreviewMode = {{ 'true' if preview_mode else 'false' }};
+laporanForm.addEventListener('submit', function(event) {
+    if (laporanPreviewMode) {
+        event.preventDefault();
+        return;
+    }
+    const requiredLinks = Array.from(document.querySelectorAll('input[id^="link_clicked_"]')).filter(function(input) {
+        const card = input.closest('.form-field-card');
+        return card && card.querySelector('.required-star');
+    });
+    const unopened = requiredLinks.find(function(input) {
+        return input.value !== 'clicked';
+    });
+    if (unopened) {
+        event.preventDefault();
+        unopened.closest('.form-field-card').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        alert('Ada link wajib yang belum dibuka.');
+        return;
+    }
     const btn = document.getElementById('submitBtn');
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Mengirim...';
 });
+</script>
+
+<script>
+// ── Fitur: Isi dari Periode Lalu ──────────────────────────────
+function loadPreviousAnswers(formId) {
+    var btn = document.getElementById('loadPrevBtn');
+    var status = document.getElementById('loadPrevStatus');
+    if (!btn) return;
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Mengambil data...';
+    if (status) status.textContent = '';
+
+    fetch('/laporan/sekolah/' + formId + '/previous-answers', {
+        method: 'GET',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-clock-history"></i> Isi dari Periode Lalu';
+
+        if (!data.ok) {
+            if (status) {
+                status.textContent = data.message || 'Belum ada data sebelumnya.';
+                status.className = 'text-muted small ms-2';
+            }
+            return;
+        }
+
+        var answers = data.answers || {};
+        var filledCount = 0;
+        var skippedFiles = 0;
+
+        Object.keys(answers).forEach(function(fieldId) {
+            var ans = answers[fieldId];
+            var fieldType = ans.field_type;
+            var textVal = ans.answer_text || '';
+            var jsonVal = ans.answer_json;
+
+            // Skip field file (tidak bisa prefill)
+            if (fieldType === 'file') {
+                if (textVal || (jsonVal && jsonVal.length)) skippedFiles++;
+                return;
+            }
+            // Skip formula (dihitung otomatis)
+            if (fieldType === 'formula') return;
+
+            if (fieldType === 'checkbox') {
+                var values = Array.isArray(jsonVal) ? jsonVal : (textVal ? [textVal] : []);
+                var checkboxes = document.querySelectorAll('input[name="field_' + fieldId + '[]"]');
+                if (!checkboxes.length) return;
+                checkboxes.forEach(function(cb) {
+                    cb.checked = values.indexOf(cb.value) !== -1;
+                });
+                if (values.length) filledCount++;
+
+            } else if (fieldType === 'radio') {
+                var val = textVal || (Array.isArray(jsonVal) ? jsonVal[0] : jsonVal) || '';
+                var radios = document.querySelectorAll('input[name="field_' + fieldId + '"]');
+                if (!radios.length) return;
+                radios.forEach(function(r) { r.checked = (r.value === val); });
+                if (val) filledCount++;
+
+            } else if (fieldType === 'dropdown') {
+                var sel = document.getElementById('field_' + fieldId);
+                if (!sel) return;
+                sel.value = textVal;
+                if (textVal) filledCount++;
+
+            } else if (fieldType === 'rating') {
+                var ratingVal = parseInt(textVal || jsonVal || 0);
+                if (ratingVal > 0 && typeof setRating === 'function') {
+                    setRating(parseInt(fieldId), ratingVal);
+                    filledCount++;
+                }
+
+            } else {
+                // text, textarea, number, email, date, time, link
+                var input = document.getElementById('field_' + fieldId);
+                if (!input) return;
+                input.value = textVal;
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+                input.dispatchEvent(new Event('change', { bubbles: true }));
+                if (textVal) filledCount++;
+            }
+        });
+
+        // Recalculate formula fields
+        if (typeof recalculateFormulaFields === 'function') {
+            recalculateFormulaFields();
+        }
+
+        // Tampilkan toast
+        _showPrevAnswerToast(data.period_label, filledCount, skippedFiles);
+
+        if (status) {
+            status.textContent = 'Data dari "' + (data.period_label || 'periode lalu') + '" berhasil dimuat.';
+            status.className = 'text-success small ms-2 fw-semibold';
+        }
+    })
+    .catch(function(err) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-clock-history"></i> Isi dari Periode Lalu';
+        if (status) {
+            status.textContent = 'Gagal memuat data. Coba lagi.';
+            status.className = 'text-danger small ms-2';
+        }
+        console.error('[loadPreviousAnswers] error:', err);
+    });
+}
+
+function _showPrevAnswerToast(periodLabel, filled, skipped) {
+    var existing = document.getElementById('prevAnswerToast');
+    if (existing) existing.remove();
+
+    var skipNote = skipped > 0
+        ? '<div class="text-muted small mt-1"><i class="bi bi-paperclip me-1"></i>' + skipped + ' file tidak dapat dimuat ulang secara otomatis.</div>'
+        : '';
+
+    var toast = document.createElement('div');
+    toast.id = 'prevAnswerToast';
+    toast.className = 'toast show align-items-center text-bg-success border-0';
+    toast.setAttribute('role', 'alert');
+    toast.innerHTML = [
+        '<div class="d-flex">',
+        '  <div class="toast-body">',
+        '    <div class="fw-bold mb-1"><i class="bi bi-check-circle-fill me-1"></i>Data periode lalu dimuat!</div>',
+        '    <div class="small">Dari: <strong>' + (periodLabel || 'periode sebelumnya') + '</strong></div>',
+        '    <div class="small">' + filled + ' field terisi otomatis.</div>',
+        skipNote,
+        '    <div class="text-warning-emphasis small mt-1 fw-semibold"><i class="bi bi-pencil me-1"></i>Silakan periksa dan edit sebelum mengirim.</div>',
+        '  </div>',
+        '  <button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="this.closest(\'#prevAnswerToast\').remove()"></button>',
+        '</div>',
+    ].join('');
+    document.body.appendChild(toast);
+
+    setTimeout(function() {
+        if (toast.parentNode) toast.remove();
+    }, 7000);
+}
 </script>
 {% endblock %}

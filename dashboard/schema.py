@@ -1708,6 +1708,9 @@ CREATE TABLE IF NOT EXISTS laporan_forms (
     target_jenjang TEXT,
     allow_multiple BOOLEAN NOT NULL DEFAULT FALSE,
     allow_late BOOLEAN NOT NULL DEFAULT FALSE,
+    very_late_after_minutes INTEGER NOT NULL DEFAULT 180,
+    no_submission_after_minutes INTEGER,
+    no_submission_jenjangs TEXT,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     status TEXT NOT NULL DEFAULT 'published' CHECK (status IN ('draft', 'published')),
     repeat_policy TEXT NOT NULL DEFAULT 'once' CHECK (repeat_policy IN ('once', 'multiple', 'daily', 'weekly', 'monthly')),
@@ -1779,7 +1782,7 @@ CREATE TABLE IF NOT EXISTS laporan_form_fields (
     id SERIAL PRIMARY KEY,
     form_id INTEGER NOT NULL REFERENCES laporan_forms(id) ON DELETE CASCADE,
     label TEXT NOT NULL,
-    field_type TEXT NOT NULL DEFAULT 'text' CHECK (field_type IN ('text', 'textarea', 'radio', 'checkbox', 'file', 'date', 'number', 'rating', 'dropdown', 'time', 'email', 'header', 'info')),
+    field_type TEXT NOT NULL DEFAULT 'text' CHECK (field_type IN ('text', 'textarea', 'radio', 'checkbox', 'file', 'date', 'number', 'rating', 'dropdown', 'time', 'email', 'header', 'info', 'link')),
     options_json JSONB,
     required BOOLEAN NOT NULL DEFAULT TRUE,
     sort_order INTEGER NOT NULL DEFAULT 0,
@@ -1801,6 +1804,7 @@ CREATE TABLE IF NOT EXISTS laporan_submissions (
     submitted_at TIMESTAMPTZ,
     is_late BOOLEAN NOT NULL DEFAULT FALSE,
     late_days INTEGER DEFAULT 0,
+    late_minutes INTEGER DEFAULT 0,
     repeat_period_key TEXT,
     repeat_period_label TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -1815,17 +1819,25 @@ ALTER TABLE laporan_submissions ADD COLUMN IF NOT EXISTS repeat_period_label TEX
 
 _LAPORAN_FORMS_LATE_MIGRATION_SQL = """
 ALTER TABLE laporan_forms ADD COLUMN IF NOT EXISTS allow_late BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE laporan_forms ADD COLUMN IF NOT EXISTS very_late_after_minutes INTEGER NOT NULL DEFAULT 180;
+ALTER TABLE laporan_forms ADD COLUMN IF NOT EXISTS no_submission_after_minutes INTEGER;
+ALTER TABLE laporan_forms ADD COLUMN IF NOT EXISTS no_submission_jenjangs TEXT;
+"""
+
+_LAPORAN_FORMS_STATUS_FILTER_MIGRATION_SQL = """
+ALTER TABLE laporan_forms ADD COLUMN IF NOT EXISTS no_submission_statuses TEXT;
 """
 
 _LAPORAN_SUBMISSIONS_LATE_MIGRATION_SQL = """
 ALTER TABLE laporan_submissions ADD COLUMN IF NOT EXISTS is_late BOOLEAN NOT NULL DEFAULT FALSE;
 ALTER TABLE laporan_submissions ADD COLUMN IF NOT EXISTS late_days INTEGER DEFAULT 0;
+ALTER TABLE laporan_submissions ADD COLUMN IF NOT EXISTS late_minutes INTEGER DEFAULT 0;
 """
 
 _LAPORAN_FIELDS_CONSTRAINT_MIGRATION_SQL = """
 ALTER TABLE laporan_form_fields DROP CONSTRAINT IF EXISTS laporan_form_fields_field_type_check;
 ALTER TABLE laporan_form_fields ADD CONSTRAINT laporan_form_fields_field_type_check 
-CHECK (field_type IN ('text', 'textarea', 'radio', 'checkbox', 'file', 'date', 'number', 'rating', 'dropdown', 'time', 'email', 'header', 'info'));
+CHECK (field_type IN ('text', 'textarea', 'radio', 'checkbox', 'file', 'date', 'number', 'rating', 'dropdown', 'time', 'email', 'header', 'info', 'link'));
 """
 
 _LAPORAN_SUBMISSIONS_INDEX_SQL = """
@@ -1880,6 +1892,7 @@ def ensure_laporan_schema() -> None:
         _LAPORAN_FORMS_STATUS_MIGRATION_SQL,
         _LAPORAN_REPEAT_POLICY_MIGRATION_SQL,
         _LAPORAN_FORMS_LATE_MIGRATION_SQL,
+        _LAPORAN_FORMS_STATUS_FILTER_MIGRATION_SQL,
         _LAPORAN_FORMS_INDEX_SQL,
         _LAPORAN_FORM_TARGETS_SQL,
         _LAPORAN_FORM_TARGETS_INDEX_SQL,

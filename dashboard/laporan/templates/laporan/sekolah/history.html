@@ -51,13 +51,13 @@
                     </td>
                     <td>
                         {% if sub.status == 'submitted' %}
-                            {% if sub.is_late and sub.late_days > 3 %}
+                            {% if sub.is_very_late %}
                             <span class="badge bg-danger-subtle text-danger">
-                                <i class="bi bi-exclamation-octagon me-1"></i>Sangat Telat ({{ sub.late_days }} Hari)
+                                <i class="bi bi-exclamation-octagon me-1"></i>Sangat Terlambat ({{ sub.late_duration_label }})
                             </span>
                             {% elif sub.is_late %}
                             <span class="badge bg-warning-subtle text-warning">
-                                <i class="bi bi-exclamation-triangle me-1"></i>Telat ({{ sub.late_days }} Hari)
+                                <i class="bi bi-exclamation-triangle me-1"></i>Terlambat ({{ sub.late_duration_label }})
                             </span>
                             {% else %}
                             <span class="badge bg-success-subtle text-success">

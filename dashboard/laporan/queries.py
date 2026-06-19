@@ -20,7 +20,9 @@ def list_all_forms(include_inactive: bool = False) -> list[dict]:
         cur.execute(
             f"""
             SELECT f.id, f.title, f.description, f.target_scope, f.target_jenjang,
-                   f.allow_multiple, f.allow_late, f.is_active, f.status, f.repeat_policy,
+                   f.allow_multiple, f.allow_late, f.very_late_after_minutes,
+                   f.no_submission_after_minutes, f.no_submission_jenjangs, f.no_submission_statuses,
+                   f.is_active, f.status, f.repeat_policy,
                    f.repeat_until_at, f.repeat_deadline_time, f.repeat_deadline_day,
                    f.deadline_at, f.created_at,
                    u.full_name AS created_by_name,
@@ -83,6 +85,12 @@ def get_form_fields(form_id: int) -> list[dict]:
                         "operator": raw_options.get("operator") or "subtract",
                         "right_key": raw_options.get("right_key") or "",
                     }
+                elif raw_options.get("kind") == "link":
+                    d["field_type"] = "link"
+                    d["options_json"] = {
+                        "url": raw_options.get("url") or "",
+                        "button_text": raw_options.get("button_text") or "Buka Link",
+                    }
                 else:
                     d["options_json"] = raw_options.get("choices") or []
             rows.append(d)
@@ -108,7 +116,9 @@ def list_forms_for_school(school_id: int, jenjang: Optional[str] = None) -> list
         cur.execute(
             """
             SELECT DISTINCT f.id, f.title, f.description, f.target_scope,
-                   f.allow_multiple, f.allow_late, f.repeat_policy, f.repeat_until_at,
+                   f.allow_multiple, f.allow_late, f.very_late_after_minutes,
+                   f.no_submission_after_minutes, f.no_submission_jenjangs, f.no_submission_statuses,
+                   f.repeat_policy, f.repeat_until_at,
                    f.repeat_deadline_time, f.repeat_deadline_day, f.deadline_at, f.created_at,
                    (
                        SELECT COUNT(*) FROM laporan_submissions s
@@ -159,6 +169,10 @@ def create_form(
     target_jenjang: Optional[str],
     allow_multiple: bool,
     allow_late: bool,
+    very_late_after_minutes: int,
+    no_submission_after_minutes: Optional[int],
+    no_submission_jenjangs: Optional[str],
+    no_submission_statuses: Optional[str],
     is_active: bool,
     deadline_at: Optional[datetime],
     created_by: int,
@@ -174,9 +188,11 @@ def create_form(
             """
             INSERT INTO laporan_forms
                 (title, description, target_scope, target_jenjang, allow_multiple, allow_late,
+                 very_late_after_minutes, no_submission_after_minutes, no_submission_jenjangs,
+                 no_submission_statuses,
                  is_active, status, repeat_policy, repeat_until_at, repeat_deadline_time,
                  repeat_deadline_day, deadline_at, created_by, updated_by)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id, title, status, created_at
             """,
             (
@@ -186,6 +202,10 @@ def create_form(
                 target_jenjang,
                 allow_multiple,
                 allow_late,
+                very_late_after_minutes,
+                no_submission_after_minutes,
+                no_submission_jenjangs,
+                no_submission_statuses,
                 is_active,
                 status,
                 repeat_policy,
@@ -208,6 +228,10 @@ def update_form(
     target_jenjang: Optional[str],
     allow_multiple: bool,
     allow_late: bool,
+    very_late_after_minutes: int,
+    no_submission_after_minutes: Optional[int],
+    no_submission_jenjangs: Optional[str],
+    no_submission_statuses: Optional[str],
     is_active: bool,
     deadline_at: Optional[datetime],
     updated_by: int,
@@ -223,7 +247,10 @@ def update_form(
             """
             UPDATE laporan_forms SET
                 title=%s, description=%s, target_scope=%s, target_jenjang=%s,
-                allow_multiple=%s, allow_late=%s, is_active=%s, status=%s,
+                allow_multiple=%s, allow_late=%s, very_late_after_minutes=%s,
+                no_submission_after_minutes=%s, no_submission_jenjangs=%s,
+                no_submission_statuses=%s,
+                is_active=%s, status=%s,
                 repeat_policy=%s, repeat_until_at=%s, repeat_deadline_time=%s,
                 repeat_deadline_day=%s, deadline_at=%s,
                 updated_by=%s, updated_at=NOW()
@@ -236,6 +263,10 @@ def update_form(
                 target_jenjang,
                 allow_multiple,
                 allow_late,
+                very_late_after_minutes,
+                no_submission_after_minutes,
+                no_submission_jenjangs,
+                no_submission_statuses,
                 is_active,
                 status,
                 repeat_policy,
@@ -289,6 +320,14 @@ def replace_form_fields(form_id: int, fields: list[dict]) -> None:
                 }
             elif field_type in {"radio", "checkbox", "dropdown"}:
                 options = {"field_key": field_key, "choices": raw_options or []}
+            elif field_type == "link":
+                raw_options = raw_options if isinstance(raw_options, dict) else {}
+                options = {
+                    "kind": "link",
+                    "field_key": field_key,
+                    "url": raw_options.get("url") or "",
+                    "button_text": raw_options.get("button_text") or "Buka Link",
+                }
             else:
                 options = {"field_key": field_key}
             options = json.dumps(options, ensure_ascii=False)
@@ -351,6 +390,7 @@ def create_submission(
     submitted_by: int,
     is_late: bool = False,
     late_days: int = 0,
+    late_minutes: int = 0,
     repeat_period_key: Optional[str] = None,
     repeat_period_label: Optional[str] = None,
 ) -> dict:
@@ -360,12 +400,21 @@ def create_submission(
             """
             INSERT INTO laporan_submissions (
                 form_id, school_id, submitted_by, status, submitted_at,
-                is_late, late_days, repeat_period_key, repeat_period_label
+                is_late, late_days, late_minutes, repeat_period_key, repeat_period_label
             )
-            VALUES (%s, %s, %s, 'submitted', NOW(), %s, %s, %s, %s)
+            VALUES (%s, %s, %s, 'submitted', NOW(), %s, %s, %s, %s, %s)
             RETURNING id, form_id, school_id, submitted_at
             """,
-            (form_id, school_id, submitted_by, is_late, late_days, repeat_period_key, repeat_period_label),
+            (
+                form_id,
+                school_id,
+                submitted_by,
+                is_late,
+                late_days,
+                late_minutes,
+                repeat_period_key,
+                repeat_period_label,
+            ),
         )
         return dict(cur.fetchone())
 
@@ -405,8 +454,15 @@ def get_submission_with_answers(submission_id: int) -> Optional[dict]:
     with get_cursor() as cur:
         cur.execute(
             """
-            SELECT s.*, sc.name AS school_name, sc.npsn, sc.jenjang, u.full_name AS submitted_by_name
+            SELECT s.*, COALESCE(s.late_minutes, s.late_days * 1440, 0) AS late_minutes,
+                   f.very_late_after_minutes,
+                   f.deadline_at AS form_deadline_at,
+                   f.repeat_policy AS form_repeat_policy,
+                   f.repeat_deadline_time AS form_repeat_deadline_time,
+                   f.repeat_deadline_day AS form_repeat_deadline_day,
+                   sc.name AS school_name, sc.npsn, sc.jenjang, u.full_name AS submitted_by_name
             FROM laporan_submissions s
+            JOIN laporan_forms f ON f.id = s.form_id
             JOIN portal_schools sc ON sc.id = s.school_id
             LEFT JOIN dashboard_users u ON u.id = s.submitted_by
             WHERE s.id = %s
@@ -453,9 +509,15 @@ def list_school_submissions(school_id: int) -> list[dict]:
     with get_cursor() as cur:
         cur.execute(
             """
-            SELECT s.id, s.form_id, s.status, s.submitted_at, s.created_at, s.is_late, s.late_days,
+            SELECT s.id, s.form_id, s.status, s.submitted_at, s.created_at,
+                   s.is_late, s.late_days, COALESCE(s.late_minutes, s.late_days * 1440, 0) AS late_minutes,
                    s.repeat_period_key, s.repeat_period_label,
-                   f.title AS form_title, f.description AS form_description
+                   f.title AS form_title, f.description AS form_description,
+                   f.very_late_after_minutes,
+                   f.deadline_at AS form_deadline_at,
+                   f.repeat_policy AS form_repeat_policy,
+                   f.repeat_deadline_time AS form_repeat_deadline_time,
+                   f.repeat_deadline_day AS form_repeat_deadline_day
             FROM laporan_submissions s
             JOIN laporan_forms f ON f.id = s.form_id
             WHERE s.school_id = %s
@@ -466,16 +528,85 @@ def list_school_submissions(school_id: int) -> list[dict]:
         return [dict(r) for r in cur.fetchall()]
 
 
+def get_last_submission_answers(form_id: int, school_id: int) -> Optional[dict]:
+    """
+    Fetch the most recent submitted answers for a given form+school.
+    Returns a dict with:
+      - period_label: label periode submission tersebut
+      - answers: {field_id -> {answer_text, answer_json, field_type}}
+    Returns None if no previous submission exists.
+    Uses only 2 queries (no N+1).
+    """
+    with get_cursor() as cur:
+        # Query 1: ambil submission terakhir
+        cur.execute(
+            """
+            SELECT s.id, s.repeat_period_label
+            FROM laporan_submissions s
+            WHERE s.form_id = %s AND s.school_id = %s AND s.status = 'submitted'
+            ORDER BY s.submitted_at DESC NULLS LAST, s.id DESC
+            LIMIT 1
+            """,
+            (form_id, school_id),
+        )
+        row = cur.fetchone()
+        if not row:
+            return None
+        submission_id = row["id"]
+        period_label = row["repeat_period_label"]
+
+        # Query 2: batch ambil semua jawaban sekaligus
+        cur.execute(
+            """
+            SELECT a.field_id, a.answer_text, a.answer_json,
+                   ff.field_type, ff.options_json
+            FROM laporan_submission_answers a
+            JOIN laporan_form_fields ff ON ff.id = a.field_id
+            WHERE a.submission_id = %s
+            ORDER BY ff.sort_order, ff.id
+            """,
+            (submission_id,),
+        )
+        answers = {}
+        for r in cur.fetchall():
+            d = dict(r)
+            answer_json = d.get("answer_json")
+            if answer_json and isinstance(answer_json, str):
+                try:
+                    answer_json = json.loads(answer_json)
+                except Exception:
+                    answer_json = None
+            answers[str(d["field_id"])] = {
+                "answer_text": d.get("answer_text"),
+                "answer_json": answer_json,
+                "field_type": d.get("field_type"),
+            }
+
+        return {
+            "period_label": period_label,
+            "answers": answers,
+        }
+
+
+
+
 def list_form_submissions(form_id: int) -> list[dict]:
     """List all submissions for a given form (admin view)."""
     with get_cursor() as cur:
         cur.execute(
             """
-            SELECT s.id, s.school_id, s.status, s.submitted_at, s.created_at, s.is_late, s.late_days,
+            SELECT s.id, s.school_id, s.status, s.submitted_at, s.created_at,
+                   s.is_late, s.late_days, COALESCE(s.late_minutes, s.late_days * 1440, 0) AS late_minutes,
                    s.repeat_period_key, s.repeat_period_label,
+                   f.deadline_at AS form_deadline_at,
+                   f.repeat_policy AS form_repeat_policy,
+                   f.repeat_deadline_time AS form_repeat_deadline_time,
+                   f.repeat_deadline_day AS form_repeat_deadline_day,
+                   f.very_late_after_minutes,
                    sc.name AS school_name, sc.npsn, sc.jenjang,
                    u.full_name AS submitted_by_name
             FROM laporan_submissions s
+            JOIN laporan_forms f ON f.id = s.form_id
             JOIN portal_schools sc ON sc.id = s.school_id
             LEFT JOIN dashboard_users u ON u.id = s.submitted_by
             WHERE s.form_id = %s AND s.status = 'submitted'
@@ -516,7 +647,7 @@ def export_form_xlsx(form_id: int) -> tuple[str, bytes]:
     if not form:
         return "laporan.xlsx", b""
 
-    fields = get_form_fields(form_id)
+    fields = [f for f in get_form_fields(form_id) if f.get("field_type") not in {"header", "info"}]
     submissions = list_form_submissions(form_id)
     header = ["No", "Sekolah", "NPSN", "Jenjang", "Disubmit Oleh", "Periode", "Waktu Submit"]
     for f in fields:
@@ -627,8 +758,8 @@ def fetch_laporan_kpi_schools() -> list[dict]:
     Fetch KPIs for reporting tardiness grouped by school.
     Rules:
       - is_late = false -> Tepat Waktu
-      - is_late = true AND late_days <= 3 -> Terlambat
-      - is_late = true AND late_days > 3 -> Sangat Terlambat
+      - is_late = true AND late_minutes <= form threshold -> Terlambat
+      - is_late = true AND late_minutes > form threshold -> Sangat Terlambat
     """
     with get_cursor() as cur:
         cur.execute(
@@ -636,10 +767,21 @@ def fetch_laporan_kpi_schools() -> list[dict]:
             SELECT sc.id AS school_id, sc.name AS school_name, sc.npsn, sc.jenjang,
                    COUNT(s.id) AS total_submissions,
                    SUM(CASE WHEN s.is_late = FALSE THEN 1 ELSE 0 END) AS on_time_count,
-                   SUM(CASE WHEN s.is_late = TRUE AND s.late_days <= 3 THEN 1 ELSE 0 END) AS late_count,
-                   SUM(CASE WHEN s.is_late = TRUE AND s.late_days > 3 THEN 1 ELSE 0 END) AS very_late_count
+                   SUM(CASE
+                       WHEN s.is_late = TRUE
+                        AND COALESCE(s.late_minutes, s.late_days * 1440, 0)
+                            <= COALESCE(f.very_late_after_minutes, 180)
+                       THEN 1 ELSE 0
+                   END) AS late_count,
+                   SUM(CASE
+                       WHEN s.is_late = TRUE
+                        AND COALESCE(s.late_minutes, s.late_days * 1440, 0)
+                            > COALESCE(f.very_late_after_minutes, 180)
+                       THEN 1 ELSE 0
+                   END) AS very_late_count
             FROM portal_schools sc
             LEFT JOIN laporan_submissions s ON s.school_id = sc.id AND s.status = 'submitted'
+            LEFT JOIN laporan_forms f ON f.id = s.form_id
             WHERE sc.active = TRUE
             GROUP BY sc.id, sc.name, sc.npsn, sc.jenjang
             ORDER BY total_submissions DESC, sc.name

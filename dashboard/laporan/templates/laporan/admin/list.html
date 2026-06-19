@@ -99,6 +99,19 @@
                         class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1">
                         <i class="bi bi-pencil"></i> Edit
                     </a>
+                    <button type="button"
+                        class="btn btn-sm btn-outline-dark d-inline-flex align-items-center gap-1"
+                        data-caption-id="shareCaption{{ f.id }}"
+                        onclick="copyCaption(this)">
+                        <i class="bi bi-clipboard"></i> Copy Caption
+                    </button>
+                    <button type="button"
+                        class="btn btn-sm btn-success d-inline-flex align-items-center gap-1"
+                        data-caption-id="shareCaption{{ f.id }}"
+                        onclick="shareWhatsapp(this)">
+                        <i class="bi bi-whatsapp"></i> Share WA
+                    </button>
+                    <textarea id="shareCaption{{ f.id }}" class="d-none">{{ f.share_caption | default('') }}</textarea>
                     {% endif %}
                     <button type="button" class="btn btn-sm btn-outline-danger d-inline-flex align-items-center gap-1"
                         onclick="confirmDelete({{ f.id }}, '{{ f.title | e }}', {{ 'true' if f.status == 'draft' else 'false' }})">
@@ -149,6 +162,56 @@ function confirmDelete(formId, formTitle, isDraft) {
         : '<i class="bi bi-info-circle me-1"></i>Semua jawaban yang masuk juga akan ikut terhapus secara permanen.';
     document.getElementById('deleteForm').action = '/laporan/admin/' + formId + '/delete';
     new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+
+function getCaption(button) {
+    var id = button.getAttribute('data-caption-id');
+    var source = id ? document.getElementById(id) : null;
+    return source ? source.value : '';
+}
+
+function setTemporaryButtonLabel(button, text, iconClass) {
+    var original = button.innerHTML;
+    button.innerHTML = '<i class="bi ' + iconClass + '"></i> ' + text;
+    window.setTimeout(function() {
+        button.innerHTML = original;
+    }, 1800);
+}
+
+function copyCaption(button) {
+    var caption = getCaption(button);
+    if (!caption) return;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(caption).then(function() {
+            setTemporaryButtonLabel(button, 'Tersalin', 'bi-check2');
+        }).catch(function() {
+            fallbackCopyCaption(button, caption);
+        });
+        return;
+    }
+    fallbackCopyCaption(button, caption);
+}
+
+function fallbackCopyCaption(button, caption) {
+    var textarea = document.createElement('textarea');
+    textarea.value = caption;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    try {
+        document.execCommand('copy');
+        setTemporaryButtonLabel(button, 'Tersalin', 'bi-check2');
+    } finally {
+        document.body.removeChild(textarea);
+    }
+}
+
+function shareWhatsapp(button) {
+    var caption = getCaption(button);
+    if (!caption) return;
+    window.open('https://wa.me/?text=' + encodeURIComponent(caption), '_blank', 'noopener,noreferrer');
 }
 </script>
 {% endblock %}

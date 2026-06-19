@@ -137,9 +137,35 @@
                 <label class="form-label fw-semibold">Toleransi Keterlambatan</label>
                 <select name="allow_late" class="form-select">
                     <option value="0" {% if not form or not form.allow_late %}selected{% endif %}>Blokir jika lewat deadline</option>
-                    <option value="1" {% if form and form.allow_late %}selected{% endif %}>Izinkan (Tandai Telat)</option>
+                    <option value="1" {% if form and form.allow_late %}selected{% endif %}>Izinkan (Tandai Terlambat)</option>
                 </select>
                 <small class="text-muted">Jika diizinkan, dihitung ke dalam KPI</small>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Sangat Terlambat Setelah</label>
+                <div class="input-group">
+                    <input type="number" name="very_late_after_hours" class="form-control"
+                        min="0.25" max="720" step="0.25"
+                        value="{{ laporan_very_late_hours_value(form) if form else '3' }}">
+                    <span class="input-group-text">jam</span>
+                </div>
+                <small class="text-muted">Default 3 jam setelah deadline</small>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Tidak Mengumpulkan Setelah</label>
+                <div class="input-group">
+                    <input type="number" name="no_submission_after_hours" class="form-control"
+                        min="0" max="720" step="1"
+                        value="{{ laporan_no_submission_hours_value(form) if form else '' }}"
+                        placeholder="Jam">
+                    <span class="input-group-text">jam</span>
+                    <input type="number" name="no_submission_after_minutes" class="form-control"
+                        min="0" max="59" step="1"
+                        value="{{ laporan_no_submission_minutes_value(form) if form else '' }}"
+                        placeholder="Menit">
+                    <span class="input-group-text">menit</span>
+                </div>
+                <small class="text-muted">Kosongkan jika tidak ingin blokir total setelah deadline</small>
             </div>
             <div class="col-md-3">
                 <label class="form-label fw-semibold">Boleh Diisi Ulang?</label>
@@ -193,6 +219,54 @@
                     <option value="1" {% if not form or form.status == 'draft' or form.is_active %}selected{% endif %}>Aktif</option>
                     <option value="0" {% if form and form.status != 'draft' and not form.is_active %}selected{% endif %}>Nonaktif</option>
                 </select>
+            </div>
+            <div class="col-12">
+                <label class="form-label fw-semibold">Jenjang yang Dihitung Tidak Mengumpulkan</label>
+                {% set selected_no_submission_jenjangs = laporan_selected_no_submission_jenjangs(form) if form else [] %}
+                {% set selected_no_submission_statuses_val = laporan_selected_no_submission_statuses(form) if form else [] %}
+                {% set current_status_filter = selected_no_submission_statuses_val[0] if selected_no_submission_statuses_val else '' %}
+
+                {# Filter Semua / Negeri / Swasta #}
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <span class="text-muted small fw-semibold me-1">Status Sekolah:</span>
+                    <div class="btn-group btn-group-sm" role="group" id="statusFilterGroup">
+                        <input type="radio" class="btn-check" name="no_submission_statuses"
+                            id="status_filter_all" value=""
+                            {% if current_status_filter == 'SEMUA' %}checked{% endif %}
+                            onchange="filterJenjangByStatus(this.value)">
+                        <label class="btn btn-outline-secondary" for="status_filter_all">Semua</label>
+
+                        <input type="radio" class="btn-check" name="no_submission_statuses"
+                            id="status_filter_negeri" value="NEGERI"
+                            {% if current_status_filter == 'NEGERI' or not current_status_filter %}checked{% endif %}
+                            onchange="filterJenjangByStatus(this.value)">
+                        <label class="btn btn-outline-primary" for="status_filter_negeri">
+                            <i class="bi bi-building me-1"></i>Negeri
+                        </label>
+
+                        <input type="radio" class="btn-check" name="no_submission_statuses"
+                            id="status_filter_swasta" value="SWASTA"
+                            {% if current_status_filter == 'SWASTA' %}checked{% endif %}
+                            onchange="filterJenjangByStatus(this.value)">
+                        <label class="btn btn-outline-success" for="status_filter_swasta">
+                            <i class="bi bi-building-check me-1"></i>Swasta
+                        </label>
+                    </div>
+                </div>
+
+                {# Checkbox Jenjang #}
+                <div class="d-flex flex-wrap gap-3" id="jenjangCheckboxGroup">
+                    {% for jenjang in available_jenjangs or ['SD', 'SMP'] %}
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox"
+                            name="no_submission_jenjangs[]" value="{{ jenjang }}"
+                            id="no_submission_jenjang_{{ loop.index }}"
+                            {% if jenjang in selected_no_submission_jenjangs %}checked{% endif %}>
+                        <label class="form-check-label" for="no_submission_jenjang_{{ loop.index }}">{{ jenjang }}</label>
+                    </div>
+                    {% endfor %}
+                </div>
+                <small class="text-muted">Jika tidak dipilih, aturan tidak mengumpulkan berlaku untuk semua jenjang target form.</small>
             </div>
         </div>
     </div>
@@ -254,6 +328,7 @@
             {% set fid = 'f_' ~ loop.index0 ~ '_' ~ range(10000, 99999)|random %}
             {% endif %}
             {% set formula_cfg = field.options_json if field.field_type == 'formula' and field.options_json else {} %}
+            {% set link_cfg = field.options_json if field.field_type == 'link' and field.options_json else {} %}
             <div class="field-builder-item" data-id="{{ fid }}">
                 <input type="hidden" name="field_id[]" value="{{ fid }}">
                 <div class="d-flex align-items-center gap-2 mb-2">
@@ -276,6 +351,7 @@
                         <option value="email" {% if field.field_type == 'email' %}selected{% endif %}>Email</option>
                         <option value="header" {% if field.field_type == 'header' %}selected{% endif %}>Judul Bagian</option>
                         <option value="info" {% if field.field_type == 'info' %}selected{% endif %}>Teks Informasi</option>
+                        <option value="link" {% if field.field_type == 'link' %}selected{% endif %}>Link / Tombol</option>
                     </select>
                     <button type="button" class="remove-field-btn btn btn-sm btn-outline-danger icon-only"
                         onclick="removeField(this)"><i class="bi bi-x-lg"></i></button>
@@ -330,6 +406,24 @@
                         </div>
                     </div>
                 </div>
+                <div class="link-group mt-2" id="link_{{ fid }}"
+                    {% if field.field_type != 'link' %}style="display:none;"{% endif %}>
+                    <label class="text-muted small fw-semibold">Link:</label>
+                    <div class="row g-2">
+                        <div class="col-md-7">
+                            <input type="url" class="form-control form-control-sm"
+                                name="field_link_url_{{ fid }}"
+                                placeholder="https://contoh.go.id/dokumen"
+                                value="{{ link_cfg.url or '' }}">
+                        </div>
+                        <div class="col-md-5">
+                            <input type="text" class="form-control form-control-sm"
+                                name="field_link_text_{{ fid }}"
+                                placeholder="Teks tombol"
+                                value="{{ link_cfg.button_text or 'Buka Link' }}">
+                        </div>
+                    </div>
+                </div>
                 <div class="mt-2 req-group" id="req_group_{{ fid }}" {% if field.field_type in ('header', 'info', 'formula') %}style="display:none;"{% endif %}>
                     <div class="form-check form-check-inline">
                         <input class="form-check-input" type="checkbox" name="field_required_{{ fid }}" id="req_{{ fid }}"
@@ -351,6 +445,13 @@
         <div class="me-auto text-muted small d-flex align-items-center" id="draftAutosaveStatus">
             <i class="bi bi-cloud-check me-1"></i>Draft tersimpan
         </div>
+        {% endif %}
+        {% if form %}
+        <a href="{{ url_for('laporan.admin_laporan_preview', form_id=form.id) }}"
+            target="_blank" rel="noopener noreferrer"
+            class="btn btn-outline-primary d-inline-flex align-items-center gap-1">
+            <i class="bi bi-eye"></i>Preview
+        </a>
         {% endif %}
         <a href="{{ url_for('laporan.admin_laporan_list') }}" class="btn btn-secondary">Batal</a>
         {% if not form or form.status == 'draft' %}
@@ -470,6 +571,10 @@ function restoreDraftFields(pairs) {
                 left: firstValueFromPairs(pairs, 'field_formula_left_' + fid, ''),
                 operator: firstValueFromPairs(pairs, 'field_formula_operator_' + fid, 'subtract'),
                 right: firstValueFromPairs(pairs, 'field_formula_right_' + fid, '')
+            },
+            link: {
+                url: firstValueFromPairs(pairs, 'field_link_url_' + fid, ''),
+                text: firstValueFromPairs(pairs, 'field_link_text_' + fid, 'Buka Link')
             }
         };
         addField(fieldData);
@@ -613,6 +718,13 @@ function updateTargetScope() {
     updateSelectedCount();
 }
 
+function filterJenjangByStatus(statusValue) {
+    // Fungsi ini tidak menyembunyikan checkbox jenjang,
+    // melainkan hanya memperbarui visual feedback status yang dipilih.
+    // Nilai filter tersimpan melalui radio button no_submission_statuses.
+    // Tidak ada perubahan tambahan diperlukan karena radio button Bootstrap sudah mengelola state.
+}
+
 function filterSchools() {
     var q = document.getElementById('schoolSearchInput').value.toLowerCase();
     document.querySelectorAll('.school-item').forEach(function(item) {
@@ -671,6 +783,7 @@ function addField(fieldData) {
                 <option value="email">Email</option>
                 <option value="header">Judul Bagian</option>
                 <option value="info">Teks Informasi</option>
+                <option value="link">Link / Tombol</option>
             </select>
             <button type="button" class="remove-field-btn btn btn-sm btn-outline-danger icon-only"
                 onclick="removeField(this)"><i class="bi bi-x-lg"></i></button>
@@ -709,6 +822,19 @@ function addField(fieldData) {
                 </div>
             </div>
         </div>
+        <div class="link-group mt-2" id="link_${fid}" style="display:none;">
+            <label class="text-muted small fw-semibold">Link:</label>
+            <div class="row g-2">
+                <div class="col-md-7">
+                    <input type="url" class="form-control form-control-sm"
+                        name="field_link_url_${fid}" placeholder="https://contoh.go.id/dokumen">
+                </div>
+                <div class="col-md-5">
+                    <input type="text" class="form-control form-control-sm"
+                        name="field_link_text_${fid}" placeholder="Teks tombol" value="Buka Link">
+                </div>
+            </div>
+        </div>
         <div class="mt-2 req-group" id="req_group_${fid}">
             <div class="form-check form-check-inline">
                 <input class="form-check-input" type="checkbox" name="field_required_${fid}" id="req_${fid}" checked>
@@ -739,6 +865,12 @@ function addField(fieldData) {
         if (formulaRight) formulaRight.setAttribute('data-selected', fieldData.formula.right || '');
         if (formulaOperator) formulaOperator.value = fieldData.formula.operator || 'subtract';
     }
+    if (fieldData.link) {
+        var linkUrl = item.querySelector('input[name^="field_link_url_"]');
+        var linkText = item.querySelector('input[name^="field_link_text_"]');
+        if (linkUrl) linkUrl.value = fieldData.link.url || '';
+        if (linkText) linkText.value = fieldData.link.text || 'Buka Link';
+    }
     if (typeSelect) toggleFieldOptions(typeSelect, fid);
     updateFieldNumbers();
     rebuildFormulaSelects();
@@ -766,6 +898,9 @@ function toggleFieldOptions(select, fid) {
 
     var formulaGroup = document.getElementById('formula_' + fid);
     if (formulaGroup) formulaGroup.style.display = val === 'formula' ? '' : 'none';
+
+    var linkGroup = document.getElementById('link_' + fid);
+    if (linkGroup) linkGroup.style.display = val === 'link' ? '' : 'none';
     
     var reqGroup = document.getElementById('req_group_' + fid);
     var showReq = (val !== 'header' && val !== 'info' && val !== 'formula');

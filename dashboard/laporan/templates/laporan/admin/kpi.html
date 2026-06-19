@@ -54,8 +54,8 @@
                         <th class="ps-4">Sekolah</th>
                         <th class="text-center">Total Form</th>
                         <th class="text-center">Tepat Waktu</th>
-                        <th class="text-center">Telat (≤ 3 Hari)</th>
-                        <th class="text-center">Sangat Telat (> 3 Hari)</th>
+                        <th class="text-center" title="Mengikuti konfigurasi sangat terlambat pada masing-masing form">Terlambat</th>
+                        <th class="text-center" title="Mengikuti konfigurasi sangat terlambat pada masing-masing form">Sangat Terlambat</th>
                         <th class="pe-4 text-center">Tingkat Kepatuhan</th>
                     </tr>
                 </thead>
@@ -73,10 +73,10 @@
                             <span class="stat-badge bg-success-subtle text-success" title="{{ row.on_time_count }} Tepat Waktu">{{ row.on_time_count }}</span>
                         </td>
                         <td class="text-center">
-                            <span class="stat-badge bg-warning-subtle text-warning" title="{{ row.late_count }} Telat">{{ row.late_count }}</span>
+                            <span class="stat-badge bg-warning-subtle text-warning" title="{{ row.late_count }} Terlambat">{{ row.late_count }}</span>
                         </td>
                         <td class="text-center">
-                            <span class="stat-badge bg-danger-subtle text-danger" title="{{ row.very_late_count }} Sangat Telat">{{ row.very_late_count }}</span>
+                            <span class="stat-badge bg-danger-subtle text-danger" title="{{ row.very_late_count }} Sangat Terlambat">{{ row.very_late_count }}</span>
                         </td>
                         <td class="pe-4 text-center">
                             {% set total = row.total_submissions %}

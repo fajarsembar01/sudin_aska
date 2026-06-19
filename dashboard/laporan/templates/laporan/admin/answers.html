@@ -283,10 +283,10 @@
             </div>
         </div>
         <div class="d-flex align-items-center gap-2">
-            {% if sub.is_late and sub.late_days > 3 %}
-            <span class="badge bg-danger-subtle text-danger">Sangat Telat</span>
+            {% if sub.is_very_late %}
+            <span class="badge bg-danger-subtle text-danger">Sangat Terlambat ({{ sub.late_duration_label }})</span>
             {% elif sub.is_late %}
-            <span class="badge bg-warning-subtle text-warning">Telat</span>
+            <span class="badge bg-warning-subtle text-warning">Terlambat ({{ sub.late_duration_label }})</span>
             {% else %}
             <span class="badge bg-success-subtle text-success">Tepat Waktu</span>
             {% endif %}
