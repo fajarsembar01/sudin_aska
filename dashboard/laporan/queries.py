@@ -22,7 +22,7 @@ def list_all_forms(include_inactive: bool = False) -> list[dict]:
             SELECT f.id, f.title, f.description, f.target_scope, f.target_jenjang,
                    f.allow_multiple, f.allow_late, f.very_late_after_minutes,
                    f.no_submission_after_minutes, f.no_submission_jenjangs, f.no_submission_statuses,
-                   f.is_active, f.status, f.repeat_policy,
+                   f.is_active, f.is_paused, f.status, f.repeat_policy,
                    f.repeat_until_at, f.repeat_deadline_time, f.repeat_deadline_day,
                    f.deadline_at, f.created_at,
                    u.full_name AS created_by_name,
@@ -116,7 +116,7 @@ def list_forms_for_school(school_id: int, jenjang: Optional[str] = None) -> list
             SELECT DISTINCT f.id, f.title, f.description, f.target_scope,
                    f.allow_multiple, f.allow_late, f.very_late_after_minutes,
                    f.no_submission_after_minutes, f.no_submission_jenjangs, f.no_submission_statuses,
-                   f.repeat_policy, f.repeat_until_at,
+                   f.is_paused, f.repeat_policy, f.repeat_until_at,
                    f.repeat_deadline_time, f.repeat_deadline_day, f.deadline_at, f.created_at,
                    (
                        SELECT COUNT(*) FROM laporan_submissions s
@@ -281,6 +281,19 @@ def update_form(
 def delete_form(form_id: int) -> None:
     with get_cursor(commit=True) as cur:
         cur.execute("DELETE FROM laporan_forms WHERE id = %s", (form_id,))
+
+
+def set_form_paused(form_id: int, is_paused: bool, updated_by: int) -> None:
+    """Pause/unpause a published form without changing active/draft status."""
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE laporan_forms
+            SET is_paused = %s, updated_by = %s, updated_at = NOW()
+            WHERE id = %s
+            """,
+            (is_paused, updated_by, form_id),
+        )
 
 
 def set_form_targets(form_id: int, school_ids: list[int]) -> None:

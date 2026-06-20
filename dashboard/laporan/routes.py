@@ -55,6 +55,7 @@ from .queries import (
     list_all_schools_simple,
     fetch_laporan_kpi_schools,
     can_school_access_form,
+    set_form_paused,
 )
 
 _LAPORAN_SCHEMA_READY = False
@@ -390,7 +391,7 @@ def sync_no_submissions(form_id: int, now: Optional[datetime] = None) -> None:
         now = datetime.now(JAKARTA_TZ)
 
     form = get_form(form_id)
-    if not form or not form.get("is_active") or form.get("status") != "published":
+    if not form or not form.get("is_active") or form.get("is_paused") or form.get("status") != "published":
         return
 
     after_minutes = _no_submission_after_minutes(form)
@@ -1019,7 +1020,8 @@ def sekolah_laporan_list() -> Response:
             and _school_subject_to_no_submission(f, school)
         )
         f["can_fill"] = (
-            (not f["is_expired"] or f.get("allow_late"))
+            not f.get("is_paused")
+            and (not f["is_expired"] or f.get("allow_late"))
             and not f["is_no_submission"]
             and not repeat_state["repeat_closed"]
             and not repeat_state["blocked_by_submission"]
@@ -1050,6 +1052,10 @@ def sekolah_laporan_fill(form_id: int) -> Response:
         
     if not can_school_access_form(form_id, school["id"], school.get("jenjang")):
         flash("Sekolah Anda tidak memiliki akses ke form ini.", "danger")
+        return redirect(url_for("laporan.sekolah_laporan_list"))
+
+    if form.get("is_paused"):
+        flash("Pengisian form ini sedang dipause oleh admin.", "warning")
         return redirect(url_for("laporan.sekolah_laporan_list"))
 
     now = datetime.now(JAKARTA_TZ)
@@ -1109,6 +1115,9 @@ def sekolah_laporan_previous_answers(form_id: int) -> Response:
     if not can_school_access_form(form_id, school["id"], school.get("jenjang")):
         return jsonify({"ok": False, "message": "Akses ditolak."}), 403
 
+    if form.get("is_paused"):
+        return jsonify({"ok": False, "message": "Pengisian form ini sedang dipause oleh admin."}), 423
+
     # Hanya untuk form periodik
     if form.get("repeat_policy") not in ("daily", "weekly", "monthly"):
         return jsonify({"ok": False, "message": "Fitur ini hanya tersedia untuk form periodik."}), 400
@@ -1141,6 +1150,10 @@ def sekolah_laporan_submit(form_id: int) -> Response:
 
     if not can_school_access_form(form_id, school["id"], school.get("jenjang")):
         flash("Sekolah Anda tidak memiliki akses ke form ini.", "danger")
+        return redirect(url_for("laporan.sekolah_laporan_list"))
+
+    if form.get("is_paused"):
+        flash("Pengisian form ini sedang dipause oleh admin.", "warning")
         return redirect(url_for("laporan.sekolah_laporan_list"))
 
     now = datetime.now(JAKARTA_TZ)
@@ -1826,6 +1839,29 @@ def admin_laporan_export_no_submission(form_id: int) -> Response:
         as_attachment=True,
         download_name=filename,
     )
+
+
+@laporan_bp.route("/admin/<int:form_id>/pause", methods=["POST"])
+@role_required("admin")
+def admin_laporan_pause(form_id: int) -> Response:
+    """Admin: pause/unpause school submissions for a published form."""
+    form = get_form(form_id)
+    if not form:
+        flash("Form tidak ditemukan.", "danger")
+        return redirect(url_for("laporan.admin_laporan_list"))
+    if form.get("status") == "draft":
+        flash("Draft belum bisa dipause karena belum diterbitkan.", "warning")
+        return redirect(url_for("laporan.admin_laporan_list"))
+
+    user = current_user()
+    should_pause = not bool(form.get("is_paused"))
+    set_form_paused(form_id, should_pause, user["id"])
+
+    if should_pause:
+        flash(f"Form '{form['title']}' dipause. Sekolah tidak bisa mengisi sampai admin unpause.", "success")
+    else:
+        flash(f"Form '{form['title']}' di-unpause. Sekolah dapat mengisi lagi sesuai status dan deadline form.", "success")
+    return redirect(url_for("laporan.admin_laporan_list"))
 
 
 @laporan_bp.route("/admin/<int:form_id>/delete", methods=["POST"])

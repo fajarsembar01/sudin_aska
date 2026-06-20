@@ -1670,6 +1670,7 @@ def ensure_dashboard_schema() -> None:
         # ===== Laporan (Form Reports) tables =====
         _LAPORAN_FORMS_SQL,
         _LAPORAN_FORMS_STATUS_MIGRATION_SQL,
+        _LAPORAN_FORMS_PAUSE_MIGRATION_SQL,
         _LAPORAN_REPEAT_POLICY_MIGRATION_SQL,
         _LAPORAN_FORMS_INDEX_SQL,
         _LAPORAN_FORM_TARGETS_SQL,
@@ -1712,6 +1713,7 @@ CREATE TABLE IF NOT EXISTS laporan_forms (
     no_submission_after_minutes INTEGER,
     no_submission_jenjangs TEXT,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    is_paused BOOLEAN NOT NULL DEFAULT FALSE,
     status TEXT NOT NULL DEFAULT 'published' CHECK (status IN ('draft', 'published')),
     repeat_policy TEXT NOT NULL DEFAULT 'once' CHECK (repeat_policy IN ('once', 'multiple', 'daily', 'weekly', 'monthly')),
     repeat_until_at TIMESTAMPTZ,
@@ -1727,6 +1729,7 @@ CREATE TABLE IF NOT EXISTS laporan_forms (
 
 _LAPORAN_FORMS_INDEX_SQL = """
 CREATE INDEX IF NOT EXISTS idx_laporan_forms_active ON laporan_forms (is_active, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_laporan_forms_paused ON laporan_forms (is_paused, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_laporan_forms_scope ON laporan_forms (target_scope);
 CREATE INDEX IF NOT EXISTS idx_laporan_forms_status ON laporan_forms (status, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_laporan_forms_repeat_policy ON laporan_forms (repeat_policy, repeat_until_at);
@@ -1743,6 +1746,11 @@ EXCEPTION
     WHEN duplicate_object THEN NULL;
 END $$;
 UPDATE laporan_forms SET status = 'published' WHERE status IS NULL;
+"""
+
+_LAPORAN_FORMS_PAUSE_MIGRATION_SQL = """
+ALTER TABLE laporan_forms ADD COLUMN IF NOT EXISTS is_paused BOOLEAN NOT NULL DEFAULT FALSE;
+CREATE INDEX IF NOT EXISTS idx_laporan_forms_paused ON laporan_forms (is_paused, created_at DESC);
 """
 
 _LAPORAN_REPEAT_POLICY_MIGRATION_SQL = """
@@ -1896,6 +1904,7 @@ def ensure_laporan_schema() -> None:
     statements = (
         _LAPORAN_FORMS_SQL,
         _LAPORAN_FORMS_STATUS_MIGRATION_SQL,
+        _LAPORAN_FORMS_PAUSE_MIGRATION_SQL,
         _LAPORAN_REPEAT_POLICY_MIGRATION_SQL,
         _LAPORAN_FORMS_LATE_MIGRATION_SQL,
         _LAPORAN_FORMS_STATUS_FILTER_MIGRATION_SQL,

@@ -43,6 +43,7 @@
     }
     .laporan-icon.submitted { background: rgba(25,135,84,0.1); color: #198754; }
     .laporan-icon.expired { background: rgba(108,117,125,0.1); color: #6c757d; }
+    .laporan-icon.paused { background: rgba(245,158,11,0.12); color: #b45309; }
     .deadline-countdown {
         color: var(--text-primary);
         font-weight: 700;
@@ -104,13 +105,17 @@
         <div class="laporan-card is-disabled">
         {% endif %}
             <div class="d-flex align-items-start gap-3">
-                <div class="laporan-icon {% if already_submitted %}submitted{% elif f.is_no_submission or (f.is_expired and not f.allow_late) %}expired{% endif %}">
+                <div class="laporan-icon {% if f.is_paused %}paused{% elif already_submitted %}submitted{% elif f.is_no_submission or (f.is_expired and not f.allow_late) %}expired{% endif %}">
                     <i class="bi bi-file-earmark-text"></i>
                 </div>
                 <div class="flex-grow-1 min-width-0">
                     <div class="d-flex align-items-start justify-content-between gap-2 mb-1">
                         <h2 class="h6 fw-bold mb-0">{{ f.title }}</h2>
-                        {% if f.is_no_submission %}
+                        {% if f.is_paused %}
+                        <span class="form-status-badge bg-warning-subtle text-warning">
+                            <i class="bi bi-pause-circle me-1"></i>Dipause
+                        </span>
+                        {% elif f.is_no_submission %}
                         <span class="form-status-badge bg-danger-subtle text-danger">
                             <i class="bi bi-x-octagon me-1"></i>Tidak Mengumpulkan
                         </span>

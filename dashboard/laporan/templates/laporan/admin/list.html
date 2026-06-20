@@ -42,6 +42,10 @@
                     </div>
                     {% if f.status == 'draft' %}
                     <span class="badge bg-warning-subtle text-warning flex-shrink-0">Draft</span>
+                    {% elif f.is_paused %}
+                    <span class="badge bg-warning-subtle text-warning flex-shrink-0">
+                        <i class="bi bi-pause-circle me-1"></i>Dipause
+                    </span>
                     {% elif f.is_active %}
                     <span class="badge bg-success-subtle text-success flex-shrink-0">Aktif</span>
                     {% else %}
@@ -99,6 +103,21 @@
                         class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1">
                         <i class="bi bi-pencil"></i> Edit
                     </a>
+                    <form method="POST" action="{{ url_for('laporan.admin_laporan_pause', form_id=f.id) }}"
+                        class="d-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        {% if f.is_paused %}
+                        <button type="submit"
+                            class="btn btn-sm btn-outline-success d-inline-flex align-items-center gap-1">
+                            <i class="bi bi-play-fill"></i> Unpause
+                        </button>
+                        {% else %}
+                        <button type="submit"
+                            class="btn btn-sm btn-outline-warning d-inline-flex align-items-center gap-1">
+                            <i class="bi bi-pause-fill"></i> Pause
+                        </button>
+                        {% endif %}
+                    </form>
                     <button type="button"
                         class="btn btn-sm btn-outline-dark d-inline-flex align-items-center gap-1"
                         data-caption-id="shareCaption{{ f.id }}"
