@@ -19,6 +19,45 @@
         cursor: grab;
         color: var(--text-muted);
         font-size: 1.1rem;
+        width: 30px;
+        height: 30px;
+        border: 1px solid var(--border-soft);
+        border-radius: 8px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--bg-subtle);
+        flex-shrink: 0;
+        touch-action: none;
+    }
+    .field-builder-item .field-drag-handle:active {
+        cursor: grabbing;
+    }
+    .field-builder-item.is-dragging {
+        opacity: 0.55;
+        border-style: dashed;
+    }
+    .field-builder-item.is-drop-before {
+        border-top-color: var(--accent);
+        box-shadow: 0 -3px 0 var(--accent);
+    }
+    .field-builder-item.is-drop-after {
+        border-bottom-color: var(--accent);
+        box-shadow: 0 3px 0 var(--accent);
+    }
+    .field-order-controls {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        flex-shrink: 0;
+    }
+    .field-order-controls .btn {
+        width: 30px;
+        height: 30px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
     }
     .remove-field-btn {
         position: absolute;
@@ -333,6 +372,21 @@
                 <input type="hidden" name="field_id[]" value="{{ fid }}">
                 <div class="d-flex align-items-center gap-2 mb-2">
                     <span class="field-number">{{ loop.index }}</span>
+                    <button type="button" class="field-drag-handle"
+                        draggable="true" title="Geser untuk mengatur urutan"
+                        aria-label="Geser untuk mengatur urutan">
+                        <i class="bi bi-grip-vertical"></i>
+                    </button>
+                    <div class="field-order-controls">
+                        <button type="button" class="btn btn-sm btn-outline-secondary"
+                            onclick="moveField(this, -1)" title="Pindah ke atas" aria-label="Pindah ke atas">
+                            <i class="bi bi-arrow-up"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary"
+                            onclick="moveField(this, 1)" title="Pindah ke bawah" aria-label="Pindah ke bawah">
+                            <i class="bi bi-arrow-down"></i>
+                        </button>
+                    </div>
                     <input type="text" name="field_label_{{ fid }}" class="form-control fw-semibold"
                         placeholder="Tulis pertanyaan atau teks di sini..." value="{{ field.label }}">
                     <select name="field_type_{{ fid }}" class="form-select" style="max-width:180px;"
@@ -767,6 +821,21 @@ function addField(fieldData) {
         <input type="hidden" name="field_id[]" value="${fid}">
         <div class="d-flex align-items-center gap-2 mb-2">
             <span class="field-number">${document.querySelectorAll('.field-builder-item').length + 1}</span>
+            <button type="button" class="field-drag-handle"
+                draggable="true" title="Geser untuk mengatur urutan"
+                aria-label="Geser untuk mengatur urutan">
+                <i class="bi bi-grip-vertical"></i>
+            </button>
+            <div class="field-order-controls">
+                <button type="button" class="btn btn-sm btn-outline-secondary"
+                    onclick="moveField(this, -1)" title="Pindah ke atas" aria-label="Pindah ke atas">
+                    <i class="bi bi-arrow-up"></i>
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary"
+                    onclick="moveField(this, 1)" title="Pindah ke bawah" aria-label="Pindah ke bawah">
+                    <i class="bi bi-arrow-down"></i>
+                </button>
+            </div>
             <input type="text" name="field_label_${fid}" class="form-control fw-semibold"
                 placeholder="Tulis pertanyaan atau teks di sini...">
             <select name="field_type_${fid}" class="form-select" style="max-width:180px;"
@@ -886,11 +955,115 @@ function removeField(btn) {
     scheduleDraftAutosave();
 }
 
+function moveField(btn, direction) {
+    var item = btn.closest('.field-builder-item');
+    if (!item) return;
+    if (direction < 0 && item.previousElementSibling) {
+        item.parentNode.insertBefore(item, item.previousElementSibling);
+    } else if (direction > 0 && item.nextElementSibling) {
+        item.parentNode.insertBefore(item.nextElementSibling, item);
+    } else {
+        return;
+    }
+    updateFieldNumbers();
+    rebuildFormulaSelects();
+    scheduleDraftAutosave();
+}
+
 function updateFieldNumbers() {
-    document.querySelectorAll('.field-builder-item .field-number').forEach(function(el, i) {
-        el.textContent = i + 1;
+    var items = Array.from(document.querySelectorAll('.field-builder-item'));
+    items.forEach(function(item, i) {
+        var number = item.querySelector('.field-number');
+        var up = item.querySelector('.field-order-controls button:first-child');
+        var down = item.querySelector('.field-order-controls button:last-child');
+        if (number) number.textContent = i + 1;
+        if (up) up.disabled = i === 0;
+        if (down) down.disabled = i === items.length - 1;
     });
 }
+
+var draggedFieldItem = null;
+
+function clearFieldDropIndicators() {
+    document.querySelectorAll('.field-builder-item.is-drop-before, .field-builder-item.is-drop-after').forEach(function(item) {
+        item.classList.remove('is-drop-before', 'is-drop-after');
+    });
+}
+
+function getFieldDropPosition(targetItem, clientY) {
+    var rect = targetItem.getBoundingClientRect();
+    return clientY < rect.top + (rect.height / 2) ? 'before' : 'after';
+}
+
+function moveDraggedField(targetItem, position) {
+    if (!draggedFieldItem || !targetItem || draggedFieldItem === targetItem) return false;
+    if (position === 'before') {
+        targetItem.parentNode.insertBefore(draggedFieldItem, targetItem);
+    } else {
+        targetItem.parentNode.insertBefore(draggedFieldItem, targetItem.nextElementSibling);
+    }
+    return true;
+}
+
+function finalizeFieldReorder(changed) {
+    clearFieldDropIndicators();
+    if (draggedFieldItem) {
+        draggedFieldItem.classList.remove('is-dragging');
+    }
+    draggedFieldItem = null;
+    if (changed) {
+        updateFieldNumbers();
+        rebuildFormulaSelects();
+        scheduleDraftAutosave();
+    }
+}
+
+var fieldsContainer = document.getElementById('fieldsContainer');
+fieldsContainer.addEventListener('dragstart', function(event) {
+    var handle = event.target.closest('.field-drag-handle');
+    if (!handle) {
+        event.preventDefault();
+        return;
+    }
+    draggedFieldItem = handle.closest('.field-builder-item');
+    if (!draggedFieldItem) return;
+    draggedFieldItem.classList.add('is-dragging');
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', draggedFieldItem.getAttribute('data-id') || '');
+});
+
+fieldsContainer.addEventListener('dragover', function(event) {
+    if (!draggedFieldItem) return;
+    var targetItem = event.target.closest('.field-builder-item');
+    if (!targetItem || targetItem === draggedFieldItem) return;
+    event.preventDefault();
+    var position = getFieldDropPosition(targetItem, event.clientY);
+    clearFieldDropIndicators();
+    targetItem.classList.add(position === 'before' ? 'is-drop-before' : 'is-drop-after');
+    event.dataTransfer.dropEffect = 'move';
+});
+
+fieldsContainer.addEventListener('dragleave', function(event) {
+    if (!fieldsContainer.contains(event.relatedTarget)) {
+        clearFieldDropIndicators();
+    }
+});
+
+fieldsContainer.addEventListener('drop', function(event) {
+    if (!draggedFieldItem) return;
+    var targetItem = event.target.closest('.field-builder-item');
+    if (!targetItem || targetItem === draggedFieldItem) {
+        finalizeFieldReorder(false);
+        return;
+    }
+    event.preventDefault();
+    var position = getFieldDropPosition(targetItem, event.clientY);
+    finalizeFieldReorder(moveDraggedField(targetItem, position));
+});
+
+fieldsContainer.addEventListener('dragend', function() {
+    finalizeFieldReorder(false);
+});
 
 function toggleFieldOptions(select, fid) {
     var val = select.value;
@@ -981,6 +1154,7 @@ document.getElementById('fieldsContainer').addEventListener('change', function(e
 });
 
 rebuildFormulaSelects();
+updateFieldNumbers();
 
 function addOptionValue(fid, value, shouldSave) {
     var val = (value || '').trim();

@@ -473,6 +473,31 @@ def create_submission(
         return dict(cur.fetchone())
 
 
+def update_submission_status(
+    submission_id: int,
+    submitted_by: int,
+    is_late: bool = False,
+    late_days: int = 0,
+    late_minutes: int = 0,
+) -> None:
+    """Mark an existing submission as resubmitted and refresh lateness metadata."""
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE laporan_submissions
+            SET submitted_by = %s,
+                submitted_at = NOW(),
+                status = 'submitted',
+                is_late = %s,
+                late_days = %s,
+                late_minutes = %s,
+                updated_at = NOW()
+            WHERE id = %s
+            """,
+            (submitted_by, is_late, late_days, late_minutes, submission_id),
+        )
+
+
 def save_answer(submission_id: int, field_id: int, answer_text: Optional[str], answer_json=None) -> int:
     """Upsert an answer for a submission+field. Returns answer id."""
     with get_cursor(commit=True) as cur:
@@ -490,6 +515,20 @@ def save_answer(submission_id: int, field_id: int, answer_text: Optional[str], a
             (submission_id, field_id, answer_text, json_val),
         )
         return cur.fetchone()["id"]
+
+
+def replace_answer_files(answer_id: int, file_paths: list[str]) -> None:
+    """Delete file rows for one answer, scoped to known stored paths."""
+    if not file_paths:
+        return
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            DELETE FROM laporan_submission_files
+            WHERE answer_id = %s AND file_path = ANY(%s)
+            """,
+            (answer_id, file_paths),
+        )
 
 
 def save_file(answer_id: int, file_path: str, original_name: str, mime_type: str, size_bytes: int) -> None:

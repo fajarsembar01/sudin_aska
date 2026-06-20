@@ -9,6 +9,17 @@
                 class="btn btn-sm btn-outline-secondary mb-2 d-inline-flex align-items-center gap-1">
                 <i class="bi bi-arrow-left"></i> Kembali ke Riwayat
             </a>
+            {% if submission.status == 'submitted' and submission.can_edit %}
+            <a href="{{ url_for('laporan.sekolah_laporan_edit_submission', submission_id=submission.id) }}"
+                class="btn btn-sm btn-outline-primary mb-2 ms-2 d-inline-flex align-items-center gap-1">
+                <i class="bi bi-pencil-square"></i>Edit Laporan
+            </a>
+            {% elif submission.status == 'submitted' %}
+            <button type="button" class="btn btn-sm btn-outline-secondary mb-2 ms-2 d-inline-flex align-items-center gap-1" disabled
+                title="{{ submission.edit_disabled_reason or 'Tidak bisa diedit' }}">
+                <i class="bi bi-lock"></i>Edit Tidak Tersedia
+            </button>
+            {% endif %}
             <h1 class="h3 fw-bold page-title mb-1">Detail Laporan</h1>
             <p class="page-subtitle mb-0">
                 {% if submission.status == 'no_submission' %}

@@ -1,6 +1,11 @@
 {% extends "laporan/base_laporan.html" %}
 {% set page_title = "Isi " ~ form.title %}
 {% set preview_mode = preview_mode | default(false) %}
+{% set edit_mode = edit_mode | default(false) %}
+{% set existing_answers = existing_answers | default({}) %}
+{% set edit_after_deadline = edit_after_deadline | default(false) %}
+{% set edit_deadline_str = edit_deadline_str | default(none) %}
+{% set edit_cutoff_str = edit_cutoff_str | default(none) %}
 
 {% block head_extra %}
 <style>
@@ -169,10 +174,22 @@
 {% endif %}
 
 <div class="form-header-card">
-    <a href="{{ url_for('laporan.admin_laporan_edit', form_id=form.id) if preview_mode else url_for('laporan.sekolah_laporan_list') }}"
+    <a href="{{ url_for('laporan.admin_laporan_edit', form_id=form.id) if preview_mode else (url_for('laporan.sekolah_laporan_detail', submission_id=submission.id) if edit_mode and submission else url_for('laporan.sekolah_laporan_list')) }}"
         class="btn btn-sm btn-outline-secondary mb-3 d-inline-flex align-items-center gap-1">
-        <i class="bi bi-arrow-left"></i> {% if preview_mode %}Kembali ke Editor{% else %}Kembali ke Daftar Form{% endif %}
+        <i class="bi bi-arrow-left"></i> {% if preview_mode %}Kembali ke Editor{% elif edit_mode %}Kembali ke Detail{% else %}Kembali ke Daftar Form{% endif %}
     </a>
+    {% if edit_mode %}
+    <div class="alert alert-info border-0 mb-3" role="alert">
+        <i class="bi bi-pencil-square me-2"></i>Anda sedang mengedit riwayat laporan yang sudah dikirim.
+    </div>
+    {% endif %}
+    {% if edit_after_deadline %}
+    <div class="alert alert-warning border-0 mb-3" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        Deadline laporan{% if edit_deadline_str %} ({{ edit_deadline_str }}){% endif %} sudah lewat.
+        Jika perubahan disimpan, waktu kirim diperbarui dan status ketepatan waktu dapat berubah menjadi terlambat.
+    </div>
+    {% endif %}
     <h1 class="h4 fw-bold mb-1">{{ form.title }}</h1>
     {% if form.description %}
     <p class="text-muted mb-2">{{ form.description }}</p>
@@ -200,7 +217,7 @@
         <span class="text-warning fw-semibold"><i class="bi bi-info-circle me-1"></i>Anda sudah pernah mengisi form ini. Pengisian ulang diperbolehkan.</span>
         {% endif %}
     </div>
-    {% if not preview_mode and form.repeat_policy in ('daily', 'weekly', 'monthly') %}
+    {% if not preview_mode and not edit_mode and form.repeat_policy in ('daily', 'weekly', 'monthly') %}
     <div class="mt-3 pt-3 border-top border-1" style="border-color: var(--border-soft) !important;">
         <button type="button" class="load-prev-btn" id="loadPrevBtn"
             onclick="loadPreviousAnswers({{ form.id }})">
@@ -213,7 +230,7 @@
 </div>
 
 <form id="laporanForm" method="POST"
-    action="{% if preview_mode %}#{% else %}{{ url_for('laporan.sekolah_laporan_submit', form_id=form.id) }}{% endif %}"
+    action="{% if preview_mode %}#{% elif edit_mode and submission %}{{ url_for('laporan.sekolah_laporan_edit_submission', submission_id=submission.id) }}{% else %}{{ url_for('laporan.sekolah_laporan_submit', form_id=form.id) }}{% endif %}"
     enctype="multipart/form-data"
     novalidate>
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -228,6 +245,7 @@
     {% if field.field_type not in ('header', 'info') %}
         {% set ns.q_idx = ns.q_idx + 1 %}
     {% endif %}
+    {% set existing = existing_answers.get(field.id) %}
 
     <div class="form-field-card {% if field.field_type in ('header', 'info') %}border-0 bg-transparent px-0{% endif %}" id="field-card-{{ field.id }}">
         
@@ -249,7 +267,7 @@
                     <i class="bi bi-link-45deg me-2"></i>{{ ns.q_idx }}. {{ field.label }}
                     {% if field.required %}<span class="required-star">*</span>{% endif %}
                 </div>
-                <input type="hidden" name="field_{{ field.id }}" id="link_clicked_{{ field.id }}" value="">
+                <input type="hidden" name="field_{{ field.id }}" id="link_clicked_{{ field.id }}" value="{{ 'clicked' if existing and existing.answer_text else '' }}">
                 {% if link_cfg.url %}
                 <a class="btn btn-sm btn-primary d-inline-flex align-items-center gap-1"
                     href="{{ link_cfg.url }}" target="_blank" rel="noopener noreferrer"
@@ -270,13 +288,14 @@
         {% if field.field_type == 'text' %}
         <input type="text" class="form-control" name="field_{{ field.id }}"
             id="field_{{ field.id }}" placeholder="Tulis jawaban Anda..."
+            value="{{ existing.answer_text if existing else '' }}"
             {% if field.required %}required{% endif %}>
 
         {# Textarea #}
         {% elif field.field_type == 'textarea' %}
         <textarea class="form-control" name="field_{{ field.id }}" id="field_{{ field.id }}"
             rows="4" placeholder="Tulis jawaban Anda di sini..."
-            {% if field.required %}required{% endif %}></textarea>
+            {% if field.required %}required{% endif %}>{{ existing.answer_text if existing else '' }}</textarea>
 
         {# Radio #}
         {% elif field.field_type == 'radio' %}
@@ -286,7 +305,7 @@
             <div class="form-check">
                 <input class="form-check-input" type="radio"
                     name="field_{{ field.id }}" id="field_{{ field.id }}_{{ loop.index }}"
-                    value="{{ opt }}" {% if field.required and loop.first %}required{% endif %}>
+                    value="{{ opt }}" {% if existing and existing.answer_text == opt %}checked{% endif %} {% if field.required and loop.first %}required{% endif %}>
                 <label class="form-check-label" for="field_{{ field.id }}_{{ loop.index }}">{{ opt }}</label>
             </div>
             {% endfor %}
@@ -301,7 +320,7 @@
             <div class="form-check">
                 <input class="form-check-input" type="checkbox"
                     name="field_{{ field.id }}[]" id="field_{{ field.id }}_{{ loop.index }}"
-                    value="{{ opt }}">
+                    value="{{ opt }}" {% if existing and existing.answer_json and opt in existing.answer_json %}checked{% endif %}>
                 <label class="form-check-label" for="field_{{ field.id }}_{{ loop.index }}">{{ opt }}</label>
             </div>
             {% endfor %}
@@ -311,10 +330,10 @@
         {# Dropdown #}
         {% elif field.field_type == 'dropdown' %}
         <select class="form-select" name="field_{{ field.id }}" id="field_{{ field.id }}" {% if field.required %}required{% endif %}>
-            <option value="" disabled selected>Pilih salah satu...</option>
+            <option value="" disabled {% if not existing or not existing.answer_text %}selected{% endif %}>Pilih salah satu...</option>
             {% if field.options_json %}
             {% for opt in field.options_json %}
-            <option value="{{ opt }}">{{ opt }}</option>
+            <option value="{{ opt }}" {% if existing and existing.answer_text == opt %}selected{% endif %}>{{ opt }}</option>
             {% endfor %}
             {% endif %}
         </select>
@@ -327,43 +346,56 @@
             <p class="mb-1 fw-semibold">Klik atau seret file ke sini</p>
             <p class="text-muted small mb-0">JPG, PNG, PDF, DOCX, XLSX (maks. 10 MB per file)</p>
         </div>
+        {% if existing and existing.files %}
+        <div class="d-flex flex-wrap gap-2 mt-2">
+            {% for f in existing.files %}
+            <a href="{{ url_for('laporan.laporan_serve_file', filepath=f.file_path) }}"
+                class="btn btn-sm btn-outline-primary" target="_blank">
+                <i class="bi bi-paperclip me-1"></i>{{ f.original_name }}
+            </a>
+            {% endfor %}
+        </div>
+        <p class="text-muted small mt-2 mb-0">Upload file baru hanya jika ingin mengganti file lama.</p>
+        {% endif %}
         <input type="file" name="field_{{ field.id }}[]" id="file_{{ field.id }}"
             class="d-none" multiple
             accept=".jpg,.jpeg,.png,.webp,.pdf,.doc,.docx,.xls,.xlsx"
-            {% if field.required %}required{% endif %}
+            {% if field.required and not (existing and existing.files) %}required{% endif %}
             onchange="showFilePreviews(this, '{{ field.id }}')">
         <div class="file-preview-list" id="preview_{{ field.id }}"></div>
 
         {# Date #}
         {% elif field.field_type == 'date' %}
         <input type="date" class="form-control" name="field_{{ field.id }}"
-            id="field_{{ field.id }}" {% if field.required %}required{% endif %}>
+            id="field_{{ field.id }}" value="{{ existing.answer_text if existing else '' }}" {% if field.required %}required{% endif %}>
             
         {# Time #}
         {% elif field.field_type == 'time' %}
         <input type="time" class="form-control" name="field_{{ field.id }}"
-            id="field_{{ field.id }}" {% if field.required %}required{% endif %}>
+            id="field_{{ field.id }}" value="{{ existing.answer_text if existing else '' }}" {% if field.required %}required{% endif %}>
             
         {# Email #}
         {% elif field.field_type == 'email' %}
         <input type="email" class="form-control" name="field_{{ field.id }}"
-            id="field_{{ field.id }}" placeholder="contoh@email.com" {% if field.required %}required{% endif %}>
+            id="field_{{ field.id }}" placeholder="contoh@email.com" value="{{ existing.answer_text if existing else '' }}" {% if field.required %}required{% endif %}>
 
         {# Number #}
         {% elif field.field_type == 'number' %}
         <input type="number" class="form-control" name="field_{{ field.id }}"
             id="field_{{ field.id }}" placeholder="0"
+            value="{{ existing.answer_text if existing else '' }}"
             data-field-key="{{ field.field_key }}" data-formula-source="1"
             {% if field.required %}required{% endif %}>
 
         {# Rating #}
         {% elif field.field_type == 'rating' %}
-        <input type="hidden" name="field_{{ field.id }}" id="rating_val_{{ field.id }}" value=""
+        <input type="hidden" name="field_{{ field.id }}" id="rating_val_{{ field.id }}" value="{{ existing.answer_text if existing else '' }}"
             data-field-key="{{ field.field_key }}" data-formula-source="1"
             {% if field.required %}required{% endif %}>
         <div class="rating-group" id="rating_group_{{ field.id }}">
             {% for i in range(1, 6) %}
-            <button type="button" class="rating-btn" data-field="{{ field.id }}" data-val="{{ i }}"
+            {% set rating_value = (existing.answer_text | int) if existing and existing.answer_text else 0 %}
+            <button type="button" class="rating-btn {% if i <= rating_value %}active{% endif %}" data-field="{{ field.id }}" data-val="{{ i }}"
                 onclick="setRating({{ field.id }}, {{ i }})">
                 {{ i }}
             </button>
@@ -378,7 +410,7 @@
         {% elif field.field_type == 'formula' %}
         {% set formula_cfg = field.options_json or {} %}
         <input type="text" class="form-control bg-body-secondary" name="field_{{ field.id }}"
-            id="field_{{ field.id }}" value="0" readonly tabindex="-1"
+            id="field_{{ field.id }}" value="{{ existing.answer_text if existing else '0' }}" readonly tabindex="-1"
             data-formula-field="1"
             data-formula-source="1"
             data-field-key="{{ field.field_key }}"
@@ -396,7 +428,7 @@
         <button type="submit" class="btn btn-primary d-inline-flex align-items-center gap-2 px-4"
             id="submitBtn" {% if preview_mode %}disabled{% endif %}>
             <i class="bi {% if preview_mode %}bi-eye{% else %}bi-send-fill{% endif %}"></i>
-            <span>{% if preview_mode %}Preview Tampilan Sekolah{% else %}Kirim Laporan{% endif %}</span>
+            <span>{% if preview_mode %}Preview Tampilan Sekolah{% elif edit_mode %}Simpan Perubahan{% else %}Kirim Laporan{% endif %}</span>
         </button>
     </div>
     {% endif %}
@@ -563,6 +595,7 @@ document.querySelectorAll('.file-drop-zone').forEach(function(zone) {
 // Prevent double submit
 var laporanForm = document.getElementById('laporanForm');
 var laporanPreviewMode = {{ 'true' if preview_mode else 'false' }};
+var laporanEditAfterDeadline = {{ 'true' if edit_after_deadline else 'false' }};
 laporanForm.addEventListener('submit', function(event) {
     if (laporanPreviewMode) {
         event.preventDefault();
@@ -579,6 +612,10 @@ laporanForm.addEventListener('submit', function(event) {
         event.preventDefault();
         unopened.closest('.form-field-card').scrollIntoView({ behavior: 'smooth', block: 'center' });
         alert('Ada link wajib yang belum dibuka.');
+        return;
+    }
+    if (laporanEditAfterDeadline && !window.confirm('Deadline laporan sudah lewat. Jika disimpan, waktu kirim diperbarui dan status dapat berubah menjadi terlambat. Lanjutkan simpan perubahan?')) {
+        event.preventDefault();
         return;
     }
     const btn = document.getElementById('submitBtn');

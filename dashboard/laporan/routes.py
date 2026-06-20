@@ -44,7 +44,9 @@ from .queries import (
     school_has_submitted,
     school_has_submitted_for_period,
     create_submission,
+    update_submission_status,
     save_answer,
+    replace_answer_files,
     save_file,
     get_submission_with_answers,
     delete_submitted_submission,
@@ -399,6 +401,16 @@ def _form_no_submission_cutoff(form: dict, now: datetime) -> Optional[datetime]:
     if after_minutes is None:
         return None
     deadline = _form_deadline_for_request(form, now)
+    if not deadline:
+        return None
+    return deadline + timedelta(minutes=after_minutes)
+
+
+def _form_no_submission_cutoff_for_submission(form: dict, submission: dict, now: datetime) -> Optional[datetime]:
+    after_minutes = _no_submission_after_minutes(form)
+    if after_minutes is None:
+        return None
+    deadline = _form_deadline_for_submission(form, submission, now)
     if not deadline:
         return None
     return deadline + timedelta(minutes=after_minutes)
@@ -776,6 +788,86 @@ def _form_deadline_for_request(form: dict, now: datetime) -> Optional[datetime]:
             _annotate_repeat_form(form, now)
         return _as_jakarta_datetime(form.get("period_deadline_at"))
     return _as_jakarta_datetime(form.get("deadline_at"))
+
+
+def _form_deadline_for_submission(form: dict, submission: dict, now: datetime) -> Optional[datetime]:
+    policy = _form_repeat_policy(form)
+    if policy not in PERIODIC_REPEAT_POLICIES:
+        return _as_jakarta_datetime(form.get("deadline_at"))
+
+    period_key = submission.get("repeat_period_key") or ""
+    period_date = None
+    try:
+        if policy == "daily" and period_key.startswith("daily:"):
+            period_date = date.fromisoformat(period_key.split(":", 1)[1])
+        elif policy == "weekly" and period_key.startswith("weekly:"):
+            iso_text = period_key.split(":", 1)[1]
+            iso_year, iso_week = iso_text.split("-W", 1)
+            period_date = date.fromisocalendar(int(iso_year), int(iso_week), 1)
+        elif policy == "monthly" and period_key.startswith("monthly:"):
+            year_text, month_text = period_key.split(":", 1)[1].split("-", 1)
+            period_date = date(int(year_text), int(month_text), 1)
+    except (ValueError, TypeError):
+        period_date = None
+
+    if period_date is None:
+        submitted_at = _as_jakarta_datetime(submission.get("submitted_at"))
+        period_date = submitted_at.date() if submitted_at else now.date()
+    return _as_jakarta_datetime(_period_deadline_at(policy, period_date, form))
+
+
+def _answers_by_field_id(submission: dict) -> dict[int, dict]:
+    return {
+        int(answer["field_id"]): answer
+        for answer in submission.get("answers") or []
+        if answer.get("field_id") is not None
+    }
+
+
+def _submission_edit_state(form: Optional[dict], submission: dict, school: Optional[dict], now: datetime) -> dict:
+    state = {
+        "can_edit": False,
+        "edit_after_deadline": False,
+        "edit_deadline_str": None,
+        "edit_cutoff_str": None,
+        "edit_disabled_reason": "Riwayat ini tidak bisa diedit.",
+    }
+    if not form:
+        state["edit_disabled_reason"] = "Form tidak ditemukan."
+        return state
+    if submission.get("status") != "submitted":
+        state["edit_disabled_reason"] = "Hanya laporan terkirim yang bisa diedit."
+        return state
+    if not form.get("is_active") or form.get("status") != "published":
+        state["edit_disabled_reason"] = "Form sudah tidak aktif."
+        return state
+    if form.get("is_paused"):
+        state["edit_disabled_reason"] = "Form sedang dipause oleh admin."
+        return state
+    if school and not can_school_access_form(form["id"], school["id"], school.get("jenjang")):
+        state["edit_disabled_reason"] = "Sekolah tidak memiliki akses ke form ini."
+        return state
+
+    _annotate_repeat_form(form, now)
+    deadline = _form_deadline_for_submission(form, submission, now)
+    cutoff = _form_no_submission_cutoff_for_submission(form, submission, now)
+    state["edit_after_deadline"] = bool(deadline and deadline < now)
+    state["edit_deadline_str"] = _format_datetime_id(deadline)
+    state["edit_cutoff_str"] = _format_datetime_id(cutoff)
+
+    if form.get("repeat_closed"):
+        state["edit_disabled_reason"] = "Masa pengisian form sudah berakhir."
+        return state
+    if cutoff and now > cutoff and _school_subject_to_no_submission(form, school):
+        state["edit_disabled_reason"] = "Batas tidak mengumpulkan sudah lewat."
+        return state
+    if deadline and deadline < now and not form.get("allow_late"):
+        state["edit_disabled_reason"] = "Deadline form sudah berakhir."
+        return state
+
+    state["can_edit"] = True
+    state["edit_disabled_reason"] = None
+    return state
 
 
 def _repeat_deadline_errors(
@@ -1361,6 +1453,10 @@ def sekolah_laporan_history() -> Response:
     submissions = list_school_submissions(school["id"])
     for submission in submissions:
         _annotate_late_submission(submission)
+        if submission.get("status") == "submitted":
+            form = get_form(submission["form_id"])
+            edit_state = _submission_edit_state(form, submission, school, now)
+            submission.update(edit_state)
     return render_template(
         "laporan/sekolah/history.html",
         school=school,
@@ -1383,12 +1479,196 @@ def sekolah_laporan_detail(submission_id: int) -> Response:
         flash("Laporan tidak ditemukan atau bukan milik sekolah Anda.", "danger")
         return redirect(url_for("laporan.sekolah_laporan_history"))
     _annotate_late_submission(sub)
+    form = get_form(sub["form_id"])
+    sub.update(_submission_edit_state(form, sub, school, datetime.now(JAKARTA_TZ)))
 
     return render_template(
         "laporan/sekolah/detail.html",
         submission=sub,
         school=school,
     )
+
+
+@laporan_bp.route("/sekolah/riwayat/<int:submission_id>/edit", methods=["GET", "POST"])
+@role_required("sekolah")
+def sekolah_laporan_edit_submission(submission_id: int) -> Response:
+    """Edit an existing submitted laporan history row."""
+    user = current_user()
+    school = _fetch_user_school(user.get("id"))
+    if not school:
+        flash("Akun belum terhubung.", "warning")
+        return redirect(url_for("laporan.sekolah_laporan_list"))
+
+    sub = get_submission_with_answers(submission_id)
+    if not sub or sub.get("school_id") != school["id"]:
+        flash("Laporan tidak ditemukan atau bukan milik sekolah Anda.", "danger")
+        return redirect(url_for("laporan.sekolah_laporan_history"))
+    if sub.get("status") != "submitted":
+        flash("Riwayat ini tidak bisa diedit.", "warning")
+        return redirect(url_for("laporan.sekolah_laporan_detail", submission_id=submission_id))
+
+    form = get_form(sub["form_id"])
+    if not form or not form.get("is_active"):
+        flash("Form tidak ditemukan atau sudah tidak aktif.", "danger")
+        return redirect(url_for("laporan.sekolah_laporan_history"))
+    if form.get("is_paused"):
+        flash("Pengisian form ini sedang dipause oleh admin.", "warning")
+        return redirect(url_for("laporan.sekolah_laporan_detail", submission_id=submission_id))
+    if not can_school_access_form(form["id"], school["id"], school.get("jenjang")):
+        flash("Sekolah Anda tidak memiliki akses ke form ini.", "danger")
+        return redirect(url_for("laporan.sekolah_laporan_history"))
+
+    now = datetime.now(JAKARTA_TZ)
+    edit_state = _submission_edit_state(form, sub, school, now)
+    if not edit_state["can_edit"]:
+        flash(edit_state["edit_disabled_reason"] or "Riwayat ini tidak bisa diedit.", "warning")
+        return redirect(url_for("laporan.sekolah_laporan_detail", submission_id=submission_id))
+
+    dl = _form_deadline_for_submission(form, sub, now)
+    form["deadline_str"] = _format_datetime_id(dl)
+    form["deadline_iso"] = dl.isoformat() if dl else None
+    form["current_period_label"] = sub.get("repeat_period_label") or form.get("current_period_label")
+    edit_after_deadline = edit_state["edit_after_deadline"]
+    fields = get_form_fields(form["id"])
+    existing_answers = _answers_by_field_id(sub)
+
+    if request.method == "GET":
+        return render_template(
+            "laporan/sekolah/fill.html",
+            form=form,
+            fields=fields,
+            school=school,
+            already_submitted=True,
+            repeat_state={"policy": _form_repeat_policy(form), "period": {}},
+            edit_mode=True,
+            submission=sub,
+            existing_answers=existing_answers,
+            edit_after_deadline=edit_after_deadline,
+            edit_deadline_str=edit_state.get("edit_deadline_str"),
+            edit_cutoff_str=edit_state.get("edit_cutoff_str"),
+        )
+
+    if not any(f["field_type"] not in DISPLAY_ONLY_FIELD_TYPES for f in fields):
+        flash("Form ini belum memiliki pertanyaan yang bisa diisi. Hubungi admin.", "warning")
+        return redirect(url_for("laporan.sekolah_laporan_detail", submission_id=submission_id))
+
+    submitted_values_by_key = {}
+    for f in fields:
+        key = f.get("field_key")
+        if not key or f["field_type"] not in {"number", "rating"}:
+            continue
+        submitted_values_by_key[key] = request.form.get(f"field_{f['id']}", "").strip()
+
+    errors = []
+    for f in fields:
+        if not f.get("required"):
+            continue
+        ftype = f["field_type"]
+        fid = f["id"]
+        existing = existing_answers.get(fid)
+        if ftype == "file":
+            uploaded = request.files.getlist(f"field_{fid}[]")
+            has_existing_files = bool(existing and existing.get("files"))
+            if not has_existing_files and not any(uf.filename for uf in uploaded):
+                errors.append(f"Field '{f['label']}' wajib diisi.")
+        elif ftype == "checkbox":
+            vals = request.form.getlist(f"field_{fid}[]")
+            if not vals:
+                errors.append(f"Field '{f['label']}' wajib dipilih.")
+        elif ftype == "link":
+            val = request.form.get(f"field_{fid}", "").strip()
+            if val != "clicked":
+                errors.append(f"Link '{f['label']}' wajib dibuka terlebih dahulu.")
+        elif ftype == "formula" or ftype in DISPLAY_ONLY_FIELD_TYPES:
+            pass
+        else:
+            val = request.form.get(f"field_{fid}", "").strip()
+            if not val:
+                errors.append(f"Field '{f['label']}' wajib diisi.")
+
+    if errors:
+        for err in errors:
+            flash(err, "warning")
+        return redirect(url_for("laporan.sekolah_laporan_edit_submission", submission_id=submission_id))
+
+    is_late = False
+    late_days = 0
+    late_minutes = 0
+    if dl and dl < now:
+        is_late = True
+        late_delta = now - dl
+        late_days = late_delta.days
+        late_minutes = max(int((late_delta.total_seconds() + 59) // 60), 1)
+
+    UPLOAD_FOLDER.mkdir(parents=True, exist_ok=True)
+    school_upload_dir = UPLOAD_FOLDER / str(school["id"]) / str(form["id"])
+    school_upload_dir.mkdir(parents=True, exist_ok=True)
+    saved_rel_paths = []
+    try:
+        for f in fields:
+            ftype = f["field_type"]
+            fid = f["id"]
+
+            if ftype == "file":
+                uploaded_files = request.files.getlist(f"field_{fid}[]")
+                valid_files = [uf for uf in uploaded_files if uf.filename and _allowed_file(uf.filename)]
+                if not valid_files:
+                    continue
+                existing = existing_answers.get(fid)
+                old_paths = [file_info.get("file_path") for file_info in (existing.get("files") if existing else []) if file_info.get("file_path")]
+                file_names = [uf.filename for uf in valid_files]
+                answer_id = save_answer(submission_id, fid, None, answer_json=file_names)
+                replace_answer_files(answer_id, old_paths)
+                _cleanup_submission_files(old_paths)
+                for uf in valid_files:
+                    ext = uf.filename.rsplit(".", 1)[-1].lower()
+                    saved_name = f"{uuid.uuid4().hex}.{ext}"
+                    save_path = school_upload_dir / saved_name
+                    uf.save(str(save_path))
+                    rel_path = f"{school['id']}/{form['id']}/{saved_name}"
+                    saved_rel_paths.append(rel_path)
+                    save_file(
+                        answer_id,
+                        rel_path,
+                        uf.filename,
+                        uf.content_type or "",
+                        save_path.stat().st_size,
+                    )
+
+            elif ftype == "checkbox":
+                vals = request.form.getlist(f"field_{fid}[]")
+                save_answer(submission_id, fid, ", ".join(vals), answer_json=vals)
+            elif ftype == "rating":
+                val = request.form.get(f"field_{fid}", "").strip()
+                save_answer(submission_id, fid, val)
+            elif ftype == "formula":
+                val = _calculate_formula_value(f, submitted_values_by_key)
+                save_answer(submission_id, fid, val)
+                if f.get("field_key"):
+                    submitted_values_by_key[f["field_key"]] = val
+            elif ftype == "link":
+                val = request.form.get(f"field_{fid}", "").strip()
+                if val == "clicked":
+                    save_answer(submission_id, fid, "Dibuka")
+            else:
+                val = request.form.get(f"field_{fid}", "").strip()
+                save_answer(submission_id, fid, val)
+
+        update_submission_status(
+            submission_id,
+            user["id"],
+            is_late=is_late,
+            late_days=late_days,
+            late_minutes=late_minutes,
+        )
+    except Exception:
+        current_app.logger.exception("Failed to update laporan submission %s", submission_id)
+        _cleanup_submission_files(saved_rel_paths)
+        flash("Perubahan jawaban gagal disimpan. Silakan coba lagi.", "danger")
+        return redirect(url_for("laporan.sekolah_laporan_edit_submission", submission_id=submission_id))
+
+    flash("Perubahan laporan berhasil disimpan.", "success")
+    return redirect(url_for("laporan.sekolah_laporan_detail", submission_id=submission_id))
 
 
 # ═══════════════════════════════════════════════════════
