@@ -47,6 +47,8 @@ from .queries import (
     save_answer,
     save_file,
     get_submission_with_answers,
+    delete_submitted_submission,
+    delete_empty_submitted_submissions,
     list_school_submissions,
     get_last_submission_answers,
     list_form_submissions,
@@ -146,6 +148,22 @@ ALLOWED_FIELD_TYPES = {
 
 def _allowed_file(filename: str) -> bool:
     return "." in filename and filename.rsplit(".", 1)[-1].lower() in ALLOWED_EXTENSIONS
+
+
+def _cleanup_submission_files(file_paths: list[str]) -> None:
+    upload_root = UPLOAD_FOLDER.resolve()
+    for rel_path in file_paths or []:
+        try:
+            target_path = (UPLOAD_FOLDER / rel_path).resolve()
+            target_path.relative_to(upload_root)
+        except (OSError, ValueError):
+            current_app.logger.warning("Skipping unsafe laporan file cleanup path: %s", rel_path)
+            continue
+        try:
+            if target_path.is_file():
+                target_path.unlink()
+        except OSError:
+            current_app.logger.exception("Failed to delete laporan upload file: %s", target_path)
 
 
 def _parse_deadline(raw: str) -> Optional[datetime]:
@@ -779,6 +797,8 @@ def _repeat_deadline_errors(
 
 def _field_publish_errors(fields: list[dict]) -> list[str]:
     errors = []
+    if not any(field.get("field_type") not in DISPLAY_ONLY_FIELD_TYPES for field in fields):
+        errors.append("Form wajib memiliki minimal satu pertanyaan yang bisa dijawab sekolah.")
     for field in fields:
         if field.get("field_type") == "link" and field.get("required"):
             options = field.get("options_json") if isinstance(field.get("options_json"), dict) else {}
@@ -1194,6 +1214,10 @@ def sekolah_laporan_submit(form_id: int) -> Response:
         return redirect(url_for("laporan.sekolah_laporan_list"))
 
     fields = get_form_fields(form_id)
+    if not any(f["field_type"] not in DISPLAY_ONLY_FIELD_TYPES for f in fields):
+        flash("Form ini belum memiliki pertanyaan yang bisa diisi. Hubungi admin.", "warning")
+        return redirect(url_for("laporan.sekolah_laporan_list"))
+
     submitted_values_by_key = {}
     for f in fields:
         key = f.get("field_key")
@@ -1257,54 +1281,63 @@ def sekolah_laporan_submit(form_id: int) -> Response:
     UPLOAD_FOLDER.mkdir(parents=True, exist_ok=True)
     school_upload_dir = UPLOAD_FOLDER / str(school["id"]) / str(form_id)
     school_upload_dir.mkdir(parents=True, exist_ok=True)
+    saved_rel_paths = []
+    try:
+        for f in fields:
+            ftype = f["field_type"]
+            fid = f["id"]
 
-    for f in fields:
-        ftype = f["field_type"]
-        fid = f["id"]
+            if ftype == "file":
+                uploaded_files = request.files.getlist(f"field_{fid}[]")
+                valid_files = [uf for uf in uploaded_files if uf.filename and _allowed_file(uf.filename)]
+                if not valid_files:
+                    continue
+                file_names = [uf.filename for uf in valid_files]
+                answer_id = save_answer(submission_id, fid, None, answer_json=file_names)
+                for uf in valid_files:
+                    ext = uf.filename.rsplit(".", 1)[-1].lower()
+                    saved_name = f"{uuid.uuid4().hex}.{ext}"
+                    save_path = school_upload_dir / saved_name
+                    uf.save(str(save_path))
+                    rel_path = f"{school['id']}/{form_id}/{saved_name}"
+                    saved_rel_paths.append(rel_path)
+                    save_file(
+                        answer_id,
+                        rel_path,
+                        uf.filename,
+                        uf.content_type or "",
+                        save_path.stat().st_size,
+                    )
 
-        if ftype == "file":
-            uploaded_files = request.files.getlist(f"field_{fid}[]")
-            valid_files = [uf for uf in uploaded_files if uf.filename and _allowed_file(uf.filename)]
-            if not valid_files:
-                continue
-            file_names = [uf.filename for uf in valid_files]
-            answer_id = save_answer(submission_id, fid, None, answer_json=file_names)
-            for uf in valid_files:
-                ext = uf.filename.rsplit(".", 1)[-1].lower()
-                saved_name = f"{uuid.uuid4().hex}.{ext}"
-                save_path = school_upload_dir / saved_name
-                uf.save(str(save_path))
-                rel_path = f"{school['id']}/{form_id}/{saved_name}"
-                save_file(
-                    answer_id,
-                    rel_path,
-                    uf.filename,
-                    uf.content_type or "",
-                    save_path.stat().st_size,
-                )
+            elif ftype == "checkbox":
+                vals = request.form.getlist(f"field_{fid}[]")
+                save_answer(submission_id, fid, ", ".join(vals), answer_json=vals)
 
-        elif ftype == "checkbox":
-            vals = request.form.getlist(f"field_{fid}[]")
-            save_answer(submission_id, fid, ", ".join(vals), answer_json=vals)
+            elif ftype == "rating":
+                val = request.form.get(f"field_{fid}", "").strip()
+                save_answer(submission_id, fid, val)
 
-        elif ftype == "rating":
-            val = request.form.get(f"field_{fid}", "").strip()
-            save_answer(submission_id, fid, val)
+            elif ftype == "formula":
+                val = _calculate_formula_value(f, submitted_values_by_key)
+                save_answer(submission_id, fid, val)
+                if f.get("field_key"):
+                    submitted_values_by_key[f["field_key"]] = val
 
-        elif ftype == "formula":
-            val = _calculate_formula_value(f, submitted_values_by_key)
-            save_answer(submission_id, fid, val)
-            if f.get("field_key"):
-                submitted_values_by_key[f["field_key"]] = val
+            elif ftype == "link":
+                val = request.form.get(f"field_{fid}", "").strip()
+                if val == "clicked":
+                    save_answer(submission_id, fid, "Dibuka")
 
-        elif ftype == "link":
-            val = request.form.get(f"field_{fid}", "").strip()
-            if val == "clicked":
-                save_answer(submission_id, fid, "Dibuka")
-
-        else:
-            val = request.form.get(f"field_{fid}", "").strip()
-            save_answer(submission_id, fid, val)
+            else:
+                val = request.form.get(f"field_{fid}", "").strip()
+                save_answer(submission_id, fid, val)
+    except Exception:
+        current_app.logger.exception("Failed to save laporan answers for submission %s", submission_id)
+        deleted = delete_submitted_submission(form_id, submission_id)
+        db_file_paths = (deleted or {}).get("file_paths") or []
+        _cleanup_submission_files(list(db_file_paths) + saved_rel_paths)
+        flash("Jawaban gagal disimpan. Silakan coba kirim ulang.", "danger")
+        return redirect(url_for("laporan.sekolah_laporan_fill", form_id=form_id))
 
     flash("Laporan berhasil dikirim! Terima kasih.", "success")
     return redirect(url_for("laporan.sekolah_laporan_list"))
@@ -1787,6 +1820,11 @@ def admin_laporan_answers(form_id: int) -> Response:
         if sub_detail:
             _annotate_late_submission(sub_detail)
             detailed.append(sub_detail)
+    empty_submitted_count = sum(
+        1
+        for sub in detailed
+        if sub.get("status") == "submitted" and not sub.get("answers")
+    )
     analytics = _build_laporan_analytics(fields, detailed)
 
     return render_template(
@@ -1798,7 +1836,53 @@ def admin_laporan_answers(form_id: int) -> Response:
         filter_period=filter_period,
         periods=sorted_periods,
         is_periodic=is_periodic,
+        empty_submitted_count=empty_submitted_count,
     )
+
+
+@laporan_bp.route("/admin/<int:form_id>/jawaban/delete-empty", methods=["POST"])
+@role_required("admin")
+def admin_laporan_delete_empty_submissions(form_id: int) -> Response:
+    """Admin: delete empty submitted rows so affected schools can submit again."""
+    form = get_form(form_id)
+    if not form:
+        flash("Form tidak ditemukan.", "danger")
+        return redirect(url_for("laporan.admin_laporan_list"))
+
+    filter_period = request.args.get("period") or request.form.get("period") or "all"
+    period_key = filter_period if filter_period and filter_period != "all" else None
+    deleted_count = delete_empty_submitted_submissions(form_id, period_key)
+    if deleted_count:
+        flash(f"{deleted_count} riwayat terkirim kosong berhasil dihapus. Sekolah terkait dapat mengisi ulang jika form masih dibuka.", "success")
+    else:
+        flash("Tidak ada riwayat terkirim kosong untuk dihapus.", "info")
+    return redirect(url_for("laporan.admin_laporan_answers", form_id=form_id, period=filter_period))
+
+
+@laporan_bp.route("/admin/<int:form_id>/jawaban/<int:submission_id>/delete", methods=["POST"])
+@role_required("admin")
+def admin_laporan_delete_submission(form_id: int, submission_id: int) -> Response:
+    """Admin: delete one submitted history row so the school can submit again."""
+    form = get_form(form_id)
+    if not form:
+        flash("Form tidak ditemukan.", "danger")
+        return redirect(url_for("laporan.admin_laporan_list"))
+
+    filter_period = request.args.get("period") or request.form.get("period") or "all"
+    deleted = delete_submitted_submission(form_id, submission_id)
+    if not deleted:
+        flash("Riwayat isian tidak ditemukan atau bukan jawaban terkirim.", "warning")
+        return redirect(url_for("laporan.admin_laporan_answers", form_id=form_id, period=filter_period))
+
+    _cleanup_submission_files(deleted.get("file_paths") or [])
+    school_name = deleted.get("school_name") or "sekolah"
+    period_label = deleted.get("repeat_period_label")
+    period_text = f" untuk {period_label}" if period_label else ""
+    flash(
+        f"Riwayat isian {school_name}{period_text} berhasil dihapus. Sekolah dapat mengisi lagi jika form masih dibuka.",
+        "success",
+    )
+    return redirect(url_for("laporan.admin_laporan_answers", form_id=form_id, period=filter_period))
 
 
 @laporan_bp.route("/admin/<int:form_id>/export")

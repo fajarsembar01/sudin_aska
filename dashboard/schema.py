@@ -1681,6 +1681,7 @@ def ensure_dashboard_schema() -> None:
         _LAPORAN_SUBMISSIONS_REPEAT_PERIOD_MIGRATION_SQL,
         _LAPORAN_SUBMISSIONS_INDEX_SQL,
         _LAPORAN_SUBMISSION_ANSWERS_SQL,
+        _LAPORAN_SUBMISSION_ANSWERS_UNIQUE_MIGRATION_SQL,
         _LAPORAN_SUBMISSION_ANSWERS_INDEX_SQL,
         _LAPORAN_SUBMISSION_FILES_SQL,
         _LAPORAN_SUBMISSION_FILES_INDEX_SQL,
@@ -1882,6 +1883,49 @@ CREATE INDEX IF NOT EXISTS idx_laporan_answers_submission ON laporan_submission_
 CREATE INDEX IF NOT EXISTS idx_laporan_answers_field ON laporan_submission_answers (field_id);
 """
 
+_LAPORAN_SUBMISSION_ANSWERS_UNIQUE_MIGRATION_SQL = """
+DO $$
+BEGIN
+    IF to_regclass('public.laporan_submission_files') IS NOT NULL THEN
+        WITH ranked AS (
+            SELECT
+                id,
+                FIRST_VALUE(id) OVER (
+                    PARTITION BY submission_id, field_id
+                    ORDER BY id DESC
+                ) AS keep_id,
+                ROW_NUMBER() OVER (
+                    PARTITION BY submission_id, field_id
+                    ORDER BY id DESC
+                ) AS rn
+            FROM laporan_submission_answers
+        )
+        UPDATE laporan_submission_files sf
+        SET answer_id = ranked.keep_id
+        FROM ranked
+        WHERE sf.answer_id = ranked.id
+          AND ranked.rn > 1;
+    END IF;
+END $$;
+
+WITH ranked AS (
+    SELECT
+        id,
+        ROW_NUMBER() OVER (
+            PARTITION BY submission_id, field_id
+            ORDER BY id DESC
+        ) AS rn
+    FROM laporan_submission_answers
+)
+DELETE FROM laporan_submission_answers a
+USING ranked
+WHERE a.id = ranked.id
+  AND ranked.rn > 1;
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_laporan_submission_answers_submission_field
+    ON laporan_submission_answers (submission_id, field_id);
+"""
+
 _LAPORAN_SUBMISSION_FILES_SQL = """
 CREATE TABLE IF NOT EXISTS laporan_submission_files (
     id SERIAL PRIMARY KEY,
@@ -1920,6 +1964,7 @@ def ensure_laporan_schema() -> None:
         _LAPORAN_SUBMISSIONS_LATE_MIGRATION_SQL,
         _LAPORAN_SUBMISSIONS_INDEX_SQL,
         _LAPORAN_SUBMISSION_ANSWERS_SQL,
+        _LAPORAN_SUBMISSION_ANSWERS_UNIQUE_MIGRATION_SQL,
         _LAPORAN_SUBMISSION_ANSWERS_INDEX_SQL,
         _LAPORAN_SUBMISSION_FILES_SQL,
         _LAPORAN_SUBMISSION_FILES_INDEX_SQL,

@@ -558,6 +558,64 @@ def get_submission_with_answers(submission_id: int) -> Optional[dict]:
         return sub
 
 
+def delete_submitted_submission(form_id: int, submission_id: int) -> Optional[dict]:
+    """
+    Delete one submitted laporan history row and return metadata for cleanup/flash.
+    Draft and no_submission rows are intentionally ignored here.
+    """
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            SELECT s.id, s.form_id, s.school_id, s.status, s.repeat_period_key,
+                   s.repeat_period_label, sc.name AS school_name,
+                   ARRAY_REMOVE(ARRAY_AGG(sf.file_path), NULL) AS file_paths
+            FROM laporan_submissions s
+            JOIN portal_schools sc ON sc.id = s.school_id
+            LEFT JOIN laporan_submission_answers a ON a.submission_id = s.id
+            LEFT JOIN laporan_submission_files sf ON sf.answer_id = a.id
+            WHERE s.id = %s AND s.form_id = %s AND s.status = 'submitted'
+            GROUP BY s.id, s.form_id, s.school_id, s.status, s.repeat_period_key,
+                     s.repeat_period_label, sc.name
+            """,
+            (submission_id, form_id),
+        )
+        row = cur.fetchone()
+        if not row:
+            return None
+        deleted = dict(row)
+        cur.execute(
+            "DELETE FROM laporan_submissions WHERE id = %s AND form_id = %s AND status = 'submitted'",
+            (submission_id, form_id),
+        )
+        return deleted
+
+
+def delete_empty_submitted_submissions(form_id: int, repeat_period_key: Optional[str] = None) -> int:
+    """Delete submitted rows that have no saved answers, optionally scoped to one period."""
+    params = [form_id]
+    period_filter = ""
+    if repeat_period_key:
+        period_filter = "AND s.repeat_period_key = %s"
+        params.append(repeat_period_key)
+
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            f"""
+            DELETE FROM laporan_submissions s
+            WHERE s.form_id = %s
+              AND s.status = 'submitted'
+              {period_filter}
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM laporan_submission_answers a
+                  WHERE a.submission_id = s.id
+              )
+            """,
+            tuple(params),
+        )
+        return cur.rowcount
+
+
 def list_school_submissions(school_id: int) -> list[dict]:
     """List all submissions by a school (for school's own history view)."""
     with get_cursor() as cur:

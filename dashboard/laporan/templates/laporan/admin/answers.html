@@ -181,6 +181,24 @@
 </div>
 {% else %}
 
+{% if empty_submitted_count %}
+<div class="alert alert-warning border-0 d-flex flex-wrap align-items-center justify-content-between gap-2" role="alert">
+    <div>
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        Ada {{ empty_submitted_count }} riwayat terkirim tanpa jawaban pada tampilan ini.
+    </div>
+    <form method="POST"
+        action="{{ url_for('laporan.admin_laporan_delete_empty_submissions', form_id=form.id, period=filter_period) }}"
+        onsubmit="return confirmDeleteEmptySubmissions({{ empty_submitted_count }})">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="period" value="{{ filter_period }}">
+        <button type="submit" class="btn btn-sm btn-warning d-inline-flex align-items-center gap-1">
+            <i class="bi bi-trash"></i> Hapus Riwayat Kosong
+        </button>
+    </form>
+</div>
+{% endif %}
+
 {# Summary Stats #}
 <div class="row g-3 mb-4">
     <div class="col-6 col-md-3">
@@ -325,6 +343,20 @@
             {% else %}
             <span class="badge bg-success-subtle text-success">Tepat Waktu</span>
             {% endif %}
+            {% if sub.status == 'submitted' %}
+            <form method="POST"
+                action="{{ url_for('laporan.admin_laporan_delete_submission', form_id=form.id, submission_id=sub.id, period=filter_period) }}"
+                class="d-inline"
+                onclick="event.stopPropagation()"
+                onsubmit='return confirmDeleteSubmission(event, {{ sub.school_name | tojson }})'>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="period" value="{{ filter_period }}">
+                <button type="submit"
+                    class="btn btn-sm btn-outline-danger d-inline-flex align-items-center gap-1">
+                    <i class="bi bi-trash"></i> Hapus Riwayat
+                </button>
+            </form>
+            {% endif %}
             <i class="bi bi-chevron-down text-muted toggle-icon" style="transition:transform 0.2s;"></i>
         </div>
     </div>
@@ -334,7 +366,10 @@
             <i class="bi bi-x-circle-fill me-1"></i> Sekolah ini tidak mengirimkan laporan untuk periode ini hingga batas waktu yang ditentukan.
         </p>
         {% elif not sub.answers %}
-        <p class="text-muted mb-0 small">Tidak ada jawaban tercatat.</p>
+        <p class="text-warning mb-0 small fw-medium">
+            <i class="bi bi-exclamation-triangle-fill me-1"></i>
+            Riwayat terkirim ini tidak memiliki jawaban tersimpan. Hapus riwayat agar sekolah bisa mengisi ulang jika form masih dibuka.
+        </p>
         {% else %}
         {% for ans in sub.answers %}
         {% if ans.field_type not in ('header', 'info') %}
@@ -405,6 +440,21 @@ function filterAnswers() {
         var school = card.getAttribute('data-school') || '';
         card.style.display = (!q || school.includes(q)) ? '' : 'none';
     });
+}
+
+function confirmDeleteSubmission(event, schoolName) {
+    event.stopPropagation();
+    return window.confirm(
+        'Hapus riwayat isian ' + (schoolName || 'sekolah ini') +
+        '? Sekolah dapat mengisi lagi jika form masih dibuka.'
+    );
+}
+
+function confirmDeleteEmptySubmissions(count) {
+    return window.confirm(
+        'Hapus ' + count + ' riwayat terkirim tanpa jawaban pada periode/tampilan ini? ' +
+        'Sekolah terkait dapat mengisi ulang jika form masih dibuka.'
+    );
 }
 </script>
 {% endblock %}
