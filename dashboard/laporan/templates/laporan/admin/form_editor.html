@@ -428,7 +428,9 @@
                     <div class="form-check form-check-inline">
                         <input class="form-check-input" type="checkbox" name="field_required_{{ fid }}" id="req_{{ fid }}"
                             {% if field.required %}checked{% endif %}>
-                        <label class="form-check-label small" for="req_{{ fid }}">Wajib diisi</label>
+                        <label class="form-check-label small required-label" for="req_{{ fid }}">
+                            {% if field.field_type == 'link' %}Wajib klik link{% else %}Wajib diisi{% endif %}
+                        </label>
                     </div>
                 </div>
             </div>
@@ -838,7 +840,7 @@ function addField(fieldData) {
         <div class="mt-2 req-group" id="req_group_${fid}">
             <div class="form-check form-check-inline">
                 <input class="form-check-input" type="checkbox" name="field_required_${fid}" id="req_${fid}" checked>
-                <label class="form-check-label small" for="req_${fid}">Wajib diisi</label>
+                <label class="form-check-label small required-label" for="req_${fid}">Wajib diisi</label>
             </div>
         </div>
     </div>`;
@@ -905,6 +907,8 @@ function toggleFieldOptions(select, fid) {
     var reqGroup = document.getElementById('req_group_' + fid);
     var showReq = (val !== 'header' && val !== 'info' && val !== 'formula');
     if (reqGroup) reqGroup.style.display = showReq ? '' : 'none';
+    var reqLabel = reqGroup ? reqGroup.querySelector('.required-label') : null;
+    if (reqLabel) reqLabel.textContent = val === 'link' ? 'Wajib klik link' : 'Wajib diisi';
     
     if (!showReq) {
         var req = document.getElementById('req_' + fid);
