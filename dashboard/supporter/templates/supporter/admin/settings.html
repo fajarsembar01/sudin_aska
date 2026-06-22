@@ -46,14 +46,14 @@
   </div>
   <div class="col-lg-7">
     <div class="supporter-panel p-3 h-100">
-      <h2 class="h6 fw-bold mb-3">Admin Telegram Supporter</h2>
+      <h2 class="h6 fw-bold mb-3">Verifikator Telegram Supporter</h2>
       <form method="post" class="row g-2 align-items-end mb-3">
         <div class="col-md-5">
-          <label class="form-label">Admin Dashboard</label>
+          <label class="form-label">Verifikator (Admin/Staff)</label>
           <select class="form-select" name="dashboard_user_id" required>
-            <option value="">Pilih admin</option>
-            {% for admin in admin_users %}
-            <option value="{{ admin.id }}">{{ admin.full_name or admin.email }}</option>
+            <option value="">Pilih verifikator</option>
+            {% for u in admin_users %}
+            <option value="{{ u.id }}">{{ u.full_name or u.email }} — {{ 'Admin' if u.role == 'admin' else 'Staff' }}</option>
             {% endfor %}
           </select>
         </div>
@@ -72,7 +72,12 @@
             {% for item in telegram_admins %}
             <tr>
               <td>@{{ item.telegram_username }}</td>
-              <td>{{ item.admin_name or item.admin_email }}</td>
+              <td>
+                {{ item.admin_name or item.admin_email }}
+                {% if item.admin_role %}
+                <span class="badge {{ 'text-bg-primary' if item.admin_role == 'admin' else 'text-bg-secondary' }} ms-1">{{ 'Admin' if item.admin_role == 'admin' else 'Staff' }}</span>
+                {% endif %}
+              </td>
               <td>
                 {% if item.reachable %}
                 <span class="badge text-bg-success"><i class="bi bi-check2 me-1"></i>Siap</span>

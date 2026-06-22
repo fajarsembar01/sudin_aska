@@ -8,11 +8,10 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
 
 from db import save_chat
-from dashboard.queries import get_telegram_admin_by_username
 from .queries import (
-    SUPPORTER_TELEGRAM_SCOPE,
     delete_supporter_telegram_group_by_chat_id,
     get_submission_detail,
+    get_supporter_verifier_by_username,
     list_submissions,
     review_submission,
     review_submission_action,
@@ -35,7 +34,8 @@ def _authorize_admin(update: Update) -> Optional[dict]:
     username = _normalize_username(user.username)
     if not username:
         return None
-    return get_telegram_admin_by_username(username, scope=SUPPORTER_TELEGRAM_SCOPE)
+    # Supporter verifiers may be admins or staff (configured by an admin).
+    return get_supporter_verifier_by_username(username)
 
 
 def _log_command(update: Update, text: str) -> None:

@@ -33,6 +33,7 @@ from utils import JAKARTA_TZ, current_jakarta_time, to_jakarta
 from .queries import (
     ACTION_OPTIONS,
     PLATFORM_OPTIONS,
+    SUPPORTER_SOCIAL_FIELDS,
     SUPPORTER_TELEGRAM_SCOPE,
     TASK_STATUSES,
     calculate_points,
@@ -47,12 +48,14 @@ from .queries import (
     get_staff_submission_for_task,
     get_submission_detail,
     get_supporter_setting,
+    get_supporter_staff_profile,
     get_task,
     list_activity_logs,
     list_staff_tasks,
     list_submissions,
     list_supporter_admin_delivery_status,
     list_supporter_telegram_groups,
+    list_supporter_verifier_candidates,
     list_tasks,
     normalize_action_types,
     review_submission,
@@ -61,6 +64,7 @@ from .queries import (
     submit_task,
     update_task,
     update_task_status,
+    upsert_supporter_staff_profile,
 )
 
 
@@ -367,6 +371,7 @@ def staff_dashboard() -> Response:
     submissions = list_submissions(staff_id=staff_id, limit=20)
     stats = fetch_staff_stats(staff_id)
     leaderboard = fetch_leaderboard(limit=5)
+    profile = get_supporter_staff_profile(staff_id)
     return render_template(
         "supporter/staff/dashboard.html",
         page_title="Supporter",
@@ -374,7 +379,42 @@ def staff_dashboard() -> Response:
         submissions=submissions,
         stats=stats,
         leaderboard=leaderboard,
+        supporter_social_fields=SUPPORTER_SOCIAL_FIELDS,
+        supporter_socials=profile["socials"],
+        supporter_profile_complete=profile["is_complete"],
     )
+
+
+@supporter_bp.route("/profile", methods=["POST"])
+@role_required("staff")
+def save_staff_profile() -> Response:
+    user = current_user() or {}
+    staff_id = int(user.get("id") or 0)
+    socials = {}
+    for key, _label, _required in SUPPORTER_SOCIAL_FIELDS:
+        socials[key] = _clean_text(f"social_{key}")
+    missing = [
+        label
+        for key, label, required in SUPPORTER_SOCIAL_FIELDS
+        if required and not socials.get(key)
+    ]
+    if missing:
+        flash("Wajib mengisi: " + ", ".join(missing) + ".", "warning")
+        return redirect(url_for("supporter.staff_dashboard"))
+    upsert_supporter_staff_profile(staff_id, socials)
+    # Keep the legacy single handle in sync with Instagram for submissions.
+    instagram = socials.get("instagram")
+    if instagram and instagram != user.get("social_username"):
+        try:
+            from dashboard.portal.queries import update_dashboard_user_profile
+
+            update_dashboard_user_profile(user_id=staff_id, social_username=instagram)
+            user["social_username"] = instagram
+            session["user"] = user
+        except Exception:
+            pass
+    flash("Username sosmed berhasil disimpan.", "success")
+    return redirect(url_for("supporter.staff_dashboard"))
 
 
 @supporter_bp.route("/tasks/<int:task_id>")
@@ -744,7 +784,7 @@ def admin_settings() -> Response:
     return render_template(
         "supporter/admin/settings.html",
         page_title="Supporter - Pengaturan",
-        admin_users=list_admin_users(),
+        admin_users=list_supporter_verifier_candidates(),
         telegram_admins=list_supporter_admin_delivery_status(),
         telegram_groups=list_supporter_telegram_groups(),
         supporter_bot_token_configured=bool(stored_bot_token) or env_bot_token,

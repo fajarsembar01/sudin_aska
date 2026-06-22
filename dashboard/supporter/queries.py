@@ -59,6 +59,18 @@ PLATFORM_OPTIONS = (
 ACTION_LABELS = dict(ACTION_OPTIONS)
 
 
+# Social handles collected from supporter staff. (key, label, required)
+SUPPORTER_SOCIAL_FIELDS = (
+    ("instagram", "Instagram", True),
+    ("tiktok", "TikTok", True),
+    ("facebook", "Facebook", False),
+    ("youtube", "YouTube", False),
+    ("twitter", "X / Twitter", False),
+    ("threads", "Threads", False),
+)
+SUPPORTER_REQUIRED_SOCIALS = tuple(key for key, _, required in SUPPORTER_SOCIAL_FIELDS if required)
+
+
 def normalize_action_types(raw_value: Any, fallback: Optional[str] = None) -> List[str]:
     """Return a stable list of task action keys for old and new task rows."""
     values: list[Any]
@@ -323,6 +335,16 @@ def ensure_supporter_schema() -> None:
                 value TEXT,
                 updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 updated_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL
+            )
+            """
+        )
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS supporter_staff_profiles (
+                staff_id INTEGER PRIMARY KEY REFERENCES dashboard_users(id) ON DELETE CASCADE,
+                socials JSONB NOT NULL DEFAULT '{}'::jsonb,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
             )
             """
         )
@@ -1256,6 +1278,52 @@ def delete_supporter_telegram_group(group_id: int) -> bool:
         return cur.rowcount > 0
 
 
+def list_supporter_verifier_candidates() -> List[Dict[str, Any]]:
+    """Dashboard users that can be assigned as supporter verifiers (admin or staff)."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT id, full_name, email, role
+            FROM dashboard_users
+            WHERE role IN ('admin', 'staff')
+            ORDER BY
+                CASE WHEN role = 'admin' THEN 0 ELSE 1 END,
+                full_name ASC
+            """
+        )
+        return [dict(row) for row in cur.fetchall()]
+
+
+def get_supporter_verifier_by_username(username: str) -> Optional[Dict[str, Any]]:
+    """Authorize a Telegram username as a supporter verifier (admin or staff)."""
+    if not username:
+        return None
+    normalized = username.strip().lstrip("@").lower()
+    if not normalized:
+        return None
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT
+                ta.id,
+                ta.telegram_username,
+                ta.dashboard_user_id,
+                u.full_name AS admin_name,
+                u.email AS admin_email,
+                u.role AS admin_role
+            FROM telegram_admin_accounts ta
+            JOIN dashboard_users u ON u.id = ta.dashboard_user_id
+            WHERE ta.telegram_username = %s
+              AND ta.notification_scope = %s
+              AND u.role IN ('admin', 'staff')
+            LIMIT 1
+            """,
+            (normalized, SUPPORTER_TELEGRAM_SCOPE),
+        )
+        row = cur.fetchone()
+    return dict(row) if row else None
+
+
 def list_supporter_admin_delivery_status() -> List[Dict[str, Any]]:
     """Registered supporter admins with resolved Telegram chat_id (reachability)."""
     ensure_supporter_schema()
@@ -1267,6 +1335,7 @@ def list_supporter_admin_delivery_status() -> List[Dict[str, Any]]:
                 ta.telegram_username,
                 u.full_name AS admin_name,
                 u.email AS admin_email,
+                u.role AS admin_role,
                 tu.telegram_user_id
             FROM telegram_admin_accounts ta
             LEFT JOIN dashboard_users u ON u.id = ta.dashboard_user_id
@@ -1291,6 +1360,56 @@ def get_supporter_setting(key: str) -> Optional[str]:
         return None
     value = (dict(row).get("value") or "").strip()
     return value or None
+
+
+def get_supporter_staff_profile(staff_id: int) -> Dict[str, Any]:
+    """Return the staff member's saved social handles and completion state."""
+    ensure_supporter_schema()
+    with get_cursor() as cur:
+        cur.execute(
+            "SELECT socials, updated_at FROM supporter_staff_profiles WHERE staff_id = %s",
+            (staff_id,),
+        )
+        row = cur.fetchone()
+    socials: Dict[str, str] = {}
+    updated_at = None
+    if row:
+        data = dict(row)
+        raw = data.get("socials") or {}
+        if isinstance(raw, str):
+            try:
+                raw = json.loads(raw)
+            except (TypeError, ValueError):
+                raw = {}
+        if isinstance(raw, dict):
+            socials = {str(k): str(v) for k, v in raw.items() if v}
+        updated_at = data.get("updated_at")
+    complete = all(socials.get(key) for key in SUPPORTER_REQUIRED_SOCIALS)
+    return {"socials": socials, "updated_at": updated_at, "is_complete": complete}
+
+
+def upsert_supporter_staff_profile(staff_id: int, socials: Dict[str, Any]) -> bool:
+    """Save the staff member's social handles (keeps only known fields)."""
+    ensure_supporter_schema()
+    valid_keys = {key for key, _, _ in SUPPORTER_SOCIAL_FIELDS}
+    clean: Dict[str, str] = {}
+    for key, value in (socials or {}).items():
+        if key in valid_keys:
+            text = str(value or "").strip()
+            if text:
+                clean[key] = text
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            INSERT INTO supporter_staff_profiles (staff_id, socials, created_at, updated_at)
+            VALUES (%s, %s, NOW(), NOW())
+            ON CONFLICT (staff_id) DO UPDATE
+                SET socials = EXCLUDED.socials,
+                    updated_at = NOW()
+            """,
+            (staff_id, Json(clean)),
+        )
+    return all(clean.get(key) for key in SUPPORTER_REQUIRED_SOCIALS)
 
 
 def set_supporter_setting(key: str, value: Optional[str], *, updated_by: Optional[int] = None) -> None:

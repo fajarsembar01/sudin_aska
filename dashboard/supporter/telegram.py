@@ -100,7 +100,7 @@ def _list_supporter_admin_recipients() -> List[Dict[str, Any]]:
                 ta.telegram_username,
                 tu.telegram_user_id
             FROM telegram_admin_accounts ta
-            JOIN dashboard_users u ON u.id = ta.dashboard_user_id AND u.role = 'admin'
+            JOIN dashboard_users u ON u.id = ta.dashboard_user_id AND u.role IN ('admin', 'staff')
             LEFT JOIN telegram_users tu ON LOWER(tu.username) = LOWER(ta.telegram_username)
             WHERE ta.notification_scope = %s
             ORDER BY LOWER(ta.telegram_username) ASC
