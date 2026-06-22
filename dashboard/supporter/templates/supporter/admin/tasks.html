@@ -1,0 +1,170 @@
+{% extends "supporter/base_supporter.html" %}
+
+{% block portal_content %}
+<section class="supporter-hero mb-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+    <div>
+      <h1 class="h3 fw-bold mb-1">Task Supporter</h1>
+      <p class="text-muted mb-0">Buat task sosial media dengan deadline, penalty, dan aturan bukti.</p>
+    </div>
+    <a class="btn btn-outline-primary" href="{{ url_for('supporter.admin_submissions') }}">
+      <i class="bi bi-patch-check me-1"></i>Verifikasi
+    </a>
+  </div>
+</section>
+
+<section class="row g-3">
+  <div class="col-lg-4">
+    <div class="supporter-panel p-3">
+      <h2 class="h6 fw-bold mb-3">Buat Task Baru</h2>
+      <form method="post" class="vstack gap-3 supporter-task-form">
+        <div>
+          <label class="form-label">Judul</label>
+          <input class="form-control" name="title" required placeholder="Like dan komentar postingan...">
+        </div>
+        <div>
+          <label class="form-label">Nama Kampanye</label>
+          <input class="form-control" name="campaign_name" placeholder="SPMB, PPDB, publikasi layanan">
+        </div>
+        <div>
+          <label class="form-label">Platform</label>
+          <select class="form-select" name="platform">
+            {% for key, label in platform_options %}
+            <option value="{{ key }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
+            <label class="form-label mb-0">Aksi</label>
+            <span class="form-text m-0">Bisa pilih lebih dari satu</span>
+          </div>
+          <div class="supporter-action-grid">
+            {% for key, label in action_options %}
+            <label class="supporter-check-pill">
+              <input class="form-check-input" type="checkbox" name="action_types" value="{{ key }}" {% if key == 'like' %}checked{% endif %}>
+              <span>{{ label }}</span>
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+        <div>
+          <label class="form-label">URL Target</label>
+          <input class="form-control" name="target_url" type="url" placeholder="https://...">
+        </div>
+        <div>
+          <label class="form-label">Akun Target</label>
+          <input class="form-control" name="target_account" placeholder="@sudindikju2">
+        </div>
+        <div>
+          <label class="form-label">Deskripsi</label>
+          <textarea class="form-control" name="description" rows="2"></textarea>
+        </div>
+        <div>
+          <label class="form-label">Instruksi Staff</label>
+          <textarea class="form-control" name="instructions" rows="3"></textarea>
+        </div>
+        <div class="row g-2">
+          <div class="col-md-4">
+            <label class="form-label">Poin per Aksi</label>
+            <input class="form-control js-supporter-points" name="base_points" type="number" min="0" value="10">
+            <div class="form-text">Total mengikuti jumlah aksi.</div>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Total Poin</label>
+            <input class="form-control js-supporter-total-points" type="text" value="10" readonly tabindex="-1">
+            <div class="form-text">Otomatis dari poin per aksi x aksi.</div>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Penalty Telat (%)</label>
+            <input class="form-control" name="late_penalty_percent" type="number" min="0" max="100" step="0.01" value="50">
+          </div>
+        </div>
+        <div>
+          <label class="form-label">Mulai</label>
+          <input class="form-control" name="start_at" type="datetime-local" value="{{ datetime_local_value(default_start_at) }}">
+        </div>
+        <div>
+          <label class="form-label">Deadline Poin Penuh</label>
+          <input class="form-control" name="deadline_at" type="datetime-local">
+          <div class="form-text">Lewat waktu ini poin dikurangi sesuai penalty.</div>
+        </div>
+        <div>
+          <label class="form-label">Waktu Berakhir</label>
+          <input class="form-control" name="end_at" type="datetime-local">
+          <div class="form-text">Opsional. Lewat waktu ini staff tidak bisa submit. Kosongkan jika tidak ada batas waktu.</div>
+        </div>
+        <div>
+          <label class="form-label">Status</label>
+          <select class="form-select" name="status">
+            {% for item in task_statuses %}
+            <option value="{{ item }}" {% if item == 'active' %}selected{% endif %}>{{ supporter_task_status_labels.get(item, item) }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <input type="hidden" name="verification_mode" value="manual_telegram">
+        <div class="vstack gap-2">
+          <label class="form-check"><input class="form-check-input" type="checkbox" name="allow_late_submission" checked> Boleh submit setelah deadline sampai waktu berakhir</label>
+          <label class="form-check"><input class="form-check-input" type="checkbox" name="requires_proof_url" checked> Wajib link bukti</label>
+          <label class="form-check"><input class="form-check-input" type="checkbox" name="requires_proof_text" checked> Wajib catatan bukti</label>
+          <label class="form-check"><input class="form-check-input" type="checkbox" name="requires_screenshot" checked> Wajib screenshot/file</label>
+        </div>
+        <button class="btn btn-primary" type="submit"><i class="bi bi-plus-circle me-1"></i>Buat Task</button>
+      </form>
+    </div>
+  </div>
+  <div class="col-lg-8">
+    <div class="supporter-panel p-3">
+      <form method="get" class="d-flex flex-wrap gap-2 mb-3">
+        <input class="form-control" name="q" value="{{ q }}" placeholder="Cari task..." style="max-width: 260px;">
+        <select class="form-select" name="status" style="max-width: 180px;">
+          <option value="">Semua status</option>
+          {% for item in task_statuses %}
+          <option value="{{ item }}" {% if status_filter == item %}selected{% endif %}>{{ supporter_task_status_labels.get(item, item) }}</option>
+          {% endfor %}
+        </select>
+        <button class="btn btn-outline-primary" type="submit"><i class="bi bi-search"></i></button>
+      </form>
+      <div class="table-responsive">
+        <table class="table supporter-table align-middle">
+          <thead>
+            <tr>
+              <th>Task</th>
+              <th>Status</th>
+              <th>Poin</th>
+              <th>Waktu</th>
+              <th>Submission</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in tasks %}
+            <tr>
+              <td>
+                <div class="fw-semibold">{{ item.title }}</div>
+                <div class="text-muted small">{{ supporter_platform_labels.get(item.platform, item.platform) }} · {{ item.action_summary }}</div>
+              </td>
+              <td><span class="badge text-bg-secondary">{{ supporter_task_status_labels.get(item.status, item.status) }}</span></td>
+              <td>
+                <div class="fw-semibold">{{ item.total_task_points }}</div>
+                <div class="text-muted small">{{ item.base_points }} x {{ item.action_count or 1 }} aksi</div>
+              </td>
+              <td class="text-muted small">
+                <div>Deadline: {{ item.deadline_at|jakarta('%d %b %Y %H:%M') if item.deadline_at else '-' }}</div>
+                <div>Berakhir: {{ item.end_at|jakarta('%d %b %Y %H:%M') if item.end_at else 'Tanpa batas' }}</div>
+              </td>
+              <td>{{ item.submission_count or 0 }} <span class="text-muted small">({{ item.pending_count or 0 }} pending)</span></td>
+              <td class="text-end">
+                <a class="btn btn-sm btn-outline-primary" href="{{ url_for('supporter.admin_edit_task', task_id=item.id) }}"><i class="bi bi-pencil"></i></a>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6" class="text-center text-muted py-4">Belum ada task.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,4 +1,5 @@
 {% extends "laporan/base_laporan.html" %}
+{% from "shared/_countdown.html" import countdown_css, countdown_js %}
 {% set page_title = "Isi " ~ form.title %}
 {% set preview_mode = preview_mode | default(false) %}
 {% set edit_mode = edit_mode | default(false) %}
@@ -104,20 +105,7 @@
         padding: 1.5rem;
         margin-bottom: 1.5rem;
     }
-    .deadline-countdown {
-        color: var(--text-primary);
-        font-weight: 700;
-    }
-    .deadline-countdown.is-warning { color: #f59e0b; }
-    .deadline-countdown.is-danger { color: #dc3545; }
-    .deadline-countdown.is-hidden { display: none; }
-    .deadline-countdown.is-blinking {
-        animation: deadlineBlink 0.8s ease-in-out infinite;
-    }
-    @keyframes deadlineBlink {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.28; }
-    }
+
     .load-prev-btn {
         background: linear-gradient(135deg, #0d6efd, #0b5ed7);
         color: white;
@@ -160,6 +148,7 @@
         to   { opacity: 1; transform: translateY(0); }
     }
 </style>
+{{ countdown_css() }}
 {% endblock %}
 
 {% block portal_content %}
@@ -508,71 +497,9 @@ document.querySelectorAll('[data-formula-source="1"]').forEach(function(input) {
     input.addEventListener('change', recalculateFormulaFields);
 });
 recalculateFormulaFields();
-
-(function() {
-    const countdowns = Array.from(document.querySelectorAll('[data-deadline]'));
-    if (!countdowns.length) return;
-
-    const ONE_DAY = 24 * 60 * 60 * 1000;
-    const THREE_HOURS = 3 * 60 * 60 * 1000;
-    const ONE_HOUR = 60 * 60 * 1000;
-    const FIFTEEN_MINUTES = 15 * 60 * 1000;
-    const SIX_HOURS = 6 * 60 * 60 * 1000;
-
-    function formatClock(ms) {
-        const totalSeconds = Math.max(0, Math.floor(ms / 1000));
-        const hours = Math.floor(totalSeconds / 3600);
-        const minutes = Math.floor((totalSeconds % 3600) / 60);
-        const seconds = totalSeconds % 60;
-        return [hours, minutes, seconds].map(function(value) {
-            return String(value).padStart(2, '0');
-        }).join(':');
-    }
-
-    function updateCountdowns() {
-        const now = Date.now();
-        countdowns.forEach(function(el) {
-            const deadline = Date.parse(el.getAttribute('data-deadline') || '');
-            if (!Number.isFinite(deadline)) {
-                el.classList.add('is-hidden');
-                return;
-            }
-
-            const remaining = deadline - now;
-            el.classList.remove('is-warning', 'is-danger', 'is-blinking');
-
-            if (remaining <= 0) {
-                const overdue = Math.abs(remaining);
-                if (overdue > SIX_HOURS) {
-                    el.classList.add('is-hidden');
-                    return;
-                }
-                el.querySelector('.deadline-countdown-text').textContent = '-' + formatClock(overdue);
-                el.classList.remove('is-hidden');
-                el.classList.add('is-danger', 'is-blinking');
-                return;
-            }
-            if (remaining > ONE_DAY) {
-                el.classList.add('is-hidden');
-                return;
-            }
-
-            el.querySelector('.deadline-countdown-text').textContent = formatClock(remaining);
-            el.classList.remove('is-hidden');
-            if (remaining <= FIFTEEN_MINUTES) {
-                el.classList.add('is-danger', 'is-blinking');
-            } else if (remaining <= ONE_HOUR) {
-                el.classList.add('is-danger');
-            } else if (remaining <= THREE_HOURS) {
-                el.classList.add('is-warning');
-            }
-        });
-    }
-
-    updateCountdowns();
-    window.setInterval(updateCountdowns, 1000);
-})();
-
+</script>
+{{ countdown_js() }}
+<script>
 // Drag & drop support
 document.querySelectorAll('.file-drop-zone').forEach(function(zone) {
     zone.addEventListener('dragover', function(e) {

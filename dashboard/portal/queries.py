@@ -5319,7 +5319,8 @@ def get_dashboard_user_profile(user_id: int) -> Optional[Dict[str, Any]]:
                 jabatan,
                 whatsapp_number,
                 profile_photo_path,
-                password_hash
+                password_hash,
+                social_username
             FROM dashboard_users
             WHERE id = %s
             LIMIT 1
@@ -5340,6 +5341,7 @@ def update_dashboard_user_profile(
     nrk: Optional[str] = None,
     jabatan: Optional[str] = None,
     password_hash: Optional[str] = None,
+    social_username: Optional[str] = None,
 ) -> bool:
     """Update editable profile fields for a dashboard user."""
     updates = []
@@ -5359,6 +5361,8 @@ def update_dashboard_user_profile(
     params.append(nrk)
     updates.append("jabatan = %s")
     params.append(jabatan)
+    updates.append("social_username = %s")
+    params.append(social_username)
     if password_hash:
         updates.append("password_hash = %s")
         params.append(password_hash)

@@ -1,0 +1,136 @@
+{% extends "supporter/base_supporter.html" %}
+
+{% block portal_content %}
+<section class="supporter-hero mb-4">
+  <h1 class="h3 fw-bold mb-1">Pengaturan Supporter</h1>
+  <p class="text-muted mb-0">Konfigurasi bot Telegram khusus Supporter dan target notifikasi verifikasi.</p>
+</section>
+
+<section class="row g-3">
+  <div class="col-lg-5">
+    <div class="supporter-panel p-3 h-100">
+      <h2 class="h6 fw-bold mb-3">Bot Telegram</h2>
+      <div class="alert {% if supporter_bot_token_configured %}alert-success{% else %}alert-warning{% endif %} py-2">
+        {% if supporter_bot_token_from_db %}
+        <i class="bi bi-check-circle me-1"></i>Token tersimpan di dashboard.
+        {% elif supporter_bot_token_from_env %}
+        <i class="bi bi-info-circle me-1"></i>Token terdeteksi dari environment <code>TELEGRAM_SUPPORTER_BOT_TOKEN</code>.
+        {% else %}
+        <i class="bi bi-exclamation-triangle me-1"></i>Token belum dikonfigurasi.
+        {% endif %}
+      </div>
+      <form method="post" class="mb-3">
+        <input type="hidden" name="form_action" value="bot_token">
+        <label class="form-label">Token Bot Telegram</label>
+        <div class="input-group">
+          <input class="form-control" type="password" name="supporter_bot_token"
+                 placeholder="{% if supporter_bot_token_from_db %}•••••••• (tersimpan, isi untuk mengganti){% else %}123456:ABC-DEF...{% endif %}"
+                 autocomplete="off">
+          <button class="btn btn-primary" type="submit">Simpan</button>
+        </div>
+        <div class="form-text">
+          Dapatkan token dari <a href="https://t.me/BotFather" target="_blank" rel="noopener">@BotFather</a>.
+          Token yang disimpan di sini menggantikan environment variable.
+        </div>
+      </form>
+      <div class="small text-muted">
+        Jalankan bot dengan <code>python3 bot_supporter.py</code> atau <code>npm run bot:supporter</code>. Di grup Telegram target, admin yang sudah terdaftar menjalankan <code>/register_group</code>.
+      </div>
+      <form method="post" action="{{ url_for('supporter.admin_test_bot') }}" class="mt-3">
+        <button class="btn btn-outline-primary btn-sm w-100" type="submit"
+                {% if not supporter_bot_token_configured %}disabled{% endif %}>
+          <i class="bi bi-plug me-1"></i>Tes Koneksi Bot
+        </button>
+      </form>
+    </div>
+  </div>
+  <div class="col-lg-7">
+    <div class="supporter-panel p-3 h-100">
+      <h2 class="h6 fw-bold mb-3">Admin Telegram Supporter</h2>
+      <form method="post" class="row g-2 align-items-end mb-3">
+        <div class="col-md-5">
+          <label class="form-label">Admin Dashboard</label>
+          <select class="form-select" name="dashboard_user_id" required>
+            <option value="">Pilih admin</option>
+            {% for admin in admin_users %}
+            <option value="{{ admin.id }}">{{ admin.full_name or admin.email }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-5">
+          <label class="form-label">Username Telegram</label>
+          <input class="form-control" name="telegram_username" placeholder="username tanpa @">
+        </div>
+        <div class="col-md-2 d-grid">
+          <button class="btn btn-primary" type="submit">Simpan</button>
+        </div>
+      </form>
+      <div class="table-responsive">
+        <table class="table supporter-table align-middle mb-0">
+          <thead><tr><th>Username</th><th>Admin</th><th>Status</th><th></th></tr></thead>
+          <tbody>
+            {% for item in telegram_admins %}
+            <tr>
+              <td>@{{ item.telegram_username }}</td>
+              <td>{{ item.admin_name or item.admin_email }}</td>
+              <td>
+                {% if item.reachable %}
+                <span class="badge text-bg-success"><i class="bi bi-check2 me-1"></i>Siap</span>
+                {% else %}
+                <span class="badge text-bg-warning" title="Admin ini belum pernah menekan /start di bot Supporter sehingga belum bisa menerima notifikasi.">
+                  <i class="bi bi-exclamation-triangle me-1"></i>Belum chat bot
+                </span>
+                {% endif %}
+              </td>
+              <td class="text-end">
+                <form method="post" action="{{ url_for('supporter.admin_delete_telegram_admin', mapping_id=item.id) }}">
+                  <button class="btn btn-sm btn-outline-danger" type="submit" onclick="return confirm('Hapus mapping admin Telegram?');"><i class="bi bi-trash"></i></button>
+                </form>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4" class="text-center text-muted py-3">Belum ada admin Telegram Supporter.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="d-flex flex-wrap align-items-center gap-2 mt-3">
+        <form method="post" action="{{ url_for('supporter.admin_test_notification') }}">
+          <button class="btn btn-outline-success btn-sm" type="submit"
+                  {% if not supporter_bot_token_configured %}disabled{% endif %}>
+            <i class="bi bi-send me-1"></i>Kirim Notifikasi Tes
+          </button>
+        </form>
+        <span class="text-muted small">
+          Agar bisa menerima notifikasi, tiap admin harus menekan <code>/start</code> di bot Supporter terlebih dahulu (bot harus aktif/polling).
+        </span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="supporter-panel p-3 mt-3">
+  <h2 class="h6 fw-bold mb-3">Group Telegram Terdaftar</h2>
+  <div class="table-responsive">
+    <table class="table supporter-table align-middle mb-0">
+      <thead><tr><th>Group</th><th>Chat ID</th><th>Didaftarkan</th><th></th></tr></thead>
+      <tbody>
+        {% for group in telegram_groups %}
+        <tr>
+          <td>{{ group.title or '-' }}</td>
+          <td><code>{{ group.chat_id }}</code></td>
+          <td class="text-muted small">{{ group.updated_at|jakarta('%d %b %Y %H:%M') }}</td>
+          <td class="text-end">
+            <form method="post" action="{{ url_for('supporter.admin_delete_telegram_group', group_id=group.id) }}">
+              <button class="btn btn-sm btn-outline-danger" type="submit" onclick="return confirm('Hapus group Telegram ini?');"><i class="bi bi-trash"></i></button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" class="text-center text-muted py-3">Belum ada group. Gunakan /register_group di bot Supporter.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

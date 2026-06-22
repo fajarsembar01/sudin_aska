@@ -1,0 +1,203 @@
+{% extends "portal/base_portal.html" %}
+{% from "shared/_countdown.html" import countdown_css, countdown_js %}
+
+{% block portal_nav %}
+<nav class="navbar navbar-expand-lg sticky-top">
+  <div class="container-fluid px-lg-4">
+    <a class="navbar-brand" href="{{ url_for('supporter.admin_dashboard') if current_user and current_user.role == 'admin' else url_for('supporter.staff_dashboard') }}">
+      <span class="icon-badge brand-icon text-primary"><i class="bi bi-megaphone"></i></span>
+      <span class="fw-bold">Supporter</span>
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#supporterNavbar">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="supporterNavbar">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        {% if current_user and current_user.role == 'admin' %}
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint == 'supporter.admin_dashboard' %}active{% endif %}" href="{{ url_for('supporter.admin_dashboard') }}">
+            <i class="bi bi-speedometer2 nav-icon"></i>Dashboard
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint in ['supporter.admin_tasks', 'supporter.admin_edit_task'] %}active{% endif %}" href="{{ url_for('supporter.admin_tasks') }}">
+            <i class="bi bi-list-task nav-icon"></i>Task
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint == 'supporter.admin_submissions' %}active{% endif %}" href="{{ url_for('supporter.admin_submissions') }}">
+            <i class="bi bi-patch-check nav-icon"></i>Verifikasi
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint in ['supporter.leaderboard', 'supporter.admin_leaderboard'] %}active{% endif %}" href="{{ url_for('supporter.leaderboard') }}">
+            <i class="bi bi-trophy nav-icon"></i>Leaderboard
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint == 'supporter.admin_settings' %}active{% endif %}" href="{{ url_for('supporter.admin_settings') }}">
+            <i class="bi bi-gear nav-icon"></i>Pengaturan
+          </a>
+        </li>
+        {% elif current_user and current_user.role == 'staff' %}
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint in ['supporter.staff_dashboard', 'supporter.task_detail'] %}active{% endif %}" href="{{ url_for('supporter.staff_dashboard') }}">
+            <i class="bi bi-list-task nav-icon"></i>Task Saya
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint == 'supporter.leaderboard' %}active{% endif %}" href="{{ url_for('supporter.leaderboard') }}">
+            <i class="bi bi-trophy nav-icon"></i>Leaderboard
+          </a>
+        </li>
+        {% endif %}
+      </ul>
+      <div class="d-flex align-items-center gap-3 user-nav-actions">
+        {% if current_user and current_user.role in ['admin', 'staff'] %}
+        <a href="{{ url_for('main.admin_select_role') if current_user.role == 'admin' else url_for('portal.home') }}"
+           class="btn btn-outline-secondary btn-sm text-nowrap oss-home-btn">
+          <i class="bi bi-house me-1"></i><span class="oss-home-label">Home</span>
+        </a>
+        {% endif %}
+        <div class="form-check form-switch mb-0">
+          <input class="form-check-input" type="checkbox" id="themeToggle" role="switch">
+          <label class="theme-toggle-label" for="themeToggle">
+            <i class="bi bi-sun-fill theme-icon theme-icon-sun"></i>
+            <i class="bi bi-moon-fill theme-icon theme-icon-moon"></i>
+          </label>
+        </div>
+        {% include "portal/components/_user_menu.html" %}
+      </div>
+    </div>
+  </div>
+</nav>
+{% endblock %}
+
+{% block head_extra %}
+{{ super() }}
+<style>
+  .supporter-hero,
+  .supporter-panel {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-soft);
+    border-radius: 1rem;
+  }
+  .supporter-hero { padding: 1.25rem 1.5rem; }
+  .supporter-stat {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-soft);
+    border-radius: 1rem;
+    padding: 1rem;
+    height: 100%;
+  }
+  .supporter-stat .stat-label {
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+  .supporter-task-card {
+    border: 1px solid var(--border-soft);
+    border-radius: 1rem;
+    background: var(--bg-surface);
+    padding: 1rem;
+    height: 100%;
+  }
+  .supporter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    border-radius: 999px;
+    padding: 0.28rem 0.65rem;
+    border: 1px solid var(--border-soft);
+    background: var(--bg-subtle);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  .supporter-table th {
+    color: var(--text-muted);
+    font-size: 0.76rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .supporter-proof {
+    word-break: break-word;
+  }
+  .supporter-action-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+  }
+  .supporter-check-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-height: 2.35rem;
+    border: 1px solid var(--border-soft);
+    border-radius: 0.75rem;
+    background: var(--bg-subtle);
+    padding: 0.45rem 0.65rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+  .supporter-check-pill .form-check-input {
+    margin-top: 0;
+  }
+  .supporter-rank {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-subtle);
+    font-weight: 700;
+  }
+  @media (max-width: 768px) {
+    .supporter-hero { padding: 1rem; }
+    .supporter-table { min-width: 760px; }
+    .supporter-action-grid { grid-template-columns: 1fr; }
+  }
+</style>
+{{ countdown_css() }}
+{% endblock %}
+
+{% block portal_scripts %}
+{{ super() }}
+<script>
+  (function () {
+    function bindSupporterPointTotals() {
+      document.querySelectorAll('.supporter-task-form').forEach(function (form) {
+        var pointsInput = form.querySelector('.js-supporter-points');
+        var totalInput = form.querySelector('.js-supporter-total-points');
+        if (!pointsInput || !totalInput) {
+          return;
+        }
+        var actionInputs = Array.prototype.slice.call(form.querySelectorAll('input[name="action_types"]'));
+        function updateTotal() {
+          var points = parseInt(pointsInput.value || '0', 10);
+          if (!Number.isFinite(points) || points < 0) {
+            points = 0;
+          }
+          var checkedCount = actionInputs.filter(function (input) { return input.checked; }).length;
+          checkedCount = Math.max(1, checkedCount);
+          totalInput.value = String(points * checkedCount);
+        }
+        pointsInput.addEventListener('input', updateTotal);
+        actionInputs.forEach(function (input) {
+          input.addEventListener('change', updateTotal);
+        });
+        updateTotal();
+      });
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', bindSupporterPointTotals);
+    } else {
+      bindSupporterPointTotals();
+    }
+  })();
+</script>
+{{ countdown_js() }}
+{% endblock %}

@@ -1780,28 +1780,43 @@ def home() -> Response:
                 "description": "Akses tugas Monev dan proses penilaian PANBERSS.",
                 "icon": "bi-building",
                 "href": url_for("portal.staff_assignments"),
-                "col_class": "col-md-6 col-12",
+                "col_class": "col-lg-4 col-md-6 col-12",
             },
             {
                 "title": "Hospitality",
                 "description": "Penilaian hospitality tanpa penugasan, terhubung buku tamu.",
                 "icon": "bi-house-heart",
                 "href": url_for("hospitality.staff_home"),
-                "col_class": "col-md-6 col-12",
+                "col_class": "col-lg-4 col-md-6 col-12",
             },
             {
                 "title": "Buku Tamu",
                 "description": "Lihat riwayat buku tamu pribadi Anda.",
                 "icon": "bi-person-vcard",
                 "href": url_for("daftar_tamu.user_guestbook_history"),
-                "col_class": "col-md-6 col-12",
+                "col_class": "col-lg-4 col-md-6 col-12",
             },
             {
                 "title": "Pilih Antrian",
                 "description": "Panggil nomor antrian SPMB dari meja operator yang sudah diklaim.",
-                "icon": "bi-megaphone",
+                "icon": "bi-list-ol",
                 "href": url_for("penugasan.spmb_queue_picker"),
-                "col_class": "col-md-6 col-12",
+                "col_class": "col-lg-4 col-md-6 col-12",
+            },
+            {
+                "title": "Supporter",
+                "description": "Selesaikan task sosial media dan kumpulkan poin.",
+                "icon": "bi-megaphone",
+                "href": url_for("supporter.staff_dashboard"),
+                "col_class": "col-lg-4 col-md-6 col-12",
+            },
+            {
+                "title": "Coming Soon",
+                "description": "Layanan tambahan sedang disiapkan.",
+                "icon": "bi-hourglass-split",
+                "href": "#",
+                "disabled": True,
+                "col_class": "col-lg-4 col-md-6 col-12",
             },
         ]
         return render_template(
@@ -1811,8 +1826,8 @@ def home() -> Response:
             header_title=header_title,
             header_subtitle="Silakan pilih layanan ASKA Portal",
             cards=cards,
-            default_col_class="col-md-6 col-12",
-            enable_odd_center=True,
+            default_col_class="col-lg-4 col-md-6 col-12",
+            enable_odd_center=False,
             show_logout=True,
         )
     if role == "coordinator":
@@ -1841,7 +1856,7 @@ def home() -> Response:
             {
                 "title": "Pilih Antrian",
                 "description": "Panggil nomor antrian SPMB dari meja operator yang sudah diklaim.",
-                "icon": "bi-megaphone",
+                "icon": "bi-list-ol",
                 "href": url_for("penugasan.spmb_queue_picker"),
                 "col_class": "col-md-6 col-12",
             },
@@ -9875,6 +9890,7 @@ def user_profile_settings() -> Response:
         nip = (request.form.get("nip") or profile.get("nip") or "").strip() or None
         nrk = (request.form.get("nrk") or profile.get("nrk") or "").strip() or None
         jabatan = (request.form.get("jabatan") or profile.get("jabatan") or "").strip() or None
+        social_username = (request.form.get("social_username") or profile.get("social_username") or "").strip() or None
 
         current_password = request.form.get("current_password") or ""
         new_password = request.form.get("new_password") or ""
@@ -9929,11 +9945,13 @@ def user_profile_settings() -> Response:
                     nrk=nrk,
                     jabatan=jabatan,
                     password_hash=pw_hash,
+                    social_username=social_username,
                 )
                 # Refresh session data
                 session_user = session.get("user", {})
                 session_user["full_name"] = full_name
                 session_user["email"] = email
+                session_user["social_username"] = social_username
                 session["user"] = session_user
                 flash("Profil berhasil diperbarui.", "success")
                 profile = get_dashboard_user_profile(user["id"])
@@ -10052,6 +10070,7 @@ def _build_session_user_payload(row: dict) -> dict:
         "profile_photo_url": profile_photo_url,
         "no_tester_enabled": bool(row.get("no_tester_enabled")),
         "assigned_class_id": assigned_class_id,
+        "social_username": row.get("social_username"),
     }
 
 

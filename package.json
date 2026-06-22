@@ -6,6 +6,7 @@
   "scripts": {
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
+    "bot:supporter": "python3 bot_supporter.py",
     "wa:start": "node scripts/whatsapp_bridge.js",
     "wa:cc": "node scripts/whatsapp_bridge_cc.js"
   },

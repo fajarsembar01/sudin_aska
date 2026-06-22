@@ -24,7 +24,7 @@
                 <li class="nav-item">
                     <a class="nav-link {% if request.endpoint == 'penugasan.spmb_queue_picker' %}active{% endif %}"
                         href="{{ url_for('penugasan.spmb_queue_picker') }}">
-                        <i class="bi bi-megaphone nav-icon"></i>Pilih Antrian
+                        <i class="bi bi-list-ol nav-icon"></i>Pilih Antrian
                     </a>
                 </li>
                 {% if current_user and current_user.role == 'admin' %}

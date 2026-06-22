@@ -1,0 +1,122 @@
+{% extends "supporter/base_supporter.html" %}
+
+{% block portal_content %}
+<section class="supporter-hero mb-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+    <div>
+      <h1 class="h3 fw-bold mb-1">Verifikasi Supporter</h1>
+      <p class="text-muted mb-0">Review bukti staff. Tombol Telegram dan halaman ini memakai status yang sama.</p>
+    </div>
+    <a class="btn btn-outline-success" href="{{ url_for('supporter.admin_export') }}"><i class="bi bi-download me-1"></i>Export</a>
+  </div>
+</section>
+
+<section class="supporter-panel p-3">
+  <form method="get" class="d-flex flex-wrap gap-2 mb-3">
+    <select class="form-select" name="status" style="max-width: 190px;">
+      {% for key, label in [('pending', 'Pending'), ('submitted', 'Submitted'), ('under_review', 'Direview'), ('verified', 'Terverifikasi'), ('needs_revision', 'Revisi'), ('rejected', 'Ditolak'), ('all', 'Semua')] %}
+      <option value="{{ key }}" {% if status_filter == key %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <input class="form-control" name="q" value="{{ q }}" placeholder="Cari staff, task, akun..." style="max-width: 300px;">
+    <button class="btn btn-outline-primary" type="submit"><i class="bi bi-search"></i></button>
+  </form>
+
+  <div class="table-responsive">
+    <table class="table supporter-table align-middle">
+      <thead>
+        <tr>
+          <th>Staff</th>
+          <th>Task</th>
+          <th>Bukti</th>
+          <th>Status</th>
+          <th>Poin</th>
+          <th>Review</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in submissions %}
+        <tr>
+          <td>
+            <div class="fw-semibold">{{ item.staff_name }}</div>
+            <div class="text-muted small">{{ item.staff_email }}</div>
+            {% if item.social_username %}<div class="small">{{ item.social_username }}</div>{% endif %}
+          </td>
+          <td>
+            <div class="fw-semibold">{{ item.task_title }}</div>
+            <div class="text-muted small">{{ supporter_platform_labels.get(item.platform, item.platform) }} · {{ item.action_summary }}</div>
+            <div class="text-muted small">{{ item.submitted_at|jakarta('%d %b %Y %H:%M') }}</div>
+          </td>
+          <td class="supporter-proof">
+            {% if item.proof_url %}<a href="{{ item.proof_url }}" target="_blank" rel="noopener">Link bukti</a><br>{% endif %}
+            {% if item.metadata and item.metadata.screenshots %}
+              {% for action_key, filepath in item.metadata.screenshots.items() %}
+                <a href="{{ url_for('supporter.proof_file', filename=filepath) }}" target="_blank" class="d-block mb-1 small text-nowrap">
+                  <i class="bi bi-image"></i> SS {{ supporter_action_labels.get(action_key, action_key) }}
+                </a>
+              {% endfor %}
+            {% elif item.proof_file_path %}
+              <a href="{{ url_for('supporter.proof_file', filename=item.proof_file_path) }}" target="_blank">File bukti</a><br>
+            {% endif %}
+            {% if item.proof_text %}<span class="small text-muted d-block mt-1">{{ item.proof_text }}</span>{% endif %}
+          </td>
+          <td><span class="badge {{ supporter_submission_status_badges.get(item.status, 'text-bg-secondary') }}">{{ supporter_submission_status_labels.get(item.status, item.status) }}</span></td>
+          <td>
+            <div class="fw-semibold">{{ item.awarded_points or 0 }} / {{ item.potential_points or 0 }}</div>
+            <div class="text-muted small">terkumpul / potensi</div>
+            {% if item.penalty_percent %}<div class="text-danger small">Penalty {{ item.penalty_percent }}%</div>{% endif %}
+          </td>
+          <td style="min-width: 280px;">
+            {% set reviews = (item.metadata.action_reviews if item.metadata else None) or {} %}
+            {% if item.metadata and item.metadata.screenshots %}
+              {% for action_key, filepath in item.metadata.screenshots.items() %}
+              {% set ar = reviews.get(action_key) %}
+              <div class="border rounded-2 p-2 mb-2">
+                <div class="d-flex justify-content-between align-items-center gap-2 mb-1">
+                  <span class="small fw-semibold">{{ supporter_action_labels.get(action_key, action_key) }}</span>
+                  {% if ar and ar.status %}
+                  <span class="badge {{ supporter_submission_status_badges.get(ar.status, 'text-bg-secondary') }}">{{ supporter_submission_status_labels.get(ar.status, ar.status) }}</span>
+                  {% else %}
+                  <span class="badge text-bg-warning">Menunggu</span>
+                  {% endif %}
+                </div>
+                <a href="{{ url_for('supporter.proof_file', filename=filepath) }}" target="_blank" class="small d-inline-block mb-1"><i class="bi bi-image"></i> Lihat screenshot</a>
+                {% if item.status != 'cancelled' %}
+                <form method="post" action="{{ url_for('supporter.admin_review_action', submission_id=item.id) }}" class="vstack gap-1">
+                  <input type="hidden" name="action_key" value="{{ action_key }}">
+                  <input class="form-control form-control-sm" name="reviewer_note" placeholder="Catatan (opsional)" value="{{ ar.note if ar else '' }}">
+                  <div class="d-flex flex-wrap gap-1">
+                    <button class="btn btn-sm btn-success" name="action" value="verify" type="submit"><i class="bi bi-check2"></i> Verify</button>
+                    <button class="btn btn-sm btn-outline-primary" name="action" value="revision" type="submit"><i class="bi bi-arrow-repeat"></i> Revisi</button>
+                    <button class="btn btn-sm btn-outline-danger" name="action" value="reject" type="submit"><i class="bi bi-x"></i> Tolak</button>
+                  </div>
+                </form>
+                {% endif %}
+              </div>
+              {% endfor %}
+            {% elif item.status not in ['verified', 'cancelled'] %}
+            <form method="post" action="{{ url_for('supporter.admin_review_submission', submission_id=item.id) }}" class="vstack gap-2">
+              <textarea class="form-control form-control-sm" name="reviewer_note" rows="2" placeholder="Catatan admin">{{ item.reviewer_note or '' }}</textarea>
+              <div class="d-flex flex-wrap gap-1">
+                <button class="btn btn-sm btn-success" name="action" value="verify" type="submit"><i class="bi bi-check2"></i> Verify</button>
+                <button class="btn btn-sm btn-outline-primary" name="action" value="revision" type="submit"><i class="bi bi-arrow-repeat"></i> Revisi</button>
+                <button class="btn btn-sm btn-outline-danger" name="action" value="reject" type="submit"><i class="bi bi-x"></i> Tolak</button>
+              </div>
+            </form>
+            {% else %}
+            <div class="small text-muted">
+              {{ item.reviewer_name or '-' }}<br>
+              {{ item.reviewed_at|jakarta('%d %b %Y %H:%M') if item.reviewed_at else '' }}
+            </div>
+            {% if item.reviewer_note %}<div class="small mt-1">{{ item.reviewer_note }}</div>{% endif %}
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" class="text-center text-muted py-4">Tidak ada submission.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

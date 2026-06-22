@@ -1798,6 +1798,7 @@ def get_user_by_email(email: str) -> Optional[DictRow]:
                 no_tester_enabled,
                 assigned_class_id,
                 last_login_at,
+                social_username,
                 COALESCE(account_status, 'approved') AS account_status
             FROM dashboard_users
             WHERE email = %s
@@ -1832,6 +1833,7 @@ def list_dashboard_users() -> List[Dict[str, Any]]:
                 u.merged_to,
                 u.merged_at,
                 u.whatsapp_number,
+                u.social_username,
                 u.requested_kecamatan,
                 u.verification_notes,
                 k.name as kecamatan_name,

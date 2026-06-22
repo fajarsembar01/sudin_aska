@@ -1,0 +1,156 @@
+{% extends "supporter/base_supporter.html" %}
+
+{% block portal_content %}
+<section class="supporter-hero mb-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+    <div>
+      <div class="d-flex align-items-center gap-2 mb-2">
+        <span class="icon-badge feature-icon text-primary"><i class="bi bi-megaphone"></i></span>
+        <h1 class="h3 fw-bold mb-0">Supporter</h1>
+      </div>
+      <p class="text-muted mb-0">Selesaikan task sosial media, kirim bukti, dan kumpulkan poin terverifikasi.</p>
+    </div>
+    <a class="btn btn-outline-primary" href="{{ url_for('supporter.leaderboard') }}">
+      <i class="bi bi-trophy me-1"></i>Leaderboard
+    </a>
+  </div>
+</section>
+
+<section class="row g-3 mb-4">
+  <div class="col-md-3 col-6">
+    <div class="supporter-stat">
+      <div class="stat-label">Total Poin</div>
+      <div class="h2 fw-bold mb-0">{{ stats.total_points or 0 }}</div>
+    </div>
+  </div>
+  <div class="col-md-3 col-6">
+    <div class="supporter-stat">
+      <div class="stat-label">Terverifikasi</div>
+      <div class="h2 fw-bold mb-0">{{ stats.verified_submissions or 0 }}</div>
+    </div>
+  </div>
+  <div class="col-md-3 col-6">
+    <div class="supporter-stat">
+      <div class="stat-label">Menunggu</div>
+      <div class="h2 fw-bold mb-0">{{ stats.pending_submissions or 0 }}</div>
+    </div>
+  </div>
+  <div class="col-md-3 col-6">
+    <div class="supporter-stat">
+      <div class="stat-label">Peringkat</div>
+      <div class="h2 fw-bold mb-0">{{ stats.rank or '-' }}</div>
+    </div>
+  </div>
+</section>
+
+<section class="mb-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="h5 fw-bold mb-0">Task Aktif</h2>
+    <span class="text-muted small">{{ tasks|length }} task</span>
+  </div>
+  {% if tasks %}
+  <div class="row g-3">
+    {% for task in tasks %}
+    <div class="col-lg-4 col-md-6">
+      <div class="supporter-task-card">
+        <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+          <div>
+            <div class="fw-bold">{{ task.title }}</div>
+            <div class="text-muted small">{{ task.campaign_name or 'Kampanye umum' }}</div>
+          </div>
+          {% if task.submission_status %}
+          <span class="badge {{ supporter_submission_status_badges.get(task.submission_status, 'text-bg-secondary') }}">
+            {{ supporter_submission_status_labels.get(task.submission_status, task.submission_status) }}
+          </span>
+          {% endif %}
+        </div>
+        <div class="d-flex flex-wrap gap-2 mb-3">
+          <span class="supporter-chip"><i class="bi bi-broadcast"></i>{{ supporter_platform_labels.get(task.platform, task.platform) }}</span>
+          <span class="supporter-chip"><i class="bi bi-check2-circle"></i>{{ task.action_summary }}</span>
+          <span class="supporter-chip"><i class="bi bi-star"></i>{{ task.current_potential_points }} poin</span>
+        </div>
+        {% if task.deadline_at or task.end_at %}
+        <div class="small text-muted mb-3">
+          {% if task.deadline_at %}
+          <i class="bi bi-clock me-1"></i>Deadline {{ task.deadline_at|jakarta('%d %b %Y %H:%M') }} WIB
+          {% if task.is_late_now %}
+          <span class="text-danger fw-semibold">telat {{ task.current_penalty_percent }}%</span>
+          {% elif task.deadline_iso and (not task.submission_status or task.submission_status in ['needs_revision', 'rejected', 'cancelled']) %}
+          <span class="deadline-countdown small is-hidden ms-1" data-countdown-extended data-deadline="{{ task.deadline_iso }}">
+            <i class="bi bi-hourglass-split me-1"></i><span class="deadline-countdown-text"></span>
+          </span>
+          {% endif %}
+          {% endif %}
+          {% if task.end_at %}
+          <div><i class="bi bi-lock me-1"></i>Berakhir {{ task.end_at|jakarta('%d %b %Y %H:%M') }} WIB</div>
+          {% endif %}
+        </div>
+        {% endif %}
+        <a href="{{ url_for('supporter.task_detail', task_id=task.id) }}" class="btn btn-sm btn-primary w-100">
+          Detail Task
+        </a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="supporter-panel p-4 text-center text-muted">Belum ada task aktif.</div>
+  {% endif %}
+</section>
+
+<section class="row g-3">
+  <div class="col-lg-8">
+    <div class="supporter-panel p-3">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="h6 fw-bold mb-0">Riwayat Submission</h2>
+      </div>
+      <div class="table-responsive">
+        <table class="table supporter-table align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Task</th>
+              <th>Status</th>
+              <th>Poin</th>
+              <th>Dikirim</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in submissions %}
+            <tr>
+              <td>
+                <div class="fw-semibold">{{ item.task_title }}</div>
+                <div class="text-muted small">{{ supporter_platform_labels.get(item.platform, item.platform) }} · {{ item.action_summary }}</div>
+              </td>
+              <td><span class="badge {{ supporter_submission_status_badges.get(item.status, 'text-bg-secondary') }}">{{ supporter_submission_status_labels.get(item.status, item.status) }}</span></td>
+              <td>{{ item.awarded_points if item.status == 'verified' else item.potential_points }}</td>
+              <td class="text-muted small">{{ item.submitted_at|jakarta('%d %b %Y %H:%M') }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4" class="text-center text-muted py-4">Belum ada submission.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="supporter-panel p-3">
+      <h2 class="h6 fw-bold mb-3">Top Supporter</h2>
+      {% for row in leaderboard %}
+      <div class="d-flex align-items-center justify-content-between gap-2 py-2 border-bottom">
+        <div class="d-flex align-items-center gap-2">
+          <span class="supporter-rank">{{ row.rank }}</span>
+          <div>
+            <div class="fw-semibold small">{{ row.staff_name }}</div>
+            <div class="text-muted small">{{ row.verified_count }} task</div>
+          </div>
+        </div>
+        <span class="badge text-bg-success">{{ row.total_points }} poin</span>
+      </div>
+      {% else %}
+      <div class="text-muted small">Leaderboard belum tersedia.</div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

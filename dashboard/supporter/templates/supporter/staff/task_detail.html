@@ -1,0 +1,258 @@
+{% extends "supporter/base_supporter.html" %}
+
+{% block portal_content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <a href="{{ url_for('supporter.staff_dashboard') }}" class="btn btn-outline-secondary btn-sm">
+    <i class="bi bi-arrow-left me-1"></i>Kembali
+  </a>
+  {% if submission %}
+  <span class="badge {{ supporter_submission_status_badges.get(submission.status, 'text-bg-secondary') }}">
+    {{ supporter_submission_status_labels.get(submission.status, submission.status) }}
+  </span>
+  {% endif %}
+</div>
+
+<section class="row g-3">
+  <div class="col-lg-7">
+    <div class="supporter-panel p-4 h-100">
+      <div class="d-flex flex-wrap gap-2 mb-3">
+        <span class="supporter-chip"><i class="bi bi-broadcast"></i>{{ supporter_platform_labels.get(task.platform, task.platform) }}</span>
+        <span class="supporter-chip"><i class="bi bi-check2-circle"></i>{{ task.action_summary }}</span>
+        <span class="supporter-chip"><i class="bi bi-star"></i>{{ current_points.potential_points }} poin</span>
+      </div>
+      <div class="small text-muted mb-3">
+        Poin dihitung {{ current_points.points_per_action }} x {{ current_points.action_count }} aksi.
+      </div>
+      <h1 class="h3 fw-bold mb-2">{{ task.title }}</h1>
+      <p class="text-muted">{{ task.description or 'Tidak ada deskripsi tambahan.' }}</p>
+      <div class="row g-2 mb-3">
+        <div class="col-md-4">
+          <div class="border rounded-3 p-3 h-100">
+            <div class="text-muted small">Target</div>
+            <div class="fw-semibold supporter-proof">
+              {% if task.target_url %}
+              <a href="{{ task.target_url }}" target="_blank" rel="noopener">{{ task.target_account or task.target_url }}</a>
+              {% else %}
+              {{ task.target_account or '-' }}
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="border rounded-3 p-3 h-100">
+            <div class="text-muted small">Deadline Poin Penuh</div>
+            <div class="fw-semibold">
+              {{ task.deadline_at|jakarta('%d %b %Y %H:%M') if task.deadline_at else 'Tanpa deadline' }}
+            </div>
+            {% if current_points.is_late %}
+            <div class="small text-danger">Penalty {{ current_points.penalty_percent }}%</div>
+            {% elif task.deadline_iso and (not submission or submission.status in ['needs_revision', 'rejected', 'cancelled']) %}
+            <div class="mt-1">
+              <span class="deadline-countdown is-hidden" data-countdown-extended data-deadline="{{ task.deadline_iso }}">
+                <i class="bi bi-hourglass-split me-1"></i><span class="deadline-countdown-text"></span>
+              </span>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="border rounded-3 p-3 h-100">
+            <div class="text-muted small">Waktu Berakhir</div>
+            <div class="fw-semibold">
+              {{ task.end_at|jakarta('%d %b %Y %H:%M') if task.end_at else 'Tanpa batas waktu' }}
+            </div>
+            {% if current_points.is_ended %}
+            <div class="small text-danger">Submit ditutup</div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      <div class="border rounded-3 p-3">
+        <div class="text-muted small mb-2">Aksi yang harus diselesaikan</div>
+        <div class="d-flex flex-wrap gap-2 mb-3">
+          {% for action_key in task.action_types %}
+          <span class="supporter-chip"><i class="bi bi-check2"></i>{{ supporter_action_labels.get(action_key, action_key) }}</span>
+          {% endfor %}
+        </div>
+        <div class="text-muted small mb-1">Instruksi</div>
+        <div style="white-space: pre-wrap;">{{ task.instructions or 'Ikuti target dan kirim bukti sesuai aksi task.' }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="supporter-panel p-4">
+      <h2 class="h5 fw-bold mb-3">Submission</h2>
+      {% if submission and submission.status not in ['needs_revision', 'rejected', 'cancelled'] %}
+      <div class="alert alert-info mb-3">
+        Submission sudah tercatat. Admin akan memverifikasi melalui sistem Supporter.
+      </div>
+      <dl class="row small mb-0">
+        <dt class="col-5 text-muted">Dikirim</dt>
+        <dd class="col-7">{{ submission.submitted_at|jakarta('%d %b %Y %H:%M') }}</dd>
+        <dt class="col-5 text-muted">Potensi Poin</dt>
+        <dd class="col-7">{{ submission.potential_points }}</dd>
+        <dt class="col-5 text-muted">Poin Award</dt>
+        <dd class="col-7">{{ submission.awarded_points }}</dd>
+        {% if submission.metadata and submission.metadata.screenshots %}
+        <dt class="col-5 text-muted">Status per Aksi</dt>
+        <dd class="col-7">
+          {% set reviews = submission.metadata.action_reviews or {} %}
+          {% for action_key in submission.metadata.screenshots.keys() %}
+          {% set ar = reviews.get(action_key) %}
+          <div class="d-flex justify-content-between align-items-center gap-2 mb-1">
+            <span class="small">{{ supporter_action_labels.get(action_key, action_key) }}</span>
+            {% if ar and ar.status %}
+            <span class="badge {{ supporter_submission_status_badges.get(ar.status, 'text-bg-secondary') }}">
+              {{ supporter_submission_status_labels.get(ar.status, ar.status) }}{% if ar.status == 'verified' and ar.points %} (+{{ ar.points }}){% endif %}
+            </span>
+            {% else %}
+            <span class="badge text-bg-warning">Menunggu</span>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </dd>
+        {% endif %}
+        {% if submission.social_username %}
+        <dt class="col-5 text-muted">Akun Sosmed</dt>
+        <dd class="col-7">{{ submission.social_username }}</dd>
+        {% endif %}
+        {% if submission.proof_url %}
+        <dt class="col-5 text-muted">Link Bukti</dt>
+        <dd class="col-7"><a href="{{ submission.proof_url }}" target="_blank" rel="noopener">Link Bukti</a></dd>
+        {% endif %}
+        {% if submission.metadata and submission.metadata.screenshots %}
+        <dt class="col-5 text-muted">Screenshot Bukti</dt>
+        <dd class="col-7">
+          {% for action_key, filepath in submission.metadata.screenshots.items() %}
+            <a href="{{ url_for('supporter.proof_file', filename=filepath) }}" target="_blank" class="d-block mb-1">
+              <i class="bi bi-image me-1"></i>SS {{ supporter_action_labels.get(action_key, action_key) }}
+            </a>
+          {% endfor %}
+        </dd>
+        {% elif submission.proof_file_path %}
+        <dt class="col-5 text-muted">File Bukti</dt>
+        <dd class="col-7">
+          <a href="{{ url_for('supporter.proof_file', filename=submission.proof_file_path) }}" target="_blank">
+            <i class="bi bi-file-earmark me-1"></i>File Bukti
+          </a>
+        </dd>
+        {% endif %}
+        {% if submission.proof_text %}
+        <dt class="col-5 text-muted">Catatan Bukti</dt>
+        <dd class="col-7" style="white-space: pre-wrap;">{{ submission.proof_text }}</dd>
+        {% endif %}
+        {% if submission.reviewer_note %}
+        <dt class="col-5 text-muted">Catatan Admin</dt>
+        <dd class="col-7">{{ submission.reviewer_note }}</dd>
+        {% endif %}
+      </dl>
+      {% if submission.status in ['submitted', 'under_review'] %}
+      <form method="post" action="{{ url_for('supporter.cancel_submission_route', submission_id=submission.id) }}" class="mt-3">
+        <button class="btn btn-outline-danger btn-sm" type="submit" onclick="return confirm('Batalkan submission ini?');">
+          <i class="bi bi-x-circle me-1"></i>Batalkan
+        </button>
+      </form>
+      {% endif %}
+      {% elif can_submit %}
+      {% if submission and submission.reviewer_note %}
+      <div class="alert alert-warning">
+        <div class="fw-semibold">Catatan admin</div>
+        {{ submission.reviewer_note }}
+      </div>
+      {% endif %}
+      <form method="post" enctype="multipart/form-data" action="{{ url_for('supporter.submit_task_route', task_id=task.id) }}" class="vstack gap-3">
+        <div>
+          <label class="form-label">Username/Akun Sosmed <span class="text-danger">*</span></label>
+          <input type="text" class="form-control" name="social_username" placeholder="@username" value="{{ current_user.social_username or '' }}" required>
+        </div>
+        <div>
+          <label class="form-label">Link Bukti{% if task.requires_proof_url %} <span class="text-danger">*</span>{% endif %}</label>
+          <input type="url" class="form-control" name="proof_url" placeholder="https://..." {% if task.requires_proof_url %}required{% endif %}>
+        </div>
+        <div>
+          <label class="form-label">Catatan Bukti Semua Aksi{% if task.requires_proof_text %} <span class="text-danger">*</span>{% endif %}</label>
+          <textarea class="form-control" name="proof_text" rows="4" placeholder="Contoh: semua aksi sudah dilakukan dengan akun ..." {% if task.requires_proof_text %}required{% endif %}></textarea>
+        </div>
+        {% if task.requires_screenshot %}
+          {% if task.action_types %}
+            {% for action_key in task.action_types %}
+            <div>
+              <label class="form-label">Screenshot/File Bukti Aksi: {{ supporter_action_labels.get(action_key, action_key) }} <span class="text-danger">*</span></label>
+              <div class="proof-preview-wrap mb-2" hidden>
+                <img class="proof-preview img-fluid rounded border" alt="Preview bukti" style="max-height: 220px;">
+                <div class="proof-preview-name small text-muted mt-1"></div>
+              </div>
+              <input type="file" class="form-control js-proof-input" name="proof_file_{{ action_key }}" accept=".jpg,.jpeg,.png,.webp,.pdf,image/*,application/pdf" required>
+              <div class="form-text">Format: jpg, png, webp, atau pdf. Gambar otomatis dikompres maks 100KB.</div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div>
+              <label class="form-label">Screenshot/File Bukti <span class="text-danger">*</span></label>
+              <div class="proof-preview-wrap mb-2" hidden>
+                <img class="proof-preview img-fluid rounded border" alt="Preview bukti" style="max-height: 220px;">
+                <div class="proof-preview-name small text-muted mt-1"></div>
+              </div>
+              <input type="file" class="form-control js-proof-input" name="proof_file" accept=".jpg,.jpeg,.png,.webp,.pdf,image/*,application/pdf" required>
+              <div class="form-text">Format: jpg, png, webp, atau pdf. Gambar otomatis dikompres maks 100KB.</div>
+            </div>
+          {% endif %}
+        {% endif %}
+        <button class="btn btn-primary" type="submit">
+          <i class="bi bi-send me-1"></i>Kirim Submission
+        </button>
+      </form>
+      {% else %}
+      <div class="alert alert-secondary mb-0">{{ submit_reason or 'Task belum dapat disubmit.' }}</div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block portal_scripts %}
+{{ super() }}
+<script>
+  (function () {
+    function bindProofPreview(input) {
+      input.addEventListener('change', function () {
+        var wrap = input.parentElement ? input.parentElement.querySelector('.proof-preview-wrap') : null;
+        if (!wrap) return;
+        var img = wrap.querySelector('.proof-preview');
+        var nameEl = wrap.querySelector('.proof-preview-name');
+        var file = input.files && input.files[0];
+
+        if (img && img.dataset.objectUrl) {
+          URL.revokeObjectURL(img.dataset.objectUrl);
+          img.removeAttribute('data-object-url');
+        }
+
+        if (!file) {
+          wrap.hidden = true;
+          if (img) { img.removeAttribute('src'); img.style.display = 'none'; }
+          if (nameEl) nameEl.textContent = '';
+          return;
+        }
+
+        wrap.hidden = false;
+        if (nameEl) nameEl.textContent = file.name;
+
+        if (img) {
+          if (file.type && file.type.indexOf('image/') === 0) {
+            var url = URL.createObjectURL(file);
+            img.dataset.objectUrl = url;
+            img.src = url;
+            img.style.display = 'block';
+          } else {
+            // Non-image (e.g. PDF): show filename only.
+            img.removeAttribute('src');
+            img.style.display = 'none';
+          }
+        }
+      });
+    }
+    document.querySelectorAll('.js-proof-input').forEach(bindProofPreview);
+  })();
+</script>
+{% endblock %}
