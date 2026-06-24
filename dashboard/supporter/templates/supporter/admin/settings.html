@@ -50,12 +50,21 @@
       <form method="post" class="row g-2 align-items-end mb-3">
         <div class="col-md-5">
           <label class="form-label">Verifikator (Admin/Staff)</label>
-          <select class="form-select" name="dashboard_user_id" required>
+          <input class="form-control mb-2" type="search" id="supporterVerifierSearch"
+                 placeholder="Cari nama, email, atau role...">
+          <select class="form-select" name="dashboard_user_id" id="supporterVerifierSelect" required>
             <option value="">Pilih verifikator</option>
             {% for u in admin_users %}
-            <option value="{{ u.id }}">{{ u.full_name or u.email }} — {{ 'Admin' if u.role == 'admin' else 'Staff' }}</option>
+            {% set role_label = 'Admin' if u.role == 'admin' else 'Staff' %}
+            <option value="{{ u.id }}"
+                    data-search="{{ ((u.full_name or '') ~ ' ' ~ (u.email or '') ~ ' ' ~ role_label)|lower }}">
+              {{ u.full_name or u.email }} — {{ role_label }}
+            </option>
             {% endfor %}
           </select>
+          <div class="form-text" id="supporterVerifierSearchHelp">
+            Hanya akun Active yang bisa dipilih.
+          </div>
         </div>
         <div class="col-md-5">
           <label class="form-label">Username Telegram</label>
@@ -138,4 +147,51 @@
     </table>
   </div>
 </section>
+{% endblock %}
+
+{% block portal_scripts %}
+{{ super() }}
+<script>
+  (function () {
+    function bindVerifierSearch() {
+      var input = document.getElementById('supporterVerifierSearch');
+      var select = document.getElementById('supporterVerifierSelect');
+      var help = document.getElementById('supporterVerifierSearchHelp');
+      if (!input || !select) return;
+
+      var options = Array.prototype.slice.call(select.options).filter(function (option) {
+        return option.value;
+      });
+
+      function applyFilter() {
+        var query = (input.value || '').trim().toLowerCase();
+        var visibleCount = 0;
+        options.forEach(function (option) {
+          var haystack = option.dataset.search || option.textContent || '';
+          var match = !query || haystack.toLowerCase().indexOf(query) !== -1;
+          option.hidden = !match;
+          option.disabled = !match;
+          if (match) visibleCount += 1;
+        });
+        if (select.value && select.selectedOptions.length && select.selectedOptions[0].hidden) {
+          select.value = '';
+        }
+        if (help) {
+          help.textContent = visibleCount
+            ? 'Hanya akun Active yang bisa dipilih.'
+            : 'Tidak ada akun Active yang cocok.';
+        }
+      }
+
+      input.addEventListener('input', applyFilter);
+      applyFilter();
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', bindVerifierSearch);
+    } else {
+      bindVerifierSearch();
+    }
+  })();
+</script>
 {% endblock %}

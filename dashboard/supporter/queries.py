@@ -1118,7 +1118,12 @@ def fetch_admin_stats() -> Dict[str, Any]:
                 (SELECT COUNT(*) FROM supporter_submissions) AS total_submissions,
                 (SELECT COUNT(*) FROM supporter_submissions WHERE status IN ('submitted', 'under_review')) AS pending_submissions,
                 (SELECT COUNT(*) FROM supporter_submissions WHERE status = 'verified') AS verified_submissions,
-                (SELECT COALESCE(SUM(awarded_points), 0) FROM supporter_submissions) AS total_points
+                (
+                    SELECT COALESCE(SUM(s.awarded_points), 0)
+                    FROM supporter_submissions s
+                    JOIN supporter_tasks t ON t.id = s.task_id
+                    WHERE t.status <> 'archived'
+                ) AS total_points
             FROM supporter_tasks
             """
         )
@@ -1132,12 +1137,13 @@ def fetch_staff_stats(staff_id: int) -> Dict[str, Any]:
             """
             SELECT
                 COUNT(*) AS total_submissions,
-                COUNT(*) FILTER (WHERE status IN ('submitted', 'under_review')) AS pending_submissions,
-                COUNT(*) FILTER (WHERE status = 'verified') AS verified_submissions,
-                COUNT(*) FILTER (WHERE status = 'needs_revision') AS revision_submissions,
-                COALESCE(SUM(awarded_points), 0) AS total_points
-            FROM supporter_submissions
-            WHERE staff_id = %s
+                COUNT(*) FILTER (WHERE s.status IN ('submitted', 'under_review')) AS pending_submissions,
+                COUNT(*) FILTER (WHERE s.status = 'verified') AS verified_submissions,
+                COUNT(*) FILTER (WHERE s.status = 'needs_revision') AS revision_submissions,
+                COALESCE(SUM(s.awarded_points) FILTER (WHERE t.status <> 'archived'), 0) AS total_points
+            FROM supporter_submissions s
+            JOIN supporter_tasks t ON t.id = s.task_id
+            WHERE s.staff_id = %s
             """,
             (staff_id,),
         )
@@ -1157,20 +1163,21 @@ def fetch_leaderboard(*, limit: int = 50) -> List[Dict[str, Any]]:
                 u.full_name AS staff_name,
                 u.email AS staff_email,
                 u.nip AS staff_nip,
-                COUNT(s.id) FILTER (WHERE s.awarded_points > 0) AS verified_count,
-                COALESCE(SUM(s.awarded_points), 0) AS total_points,
-                MAX(s.reviewed_at) FILTER (WHERE s.awarded_points > 0) AS last_verified_at,
+                COUNT(s.id) FILTER (WHERE s.awarded_points > 0 AND t.status <> 'archived') AS verified_count,
+                COALESCE(SUM(s.awarded_points) FILTER (WHERE t.status <> 'archived'), 0) AS total_points,
+                MAX(s.reviewed_at) FILTER (WHERE s.awarded_points > 0 AND t.status <> 'archived') AS last_verified_at,
                 RANK() OVER (
                     ORDER BY
-                        COALESCE(SUM(s.awarded_points), 0) DESC,
-                        COUNT(s.id) FILTER (WHERE s.awarded_points > 0) DESC,
-                        MAX(s.reviewed_at) FILTER (WHERE s.awarded_points > 0) ASC NULLS LAST
+                        COALESCE(SUM(s.awarded_points) FILTER (WHERE t.status <> 'archived'), 0) DESC,
+                        COUNT(s.id) FILTER (WHERE s.awarded_points > 0 AND t.status <> 'archived') DESC,
+                        MAX(s.reviewed_at) FILTER (WHERE s.awarded_points > 0 AND t.status <> 'archived') ASC NULLS LAST
                 ) AS rank
             FROM dashboard_users u
             LEFT JOIN supporter_submissions s ON s.staff_id = u.id
+            LEFT JOIN supporter_tasks t ON t.id = s.task_id
             WHERE u.role = 'staff'
             GROUP BY u.id, u.full_name, u.email, u.nip
-            HAVING COALESCE(SUM(s.awarded_points), 0) > 0
+            HAVING COALESCE(SUM(s.awarded_points) FILTER (WHERE t.status <> 'archived'), 0) > 0
             ORDER BY rank ASC, u.full_name ASC
             LIMIT %s
             """,
@@ -1187,16 +1194,17 @@ def fetch_staff_rank(staff_id: int) -> Optional[Dict[str, Any]]:
             WITH ranked AS (
                 SELECT
                     u.id AS staff_id,
-                    COALESCE(SUM(s.awarded_points), 0) AS total_points,
-                    COUNT(s.id) FILTER (WHERE s.awarded_points > 0) AS verified_count,
+                    COALESCE(SUM(s.awarded_points) FILTER (WHERE t.status <> 'archived'), 0) AS total_points,
+                    COUNT(s.id) FILTER (WHERE s.awarded_points > 0 AND t.status <> 'archived') AS verified_count,
                     RANK() OVER (
                         ORDER BY
-                            COALESCE(SUM(s.awarded_points), 0) DESC,
-                            COUNT(s.id) FILTER (WHERE s.awarded_points > 0) DESC,
-                            MAX(s.reviewed_at) FILTER (WHERE s.awarded_points > 0) ASC NULLS LAST
+                            COALESCE(SUM(s.awarded_points) FILTER (WHERE t.status <> 'archived'), 0) DESC,
+                            COUNT(s.id) FILTER (WHERE s.awarded_points > 0 AND t.status <> 'archived') DESC,
+                            MAX(s.reviewed_at) FILTER (WHERE s.awarded_points > 0 AND t.status <> 'archived') ASC NULLS LAST
                     ) AS rank
                 FROM dashboard_users u
                 LEFT JOIN supporter_submissions s ON s.staff_id = u.id
+                LEFT JOIN supporter_tasks t ON t.id = s.task_id
                 WHERE u.role = 'staff'
                 GROUP BY u.id
             )
@@ -1283,15 +1291,62 @@ def list_supporter_verifier_candidates() -> List[Dict[str, Any]]:
     with get_cursor() as cur:
         cur.execute(
             """
-            SELECT id, full_name, email, role
+            SELECT
+                id,
+                full_name,
+                email,
+                role,
+                COALESCE(account_status, 'approved') AS account_status
             FROM dashboard_users
             WHERE role IN ('admin', 'staff')
+              AND COALESCE(account_status, 'approved') = 'approved'
             ORDER BY
                 CASE WHEN role = 'admin' THEN 0 ELSE 1 END,
-                full_name ASC
+                LOWER(full_name) ASC,
+                LOWER(email) ASC
             """
         )
         return [dict(row) for row in cur.fetchall()]
+
+
+def is_supporter_verifier_candidate(user_id: Optional[int]) -> bool:
+    """Return whether a dashboard user may be assigned as a supporter verifier."""
+    if not user_id:
+        return False
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT 1
+            FROM dashboard_users
+            WHERE id = %s
+              AND role IN ('admin', 'staff')
+              AND COALESCE(account_status, 'approved') = 'approved'
+            LIMIT 1
+            """,
+            (user_id,),
+        )
+        return bool(cur.fetchone())
+
+
+def is_supporter_verifier_user(user_id: Optional[int]) -> bool:
+    """Return whether an active dashboard user is assigned as a Supporter verifier."""
+    if not user_id:
+        return False
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT 1
+            FROM telegram_admin_accounts ta
+            JOIN dashboard_users u ON u.id = ta.dashboard_user_id
+            WHERE ta.dashboard_user_id = %s
+              AND ta.notification_scope = %s
+              AND u.role IN ('admin', 'staff')
+              AND COALESCE(u.account_status, 'approved') = 'approved'
+            LIMIT 1
+            """,
+            (user_id, SUPPORTER_TELEGRAM_SCOPE),
+        )
+        return bool(cur.fetchone())
 
 
 def get_supporter_verifier_by_username(username: str) -> Optional[Dict[str, Any]]:
@@ -1316,6 +1371,7 @@ def get_supporter_verifier_by_username(username: str) -> Optional[Dict[str, Any]
             WHERE ta.telegram_username = %s
               AND ta.notification_scope = %s
               AND u.role IN ('admin', 'staff')
+              AND COALESCE(u.account_status, 'approved') = 'approved'
             LIMIT 1
             """,
             (normalized, SUPPORTER_TELEGRAM_SCOPE),
@@ -1367,7 +1423,15 @@ def get_supporter_staff_profile(staff_id: int) -> Dict[str, Any]:
     ensure_supporter_schema()
     with get_cursor() as cur:
         cur.execute(
-            "SELECT socials, updated_at FROM supporter_staff_profiles WHERE staff_id = %s",
+            """
+            SELECT
+                p.socials,
+                p.updated_at,
+                u.social_username
+            FROM dashboard_users u
+            LEFT JOIN supporter_staff_profiles p ON p.staff_id = u.id
+            WHERE u.id = %s
+            """,
             (staff_id,),
         )
         row = cur.fetchone()
@@ -1384,6 +1448,9 @@ def get_supporter_staff_profile(staff_id: int) -> Dict[str, Any]:
         if isinstance(raw, dict):
             socials = {str(k): str(v) for k, v in raw.items() if v}
         updated_at = data.get("updated_at")
+        legacy_instagram = (data.get("social_username") or "").strip().lstrip("@")
+        if legacy_instagram and not socials.get("instagram"):
+            socials["instagram"] = legacy_instagram
     complete = all(socials.get(key) for key in SUPPORTER_REQUIRED_SOCIALS)
     return {"socials": socials, "updated_at": updated_at, "is_complete": complete}
 
@@ -1395,7 +1462,7 @@ def upsert_supporter_staff_profile(staff_id: int, socials: Dict[str, Any]) -> bo
     clean: Dict[str, str] = {}
     for key, value in (socials or {}).items():
         if key in valid_keys:
-            text = str(value or "").strip()
+            text = str(value or "").strip().lstrip("@").strip()
             if text:
                 clean[key] = text
     with get_cursor(commit=True) as cur:

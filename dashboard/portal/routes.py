@@ -9873,6 +9873,12 @@ def set_hospitality_date_mode() -> Response:
 @role_required("admin", "coordinator", "staff")
 def user_profile_settings() -> Response:
     """Allow dashboard users to edit basic profile info and change password."""
+    from dashboard.supporter.queries import (
+        SUPPORTER_SOCIAL_FIELDS,
+        get_supporter_staff_profile,
+        upsert_supporter_staff_profile,
+    )
+
     user = current_user()
     profile = get_dashboard_user_profile(user["id"])
     if not profile:
@@ -9880,6 +9886,10 @@ def user_profile_settings() -> Response:
         return redirect(url_for("portal.home"))
     profile_view = {k: v for k, v in profile.items() if k != "password_hash"}
     profile_view["profile_photo_url"] = _build_profile_photo_url(profile.get("profile_photo_path"))
+    is_staff_user = (user.get("role") or "").strip().lower() == "staff"
+    supporter_profile = get_supporter_staff_profile(int(user["id"])) if is_staff_user else {"socials": {}, "is_complete": False}
+    profile_view["supporter_socials"] = supporter_profile.get("socials") or {}
+    profile_view["supporter_profile_complete"] = bool(supporter_profile.get("is_complete"))
 
     if request.method == "POST":
         form_type = (request.form.get("form_type") or "profile").strip().lower()
@@ -9891,6 +9901,11 @@ def user_profile_settings() -> Response:
         nrk = (request.form.get("nrk") or profile.get("nrk") or "").strip() or None
         jabatan = (request.form.get("jabatan") or profile.get("jabatan") or "").strip() or None
         social_username = (request.form.get("social_username") or profile.get("social_username") or "").strip() or None
+        supporter_socials = {}
+        if is_staff_user and form_type == "profile":
+            for key, _label, _required in SUPPORTER_SOCIAL_FIELDS:
+                supporter_socials[key] = (request.form.get(f"supporter_social_{key}") or "").strip()
+            social_username = (supporter_socials.get("instagram") or social_username or "").strip().lstrip("@") or None
 
         current_password = request.form.get("current_password") or ""
         new_password = request.form.get("new_password") or ""
@@ -9947,6 +9962,8 @@ def user_profile_settings() -> Response:
                     password_hash=pw_hash,
                     social_username=social_username,
                 )
+                if is_staff_user and form_type == "profile":
+                    upsert_supporter_staff_profile(int(user["id"]), supporter_socials)
                 # Refresh session data
                 session_user = session.get("user", {})
                 session_user["full_name"] = full_name
@@ -9957,6 +9974,9 @@ def user_profile_settings() -> Response:
                 profile = get_dashboard_user_profile(user["id"])
                 profile_view = {k: v for k, v in profile.items() if k != "password_hash"}
                 profile_view["profile_photo_url"] = _build_profile_photo_url(profile.get("profile_photo_path"))
+                supporter_profile = get_supporter_staff_profile(int(user["id"])) if is_staff_user else {"socials": {}, "is_complete": False}
+                profile_view["supporter_socials"] = supporter_profile.get("socials") or {}
+                profile_view["supporter_profile_complete"] = bool(supporter_profile.get("is_complete"))
             except Exception as exc:
                 current_app.logger.error(f"Gagal memperbarui profil: {exc}")
                 flash("Gagal memperbarui profil.", "danger")
@@ -9965,6 +9985,7 @@ def user_profile_settings() -> Response:
     return render_template(
         "portal/profile.html",
         profile=profile_view,
+        supporter_social_fields=SUPPORTER_SOCIAL_FIELDS,
         hospitality_date_mode=hospitality_date_mode,
     )
 

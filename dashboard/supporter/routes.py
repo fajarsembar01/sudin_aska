@@ -5,8 +5,9 @@ import io
 import os
 import uuid
 from datetime import datetime
+from functools import wraps
 from pathlib import Path, PurePosixPath
-from typing import Any, Dict, Optional
+from typing import Any, Callable, Dict, Optional
 
 from flask import (
     Blueprint,
@@ -16,6 +17,7 @@ from flask import (
     render_template,
     request,
     send_from_directory,
+    session,
     url_for,
 )
 from werkzeug.utils import secure_filename
@@ -50,6 +52,8 @@ from .queries import (
     get_supporter_setting,
     get_supporter_staff_profile,
     get_task,
+    is_supporter_verifier_candidate,
+    is_supporter_verifier_user,
     list_activity_logs,
     list_staff_tasks,
     list_submissions,
@@ -109,6 +113,7 @@ SUBMISSION_STATUS_BADGES = {
 @supporter_bp.context_processor
 def inject_supporter_context() -> Dict[str, Any]:
     context = portal_inject_permissions() or {}
+    user = current_user() or {}
     context.update(
         {
             "supporter_action_labels": ACTION_LABELS,
@@ -116,6 +121,7 @@ def inject_supporter_context() -> Dict[str, Any]:
             "supporter_task_status_labels": TASK_STATUS_LABELS,
             "supporter_submission_status_labels": SUBMISSION_STATUS_LABELS,
             "supporter_submission_status_badges": SUBMISSION_STATUS_BADGES,
+            "supporter_can_manage_tasks": _can_manage_supporter_tasks(user),
         }
     )
     return context
@@ -149,6 +155,34 @@ def _datetime_local_value(value: Optional[datetime]) -> str:
 
 def _clean_text(name: str, *, default: str = "") -> str:
     return (request.form.get(name) or default).strip()
+
+
+def _can_manage_supporter_tasks(user: Optional[Dict[str, Any]]) -> bool:
+    role = ((user or {}).get("role") or "").strip().lower()
+    if role == "admin":
+        return True
+    if role != "staff":
+        return False
+    try:
+        return is_supporter_verifier_user(int((user or {}).get("id") or 0))
+    except (TypeError, ValueError):
+        return False
+
+
+def supporter_task_manager_required(view: Callable) -> Callable:
+    @wraps(view)
+    def wrapper(*args, **kwargs):
+        user = current_user() or {}
+        if not user:
+            return redirect(url_for("auth.login", next=request.path))
+        if _can_manage_supporter_tasks(user):
+            return view(*args, **kwargs)
+        flash("Anda tidak memiliki akses untuk mengelola task Supporter.", "danger")
+        if (user.get("role") or "").strip().lower() == "staff":
+            return redirect(url_for("supporter.staff_dashboard"))
+        return redirect(url_for("portal.home"))
+
+    return wrapper
 
 
 def _task_form_data() -> Dict[str, Any]:
@@ -392,7 +426,7 @@ def save_staff_profile() -> Response:
     staff_id = int(user.get("id") or 0)
     socials = {}
     for key, _label, _required in SUPPORTER_SOCIAL_FIELDS:
-        socials[key] = _clean_text(f"social_{key}")
+        socials[key] = _clean_text(f"social_{key}").lstrip("@").strip()
     missing = [
         label
         for key, label, required in SUPPORTER_SOCIAL_FIELDS
@@ -403,7 +437,7 @@ def save_staff_profile() -> Response:
         return redirect(url_for("supporter.staff_dashboard"))
     upsert_supporter_staff_profile(staff_id, socials)
     # Keep the legacy single handle in sync with Instagram for submissions.
-    instagram = socials.get("instagram")
+    instagram = (socials.get("instagram") or "").strip().lstrip("@")
     if instagram and instagram != user.get("social_username"):
         try:
             from dashboard.portal.queries import update_dashboard_user_profile
@@ -577,7 +611,7 @@ def admin_dashboard() -> Response:
 
 
 @supporter_bp.route("/admin/tasks", methods=["GET", "POST"])
-@role_required("admin")
+@supporter_task_manager_required
 def admin_tasks() -> Response:
     user = current_user() or {}
     if request.method == "POST":
@@ -607,7 +641,7 @@ def admin_tasks() -> Response:
 
 
 @supporter_bp.route("/admin/tasks/<int:task_id>/edit", methods=["GET", "POST"])
-@role_required("admin")
+@supporter_task_manager_required
 def admin_edit_task(task_id: int) -> Response:
     user = current_user() or {}
     task = get_task(task_id)
@@ -637,7 +671,7 @@ def admin_edit_task(task_id: int) -> Response:
 
 
 @supporter_bp.route("/admin/tasks/<int:task_id>/status", methods=["POST"])
-@role_required("admin")
+@supporter_task_manager_required
 def admin_task_status(task_id: int) -> Response:
     user = current_user() or {}
     status = (request.form.get("status") or "").strip()
@@ -763,6 +797,8 @@ def admin_settings() -> Response:
         dashboard_user_id = request.form.get("dashboard_user_id", type=int)
         if not username or not dashboard_user_id:
             flash("Pilih admin dan isi username Telegram.", "warning")
+        elif not is_supporter_verifier_candidate(dashboard_user_id):
+            flash("Pilih akun verifikator yang aktif.", "warning")
         else:
             upsert_telegram_admin_accounts(
                 [

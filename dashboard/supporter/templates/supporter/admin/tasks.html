@@ -7,9 +7,11 @@
       <h1 class="h3 fw-bold mb-1">Task Supporter</h1>
       <p class="text-muted mb-0">Buat task sosial media dengan deadline, penalty, dan aturan bukti.</p>
     </div>
-    <a class="btn btn-outline-primary" href="{{ url_for('supporter.admin_submissions') }}">
-      <i class="bi bi-patch-check me-1"></i>Verifikasi
-    </a>
+    {% if current_user and current_user.role == 'admin' %}
+      <a class="btn btn-outline-primary" href="{{ url_for('supporter.admin_submissions') }}">
+        <i class="bi bi-patch-check me-1"></i>Verifikasi
+      </a>
+    {% endif %}
   </div>
 </section>
 
