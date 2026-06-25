@@ -573,7 +573,7 @@ def admin_select_role() -> Response:
             "description": "Pantau progres pelestarian lingkungan sekolah.",
             "icon": "bi-buildings",
             "icon_secondary": "bi-tree-fill",
-            "href": "/portal/admin/adiwiyata",
+            "href": url_for("adiwiyata.admin_adiwiyata_dashboard"),
         },
         {
             "title": "Supporter",
