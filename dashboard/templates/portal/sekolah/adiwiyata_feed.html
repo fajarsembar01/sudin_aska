@@ -540,29 +540,29 @@
             overflow: hidden;
             display: grid;
             grid-template-columns: auto 340px;
-            max-width: 90vw;
-            max-height: 90vh;
+            max-width: 95vw;
+            max-height: 95vh;
             box-shadow: 0 24px 60px rgba(0,0,0,0.5);
         }
         .lbx-media-side {
             background: #000;
+            width: min(65vw, 960px);
+            height: min(90vh, 800px);
             min-width: 320px;
-            max-width: 55vw;
+            min-height: 360px;
             display: flex; align-items: center; justify-content: center;
             overflow: hidden;
         }
         .lbx-media-side img {
-            max-width: 100%; max-height: 90vh; object-fit: contain; display: block;
+            max-width: 100%; max-height: 100%; object-fit: contain; display: block;
         }
         .lbx-media-side iframe {
-            width: 100%; height: 100%; min-height: 320px; border: none; display: block;
+            width: 100%; height: 100%; border: none; display: block;
         }
         .lbx-photo-stage {
             position: relative;
-            width: min(55vw, 820px);
-            height: min(90vh, 760px);
-            min-width: 320px;
-            min-height: 360px;
+            width: 100%;
+            height: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -928,7 +928,7 @@
             .share-copy-btn { justify-content: center; }
         }
 
-        @media (max-width: 720px) {
+        @media (max-width: 768px) {
             .lbx-inner {
                 grid-template-columns: 1fr;
                 grid-template-rows: auto minmax(0, 1fr);
@@ -936,15 +936,11 @@
                 max-height: 96vh;
             }
             .lbx-media-side {
-                max-width: 96vw;
-                max-height: none;
-                min-width: 0;
-            }
-            .lbx-photo-stage {
                 width: 96vw;
                 height: 56vh;
+                max-width: none;
+                max-height: none;
                 min-width: 0;
-                min-height: 280px;
             }
             .lbx-info-side {
                 max-height: 38vh;
@@ -968,10 +964,8 @@
             .topbar { padding: 0 12px; }
             .school-pill { display: none; }
             .topbar-title span:not(.cat-icon) { font-size: 0.88rem; }
-            .lbx-photo-stage {
-                width: 96vw;
+            .lbx-media-side {
                 height: 58vh;
-                min-width: 0;
                 min-height: 260px;
             }
             .lbx-nav-btn {
@@ -1146,7 +1140,7 @@
 
             <!-- ── Tab: Video Link ── -->
             <div class="tab-pane-content" id="paneVideo">
-                <form id="formVideo" action="{{ url_for('portal.sekolah_adiwiyata_add', category=category) }}" method="POST">
+                <form id="formVideo" action="{{ url_for('portal.sekolah_adiwiyata_add', category=category) }}" method="POST" enctype="multipart/form-data">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="post_type" value="video_link">
 
@@ -1159,6 +1153,12 @@
                     <div class="url-preview-thumb" id="ytThumbWrap">
                         <img id="ytThumb" src="" alt="Preview">
                     </div>
+
+                    <label class="field-label" for="videoThumbnail">
+                        <i class="bi bi-image me-1"></i>Thumbnail Manual (Opsional)
+                    </label>
+                    <input type="file" name="video_thumbnail" id="videoThumbnail" class="url-input" accept="image/png,image/jpeg,image/webp">
+                    <p class="url-hint"><i class="bi bi-info-circle"></i> Jika dikosongkan, sistem akan otomatis menarik thumbnail YouTube atau menampilkan ikon platform.</p>
 
                     <label class="field-label" for="descVideo">
                         <i class="bi bi-card-text me-1"></i>Deskripsi <span class="text-danger">*</span>
@@ -1235,7 +1235,9 @@
                         {%- set yt_id = link.split('youtube.com/embed/')[-1].split('?')[0] -%}
                     {%- endif -%}
 
-                    {% if yt_id %}
+                    {% if post.thumbnail_path %}
+                    <img src="{{ url_for('portal.uploaded_file', filename=post.thumbnail_path) }}" alt="Thumbnail Video" loading="lazy" style="width:100%;height:100%;object-fit:cover;">
+                    {% elif yt_id %}
                     <img class="yt-thumb" src="https://img.youtube.com/vi/{{ yt_id }}/hqdefault.jpg" alt="Thumbnail Video" loading="lazy">
                     {% elif 'tiktok.com' in link|lower %}
                     <div style="width:100%;height:100%;background:#010101;display:flex;align-items:center;justify-content:center;">

@@ -1991,16 +1991,16 @@ def _queue_adiwiyata_share_prompt(post: dict | None, school: dict, category: str
     }
 
 
-def create_adiwiyata_post(school_id: int, category: str, media_path: str, media_type: str, description: str, user_id: int) -> dict | None:
+def create_adiwiyata_post(school_id: int, category: str, media_path: str, media_type: str, description: str, user_id: int, thumbnail_path: str | None = None) -> dict | None:
     with get_cursor(commit=True) as cur:
         cur.execute(
             """
             INSERT INTO portal_adiwiyata_posts 
-            (school_id, category, media_path, media_type, description, created_by)
-            VALUES (%s, %s, %s, %s, %s, %s)
+            (school_id, category, media_path, media_type, description, created_by, thumbnail_path)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
             RETURNING *
             """,
-            (school_id, category, media_path, media_type, description, user_id)
+            (school_id, category, media_path, media_type, description, user_id, thumbnail_path)
         )
         return cur.fetchone()
 
@@ -2024,6 +2024,7 @@ def list_adiwiyata_posts(school_id: int, category: str) -> list[dict]:
             row = dict(raw)
             row["media_urls"] = None
             row["media_paths"] = None
+            row["thumbnail_path"] = raw.get("thumbnail_path")
             if row.get("media_type") == "image":
                 val = row.get("media_path") or ""
                 is_json = False
@@ -2220,6 +2221,7 @@ def list_all_adiwiyata_posts_public(limit: int = 20, offset: int = 0) -> list[di
                 p.media_type,
                 p.description,
                 p.created_at,
+                p.thumbnail_path,
                 s.name AS school_name,
                 s.npsn AS school_npsn,
                 s.logo_url AS school_logo_url
@@ -3183,7 +3185,38 @@ def sekolah_adiwiyata_add(category: str) -> Response:
             # Store raw URL for iframe src
             embed_url = video_url
 
-        created_post = create_adiwiyata_post(school["id"], category, embed_url, "video_link", description, user["id"])
+        # Handle optional manual thumbnail
+        import uuid
+        thumbnail_path = None
+        video_thumb_file = request.files.get("video_thumbnail")
+        if video_thumb_file and video_thumb_file.filename:
+            ext = video_thumb_file.filename.rsplit(".", 1)[-1].lower()
+            if ext in {"png", "jpg", "jpeg", "webp"}:
+                save_ext = "webp" if ext == "webp" else "jpg"
+                filename = f"{uuid.uuid4().hex}_thumb.{save_ext}"
+                school_id_str = str(school["id"])
+                target_dir = UPLOAD_FOLDER / "adiwiyata" / school_id_str
+                target_dir.mkdir(parents=True, exist_ok=True)
+                filepath = target_dir / filename
+                
+                try:
+                    from PIL import Image
+                    import io
+                    img = Image.open(video_thumb_file.stream)
+                    img = img.convert("RGB")
+                    if img.width > 800 or img.height > 800:
+                        img.thumbnail((800, 800), Image.LANCZOS)
+                    buf = io.BytesIO()
+                    pil_fmt = "WEBP" if save_ext == "webp" else "JPEG"
+                    img.save(buf, format=pil_fmt, quality=80, optimize=True)
+                    buf.seek(0)
+                    with open(filepath, "wb") as out_f:
+                        out_f.write(buf.read())
+                    thumbnail_path = f"adiwiyata/{school_id_str}/{filename}"
+                except Exception as e:
+                    pass
+
+        created_post = create_adiwiyata_post(school["id"], category, embed_url, "video_link", description, user["id"], thumbnail_path=thumbnail_path)
         _queue_adiwiyata_share_prompt(created_post, school, category, title, "video")
         flash("Link video berhasil diposting.", "success")
         return redirect(url_for("portal.sekolah_adiwiyata_feed", category=category))
