@@ -452,8 +452,10 @@ function filterAnswers() {
 function confirmDeleteSubmission(event, schoolName) {
     event.stopPropagation();
     return window.confirm(
-        'Hapus riwayat isian ' + (schoolName || 'sekolah ini') +
-        '? Sekolah dapat mengisi lagi jika form masih dibuka.'
+        'Apakah Anda yakin ingin menghapus seluruh riwayat isian untuk sekolah:\n\n' +
+        '🏫 ' + (schoolName || 'sekolah ini') + '\n\n' +
+        'Semua jawaban dan file yang diunggah oleh sekolah ini akan dihapus permanen. ' +
+        'Sekolah dapat mengisi ulang jika form masih dibuka. Lanjutkan?'
     );
 }
 
