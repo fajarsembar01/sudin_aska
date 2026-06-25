@@ -11,6 +11,12 @@ from typing import Optional
 from urllib.parse import urlparse
 from zoneinfo import ZoneInfo
 
+try:
+    from PIL import Image as _PilImage
+    _PIL_AVAILABLE = True
+except ImportError:
+    _PIL_AVAILABLE = False
+
 from flask import (
     Blueprint,
     Response,
@@ -107,10 +113,15 @@ def ensure_laporan_schema_before_request() -> None:
 JAKARTA_TZ = ZoneInfo("Asia/Jakarta")
 UPLOAD_FOLDER = Path(__file__).parent.parent.parent / "uploads" / "laporan"
 ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "webp", "pdf", "doc", "docx", "xls", "xlsx"}
+ALLOWED_DOC_EXTENSIONS = {"pdf", "doc", "docx", "xls", "xlsx"}
+ALLOWED_IMAGE_EXTENSIONS = {"jpg", "jpeg", "png", "webp", "gif"}
+IMAGE_COMPRESS_QUALITY = 75   # JPEG quality for compressed images (0-95)
+IMAGE_MAX_DIMENSION = 1920    # Max width or height in pixels
 CHOICE_FIELD_TYPES = {"radio", "checkbox", "dropdown"}
 FORMULA_OPERATORS = {"add", "subtract", "multiply", "divide"}
 FORMULA_SOURCE_TYPES = {"number", "rating", "formula"}
 DISPLAY_ONLY_FIELD_TYPES = {"header", "info"}
+FILE_UPLOAD_FIELD_TYPES = {"file", "upload_dokumen", "upload_gambar"}
 REPEAT_POLICIES = {"once", "multiple", "daily", "weekly", "monthly"}
 PERIODIC_REPEAT_POLICIES = {"daily", "weekly", "monthly"}
 DEFAULT_VERY_LATE_AFTER_MINUTES = 3 * 60
@@ -136,6 +147,8 @@ ALLOWED_FIELD_TYPES = {
     "checkbox",
     "dropdown",
     "file",
+    "upload_dokumen",
+    "upload_gambar",
     "date",
     "time",
     "number",
@@ -150,6 +163,78 @@ ALLOWED_FIELD_TYPES = {
 
 def _allowed_file(filename: str) -> bool:
     return "." in filename and filename.rsplit(".", 1)[-1].lower() in ALLOWED_EXTENSIONS
+
+
+def _allowed_doc(filename: str) -> bool:
+    """Hanya izinkan file dokumen (PDF, DOC, DOCX, XLS, XLSX)."""
+    return "." in filename and filename.rsplit(".", 1)[-1].lower() in ALLOWED_DOC_EXTENSIONS
+
+
+def _allowed_image(filename: str) -> bool:
+    """Hanya izinkan file gambar (JPG, PNG, WEBP, GIF)."""
+    return "." in filename and filename.rsplit(".", 1)[-1].lower() in ALLOWED_IMAGE_EXTENSIONS
+
+
+def _compress_and_save_image(file_storage, save_path: Path) -> int:
+    """Kompres gambar dan simpan ke disk. Mengembalikan ukuran file hasil kompresi.
+    
+    Menggunakan Pillow untuk:
+    - Mengubah ukuran gambar jika melebihi IMAGE_MAX_DIMENSION
+    - Mengompresi ke JPEG dengan kualitas IMAGE_COMPRESS_QUALITY
+    - Gambar GIF/PNG dengan transparansi dikonversi ke WebP agar hemat storage
+    """
+    if not _PIL_AVAILABLE:
+        # Fallback: simpan langsung tanpa kompresi
+        file_storage.save(str(save_path))
+        return save_path.stat().st_size
+
+    try:
+        img_bytes = file_storage.read()
+        file_storage.seek(0)  # reset stream
+        img = _PilImage.open(io.BytesIO(img_bytes))
+
+        # Konversi mode yang tidak kompatibel
+        original_format = img.format or "JPEG"
+        has_alpha = img.mode in ("RGBA", "LA", "PA") or (
+            img.mode == "P" and "transparency" in img.info
+        )
+
+        # Resize jika terlalu besar
+        w, h = img.size
+        if w > IMAGE_MAX_DIMENSION or h > IMAGE_MAX_DIMENSION:
+            ratio = min(IMAGE_MAX_DIMENSION / w, IMAGE_MAX_DIMENSION / h)
+            new_w, new_h = int(w * ratio), int(h * ratio)
+            img = img.resize((new_w, new_h), _PilImage.LANCZOS)
+
+        # Tentukan format output
+        ext = save_path.suffix.lower().lstrip(".")
+        if ext in {"jpg", "jpeg"}:
+            if img.mode != "RGB":
+                img = img.convert("RGB")
+            img.save(str(save_path), format="JPEG", quality=IMAGE_COMPRESS_QUALITY, optimize=True)
+        elif ext == "webp":
+            img.save(str(save_path), format="WEBP", quality=IMAGE_COMPRESS_QUALITY, method=6)
+        elif ext == "png":
+            if has_alpha and img.mode != "RGBA":
+                img = img.convert("RGBA")
+            elif not has_alpha and img.mode != "RGB":
+                img = img.convert("RGB")
+            img.save(str(save_path), format="PNG", optimize=True)
+        elif ext == "gif":
+            # GIF: simpan as-is (animasi dll) – kompresi minimal
+            img.save(str(save_path), format="GIF")
+        else:
+            # Fallback ke JPEG
+            if img.mode != "RGB":
+                img = img.convert("RGB")
+            img.save(str(save_path), format="JPEG", quality=IMAGE_COMPRESS_QUALITY, optimize=True)
+
+        return save_path.stat().st_size
+    except Exception:
+        current_app.logger.exception("Gagal mengompresi gambar, menyimpan tanpa kompresi")
+        file_storage.seek(0)
+        file_storage.save(str(save_path))
+        return save_path.stat().st_size
 
 
 def _cleanup_submission_files(file_paths: list[str]) -> None:
@@ -939,6 +1024,7 @@ def _parse_fields_from_form() -> list[dict]:
         ftype = request.form.get(f"field_type_{fid}", "text")
         if ftype not in ALLOWED_FIELD_TYPES:
             ftype = "text"
+        # Alias: 'file' lama tetap didukung, tipe baru diproses normal
         
         # Checkbox for required: since it's a checkbox, if it exists in form it's 'on', else absent.
         # But for robustness we can check if it exists in a getlist or simple get.
@@ -1324,7 +1410,7 @@ def sekolah_laporan_submit(form_id: int) -> Response:
             continue
         ftype = f["field_type"]
         fid = f["id"]
-        if ftype == "file":
+        if ftype in FILE_UPLOAD_FIELD_TYPES:
             uploaded = request.files.getlist(f"field_{fid}[]")
             if not any(uf.filename for uf in uploaded):
                 errors.append(f"Field '{f['label']}' wajib diisi.")
@@ -1379,9 +1465,15 @@ def sekolah_laporan_submit(form_id: int) -> Response:
             ftype = f["field_type"]
             fid = f["id"]
 
-            if ftype == "file":
+            if ftype in FILE_UPLOAD_FIELD_TYPES:
                 uploaded_files = request.files.getlist(f"field_{fid}[]")
-                valid_files = [uf for uf in uploaded_files if uf.filename and _allowed_file(uf.filename)]
+                # Filter sesuai tipe field
+                if ftype == "upload_dokumen":
+                    valid_files = [uf for uf in uploaded_files if uf.filename and _allowed_doc(uf.filename)]
+                elif ftype == "upload_gambar":
+                    valid_files = [uf for uf in uploaded_files if uf.filename and _allowed_image(uf.filename)]
+                else:
+                    valid_files = [uf for uf in uploaded_files if uf.filename and _allowed_file(uf.filename)]
                 if not valid_files:
                     continue
                 file_names = [uf.filename for uf in valid_files]
@@ -1390,7 +1482,11 @@ def sekolah_laporan_submit(form_id: int) -> Response:
                     ext = uf.filename.rsplit(".", 1)[-1].lower()
                     saved_name = f"{uuid.uuid4().hex}.{ext}"
                     save_path = school_upload_dir / saved_name
-                    uf.save(str(save_path))
+                    if ftype == "upload_gambar":
+                        file_size = _compress_and_save_image(uf, save_path)
+                    else:
+                        uf.save(str(save_path))
+                        file_size = save_path.stat().st_size
                     rel_path = f"{school['id']}/{form_id}/{saved_name}"
                     saved_rel_paths.append(rel_path)
                     save_file(
@@ -1398,7 +1494,7 @@ def sekolah_laporan_submit(form_id: int) -> Response:
                         rel_path,
                         uf.filename,
                         uf.content_type or "",
-                        save_path.stat().st_size,
+                        file_size,
                     )
 
             elif ftype == "checkbox":
@@ -1609,9 +1705,15 @@ def sekolah_laporan_edit_submission(submission_id: int) -> Response:
             ftype = f["field_type"]
             fid = f["id"]
 
-            if ftype == "file":
+            if ftype in FILE_UPLOAD_FIELD_TYPES:
                 uploaded_files = request.files.getlist(f"field_{fid}[]")
-                valid_files = [uf for uf in uploaded_files if uf.filename and _allowed_file(uf.filename)]
+                # Filter sesuai tipe field
+                if ftype == "upload_dokumen":
+                    valid_files = [uf for uf in uploaded_files if uf.filename and _allowed_doc(uf.filename)]
+                elif ftype == "upload_gambar":
+                    valid_files = [uf for uf in uploaded_files if uf.filename and _allowed_image(uf.filename)]
+                else:
+                    valid_files = [uf for uf in uploaded_files if uf.filename and _allowed_file(uf.filename)]
                 if not valid_files:
                     continue
                 existing = existing_answers.get(fid)
@@ -1624,7 +1726,11 @@ def sekolah_laporan_edit_submission(submission_id: int) -> Response:
                     ext = uf.filename.rsplit(".", 1)[-1].lower()
                     saved_name = f"{uuid.uuid4().hex}.{ext}"
                     save_path = school_upload_dir / saved_name
-                    uf.save(str(save_path))
+                    if ftype == "upload_gambar":
+                        file_size = _compress_and_save_image(uf, save_path)
+                    else:
+                        uf.save(str(save_path))
+                        file_size = save_path.stat().st_size
                     rel_path = f"{school['id']}/{form['id']}/{saved_name}"
                     saved_rel_paths.append(rel_path)
                     save_file(
@@ -1632,7 +1738,7 @@ def sekolah_laporan_edit_submission(submission_id: int) -> Response:
                         rel_path,
                         uf.filename,
                         uf.content_type or "",
-                        save_path.stat().st_size,
+                        file_size,
                     )
 
             elif ftype == "checkbox":
