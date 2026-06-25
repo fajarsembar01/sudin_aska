@@ -327,7 +327,7 @@
             {% endif %}
         </select>
 
-        {# File Upload #}
+        {# File Upload (Semua tipe) #}
         {% elif field.field_type == 'file' %}
         <div class="file-drop-zone" onclick="document.getElementById('file_{{ field.id }}').click()"
             id="dropzone_{{ field.id }}">
@@ -350,7 +350,61 @@
             class="d-none" multiple
             accept=".jpg,.jpeg,.png,.webp,.pdf,.doc,.docx,.xls,.xlsx"
             {% if field.required and not (existing and existing.files) %}required{% endif %}
-            onchange="showFilePreviews(this, '{{ field.id }}')">
+            onchange="showFilePreviews(this, '{{ field.id }}', 'any')">
+        <div class="file-preview-list" id="preview_{{ field.id }}"></div>
+
+        {# Upload Dokumen (khusus: PDF, DOC, DOCX, XLS, XLSX) #}
+        {% elif field.field_type == 'upload_dokumen' %}
+        <div class="file-drop-zone" onclick="document.getElementById('file_{{ field.id }}').click()"
+            id="dropzone_{{ field.id }}">
+            <i class="bi bi-file-earmark-arrow-up" style="color:#0d6efd;"></i>
+            <p class="mb-1 fw-semibold">Klik atau seret dokumen ke sini</p>
+            <p class="text-muted small mb-0">PDF, DOC, DOCX, XLS, XLSX (maks. 20 MB per file)</p>
+        </div>
+        {% if existing and existing.files %}
+        <div class="d-flex flex-wrap gap-2 mt-2">
+            {% for f in existing.files %}
+            <a href="{{ url_for('laporan.laporan_serve_file', filepath=f.file_path) }}"
+                class="btn btn-sm btn-outline-primary" target="_blank">
+                <i class="bi bi-file-earmark-text me-1"></i>{{ f.original_name }}
+            </a>
+            {% endfor %}
+        </div>
+        <p class="text-muted small mt-2 mb-0">Upload file baru hanya jika ingin mengganti dokumen lama.</p>
+        {% endif %}
+        <input type="file" name="field_{{ field.id }}[]" id="file_{{ field.id }}"
+            class="d-none" multiple
+            accept=".pdf,.doc,.docx,.xls,.xlsx"
+            {% if field.required and not (existing and existing.files) %}required{% endif %}
+            onchange="showFilePreviews(this, '{{ field.id }}', 'doc')">
+        <div class="file-preview-list" id="preview_{{ field.id }}"></div>
+
+        {# Upload Gambar (khusus: JPG, PNG, WEBP, GIF + auto-kompres) #}
+        {% elif field.field_type == 'upload_gambar' %}
+        <div class="file-drop-zone" onclick="document.getElementById('file_{{ field.id }}').click()"
+            id="dropzone_{{ field.id }}" style="border-color: #198754; background: rgba(25,135,84,0.03);">
+            <i class="bi bi-image" style="color:#198754;"></i>
+            <p class="mb-1 fw-semibold">Klik atau seret gambar ke sini</p>
+            <p class="text-muted small mb-0">JPG, PNG, WEBP, GIF (maks. 10 MB) &bull; Gambar akan dikompres otomatis</p>
+        </div>
+        {% if existing and existing.files %}
+        <div class="d-flex flex-wrap gap-2 mt-2" id="existing_imgs_{{ field.id }}">
+            {% for f in existing.files %}
+            <a href="{{ url_for('laporan.laporan_serve_file', filepath=f.file_path) }}" target="_blank"
+                class="d-inline-block" style="border-radius:8px; overflow:hidden; border:2px solid var(--border-soft);">
+                <img src="{{ url_for('laporan.laporan_serve_file', filepath=f.file_path) }}"
+                    alt="{{ f.original_name }}" loading="lazy"
+                    style="max-width:160px; max-height:120px; object-fit:cover; display:block;">
+            </a>
+            {% endfor %}
+        </div>
+        <p class="text-muted small mt-2 mb-0">Upload gambar baru hanya jika ingin mengganti gambar lama.</p>
+        {% endif %}
+        <input type="file" name="field_{{ field.id }}[]" id="file_{{ field.id }}"
+            class="d-none" multiple
+            accept=".jpg,.jpeg,.png,.webp,.gif"
+            {% if field.required and not (existing and existing.files) %}required{% endif %}
+            onchange="showFilePreviews(this, '{{ field.id }}', 'image')">
         <div class="file-preview-list" id="preview_{{ field.id }}"></div>
 
         {# Date #}
@@ -426,14 +480,43 @@
 
 {% block portal_scripts %}
 <script>
-function showFilePreviews(input, fieldId) {
+function showFilePreviews(input, fieldId, mode) {
+    if (!mode) {
+        const accept = input.getAttribute('accept') || '';
+        if (accept.includes('gif')) {
+            mode = 'image';
+        } else if (accept.includes('pdf') && !accept.includes('png')) {
+            mode = 'doc';
+        } else {
+            mode = 'any';
+        }
+    }
     const preview = document.getElementById('preview_' + fieldId);
     preview.innerHTML = '';
     if (!input.files) return;
     Array.from(input.files).forEach(function(file) {
         const item = document.createElement('div');
-        item.className = 'file-preview-item';
-        item.innerHTML = '<i class="bi bi-paperclip"></i>' + file.name;
+        if (mode === 'image') {
+            // Preview gambar inline sebagai thumbnail
+            item.className = 'file-preview-item d-inline-block me-2 mt-2';
+            item.style.cssText = 'border:2px solid var(--border-soft); border-radius:8px; overflow:hidden; position:relative;';
+            const img = document.createElement('img');
+            img.style.cssText = 'max-width:160px; max-height:120px; object-fit:cover; display:block;';
+            img.alt = file.name;
+            const reader = new FileReader();
+            reader.onload = function(e) { img.src = e.target.result; };
+            reader.readAsDataURL(file);
+            const caption = document.createElement('div');
+            caption.className = 'text-muted small text-truncate px-1';
+            caption.style.cssText = 'max-width:160px; font-size:0.72rem;';
+            caption.textContent = file.name;
+            item.appendChild(img);
+            item.appendChild(caption);
+        } else {
+            item.className = 'file-preview-item';
+            const icon = mode === 'doc' ? 'bi-file-earmark-text' : 'bi-paperclip';
+            item.innerHTML = '<i class="bi ' + icon + '"></i> ' + file.name;
+        }
         preview.appendChild(item);
     });
 }

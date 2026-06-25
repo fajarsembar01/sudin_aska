@@ -1901,7 +1901,7 @@ CREATE TABLE IF NOT EXISTS laporan_form_fields (
     id SERIAL PRIMARY KEY,
     form_id INTEGER NOT NULL REFERENCES laporan_forms(id) ON DELETE CASCADE,
     label TEXT NOT NULL,
-    field_type TEXT NOT NULL DEFAULT 'text' CHECK (field_type IN ('text', 'textarea', 'radio', 'checkbox', 'file', 'date', 'number', 'rating', 'dropdown', 'time', 'email', 'header', 'info', 'link')),
+    field_type TEXT NOT NULL DEFAULT 'text' CHECK (field_type IN ('text', 'textarea', 'radio', 'checkbox', 'file', 'upload_dokumen', 'upload_gambar', 'date', 'number', 'rating', 'dropdown', 'time', 'email', 'header', 'info', 'link')),
     options_json JSONB,
     required BOOLEAN NOT NULL DEFAULT TRUE,
     sort_order INTEGER NOT NULL DEFAULT 0,
@@ -1962,7 +1962,7 @@ ALTER TABLE laporan_submissions ADD COLUMN IF NOT EXISTS late_minutes INTEGER DE
 _LAPORAN_FIELDS_CONSTRAINT_MIGRATION_SQL = """
 ALTER TABLE laporan_form_fields DROP CONSTRAINT IF EXISTS laporan_form_fields_field_type_check;
 ALTER TABLE laporan_form_fields ADD CONSTRAINT laporan_form_fields_field_type_check 
-CHECK (field_type IN ('text', 'textarea', 'radio', 'checkbox', 'file', 'date', 'number', 'rating', 'dropdown', 'time', 'email', 'header', 'info', 'link'));
+CHECK (field_type IN ('text', 'textarea', 'radio', 'checkbox', 'file', 'upload_dokumen', 'upload_gambar', 'date', 'number', 'rating', 'dropdown', 'time', 'email', 'header', 'info', 'link'));
 """
 
 _LAPORAN_SUBMISSIONS_INDEX_SQL = """

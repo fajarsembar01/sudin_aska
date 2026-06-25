@@ -397,6 +397,8 @@
                         <option value="checkbox" {% if field.field_type == 'checkbox' %}selected{% endif %}>Pilihan Ganda</option>
                         <option value="dropdown" {% if field.field_type == 'dropdown' %}selected{% endif %}>Dropdown</option>
                         <option value="file" {% if field.field_type == 'file' %}selected{% endif %}>Upload File</option>
+                        <option value="upload_dokumen" {% if field.field_type == 'upload_dokumen' %}selected{% endif %}>📄 Upload Dokumen</option>
+                        <option value="upload_gambar" {% if field.field_type == 'upload_gambar' %}selected{% endif %}>🖼️ Upload Gambar</option>
                         <option value="date" {% if field.field_type == 'date' %}selected{% endif %}>Tanggal</option>
                         <option value="time" {% if field.field_type == 'time' %}selected{% endif %}>Waktu</option>
                         <option value="number" {% if field.field_type == 'number' %}selected{% endif %}>Angka</option>
@@ -476,6 +478,23 @@
                                 placeholder="Teks tombol"
                                 value="{{ link_cfg.button_text or 'Buka Link' }}">
                         </div>
+                    </div>
+                </div>
+                <div class="upload-dokumen-info mt-2" id="dok_info_{{ fid }}"
+                    {% if field.field_type != 'upload_dokumen' %}style="display:none;"{% endif %}>
+                    <div class="alert alert-info py-2 px-3 mb-0 small">
+                        <i class="bi bi-info-circle me-1"></i>
+                        <strong>Upload Dokumen:</strong> Format diizinkan: PDF, DOC, DOCX, XLS, XLSX.
+                        File akan disimpan apa adanya tanpa kompresi.
+                    </div>
+                </div>
+                <div class="upload-gambar-info mt-2" id="img_info_{{ fid }}"
+                    {% if field.field_type != 'upload_gambar' %}style="display:none;"{% endif %}>
+                    <div class="alert alert-success py-2 px-3 mb-0 small">
+                        <i class="bi bi-image me-1"></i>
+                        <strong>Upload Gambar:</strong> Format diizinkan: JPG, PNG, WEBP, GIF.
+                        Gambar akan <strong>otomatis dikompres</strong> saat disimpan untuk menghemat storage.
+                        Ukuran maks: 1920×1920 px · Kualitas JPEG: 75%.
                     </div>
                 </div>
                 <div class="mt-2 req-group" id="req_group_{{ fid }}" {% if field.field_type in ('header', 'info', 'formula') %}style="display:none;"{% endif %}>
@@ -846,6 +865,8 @@ function addField(fieldData) {
                 <option value="checkbox">Pilihan Ganda</option>
                 <option value="dropdown">Dropdown</option>
                 <option value="file">Upload File</option>
+                <option value="upload_dokumen">📄 Upload Dokumen</option>
+                <option value="upload_gambar">🖼️ Upload Gambar</option>
                 <option value="date">Tanggal</option>
                 <option value="time">Waktu</option>
                 <option value="number">Angka</option>
@@ -904,6 +925,21 @@ function addField(fieldData) {
                     <input type="text" class="form-control form-control-sm"
                         name="field_link_text_${fid}" placeholder="Teks tombol" value="Buka Link">
                 </div>
+            </div>
+        </div>
+        <div class="upload-dokumen-info mt-2" id="dok_info_${fid}" style="display:none;">
+            <div class="alert alert-info py-2 px-3 mb-0 small">
+                <i class="bi bi-info-circle me-1"></i>
+                <strong>Upload Dokumen:</strong> Format diizinkan: PDF, DOC, DOCX, XLS, XLSX.
+                File akan disimpan apa adanya tanpa kompresi.
+            </div>
+        </div>
+        <div class="upload-gambar-info mt-2" id="img_info_${fid}" style="display:none;">
+            <div class="alert alert-success py-2 px-3 mb-0 small">
+                <i class="bi bi-image me-1"></i>
+                <strong>Upload Gambar:</strong> Format diizinkan: JPG, PNG, WEBP, GIF.
+                Gambar akan <strong>otomatis dikompres</strong> saat disimpan untuk menghemat storage.
+                Ukuran maks: 1920×1920 px · Kualitas JPEG: 75%.
             </div>
         </div>
         <div class="mt-2 req-group" id="req_group_${fid}">
@@ -1076,6 +1112,12 @@ function toggleFieldOptions(select, fid) {
 
     var linkGroup = document.getElementById('link_' + fid);
     if (linkGroup) linkGroup.style.display = val === 'link' ? '' : 'none';
+
+    var dokInfo = document.getElementById('dok_info_' + fid);
+    if (dokInfo) dokInfo.style.display = val === 'upload_dokumen' ? '' : 'none';
+
+    var imgInfo = document.getElementById('img_info_' + fid);
+    if (imgInfo) imgInfo.style.display = val === 'upload_gambar' ? '' : 'none';
     
     var reqGroup = document.getElementById('req_group_' + fid);
     var showReq = (val !== 'header' && val !== 'info' && val !== 'formula');

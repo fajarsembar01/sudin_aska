@@ -776,7 +776,7 @@ def _answer_export_value(field: dict, answer: Optional[dict]) -> str:
     if not answer:
         return ""
     ftype = field["field_type"]
-    if ftype == "file":
+    if ftype in {"file", "upload_dokumen", "upload_gambar"}:
         files = answer.get("files") or []
         return ", ".join(fi.get("original_name", "") for fi in files)
     if ftype == "checkbox" and answer.get("answer_json"):

@@ -56,14 +56,21 @@
                     <p class="fw-semibold text-muted small mb-1" style="text-transform:uppercase;letter-spacing:0.05em;">
                         {{ loop.index }}. {{ ans.label }}
                     </p>
-                    {% if ans.field_type == 'file' %}
+                    {% if ans.field_type in ('file', 'upload_dokumen', 'upload_gambar') %}
                         {% if ans.files %}
-                        <div class="d-flex flex-wrap gap-2 mt-1">
+                        <div class="d-flex flex-wrap gap-3 mt-1">
                             {% for f in ans.files %}
-                            <a href="{{ url_for('laporan.laporan_serve_file', filepath=f.file_path) }}"
-                                class="btn btn-sm btn-outline-primary" target="_blank">
-                                <i class="bi bi-paperclip me-1"></i>{{ f.original_name }}
-                            </a>
+                            <div class="d-flex flex-column align-items-start border rounded p-2 bg-light">
+                                <a href="{{ url_for('laporan.laporan_serve_file', filepath=f.file_path) }}"
+                                    class="btn btn-sm btn-outline-primary mb-1" target="_blank">
+                                    <i class="bi bi-paperclip me-1"></i>{{ f.original_name }}
+                                </a>
+                                {% if ans.field_type == 'upload_gambar' or (f.original_name.lower().endswith(('.png', '.jpg', '.jpeg', '.webp', '.gif'))) %}
+                                <div class="mt-1">
+                                    <img src="{{ url_for('laporan.laporan_serve_file', filepath=f.file_path) }}" alt="{{ f.original_name }}" class="img-thumbnail" style="max-height: 80px; max-width: 150px; object-fit: cover;">
+                                </div>
+                                {% endif %}
+                            </div>
                             {% endfor %}
                         </div>
                         {% else %}
