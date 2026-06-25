@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useRef, useCallback } from 'react'
 import Link from 'next/link'
+import { InstagramEmbed, TikTokEmbed } from 'react-social-media-embed'
 
 interface Post {
   id: number;
@@ -14,6 +15,7 @@ interface Post {
   media_path: string | null;
   description: string;
   created_at: string;
+  thumbnail_path?: string | null;
 }
 
 interface Photo {
@@ -406,8 +408,10 @@ export default function AdiwiyataPage() {
     return acc
   }, {} as Record<string, number>)
 
+  const schoolPostCounts = new Map<number, number>()
   const schoolMap = new Map<number, Post>()
   posts.forEach(post => {
+    schoolPostCounts.set(post.school_id, (schoolPostCounts.get(post.school_id) || 0) + 1)
     if (!schoolMap.has(post.school_id)) {
       schoolMap.set(post.school_id, post)
     }
@@ -447,15 +451,32 @@ export default function AdiwiyataPage() {
               {activePost?.media_type === 'video_link' ? (
                 <div className="w-full h-full min-h-[300px] lg:min-h-[560px] flex items-center justify-center">
                   {(() => {
-                    const info = getPlatformInfo(lightboxUrls[0]);
+                    const url = lightboxUrls[0];
+                    const info = getPlatformInfo(url);
                     if (info.type === 'youtube') return <iframe className="w-full h-full border-0" src={`https://www.youtube.com/embed/${info.id}`} allowFullScreen />;
-                    if (info.type === 'tiktok') return <iframe className="w-[min(100%,400px)] h-full border-0" src={`https://www.tiktok.com/embed/v2/${info.id}`} allowFullScreen />;
-                    if (info.type === 'instagram') return <iframe className="w-[min(100%,400px)] h-full border-0 bg-white" src={`https://www.instagram.com/p/${info.id}/embed`} />;
+                    if (info.type === 'tiktok') {
+                      return (
+                        <div className="w-full h-full overflow-y-auto bg-black flex items-center justify-center custom-scroll p-4">
+                          <div className="w-full max-w-[340px] rounded-xl overflow-hidden shadow-2xl">
+                            <TikTokEmbed url={url} width="100%" />
+                          </div>
+                        </div>
+                      )
+                    }
+                    if (info.type === 'instagram') {
+                      return (
+                        <div className="w-full h-full overflow-y-auto bg-black flex items-center justify-center custom-scroll p-4">
+                          <div className="w-full max-w-[400px] rounded-xl overflow-hidden shadow-2xl bg-white">
+                            <InstagramEmbed url={url} width="100%" captioned />
+                          </div>
+                        </div>
+                      )
+                    }
                     if (info.type === 'gdrive') return <iframe className="w-full h-full border-0" src={`https://drive.google.com/file/d/${info.id}/preview`} allowFullScreen />;
                     return (
                       <div className="text-white text-center p-6">
                         <p className="mb-4 text-lg font-semibold">Tautan video eksternal</p>
-                        <a href={lightboxUrls[0]} target="_blank" rel="noopener noreferrer" className="inline-block px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 rounded-xl text-white font-bold transition-colors">
+                        <a href={url} target="_blank" rel="noopener noreferrer" className="inline-block px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 rounded-xl text-white font-bold transition-colors">
                           Buka di Tab Baru
                         </a>
                       </div>
@@ -718,21 +739,27 @@ export default function AdiwiyataPage() {
                 Sekolah Aktif
               </h2>
               <div className="space-y-1 max-h-64 overflow-y-auto pr-1 custom-scroll">
-                {uniqueSchools.slice(0, 15).map((schoolPost, i) => {
+                {uniqueSchools.slice(0, 50).map((schoolPost, i) => {
+                  const postCount = schoolPostCounts.get(schoolPost.school_id) || 0
                   return (
                     <a
                       key={i}
                       href={localSchoolProfileUrl(schoolPost.school_id, schoolPost.category)}
                       target="_blank" rel="noopener noreferrer"
-                      className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-emerald-50 transition-colors group cursor-pointer"
+                      className="flex items-center justify-between p-2 rounded-xl hover:bg-emerald-50 transition-colors group cursor-pointer"
                     >
-                      <SchoolLogoAvatar
-                        name={schoolPost.school_name}
-                        logoUrl={schoolPost.school_logo_url}
-                        colorClass={CATEGORY_COLORS[schoolPost.category] || 'from-green-400 to-emerald-600'}
-                        className="w-7 h-7 rounded-lg text-xs"
-                      />
-                      <span className="text-xs text-slate-500 group-hover:text-slate-800 transition-colors font-medium leading-tight line-clamp-2">{schoolPost.school_name}</span>
+                      <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                        <SchoolLogoAvatar
+                          name={schoolPost.school_name}
+                          logoUrl={schoolPost.school_logo_url}
+                          colorClass={CATEGORY_COLORS[schoolPost.category] || 'from-green-400 to-emerald-600'}
+                          className="w-7 h-7 rounded-lg text-xs shrink-0"
+                        />
+                        <span className="text-xs text-slate-500 group-hover:text-slate-800 transition-colors font-medium leading-tight line-clamp-2">{schoolPost.school_name}</span>
+                      </div>
+                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md shrink-0 border border-emerald-200">
+                        {postCount} Post
+                      </span>
                     </a>
                   )
                 })}
@@ -838,7 +865,20 @@ export default function AdiwiyataPage() {
                         className="relative aspect-video cursor-pointer group overflow-hidden"
                         onClick={() => openLightbox([post.media_path!], 0, post)}
                       >
-                        {(() => {
+                        {post.thumbnail_path ? (
+                          <>
+                            <img
+                              src={toPortalAssetUrl(post.thumbnail_path)}
+                              alt="Thumbnail Video"
+                              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                            />
+                            <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+                              <div className="w-14 h-14 rounded-full bg-white/90 text-emerald-700 flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform">
+                                <svg className="w-6 h-6 ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                              </div>
+                            </div>
+                          </>
+                        ) : (() => {
                           const info = getPlatformInfo(post.media_path);
                           if (info.type === 'youtube') {
                             return (

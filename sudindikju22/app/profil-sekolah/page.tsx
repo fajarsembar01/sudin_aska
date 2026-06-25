@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
+import { InstagramEmbed, TikTokEmbed } from 'react-social-media-embed'
 
 const CATEGORY_LABELS: Record<string, string> = {
   'pengelolaan-sampah': 'Pengelolaan Sampah',
@@ -63,6 +64,7 @@ interface PublicPost {
   media_urls?: string[] | null
   description?: string | null
   created_at?: string | null
+  thumbnail_path?: string | null
 }
 
 interface PublicProfileResponse {
@@ -72,6 +74,19 @@ interface PublicProfileResponse {
   posts?: PublicPost[]
   category?: string
   title?: string
+}
+
+function getPlatformInfo(url: string) {
+  if (!url) return { type: 'unknown', id: null };
+  const ytMatch = url.match(/(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/i);
+  if (ytMatch) return { type: 'youtube', id: ytMatch[1] };
+  const ttMatch = url.match(/(?:tiktok\.com\/.*\/video\/|tiktok\.com\/v\/|vt\.tiktok\.com\/)([\w\d]+)/i);
+  if (ttMatch) return { type: 'tiktok', id: ttMatch[1] };
+  const igMatch = url.match(/instagram\.com\/(?:p|reel|tv)\/([A-Za-z0-9_-]+)/i);
+  if (igMatch) return { type: 'instagram', id: igMatch[1] };
+  const gdMatch = url.match(/drive\.google\.com\/(?:file\/d\/|open\?id=)([\w-]+)/i);
+  if (gdMatch) return { type: 'gdrive', id: gdMatch[1] };
+  return { type: 'unknown', id: null };
 }
 
 function getYoutubeId(url?: string | null) {
@@ -220,6 +235,28 @@ export default function ProfilSekolahPage() {
   const [category, setCategory] = useState('')
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
+  const [lightboxIndex, setLightboxIndex] = useState(-1)
+  const [lightboxUrls, setLightboxUrls] = useState<string[]>([])
+  const [activePost, setActivePost] = useState<PublicPost | null>(null)
+
+  const openLightbox = (urls: string[], idx = 0, post: PublicPost | null = null) => {
+    setLightboxUrls(urls)
+    setLightboxIndex(idx)
+    setActivePost(post)
+  }
+
+  const closeLightbox = () => {
+    setLightboxIndex(-1)
+    setActivePost(null)
+  }
+
+  useEffect(() => {
+    document.body.style.overflow = lightboxIndex >= 0 ? 'hidden' : ''
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [lightboxIndex])
+
   const fetchProfile = useCallback(async () => {
     const params = new URLSearchParams(window.location.search)
     const schoolId = params.get('school_id')
@@ -285,6 +322,76 @@ export default function ProfilSekolahPage() {
 
   return (
     <main className="min-h-screen bg-[#f0f2f5] text-slate-900">
+      {lightboxIndex >= 0 && (
+        <div className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-md flex items-center justify-center p-3 sm:p-6" onClick={closeLightbox}>
+          <button onClick={closeLightbox} className="absolute top-5 right-5 z-50 w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white transition-all border border-white/20">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+
+          <div className="bg-black rounded-3xl overflow-hidden flex flex-col lg:flex-row w-full max-w-4xl max-h-[92vh] shadow-[0_32px_80px_rgba(0,0,0,0.25)] relative border border-slate-800" onClick={e => e.stopPropagation()}>
+            <div className="flex-1 relative flex items-center justify-center bg-black min-h-[40vh] lg:min-h-[500px]">
+              {activePost?.media_type === 'video_link' ? (
+                <div className="w-full h-full flex items-center justify-center">
+                  {(() => {
+                    const url = lightboxUrls[0];
+                    const info = getPlatformInfo(url);
+                    if (info.type === 'youtube') return <iframe className="w-full h-full border-0" src={`https://www.youtube.com/embed/${info.id}`} allowFullScreen />;
+                    if (info.type === 'tiktok') {
+                      return (
+                        <div className="w-full h-full overflow-y-auto bg-black flex items-center justify-center custom-scroll p-4">
+                          <div className="w-full max-w-[340px] rounded-xl overflow-hidden shadow-2xl">
+                            <TikTokEmbed url={url} width="100%" />
+                          </div>
+                        </div>
+                      )
+                    }
+                    if (info.type === 'instagram') {
+                      return (
+                        <div className="w-full h-full overflow-y-auto bg-black flex items-center justify-center custom-scroll p-4">
+                          <div className="w-full max-w-[400px] rounded-xl overflow-hidden shadow-2xl bg-white">
+                            <InstagramEmbed url={url} width="100%" captioned />
+                          </div>
+                        </div>
+                      )
+                    }
+                    if (info.type === 'gdrive') return <iframe className="w-full h-full border-0" src={`https://drive.google.com/file/d/${info.id}/preview`} allowFullScreen />;
+                    return (
+                      <div className="text-white text-center p-6">
+                        <p className="mb-4 text-lg font-semibold">Tautan video eksternal</p>
+                        <a href={url} target="_blank" rel="noopener noreferrer" className="inline-block px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 rounded-xl text-white font-bold transition-colors">
+                          Buka di Tab Baru
+                        </a>
+                      </div>
+                    );
+                  })()}
+                </div>
+              ) : (
+                <img src={lightboxUrls[lightboxIndex]} alt="Gallery" className="max-w-full max-h-[60vh] lg:max-h-[92vh] object-contain select-none" />
+              )}
+              
+              {lightboxUrls.length > 1 && (
+                <>
+                  <button onClick={e => { e.stopPropagation(); setLightboxIndex(p => p > 0 ? p - 1 : lightboxUrls.length - 1) }} className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center rounded-full bg-black/60 hover:bg-black/80 text-white border border-white/20 backdrop-blur-md transition-all hover:scale-110">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" /></svg>
+                  </button>
+                  <button onClick={e => { e.stopPropagation(); setLightboxIndex(p => p < lightboxUrls.length - 1 ? p + 1 : 0) }} className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center rounded-full bg-black/60 hover:bg-black/80 text-white border border-white/20 backdrop-blur-md transition-all hover:scale-110">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" /></svg>
+                  </button>
+                </>
+              )}
+            </div>
+            {/* Deskripsi */}
+            <div className="w-full lg:w-[320px] bg-white flex flex-col p-6 overflow-y-auto border-t lg:border-t-0 lg:border-l border-slate-100">
+              <h3 className="font-black text-slate-900 text-sm mb-3">Deskripsi</h3>
+              <p className="text-sm text-slate-600 whitespace-pre-wrap flex-1">{activePost?.description || <span className="italic text-slate-400">Tidak ada deskripsi.</span>}</p>
+              {activePost?.created_at && (
+                <p className="mt-6 text-xs text-emerald-600 font-bold border-t border-slate-100 pt-4">{formatDate(activePost.created_at)}</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <nav className="sticky top-0 z-30 h-14 border-b border-slate-200 bg-white/95 backdrop-blur-sm shadow-sm">
         <div className="mx-auto max-w-[980px] h-full px-4 flex items-center gap-3">
           <Link href="/adiwiyata" className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm font-semibold text-slate-500 hover:border-emerald-500 hover:bg-emerald-50 hover:text-emerald-700">
@@ -373,17 +480,25 @@ export default function ProfilSekolahPage() {
                 const mediaUrls = resolveMediaUrls(post)
                 const firstMedia = mediaUrls[0]
                 const youtubeId = getYoutubeId(post.media_path || firstMedia)
-                const imageSrc = post.media_type === 'video_link' && youtubeId
-                  ? `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg`
-                  : firstMedia
+                
+                let imageSrc = null;
+                if (post.media_type === 'video_link') {
+                  if (post.thumbnail_path) {
+                    imageSrc = resolvePortalUrl(post.thumbnail_path)
+                  } else if (youtubeId) {
+                    imageSrc = `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg`
+                  }
+                } else {
+                  imageSrc = firstMedia
+                }
 
                 return (
-                  <a
+                  <div
                     key={post.id}
-                    href={firstMedia || '#'}
-                    target={firstMedia ? '_blank' : undefined}
-                    rel={firstMedia ? 'noopener noreferrer' : undefined}
-                    className="group relative aspect-square overflow-hidden bg-slate-100"
+                    onClick={() => {
+                      if (firstMedia) openLightbox(mediaUrls.length ? mediaUrls : [firstMedia], 0, post)
+                    }}
+                    className="group relative aspect-square overflow-hidden bg-slate-100 cursor-pointer"
                   >
                     {imageSrc ? (
                       <img src={imageSrc} alt={post.description || 'Dokumentasi Adiwiyata'} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
@@ -407,7 +522,7 @@ export default function ProfilSekolahPage() {
                       {post.description && <p className="line-clamp-2 text-[11px] font-semibold leading-tight text-white/90">{post.description}</p>}
                       {post.created_at && <p className="mt-1 text-[10px] font-medium text-white/65">{formatDate(post.created_at)}</p>}
                     </div>
-                  </a>
+                  </div>
                 )
               })}
             </div>
