@@ -240,6 +240,15 @@ portal_bp = Blueprint(
     url_prefix="/portal",
 )
 
+adiwiyata_bp = Blueprint(
+    "adiwiyata",
+    __name__,
+    template_folder="templates",
+    static_folder="static",
+    url_prefix="/adiwiyata",
+)
+
+
 UPLOAD_FOLDER = Path(__file__).parent.parent.parent / "uploads" / "portal"
 PHOTO_REQUIRED_PCT = 90.0
 FOLLOW_UP_THRESHOLD_PCT = 60.0
@@ -2553,7 +2562,7 @@ def _list_schools_with_adiwiyata() -> list[dict]:
         "pengelolaan-sampah", "konservasi-energi", "konservasi-air",
         "kebersihan-sanitasi-drainase", "kompos", "tanaman",
     ]
-    cat_case = " ".join(
+    cat_case = ", ".join(
         f"SUM(CASE WHEN p.category = '{c}' THEN 1 ELSE 0 END) AS \"{c}\""
         for c in categories
     )
@@ -2585,7 +2594,7 @@ def _list_schools_with_adiwiyata() -> list[dict]:
     return rows
 
 
-@portal_bp.route("/admin/adiwiyata")
+@adiwiyata_bp.route("/admin/", strict_slashes=False)
 @role_required("admin")
 def admin_adiwiyata_dashboard() -> Response:
     """Admin Adiwiyata — halaman dashboard ringkasan."""
@@ -2608,7 +2617,7 @@ def admin_adiwiyata_dashboard() -> Response:
     )
 
 
-@portal_bp.route("/admin/adiwiyata/posts")
+@adiwiyata_bp.route("/admin/posts")
 @role_required("admin")
 def admin_adiwiyata_posts() -> Response:
     """Admin Adiwiyata — daftar semua post dengan filter & delete."""
@@ -2668,7 +2677,7 @@ def admin_adiwiyata_posts() -> Response:
     )
 
 
-@portal_bp.route("/admin/adiwiyata/schools")
+@adiwiyata_bp.route("/admin/schools")
 @role_required("admin")
 def admin_adiwiyata_schools() -> Response:
     """Admin Adiwiyata — ringkasan per sekolah."""
@@ -2694,7 +2703,7 @@ def admin_adiwiyata_schools() -> Response:
     )
 
 
-@portal_bp.route("/admin/adiwiyata/schools/<int:school_id>")
+@adiwiyata_bp.route("/admin/schools/<int:school_id>")
 @role_required("admin")
 def admin_adiwiyata_school_detail(school_id: int) -> Response:
     """Admin Adiwiyata — detail galeri per sekolah."""
@@ -2720,7 +2729,7 @@ def admin_adiwiyata_school_detail(school_id: int) -> Response:
         school = cur.fetchone()
     if not school:
         flash("Sekolah tidak ditemukan.", "danger")
-        return redirect(url_for("portal.admin_adiwiyata_schools"))
+        return redirect(url_for("adiwiyata.admin_adiwiyata_schools"))
     school = dict(school)
 
     category = request.args.get("category", "").strip() or None
@@ -2757,14 +2766,14 @@ def admin_adiwiyata_school_detail(school_id: int) -> Response:
     )
 
 
-@portal_bp.route("/admin/adiwiyata/post/<int:post_id>/delete", methods=["POST"])
+@adiwiyata_bp.route("/admin/post/<int:post_id>/delete", methods=["POST"])
 @role_required("admin")
 def admin_adiwiyata_delete_post(post_id: int) -> Response:
     """Admin delete satu post adiwiyata."""
     post = get_adiwiyata_post(post_id)
     if not post:
         flash("Post tidak ditemukan.", "danger")
-        return redirect(url_for("portal.admin_adiwiyata_posts"))
+        return redirect(url_for("adiwiyata.admin_adiwiyata_posts"))
     school_id = post.get("school_id")
     ok = delete_adiwiyata_post(post_id)
     if ok:
@@ -2774,10 +2783,10 @@ def admin_adiwiyata_delete_post(post_id: int) -> Response:
     # Kembali ke halaman asal
     ref = request.form.get("redirect_to") or ""
     if ref == "school_detail" and school_id:
-        return redirect(url_for("portal.admin_adiwiyata_school_detail", school_id=school_id))
+        return redirect(url_for("adiwiyata.admin_adiwiyata_school_detail", school_id=school_id))
     if ref == "posts":
-        return redirect(url_for("portal.admin_adiwiyata_posts"))
-    return redirect(url_for("portal.admin_adiwiyata_posts"))
+        return redirect(url_for("adiwiyata.admin_adiwiyata_posts"))
+    return redirect(url_for("adiwiyata.admin_adiwiyata_posts"))
 
 # ===== End Admin Adiwiyata Routes =====
 
@@ -2949,7 +2958,7 @@ def sekolah_home() -> Response:
             "description": "Posting laporan progres atau kondisi pelestarian lingkungan sekolah.",
             "icon": "bi-buildings",
             "icon_secondary": "bi-tree-fill",
-            "href": "/portal/sekolah/adiwiyata",
+            "href": url_for("adiwiyata.sekolah_adiwiyata"),
             "col_class": "col-md-6 col-12",
         },
         {
@@ -2973,7 +2982,7 @@ def sekolah_home() -> Response:
     )
 
 
-@portal_bp.route("/sekolah/adiwiyata")
+@adiwiyata_bp.route("/sekolah/", strict_slashes=False)
 @role_required("sekolah")
 def sekolah_adiwiyata() -> Response:
     """Menu Adiwiyata untuk sekolah."""
@@ -3024,7 +3033,7 @@ def sekolah_adiwiyata() -> Response:
             "title": "Pengelolaan Sampah",
             "description": "Bank sampah, pemilahan organik/anorganik, dan daur ulang.",
             "icon": "bi-trash3",
-            "href": url_for("portal.sekolah_adiwiyata_feed", category="pengelolaan-sampah"),
+            "href": url_for("adiwiyata.sekolah_adiwiyata_feed", category="pengelolaan-sampah"),
             "col_class": "col-md-4 col-12",
             "badge_text": "Siap Digunakan",
             "badge_type": "primary"
@@ -3053,14 +3062,14 @@ def sekolah_adiwiyata() -> Response:
     )
 
 
-@portal_bp.route("/sekolah/adiwiyata/<category>")
+@adiwiyata_bp.route("/sekolah/<category>")
 @role_required("sekolah")
 def sekolah_adiwiyata_feed(category: str) -> Response:
     user = current_user()
     school = _fetch_user_school(user.get("id"))
     if not school:
         flash("Akun belum terhubung dengan sekolah.", "warning")
-        return redirect(url_for("portal.sekolah_adiwiyata"))
+        return redirect(url_for("adiwiyata.sekolah_adiwiyata"))
 
     posts = list_adiwiyata_posts(school["id"], category)
     
@@ -3130,41 +3139,20 @@ def api_public_sekolah_adiwiyata_feed(school_id: int, category: str) -> Response
         "category": category,
         "title": title
     })
-@role_required("sekolah")
-def sekolah_adiwiyata_feed(category: str) -> Response:
-    user = current_user()
-    school = _fetch_user_school(user.get("id"))
-    if not school:
-        flash("Akun belum terhubung dengan sekolah.", "warning")
-        return redirect(url_for("portal.sekolah_adiwiyata"))
 
-    posts = list_adiwiyata_posts(school["id"], category)
-    
-    title = _adiwiyata_category_title(category)
-    
-    return render_template(
-        "portal/sekolah/adiwiyata_feed.html",
-        posts=posts,
-        category=category,
-        title=title,
-        school=school,
-        is_public=False,
-        adiwiyata_share_base_url=_adiwiyata_public_share_base_url(),
-        share_prompt=None,
-    )
 
-@portal_bp.route("/sekolah/adiwiyata/<category>/add", methods=["POST"])
+@adiwiyata_bp.route("/sekolah/<category>/add", methods=["POST"])
 @role_required("sekolah")
 def sekolah_adiwiyata_add(category: str) -> Response:
     user = current_user()
     school = _fetch_user_school(user.get("id"))
     if not school:
-        return redirect(url_for("portal.sekolah_adiwiyata"))
+        return redirect(url_for("adiwiyata.sekolah_adiwiyata"))
 
     description = request.form.get("description", "").strip()
     if len(description) < 100:
         flash("Deskripsi wajib diisi dan minimal 100 karakter.", "warning")
-        return redirect(url_for("portal.sekolah_adiwiyata_feed", category=category))
+        return redirect(url_for("adiwiyata.sekolah_adiwiyata_feed", category=category))
 
     post_type = request.form.get("post_type", "image")  # "image" or "video_link"
     title = _adiwiyata_category_title(category)
@@ -3173,7 +3161,7 @@ def sekolah_adiwiyata_add(category: str) -> Response:
         video_url = request.form.get("video_url", "").strip()
         if not video_url:
             flash("Link video tidak boleh kosong.", "warning")
-            return redirect(url_for("portal.sekolah_adiwiyata_feed", category=category))
+            return redirect(url_for("adiwiyata.sekolah_adiwiyata_feed", category=category))
 
         # Normalize YouTube / Google Drive / generic URLs
         import re
@@ -3219,13 +3207,13 @@ def sekolah_adiwiyata_add(category: str) -> Response:
         created_post = create_adiwiyata_post(school["id"], category, embed_url, "video_link", description, user["id"], thumbnail_path=thumbnail_path)
         _queue_adiwiyata_share_prompt(created_post, school, category, title, "video")
         flash("Link video berhasil diposting.", "success")
-        return redirect(url_for("portal.sekolah_adiwiyata_feed", category=category))
+        return redirect(url_for("adiwiyata.sekolah_adiwiyata_feed", category=category))
 
     # Default: multiple image upload
     file_storages = request.files.getlist("media_files")
     if not file_storages or all(not f.filename for f in file_storages):
         flash("File foto wajib diunggah.", "warning")
-        return redirect(url_for("portal.sekolah_adiwiyata_feed", category=category))
+        return redirect(url_for("adiwiyata.sekolah_adiwiyata_feed", category=category))
 
     import uuid
     import json
@@ -3291,10 +3279,10 @@ def sekolah_adiwiyata_add(category: str) -> Response:
     else:
         flash("Gagal mengunggah foto.", "danger")
         
-    return redirect(url_for("portal.sekolah_adiwiyata_feed", category=category))
+    return redirect(url_for("adiwiyata.sekolah_adiwiyata_feed", category=category))
 
 
-@portal_bp.route("/sekolah/adiwiyata/post/<int:post_id>/edit", methods=["POST"])
+@adiwiyata_bp.route("/sekolah/post/<int:post_id>/edit", methods=["POST"])
 @role_required("sekolah")
 def sekolah_adiwiyata_edit(post_id: int) -> Response:
     user = current_user()
@@ -3303,19 +3291,19 @@ def sekolah_adiwiyata_edit(post_id: int) -> Response:
     post = get_adiwiyata_post(post_id)
     if not post or post["school_id"] != school["id"]:
         flash("Postingan tidak ditemukan atau Anda tidak memiliki akses.", "danger")
-        return redirect(url_for("portal.sekolah_adiwiyata"))
+        return redirect(url_for("adiwiyata.sekolah_adiwiyata"))
         
     description = request.form.get("description", "").strip()
     if len(description) < 100:
         flash("Deskripsi wajib diisi dan minimal 100 karakter.", "warning")
-        return redirect(url_for("portal.sekolah_adiwiyata_feed", category=post["category"]))
+        return redirect(url_for("adiwiyata.sekolah_adiwiyata_feed", category=post["category"]))
         
     update_adiwiyata_post(post_id, description)
     
     flash("Postingan berhasil diperbarui.", "success")
-    return redirect(url_for("portal.sekolah_adiwiyata_feed", category=post["category"]))
+    return redirect(url_for("adiwiyata.sekolah_adiwiyata_feed", category=post["category"]))
 
-@portal_bp.route("/sekolah/adiwiyata/post/<int:post_id>/delete", methods=["POST"])
+@adiwiyata_bp.route("/sekolah/post/<int:post_id>/delete", methods=["POST"])
 @role_required("sekolah")
 def sekolah_adiwiyata_delete(post_id: int) -> Response:
     user = current_user()
@@ -3324,11 +3312,11 @@ def sekolah_adiwiyata_delete(post_id: int) -> Response:
     post = get_adiwiyata_post(post_id)
     if not post or post["school_id"] != school["id"]:
         flash("Postingan tidak ditemukan atau Anda tidak memiliki akses.", "danger")
-        return redirect(url_for("portal.sekolah_adiwiyata"))
+        return redirect(url_for("adiwiyata.sekolah_adiwiyata"))
         
     delete_adiwiyata_post(post_id)
     flash("Postingan berhasil dihapus.", "success")
-    return redirect(url_for("portal.sekolah_adiwiyata_feed", category=post["category"]))
+    return redirect(url_for("adiwiyata.sekolah_adiwiyata_feed", category=post["category"]))
 
 
 def _annotate_follow_up_ticket(ticket: dict) -> dict:

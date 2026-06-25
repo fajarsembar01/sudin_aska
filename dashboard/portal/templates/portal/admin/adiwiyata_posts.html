@@ -123,7 +123,7 @@
             </div>
             <div class="col-md-1 d-flex gap-1">
                 <button type="submit" class="btn btn-success btn-sm w-100 fw-bold"><i class="bi bi-search"></i></button>
-                <a href="{{ url_for('portal.admin_adiwiyata_posts') }}" class="btn btn-light btn-sm w-100 border text-muted"><i class="bi bi-arrow-clockwise"></i></a>
+                <a href="{{ url_for('adiwiyata.admin_adiwiyata_posts') }}" class="btn btn-light btn-sm w-100 border text-muted"><i class="bi bi-arrow-clockwise"></i></a>
             </div>
         </form>
     </div>
@@ -171,7 +171,7 @@
             {% endif %}
         </div>
         <div class="post-actions">
-            <a href="{{ url_for('portal.admin_adiwiyata_school_detail', school_id=post.school_id) }}" class="btn btn-sm btn-outline-success flex-grow-1" style="font-size: 0.75rem;">
+            <a href="{{ url_for('adiwiyata.admin_adiwiyata_school_detail', school_id=post.school_id) }}" class="btn btn-sm btn-outline-success flex-grow-1" style="font-size: 0.75rem;">
                 <i class="bi bi-buildings"></i> Sekolah
             </a>
             <button type="button" class="btn btn-sm btn-outline-danger" onclick="confirmDelete({{ post.id }}, 'posts', '{{ post.school_name | replace("'", "\\'") }}')" title="Hapus">
@@ -188,21 +188,21 @@
     <ul class="pagination pagination-sm">
         {% set base_args = {'q': search, 'school_id': selected_school_id, 'category': selected_category, 'media_type': selected_media_type, 'sort': sort} %}
         <li class="page-item {{ 'disabled' if page <= 1 }}">
-            <a class="page-link" href="{{ url_for('portal.admin_adiwiyata_posts', **dict(base_args, page=1)) }}"><i class="bi bi-chevron-double-left"></i></a>
+            <a class="page-link" href="{{ url_for('adiwiyata.admin_adiwiyata_posts', **dict(base_args, page=1)) }}"><i class="bi bi-chevron-double-left"></i></a>
         </li>
         <li class="page-item {{ 'disabled' if page <= 1 }}">
-            <a class="page-link" href="{{ url_for('portal.admin_adiwiyata_posts', **dict(base_args, page=page-1)) }}"><i class="bi bi-chevron-left"></i></a>
+            <a class="page-link" href="{{ url_for('adiwiyata.admin_adiwiyata_posts', **dict(base_args, page=page-1)) }}"><i class="bi bi-chevron-left"></i></a>
         </li>
         {% for p in range([1, page-2]|max, [total_pages+1, page+3]|min) %}
         <li class="page-item {{ 'active' if p == page }}">
-            <a class="page-link" href="{{ url_for('portal.admin_adiwiyata_posts', **dict(base_args, page=p)) }}">{{ p }}</a>
+            <a class="page-link" href="{{ url_for('adiwiyata.admin_adiwiyata_posts', **dict(base_args, page=p)) }}">{{ p }}</a>
         </li>
         {% endfor %}
         <li class="page-item {{ 'disabled' if page >= total_pages }}">
-            <a class="page-link" href="{{ url_for('portal.admin_adiwiyata_posts', **dict(base_args, page=page+1)) }}"><i class="bi bi-chevron-right"></i></a>
+            <a class="page-link" href="{{ url_for('adiwiyata.admin_adiwiyata_posts', **dict(base_args, page=page+1)) }}"><i class="bi bi-chevron-right"></i></a>
         </li>
         <li class="page-item {{ 'disabled' if page >= total_pages }}">
-            <a class="page-link" href="{{ url_for('portal.admin_adiwiyata_posts', **dict(base_args, page=total_pages)) }}"><i class="bi bi-chevron-double-right"></i></a>
+            <a class="page-link" href="{{ url_for('adiwiyata.admin_adiwiyata_posts', **dict(base_args, page=total_pages)) }}"><i class="bi bi-chevron-double-right"></i></a>
         </li>
     </ul>
 </nav>
@@ -261,7 +261,7 @@ function closeLightbox() {
 
 function confirmDelete(postId, redirectTo, schoolName) {
     const form = document.getElementById('delForm');
-    form.action = `/portal/admin/adiwiyata/post/${postId}/delete`;
+    form.action = `/adiwiyata/admin/post/${postId}/delete`;
     document.getElementById('delRedirectTo').value = redirectTo;
     document.getElementById('delModalDesc').textContent = `Post dari "${schoolName}" akan dihapus permanen.`;
     const bsModal = new bootstrap.Modal(document.getElementById('deleteModal'));

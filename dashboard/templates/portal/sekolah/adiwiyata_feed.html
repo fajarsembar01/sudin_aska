@@ -985,7 +985,7 @@
         <i class="bi bi-arrow-left-short fs-5"></i> Kembali
     </a>
     {% else %}
-    <a href="{{ url_for('portal.sekolah_adiwiyata') }}" class="topbar-back">
+    <a href="{{ url_for('adiwiyata.sekolah_adiwiyata') }}" class="topbar-back">
         <i class="bi bi-arrow-left-short fs-5"></i> Kembali
     </a>
     {% endif %}
@@ -1105,7 +1105,7 @@
 
             <!-- ── Tab: Foto ── -->
             <div class="tab-pane-content active" id="panePhoto">
-                <form id="formPhoto" action="{{ url_for('portal.sekolah_adiwiyata_add', category=category) }}" method="POST" enctype="multipart/form-data">
+                <form id="formPhoto" action="{{ url_for('adiwiyata.sekolah_adiwiyata_add', category=category) }}" method="POST" enctype="multipart/form-data">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="post_type" value="image">
 
@@ -1140,7 +1140,7 @@
 
             <!-- ── Tab: Video Link ── -->
             <div class="tab-pane-content" id="paneVideo">
-                <form id="formVideo" action="{{ url_for('portal.sekolah_adiwiyata_add', category=category) }}" method="POST" enctype="multipart/form-data">
+                <form id="formVideo" action="{{ url_for('adiwiyata.sekolah_adiwiyata_add', category=category) }}" method="POST" enctype="multipart/form-data">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="post_type" value="video_link">
 
@@ -1984,11 +1984,11 @@ let currentPostId = null;
 let currentMediaUrls = [];
 let currentMediaIndex = 0;
 const EDIT_URLS = {
-    {% for post in posts %}"{{ post.id }}": "{{ url_for('portal.sekolah_adiwiyata_edit', post_id=post.id) }}"{% if not loop.last %},{% endif %}
+    {% for post in posts %}"{{ post.id }}": "{{ url_for('adiwiyata.sekolah_adiwiyata_edit', post_id=post.id) }}"{% if not loop.last %},{% endif %}
     {% endfor %}
 };
 const DELETE_URLS = {
-    {% for post in posts %}"{{ post.id }}": "{{ url_for('portal.sekolah_adiwiyata_delete', post_id=post.id) }}"{% if not loop.last %},{% endif %}
+    {% for post in posts %}"{{ post.id }}": "{{ url_for('adiwiyata.sekolah_adiwiyata_delete', post_id=post.id) }}"{% if not loop.last %},{% endif %}
     {% endfor %}
 };
 

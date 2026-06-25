@@ -99,8 +99,8 @@
 <!-- Breadcrumb -->
 <nav aria-label="breadcrumb" class="mb-3">
     <ol class="breadcrumb small fw-semibold">
-        <li class="breadcrumb-item"><a href="{{ url_for('portal.admin_adiwiyata_dashboard') }}" class="text-success text-decoration-none"><i class="bi bi-grid-1x2-fill me-1"></i>Dashboard</a></li>
-        <li class="breadcrumb-item"><a href="{{ url_for('portal.admin_adiwiyata_schools') }}" class="text-success text-decoration-none">Per Sekolah</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('adiwiyata.admin_adiwiyata_dashboard') }}" class="text-success text-decoration-none"><i class="bi bi-grid-1x2-fill me-1"></i>Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('adiwiyata.admin_adiwiyata_schools') }}" class="text-success text-decoration-none">Per Sekolah</a></li>
         <li class="breadcrumb-item active" aria-current="page">{{ school.name }}</li>
     </ol>
 </nav>
@@ -133,7 +133,7 @@
 <!-- Category Filter Tabs -->
 <div class="cat-tabs">
     {% set all_active = not selected_category %}
-    <a href="{{ url_for('portal.admin_adiwiyata_school_detail', school_id=school.id) }}"
+    <a href="{{ url_for('adiwiyata.admin_adiwiyata_school_detail', school_id=school.id) }}"
        class="cat-tab all {{ 'active' if all_active }}">
         <i class="bi bi-grid me-1"></i>Semua ({{ total }})
     </a>
@@ -146,7 +146,7 @@
         ('tanaman', 'Tanaman', 'tanaman', 'bi-tree'),
     ] %}
     {% for cat_key, cat_label, cat_cls, cat_icon in tab_data %}
-    <a href="{{ url_for('portal.admin_adiwiyata_school_detail', school_id=school.id, category=cat_key) }}"
+    <a href="{{ url_for('adiwiyata.admin_adiwiyata_school_detail', school_id=school.id, category=cat_key) }}"
        class="cat-tab {{ cat_cls }} {{ 'active' if selected_category == cat_key }}">
         <i class="{{ cat_icon }} me-1"></i>{{ cat_label }}
     </a>
@@ -211,21 +211,21 @@
     <ul class="pagination pagination-sm">
         {% set base_args = {'category': selected_category} %}
         <li class="page-item {{ 'disabled' if page <= 1 }}">
-            <a class="page-link" href="{{ url_for('portal.admin_adiwiyata_school_detail', school_id=school.id, **dict(base_args, page=1)) }}"><i class="bi bi-chevron-double-left"></i></a>
+            <a class="page-link" href="{{ url_for('adiwiyata.admin_adiwiyata_school_detail', school_id=school.id, **dict(base_args, page=1)) }}"><i class="bi bi-chevron-double-left"></i></a>
         </li>
         <li class="page-item {{ 'disabled' if page <= 1 }}">
-            <a class="page-link" href="{{ url_for('portal.admin_adiwiyata_school_detail', school_id=school.id, **dict(base_args, page=page-1)) }}"><i class="bi bi-chevron-left"></i></a>
+            <a class="page-link" href="{{ url_for('adiwiyata.admin_adiwiyata_school_detail', school_id=school.id, **dict(base_args, page=page-1)) }}"><i class="bi bi-chevron-left"></i></a>
         </li>
         {% for p in range([1, page-2]|max, [total_pages+1, page+3]|min) %}
         <li class="page-item {{ 'active' if p == page }}">
-            <a class="page-link" href="{{ url_for('portal.admin_adiwiyata_school_detail', school_id=school.id, **dict(base_args, page=p)) }}">{{ p }}</a>
+            <a class="page-link" href="{{ url_for('adiwiyata.admin_adiwiyata_school_detail', school_id=school.id, **dict(base_args, page=p)) }}">{{ p }}</a>
         </li>
         {% endfor %}
         <li class="page-item {{ 'disabled' if page >= total_pages }}">
-            <a class="page-link" href="{{ url_for('portal.admin_adiwiyata_school_detail', school_id=school.id, **dict(base_args, page=page+1)) }}"><i class="bi bi-chevron-right"></i></a>
+            <a class="page-link" href="{{ url_for('adiwiyata.admin_adiwiyata_school_detail', school_id=school.id, **dict(base_args, page=page+1)) }}"><i class="bi bi-chevron-right"></i></a>
         </li>
         <li class="page-item {{ 'disabled' if page >= total_pages }}">
-            <a class="page-link" href="{{ url_for('portal.admin_adiwiyata_school_detail', school_id=school.id, **dict(base_args, page=total_pages)) }}"><i class="bi bi-chevron-double-right"></i></a>
+            <a class="page-link" href="{{ url_for('adiwiyata.admin_adiwiyata_school_detail', school_id=school.id, **dict(base_args, page=total_pages)) }}"><i class="bi bi-chevron-double-right"></i></a>
         </li>
     </ul>
 </nav>
@@ -237,7 +237,7 @@
         <i class="bi bi-images text-muted" style="font-size: 3rem;"></i>
         <p class="text-muted mt-3 mb-2">Belum ada post {% if selected_category %}untuk kategori ini{% endif %}.</p>
         {% if selected_category %}
-        <a href="{{ url_for('portal.admin_adiwiyata_school_detail', school_id=school.id) }}" class="btn btn-outline-success btn-sm mt-2 fw-bold">Lihat Semua Kategori</a>
+        <a href="{{ url_for('adiwiyata.admin_adiwiyata_school_detail', school_id=school.id) }}" class="btn btn-outline-success btn-sm mt-2 fw-bold">Lihat Semua Kategori</a>
         {% endif %}
     </div>
 </div>
@@ -288,7 +288,7 @@ function closeLightbox() {
 
 function confirmDelete(postId, schoolId, desc) {
     const form = document.getElementById('delForm');
-    form.action = `/portal/admin/adiwiyata/post/${postId}/delete`;
+    form.action = `/adiwiyata/admin/post/${postId}/delete`;
     document.getElementById('delModalDesc').textContent = `"${desc}" akan dihapus permanen dan tidak bisa dipulihkan.`;
     const bsModal = new bootstrap.Modal(document.getElementById('deleteModal'));
     bsModal.show();
