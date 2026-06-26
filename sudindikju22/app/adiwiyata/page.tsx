@@ -28,6 +28,7 @@ interface Photo {
   category?: string;
   description?: string;
   created_at?: string;
+  likes?: number;
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -241,6 +242,9 @@ const PostActions = ({ postId }: { postId: number }) => {
 export default function AdiwiyataPage() {
   const [posts, setPosts] = useState<Post[]>([])
   const [photos, setPhotos] = useState<Photo[]>([])
+  const [topPhotos, setTopPhotos] = useState<Photo[]>([])
+  const [newestPhotos, setNewestPhotos] = useState<Photo[]>([])
+  const [photoTab, setPhotoTab] = useState<'top' | 'newest'>('top')
   const [isLoading, setIsLoading] = useState(true)
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(true)
@@ -288,6 +292,61 @@ export default function AdiwiyataPage() {
 
     const initialPostsTimer = window.setTimeout(() => fetchPosts(1), 0)
     return () => window.clearTimeout(initialPostsTimer)
+  }, [])
+
+  // ── SIDEBAR GALLERY: Newest & Top (by likes) ──
+  // Built from the stable posts feed + likes API so ordering is deterministic
+  // across refreshes (unlike the random-photos endpoint used by the marquee).
+  useEffect(() => {
+    let cancelled = false
+
+    const postToPhoto = (p: Post): Photo => ({
+      id: p.id,
+      url: (p.media_urls && p.media_urls[0]) || p.media_path || '',
+      media_urls: p.media_urls,
+      school_id: p.school_id,
+      school_name: p.school_name,
+      school_logo_url: p.school_logo_url,
+      category: p.category,
+      description: p.description,
+      created_at: p.created_at,
+    })
+
+    const buildGallery = async () => {
+      try {
+        const res = await fetch(portalUrl('/portal/api/public/adiwiyata/posts?page=1&per_page=50'))
+        const data = await res.json()
+        const feed: Post[] = (data?.posts || [])
+          .map(normalizePost)
+          .filter((p: Post) => p.media_type === 'image' && p.media_urls && p.media_urls.length)
+
+        // Newest = feed order (already created_at DESC)
+        if (!cancelled) setNewestPhotos(feed.slice(0, 6).map(postToPhoto))
+
+        // Top = sort candidates by like count (cap requests to a bounded set)
+        const candidates = feed.slice(0, 24)
+        const withLikes = await Promise.all(
+          candidates.map(async (p) => {
+            try {
+              const r = await fetch(portalUrl(`/portal/api/public/adiwiyata/posts/${p.id}/likes`))
+              const d = await r.json()
+              return { photo: postToPhoto(p), likes: Number(d?.likes || 0) }
+            } catch {
+              return { photo: postToPhoto(p), likes: 0 }
+            }
+          })
+        )
+        withLikes.sort((a, b) => b.likes - a.likes)
+        if (!cancelled) {
+          setTopPhotos(withLikes.slice(0, 6).map(x => ({ ...x.photo, likes: x.likes })))
+        }
+      } catch (err) {
+        console.error(err)
+      }
+    }
+
+    buildGallery()
+    return () => { cancelled = true }
   }, [])
 
   useEffect(() => {
@@ -1002,12 +1061,22 @@ export default function AdiwiyataPage() {
           <aside className={`hidden lg:flex flex-col gap-5 sticky top-24 transition-all duration-700 delay-300 ${isLoaded ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-8'}`}>
             {/* Live Photos */}
             <div className="rounded-2xl bg-white border border-slate-200 p-5 shadow-sm">
-              <h2 className="text-sm font-black text-slate-800 mb-4 flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                Foto Terbaru
-              </h2>
+              <div className="flex items-center gap-1 p-0.5 mb-4 rounded-full bg-slate-100 border border-slate-200">
+                <button
+                  onClick={() => setPhotoTab('top')}
+                  className={`flex-1 flex items-center justify-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${photoTab === 'top' ? 'bg-white text-amber-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  🔥 Top
+                </button>
+                <button
+                  onClick={() => setPhotoTab('newest')}
+                  className={`flex-1 flex items-center justify-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${photoTab === 'newest' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  ✨ Terbaru
+                </button>
+              </div>
               <div className="grid grid-cols-2 gap-2">
-                {photos.slice(0, 6).map((photo, i) => (
+                {(photoTab === 'top' ? topPhotos : newestPhotos).slice(0, 6).map((photo, i) => (
                   <div
                     key={i}
                     onClick={() => openPhotoLightbox(photo)}
@@ -1015,6 +1084,12 @@ export default function AdiwiyataPage() {
                   >
                     <img src={photo.url} alt={photo.school_name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/45 transition-colors" />
+                    {photoTab === 'top' && (photo.likes ?? 0) > 0 && (
+                      <div className="absolute top-1.5 left-1.5 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-black/55 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity">
+                        <svg className="w-3 h-3 text-emerald-400 fill-current" viewBox="0 0 24 24"><path d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" /></svg>
+                        <span className="text-white text-[10px] font-bold">{photo.likes} suka</span>
+                      </div>
+                    )}
                     <div className="absolute inset-x-0 bottom-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <p className="text-white text-[10px] font-bold leading-tight truncate">{photo.school_name}</p>
                     </div>
@@ -1022,6 +1097,9 @@ export default function AdiwiyataPage() {
                   </div>
                 ))}
               </div>
+              {(photoTab === 'top' ? topPhotos : newestPhotos).length === 0 && (
+                <p className="text-center text-xs text-slate-400 py-6">Belum ada foto.</p>
+              )}
             </div>
 
             {/* Kategori Quick Nav */}
