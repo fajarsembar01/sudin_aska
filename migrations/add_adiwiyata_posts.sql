@@ -8,10 +8,14 @@ CREATE TABLE IF NOT EXISTS portal_adiwiyata_posts (
     media_path TEXT NOT NULL,
     media_type TEXT NOT NULL,
     description TEXT,
+    thumbnail_path TEXT,
     created_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE portal_adiwiyata_posts
+ADD COLUMN IF NOT EXISTS thumbnail_path TEXT;
 
 CREATE INDEX IF NOT EXISTS idx_adiwiyata_posts_school_category
 ON portal_adiwiyata_posts (school_id, category);
