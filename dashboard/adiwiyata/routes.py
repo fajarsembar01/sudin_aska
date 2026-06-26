@@ -474,6 +474,77 @@ def list_random_adiwiyata_photos(limit: int = 12) -> list[dict]:
     return rows
 
 
+def list_adiwiyata_photos_sorted(limit: int = 6, sort: str = "newest") -> list[dict]:
+    """Ambil foto (image only) untuk sidebar, diurut berdasarkan terbaru atau jumlah like."""
+    order = "p.created_at DESC"
+    if sort == "top":
+        order = "COALESCE(lk.likes, 0) DESC, p.created_at DESC"
+
+    with get_cursor() as cur:
+        cur.execute(
+            f"""
+            SELECT
+                p.id,
+                p.school_id,
+                p.category,
+                p.media_path,
+                p.media_type,
+                p.description,
+                p.created_at,
+                s.name AS school_name,
+                s.logo_url AS school_logo_url,
+                COALESCE(lk.likes, 0) AS likes
+            FROM portal_adiwiyata_posts p
+            LEFT JOIN portal_schools s ON p.school_id = s.id
+            LEFT JOIN (
+                SELECT post_id, COUNT(*) AS likes
+                FROM adiwiyata_post_likes WHERE action = 'like' GROUP BY post_id
+            ) lk ON lk.post_id = p.id
+            WHERE p.media_type = 'image'
+            ORDER BY {order}
+            LIMIT %s
+            """,
+            (limit,)
+        )
+        raw_rows = cur.fetchall()
+
+    import json
+    from flask import url_for
+    rows = []
+    for raw in raw_rows:
+        row = dict(raw)
+        val = row.get("media_path") or ""
+        urls = []
+        if val.strip().startswith("[") and val.strip().endswith("]"):
+            try:
+                paths = json.loads(val)
+                if isinstance(paths, list) and paths:
+                    urls = [
+                        url_for("portal.uploaded_file", filename=path, _external=True)
+                        for path in paths
+                        if path
+                    ]
+            except Exception:
+                pass
+        if not urls and val:
+            urls = [url_for("portal.uploaded_file", filename=val, _external=True)]
+        if urls:
+            created_at = row.get("created_at")
+            rows.append({
+                "id": row["id"],
+                "url": urls[0],
+                "media_urls": urls,
+                "school_id": row.get("school_id"),
+                "school_name": row.get("school_name", ""),
+                "school_logo_url": _build_school_logo_url(row.get("school_logo_url"), external=True),
+                "category": row.get("category", ""),
+                "description": row.get("description") or "",
+                "created_at": created_at.isoformat() if created_at else None,
+                "likes": int(row.get("likes") or 0),
+            })
+    return rows
+
+
 # ===== Admin Adiwiyata Routes =====
 
 def _get_adiwiyata_admin_stats() -> dict:
@@ -962,6 +1033,20 @@ def api_public_adiwiyata_random_photos():
 
     limit = min(30, max(1, request.args.get("limit", 12, type=int)))
     photos = list_random_adiwiyata_photos(limit=limit)
+    return make_cors_response({"photos": photos})
+
+
+@adiwiyata_api_bp.route("/api/public/adiwiyata/top-photos", methods=["GET", "OPTIONS"])
+def api_public_adiwiyata_top_photos():
+    from flask import request
+    if request.method == "OPTIONS":
+        return make_cors_response({})
+
+    limit = min(30, max(1, request.args.get("limit", 6, type=int)))
+    sort = request.args.get("sort", "newest")
+    if sort not in ("newest", "top"):
+        sort = "newest"
+    photos = list_adiwiyata_photos_sorted(limit=limit, sort=sort)
     return make_cors_response({"photos": photos})
 
 
