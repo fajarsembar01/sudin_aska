@@ -14,8 +14,16 @@ from dashboard.queries import (
     merge_dashboard_users,
     update_dashboard_user,
 )
-from dashboard.portal.queries import fetch_activity_logs, get_school_by_id, list_kecamatan, log_activity
+from dashboard.portal.queries import (
+    fetch_activity_logs,
+    get_dashboard_user_profile,
+    get_school_by_id,
+    list_kecamatan,
+    log_activity,
+)
 from dashboard.telegram_notifications import notify_verification_status_update
+
+DEFAULT_RESET_PASSWORD = "12345678"
 
 
 def _slugify(value: str) -> str:
@@ -66,6 +74,46 @@ def handle_manage_users(*, actor: Optional[dict], base_template: str, read_only:
         requested_kecamatan = int(requested_kecamatan_raw) if requested_kecamatan_raw.isdigit() else None
 
         try:
+            if action == "reset_password":
+                if not user_id:
+                    flash("ID User tidak valid.", "danger")
+                else:
+                    profile = get_dashboard_user_profile(int(user_id))
+                    if not profile:
+                        flash("User tidak ditemukan.", "warning")
+                    else:
+                        password_hash = generate_password_hash(
+                            DEFAULT_RESET_PASSWORD,
+                            method="pbkdf2:sha256",
+                            salt_length=12,
+                        )
+                        updated = update_dashboard_user(
+                            user_id=int(user_id),
+                            full_name=profile.get("full_name") or "",
+                            role=profile.get("role") or "viewer",
+                            email=profile.get("email"),
+                            password_hash=password_hash,
+                        )
+                        if updated:
+                            log_activity(
+                                actor_id,
+                                "UPDATE",
+                                "USER",
+                                int(user_id),
+                                profile.get("full_name") or profile.get("email") or f"User #{user_id}",
+                                {
+                                    "email": profile.get("email"),
+                                    "role": profile.get("role"),
+                                    "password_reset": True,
+                                },
+                            )
+                            flash(
+                                f"Password user {profile.get('full_name') or profile.get('email') or user_id} berhasil direset ke default 12345678.",
+                                "success",
+                            )
+                        else:
+                            flash("Gagal mereset password user.", "danger")
+
             if action == "create":
                 if is_unregistered:
                     if not full_name or not jabatan or requested_kecamatan is None:
