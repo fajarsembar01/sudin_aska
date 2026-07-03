@@ -293,6 +293,116 @@ CREATE TABLE IF NOT EXISTS whatsapp_link_settings (
 );
 """
 
+_SPMB_SERVICE_TYPES_SQL = """
+CREATE TABLE IF NOT EXISTS spmb_service_types (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE,
+    description TEXT,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    updated_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_SPMB_SERVICE_TYPES_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_spmb_service_types_active_order
+ON spmb_service_types (active, sort_order, id);
+"""
+
+_SPMB_SERVICE_TYPES_SEED_SQL = """
+INSERT INTO spmb_service_types (name, description, sort_order, active)
+VALUES
+    ('Informasi SPMB', 'Pertanyaan umum alur dan informasi SPMB.', 10, TRUE),
+    ('Verifikasi Berkas', 'Pemeriksaan atau validasi berkas pendaftaran.', 20, TRUE),
+    ('Bantuan Akun', 'Bantuan login, akun, atau akses aplikasi.', 30, TRUE),
+    ('Perubahan Data', 'Bantuan koreksi atau penyesuaian data.', 40, TRUE),
+    ('Pengaduan', 'Keluhan atau kendala selama layanan SPMB.', 50, TRUE),
+    ('Lainnya', 'Jenis pelayanan lain di luar kategori utama.', 60, TRUE)
+ON CONFLICT (name) DO NOTHING;
+"""
+
+_SPMB_TABLE_ASSIGNMENTS_SQL = """
+CREATE TABLE IF NOT EXISTS spmb_table_assignments (
+    id SERIAL PRIMARY KEY,
+    assignment_date DATE NOT NULL,
+    table_number INTEGER NOT NULL CHECK (table_number BETWEEN 1 AND 12),
+    officer_user_id INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    note TEXT,
+    updated_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (assignment_date, table_number)
+);
+"""
+
+_SPMB_TABLE_ASSIGNMENTS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_spmb_table_assignments_date
+ON spmb_table_assignments (assignment_date, table_number);
+CREATE INDEX IF NOT EXISTS idx_spmb_table_assignments_officer
+ON spmb_table_assignments (officer_user_id);
+"""
+
+_SPMB_EVALUATIONS_SQL = """
+CREATE TABLE IF NOT EXISTS spmb_evaluations (
+    id SERIAL PRIMARY KEY,
+    service_type TEXT NOT NULL,
+    table_number INTEGER NOT NULL CHECK (table_number BETWEEN 1 AND 12),
+    indicator TEXT NOT NULL CHECK (indicator IN ('baik', 'sedang', 'buruk')),
+    note TEXT,
+    client_ip TEXT,
+    user_agent TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_SPMB_EVALUATIONS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_spmb_evaluations_created
+ON spmb_evaluations (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_spmb_evaluations_indicator
+ON spmb_evaluations (indicator);
+CREATE INDEX IF NOT EXISTS idx_spmb_evaluations_table_created
+ON spmb_evaluations (table_number, created_at DESC);
+"""
+
+_SPMB_QUEUE_COUNTERS_SQL = """
+CREATE TABLE IF NOT EXISTS spmb_queue_counters (
+    id SERIAL PRIMARY KEY,
+    service_date DATE NOT NULL UNIQUE,
+    current_number INTEGER NOT NULL DEFAULT 0 CHECK (current_number >= 0),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_SPMB_QUEUE_COUNTERS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_spmb_queue_counters_date
+ON spmb_queue_counters (service_date DESC);
+"""
+
+_SPMB_QUEUE_CALLS_SQL = """
+CREATE TABLE IF NOT EXISTS spmb_queue_calls (
+    id SERIAL PRIMARY KEY,
+    service_date DATE NOT NULL,
+    queue_number INTEGER NOT NULL CHECK (queue_number > 0),
+    table_number INTEGER NOT NULL CHECK (table_number BETWEEN 1 AND 12),
+    status TEXT NOT NULL DEFAULT 'sedang_dilayani',
+    officer_user_id INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    called_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (service_date, queue_number)
+);
+"""
+
+_SPMB_QUEUE_CALLS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_spmb_queue_calls_date_status
+ON spmb_queue_calls (service_date, status, queue_number);
+CREATE INDEX IF NOT EXISTS idx_spmb_queue_calls_called
+ON spmb_queue_calls (service_date, called_at DESC, id DESC);
+"""
+
 _TELEGRAM_ADMIN_ACCOUNTS_SQL = """
 CREATE TABLE IF NOT EXISTS telegram_admin_accounts (
     id SERIAL PRIMARY KEY,
@@ -318,6 +428,114 @@ CREATE TABLE IF NOT EXISTS telegram_notification_groups (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     created_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL
+);
+"""
+
+_SUPPORTER_SCHEMA_SQL = """
+CREATE TABLE IF NOT EXISTS supporter_tasks (
+    id SERIAL PRIMARY KEY,
+    title TEXT NOT NULL,
+    campaign_name TEXT,
+    description TEXT,
+    platform TEXT NOT NULL DEFAULT 'instagram',
+    action_type TEXT NOT NULL DEFAULT 'like',
+    action_types JSONB NOT NULL DEFAULT '[]'::jsonb,
+    target_url TEXT,
+    target_account TEXT,
+    instructions TEXT,
+    base_points INTEGER NOT NULL DEFAULT 10 CHECK (base_points >= 0),
+    late_penalty_percent NUMERIC(5,2) NOT NULL DEFAULT 50 CHECK (late_penalty_percent >= 0 AND late_penalty_percent <= 100),
+    start_at TIMESTAMPTZ,
+    deadline_at TIMESTAMPTZ,
+    end_at TIMESTAMPTZ,
+    allow_late_submission BOOLEAN NOT NULL DEFAULT TRUE,
+    requires_proof_url BOOLEAN NOT NULL DEFAULT TRUE,
+    requires_proof_text BOOLEAN NOT NULL DEFAULT FALSE,
+    requires_screenshot BOOLEAN NOT NULL DEFAULT FALSE,
+    verification_mode TEXT NOT NULL DEFAULT 'manual_telegram',
+    status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'active', 'paused', 'archived')),
+    created_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+ALTER TABLE supporter_tasks ADD COLUMN IF NOT EXISTS action_types JSONB NOT NULL DEFAULT '[]'::jsonb;
+ALTER TABLE supporter_tasks ADD COLUMN IF NOT EXISTS end_at TIMESTAMPTZ;
+ALTER TABLE supporter_tasks ALTER COLUMN late_penalty_percent SET DEFAULT 50;
+UPDATE supporter_tasks
+SET action_types = jsonb_build_array(action_type)
+WHERE action_types = '[]'::jsonb
+  AND COALESCE(action_type, '') <> '';
+CREATE INDEX IF NOT EXISTS idx_supporter_tasks_status_deadline ON supporter_tasks (status, deadline_at);
+CREATE INDEX IF NOT EXISTS idx_supporter_tasks_status_end ON supporter_tasks (status, end_at);
+CREATE INDEX IF NOT EXISTS idx_supporter_tasks_platform_action ON supporter_tasks (platform, action_type);
+CREATE INDEX IF NOT EXISTS idx_supporter_tasks_action_types ON supporter_tasks USING GIN (action_types);
+
+CREATE TABLE IF NOT EXISTS supporter_submissions (
+    id SERIAL PRIMARY KEY,
+    task_id INTEGER NOT NULL REFERENCES supporter_tasks(id) ON DELETE CASCADE,
+    staff_id INTEGER NOT NULL REFERENCES dashboard_users(id) ON DELETE CASCADE,
+    status TEXT NOT NULL DEFAULT 'submitted' CHECK (status IN ('submitted', 'under_review', 'verified', 'rejected', 'needs_revision', 'cancelled')),
+    social_username TEXT,
+    proof_url TEXT,
+    proof_text TEXT,
+    proof_file_path TEXT,
+    submitted_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    reviewed_at TIMESTAMPTZ,
+    reviewed_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    reviewer_note TEXT,
+    base_points INTEGER NOT NULL DEFAULT 0,
+    penalty_percent NUMERIC(5,2) NOT NULL DEFAULT 0,
+    potential_points INTEGER NOT NULL DEFAULT 0,
+    awarded_points INTEGER NOT NULL DEFAULT 0,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (task_id, staff_id)
+);
+CREATE INDEX IF NOT EXISTS idx_supporter_submissions_staff_status ON supporter_submissions (staff_id, status, submitted_at DESC);
+CREATE INDEX IF NOT EXISTS idx_supporter_submissions_task_status ON supporter_submissions (task_id, status, submitted_at DESC);
+
+CREATE TABLE IF NOT EXISTS supporter_point_events (
+    id SERIAL PRIMARY KEY,
+    submission_id INTEGER REFERENCES supporter_submissions(id) ON DELETE SET NULL,
+    task_id INTEGER REFERENCES supporter_tasks(id) ON DELETE SET NULL,
+    staff_id INTEGER REFERENCES dashboard_users(id) ON DELETE CASCADE,
+    points_delta INTEGER NOT NULL DEFAULT 0,
+    event_type TEXT NOT NULL DEFAULT 'verified',
+    note TEXT,
+    created_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_supporter_point_events_staff_created ON supporter_point_events (staff_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS supporter_activity_logs (
+    id SERIAL PRIMARY KEY,
+    actor_user_id INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    action TEXT NOT NULL,
+    target_type TEXT NOT NULL,
+    target_id INTEGER,
+    summary TEXT,
+    details JSONB NOT NULL DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_supporter_activity_logs_created ON supporter_activity_logs (created_at DESC);
+
+CREATE TABLE IF NOT EXISTS supporter_telegram_groups (
+    id SERIAL PRIMARY KEY,
+    chat_id BIGINT UNIQUE NOT NULL,
+    title TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS supporter_telegram_delivery_messages (
+    submission_id INTEGER NOT NULL REFERENCES supporter_submissions(id) ON DELETE CASCADE,
+    chat_id BIGINT NOT NULL,
+    message_id BIGINT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (submission_id, chat_id)
 );
 """
 
@@ -722,6 +940,48 @@ CREATE TABLE IF NOT EXISTS portal_room_follow_up_updates (
 _PORTAL_ROOM_FOLLOW_UP_UPDATES_INDEX_SQL = """
 CREATE INDEX IF NOT EXISTS idx_portal_follow_up_updates_ticket_created
 ON portal_room_follow_up_updates (follow_up_id, created_at DESC);
+"""
+
+_PORTAL_ADIWIYATA_POSTS_SQL = """
+CREATE TABLE IF NOT EXISTS portal_adiwiyata_posts (
+    id SERIAL PRIMARY KEY,
+    school_id INTEGER NOT NULL REFERENCES portal_schools(id) ON DELETE CASCADE,
+    category TEXT NOT NULL,
+    media_path TEXT NOT NULL,
+    media_type TEXT NOT NULL,
+    description TEXT,
+    thumbnail_path TEXT,
+    created_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_PORTAL_ADIWIYATA_POSTS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_adiwiyata_posts_school_category 
+ON portal_adiwiyata_posts (school_id, category);
+"""
+
+_PORTAL_ADIWIYATA_POSTS_CREATED_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_adiwiyata_posts_created_at
+ON portal_adiwiyata_posts (created_at DESC);
+"""
+
+_ADIWIYATA_POST_LIKES_SQL = """
+CREATE TABLE IF NOT EXISTS adiwiyata_post_likes (
+    id SERIAL PRIMARY KEY,
+    post_id INTEGER NOT NULL REFERENCES portal_adiwiyata_posts(id) ON DELETE CASCADE,
+    fingerprint TEXT NOT NULL,
+    action TEXT NOT NULL CHECK (action IN ('like', 'dislike')),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (post_id, fingerprint)
+);
+"""
+
+_ADIWIYATA_POST_LIKES_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_adiwiyata_post_likes_post_action
+ON adiwiyata_post_likes (post_id, action);
 """
 
 _USER_KECAMATAN_SQL = """
@@ -1264,12 +1524,24 @@ def ensure_dashboard_schema() -> None:
         _WHATSAPP_USERS_INDEX_STATUS,
         _TELEGRAM_NOTIFICATION_SETTINGS_SQL,
         _WHATSAPP_LINK_SETTINGS_SQL,
+        _SPMB_SERVICE_TYPES_SQL,
+        _SPMB_SERVICE_TYPES_INDEX_SQL,
+        _SPMB_SERVICE_TYPES_SEED_SQL,
+        _SPMB_TABLE_ASSIGNMENTS_SQL,
+        _SPMB_TABLE_ASSIGNMENTS_INDEX_SQL,
+        _SPMB_EVALUATIONS_SQL,
+        _SPMB_EVALUATIONS_INDEX_SQL,
+        _SPMB_QUEUE_COUNTERS_SQL,
+        _SPMB_QUEUE_COUNTERS_INDEX_SQL,
+        _SPMB_QUEUE_CALLS_SQL,
+        _SPMB_QUEUE_CALLS_INDEX_SQL,
         _TELEGRAM_ADMIN_ACCOUNTS_SQL,
         _TELEGRAM_ADMIN_ACCOUNTS_INDEX_USER,
         _TELEGRAM_ADMIN_SCOPE_MIGRATION,
         _TELEGRAM_ADMIN_DROP_OLD_UNIQUE,
         _TELEGRAM_ADMIN_ADD_SCOPE_UNIQUE,
         _TELEGRAM_NOTIFICATION_GROUPS_SQL,
+        _SUPPORTER_SCHEMA_SQL,
         # Portal PANBERSS tables
         _PORTAL_KECAMATAN_SQL,
         _PORTAL_KECAMATAN_INDEX_SQL,
@@ -1317,6 +1589,11 @@ def ensure_dashboard_schema() -> None:
         _PORTAL_ROOM_FOLLOW_UP_TICKETS_INDEX_SQL,
         _PORTAL_ROOM_FOLLOW_UP_UPDATES_SQL,
         _PORTAL_ROOM_FOLLOW_UP_UPDATES_INDEX_SQL,
+        _PORTAL_ADIWIYATA_POSTS_SQL,
+        _PORTAL_ADIWIYATA_POSTS_INDEX_SQL,
+        _PORTAL_ADIWIYATA_POSTS_CREATED_INDEX_SQL,
+        _ADIWIYATA_POST_LIKES_SQL,
+        _ADIWIYATA_POST_LIKES_INDEX_SQL,
         # Kecamatan access control tables
         _USER_KECAMATAN_SQL,
         _USER_KECAMATAN_INDEX_SQL,
@@ -1460,6 +1737,7 @@ def ensure_dashboard_schema() -> None:
         "ALTER TABLE portal_schools ADD COLUMN IF NOT EXISTS logo_url TEXT",
         # Kecamatan cache column for dashboard_users
         "ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS kecamatan_cache JSONB",
+        "ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS social_username TEXT",
         # Daftar tamu compatibility columns
         "ALTER TABLE daftar_tamu_schools ADD COLUMN IF NOT EXISTS metadata JSONB",
         "ALTER TABLE daftar_tamu_visits ADD COLUMN IF NOT EXISTS photo_path TEXT",
@@ -1500,6 +1778,24 @@ def ensure_dashboard_schema() -> None:
         "ALTER TABLE cc_message_drafts ADD COLUMN IF NOT EXISTS media_filename TEXT",
         "ALTER TABLE cc_message_drafts ADD COLUMN IF NOT EXISTS media_size INTEGER",
         _CC_MESSAGE_DRAFTS_INDEX_SQL,
+        # ===== Laporan (Form Reports) tables =====
+        _LAPORAN_FORMS_SQL,
+        _LAPORAN_FORMS_STATUS_MIGRATION_SQL,
+        _LAPORAN_FORMS_PAUSE_MIGRATION_SQL,
+        _LAPORAN_REPEAT_POLICY_MIGRATION_SQL,
+        _LAPORAN_FORMS_INDEX_SQL,
+        _LAPORAN_FORM_TARGETS_SQL,
+        _LAPORAN_FORM_TARGETS_INDEX_SQL,
+        _LAPORAN_FORM_FIELDS_SQL,
+        _LAPORAN_FORM_FIELDS_INDEX_SQL,
+        _LAPORAN_SUBMISSIONS_SQL,
+        _LAPORAN_SUBMISSIONS_REPEAT_PERIOD_MIGRATION_SQL,
+        _LAPORAN_SUBMISSIONS_INDEX_SQL,
+        _LAPORAN_SUBMISSION_ANSWERS_SQL,
+        _LAPORAN_SUBMISSION_ANSWERS_UNIQUE_MIGRATION_SQL,
+        _LAPORAN_SUBMISSION_ANSWERS_INDEX_SQL,
+        _LAPORAN_SUBMISSION_FILES_SQL,
+        _LAPORAN_SUBMISSION_FILES_INDEX_SQL,
     )
     
     # Execute statements one by one to ensure partial success and better error reporting
@@ -1511,6 +1807,285 @@ def ensure_dashboard_schema() -> None:
         except Exception as e:
             # Log error but continue with other statements if possible
             print(f"Error executing schema statement #{i+1}: {e}")
+            print(f"Statement: {statement[:100]}...")
+
+
+# ===== Laporan Schema SQL =====
+
+_LAPORAN_FORMS_SQL = """
+CREATE TABLE IF NOT EXISTS laporan_forms (
+    id SERIAL PRIMARY KEY,
+    title TEXT NOT NULL,
+    description TEXT,
+    target_scope TEXT NOT NULL DEFAULT 'all' CHECK (target_scope IN ('all', 'jenjang', 'specific')),
+    target_jenjang TEXT,
+    allow_multiple BOOLEAN NOT NULL DEFAULT FALSE,
+    allow_late BOOLEAN NOT NULL DEFAULT FALSE,
+    very_late_after_minutes INTEGER NOT NULL DEFAULT 180,
+    no_submission_after_minutes INTEGER,
+    no_submission_jenjangs TEXT,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    is_paused BOOLEAN NOT NULL DEFAULT FALSE,
+    status TEXT NOT NULL DEFAULT 'published' CHECK (status IN ('draft', 'published')),
+    repeat_policy TEXT NOT NULL DEFAULT 'once' CHECK (repeat_policy IN ('once', 'multiple', 'daily', 'weekly', 'monthly')),
+    repeat_until_at TIMESTAMPTZ,
+    repeat_deadline_time TIME,
+    repeat_deadline_day INTEGER,
+    deadline_at TIMESTAMPTZ,
+    created_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    updated_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_LAPORAN_FORMS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_laporan_forms_active ON laporan_forms (is_active, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_laporan_forms_paused ON laporan_forms (is_paused, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_laporan_forms_scope ON laporan_forms (target_scope);
+CREATE INDEX IF NOT EXISTS idx_laporan_forms_status ON laporan_forms (status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_laporan_forms_repeat_policy ON laporan_forms (repeat_policy, repeat_until_at);
+"""
+
+_LAPORAN_FORMS_STATUS_MIGRATION_SQL = """
+ALTER TABLE laporan_forms ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'published';
+DO $$
+BEGIN
+    ALTER TABLE laporan_forms
+    ADD CONSTRAINT laporan_forms_status_check
+    CHECK (status IN ('draft', 'published'));
+EXCEPTION
+    WHEN duplicate_object THEN NULL;
+END $$;
+UPDATE laporan_forms SET status = 'published' WHERE status IS NULL;
+"""
+
+_LAPORAN_FORMS_PAUSE_MIGRATION_SQL = """
+ALTER TABLE laporan_forms ADD COLUMN IF NOT EXISTS is_paused BOOLEAN NOT NULL DEFAULT FALSE;
+CREATE INDEX IF NOT EXISTS idx_laporan_forms_paused ON laporan_forms (is_paused, created_at DESC);
+"""
+
+_LAPORAN_REPEAT_POLICY_MIGRATION_SQL = """
+ALTER TABLE laporan_forms ADD COLUMN IF NOT EXISTS repeat_policy TEXT NOT NULL DEFAULT 'once';
+ALTER TABLE laporan_forms ADD COLUMN IF NOT EXISTS repeat_until_at TIMESTAMPTZ;
+ALTER TABLE laporan_forms ADD COLUMN IF NOT EXISTS repeat_deadline_time TIME;
+ALTER TABLE laporan_forms ADD COLUMN IF NOT EXISTS repeat_deadline_day INTEGER;
+DO $$
+BEGIN
+    ALTER TABLE laporan_forms
+    ADD CONSTRAINT laporan_forms_repeat_policy_check
+    CHECK (repeat_policy IN ('once', 'multiple', 'daily', 'weekly', 'monthly'));
+EXCEPTION
+    WHEN duplicate_object THEN NULL;
+END $$;
+UPDATE laporan_forms
+SET repeat_policy = CASE WHEN allow_multiple THEN 'multiple' ELSE 'once' END
+WHERE repeat_policy IS NULL OR (repeat_policy = 'once' AND allow_multiple = TRUE);
+"""
+
+_LAPORAN_FORM_TARGETS_SQL = """
+CREATE TABLE IF NOT EXISTS laporan_form_targets (
+    id SERIAL PRIMARY KEY,
+    form_id INTEGER NOT NULL REFERENCES laporan_forms(id) ON DELETE CASCADE,
+    school_id INTEGER NOT NULL REFERENCES portal_schools(id) ON DELETE CASCADE,
+    UNIQUE (form_id, school_id)
+);
+"""
+
+_LAPORAN_FORM_TARGETS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_laporan_form_targets_form ON laporan_form_targets (form_id);
+CREATE INDEX IF NOT EXISTS idx_laporan_form_targets_school ON laporan_form_targets (school_id);
+"""
+
+_LAPORAN_FORM_FIELDS_SQL = """
+CREATE TABLE IF NOT EXISTS laporan_form_fields (
+    id SERIAL PRIMARY KEY,
+    form_id INTEGER NOT NULL REFERENCES laporan_forms(id) ON DELETE CASCADE,
+    label TEXT NOT NULL,
+    field_type TEXT NOT NULL DEFAULT 'text' CHECK (field_type IN ('text', 'textarea', 'radio', 'checkbox', 'file', 'upload_dokumen', 'upload_gambar', 'date', 'number', 'rating', 'dropdown', 'time', 'email', 'header', 'info', 'link')),
+    options_json JSONB,
+    required BOOLEAN NOT NULL DEFAULT TRUE,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_LAPORAN_FORM_FIELDS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_laporan_form_fields_form ON laporan_form_fields (form_id, sort_order);
+"""
+
+_LAPORAN_SUBMISSIONS_SQL = """
+CREATE TABLE IF NOT EXISTS laporan_submissions (
+    id SERIAL PRIMARY KEY,
+    form_id INTEGER NOT NULL REFERENCES laporan_forms(id) ON DELETE CASCADE,
+    school_id INTEGER NOT NULL REFERENCES portal_schools(id) ON DELETE CASCADE,
+    submitted_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    status TEXT NOT NULL DEFAULT 'submitted' CHECK (status IN ('draft', 'submitted', 'no_submission')),
+    submitted_at TIMESTAMPTZ,
+    is_late BOOLEAN NOT NULL DEFAULT FALSE,
+    late_days INTEGER DEFAULT 0,
+    late_minutes INTEGER DEFAULT 0,
+    repeat_period_key TEXT,
+    repeat_period_label TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_LAPORAN_SUBMISSIONS_REPEAT_PERIOD_MIGRATION_SQL = """
+ALTER TABLE laporan_submissions ADD COLUMN IF NOT EXISTS repeat_period_key TEXT;
+ALTER TABLE laporan_submissions ADD COLUMN IF NOT EXISTS repeat_period_label TEXT;
+"""
+
+_LAPORAN_SUBMISSIONS_STATUS_CHECK_MIGRATION_SQL = """
+ALTER TABLE laporan_submissions DROP CONSTRAINT IF EXISTS laporan_submissions_status_check;
+ALTER TABLE laporan_submissions ADD CONSTRAINT laporan_submissions_status_check 
+CHECK (status IN ('draft', 'submitted', 'no_submission'));
+"""
+
+_LAPORAN_FORMS_LATE_MIGRATION_SQL = """
+ALTER TABLE laporan_forms ADD COLUMN IF NOT EXISTS allow_late BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE laporan_forms ADD COLUMN IF NOT EXISTS very_late_after_minutes INTEGER NOT NULL DEFAULT 180;
+ALTER TABLE laporan_forms ADD COLUMN IF NOT EXISTS no_submission_after_minutes INTEGER;
+ALTER TABLE laporan_forms ADD COLUMN IF NOT EXISTS no_submission_jenjangs TEXT;
+"""
+
+_LAPORAN_FORMS_STATUS_FILTER_MIGRATION_SQL = """
+ALTER TABLE laporan_forms ADD COLUMN IF NOT EXISTS no_submission_statuses TEXT;
+"""
+
+_LAPORAN_SUBMISSIONS_LATE_MIGRATION_SQL = """
+ALTER TABLE laporan_submissions ADD COLUMN IF NOT EXISTS is_late BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE laporan_submissions ADD COLUMN IF NOT EXISTS late_days INTEGER DEFAULT 0;
+ALTER TABLE laporan_submissions ADD COLUMN IF NOT EXISTS late_minutes INTEGER DEFAULT 0;
+"""
+
+_LAPORAN_FIELDS_CONSTRAINT_MIGRATION_SQL = """
+ALTER TABLE laporan_form_fields DROP CONSTRAINT IF EXISTS laporan_form_fields_field_type_check;
+ALTER TABLE laporan_form_fields ADD CONSTRAINT laporan_form_fields_field_type_check 
+CHECK (field_type IN ('text', 'textarea', 'radio', 'checkbox', 'file', 'upload_dokumen', 'upload_gambar', 'date', 'number', 'rating', 'dropdown', 'time', 'email', 'header', 'info', 'link'));
+"""
+
+_LAPORAN_SUBMISSIONS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_laporan_submissions_form ON laporan_submissions (form_id, submitted_at DESC);
+CREATE INDEX IF NOT EXISTS idx_laporan_submissions_school ON laporan_submissions (school_id, form_id);
+CREATE INDEX IF NOT EXISTS idx_laporan_submissions_status ON laporan_submissions (status);
+CREATE INDEX IF NOT EXISTS idx_laporan_submissions_is_late ON laporan_submissions (is_late);
+CREATE INDEX IF NOT EXISTS idx_laporan_submissions_period ON laporan_submissions (form_id, school_id, repeat_period_key);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_laporan_submissions_period
+    ON laporan_submissions (form_id, school_id, repeat_period_key)
+    WHERE status = 'submitted' AND repeat_period_key IS NOT NULL;
+"""
+
+_LAPORAN_SUBMISSION_ANSWERS_SQL = """
+CREATE TABLE IF NOT EXISTS laporan_submission_answers (
+    id SERIAL PRIMARY KEY,
+    submission_id INTEGER NOT NULL REFERENCES laporan_submissions(id) ON DELETE CASCADE,
+    field_id INTEGER NOT NULL REFERENCES laporan_form_fields(id) ON DELETE CASCADE,
+    answer_text TEXT,
+    answer_json JSONB,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (submission_id, field_id)
+);
+"""
+
+_LAPORAN_SUBMISSION_ANSWERS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_laporan_answers_submission ON laporan_submission_answers (submission_id);
+CREATE INDEX IF NOT EXISTS idx_laporan_answers_field ON laporan_submission_answers (field_id);
+"""
+
+_LAPORAN_SUBMISSION_ANSWERS_UNIQUE_MIGRATION_SQL = """
+DO $$
+BEGIN
+    IF to_regclass('public.laporan_submission_files') IS NOT NULL THEN
+        WITH ranked AS (
+            SELECT
+                id,
+                FIRST_VALUE(id) OVER (
+                    PARTITION BY submission_id, field_id
+                    ORDER BY id DESC
+                ) AS keep_id,
+                ROW_NUMBER() OVER (
+                    PARTITION BY submission_id, field_id
+                    ORDER BY id DESC
+                ) AS rn
+            FROM laporan_submission_answers
+        )
+        UPDATE laporan_submission_files sf
+        SET answer_id = ranked.keep_id
+        FROM ranked
+        WHERE sf.answer_id = ranked.id
+          AND ranked.rn > 1;
+    END IF;
+END $$;
+
+WITH ranked AS (
+    SELECT
+        id,
+        ROW_NUMBER() OVER (
+            PARTITION BY submission_id, field_id
+            ORDER BY id DESC
+        ) AS rn
+    FROM laporan_submission_answers
+)
+DELETE FROM laporan_submission_answers a
+USING ranked
+WHERE a.id = ranked.id
+  AND ranked.rn > 1;
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_laporan_submission_answers_submission_field
+    ON laporan_submission_answers (submission_id, field_id);
+"""
+
+_LAPORAN_SUBMISSION_FILES_SQL = """
+CREATE TABLE IF NOT EXISTS laporan_submission_files (
+    id SERIAL PRIMARY KEY,
+    answer_id INTEGER NOT NULL REFERENCES laporan_submission_answers(id) ON DELETE CASCADE,
+    file_path TEXT NOT NULL,
+    original_name TEXT,
+    mime_type TEXT,
+    size_bytes INTEGER,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_LAPORAN_SUBMISSION_FILES_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_laporan_files_answer ON laporan_submission_files (answer_id);
+"""
+
+
+def ensure_laporan_schema() -> None:
+    """Create laporan (form reports) tables without touching unrelated schema."""
+    statements = (
+        _LAPORAN_FORMS_SQL,
+        _LAPORAN_FORMS_STATUS_MIGRATION_SQL,
+        _LAPORAN_FORMS_PAUSE_MIGRATION_SQL,
+        _LAPORAN_REPEAT_POLICY_MIGRATION_SQL,
+        _LAPORAN_FORMS_LATE_MIGRATION_SQL,
+        _LAPORAN_FORMS_STATUS_FILTER_MIGRATION_SQL,
+        _LAPORAN_FORMS_INDEX_SQL,
+        _LAPORAN_FORM_TARGETS_SQL,
+        _LAPORAN_FORM_TARGETS_INDEX_SQL,
+        _LAPORAN_FORM_FIELDS_SQL,
+        _LAPORAN_FIELDS_CONSTRAINT_MIGRATION_SQL,
+        _LAPORAN_FORM_FIELDS_INDEX_SQL,
+        _LAPORAN_SUBMISSIONS_SQL,
+        _LAPORAN_SUBMISSIONS_STATUS_CHECK_MIGRATION_SQL,
+        _LAPORAN_SUBMISSIONS_REPEAT_PERIOD_MIGRATION_SQL,
+        _LAPORAN_SUBMISSIONS_LATE_MIGRATION_SQL,
+        _LAPORAN_SUBMISSIONS_INDEX_SQL,
+        _LAPORAN_SUBMISSION_ANSWERS_SQL,
+        _LAPORAN_SUBMISSION_ANSWERS_UNIQUE_MIGRATION_SQL,
+        _LAPORAN_SUBMISSION_ANSWERS_INDEX_SQL,
+        _LAPORAN_SUBMISSION_FILES_SQL,
+        _LAPORAN_SUBMISSION_FILES_INDEX_SQL,
+    )
+    for i, statement in enumerate(statements):
+        try:
+            with get_cursor(commit=True) as cur:
+                cur.execute(statement)
+        except Exception as e:
+            print(f"Error executing laporan schema statement #{i + 1}: {e}")
             print(f"Statement: {statement[:100]}...")
 
 
@@ -1536,4 +2111,4 @@ def ensure_cms_artikel_schema() -> None:
             raise
 
 
-__all__ = ["ensure_dashboard_schema", "ensure_cms_artikel_schema"]
+__all__ = ["ensure_dashboard_schema", "ensure_cms_artikel_schema", "ensure_laporan_schema"]

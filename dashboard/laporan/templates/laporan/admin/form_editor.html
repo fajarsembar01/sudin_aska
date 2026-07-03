@@ -1,0 +1,1269 @@
+{% extends "laporan/base_laporan.html" %}
+{% set page_title = "Form Editor - Laporan" %}
+
+{% block head_extra %}
+<style>
+    .field-builder-item {
+        border: 1.5px solid var(--border-soft);
+        border-radius: 14px;
+        background: var(--bg-surface);
+        padding: 1.1rem 1.25rem;
+        margin-bottom: 0.75rem;
+        position: relative;
+        transition: border-color 0.15s;
+    }
+    .field-builder-item:hover {
+        border-color: var(--accent);
+    }
+    .field-builder-item .field-drag-handle {
+        cursor: grab;
+        color: var(--text-muted);
+        font-size: 1.1rem;
+        width: 30px;
+        height: 30px;
+        border: 1px solid var(--border-soft);
+        border-radius: 8px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--bg-subtle);
+        flex-shrink: 0;
+        touch-action: none;
+    }
+    .field-builder-item .field-drag-handle:active {
+        cursor: grabbing;
+    }
+    .field-builder-item.is-dragging {
+        opacity: 0.55;
+        border-style: dashed;
+    }
+    .field-builder-item.is-drop-before {
+        border-top-color: var(--accent);
+        box-shadow: 0 -3px 0 var(--accent);
+    }
+    .field-builder-item.is-drop-after {
+        border-bottom-color: var(--accent);
+        box-shadow: 0 3px 0 var(--accent);
+    }
+    .field-order-controls {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        flex-shrink: 0;
+    }
+    .field-order-controls .btn {
+        width: 30px;
+        height: 30px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .remove-field-btn {
+        position: absolute;
+        top: 0.75rem;
+        right: 0.75rem;
+    }
+    .option-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        background: rgba(13,110,253,0.08);
+        color: #0d6efd;
+        border-radius: 8px;
+        padding: 3px 10px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        margin: 2px;
+    }
+    .option-tag button {
+        background: none;
+        border: none;
+        padding: 0;
+        line-height: 1;
+        color: #0d6efd;
+        cursor: pointer;
+        font-size: 0.8rem;
+    }
+    .add-field-btn {
+        border: 2px dashed var(--border-soft);
+        border-radius: 14px;
+        background: transparent;
+        width: 100%;
+        padding: 0.85rem;
+        color: var(--text-muted);
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.15s;
+    }
+    .add-field-btn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: rgba(13,110,253,0.03);
+    }
+    .section-card {
+        border: 1.5px solid var(--border-soft);
+        border-radius: 18px;
+        background: var(--bg-surface);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .section-card h5 {
+        font-size: 0.85rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-muted);
+        margin-bottom: 1rem;
+    }
+    #fieldsContainer .field-number {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: var(--accent);
+        color: white;
+        font-size: 0.75rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+</style>
+{% endblock %}
+
+{% block portal_content %}
+<div class="d-flex align-items-center gap-2 mb-4">
+    <a href="{{ url_for('laporan.admin_laporan_list') }}"
+        class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1">
+        <i class="bi bi-arrow-left"></i> Kembali
+    </a>
+    <h1 class="h4 fw-bold mb-0">
+        {% if form %}Edit Form: {{ form.title }}{% else %}Buat Form Baru{% endif %}
+    </h1>
+</div>
+
+<form method="POST"
+    action="{% if form %}{{ url_for('laporan.admin_laporan_edit', form_id=form.id) }}{% else %}{{ url_for('laporan.admin_laporan_create') }}{% endif %}"
+    id="formEditor">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    {% set selected_repeat_policy = form.repeat_policy if form and form.repeat_policy else ('multiple' if form and form.allow_multiple else 'once') %}
+    {% set selected_repeat_deadline_day = form.repeat_deadline_day if form and form.repeat_deadline_day is not none else '' %}
+    {% set selected_repeat_deadline_time = form.repeat_deadline_time.strftime('%H:%M') if form and form.repeat_deadline_time else '' %}
+
+    {# ── Informasi Dasar ── #}
+    <div class="section-card">
+        <h5><i class="bi bi-info-circle me-2"></i>Informasi Form</h5>
+        <div class="mb-3">
+            <label class="form-label fw-semibold">Judul Form <span class="text-danger">*</span></label>
+            <input type="text" name="title" class="form-control"
+                placeholder="Contoh: Laporan Kegiatan Bulan Juni"
+                value="{{ form.title if form else '' }}">
+        </div>
+        <div class="mb-3">
+            <label class="form-label fw-semibold">Deskripsi / Petunjuk Pengisian</label>
+            <textarea name="description" class="form-control" rows="3"
+                placeholder="Jelaskan tujuan form ini dan cara pengisiannya...">{{ form.description if form else '' }}</textarea>
+        </div>
+        <div class="row g-3">
+            <div class="col-md-3" id="globalDeadlineGroup">
+                <label class="form-label fw-semibold">Deadline Pengisian</label>
+                <input type="datetime-local" name="deadline_at" class="form-control"
+                    value="{{ form.deadline_at.strftime('%Y-%m-%dT%H:%M') if form and form.deadline_at else '' }}">
+                <small class="text-muted">Dipakai untuk sekali isi / bebas berkali-kali</small>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Toleransi Keterlambatan</label>
+                <select name="allow_late" class="form-select">
+                    <option value="0" {% if not form or not form.allow_late %}selected{% endif %}>Blokir jika lewat deadline</option>
+                    <option value="1" {% if form and form.allow_late %}selected{% endif %}>Izinkan (Tandai Terlambat)</option>
+                </select>
+                <small class="text-muted">Jika diizinkan, dihitung ke dalam KPI</small>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Sangat Terlambat Setelah</label>
+                <div class="input-group">
+                    <input type="number" name="very_late_after_hours" class="form-control"
+                        min="0.25" max="720" step="0.25"
+                        value="{{ laporan_very_late_hours_value(form) if form else '3' }}">
+                    <span class="input-group-text">jam</span>
+                </div>
+                <small class="text-muted">Default 3 jam setelah deadline</small>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Tidak Mengumpulkan Setelah</label>
+                <div class="input-group">
+                    <input type="number" name="no_submission_after_hours" class="form-control"
+                        min="0" max="720" step="1"
+                        value="{{ laporan_no_submission_hours_value(form) if form else '' }}"
+                        placeholder="Jam">
+                    <span class="input-group-text">jam</span>
+                    <input type="number" name="no_submission_after_minutes" class="form-control"
+                        min="0" max="59" step="1"
+                        value="{{ laporan_no_submission_minutes_value(form) if form else '' }}"
+                        placeholder="Menit">
+                    <span class="input-group-text">menit</span>
+                </div>
+                <small class="text-muted">Kosongkan jika tidak ingin blokir total setelah deadline</small>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Boleh Diisi Ulang?</label>
+                <input type="hidden" name="allow_multiple" id="allowMultipleInput"
+                    value="{{ '1' if selected_repeat_policy != 'once' else '0' }}">
+                <select name="repeat_policy" id="repeatPolicySelect" class="form-select" onchange="updateRepeatPolicy()">
+                    <option value="once" {% if selected_repeat_policy == 'once' %}selected{% endif %}>Tidak (sekali saja)</option>
+                    <option value="multiple" {% if selected_repeat_policy == 'multiple' %}selected{% endif %}>Ya (bebas berkali-kali)</option>
+                    <option value="daily" {% if selected_repeat_policy == 'daily' %}selected{% endif %}>Per hari</option>
+                    <option value="weekly" {% if selected_repeat_policy == 'weekly' %}selected{% endif %}>Per minggu</option>
+                    <option value="monthly" {% if selected_repeat_policy == 'monthly' %}selected{% endif %}>Per bulan</option>
+                </select>
+            </div>
+            <div class="col-md-3" id="repeatUntilGroup"
+                {% if selected_repeat_policy not in ('daily', 'weekly', 'monthly') %}style="display:none;"{% endif %}>
+                <label class="form-label fw-semibold">Diisi Ulang Sampai</label>
+                <input type="date" name="repeat_until_date" class="form-control"
+                    value="{{ laporan_date_input_value(form.repeat_until_at) if form else '' }}">
+                <small class="text-muted">Tanggal terakhir periode dibuka. Jamnya mengikuti deadline periode.</small>
+            </div>
+            <div class="col-md-3" id="repeatDeadlineDayGroup" style="display:none;">
+                <label class="form-label fw-semibold" id="repeatDeadlineDayLabel">Hari Deadline</label>
+                <select name="repeat_deadline_weekday" class="form-select" id="repeatDeadlineDaySelect">
+                    <option value="">Pilih...</option>
+                    <option value="0" {% if selected_repeat_deadline_day == 0 %}selected{% endif %}>Senin</option>
+                    <option value="1" {% if selected_repeat_deadline_day == 1 %}selected{% endif %}>Selasa</option>
+                    <option value="2" {% if selected_repeat_deadline_day == 2 %}selected{% endif %}>Rabu</option>
+                    <option value="3" {% if selected_repeat_deadline_day == 3 %}selected{% endif %}>Kamis</option>
+                    <option value="4" {% if selected_repeat_deadline_day == 4 %}selected{% endif %}>Jumat</option>
+                    <option value="5" {% if selected_repeat_deadline_day == 5 %}selected{% endif %}>Sabtu</option>
+                    <option value="6" {% if selected_repeat_deadline_day == 6 %}selected{% endif %}>Minggu</option>
+                </select>
+            </div>
+            <div class="col-md-3" id="repeatDeadlineDateGroup" style="display:none;">
+                <label class="form-label fw-semibold">Tanggal Deadline Bulanan</label>
+                <input type="number" min="1" max="31" name="repeat_deadline_month_day"
+                    class="form-control" id="repeatDeadlineDateInput"
+                    value="{% if selected_repeat_policy == 'monthly' %}{{ selected_repeat_deadline_day }}{% endif %}">
+                <small class="text-muted">Jika bulan lebih pendek, dipakai tanggal terakhir</small>
+            </div>
+            <div class="col-md-3" id="repeatDeadlineTimeGroup"
+                {% if selected_repeat_policy not in ('daily', 'weekly', 'monthly') %}style="display:none;"{% endif %}>
+                <label class="form-label fw-semibold">Jam Deadline Periode</label>
+                <input type="time" name="repeat_deadline_time" class="form-control"
+                    value="{{ selected_repeat_deadline_time }}">
+                <small class="text-muted">Contoh harian: isi sebelum jam ini</small>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Status</label>
+                <select name="is_active" class="form-select">
+                    <option value="1" {% if not form or form.status == 'draft' or form.is_active %}selected{% endif %}>Aktif</option>
+                    <option value="0" {% if form and form.status != 'draft' and not form.is_active %}selected{% endif %}>Nonaktif</option>
+                </select>
+            </div>
+            <div class="col-12">
+                <label class="form-label fw-semibold">Jenjang yang Dihitung Tidak Mengumpulkan</label>
+                {% set selected_no_submission_jenjangs = laporan_selected_no_submission_jenjangs(form) if form else [] %}
+                {% set selected_no_submission_statuses_val = laporan_selected_no_submission_statuses(form) if form else [] %}
+                {% set current_status_filter = selected_no_submission_statuses_val[0] if selected_no_submission_statuses_val else '' %}
+
+                {# Filter Semua / Negeri / Swasta #}
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <span class="text-muted small fw-semibold me-1">Status Sekolah:</span>
+                    <div class="btn-group btn-group-sm" role="group" id="statusFilterGroup">
+                        <input type="radio" class="btn-check" name="no_submission_statuses"
+                            id="status_filter_all" value=""
+                            {% if current_status_filter == 'SEMUA' %}checked{% endif %}
+                            onchange="filterJenjangByStatus(this.value)">
+                        <label class="btn btn-outline-secondary" for="status_filter_all">Semua</label>
+
+                        <input type="radio" class="btn-check" name="no_submission_statuses"
+                            id="status_filter_negeri" value="NEGERI"
+                            {% if current_status_filter == 'NEGERI' or not current_status_filter %}checked{% endif %}
+                            onchange="filterJenjangByStatus(this.value)">
+                        <label class="btn btn-outline-primary" for="status_filter_negeri">
+                            <i class="bi bi-building me-1"></i>Negeri
+                        </label>
+
+                        <input type="radio" class="btn-check" name="no_submission_statuses"
+                            id="status_filter_swasta" value="SWASTA"
+                            {% if current_status_filter == 'SWASTA' %}checked{% endif %}
+                            onchange="filterJenjangByStatus(this.value)">
+                        <label class="btn btn-outline-success" for="status_filter_swasta">
+                            <i class="bi bi-building-check me-1"></i>Swasta
+                        </label>
+                    </div>
+                </div>
+
+                {# Checkbox Jenjang #}
+                <div class="d-flex flex-wrap gap-3" id="jenjangCheckboxGroup">
+                    {% for jenjang in available_jenjangs or ['SD', 'SMP'] %}
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox"
+                            name="no_submission_jenjangs[]" value="{{ jenjang }}"
+                            id="no_submission_jenjang_{{ loop.index }}"
+                            {% if jenjang in selected_no_submission_jenjangs %}checked{% endif %}>
+                        <label class="form-check-label" for="no_submission_jenjang_{{ loop.index }}">{{ jenjang }}</label>
+                    </div>
+                    {% endfor %}
+                </div>
+                <small class="text-muted">Jika tidak dipilih, aturan tidak mengumpulkan berlaku untuk semua jenjang target form.</small>
+            </div>
+        </div>
+    </div>
+
+    {# ── Target Sekolah ── #}
+    <div class="section-card">
+        <h5><i class="bi bi-bullseye me-2"></i>Target Sekolah</h5>
+        <div class="mb-3">
+            <label class="form-label fw-semibold">Kirimkan form ke:</label>
+            <select name="target_scope" class="form-select" id="targetScopeSelect" onchange="updateTargetScope()">
+                <option value="all" {% if not form or form.target_scope == 'all' %}selected{% endif %}>Semua Sekolah</option>
+                <option value="jenjang" {% if form and form.target_scope == 'jenjang' %}selected{% endif %}>Berdasarkan Jenjang</option>
+                <option value="specific" {% if form and form.target_scope == 'specific' %}selected{% endif %}>Sekolah Tertentu</option>
+            </select>
+        </div>
+
+        <div id="jenjangGroup" class="mb-3" style="display:none;">
+            <label class="form-label fw-semibold">Jenjang</label>
+            <select name="target_jenjang" class="form-select">
+                <option value="SD" {% if form and form.target_jenjang == 'SD' %}selected{% endif %}>SD (Sekolah Dasar)</option>
+                <option value="SMP" {% if form and form.target_jenjang == 'SMP' %}selected{% endif %}>SMP (Sekolah Menengah Pertama)</option>
+            </select>
+        </div>
+
+        <div id="specificGroup" style="display:none;">
+            <label class="form-label fw-semibold">Pilih Sekolah</label>
+            <div class="input-group mb-2">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                <input type="text" class="form-control" id="schoolSearchInput"
+                    placeholder="Cari nama sekolah atau NPSN..." oninput="filterSchools()">
+            </div>
+            <div style="max-height:280px; overflow-y:auto; border:1.5px solid var(--border-soft); border-radius:10px; padding:0.5rem;"
+                id="schoolListContainer">
+                {% for s in all_schools %}
+                <div class="form-check py-1 px-2 school-item" data-name="{{ s.name | lower }}" data-npsn="{{ s.npsn }}">
+                    <input class="form-check-input" type="checkbox"
+                        name="target_schools[]" value="{{ s.id }}"
+                        id="school_{{ s.id }}"
+                        {% if s.id in target_school_ids %}checked{% endif %}>
+                    <label class="form-check-label" for="school_{{ s.id }}">
+                        <span class="fw-semibold">{{ s.name }}</span>
+                        <span class="text-muted small ms-1">{{ s.jenjang }} &bull; NPSN {{ s.npsn }}</span>
+                    </label>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="mt-2 text-muted small" id="schoolSelectedCount">0 sekolah dipilih</div>
+        </div>
+    </div>
+
+    {# ── Field Builder ── #}
+    <div class="section-card">
+        <h5><i class="bi bi-list-ul me-2"></i>Pertanyaan / Field Form</h5>
+        <div id="fieldsContainer">
+            {% for field in fields %}
+            {% if field.field_key %}
+            {% set fid = field.field_key %}
+            {% else %}
+            {% set fid = 'f_' ~ loop.index0 ~ '_' ~ range(10000, 99999)|random %}
+            {% endif %}
+            {% set formula_cfg = field.options_json if field.field_type == 'formula' and field.options_json else {} %}
+            {% set link_cfg = field.options_json if field.field_type == 'link' and field.options_json else {} %}
+            <div class="field-builder-item" data-id="{{ fid }}">
+                <input type="hidden" name="field_id[]" value="{{ fid }}">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <span class="field-number">{{ loop.index }}</span>
+                    <button type="button" class="field-drag-handle"
+                        draggable="true" title="Geser untuk mengatur urutan"
+                        aria-label="Geser untuk mengatur urutan">
+                        <i class="bi bi-grip-vertical"></i>
+                    </button>
+                    <div class="field-order-controls">
+                        <button type="button" class="btn btn-sm btn-outline-secondary"
+                            onclick="moveField(this, -1)" title="Pindah ke atas" aria-label="Pindah ke atas">
+                            <i class="bi bi-arrow-up"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary"
+                            onclick="moveField(this, 1)" title="Pindah ke bawah" aria-label="Pindah ke bawah">
+                            <i class="bi bi-arrow-down"></i>
+                        </button>
+                    </div>
+                    <input type="text" name="field_label_{{ fid }}" class="form-control fw-semibold"
+                        placeholder="Tulis pertanyaan atau teks di sini..." value="{{ field.label }}">
+                    <select name="field_type_{{ fid }}" class="form-select" style="max-width:180px;"
+                        onchange="toggleFieldOptions(this, '{{ fid }}')">
+                        <option value="text" {% if field.field_type == 'text' %}selected{% endif %}>Teks Pendek</option>
+                        <option value="textarea" {% if field.field_type == 'textarea' %}selected{% endif %}>Teks Panjang</option>
+                        <option value="radio" {% if field.field_type == 'radio' %}selected{% endif %}>Pilihan Tunggal</option>
+                        <option value="checkbox" {% if field.field_type == 'checkbox' %}selected{% endif %}>Pilihan Ganda</option>
+                        <option value="dropdown" {% if field.field_type == 'dropdown' %}selected{% endif %}>Dropdown</option>
+                        <option value="file" {% if field.field_type == 'file' %}selected{% endif %}>Upload File</option>
+                        <option value="upload_dokumen" {% if field.field_type == 'upload_dokumen' %}selected{% endif %}>📄 Upload Dokumen</option>
+                        <option value="upload_gambar" {% if field.field_type == 'upload_gambar' %}selected{% endif %}>🖼️ Upload Gambar</option>
+                        <option value="date" {% if field.field_type == 'date' %}selected{% endif %}>Tanggal</option>
+                        <option value="time" {% if field.field_type == 'time' %}selected{% endif %}>Waktu</option>
+                        <option value="number" {% if field.field_type == 'number' %}selected{% endif %}>Angka</option>
+                        <option value="rating" {% if field.field_type == 'rating' %}selected{% endif %}>Rating (1-5)</option>
+                        <option value="formula" {% if field.field_type == 'formula' %}selected{% endif %}>Rumus Otomatis</option>
+                        <option value="email" {% if field.field_type == 'email' %}selected{% endif %}>Email</option>
+                        <option value="header" {% if field.field_type == 'header' %}selected{% endif %}>Judul Bagian</option>
+                        <option value="info" {% if field.field_type == 'info' %}selected{% endif %}>Teks Informasi</option>
+                        <option value="link" {% if field.field_type == 'link' %}selected{% endif %}>Link / Tombol</option>
+                    </select>
+                    <button type="button" class="remove-field-btn btn btn-sm btn-outline-danger icon-only"
+                        onclick="removeField(this)"><i class="bi bi-x-lg"></i></button>
+                </div>
+                {# Options for radio/checkbox/dropdown #}
+                <div class="options-group mt-2" id="options_{{ fid }}"
+                    {% if field.field_type not in ('radio', 'checkbox', 'dropdown') %}style="display:none;"{% endif %}>
+                    <label class="text-muted small fw-semibold">Pilihan Jawaban:</label>
+                    <div class="d-flex flex-wrap gap-1 mb-2" id="tags_{{ fid }}">
+                        {% if field.field_type in ('radio', 'checkbox', 'dropdown') and field.options_json %}
+                        {% for opt in field.options_json %}
+                        <span class="option-tag">
+                            <input type="hidden" name="field_options_{{ fid }}[]" value="{{ opt }}">
+                            {{ opt }}
+                            <button type="button" onclick="removeOptionTag(this)">×</button>
+                        </span>
+                        {% endfor %}
+                        {% endif %}
+                    </div>
+                    <div class="input-group input-group-sm">
+                        <input type="text" class="form-control" placeholder="Tambah pilihan..."
+                            id="opt_input_{{ fid }}"
+                            onkeydown="if(event.key==='Enter'){event.preventDefault(); addOption('{{ fid }}');}">
+                        <button class="btn btn-outline-primary" type="button"
+                            onclick="addOption('{{ fid }}')">
+                            <i class="bi bi-plus"></i> Tambah
+                        </button>
+                    </div>
+                </div>
+                <div class="formula-group mt-2" id="formula_{{ fid }}"
+                    {% if field.field_type != 'formula' %}style="display:none;"{% endif %}>
+                    <label class="text-muted small fw-semibold">Rumus:</label>
+                    <div class="row g-2 align-items-center">
+                        <div class="col-md-4">
+                            <select class="form-select form-select-sm formula-left"
+                                name="field_formula_left_{{ fid }}"
+                                data-selected="{{ formula_cfg.left_key or '' }}"></select>
+                        </div>
+                        <div class="col-md-4">
+                            <select class="form-select form-select-sm"
+                                name="field_formula_operator_{{ fid }}">
+                                <option value="subtract" {% if not formula_cfg or formula_cfg.operator == 'subtract' %}selected{% endif %}>dikurangi (-)</option>
+                                <option value="add" {% if formula_cfg.operator == 'add' %}selected{% endif %}>ditambah (+)</option>
+                                <option value="multiply" {% if formula_cfg.operator == 'multiply' %}selected{% endif %}>dikali (×)</option>
+                                <option value="divide" {% if formula_cfg.operator == 'divide' %}selected{% endif %}>dibagi (÷)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <select class="form-select form-select-sm formula-right"
+                                name="field_formula_right_{{ fid }}"
+                                data-selected="{{ formula_cfg.right_key or '' }}"></select>
+                        </div>
+                    </div>
+                </div>
+                <div class="link-group mt-2" id="link_{{ fid }}"
+                    {% if field.field_type != 'link' %}style="display:none;"{% endif %}>
+                    <label class="text-muted small fw-semibold">Link:</label>
+                    <div class="row g-2">
+                        <div class="col-md-7">
+                            <input type="url" class="form-control form-control-sm"
+                                name="field_link_url_{{ fid }}"
+                                placeholder="https://contoh.go.id/dokumen"
+                                value="{{ link_cfg.url or '' }}">
+                        </div>
+                        <div class="col-md-5">
+                            <input type="text" class="form-control form-control-sm"
+                                name="field_link_text_{{ fid }}"
+                                placeholder="Teks tombol"
+                                value="{{ link_cfg.button_text or 'Buka Link' }}">
+                        </div>
+                    </div>
+                </div>
+                <div class="upload-dokumen-info mt-2" id="dok_info_{{ fid }}"
+                    {% if field.field_type != 'upload_dokumen' %}style="display:none;"{% endif %}>
+                    <div class="alert alert-info py-2 px-3 mb-0 small">
+                        <i class="bi bi-info-circle me-1"></i>
+                        <strong>Upload Dokumen:</strong> Format diizinkan: PDF, DOC, DOCX, XLS, XLSX.
+                        File akan disimpan apa adanya tanpa kompresi.
+                    </div>
+                </div>
+                <div class="upload-gambar-info mt-2" id="img_info_{{ fid }}"
+                    {% if field.field_type != 'upload_gambar' %}style="display:none;"{% endif %}>
+                    <div class="alert alert-success py-2 px-3 mb-0 small">
+                        <i class="bi bi-image me-1"></i>
+                        <strong>Upload Gambar:</strong> Format diizinkan: JPG, PNG, WEBP, GIF.
+                        Gambar akan <strong>otomatis dikompres</strong> saat disimpan untuk menghemat storage.
+                        Ukuran maks: 1920×1920 px · Kualitas JPEG: 75%.
+                    </div>
+                </div>
+                <div class="mt-2 req-group" id="req_group_{{ fid }}" {% if field.field_type in ('header', 'info', 'formula') %}style="display:none;"{% endif %}>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" name="field_required_{{ fid }}" id="req_{{ fid }}"
+                            {% if field.required %}checked{% endif %}>
+                        <label class="form-check-label small required-label" for="req_{{ fid }}">
+                            {% if field.field_type == 'link' %}Wajib klik link{% else %}Wajib diisi{% endif %}
+                        </label>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <button type="button" class="add-field-btn mt-1" onclick="addField()">
+            <i class="bi bi-plus-circle me-1"></i> Tambah Pertanyaan Baru
+        </button>
+    </div>
+
+    <div class="d-flex justify-content-end gap-2 mt-2">
+        {% if form and form.status == 'draft' %}
+        <div class="me-auto text-muted small d-flex align-items-center" id="draftAutosaveStatus">
+            <i class="bi bi-cloud-check me-1"></i>Draft tersimpan
+        </div>
+        {% endif %}
+        {% if form %}
+        <a href="{{ url_for('laporan.admin_laporan_preview', form_id=form.id) }}"
+            target="_blank" rel="noopener noreferrer"
+            class="btn btn-outline-primary d-inline-flex align-items-center gap-1">
+            <i class="bi bi-eye"></i>Preview
+        </a>
+        {% endif %}
+        <a href="{{ url_for('laporan.admin_laporan_list') }}" class="btn btn-secondary">Batal</a>
+        {% if not form or form.status == 'draft' %}
+        <button type="submit" name="form_action" value="save_draft" class="btn btn-outline-secondary px-4">
+            <i class="bi bi-save me-1"></i>Simpan Draft
+        </button>
+        <button type="submit" name="form_action" value="publish" class="btn btn-primary px-4">
+            <i class="bi bi-send-check me-1"></i>Terbitkan Form
+        </button>
+        {% else %}
+        <button type="submit" name="form_action" value="publish" class="btn btn-primary px-4">
+            <i class="bi bi-check2-circle me-1"></i>Simpan Perubahan
+        </button>
+        {% endif %}
+    </div>
+</form>
+{% endblock %}
+
+{% block portal_scripts %}
+<script>
+var draftAutosaveEnabled = {{ 'true' if form and form.status == 'draft' else 'false' }};
+var draftAutosaveUrl = {% if form and form.status == 'draft' %}"{{ url_for('laporan.admin_laporan_autosave', form_id=form.id) }}"{% else %}""{% endif %};
+var draftAutosaveTimer = null;
+var draftAutosaveInFlight = false;
+var draftAutosavePending = false;
+var draftAutosaveSubmitting = false;
+var draftAutosaveRestoring = false;
+var draftAutosaveBackupKey = {% if form and form.status == 'draft' %}"laporan:draft:{{ form.id }}"{% else %}""{% endif %};
+
+function setDraftAutosaveStatus(text, iconClass, toneClass) {
+    var el = document.getElementById('draftAutosaveStatus');
+    if (!el) return;
+    el.className = 'me-auto small d-flex align-items-center ' + (toneClass || 'text-muted');
+    el.innerHTML = '<i class="bi ' + (iconClass || 'bi-cloud-check') + ' me-1"></i>' + text;
+}
+
+function getDraftFormData() {
+    var form = document.getElementById('formEditor');
+    if (!form) return null;
+    var formData = new FormData(form);
+    formData.set('form_action', 'save_draft');
+    return formData;
+}
+
+function serializeDraftPairs(formData) {
+    var pairs = [];
+    formData.forEach(function(value, key) {
+        if (value instanceof File) return;
+        pairs.push([key, value]);
+    });
+    return pairs;
+}
+
+function persistDraftLocally() {
+    if (!draftAutosaveEnabled || !draftAutosaveBackupKey || draftAutosaveSubmitting || draftAutosaveRestoring) return;
+    var formData = getDraftFormData();
+    if (!formData) return;
+    try {
+        window.localStorage.setItem(draftAutosaveBackupKey, JSON.stringify({
+            savedAt: Date.now(),
+            pairs: serializeDraftPairs(formData)
+        }));
+    } catch (error) {
+        // Local backup is a best-effort safety net.
+    }
+}
+
+function clearDraftLocalBackup() {
+    if (!draftAutosaveBackupKey) return;
+    try {
+        window.localStorage.removeItem(draftAutosaveBackupKey);
+    } catch (error) {
+    }
+}
+
+function valuesFromPairs(pairs, name) {
+    return pairs.filter(function(pair) { return pair[0] === name; }).map(function(pair) { return pair[1]; });
+}
+
+function firstValueFromPairs(pairs, name, fallback) {
+    var values = valuesFromPairs(pairs, name);
+    return values.length ? values[0] : fallback;
+}
+
+function restoreBasicDraftInputs(pairs) {
+    var form = document.getElementById('formEditor');
+    if (!form) return;
+    Array.from(form.elements).forEach(function(el) {
+        if (!el.name || el.closest('#fieldsContainer')) return;
+        var values = valuesFromPairs(pairs, el.name);
+        if (el.type === 'checkbox' || el.type === 'radio') {
+            el.checked = values.indexOf(el.value) !== -1;
+        } else if (el.tagName === 'SELECT' && el.multiple) {
+            Array.from(el.options).forEach(function(opt) {
+                opt.selected = values.indexOf(opt.value) !== -1;
+            });
+        } else if (values.length) {
+            el.value = values[0];
+        }
+    });
+}
+
+function restoreDraftFields(pairs) {
+    var fieldIds = valuesFromPairs(pairs, 'field_id[]');
+    var container = document.getElementById('fieldsContainer');
+    if (!container || !fieldIds.length) return;
+    container.innerHTML = '';
+    fieldIds.forEach(function(fid) {
+        var type = firstValueFromPairs(pairs, 'field_type_' + fid, 'text');
+        var fieldData = {
+            id: fid,
+            label: firstValueFromPairs(pairs, 'field_label_' + fid, ''),
+            type: type,
+            required: valuesFromPairs(pairs, 'field_required_' + fid).length > 0,
+            options: valuesFromPairs(pairs, 'field_options_' + fid + '[]'),
+            formula: {
+                left: firstValueFromPairs(pairs, 'field_formula_left_' + fid, ''),
+                operator: firstValueFromPairs(pairs, 'field_formula_operator_' + fid, 'subtract'),
+                right: firstValueFromPairs(pairs, 'field_formula_right_' + fid, '')
+            },
+            link: {
+                url: firstValueFromPairs(pairs, 'field_link_url_' + fid, ''),
+                text: firstValueFromPairs(pairs, 'field_link_text_' + fid, 'Buka Link')
+            }
+        };
+        addField(fieldData);
+    });
+}
+
+function restoreDraftLocalBackup() {
+    if (!draftAutosaveEnabled || !draftAutosaveBackupKey) return false;
+    var raw = null;
+    try {
+        raw = window.localStorage.getItem(draftAutosaveBackupKey);
+    } catch (error) {
+        return false;
+    }
+    if (!raw) return false;
+    var snapshot = null;
+    try {
+        snapshot = JSON.parse(raw);
+    } catch (error) {
+        clearDraftLocalBackup();
+        return false;
+    }
+    if (!snapshot || !Array.isArray(snapshot.pairs)) return false;
+    draftAutosaveRestoring = true;
+    restoreBasicDraftInputs(snapshot.pairs);
+    restoreDraftFields(snapshot.pairs);
+    updateTargetScope();
+    updateRepeatPolicy();
+    updateSelectedCount();
+    rebuildFormulaSelects();
+    draftAutosaveRestoring = false;
+    setDraftAutosaveStatus('Draft lokal dipulihkan, menyimpan ke server...', 'bi-cloud-arrow-up', 'text-warning');
+    saveDraftAutosave(true);
+    return true;
+}
+
+function scheduleDraftAutosave() {
+    if (!draftAutosaveEnabled || draftAutosaveSubmitting) return;
+    persistDraftLocally();
+    if (draftAutosaveTimer) window.clearTimeout(draftAutosaveTimer);
+    setDraftAutosaveStatus('Menyimpan perubahan...', 'bi-cloud-arrow-up', 'text-muted');
+    draftAutosaveTimer = window.setTimeout(function() {
+        saveDraftAutosave(false);
+    }, 350);
+}
+
+function saveDraftAutosave(immediate) {
+    if (!draftAutosaveEnabled || draftAutosaveSubmitting) return;
+    if (draftAutosaveTimer) {
+        window.clearTimeout(draftAutosaveTimer);
+        draftAutosaveTimer = null;
+    }
+    if (draftAutosaveInFlight) {
+        draftAutosavePending = true;
+        return;
+    }
+    var formData = getDraftFormData();
+    if (!formData || !draftAutosaveUrl) return;
+
+    draftAutosaveInFlight = true;
+    draftAutosavePending = false;
+
+    fetch(draftAutosaveUrl, {
+        method: 'POST',
+        body: formData,
+        credentials: 'same-origin',
+        keepalive: Boolean(immediate),
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(function(response) {
+        return response.json().then(function(payload) {
+            if (!response.ok || !payload.ok) {
+                throw new Error(payload.message || 'Autosave gagal.');
+            }
+            return payload;
+        });
+    })
+    .then(function(payload) {
+        clearDraftLocalBackup();
+        setDraftAutosaveStatus('Draft tersimpan otomatis ' + (payload.saved_at || ''), 'bi-cloud-check', 'text-success');
+    })
+    .catch(function(error) {
+        setDraftAutosaveStatus(error.message || 'Autosave gagal.', 'bi-cloud-slash', 'text-danger');
+    })
+    .finally(function() {
+        draftAutosaveInFlight = false;
+        if (draftAutosavePending) {
+            saveDraftAutosave(false);
+        }
+    });
+}
+
+function flushDraftAutosaveOnExit() {
+    if (!draftAutosaveEnabled || draftAutosaveSubmitting) return;
+    persistDraftLocally();
+    if (draftAutosaveTimer) {
+        window.clearTimeout(draftAutosaveTimer);
+        draftAutosaveTimer = null;
+    }
+    var formData = getDraftFormData();
+    if (!formData || !draftAutosaveUrl) return;
+    if (navigator.sendBeacon) {
+        navigator.sendBeacon(draftAutosaveUrl, formData);
+        return;
+    }
+    try {
+        fetch(draftAutosaveUrl, {
+            method: 'POST',
+            body: formData,
+            credentials: 'same-origin',
+            keepalive: true,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+    } catch (error) {
+    }
+}
+
+function updateRepeatPolicy() {
+    var select = document.getElementById('repeatPolicySelect');
+    var globalDeadlineGroup = document.getElementById('globalDeadlineGroup');
+    var repeatUntilGroup = document.getElementById('repeatUntilGroup');
+    var repeatDeadlineDayGroup = document.getElementById('repeatDeadlineDayGroup');
+    var repeatDeadlineDateGroup = document.getElementById('repeatDeadlineDateGroup');
+    var repeatDeadlineTimeGroup = document.getElementById('repeatDeadlineTimeGroup');
+    var allowMultipleInput = document.getElementById('allowMultipleInput');
+    if (!select) return;
+    var policy = select.value;
+    var isPeriodic = policy === 'daily' || policy === 'weekly' || policy === 'monthly';
+    if (globalDeadlineGroup) globalDeadlineGroup.style.display = isPeriodic ? 'none' : '';
+    if (repeatUntilGroup) repeatUntilGroup.style.display = isPeriodic ? '' : 'none';
+    if (repeatDeadlineTimeGroup) repeatDeadlineTimeGroup.style.display = isPeriodic ? '' : 'none';
+    if (repeatDeadlineDayGroup) repeatDeadlineDayGroup.style.display = policy === 'weekly' ? '' : 'none';
+    if (repeatDeadlineDateGroup) repeatDeadlineDateGroup.style.display = policy === 'monthly' ? '' : 'none';
+    if (allowMultipleInput) allowMultipleInput.value = policy === 'once' ? '0' : '1';
+}
+
+function updateTargetScope() {
+    var scope = document.getElementById('targetScopeSelect').value;
+    document.getElementById('jenjangGroup').style.display = scope === 'jenjang' ? '' : 'none';
+    document.getElementById('specificGroup').style.display = scope === 'specific' ? '' : 'none';
+    updateSelectedCount();
+}
+
+function filterJenjangByStatus(statusValue) {
+    // Fungsi ini tidak menyembunyikan checkbox jenjang,
+    // melainkan hanya memperbarui visual feedback status yang dipilih.
+    // Nilai filter tersimpan melalui radio button no_submission_statuses.
+    // Tidak ada perubahan tambahan diperlukan karena radio button Bootstrap sudah mengelola state.
+}
+
+function filterSchools() {
+    var q = document.getElementById('schoolSearchInput').value.toLowerCase();
+    document.querySelectorAll('.school-item').forEach(function(item) {
+        var name = item.getAttribute('data-name') || '';
+        var npsn = item.getAttribute('data-npsn') || '';
+        item.style.display = (!q || name.includes(q) || npsn.includes(q)) ? '' : 'none';
+    });
+}
+
+function updateSelectedCount() {
+    var count = document.querySelectorAll('#schoolListContainer input[type=checkbox]:checked').length;
+    var el = document.getElementById('schoolSelectedCount');
+    if (el) el.textContent = count + ' sekolah dipilih';
+}
+
+document.querySelectorAll('#schoolListContainer input[type=checkbox]').forEach(function(cb) {
+    cb.addEventListener('change', function() {
+        updateSelectedCount();
+    });
+});
+updateTargetScope();
+updateRepeatPolicy();
+
+function generateId() {
+    return 'f_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+}
+
+function sanitizeFieldId(raw) {
+    var clean = String(raw || '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 80);
+    return clean || generateId();
+}
+
+function addField(fieldData) {
+    fieldData = fieldData || {};
+    var fid = sanitizeFieldId(fieldData.id) || generateId();
+    var html = `
+    <div class="field-builder-item" data-id="${fid}">
+        <input type="hidden" name="field_id[]" value="${fid}">
+        <div class="d-flex align-items-center gap-2 mb-2">
+            <span class="field-number">${document.querySelectorAll('.field-builder-item').length + 1}</span>
+            <button type="button" class="field-drag-handle"
+                draggable="true" title="Geser untuk mengatur urutan"
+                aria-label="Geser untuk mengatur urutan">
+                <i class="bi bi-grip-vertical"></i>
+            </button>
+            <div class="field-order-controls">
+                <button type="button" class="btn btn-sm btn-outline-secondary"
+                    onclick="moveField(this, -1)" title="Pindah ke atas" aria-label="Pindah ke atas">
+                    <i class="bi bi-arrow-up"></i>
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary"
+                    onclick="moveField(this, 1)" title="Pindah ke bawah" aria-label="Pindah ke bawah">
+                    <i class="bi bi-arrow-down"></i>
+                </button>
+            </div>
+            <input type="text" name="field_label_${fid}" class="form-control fw-semibold"
+                placeholder="Tulis pertanyaan atau teks di sini...">
+            <select name="field_type_${fid}" class="form-select" style="max-width:180px;"
+                onchange="toggleFieldOptions(this, '${fid}')">
+                <option value="text">Teks Pendek</option>
+                <option value="textarea">Teks Panjang</option>
+                <option value="radio">Pilihan Tunggal</option>
+                <option value="checkbox">Pilihan Ganda</option>
+                <option value="dropdown">Dropdown</option>
+                <option value="file">Upload File</option>
+                <option value="upload_dokumen">📄 Upload Dokumen</option>
+                <option value="upload_gambar">🖼️ Upload Gambar</option>
+                <option value="date">Tanggal</option>
+                <option value="time">Waktu</option>
+                <option value="number">Angka</option>
+                <option value="rating">Rating (1-5)</option>
+                <option value="formula">Rumus Otomatis</option>
+                <option value="email">Email</option>
+                <option value="header">Judul Bagian</option>
+                <option value="info">Teks Informasi</option>
+                <option value="link">Link / Tombol</option>
+            </select>
+            <button type="button" class="remove-field-btn btn btn-sm btn-outline-danger icon-only"
+                onclick="removeField(this)"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="options-group mt-2" id="options_${fid}" style="display:none;">
+            <label class="text-muted small fw-semibold">Pilihan Jawaban:</label>
+            <div class="d-flex flex-wrap gap-1 mb-2" id="tags_${fid}"></div>
+            <div class="input-group input-group-sm">
+                <input type="text" class="form-control" placeholder="Tambah pilihan..."
+                    id="opt_input_${fid}"
+                    onkeydown="if(event.key==='Enter'){event.preventDefault(); addOption('${fid}');}">
+                <button class="btn btn-outline-primary" type="button" onclick="addOption('${fid}')">
+                    <i class="bi bi-plus"></i> Tambah
+                </button>
+            </div>
+        </div>
+        <div class="formula-group mt-2" id="formula_${fid}" style="display:none;">
+            <label class="text-muted small fw-semibold">Rumus:</label>
+            <div class="row g-2 align-items-center">
+                <div class="col-md-4">
+                    <select class="form-select form-select-sm formula-left"
+                        name="field_formula_left_${fid}" data-selected=""></select>
+                </div>
+                <div class="col-md-4">
+                    <select class="form-select form-select-sm"
+                        name="field_formula_operator_${fid}">
+                        <option value="subtract" selected>dikurangi (-)</option>
+                        <option value="add">ditambah (+)</option>
+                        <option value="multiply">dikali (×)</option>
+                        <option value="divide">dibagi (÷)</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <select class="form-select form-select-sm formula-right"
+                        name="field_formula_right_${fid}" data-selected=""></select>
+                </div>
+            </div>
+        </div>
+        <div class="link-group mt-2" id="link_${fid}" style="display:none;">
+            <label class="text-muted small fw-semibold">Link:</label>
+            <div class="row g-2">
+                <div class="col-md-7">
+                    <input type="url" class="form-control form-control-sm"
+                        name="field_link_url_${fid}" placeholder="https://contoh.go.id/dokumen">
+                </div>
+                <div class="col-md-5">
+                    <input type="text" class="form-control form-control-sm"
+                        name="field_link_text_${fid}" placeholder="Teks tombol" value="Buka Link">
+                </div>
+            </div>
+        </div>
+        <div class="upload-dokumen-info mt-2" id="dok_info_${fid}" style="display:none;">
+            <div class="alert alert-info py-2 px-3 mb-0 small">
+                <i class="bi bi-info-circle me-1"></i>
+                <strong>Upload Dokumen:</strong> Format diizinkan: PDF, DOC, DOCX, XLS, XLSX.
+                File akan disimpan apa adanya tanpa kompresi.
+            </div>
+        </div>
+        <div class="upload-gambar-info mt-2" id="img_info_${fid}" style="display:none;">
+            <div class="alert alert-success py-2 px-3 mb-0 small">
+                <i class="bi bi-image me-1"></i>
+                <strong>Upload Gambar:</strong> Format diizinkan: JPG, PNG, WEBP, GIF.
+                Gambar akan <strong>otomatis dikompres</strong> saat disimpan untuk menghemat storage.
+                Ukuran maks: 1920×1920 px · Kualitas JPEG: 75%.
+            </div>
+        </div>
+        <div class="mt-2 req-group" id="req_group_${fid}">
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" name="field_required_${fid}" id="req_${fid}" checked>
+                <label class="form-check-label small required-label" for="req_${fid}">Wajib diisi</label>
+            </div>
+        </div>
+    </div>`;
+    var container = document.getElementById('fieldsContainer');
+    container.insertAdjacentHTML('beforeend', html);
+    var item = container.lastElementChild;
+    var labelInput = item.querySelector('input[name^="field_label_"]');
+    var typeSelect = item.querySelector('select[name^="field_type_"]');
+    var requiredInput = item.querySelector('input[name^="field_required_"]');
+    var formulaLeft = item.querySelector('.formula-left');
+    var formulaRight = item.querySelector('.formula-right');
+    var formulaOperator = item.querySelector('select[name^="field_formula_operator_"]');
+
+    if (labelInput) labelInput.value = fieldData.label || '';
+    if (typeSelect) typeSelect.value = fieldData.type || 'text';
+    if (requiredInput && Object.prototype.hasOwnProperty.call(fieldData, 'required')) {
+        requiredInput.checked = Boolean(fieldData.required);
+    }
+    (fieldData.options || []).forEach(function(option) {
+        addOptionValue(fid, option, false);
+    });
+    if (fieldData.formula) {
+        if (formulaLeft) formulaLeft.setAttribute('data-selected', fieldData.formula.left || '');
+        if (formulaRight) formulaRight.setAttribute('data-selected', fieldData.formula.right || '');
+        if (formulaOperator) formulaOperator.value = fieldData.formula.operator || 'subtract';
+    }
+    if (fieldData.link) {
+        var linkUrl = item.querySelector('input[name^="field_link_url_"]');
+        var linkText = item.querySelector('input[name^="field_link_text_"]');
+        if (linkUrl) linkUrl.value = fieldData.link.url || '';
+        if (linkText) linkText.value = fieldData.link.text || 'Buka Link';
+    }
+    if (typeSelect) toggleFieldOptions(typeSelect, fid);
+    updateFieldNumbers();
+    rebuildFormulaSelects();
+    if (!draftAutosaveRestoring) scheduleDraftAutosave();
+}
+
+function removeField(btn) {
+    btn.closest('.field-builder-item').remove();
+    updateFieldNumbers();
+    rebuildFormulaSelects();
+    scheduleDraftAutosave();
+}
+
+function moveField(btn, direction) {
+    var item = btn.closest('.field-builder-item');
+    if (!item) return;
+    if (direction < 0 && item.previousElementSibling) {
+        item.parentNode.insertBefore(item, item.previousElementSibling);
+    } else if (direction > 0 && item.nextElementSibling) {
+        item.parentNode.insertBefore(item.nextElementSibling, item);
+    } else {
+        return;
+    }
+    updateFieldNumbers();
+    rebuildFormulaSelects();
+    scheduleDraftAutosave();
+}
+
+function updateFieldNumbers() {
+    var items = Array.from(document.querySelectorAll('.field-builder-item'));
+    items.forEach(function(item, i) {
+        var number = item.querySelector('.field-number');
+        var up = item.querySelector('.field-order-controls button:first-child');
+        var down = item.querySelector('.field-order-controls button:last-child');
+        if (number) number.textContent = i + 1;
+        if (up) up.disabled = i === 0;
+        if (down) down.disabled = i === items.length - 1;
+    });
+}
+
+var draggedFieldItem = null;
+
+function clearFieldDropIndicators() {
+    document.querySelectorAll('.field-builder-item.is-drop-before, .field-builder-item.is-drop-after').forEach(function(item) {
+        item.classList.remove('is-drop-before', 'is-drop-after');
+    });
+}
+
+function getFieldDropPosition(targetItem, clientY) {
+    var rect = targetItem.getBoundingClientRect();
+    return clientY < rect.top + (rect.height / 2) ? 'before' : 'after';
+}
+
+function moveDraggedField(targetItem, position) {
+    if (!draggedFieldItem || !targetItem || draggedFieldItem === targetItem) return false;
+    if (position === 'before') {
+        targetItem.parentNode.insertBefore(draggedFieldItem, targetItem);
+    } else {
+        targetItem.parentNode.insertBefore(draggedFieldItem, targetItem.nextElementSibling);
+    }
+    return true;
+}
+
+function finalizeFieldReorder(changed) {
+    clearFieldDropIndicators();
+    if (draggedFieldItem) {
+        draggedFieldItem.classList.remove('is-dragging');
+    }
+    draggedFieldItem = null;
+    if (changed) {
+        updateFieldNumbers();
+        rebuildFormulaSelects();
+        scheduleDraftAutosave();
+    }
+}
+
+var fieldsContainer = document.getElementById('fieldsContainer');
+fieldsContainer.addEventListener('dragstart', function(event) {
+    var handle = event.target.closest('.field-drag-handle');
+    if (!handle) {
+        event.preventDefault();
+        return;
+    }
+    draggedFieldItem = handle.closest('.field-builder-item');
+    if (!draggedFieldItem) return;
+    draggedFieldItem.classList.add('is-dragging');
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', draggedFieldItem.getAttribute('data-id') || '');
+});
+
+fieldsContainer.addEventListener('dragover', function(event) {
+    if (!draggedFieldItem) return;
+    var targetItem = event.target.closest('.field-builder-item');
+    if (!targetItem || targetItem === draggedFieldItem) return;
+    event.preventDefault();
+    var position = getFieldDropPosition(targetItem, event.clientY);
+    clearFieldDropIndicators();
+    targetItem.classList.add(position === 'before' ? 'is-drop-before' : 'is-drop-after');
+    event.dataTransfer.dropEffect = 'move';
+});
+
+fieldsContainer.addEventListener('dragleave', function(event) {
+    if (!fieldsContainer.contains(event.relatedTarget)) {
+        clearFieldDropIndicators();
+    }
+});
+
+fieldsContainer.addEventListener('drop', function(event) {
+    if (!draggedFieldItem) return;
+    var targetItem = event.target.closest('.field-builder-item');
+    if (!targetItem || targetItem === draggedFieldItem) {
+        finalizeFieldReorder(false);
+        return;
+    }
+    event.preventDefault();
+    var position = getFieldDropPosition(targetItem, event.clientY);
+    finalizeFieldReorder(moveDraggedField(targetItem, position));
+});
+
+fieldsContainer.addEventListener('dragend', function() {
+    finalizeFieldReorder(false);
+});
+
+function toggleFieldOptions(select, fid) {
+    var val = select.value;
+    var showOpts = (val === 'radio' || val === 'checkbox' || val === 'dropdown');
+    var optGroup = document.getElementById('options_' + fid);
+    if (optGroup) optGroup.style.display = showOpts ? '' : 'none';
+
+    var formulaGroup = document.getElementById('formula_' + fid);
+    if (formulaGroup) formulaGroup.style.display = val === 'formula' ? '' : 'none';
+
+    var linkGroup = document.getElementById('link_' + fid);
+    if (linkGroup) linkGroup.style.display = val === 'link' ? '' : 'none';
+
+    var dokInfo = document.getElementById('dok_info_' + fid);
+    if (dokInfo) dokInfo.style.display = val === 'upload_dokumen' ? '' : 'none';
+
+    var imgInfo = document.getElementById('img_info_' + fid);
+    if (imgInfo) imgInfo.style.display = val === 'upload_gambar' ? '' : 'none';
+    
+    var reqGroup = document.getElementById('req_group_' + fid);
+    var showReq = (val !== 'header' && val !== 'info' && val !== 'formula');
+    if (reqGroup) reqGroup.style.display = showReq ? '' : 'none';
+    var reqLabel = reqGroup ? reqGroup.querySelector('.required-label') : null;
+    if (reqLabel) reqLabel.textContent = val === 'link' ? 'Wajib klik link' : 'Wajib diisi';
+    
+    if (!showReq) {
+        var req = document.getElementById('req_' + fid);
+        if (req) req.checked = false;
+    }
+    rebuildFormulaSelects();
+}
+
+function isFormulaSourceType(type) {
+    return type === 'number' || type === 'rating' || type === 'formula';
+}
+
+function getFieldBuilderData() {
+    return Array.from(document.querySelectorAll('.field-builder-item')).map(function(item, index) {
+        var id = item.getAttribute('data-id') || '';
+        var labelInput = item.querySelector('input[name^="field_label_"]');
+        var typeSelect = item.querySelector('select[name^="field_type_"]');
+        var label = (labelInput && labelInput.value.trim()) ? labelInput.value.trim() : 'Pertanyaan ' + (index + 1);
+        var type = typeSelect ? typeSelect.value : 'text';
+        return { id: id, label: label, type: type };
+    });
+}
+
+function rebuildFormulaSelects() {
+    var fields = getFieldBuilderData();
+    document.querySelectorAll('.formula-group').forEach(function(group) {
+        var item = group.closest('.field-builder-item');
+        var currentId = item ? item.getAttribute('data-id') : '';
+        var currentIndex = fields.findIndex(function(field) { return field.id === currentId; });
+        var sources = fields.filter(function(field, index) {
+            return index < currentIndex && isFormulaSourceType(field.type);
+        });
+
+        group.querySelectorAll('.formula-left, .formula-right').forEach(function(select) {
+            var selected = select.value || select.getAttribute('data-selected') || '';
+            select.innerHTML = '';
+
+            var emptyOpt = document.createElement('option');
+            emptyOpt.value = '';
+            emptyOpt.textContent = sources.length ? 'Pilih pertanyaan angka sebelumnya' : 'Belum ada pertanyaan angka sebelumnya';
+            select.appendChild(emptyOpt);
+
+            sources.forEach(function(field) {
+                var opt = document.createElement('option');
+                opt.value = field.id;
+                opt.textContent = field.label;
+                select.appendChild(opt);
+            });
+
+            if (sources.some(function(field) { return field.id === selected; })) {
+                select.value = selected;
+            } else {
+                select.value = '';
+            }
+            select.setAttribute('data-selected', select.value);
+        });
+    });
+}
+
+document.getElementById('fieldsContainer').addEventListener('input', function(event) {
+    if (event.target.matches('input[name^="field_label_"]')) {
+        rebuildFormulaSelects();
+    }
+});
+
+document.getElementById('fieldsContainer').addEventListener('change', function(event) {
+    if (event.target.matches('.formula-left, .formula-right')) {
+        event.target.setAttribute('data-selected', event.target.value);
+    }
+});
+
+rebuildFormulaSelects();
+updateFieldNumbers();
+
+function addOptionValue(fid, value, shouldSave) {
+    var val = (value || '').trim();
+    if (!val) return;
+    var tags = document.getElementById('tags_' + fid);
+    if (!tags) return;
+    var span = document.createElement('span');
+    var hidden = document.createElement('input');
+    var removeBtn = document.createElement('button');
+
+    span.className = 'option-tag';
+    hidden.type = 'hidden';
+    hidden.name = 'field_options_' + fid + '[]';
+    hidden.value = val;
+    removeBtn.type = 'button';
+    removeBtn.textContent = '×';
+    removeBtn.addEventListener('click', function() {
+        removeOptionTag(removeBtn);
+    });
+    span.appendChild(hidden);
+    span.appendChild(document.createTextNode(val));
+    span.appendChild(removeBtn);
+    tags.appendChild(span);
+    if (shouldSave !== false && !draftAutosaveRestoring) {
+        scheduleDraftAutosave();
+    }
+}
+
+function addOption(fid) {
+    var input = document.getElementById('opt_input_' + fid);
+    var val = (input.value || '').trim();
+    if (!val) return;
+    addOptionValue(fid, val, true);
+    input.value = '';
+    input.focus();
+}
+
+function removeOptionTag(btn) {
+    var tag = btn.closest('.option-tag');
+    if (tag) tag.remove();
+    if (!draftAutosaveRestoring) scheduleDraftAutosave();
+}
+
+var formEditor = document.getElementById('formEditor');
+if (formEditor && draftAutosaveEnabled) {
+    restoreDraftLocalBackup();
+    formEditor.addEventListener('input', function() {
+        scheduleDraftAutosave();
+    });
+    formEditor.addEventListener('change', function() {
+        scheduleDraftAutosave();
+    });
+    formEditor.addEventListener('focusout', function() {
+        persistDraftLocally();
+        saveDraftAutosave(true);
+    });
+    formEditor.addEventListener('submit', function() {
+        draftAutosaveSubmitting = true;
+        if (draftAutosaveTimer) window.clearTimeout(draftAutosaveTimer);
+        clearDraftLocalBackup();
+    });
+    window.addEventListener('pagehide', flushDraftAutosaveOnExit);
+    window.addEventListener('beforeunload', flushDraftAutosaveOnExit);
+    document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'hidden') flushDraftAutosaveOnExit();
+    });
+}
+
+</script>
+{% endblock %}

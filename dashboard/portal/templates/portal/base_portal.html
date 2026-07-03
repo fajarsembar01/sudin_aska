@@ -989,6 +989,12 @@
                             <i class="bi bi-people nav-icon"></i>Tim Saya
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.blueprint == 'supporter' %}active{% endif %}"
+                            href="{{ url_for('supporter.staff_dashboard') }}">
+                            <i class="bi bi-megaphone nav-icon"></i>Supporter
+                        </a>
+                    </li>
                     {% endif %}
 
                     <!-- Buku Tamu untuk Koordinator, Staff, dan Sekolah tidak diperlukan di halaman PANBERSS supaya fokus user tidak terbagi -->

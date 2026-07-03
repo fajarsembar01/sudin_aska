@@ -9,13 +9,17 @@ from flask import Flask
 from .auth import auth_bp, current_user, init_oauth
 from .routes import main_bp
 from .portal.routes import portal_bp
+from .adiwiyata import adiwiyata_api_bp, adiwiyata_bp
 from .hospitality import hospitality_bp
+from .supporter import supporter_bp
 from .daftar_tamu.routes import daftar_tamu_bp
 from .call_center import call_center_api_bp, call_center_bp
+from .penugasan import penugasan_bp
 from .cms.routes import cms_bp
+from .laporan import laporan_bp
 from .db_access import shutdown_pool
 from .queries import fetch_pending_bullying_count, fetch_pending_psych_count, fetch_pending_corruption_count
-from .schema import ensure_dashboard_schema
+from .schema import ensure_dashboard_schema, ensure_laporan_schema
 from utils import to_jakarta
 
 
@@ -36,21 +40,44 @@ def create_app() -> Flask:
     app.config["MAX_CONTENT_LENGTH"] = _max_upload_mb * 1024 * 1024
     
     csrf = CSRFProtect(app)
+    from flask_cors import CORS
+    CORS(app, supports_credentials=True, resources={
+        r"/api/*": {"origins": ["http://localhost:3000", "http://127.0.0.1:3000"]},
+        r"/portal/api/*": {"origins": ["http://localhost:3000", "http://127.0.0.1:3000"]}
+    })
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
     app.register_blueprint(portal_bp)
+    app.register_blueprint(adiwiyata_bp)
     app.register_blueprint(hospitality_bp)
+    app.register_blueprint(supporter_bp)
     app.register_blueprint(daftar_tamu_bp)
+    app.register_blueprint(penugasan_bp)
     app.register_blueprint(call_center_bp)
     csrf.exempt(call_center_api_bp)
     app.register_blueprint(call_center_api_bp)
+    app.register_blueprint(adiwiyata_api_bp)
     app.register_blueprint(cms_bp)
+    app.register_blueprint(laporan_bp)
+    
+    # Exempt public API endpoints from CSRF
+    from .adiwiyata.routes import api_adiwiyata_likes
+    from .routes import api_spmb_evaluations, api_spmb_evaluation_item, api_spmb_queue
+    csrf.exempt(api_adiwiyata_likes)
+    csrf.exempt(api_spmb_evaluations)
+    csrf.exempt(api_spmb_evaluation_item)
+    csrf.exempt(api_spmb_queue)
+    
     init_oauth(app)
 
     if os.getenv("ASKA_DASHBOARD_AUTO_INIT", "0").strip().lower() in {"1", "true", "yes"}:
         try:
             ensure_dashboard_schema()
+        except Exception:
+            pass
+        try:
+            ensure_laporan_schema()
         except Exception:
             pass
 
@@ -119,6 +146,12 @@ def create_app() -> Flask:
                 admin_pending = {"total": 0}
                 admin_notification_items = []
 
+        try:
+            from .portal.permissions import get_permission_summary
+            permissions = get_permission_summary(user) if user else get_permission_summary({})
+        except Exception:
+            permissions = {}
+
         return {
             "current_user": user,
             "pending_bullying_count": pending_count,
@@ -129,6 +162,7 @@ def create_app() -> Flask:
             "cc_unread_count": cc_unread_count,
             "admin_pending": admin_pending,
             "admin_notification_items": admin_notification_items,
+            "permissions": permissions,
         }
 
     @app.template_filter("jakarta")

@@ -31,6 +31,7 @@ from flask import (
     send_from_directory,
     abort,
     session,
+    make_response,
 )
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -1779,21 +1780,43 @@ def home() -> Response:
                 "description": "Akses tugas Monev dan proses penilaian PANBERSS.",
                 "icon": "bi-building",
                 "href": url_for("portal.staff_assignments"),
-                "col_class": "col-md-6 col-12",
+                "col_class": "col-lg-4 col-md-6 col-12",
             },
             {
                 "title": "Hospitality",
                 "description": "Penilaian hospitality tanpa penugasan, terhubung buku tamu.",
                 "icon": "bi-house-heart",
                 "href": url_for("hospitality.staff_home"),
-                "col_class": "col-md-6 col-12",
+                "col_class": "col-lg-4 col-md-6 col-12",
             },
             {
                 "title": "Buku Tamu",
                 "description": "Lihat riwayat buku tamu pribadi Anda.",
                 "icon": "bi-person-vcard",
                 "href": url_for("daftar_tamu.user_guestbook_history"),
-                "col_class": "col-md-6 col-12",
+                "col_class": "col-lg-4 col-md-6 col-12",
+            },
+            {
+                "title": "Pilih Antrian",
+                "description": "Panggil nomor antrian SPMB dari meja operator yang sudah diklaim.",
+                "icon": "bi-list-ol",
+                "href": url_for("penugasan.spmb_queue_picker"),
+                "col_class": "col-lg-4 col-md-6 col-12",
+            },
+            {
+                "title": "Supporter",
+                "description": "Selesaikan task sosial media dan kumpulkan poin.",
+                "icon": "bi-megaphone",
+                "href": url_for("supporter.staff_dashboard"),
+                "col_class": "col-lg-4 col-md-6 col-12",
+            },
+            {
+                "title": "Layanan",
+                "description": "Akses layanan tambahan ASKA Portal.",
+                "icon": "bi-ui-checks-grid",
+                "href": "#",
+                "disabled": True,
+                "col_class": "col-lg-4 col-md-6 col-12",
             },
         ]
         return render_template(
@@ -1803,8 +1826,8 @@ def home() -> Response:
             header_title=header_title,
             header_subtitle="Silakan pilih layanan ASKA Portal",
             cards=cards,
-            default_col_class="col-md-6 col-12",
-            enable_odd_center=True,
+            default_col_class="col-lg-4 col-md-6 col-12",
+            enable_odd_center=False,
             show_logout=True,
         )
     if role == "coordinator":
@@ -1828,6 +1851,13 @@ def home() -> Response:
                 "description": "Pantau dashboard buku tamu pribadi untuk sekolah negeri.",
                 "icon": "bi-person-vcard",
                 "href": url_for("daftar_tamu.coordinator_dashboard"),
+                "col_class": "col-md-6 col-12",
+            },
+            {
+                "title": "Pilih Antrian",
+                "description": "Panggil nomor antrian SPMB dari meja operator yang sudah diklaim.",
+                "icon": "bi-list-ol",
+                "href": url_for("penugasan.spmb_queue_picker"),
                 "col_class": "col-md-6 col-12",
             },
         ]
@@ -1913,6 +1943,8 @@ def schools() -> Response:
     )
 
 
+
+
 # ===== Sekolah Landing =====
 
 @portal_bp.route("/sekolah")
@@ -1932,29 +1964,44 @@ def sekolah_home() -> Response:
              "description": "Konfigurasi ruangan untuk pemantauan kebersihan dan sarana sekolah.",
              "icon": "bi bi-building",
              "href": url_for("portal.sekolah_rooms"),
-             "col_class": "col-md-6 col-12",
+             "col_class": "col-lg-4 col-md-6 col-12",
         },
         {
             "title": "Hospitality",
             "description": "Lihat hasil penilaian hospitality dan beri komentar.",
             "icon": "bi-house-heart",
             "href": url_for("hospitality.school_home"),
-            "col_class": "col-md-6 col-12",
+            "col_class": "col-lg-4 col-md-6 col-12",
         },
         {
             "title": "Buku Tamu",
             "description": "Input kunjungan tamu dan pantau status verifikasi kunjungan.",
             "icon": "bi-person-vcard",
             "href": url_for("daftar_tamu.sekolah_guestbook"),
-            "col_class": "col-md-6 col-12",
+            "col_class": "col-lg-4 col-md-6 col-12",
         },
         {
             "title": "Adiwiyata",
             "description": "Posting laporan progres atau kondisi pelestarian lingkungan sekolah.",
             "icon": "bi-buildings",
             "icon_secondary": "bi-tree-fill",
-            "href": "/portal/sekolah/adiwiyata",
-            "col_class": "col-md-6 col-12",
+            "href": url_for("adiwiyata.sekolah_adiwiyata"),
+            "col_class": "col-lg-4 col-md-6 col-12",
+        },
+        {
+            "title": "Laporan",
+            "description": "Isi dan kirim form laporan yang ditetapkan oleh Sudin Pendidikan.",
+            "icon": "bi-file-earmark-text",
+            "href": url_for("laporan.sekolah_laporan_list"),
+            "col_class": "col-lg-4 col-md-6 col-12",
+        },
+        {
+            "title": "Coming Soon",
+            "description": "Layanan tambahan sedang disiapkan.",
+            "icon": "bi-hourglass-split",
+            "href": "#",
+            "disabled": True,
+            "col_class": "col-lg-4 col-md-6 col-12",
         },
     ]
     return render_template(
@@ -1964,8 +2011,8 @@ def sekolah_home() -> Response:
         header_title="Selamat Datang",
         header_subtitle=subtitle,
         cards=cards,
-        default_col_class="col-md-6 col-12",
-        enable_odd_center=True,
+        default_col_class="col-lg-4 col-md-6 col-12",
+        enable_odd_center=False,
         show_logout=True,
     )
 
@@ -5413,6 +5460,49 @@ def sekolah_profile() -> Response:
     )
 
 
+@portal_bp.route("/api/sekolah/profile", methods=["GET", "POST"])
+@_portal_access_required
+def api_sekolah_profile() -> Response:
+    """API for Next.js to view/update school profile data."""
+    user = current_user()
+    if user.get("role") != "sekolah":
+        return jsonify({"success": False, "message": "Hanya akun sekolah yang dapat mengakses ini."}), 403
+
+    school = _fetch_user_school(user["id"])
+    if not school:
+        return jsonify({"success": False, "message": "Akun belum terhubung dengan sekolah."}), 400
+
+    if request.method == "POST":
+        payload = _build_profile_payload(request.get_json() or {})
+        form_errors = _validate_profile_data(payload, jenjang=school.get("jenjang"))
+        if form_errors:
+            return jsonify({"success": False, "errors": form_errors}), 400
+        
+        _save_school_profile(school["id"], payload)
+        return jsonify({"success": True, "message": "Profil sekolah berhasil diperbarui."})
+
+    meta = _normalize_metadata(school.get("metadata"))
+    kecamatan_list = [dict(k) for k in list_kecamatan()]
+    kelurahan_list = [dict(l) for l in list_kelurahan()]
+    
+    return jsonify({
+        "success": True,
+        "school": {
+            "id": school["id"],
+            "name": school["name"],
+            "npsn": school["npsn"],
+            "jenjang": school["jenjang"],
+            "alamat": school.get("alamat"),
+            "kecamatan_id": school.get("kecamatan_id"),
+            "kelurahan_id": school.get("kelurahan_id"),
+            "logo_url": school.get("logo_url")
+        },
+        "meta": meta,
+        "kecamatan_list": kecamatan_list,
+        "kelurahan_list": kelurahan_list,
+        "missing_fields": _compute_missing_profile_fields(school)
+    })
+
 @portal_bp.route("/sekolah/password", methods=["GET", "POST"])
 @_portal_access_required
 def sekolah_change_password() -> Response:
@@ -8502,6 +8592,12 @@ def set_hospitality_date_mode() -> Response:
 @role_required("admin", "coordinator", "staff")
 def user_profile_settings() -> Response:
     """Allow dashboard users to edit basic profile info and change password."""
+    from dashboard.supporter.queries import (
+        SUPPORTER_SOCIAL_FIELDS,
+        get_supporter_staff_profile,
+        upsert_supporter_staff_profile,
+    )
+
     user = current_user()
     profile = get_dashboard_user_profile(user["id"])
     if not profile:
@@ -8509,6 +8605,10 @@ def user_profile_settings() -> Response:
         return redirect(url_for("portal.home"))
     profile_view = {k: v for k, v in profile.items() if k != "password_hash"}
     profile_view["profile_photo_url"] = _build_profile_photo_url(profile.get("profile_photo_path"))
+    is_staff_user = (user.get("role") or "").strip().lower() == "staff"
+    supporter_profile = get_supporter_staff_profile(int(user["id"])) if is_staff_user else {"socials": {}, "is_complete": False}
+    profile_view["supporter_socials"] = supporter_profile.get("socials") or {}
+    profile_view["supporter_profile_complete"] = bool(supporter_profile.get("is_complete"))
 
     if request.method == "POST":
         form_type = (request.form.get("form_type") or "profile").strip().lower()
@@ -8519,6 +8619,12 @@ def user_profile_settings() -> Response:
         nip = (request.form.get("nip") or profile.get("nip") or "").strip() or None
         nrk = (request.form.get("nrk") or profile.get("nrk") or "").strip() or None
         jabatan = (request.form.get("jabatan") or profile.get("jabatan") or "").strip() or None
+        social_username = (request.form.get("social_username") or profile.get("social_username") or "").strip() or None
+        supporter_socials = {}
+        if is_staff_user and form_type == "profile":
+            for key, _label, _required in SUPPORTER_SOCIAL_FIELDS:
+                supporter_socials[key] = (request.form.get(f"supporter_social_{key}") or "").strip()
+            social_username = (supporter_socials.get("instagram") or social_username or "").strip().lstrip("@") or None
 
         current_password = request.form.get("current_password") or ""
         new_password = request.form.get("new_password") or ""
@@ -8573,16 +8679,23 @@ def user_profile_settings() -> Response:
                     nrk=nrk,
                     jabatan=jabatan,
                     password_hash=pw_hash,
+                    social_username=social_username,
                 )
+                if is_staff_user and form_type == "profile":
+                    upsert_supporter_staff_profile(int(user["id"]), supporter_socials)
                 # Refresh session data
                 session_user = session.get("user", {})
                 session_user["full_name"] = full_name
                 session_user["email"] = email
+                session_user["social_username"] = social_username
                 session["user"] = session_user
                 flash("Profil berhasil diperbarui.", "success")
                 profile = get_dashboard_user_profile(user["id"])
                 profile_view = {k: v for k, v in profile.items() if k != "password_hash"}
                 profile_view["profile_photo_url"] = _build_profile_photo_url(profile.get("profile_photo_path"))
+                supporter_profile = get_supporter_staff_profile(int(user["id"])) if is_staff_user else {"socials": {}, "is_complete": False}
+                profile_view["supporter_socials"] = supporter_profile.get("socials") or {}
+                profile_view["supporter_profile_complete"] = bool(supporter_profile.get("is_complete"))
             except Exception as exc:
                 current_app.logger.error(f"Gagal memperbarui profil: {exc}")
                 flash("Gagal memperbarui profil.", "danger")
@@ -8591,6 +8704,7 @@ def user_profile_settings() -> Response:
     return render_template(
         "portal/profile.html",
         profile=profile_view,
+        supporter_social_fields=SUPPORTER_SOCIAL_FIELDS,
         hospitality_date_mode=hospitality_date_mode,
     )
 
@@ -8696,6 +8810,7 @@ def _build_session_user_payload(row: dict) -> dict:
         "profile_photo_url": profile_photo_url,
         "no_tester_enabled": bool(row.get("no_tester_enabled")),
         "assigned_class_id": assigned_class_id,
+        "social_username": row.get("social_username"),
     }
 
 

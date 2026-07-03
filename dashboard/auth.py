@@ -338,6 +338,7 @@ def _establish_session(user: dict, *, remember: bool = False, email_override: Op
         "profile_photo_url": profile_photo_url,
         "no_tester_enabled": bool(user.get("no_tester_enabled")),
         "assigned_class_id": assigned_class_id,
+        "social_username": user.get("social_username"),
     }
     session.permanent = remember
     update_last_login(user["id"])
