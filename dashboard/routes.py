@@ -563,12 +563,6 @@ def admin_select_role() -> Response:
             "href": url_for("call_center.inbox"),
         },
         {
-            "title": "Content",
-            "description": "Kelola berita dan informasi Sudin.",
-            "icon": "bi-newspaper",
-            "href": url_for("cms.dashboard"),
-        },
-        {
             "title": "Adiwiyata",
             "description": "Pantau progres pelestarian lingkungan sekolah.",
             "icon": "bi-buildings",
@@ -587,17 +581,32 @@ def admin_select_role() -> Response:
             "icon": "bi-file-earmark-text",
             "href": url_for("laporan.admin_laporan_list"),
         },
+        {
+            "title": "CMS",
+            "description": "Kelola konten dan informasi publik Sudin.",
+            "icon": "bi-newspaper",
+            "href": url_for("cms.layanan_publik"),
+        },
+        {
+            "title": "Coming Soon",
+            "description": "Menu sedang disiapkan.",
+            "icon": "bi-hourglass-split",
+            "disabled": True,
+        },
+        {
+            "title": "Coming Soon",
+            "description": "Menu sedang disiapkan.",
+            "icon": "bi-hourglass-split",
+            "disabled": True,
+        },
+        {
+            "title": "Coming Soon",
+            "description": "Menu sedang disiapkan.",
+            "icon": "bi-hourglass-split",
+            "disabled": True,
+        },
     ]
-    # Layout fleksibel: desktop 3 kolom, tablet 2 kolom, mobile 1 kolom
-    n = len(cards)
-    if n >= 4:
-        default_col_class = "col-lg-4 col-md-6 col-12"
-    elif n == 3:
-        default_col_class = "col-lg-4 col-md-6 col-12"
-    elif n == 2:
-        default_col_class = "col-lg-6 col-md-6 col-12"
-    else:
-        default_col_class = "col-12"
+    default_col_class = "col-lg-3 col-md-4 col-sm-6 col-12"
     return render_template(
         "role_selection.html",
         page_title="Pilih Mode Akses - ASKA Portal",
@@ -606,7 +615,8 @@ def admin_select_role() -> Response:
         header_subtitle="Silakan pilih layanan yang ingin Anda akses",
         cards=cards,
         default_col_class=default_col_class,
-        enable_odd_center=True,
+        enable_odd_center=False,
+        container_class="role-selection-wide",
         show_logout=True,
     )
 

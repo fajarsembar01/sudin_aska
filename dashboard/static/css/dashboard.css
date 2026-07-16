@@ -742,6 +742,196 @@ html[data-theme="dark"] .theme-toggle-label .theme-icon-moon {
     height: 100% !important;
 }
 
+.notification-toggle {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-primary);
+    transition: background-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
+}
+
+.notification-toggle:hover,
+.notification-menu.show .notification-toggle {
+    background-color: var(--bg-muted);
+    box-shadow: var(--shadow-soft);
+}
+
+.notification-badge {
+    position: absolute;
+    top: -0.2rem;
+    right: -0.1rem;
+    min-width: 1.2rem;
+    height: 1.2rem;
+    padding: 0 0.3rem;
+    border-radius: 999px;
+    background: #dc3545;
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 0 2px var(--bg-surface);
+}
+
+.notification-dropdown {
+    min-width: 22rem;
+    border: 0;
+    border-radius: 1rem;
+    padding: 1rem;
+    background-color: var(--bg-surface);
+    box-shadow: var(--shadow-soft);
+    max-height: min(70vh, 34rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+.notification-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.notification-header .notification-controls {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.notification-refresh {
+    border-radius: 999px;
+    padding: 0.2rem 0.55rem;
+}
+
+.notification-empty {
+    padding: 0.5rem 0.75rem;
+}
+
+.notification-divider {
+    border-top: 1px solid var(--border-soft);
+    margin: 0.75rem 0;
+}
+
+.notification-group-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin: 0.75rem 0 0.5rem;
+}
+
+.notification-item,
+.notification-quick-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.6rem 0.75rem;
+    border-radius: 0.75rem;
+    color: var(--text-primary);
+    text-decoration: none;
+    transition: background-color 0.16s ease, transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.notification-item {
+    background: transparent;
+}
+
+.notification-item:hover {
+    background-color: var(--bg-subtle);
+    color: var(--text-primary);
+    text-decoration: none;
+    transform: translateX(2px);
+}
+
+.notification-item small {
+    color: var(--text-muted);
+}
+
+.notification-quick-item {
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-soft);
+    margin-bottom: 0.5rem;
+}
+
+.notification-quick-item:hover,
+.notification-quick-item:focus-visible {
+    text-decoration: none;
+    color: var(--text-primary);
+    background: var(--bg-surface);
+    border-color: var(--accent);
+    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+    transform: translateY(-1px);
+}
+
+.notification-quick-item:last-child {
+    margin-bottom: 0;
+}
+
+.notification-quick-meta {
+    flex: 1;
+    min-width: 0;
+}
+
+.notification-quick-meta .fw-semibold {
+    font-size: 0.9rem;
+}
+
+.notification-quick-meta small {
+    color: var(--text-muted);
+}
+
+.notification-quick-time {
+    display: block;
+    margin-top: 0.2rem;
+    font-size: 0.68rem;
+    color: var(--text-muted);
+}
+
+.notification-quick-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+}
+
+.notification-quick-actions .btn.icon-only {
+    width: 1.9rem;
+    height: 1.9rem;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    line-height: 1;
+}
+
+@media (max-width: 576px) {
+    .notification-dropdown {
+        min-width: 0;
+        width: min(92vw, 26rem);
+        max-width: 92vw;
+        position: fixed !important;
+        left: 50% !important;
+        right: auto !important;
+        top: 4.5rem !important;
+        transform: translateX(-50%) !important;
+        max-height: calc(100vh - 6.5rem);
+        margin: 0;
+    }
+}
+
 .timeline {
     position: relative;
     margin-left: 1rem;

@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ title }} – Adiwiyata | ASKA Portal</title>
     <meta name="description" content="Galeri dokumentasi Adiwiyata sekolah kategori {{ title }}.">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="shortcut icon" href="{{ url_for('static', filename='logo/logo.png') }}" type="image/png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
@@ -978,32 +979,98 @@
 
 <body>
 
-<!-- ─── Topbar ─── -->
-<nav class="topbar">
-    {% if is_public %}
-    <a href="https://sudindikju2.com/adiwiyata" class="topbar-back">
-        <i class="bi bi-arrow-left-short fs-5"></i> Kembali
-    </a>
-    {% else %}
-    <a href="{{ url_for('adiwiyata.sekolah_adiwiyata') }}" class="topbar-back">
-        <i class="bi bi-arrow-left-short fs-5"></i> Kembali
-    </a>
-    {% endif %}
-    
-    <div class="topbar-title">
-        <span class="cat-icon"><i class="bi bi-trash3"></i></span>
-        <span>{{ title }}</span>
+<!-- ─── Navbar ─── -->
+<nav class="navbar navbar-expand-lg sticky-top">
+    <div class="container-fluid px-lg-4">
+        <a class="navbar-brand" href="{{ 'https://sudindikju2.com/adiwiyata' if is_public else url_for('adiwiyata.sekolah_adiwiyata') }}">
+            <span class="icon-badge brand-icon text-primary">
+                <i class="bi bi-tree-fill"></i>
+            </span>
+            <span class="fw-bold">Adiwiyata</span>
+        </a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#adiwiyataSchoolNavbar"
+            aria-controls="adiwiyataSchoolNavbar" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="adiwiyataSchoolNavbar">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                {% if is_public %}
+                <li class="nav-item">
+                    <a class="nav-link" href="https://sudindikju2.com/adiwiyata">
+                        <i class="bi bi-arrow-left nav-icon"></i>Kembali
+                    </a>
+                </li>
+                {% else %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('adiwiyata.sekolah_adiwiyata') }}">
+                        <i class="bi bi-grid nav-icon"></i>Menu Adiwiyata
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="{{ url_for('adiwiyata.sekolah_adiwiyata_feed', category=category) }}">
+                        <i class="bi bi-trash3 nav-icon"></i>{{ title }}
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+
+            {% if not is_public %}
+            <div class="d-flex align-items-center gap-3 user-nav-actions">
+                <a href="{{ url_for('portal.home') }}"
+                    class="btn btn-outline-secondary btn-sm text-nowrap oss-home-btn">
+                    <i class="bi bi-house me-1"></i><span class="oss-home-label">Home</span>
+                </a>
+
+                <div class="form-check form-switch mb-0">
+                    <input class="form-check-input" type="checkbox" id="themeToggle" role="switch">
+                    <label class="theme-toggle-label" for="themeToggle">
+                        <i class="bi bi-sun-fill theme-icon theme-icon-sun"></i>
+                        <i class="bi bi-moon-fill theme-icon theme-icon-moon"></i>
+                    </label>
+                </div>
+
+                {% set user_notif_unread = user_app_notifications.unread_count if user_app_notifications else 0 %}
+                <div class="dropdown notification-menu" id="userGuestbookNotifRoot"
+                    data-list-url="{{ url_for('portal.user_app_notifications') }}"
+                    data-read-url="{{ url_for('portal.user_app_notifications_mark_read') }}"
+                    data-history-url="{{ url_for('adiwiyata.sekolah_adiwiyata_feed', category=category) }}">
+                    <button class="notification-toggle" type="button" data-bs-toggle="dropdown"
+                        id="userGuestbookNotifToggle" aria-expanded="false" aria-label="Notifikasi pengguna">
+                        <i class="bi bi-bell"></i>
+                        <span class="notification-badge{% if user_notif_unread == 0 %} d-none{% endif %}"
+                            id="userGuestbookNotifBadge" data-count="{{ user_notif_unread }}">{{ user_notif_unread }}</span>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-end notification-dropdown">
+                        <div class="notification-header">
+                            <span class="fw-semibold">Notifikasi Saya</span>
+                            <div class="notification-controls">
+                                <button type="button" class="btn btn-outline-secondary btn-sm notification-refresh"
+                                    id="userGuestbookNotifRefresh" title="Perbarui">
+                                    <i class="bi bi-arrow-clockwise"></i>
+                                </button>
+                                <button type="button" class="btn btn-link btn-sm text-decoration-none px-0"
+                                    id="userGuestbookNotifMarkAll"{% if user_notif_unread == 0 %} disabled{% endif %}>
+                                    Tandai semua
+                                </button>
+                                <span class="badge bg-info-subtle text-info-emphasis{% if user_notif_unread == 0 %} d-none{% endif %}"
+                                    id="userGuestbookNotifUnreadLabel" data-count="{{ user_notif_unread }}">{{ user_notif_unread }}</span>
+                            </div>
+                        </div>
+                        <div id="userGuestbookNotifEmpty"
+                            class="notification-empty text-muted small{% if user_notif_unread > 0 %} d-none{% endif %}">
+                            Belum ada notifikasi terbaru.
+                        </div>
+                        <div class="notification-quick" id="userGuestbookNotifList"></div>
+                    </div>
+                </div>
+
+                {% include "portal/components/_user_menu.html" %}
+            </div>
+            {% endif %}
+        </div>
     </div>
-    {% if school and school.name %}
-    <span class="school-pill" title="{{ school.name }}">{{ school.name }}</span>
-    {% endif %}
-    
-    {% if not is_public %}
-    <a href="{{ url_for('auth.logout') }}" class="topbar-logout">
-        <i class="bi bi-box-arrow-right"></i>
-        <span class="d-none d-sm-inline">Logout</span>
-    </a>
-    {% endif %}
 </nav>
 
 <!-- ─── Flash ─── -->
@@ -1407,8 +1474,209 @@
     </div>
 </div>
 
+{% if not is_public %}
+{% include "portal/components/_area_contact_modal.html" %}
+{% endif %}
+
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// Navbar theme toggle
+(function () {
+    const toggle = document.getElementById('themeToggle');
+    const html = document.documentElement;
+    const saved = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const activeTheme = saved || (prefersDark ? 'dark' : 'light');
+
+    html.setAttribute('data-theme', activeTheme);
+    html.setAttribute('data-bs-theme', activeTheme);
+    if (toggle) toggle.checked = activeTheme === 'dark';
+
+    if (toggle) {
+        toggle.addEventListener('change', function () {
+            const theme = this.checked ? 'dark' : 'light';
+            html.setAttribute('data-theme', theme);
+            html.setAttribute('data-bs-theme', theme);
+            localStorage.setItem('theme', theme);
+        });
+    }
+})();
+
+// Unified user notification dropdown
+(function () {
+    const enabled = {{ 'true' if not is_public else 'false' }};
+    if (!enabled || window.__askaUnifiedNotifInit) return;
+    window.__askaUnifiedNotifInit = true;
+
+    const root = document.getElementById('userGuestbookNotifRoot');
+    if (!root) return;
+
+    const listUrl = root.getAttribute('data-list-url');
+    const readUrl = root.getAttribute('data-read-url');
+    const historyUrl = root.getAttribute('data-history-url') || '';
+    const listEl = document.getElementById('userGuestbookNotifList');
+    const emptyEl = document.getElementById('userGuestbookNotifEmpty');
+    const badgeEl = document.getElementById('userGuestbookNotifBadge');
+    const unreadLabelEl = document.getElementById('userGuestbookNotifUnreadLabel');
+    const refreshBtn = document.getElementById('userGuestbookNotifRefresh');
+    const markAllBtn = document.getElementById('userGuestbookNotifMarkAll');
+    const toggleBtn = document.getElementById('userGuestbookNotifToggle');
+    const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+    const csrfToken = csrfMeta ? (csrfMeta.getAttribute('content') || '') : '';
+    let isLoading = false;
+    let lastRequestAt = 0;
+
+    function escapeHtml(value) {
+        return String(value || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function parseCount(value) {
+        const parsed = parseInt(value || '0', 10);
+        return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+    }
+
+    function setUnreadCount(count) {
+        const safeCount = parseCount(count);
+        if (badgeEl) {
+            badgeEl.textContent = safeCount;
+            badgeEl.dataset.count = String(safeCount);
+            badgeEl.classList.toggle('d-none', safeCount <= 0);
+        }
+        if (unreadLabelEl) {
+            unreadLabelEl.textContent = safeCount;
+            unreadLabelEl.dataset.count = String(safeCount);
+            unreadLabelEl.classList.toggle('d-none', safeCount <= 0);
+        }
+        if (markAllBtn) markAllBtn.disabled = safeCount <= 0;
+    }
+
+    function renderItems(items) {
+        const safeItems = Array.isArray(items) ? items : [];
+        if (!listEl || !emptyEl) return;
+        if (!safeItems.length) {
+            listEl.innerHTML = '';
+            emptyEl.classList.remove('d-none');
+            return;
+        }
+        emptyEl.classList.add('d-none');
+        listEl.innerHTML = safeItems.map(function (item) {
+            const id = parseInt(item && item.id ? item.id : 0, 10);
+            const href = (item && item.link) ? item.link : historyUrl;
+            const title = escapeHtml(item && item.title ? item.title : 'Notifikasi');
+            const message = escapeHtml(item && item.message ? item.message : '');
+            const icon = escapeHtml(item && item.icon ? item.icon : 'bi-bell-fill');
+            const tone = escapeHtml(item && item.tone ? item.tone : 'secondary');
+            const createdLabel = escapeHtml(item && item.created_label ? item.created_label : '');
+            const isUnread = !!(item && item.is_unread);
+            return [
+                '<a class="notification-quick-item' + (isUnread ? '' : ' opacity-75') + '"',
+                ' href="' + escapeHtml(href) + '"',
+                ' data-notif-link="1"',
+                ' data-notif-id="' + String(id || 0) + '"',
+                ' data-notif-unread="' + (isUnread ? '1' : '0') + '">',
+                '<div class="notification-quick-meta">',
+                '<div class="fw-semibold text-' + tone + '"><i class="bi ' + icon + ' me-1"></i>' + title + '</div>',
+                '<small>' + message + '</small>',
+                '</div>',
+                '<div class="notification-quick-time">' + createdLabel + '</div>',
+                '</a>'
+            ].join('');
+        }).join('');
+    }
+
+    function markRead(payload) {
+        if (!readUrl) return Promise.resolve(null);
+        const headers = {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        };
+        if (csrfToken) headers['X-CSRFToken'] = csrfToken;
+        return fetch(readUrl, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify(payload || {})
+        })
+            .then(response => response.ok ? response.json() : null)
+            .then(data => {
+                if (data && data.success) setUnreadCount(data.unread_count || 0);
+                return data;
+            })
+            .catch(() => null);
+    }
+
+    function fetchNotifications(force) {
+        if (!listUrl || isLoading) return Promise.resolve(null);
+        const now = Date.now();
+        if (!force && now - lastRequestAt < 800) return Promise.resolve(null);
+        isLoading = true;
+        lastRequestAt = now;
+
+        return fetch(listUrl + '?limit=8', {
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+            .then(response => response.ok ? response.json() : null)
+            .then(data => {
+                if (!data || !data.success) return;
+                setUnreadCount(data.unread_count || 0);
+                renderItems(data.items || []);
+            })
+            .catch(() => {})
+            .finally(() => {
+                isLoading = false;
+            });
+    }
+
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            fetchNotifications(true);
+        });
+    }
+
+    if (markAllBtn) {
+        markAllBtn.addEventListener('click', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            if (markAllBtn.disabled) return;
+            markRead({ all: true }).then(() => fetchNotifications(true));
+        });
+    }
+
+    if (listEl) {
+        listEl.addEventListener('click', function (event) {
+            const linkEl = event.target && event.target.closest ? event.target.closest('[data-notif-link="1"]') : null;
+            if (!linkEl) return;
+            const href = linkEl.getAttribute('href');
+            const notifId = parseInt(linkEl.getAttribute('data-notif-id') || '0', 10);
+            const isUnread = linkEl.getAttribute('data-notif-unread') === '1';
+            if (!href || !notifId || !isUnread) return;
+
+            event.preventDefault();
+            markRead({ ids: [notifId] }).finally(() => {
+                window.location.href = href;
+            });
+        });
+    }
+
+    if (toggleBtn) {
+        toggleBtn.addEventListener('show.bs.dropdown', () => fetchNotifications(true));
+        toggleBtn.addEventListener('click', () => fetchNotifications(false));
+    }
+
+    fetchNotifications(false);
+})();
+</script>
 <script>
 const AUTO_SHARE_PROMPT = {{ share_prompt | tojson }};
 const SHARE_DEFAULTS = {
