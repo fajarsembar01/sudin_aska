@@ -950,6 +950,7 @@ CREATE TABLE IF NOT EXISTS portal_adiwiyata_posts (
     media_path TEXT NOT NULL,
     media_type TEXT NOT NULL,
     description TEXT,
+    thumbnail_path TEXT,
     created_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()

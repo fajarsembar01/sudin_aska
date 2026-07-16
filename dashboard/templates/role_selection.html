@@ -41,6 +41,10 @@
             max-width: 860px;
         }
 
+        .login-container.role-selection-wide {
+            max-width: 1160px;
+        }
+
         .login-card {
             border-radius: 16px;
             overflow: hidden;
@@ -298,7 +302,7 @@
 </head>
 
 <body>
-    <div class="login-container">
+    <div class="login-container {{ container_class or '' }}">
         <div class="card login-card shadow-sm border-0">
             <div class="login-header">
                 {% if back_href %}

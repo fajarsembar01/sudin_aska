@@ -8,7 +8,8 @@ from flask import Flask
 
 from .auth import auth_bp, current_user, init_oauth
 from .routes import main_bp
-from .portal.routes import portal_bp, adiwiyata_bp
+from .portal.routes import portal_bp
+from .adiwiyata import adiwiyata_api_bp, adiwiyata_bp
 from .hospitality import hospitality_bp
 from .supporter import supporter_bp
 from .daftar_tamu.routes import daftar_tamu_bp
@@ -56,11 +57,12 @@ def create_app() -> Flask:
     app.register_blueprint(call_center_bp)
     csrf.exempt(call_center_api_bp)
     app.register_blueprint(call_center_api_bp)
+    app.register_blueprint(adiwiyata_api_bp)
     app.register_blueprint(cms_bp)
     app.register_blueprint(laporan_bp)
     
     # Exempt public API endpoints from CSRF
-    from .portal.routes import api_adiwiyata_likes
+    from .adiwiyata.routes import api_adiwiyata_likes
     from .routes import api_spmb_evaluations, api_spmb_evaluation_item, api_spmb_queue
     csrf.exempt(api_adiwiyata_likes)
     csrf.exempt(api_spmb_evaluations)
