@@ -584,7 +584,7 @@ def admin_select_role() -> Response:
         {
             "title": "CMS",
             "description": "Kelola konten dan informasi publik Sudin.",
-            "icon": "bi-ui-checks-grid",
+            "icon": "bi-newspaper",
             "href": url_for("cms.layanan_publik"),
         },
         {
