@@ -3,7 +3,7 @@
 {%- endmacro %}
 
 {% macro assessment_aspect_row(aspect, score_values, selected_score=None, room_id=None, mode='buttons', helper_text=None, score_id_prefix='score') %}
-<div class="aspect-item">
+<div class="aspect-item"{% if room_id is not none %} id="aspect-room-{{ room_id }}-{{ aspect.id }}" data-room-id="{{ room_id }}" data-aspect-id="{{ aspect.id }}"{% endif %}>
   <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
     <div class="flex-grow-1">
       <div class="d-flex align-items-center gap-2">
