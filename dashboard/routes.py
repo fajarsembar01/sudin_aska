@@ -582,9 +582,9 @@ def admin_select_role() -> Response:
             "href": url_for("laporan.admin_laporan_list"),
         },
         {
-            "title": "Layanan",
-            "description": "Kelola layanan publik Sudin.",
-            "icon": "bi-ui-checks-grid",
+            "title": "CMS",
+            "description": "Kelola konten dan informasi publik Sudin.",
+            "icon": "bi-newspaper",
             "href": url_for("cms.layanan_publik"),
         },
         {
