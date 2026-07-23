@@ -779,6 +779,21 @@
                 return digits;
             }
 
+            function formatIdDate(isoValue) {
+                if (!isoValue) return '';
+                var date = new Date(isoValue);
+                if (Number.isNaN(date.getTime())) return '';
+                try {
+                    return new Intl.DateTimeFormat('id-ID', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric'
+                    }).format(date);
+                } catch (err) {
+                    return date.toLocaleDateString();
+                }
+            }
+
             function setGuestType(type) {
                 if (!guestTypeInput || !tabUmum || !tabSudin) return;
                 var isUmum = type !== 'sudin';
@@ -842,6 +857,14 @@
                 }
                 if (cancelUpdateBtn) {
                     cancelUpdateBtn.classList.toggle('d-none', !isRegisterUpdateMode);
+                }
+            }
+
+            function applyGuestUpdateRequirement(guest, updateRequired) {
+                if (updateRequired && guest) {
+                    setRegisterFormVisible(true);
+                    fillRegisterFormFromGuest(guest);
+                    setRegisterUpdateMode(true);
                 }
             }
 
@@ -1085,6 +1108,7 @@
                             guest.phone = normalized;
                         }
                         var isParent = isParentGuest(guest);
+                        var updateRequired = Boolean(isParent && guest.update_required);
                         var infoLine1 = '';
                         var infoLine2 = '';
                         if (isParent) {
@@ -1094,14 +1118,26 @@
                             infoLine1 = guest.instansi || '-';
                             infoLine2 = guest.jabatan || '-';
                         }
-                        var html = '<div class="p-2 rounded-3 search-result-card" data-guest-card="true" style="cursor:pointer;">'
+                        var updateBanner = '';
+                        if (updateRequired) {
+                            updateBanner = '<div class="alert alert-warning py-2 px-3 mt-3 mb-0 small">'
+                                + 'Data orang tua / wali murid ini wajib diubah setelah tahun ajaran baru.'
+                                + '</div>';
+                        }
+                        var addButtonLabel = 'Tambah ke Buku Tamu';
+                        var addButtonClass = updateRequired ? 'btn btn-sm btn-secondary' : 'btn btn-sm btn-outline-primary';
+                        var addButtonDisabled = updateRequired ? ' disabled aria-disabled="true"' : '';
+                        var html = '<div class="p-2 rounded-3 search-result-card" data-guest-card="true">'
                             + '<div class="fw-semibold">' + (guest.full_name || 'Tamu') + '</div>'
                             + '<div class="small text-muted">' + infoLine1 + '</div>'
                             + '<div class="small text-muted">' + infoLine2 + '</div>'
                             + '<div class="small text-muted">' + (guest.phone || normalized) + '</div>'
-                            + '<div class="small text-muted mt-1">Klik kartu atau tombol untuk menambahkan.</div>'
+                            + (updateRequired
+                                ? '<div class="small text-warning mt-1">Data harus diperbarui dulu sebelum ditambahkan.</div>'
+                                : '<div class="small text-muted mt-1">Klik kartu atau tombol untuk menambahkan.</div>')
+                            + updateBanner
                             + '<div class="d-flex flex-wrap gap-2 mt-2">'
-                            + '<button type="button" class="btn btn-sm btn-outline-primary" id="addExistingBtn">Tambah ke Buku Tamu</button>'
+                            + '<button type="button" class="' + addButtonClass + '" id="addExistingBtn"' + addButtonDisabled + '>' + addButtonLabel + '</button>'
                             + '<button type="button" class="btn btn-sm btn-outline-warning" id="editExistingBtn">Ubah Data</button>'
                             + '</div>'
                             + '</div>';
@@ -1109,11 +1145,13 @@
                         var card = searchResult.querySelector('[data-guest-card="true"]');
                         if (card) {
                             card.addEventListener('click', function () {
-                                addGuest(guest);
+                                if (!updateRequired) {
+                                    addGuest(guest);
+                                }
                             });
                         }
                         var btn = document.getElementById('addExistingBtn');
-                        if (btn) {
+                        if (btn && !updateRequired) {
                             btn.addEventListener('click', function (event) {
                                 event.stopPropagation();
                                 addGuest(guest);
@@ -1129,6 +1167,7 @@
                                 if (regName) regName.focus();
                             });
                         }
+                        applyGuestUpdateRequirement(guest, updateRequired);
                     } else {
                         showSearchResult('<div class="text-muted">Nomor belum terdaftar. Silakan lanjut isi form pendaftaran tamu baru di bawah.</div>');
                         setRegisterFormVisible(true);
