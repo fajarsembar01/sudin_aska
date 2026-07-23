@@ -10,7 +10,58 @@ Ya. Pendaftaran akun SPMB tetap dapat dilakukan setiap hari sejak 18 Mei, termas
 Ya. Pendaftaran akun SPMB dapat dilakukan setiap hari mulai tanggal 18 Mei, termasuk Sabtu, Minggu, dan hari libur lainnya.
 
 # POSKO SPMB 2026
+## Link dokumen SPTJM
+- Link SPTJM Tidak buta warna : https://dokumen-jkt.spmb.id/2026/20260523/SPTJM%20Tidak%20Buta%20Warna%202026-berkas--260523092550.pdf
+- Link SPTJM Mutasi : https://dokumen-jkt.spmb.id/2026/20260523/SPTJM%20Mutasi%202026-berkas--260523092511.pdf
+- Link SPTJM SPMB : https://dokumen-jkt.spmb.id/2026/20260523/SPTJM%20SPMB%202026-berkas--260523092443.pdf
+- Link SURAT KETERANGAN PERINGKAT RERATA NILAI RAPOR : https://dokumen-jkt.spmb.id/2026/20260523/SURAT%20KETERANGAN%20PERINGKAT%20RERATA%20NILAI%20RAPOR-berkas--260523092713.pdf
+- Link SURAT KETERANGAN RAPOR PENDIDIKAN : https://dokumen-jkt.spmb.id/2026/20260523/SURAT%20KETERANGAN%20RAPOR%20PENDIDIKAN-berkas--260523092652.pdf
 
+## Seluruh Lokasi Posko SPMB SD 
+- Seluruh posko SPMB SD bisa dilihat di https://spmb.jakarta.go.id/010101/lokasi
+## Seluruh Lokasi Posko SPMB SMP 
+- Seluruh posko SPMB SMP bisa dilihat di https://spmb.jakarta.go.id/020101/lokasi
+## Seluruh Lokasi Posko SPMB SMA 
+- Seluruh posko SPMB SMA bisa dilihat di https://spmb.jakarta.go.id/030101/lokasi
+## Seluruh Lokasi Posko SPMB SMK 
+- Seluruh posko SPMB SMK bisa dilihat di https://spmb.jakarta.go.id/040201/lokasi
+
+##  butuh brp lama untuk pengajuan akun diverifikasi?
+akun diverifikasi oleh operator sekolah yang bapak/ibu pilih untuk verifikasi, jika dalam waktu beberapa jam juga belum diverifikasi, silahkan datangi sekolah tempat verifikasi untuk mengingatkan operatornya melakukan verifikasi akun.
+
+## apakah posko buka di hari libur atau tanggal merah ?
+Posko libur pada hari libur seperti Sabtu, minggu, dan tanggal merah.
+
+## Dimana saya bisa melihat nomor id atau perserta DHTKA?
+untuk mendapatkan nomor id DHTKA bisa menghubungi operator sekolah masing-masing
+
+
+## Jadwal pelaksanaan Jalur Domisili SD
+- Pendaftaran dan pemilihan sekolah dilakukkan online dari tanggal 15-18 Juni 2026
+- Proses seleksi dari tanggal 15-18 juni 2026
+- Pengumuman tanggal 18 Juni 2026
+- Daftar ulang 19-20 Juni 2026
+
+## Jadwal Pelaksanaan Jalur Domisili SMP
+- Pendaftaran dan pemilihan sekolah dilakukkan online dari tanggal 29 Juni-1 Juli 2026
+- Proses seleksi dari tanggal 29 Juni-1 Juli 2026
+- pengumuman 1 Juli 2026
+- Daftar ulang 2-3 Juli 2026
+
+## Jadwal Pelaksanaan Jalur Domisili SMA
+- Pendaftaran dan pemilihan sekolah dilakukkan online dari tanggal 29 Juni-1 Juli 2026
+- Proses seleksi dari tanggal 29 Juni-1 Juli 2026
+- pengumuman 1 Juli 2026
+- Daftar ulang 2-3 Juli 2026
+
+## Jadwal Pelaksanaan Jalur Domisili SMK
+- Pendaftaran dan pemilihan sekolah dilakukkan online dari tanggal 15 Juni-18 Juni 2026
+- Proses seleksi dari tanggal 15 Juni-18 Juni 2026
+- pengumuman 18 Juni 2026
+- Daftar ulang 19-20 Juni 2026
+
+## notif respons akses data server dukcapil untuk nik anak tidak bisa diproses
+- jika muncul notif respons akses data server dukcapil untuk nik anak tidak bisa diproses maka silahkan hubungi dukcapil terdekat
 ## Di mana lokasi Posko SPMB 2026?
 
 Posko SPMB 2026 tersedia di setiap wilayah DKI Jakarta dan Kepulauan Seribu. Masyarakat dapat menghubungi Posko SPMB sesuai wilayah domisili melalui WhatsApp atau Hotline berikut. 
