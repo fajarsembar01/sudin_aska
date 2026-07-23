@@ -8,7 +8,9 @@ import hashlib
 import json
 import math
 import os
+import re
 import time
+from uuid import uuid4
 from io import BytesIO, StringIO
 import requests
 from pathlib import Path
@@ -33,6 +35,7 @@ from psycopg2.extras import Json
 from urllib.parse import quote_plus
 from PIL import Image, ImageDraw, ImageFont
 import qrcode
+from werkzeug.utils import secure_filename
 
 from dashboard.auth import current_user, role_required
 from dashboard.db_access import get_cursor
@@ -101,10 +104,23 @@ from .queries import (
     list_user_notifications,
     mark_user_notifications_read,
     create_guestbook_status_notifications,
+    sanitize_guestbook_notification_message_for_non_admin,
     upsert_transaction_staff_note,
     upsert_purpose_keyword,
     update_public_transaction_status,
     update_transaction_status,
+    list_guest_chat_bubbles,
+    get_guest_chat_bubble,
+    create_guest_chat_bubble,
+    update_guest_chat_bubble,
+    delete_guest_chat_bubble,
+    count_guest_chat_quick_questions_by_bubble,
+    list_guest_chat_quick_questions,
+    create_guest_chat_quick_question,
+    update_guest_chat_quick_question,
+    delete_guest_chat_quick_question,
+    get_guest_chat_settings,
+    update_guest_chat_settings,
 )
 
 DAFTAR_TAMU_URL_PREFIX = "/daftar-tamu"
@@ -238,6 +254,133 @@ def _to_int(value: Optional[str], default: int) -> int:
 
 def _today_jakarta() -> date:
     return current_jakarta_time().date()
+
+
+_GUEST_CHAT_MEDIA_TYPES = {"none", "image", "video", "audio"}
+_GUEST_CHAT_ALLOWED_EXTENSIONS = {
+    "image": {".jpg", ".jpeg", ".png", ".webp", ".gif"},
+    "video": {".mp4", ".webm", ".ogg", ".mov"},
+    "audio": {".mp3", ".wav", ".ogg", ".m4a", ".aac", ".opus"},
+}
+_GUEST_CHAT_MEDIA_UPLOAD_ROOT = Path(__file__).resolve().parents[2] / "uploads" / "portal"
+_GUEST_CHAT_MEDIA_RELATIVE_PREFIX = "daftar_tamu/guest_chat_media"
+
+
+def _guest_chat_normalize_media_type(value: Optional[str]) -> str:
+    clean = (value or "none").strip().lower()
+    if clean not in _GUEST_CHAT_MEDIA_TYPES:
+        return "none"
+    return clean
+
+
+def _guest_chat_is_truthy(value: object) -> bool:
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return False
+    return str(value).strip().lower() in {"1", "true", "yes", "y", "on"}
+
+
+def _guest_chat_media_ext(filename: str) -> str:
+    return Path(str(filename or "")).suffix.lower()
+
+
+def _guest_chat_media_type_from_ext(filename: str) -> str:
+    ext = _guest_chat_media_ext(filename)
+    for media_type, extensions in _GUEST_CHAT_ALLOWED_EXTENSIONS.items():
+        if ext in extensions:
+            return media_type
+    return "none"
+
+
+def _guest_chat_media_absolute_path(media_path: str) -> Optional[Path]:
+    normalized = str(media_path or "").strip().replace("\\", "/").lstrip("/")
+    if normalized.startswith("uploads/portal/"):
+        normalized = normalized.split("uploads/portal/", 1)[1]
+    if normalized.startswith("portal/uploads/"):
+        normalized = normalized.split("portal/uploads/", 1)[1]
+    if not normalized:
+        return None
+    candidate = (_GUEST_CHAT_MEDIA_UPLOAD_ROOT / normalized).resolve()
+    try:
+        candidate.relative_to(_GUEST_CHAT_MEDIA_UPLOAD_ROOT.resolve())
+    except ValueError:
+        return None
+    return candidate
+
+
+def _guest_chat_save_uploaded_media(file_storage, *, expected_media_type: str) -> tuple[str, str]:
+    filename = secure_filename(file_storage.filename or "")
+    if not filename:
+        raise ValueError("File media tidak valid.")
+    detected_type = _guest_chat_media_type_from_ext(filename)
+    if detected_type == "none":
+        raise ValueError("Format media tidak didukung.")
+    if expected_media_type != "none" and detected_type != expected_media_type:
+        raise ValueError(f"File tidak sesuai tipe media {expected_media_type}.")
+
+    target_type = expected_media_type if expected_media_type != "none" else detected_type
+    extension = _guest_chat_media_ext(filename)
+    safe_name = f"bubble_{uuid4().hex}{extension}"
+    relative_path = f"{_GUEST_CHAT_MEDIA_RELATIVE_PREFIX}/{safe_name}"
+    absolute_path = (_GUEST_CHAT_MEDIA_UPLOAD_ROOT / relative_path).resolve()
+    absolute_path.parent.mkdir(parents=True, exist_ok=True)
+    file_storage.save(absolute_path)
+    return relative_path, target_type
+
+
+def _guest_chat_render_text_preview(message_text: str) -> str:
+    text = str(message_text or "")
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
+    text = re.sub(r"(?i)<br\s*/?>", "\n", text).strip()
+    replacements = {
+        "{{school_name}}": "SDN Contoh",
+        "{school_name}": "SDN Contoh",
+        "{{guest_count}}": "1",
+        "{guest_count}": "1",
+        "{{guest_names}}": "Nama Tamu",
+        "{guest_names}": "Nama Tamu",
+    }
+    for key, value in replacements.items():
+        text = text.replace(key, value)
+    return text
+
+
+def _guest_chat_media_preview_url(media_path: str) -> str:
+    normalized = str(media_path or "").strip().replace("\\", "/").lstrip("/")
+    if normalized.startswith("uploads/portal/"):
+        normalized = normalized.split("uploads/portal/", 1)[1]
+    if normalized.startswith("portal/uploads/"):
+        normalized = normalized.split("portal/uploads/", 1)[1]
+    if not normalized:
+        return ""
+    return url_for("portal.uploaded_file", filename=normalized)
+
+
+def _guest_chat_parse_direct_links_from_form(*, label_field: str, url_field: str) -> list[dict]:
+    raw_labels = request.form.getlist(label_field)
+    raw_urls = request.form.getlist(url_field)
+    max_rows = max(len(raw_labels), len(raw_urls))
+    direct_links: list[dict] = []
+    for idx in range(max_rows):
+        label = (raw_labels[idx] if idx < len(raw_labels) else "").strip()
+        url = (raw_urls[idx] if idx < len(raw_urls) else "").strip()
+        if not label and not url:
+            continue
+        if not label or not url:
+            raise ValueError("Label dan URL tombol direct link harus diisi berpasangan.")
+        if not url.startswith(("http://", "https://")):
+            url = f"https://{url}"
+        direct_links.append(
+            {
+                "label": label,
+                "url": url,
+                "sort_order": (idx + 1) * 10,
+            }
+        )
+    if len(direct_links) > 12:
+        raise ValueError("Maksimal 12 tombol direct link.")
+    return direct_links
 
 
 def _has_dashboard_user_ui_settings_column() -> bool:
@@ -425,6 +568,40 @@ def _is_coordinator_dashboard_user(user: Optional[dict]) -> bool:
     return (user.get("role") or "").strip().lower() == "coordinator"
 
 
+# ID kecamatan virtual 'SUDIN' yang mencakup seluruh wilayah (Cilincing, Koja, Kelapa Gading)
+_SUDIN_VIRTUAL_KECAMATAN_ID = 4
+# ID kecamatan nyata yang tercakup dalam wilayah sudin
+_SUDIN_REAL_KECAMATAN_IDS = [1, 2, 3]  # CILINCING, KOJA, KELAPA GADING
+
+
+def _is_sudin_coordinator(user: Optional[dict]) -> bool:
+    """Return True jika coordinator memiliki unit kerja sudin (kecamatan virtual ID=4 / nama 'SUDIN')."""
+    if not _is_coordinator_dashboard_user(user):
+        return False
+    # Cek dari session user
+    try:
+        req_kec = int((user or {}).get("requested_kecamatan") or 0)
+        if req_kec == _SUDIN_VIRTUAL_KECAMATAN_ID:
+            return True
+    except (TypeError, ValueError):
+        pass
+    # Cek dari database
+    try:
+        user_id = int((user or {}).get("id") or 0)
+        if user_id > 0:
+            db_profile = _fetch_dashboard_user(user_id) or {}
+            req_kec_db = int(db_profile.get("requested_kecamatan") or 0)
+            if req_kec_db == _SUDIN_VIRTUAL_KECAMATAN_ID:
+                return True
+            # Cek berdasarkan nama kecamatan
+            kec_name = (db_profile.get("requested_kecamatan_name") or "").strip().upper()
+            if kec_name == "SUDIN":
+                return True
+    except (TypeError, ValueError, Exception):
+        pass
+    return False
+
+
 def _resolve_dashboard_owner_user_id(user: Optional[dict]) -> Optional[int]:
     if not _is_coordinator_dashboard_user(user):
         return None
@@ -436,11 +613,15 @@ def _resolve_dashboard_owner_user_id(user: Optional[dict]) -> Optional[int]:
 
 
 def _resolve_dashboard_school_status(user: Optional[dict], raw_value: Optional[str]) -> str:
-    default_status = "negeri" if _is_coordinator_dashboard_user(user) else "all"
-    status = _parse_school_status(raw_value, default=default_status)
-    if _is_coordinator_dashboard_user(user):
-        return "negeri"
-    return status
+    """Resolve school_status filter for dashboard.
+
+    Coordinator (baik sudin maupun kecamatan) sekarang menampilkan semua sekolah
+    (negeri + swasta) agar data lebih lengkap sesuai unit kerja masing-masing.
+    """
+    if not _is_coordinator_dashboard_user(user):
+        return _parse_school_status(raw_value, default="all")
+    # Coordinator selalu melihat semua sekolah (negeri + swasta)
+    return "all"
 
 
 def _parse_gallery_photo_order(value: Optional[str], default: str = "random") -> str:
@@ -559,6 +740,7 @@ def _notify_user_app_status_change(
         transaction_id=transaction_id,
         status=safe_status,
         actor_name=actor_name,
+        actor_role=(actor or {}).get("role"),
         reviewer_notes=reviewer_notes,
         link=history_link,
         school_link=school_history_link,
@@ -906,10 +1088,21 @@ def _fetch_dashboard_user(user_id: int) -> Optional[dict]:
 
 
 def _resolve_dashboard_kecamatan_ids(user: Optional[dict]) -> Optional[list[int]]:
+    """Resolve kecamatan IDs filter untuk coordinator dashboard.
+
+    - Coordinator SUDIN (requested_kecamatan = 4 / 'SUDIN'): return None
+      (tidak ada filter kecamatan = tampilkan semua kecamatan: Cilincing, Koja, Kelapa Gading)
+    - Coordinator kecamatan (requested_kecamatan = 1/2/3): return [kec_id]
+      (filter ke kecamatan yang bersangkutan saja)
+    """
     if not isinstance(user, dict):
         return None
     role_value = (user.get("role") or "").strip().lower()
     if role_value != "coordinator":
+        return None
+
+    # Coordinator SUDIN: tidak ada filter kecamatan (semua kecamatan)
+    if _is_sudin_coordinator(user):
         return None
 
     user_id = int(user.get("id") or 0)
@@ -921,7 +1114,8 @@ def _resolve_dashboard_kecamatan_ids(user: Optional[dict]) -> Optional[list[int]
             kecamatan_id = int(raw_value or 0)
         except (TypeError, ValueError):
             return
-        if kecamatan_id <= 0 or kecamatan_id in seen_ids:
+        # Lewati ID virtual SUDIN agar tidak dijadikan filter kecamatan nyata
+        if kecamatan_id <= 0 or kecamatan_id == _SUDIN_VIRTUAL_KECAMATAN_ID or kecamatan_id in seen_ids:
             return
         seen_ids.add(kecamatan_id)
         resolved_ids.append(kecamatan_id)
@@ -951,12 +1145,12 @@ def _can_access_school_for_dashboard(
     if role_value != "coordinator":
         return True
 
-    school_status = (school.get("status") or "").strip().lower()
-    if school_status not in {"negeri", "state"}:
-        return False
+    # Coordinator sekarang bisa akses semua jenis sekolah (negeri + swasta)
+    # Tidak ada pembatasan berdasarkan school_status
 
     allowed_ids = kecamatan_ids or _resolve_dashboard_kecamatan_ids(user)
     if not allowed_ids:
+        # Coordinator SUDIN: akses ke semua kecamatan
         return True
     try:
         school_kecamatan_id = int(school.get("kecamatan_id") or 0)
@@ -3723,6 +3917,491 @@ def admin_contact_priority() -> Response:
     )
 
 
+_GUEST_CHAT_ADMIN_TABS = {"intro", "limit"}
+
+
+def _guest_chat_admin_tab(raw_tab: Optional[str], *, default: str = "intro") -> str:
+    clean_default = (default or "intro").strip().lower()
+    if clean_default not in _GUEST_CHAT_ADMIN_TABS:
+        clean_default = "intro"
+    clean = (raw_tab or "").strip().lower()
+    if clean in _GUEST_CHAT_ADMIN_TABS:
+        return clean
+    return clean_default
+
+
+def _guest_chat_preview_context() -> dict:
+    preview_npsn = (request.args.get("preview_npsn") or os.getenv("GUEST_CHAT_PREVIEW_NPSN") or "20100682").strip()
+    if not preview_npsn:
+        preview_npsn = "20100682"
+    guest_chat_preview_url = f"{_web_aska_base_url()}/buku-tamu/{preview_npsn}/preview-chat"
+    guest_chat_preview_limit_url = f"{guest_chat_preview_url}?remaining=0"
+    return {
+        "preview_npsn": preview_npsn,
+        "guest_chat_preview_url": guest_chat_preview_url,
+        "guest_chat_preview_limit_url": guest_chat_preview_limit_url,
+    }
+
+
+def _admin_guest_chat_bubbles_redirect(*, bubble_id: Optional[int] = None, tab: str = "intro") -> str:
+    safe_tab = _guest_chat_admin_tab(tab, default="intro")
+    if safe_tab == "limit":
+        return url_for("daftar_tamu.admin_guest_chat_bubbles_limit")
+    base = url_for("daftar_tamu.admin_guest_chat_bubbles_intro")
+    if bubble_id and int(bubble_id) > 0:
+        return f"{base}#bubble-{int(bubble_id)}"
+    return base
+
+
+@daftar_tamu_bp.route("/admin/chat-bubbles", methods=["GET"])
+@role_required("admin")
+def admin_guest_chat_bubbles() -> Response:
+    active_tab = _guest_chat_admin_tab(request.args.get("tab"), default="intro")
+    kwargs: dict[str, str] = {}
+    preview_npsn = (request.args.get("preview_npsn") or "").strip()
+    if preview_npsn:
+        kwargs["preview_npsn"] = preview_npsn
+    if active_tab == "limit":
+        return redirect(url_for("daftar_tamu.admin_guest_chat_bubbles_limit", **kwargs))
+    return redirect(url_for("daftar_tamu.admin_guest_chat_bubbles_intro", **kwargs))
+
+
+@daftar_tamu_bp.route("/admin/chat-bubbles/intro", methods=["GET"])
+@role_required("admin")
+def admin_guest_chat_bubbles_intro() -> Response:
+    rows = list_guest_chat_bubbles(active_only=None, with_questions=False)
+    bubble_ids: list[int] = []
+    for row in rows:
+        bubble_id = int(row.get("id") or 0)
+        if bubble_id > 0:
+            bubble_ids.append(bubble_id)
+    quick_counts = count_guest_chat_quick_questions_by_bubble(bubble_ids=bubble_ids)
+
+    for row in rows:
+        row["message_preview"] = _guest_chat_render_text_preview(row.get("message_text") or "")
+        media_path = (row.get("media_path") or "").strip()
+        row["media_preview_url"] = _guest_chat_media_preview_url(media_path) if media_path else ""
+        direct_link_rows = row.get("direct_links") or []
+        if not direct_link_rows:
+            direct_link_rows = [{"label": "", "url": "", "sort_order": 10}]
+        row["direct_link_rows"] = direct_link_rows
+        row["quick_questions_count"] = int(quick_counts.get(int(row.get("id") or 0), 0))
+
+    preview_context = _guest_chat_preview_context()
+    return render_template(
+        "daftar_tamu/admin_guest_chat_bubbles.html",
+        active_tab="intro",
+        rows=rows,
+        settings={},
+        settings_link_rows=[],
+        **preview_context,
+    )
+
+
+@daftar_tamu_bp.route("/admin/chat-bubbles/limit", methods=["GET"])
+@role_required("admin")
+def admin_guest_chat_bubbles_limit() -> Response:
+    settings = get_guest_chat_settings()
+    settings_media_path = (settings.get("limit_reached_media_path") or "").strip()
+    settings["limit_reached_media_preview_url"] = (
+        _guest_chat_media_preview_url(settings_media_path) if settings_media_path else ""
+    )
+    settings["limit_reached_message_preview"] = _guest_chat_render_text_preview(
+        settings.get("limit_reached_message") or ""
+    )
+    settings_link_rows = settings.get("limit_reached_links") or []
+    if not settings_link_rows:
+        settings_link_rows = [{"label": "", "url": "", "sort_order": 10}]
+    preview_context = _guest_chat_preview_context()
+    return render_template(
+        "daftar_tamu/admin_guest_chat_bubbles.html",
+        active_tab="limit",
+        rows=[],
+        settings=settings,
+        settings_link_rows=settings_link_rows,
+        **preview_context,
+    )
+
+
+@daftar_tamu_bp.route("/admin/chat-bubbles/settings", methods=["POST"])
+@role_required("admin")
+def admin_update_guest_chat_settings() -> Response:
+    user = current_user()
+    current_settings = get_guest_chat_settings()
+    old_media_path = (current_settings.get("limit_reached_media_path") or "").strip()
+
+    chat_limit = _to_int(request.form.get("chat_limit"), int(current_settings.get("chat_limit") or 2))
+    limit_reached_message = (request.form.get("limit_reached_message") or "").strip()
+    media_source = (request.form.get("limit_reached_media_source") or "keep").strip().lower()
+    media_type = _guest_chat_normalize_media_type(
+        request.form.get("limit_reached_media_type") or current_settings.get("limit_reached_media_type")
+    )
+    media_loop = _guest_chat_is_truthy(request.form.get("limit_reached_media_loop"))
+    media_autoplay = _guest_chat_is_truthy(request.form.get("limit_reached_media_autoplay"))
+    video_muted = _guest_chat_is_truthy(request.form.get("limit_reached_video_muted"))
+
+    media_url = (current_settings.get("limit_reached_media_url") or "").strip() or None
+    media_path = old_media_path or None
+
+    try:
+        direct_links = _guest_chat_parse_direct_links_from_form(
+            label_field="limit_link_label[]",
+            url_field="limit_link_url[]",
+        )
+        if media_source == "keep":
+            media_type = _guest_chat_normalize_media_type(current_settings.get("limit_reached_media_type"))
+            media_url = (current_settings.get("limit_reached_media_url") or "").strip() or None
+            media_path = old_media_path or None
+        elif media_source == "none":
+            media_type = "none"
+            media_url = None
+            media_path = None
+        elif media_source == "url":
+            media_url_raw = (request.form.get("limit_reached_media_url") or "").strip()
+            if not media_url_raw:
+                raise ValueError("URL media bubble limit wajib diisi.")
+            if media_type == "none":
+                raise ValueError("Pilih tipe media bubble limit.")
+            if not media_url_raw.startswith(("http://", "https://")):
+                media_url_raw = f"https://{media_url_raw}"
+            media_url = media_url_raw
+            media_path = None
+        elif media_source == "upload":
+            media_file = request.files.get("limit_reached_media_file")
+            if not media_file or not (media_file.filename or "").strip():
+                raise ValueError("File media bubble limit wajib diunggah.")
+            media_path, detected_type = _guest_chat_save_uploaded_media(
+                media_file,
+                expected_media_type=media_type,
+            )
+            media_type = detected_type
+            media_url = None
+        else:
+            raise ValueError("Sumber media bubble limit tidak valid.")
+
+        updated = update_guest_chat_settings(
+            chat_limit=chat_limit,
+            limit_reached_message=limit_reached_message,
+            limit_reached_media_type=media_type,
+            limit_reached_media_url=media_url,
+            limit_reached_media_path=media_path,
+            limit_reached_links=direct_links,
+            limit_reached_media_loop=media_loop,
+            limit_reached_media_autoplay=media_autoplay,
+            limit_reached_video_muted=True if media_autoplay else video_muted,
+            updated_by=user.get("id"),
+        )
+    except ValueError as exc:
+        flash(str(exc), "danger")
+        return redirect(url_for("daftar_tamu.admin_guest_chat_bubbles_limit"))
+    except Exception:
+        current_app.logger.exception("Gagal memperbarui pengaturan chat buku tamu.")
+        flash("Gagal memperbarui pengaturan chat buku tamu.", "danger")
+        return redirect(url_for("daftar_tamu.admin_guest_chat_bubbles_limit"))
+
+    new_media_path = (updated.get("limit_reached_media_path") or "").strip()
+    if old_media_path and old_media_path != new_media_path:
+        old_file = _guest_chat_media_absolute_path(old_media_path)
+        if old_file and old_file.is_file():
+            try:
+                old_file.unlink()
+            except Exception:
+                current_app.logger.exception("Gagal menghapus file media limit bubble lama: %s", old_media_path)
+
+    flash("Pengaturan limit chat buku tamu berhasil diperbarui.", "success")
+    return redirect(url_for("daftar_tamu.admin_guest_chat_bubbles_limit"))
+
+
+@daftar_tamu_bp.route("/admin/chat-bubbles", methods=["POST"])
+@role_required("admin")
+def admin_create_guest_chat_bubble() -> Response:
+    user = current_user()
+    message_text = (request.form.get("message_text") or "").strip()
+    sort_order = _to_int(request.form.get("sort_order"), 0)
+    active = _guest_chat_is_truthy(request.form.get("active"))
+    media_source = (request.form.get("media_source") or "none").strip().lower()
+    media_type = _guest_chat_normalize_media_type(request.form.get("media_type"))
+    media_loop = _guest_chat_is_truthy(request.form.get("media_loop"))
+    media_autoplay = _guest_chat_is_truthy(request.form.get("media_autoplay"))
+    video_muted = _guest_chat_is_truthy(request.form.get("video_muted"))
+
+    media_url = None
+    media_path = None
+    try:
+        direct_links = _guest_chat_parse_direct_links_from_form(
+            label_field="bubble_link_label[]",
+            url_field="bubble_link_url[]",
+        )
+        if media_source == "url":
+            media_url_raw = (request.form.get("media_url") or "").strip()
+            if not media_url_raw:
+                raise ValueError("URL media wajib diisi.")
+            if media_type == "none":
+                raise ValueError("Pilih tipe media untuk URL.")
+            if not media_url_raw.startswith(("http://", "https://")):
+                media_url_raw = f"https://{media_url_raw}"
+            media_url = media_url_raw
+            media_path = None
+        elif media_source == "upload":
+            media_file = request.files.get("media_file")
+            if not media_file or not (media_file.filename or "").strip():
+                raise ValueError("File media wajib diunggah.")
+            media_path, detected_type = _guest_chat_save_uploaded_media(
+                media_file,
+                expected_media_type=media_type,
+            )
+            media_type = detected_type
+            media_url = None
+        elif media_source == "none":
+            media_type = "none"
+            media_url = None
+            media_path = None
+        else:
+            raise ValueError("Sumber media tidak valid.")
+
+        created = create_guest_chat_bubble(
+            message_text=message_text,
+            sort_order=sort_order,
+            active=active,
+            media_type=media_type,
+            media_url=media_url,
+            media_path=media_path,
+            direct_links=direct_links,
+            media_loop=media_loop,
+            media_autoplay=media_autoplay,
+            video_muted=True if media_autoplay else video_muted,
+            created_by=user.get("id"),
+        )
+    except ValueError as exc:
+        flash(str(exc), "danger")
+        return redirect(url_for("daftar_tamu.admin_guest_chat_bubbles_intro"))
+    except Exception:
+        current_app.logger.exception("Gagal menambah bubble chat buku tamu.")
+        flash("Gagal menambah bubble chat.", "danger")
+        return redirect(url_for("daftar_tamu.admin_guest_chat_bubbles_intro"))
+
+    flash("Bubble chat berhasil ditambahkan.", "success")
+    return redirect(_admin_guest_chat_bubbles_redirect(bubble_id=int(created.get("id") or 0)))
+
+
+@daftar_tamu_bp.route("/admin/chat-bubbles/<int:bubble_id>/update", methods=["POST"])
+@role_required("admin")
+def admin_update_guest_chat_bubble(bubble_id: int) -> Response:
+    existing = get_guest_chat_bubble(bubble_id=bubble_id, with_questions=True)
+    if not existing:
+        flash("Bubble chat tidak ditemukan.", "danger")
+        return redirect(url_for("daftar_tamu.admin_guest_chat_bubbles_intro"))
+
+    message_text = (request.form.get("message_text") or "").strip()
+    sort_order = _to_int(request.form.get("sort_order"), int(existing.get("sort_order") or 0))
+    active = _guest_chat_is_truthy(request.form.get("active"))
+    media_source = (request.form.get("media_source") or "keep").strip().lower()
+    media_type = _guest_chat_normalize_media_type(request.form.get("media_type") or existing.get("media_type"))
+    media_loop = _guest_chat_is_truthy(request.form.get("media_loop"))
+    media_autoplay = _guest_chat_is_truthy(request.form.get("media_autoplay"))
+    video_muted = _guest_chat_is_truthy(request.form.get("video_muted"))
+
+    old_media_path = (existing.get("media_path") or "").strip()
+    media_url = (existing.get("media_url") or "").strip() or None
+    media_path = old_media_path or None
+    try:
+        direct_links = _guest_chat_parse_direct_links_from_form(
+            label_field="bubble_link_label[]",
+            url_field="bubble_link_url[]",
+        )
+        if media_source == "keep":
+            media_type = _guest_chat_normalize_media_type(existing.get("media_type"))
+            media_url = (existing.get("media_url") or "").strip() or None
+            media_path = old_media_path or None
+        elif media_source == "none":
+            media_type = "none"
+            media_url = None
+            media_path = None
+        elif media_source == "url":
+            media_url_raw = (request.form.get("media_url") or "").strip()
+            if not media_url_raw:
+                raise ValueError("URL media wajib diisi.")
+            if media_type == "none":
+                raise ValueError("Pilih tipe media untuk URL.")
+            if not media_url_raw.startswith(("http://", "https://")):
+                media_url_raw = f"https://{media_url_raw}"
+            media_url = media_url_raw
+            media_path = None
+        elif media_source == "upload":
+            media_file = request.files.get("media_file")
+            if not media_file or not (media_file.filename or "").strip():
+                raise ValueError("File media wajib diunggah.")
+            media_path, detected_type = _guest_chat_save_uploaded_media(
+                media_file,
+                expected_media_type=media_type,
+            )
+            media_type = detected_type
+            media_url = None
+        else:
+            raise ValueError("Sumber media tidak valid.")
+
+        updated = update_guest_chat_bubble(
+            bubble_id=bubble_id,
+            message_text=message_text,
+            sort_order=sort_order,
+            active=active,
+            media_type=media_type,
+            media_url=media_url,
+            media_path=media_path,
+            direct_links=direct_links,
+            media_loop=media_loop,
+            media_autoplay=media_autoplay,
+            video_muted=True if media_autoplay else video_muted,
+        )
+    except ValueError as exc:
+        flash(str(exc), "danger")
+        return redirect(_admin_guest_chat_bubbles_redirect(bubble_id=bubble_id))
+    except Exception:
+        current_app.logger.exception("Gagal memperbarui bubble chat buku tamu.")
+        flash("Gagal memperbarui bubble chat.", "danger")
+        return redirect(_admin_guest_chat_bubbles_redirect(bubble_id=bubble_id))
+
+    if not updated:
+        flash("Bubble chat tidak ditemukan.", "danger")
+        return redirect(url_for("daftar_tamu.admin_guest_chat_bubbles_intro"))
+
+    new_media_path = (updated.get("media_path") or "").strip()
+    if old_media_path and old_media_path != new_media_path:
+        old_file = _guest_chat_media_absolute_path(old_media_path)
+        if old_file and old_file.is_file():
+            try:
+                old_file.unlink()
+            except Exception:
+                current_app.logger.exception("Gagal menghapus file media bubble lama: %s", old_media_path)
+
+    flash("Bubble chat berhasil diperbarui.", "success")
+    return redirect(_admin_guest_chat_bubbles_redirect(bubble_id=bubble_id))
+
+
+@daftar_tamu_bp.route("/admin/chat-bubbles/<int:bubble_id>/delete", methods=["POST"])
+@role_required("admin")
+def admin_delete_guest_chat_bubble(bubble_id: int) -> Response:
+    existing = get_guest_chat_bubble(bubble_id=bubble_id, with_questions=False)
+    if not existing:
+        flash("Bubble chat tidak ditemukan.", "danger")
+        return redirect(url_for("daftar_tamu.admin_guest_chat_bubbles_intro"))
+
+    media_path = (existing.get("media_path") or "").strip()
+    deleted = delete_guest_chat_bubble(bubble_id=bubble_id)
+    if not deleted:
+        flash("Bubble chat tidak ditemukan.", "danger")
+        return redirect(url_for("daftar_tamu.admin_guest_chat_bubbles_intro"))
+
+    if media_path:
+        media_file = _guest_chat_media_absolute_path(media_path)
+        if media_file and media_file.is_file():
+            try:
+                media_file.unlink()
+            except Exception:
+                current_app.logger.exception("Gagal menghapus file media bubble: %s", media_path)
+
+    flash("Bubble chat berhasil dihapus.", "success")
+    return redirect(url_for("daftar_tamu.admin_guest_chat_bubbles_intro"))
+
+
+@daftar_tamu_bp.route("/admin/chat-bubbles/<int:bubble_id>/quick-questions", methods=["GET"])
+@role_required("admin")
+def admin_list_guest_chat_quick_questions(bubble_id: int) -> Response:
+    # Memastikan schema guest chat sudah siap sebelum query langsung.
+    get_guest_chat_settings()
+    with get_cursor() as cur:
+        cur.execute(
+            "SELECT 1 FROM daftar_tamu_guest_chat_bubbles WHERE id = %s LIMIT 1",
+            [int(bubble_id)],
+        )
+        exists = bool(cur.fetchone())
+    if not exists:
+        return jsonify({"success": False, "message": "Bubble chat tidak ditemukan.", "bubble_id": bubble_id, "items": []}), 404
+
+    items = list_guest_chat_quick_questions(bubble_id=bubble_id)
+    return jsonify(
+        {
+            "success": True,
+            "bubble_id": bubble_id,
+            "items": items,
+            "total": len(items),
+        }
+    )
+
+
+@daftar_tamu_bp.route("/admin/chat-bubbles/<int:bubble_id>/quick-questions", methods=["POST"])
+@role_required("admin")
+def admin_create_guest_chat_quick_question(bubble_id: int) -> Response:
+    if not get_guest_chat_bubble(bubble_id=bubble_id, with_questions=False):
+        flash("Bubble chat tidak ditemukan.", "danger")
+        return redirect(url_for("daftar_tamu.admin_guest_chat_bubbles_intro"))
+
+    question_text = (request.form.get("question_text") or "").strip()
+    sort_order = _to_int(request.form.get("sort_order"), 0)
+    active = _guest_chat_is_truthy(request.form.get("active"))
+    try:
+        create_guest_chat_quick_question(
+            bubble_id=bubble_id,
+            question_text=question_text,
+            sort_order=sort_order,
+            active=active,
+        )
+    except ValueError as exc:
+        flash(str(exc), "danger")
+    except Exception:
+        current_app.logger.exception("Gagal menambah pertanyaan cepat bubble.")
+        flash("Gagal menambah pertanyaan cepat.", "danger")
+    else:
+        flash("Pertanyaan cepat berhasil ditambahkan.", "success")
+    return redirect(_admin_guest_chat_bubbles_redirect(bubble_id=bubble_id))
+
+
+@daftar_tamu_bp.route("/admin/chat-bubbles/<int:bubble_id>/quick-questions/<int:question_id>/update", methods=["POST"])
+@role_required("admin")
+def admin_update_guest_chat_quick_question(bubble_id: int, question_id: int) -> Response:
+    question_text = (request.form.get("question_text") or "").strip()
+    sort_order = _to_int(request.form.get("sort_order"), 0)
+    active = _guest_chat_is_truthy(request.form.get("active"))
+    try:
+        ok = update_guest_chat_quick_question(
+            question_id=question_id,
+            question_text=question_text,
+            sort_order=sort_order,
+            active=active,
+        )
+    except ValueError as exc:
+        flash(str(exc), "danger")
+        return redirect(_admin_guest_chat_bubbles_redirect(bubble_id=bubble_id))
+    except Exception:
+        current_app.logger.exception("Gagal memperbarui pertanyaan cepat bubble.")
+        flash("Gagal memperbarui pertanyaan cepat.", "danger")
+        return redirect(_admin_guest_chat_bubbles_redirect(bubble_id=bubble_id))
+
+    if not ok:
+        flash("Pertanyaan cepat tidak ditemukan.", "danger")
+    else:
+        flash("Pertanyaan cepat berhasil diperbarui.", "success")
+    return redirect(_admin_guest_chat_bubbles_redirect(bubble_id=bubble_id))
+
+
+@daftar_tamu_bp.route("/admin/chat-bubbles/<int:bubble_id>/quick-questions/<int:question_id>/delete", methods=["POST"])
+@role_required("admin")
+def admin_delete_guest_chat_quick_question(bubble_id: int, question_id: int) -> Response:
+    ok = False
+    try:
+        ok = delete_guest_chat_quick_question(question_id=question_id)
+    except Exception:
+        current_app.logger.exception("Gagal menghapus pertanyaan cepat bubble.")
+        flash("Gagal menghapus pertanyaan cepat.", "danger")
+        return redirect(_admin_guest_chat_bubbles_redirect(bubble_id=bubble_id))
+
+    if not ok:
+        flash("Pertanyaan cepat tidak ditemukan.", "danger")
+    else:
+        flash("Pertanyaan cepat berhasil dihapus.", "success")
+    return redirect(_admin_guest_chat_bubbles_redirect(bubble_id=bubble_id))
+
+
 @daftar_tamu_bp.route("/admin/umum-transactions/<int:transaction_id>/approve", methods=["POST"])
 @role_required("admin")
 def admin_public_transaction_approve(transaction_id: int) -> Response:
@@ -4700,7 +5379,7 @@ def _serialize_user_guestbook_notification(row: dict, fallback_link: str) -> dic
         "id": notification_id,
         "category": category,
         "title": (row.get("title") or "").strip() or fallback_title,
-        "message": (row.get("message") or "").strip(),
+        "message": sanitize_guestbook_notification_message_for_non_admin(row),
         "status": status_value or "unread",
         "is_unread": status_value == "unread",
         "link": (row.get("link") or "").strip() or fallback_link,

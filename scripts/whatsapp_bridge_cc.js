@@ -13,6 +13,8 @@
  *   ASKA_CC_WHATSAPP_SESSION_PATH    — local auth persistence
  *   ASKA_CC_WHATSAPP_CLIENT_ID       — whatsapp-web.js clientId
  *   ASKA_CC_WHATSAPP_STATUS_PATH     — runtime status JSON
+ *   ASKA_CC_WHATSAPP_WEB_VERSION     — optional pinned WhatsApp Web version
+ *   ASKA_CC_WHATSAPP_WEB_CACHE_TYPE  — optional cache type: local|remote|none
  *   ASKA_CC_HTTP_PORT                — Express port (default 3100)
  */
 
@@ -22,7 +24,7 @@ const path = require("path");
 const axios = require("axios");
 const express = require("express");
 const qrcode = require("qrcode-terminal");
-const { Client, LocalAuth } = require("whatsapp-web.js");
+const { Client, LocalAuth, MessageMedia } = require("whatsapp-web.js");
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -50,7 +52,7 @@ loadDotEnvFile(path.resolve(process.cwd(), ".env"));
 
 const INTERNAL_URL = (
     process.env.ASKA_CC_WHATSAPP_INTERNAL_URL ||
-    "http://127.0.0.1:5001/api/callcenter/inbound"
+    "http://127.0.0.1:5002/api/callcenter/inbound"
 ).trim();
 const IMPORT_URL = (
     process.env.ASKA_CC_WHATSAPP_IMPORT_URL ||
@@ -64,7 +66,44 @@ const CLIENT_ID = (process.env.ASKA_CC_WHATSAPP_CLIENT_ID || "cc-main").trim();
 const STATUS_PATH = path.resolve(
     process.env.ASKA_CC_WHATSAPP_STATUS_PATH || "runtime/whatsapp_cc_status.json"
 );
+const BRIDGE_KEY = String(process.env.ASKA_CC_BRIDGE_KEY || "main")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "main";
 const HTTP_PORT = parseInt(process.env.ASKA_CC_HTTP_PORT || "3100", 10);
+const MAX_MEDIA_BYTES = parseInt(process.env.ASKA_CC_MEDIA_MAX_BYTES || "0", 10);
+const MAX_PDF_RAW_BYTES = parseInt(process.env.ASKA_CC_PDF_RAW_MAX_BYTES || String(MAX_MEDIA_BYTES), 10);
+const MAX_PDF_BYTES = parseInt(process.env.ASKA_CC_PDF_MAX_BYTES || "0", 10);
+const MAX_FILE_BYTES = parseInt(process.env.ASKA_CC_FILE_MAX_BYTES || "0", 10);
+const MAX_OUTBOUND_MEDIA_BYTES = parseInt(
+    process.env.ASKA_CC_OUTBOUND_MEDIA_MAX_BYTES ||
+    process.env.ASKA_CC_DRAFT_MEDIA_MAX_BYTES ||
+    "0",
+    10
+);
+const JSON_BODY_LIMIT = (process.env.ASKA_CC_JSON_BODY_LIMIT || "25mb").trim();
+const INIT_STUCK_TIMEOUT_MS = (() => {
+    const parsed = parseInt(process.env.ASKA_CC_INIT_STUCK_TIMEOUT_MS || "120000", 10);
+    if (!Number.isFinite(parsed)) return 120000;
+    return Math.max(30000, Math.min(parsed, 900000));
+})();
+const INIT_RECOVERY_RETRY_LIMIT = (() => {
+    const parsed = parseInt(process.env.ASKA_CC_INIT_RECOVERY_RETRY_LIMIT || "2", 10);
+    if (!Number.isFinite(parsed)) return 2;
+    return Math.max(0, Math.min(parsed, 10));
+})();
+const INIT_RECOVERY_RETRY_DELAY_MS = (() => {
+    const parsed = parseInt(process.env.ASKA_CC_INIT_RECOVERY_RETRY_DELAY_MS || "2500", 10);
+    if (!Number.isFinite(parsed)) return 2500;
+    return Math.max(500, Math.min(parsed, 60000));
+})();
+const WEB_VERSION = (process.env.ASKA_CC_WHATSAPP_WEB_VERSION || "").trim();
+const WEB_CACHE_TYPE = (process.env.ASKA_CC_WHATSAPP_WEB_CACHE_TYPE || "").trim().toLowerCase();
+const WEB_CACHE_REMOTE_PATH = (process.env.ASKA_CC_WHATSAPP_WEB_CACHE_REMOTE_PATH || "").trim();
+const WEB_CACHE_STRICT = String(process.env.ASKA_CC_WHATSAPP_WEB_CACHE_STRICT || "")
+    .trim()
+    .toLowerCase();
 
 if (!INTERNAL_TOKEN) {
     console.error("[CC] ASKA_CC_WHATSAPP_INTERNAL_TOKEN belum diset. Worker dihentikan.");
@@ -84,12 +123,40 @@ function writeStatus(patch) {
         }
         fs.writeFileSync(
             STATUS_PATH,
-            JSON.stringify({ ...base, ...patch, updatedAt: new Date().toISOString() }, null, 2),
+            JSON.stringify(
+                {
+                    ...base,
+                    ...patch,
+                    bridgeKey: BRIDGE_KEY,
+                    clientId: CLIENT_ID,
+                    sessionPath: SESSION_PATH,
+                    internalUrl: INTERNAL_URL,
+                    httpPort: HTTP_PORT,
+                    updatedAt: new Date().toISOString(),
+                },
+                null,
+                2
+            ),
             "utf8"
         );
     } catch (err) {
         console.error("[CC] Gagal menulis status:", (err && err.message) || err);
     }
+}
+
+let currentBridgeState = "starting";
+let currentBridgeMessage = "Call Center bridge sedang inisialisasi...";
+
+function setBridgeStatus(patch) {
+    const nextPatch = patch && typeof patch === "object" ? patch : {};
+    if (Object.prototype.hasOwnProperty.call(nextPatch, "state")) {
+        const nextState = String(nextPatch.state || "").trim().toLowerCase();
+        if (nextState) currentBridgeState = nextState;
+    }
+    if (Object.prototype.hasOwnProperty.call(nextPatch, "message")) {
+        currentBridgeMessage = String(nextPatch.message || "").trim();
+    }
+    writeStatus(nextPatch);
 }
 
 // ── utilities ────────────────────────────────────────────────────────────────
@@ -98,9 +165,249 @@ function normalizeNumber(jid) {
     return (String(jid || "").split("@")[0] || "").replace(/\D/g, "") || "";
 }
 
+function resolveBridgeSelfNumber() {
+    try {
+        const info = client && client.info ? client.info : {};
+        const wid = info && info.wid ? info.wid : {};
+        const candidates = [
+            wid.user,
+            wid._serialized,
+            info.me,
+            info.phone && info.phone.wa_version ? info.me : "",
+        ];
+        for (const raw of candidates) {
+            const normalized = normalizeNumber(raw);
+            if (normalized) return normalized;
+        }
+    } catch (_) {
+        // Ignore lookup errors and fallback to empty string.
+    }
+    return "";
+}
+
+function estimateBase64Bytes(data) {
+    const clean = String(data || "").replace(/\s+/g, "");
+    if (!clean) return 0;
+    const padding = clean.endsWith("==") ? 2 : (clean.endsWith("=") ? 1 : 0);
+    return Math.max(0, Math.floor((clean.length * 3) / 4) - padding);
+}
+
+function mediaFallbackText(mimeType) {
+    const clean = String(mimeType || "").toLowerCase();
+    if (clean.startsWith("image/")) return "[Gambar]";
+    if (clean === "application/pdf") return "[PDF]";
+    return "[Media]";
+}
+
+function isAllowedMediaMime(mimeType) {
+    const clean = String(mimeType || "").toLowerCase();
+    return clean.startsWith("image/") || [
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/vnd.ms-excel",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/vnd.ms-powerpoint",
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        "text/plain",
+        "text/csv",
+    ].includes(clean);
+}
+
+function mediaSizeLimit(mimeType) {
+    const clean = String(mimeType || "").toLowerCase();
+    if (clean.startsWith("image/")) return MAX_MEDIA_BYTES;
+    if (clean === "application/pdf") return MAX_PDF_BYTES;
+    return MAX_FILE_BYTES;
+}
+
+function inboundMediaSizeLimit(mimeType) {
+    const clean = String(mimeType || "").toLowerCase();
+    if (clean === "application/pdf") return MAX_PDF_RAW_BYTES;
+    return mediaSizeLimit(clean);
+}
+
+function outboundMediaSizeLimit() {
+    return MAX_OUTBOUND_MEDIA_BYTES;
+}
+
+async function buildMediaPayload(msg) {
+    if (!msg || !msg.hasMedia) return null;
+    const msgType = String(msg.type || "").toLowerCase();
+    if (msgType && !["image", "document"].includes(msgType)) return null;
+    try {
+        const media = await msg.downloadMedia();
+        if (!media || !media.data || !media.mimetype) return null;
+        if (!isAllowedMediaMime(media.mimetype)) return null;
+
+        const size = estimateBase64Bytes(media.data);
+        const limit = inboundMediaSizeLimit(media.mimetype);
+        if (Number.isFinite(limit) && limit > 0 && size > limit) {
+            console.warn(`[CC] media skipped: size=${size} limit=${limit} mimetype=${media.mimetype}`);
+            return null;
+        }
+
+        return {
+            mimetype: media.mimetype,
+            filename: media.filename || (msg._data && msg._data.filename) || "",
+            data: media.data,
+            size,
+        };
+    } catch (err) {
+        console.error("[CC] downloadMedia error:", (err && err.message) || err);
+        return null;
+    }
+}
+
 const processedIds = new Set();
 const ignoredIds = new Set();
 let clientReady = false;
+let lastHeartbeat = Date.now(); // untuk watchdog deteksi Chromium crash
+let initRecoveryTimer = null;
+let initRecoveryAttempts = 0;
+
+function envFlag(value) {
+    return ["1", "true", "yes", "on"].includes(String(value || "").trim().toLowerCase());
+}
+
+function buildWebVersionOptions() {
+    const options = {};
+    if (WEB_VERSION) options.webVersion = WEB_VERSION;
+
+    if (!WEB_CACHE_TYPE) return options;
+    if (WEB_CACHE_TYPE === "none") {
+        options.webVersionCache = { type: "none" };
+        return options;
+    }
+    if (WEB_CACHE_TYPE === "remote") {
+        if (!WEB_CACHE_REMOTE_PATH) {
+            console.warn("[CC] ASKA_CC_WHATSAPP_WEB_CACHE_TYPE=remote diabaikan: remote path kosong.");
+            return options;
+        }
+        options.webVersionCache = {
+            type: "remote",
+            remotePath: WEB_CACHE_REMOTE_PATH,
+            strict: envFlag(WEB_CACHE_STRICT),
+        };
+        return options;
+    }
+    if (WEB_CACHE_TYPE === "local") {
+        options.webVersionCache = {
+            type: "local",
+            strict: envFlag(WEB_CACHE_STRICT),
+        };
+        return options;
+    }
+
+    console.warn(`[CC] ASKA_CC_WHATSAPP_WEB_CACHE_TYPE tidak dikenal: ${WEB_CACHE_TYPE}`);
+    return options;
+}
+
+function isInitInProgressState() {
+    return !clientReady && (currentBridgeState === "starting" || currentBridgeState === "authenticated");
+}
+
+function clearInitRecoveryWatchdog() {
+    if (initRecoveryTimer) {
+        clearTimeout(initRecoveryTimer);
+        initRecoveryTimer = null;
+    }
+}
+
+function armInitRecoveryWatchdog() {
+    clearInitRecoveryWatchdog();
+    if (!isInitInProgressState()) return;
+    if (INIT_RECOVERY_RETRY_LIMIT <= 0) return;
+
+    initRecoveryTimer = setTimeout(async () => {
+        if (!isInitInProgressState()) return;
+
+        const timeoutSeconds = Math.round(INIT_STUCK_TIMEOUT_MS / 1000);
+        if (initRecoveryAttempts >= INIT_RECOVERY_RETRY_LIMIT) {
+            setBridgeStatus({
+                state: "error",
+                qrText: "",
+                message: `Inisialisasi bridge macet > ${timeoutSeconds} detik. Klik Generate QR untuk restart manual.`,
+                whatsappNumber: "",
+            });
+            console.error(`[CC] Init watchdog: stuck > ${timeoutSeconds}s, retry limit reached.`);
+            return;
+        }
+
+        initRecoveryAttempts += 1;
+        setBridgeStatus({
+            state: "starting",
+            qrText: "",
+            message: `Inisialisasi terlalu lama. Recovery otomatis ${initRecoveryAttempts}/${INIT_RECOVERY_RETRY_LIMIT}...`,
+            whatsappNumber: "",
+        });
+        console.warn(
+            `[CC] Init watchdog: recovery ${initRecoveryAttempts}/${INIT_RECOVERY_RETRY_LIMIT} (timeout ${timeoutSeconds}s).`
+        );
+
+        try {
+            await client.destroy();
+        } catch (_) {
+            // abaikan error destroy
+        }
+
+        setTimeout(() => {
+            client.initialize().catch((err) => {
+                handleInitFailure("Init watchdog reinit", err);
+            });
+        }, INIT_RECOVERY_RETRY_DELAY_MS);
+
+        armInitRecoveryWatchdog();
+    }, INIT_STUCK_TIMEOUT_MS);
+}
+
+function initErrorMessage(err) {
+    return (err && err.message) || String(err || "");
+}
+
+function isRecoverableInitError(err) {
+    const message = initErrorMessage(err);
+    return message.includes("Execution context was destroyed") ||
+        message.includes("Runtime.callFunctionOn timed out") ||
+        message.includes("Protocol error");
+}
+
+function handleInitFailure(source, err, shouldExitOnFinalFailure = false) {
+    const message = initErrorMessage(err);
+    if (!isRecoverableInitError(err) || initRecoveryAttempts >= INIT_RECOVERY_RETRY_LIMIT) {
+        setBridgeStatus({
+            state: "error",
+            qrText: "",
+            message,
+            whatsappNumber: "",
+        });
+        console.error(`[CC] ${source} init error:`, message);
+        if (shouldExitOnFinalFailure) process.exit(1);
+        return;
+    }
+
+    initRecoveryAttempts += 1;
+    clientReady = false;
+    clearInitRecoveryWatchdog();
+    setBridgeStatus({
+        state: "starting",
+        qrText: "",
+        message: `Recovery init ${initRecoveryAttempts}/${INIT_RECOVERY_RETRY_LIMIT}: ${message}`,
+        whatsappNumber: "",
+    });
+    console.warn(`[CC] ${source} init recovery ${initRecoveryAttempts}/${INIT_RECOVERY_RETRY_LIMIT}: ${message}`);
+
+    setTimeout(async () => {
+        try {
+            await client.destroy();
+        } catch (_) {
+            // Ignore destroy failures while Chromium is already changing context.
+        }
+        client.initialize().catch((nextErr) => {
+            handleInitFailure(`${source} retry`, nextErr, shouldExitOnFinalFailure);
+        });
+    }, INIT_RECOVERY_RETRY_DELAY_MS);
+}
 
 // ── WhatsApp client ──────────────────────────────────────────────────────────
 
@@ -111,42 +418,132 @@ const client = new Client({
         protocolTimeout: 300000,
         args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-gpu", "--disable-dev-shm-usage"],
     },
-    webVersionCache: { type: "remote", remotePath: "https://raw.githubusercontent.com/nicholasdai/nicholasdai/refs/heads/master/nicholasdai" },
+    ...buildWebVersionOptions(),
 });
 
 client.on("qr", (qrText) => {
-    writeStatus({ state: "qr", qrText, message: "Scan QR dari WhatsApp Linked Devices." });
+    initRecoveryAttempts = 0;
+    clearInitRecoveryWatchdog();
+    setBridgeStatus({
+        state: "qr",
+        qrText,
+        message: "Scan QR dari WhatsApp Linked Devices.",
+        whatsappNumber: "",
+    });
     console.log("\n[CC] Scan QR berikut di WhatsApp Linked Devices:\n");
     qrcode.generate(qrText, { small: true });
 });
 
 client.on("authenticated", () => {
-    writeStatus({ state: "authenticated", qrText: "", message: "Authenticated." });
+    setBridgeStatus({
+        state: "authenticated",
+        qrText: "",
+        message: "Authenticated.",
+        whatsappNumber: resolveBridgeSelfNumber(),
+    });
+    armInitRecoveryWatchdog();
     console.log("[CC] Authenticated.");
 });
 
 client.on("ready", () => {
     clientReady = true;
-    writeStatus({ state: "ready", qrText: "", message: "Call Center bridge siap." });
+    initRecoveryAttempts = 0;
+    clearInitRecoveryWatchdog();
+    lastHeartbeat = Date.now();
+    const selfNumber = resolveBridgeSelfNumber();
+    setBridgeStatus({
+        state: "ready",
+        qrText: "",
+        message: "Call Center bridge siap.",
+        whatsappNumber: selfNumber,
+    });
     console.log("[CC] Bridge siap menerima chat.");
+    if (selfNumber) {
+        console.log(`[CC] Nomor akun terdeteksi: +${selfNumber}`);
+    } else {
+        console.log("[CC] Nomor akun belum bisa dideteksi otomatis.");
+    }
+    startWatchdog();
 });
 
 client.on("auth_failure", (msg) => {
     clientReady = false;
-    writeStatus({ state: "auth_failure", qrText: "", message: String(msg) });
+    clearInitRecoveryWatchdog();
+    setBridgeStatus({ state: "auth_failure", qrText: "", message: String(msg), whatsappNumber: "" });
     console.error("[CC] Auth failure:", msg);
 });
 
 client.on("disconnected", (reason) => {
     clientReady = false;
-    writeStatus({ state: "disconnected", qrText: "", message: String(reason) });
+    clearInitRecoveryWatchdog();
+    setBridgeStatus({ state: "disconnected", qrText: "", message: String(reason), whatsappNumber: "" });
     console.warn("[CC] Disconnected:", reason);
     setTimeout(() => {
+        setBridgeStatus({
+            state: "starting",
+            qrText: "",
+            message: "Mencoba inisialisasi ulang setelah disconnect...",
+            whatsappNumber: "",
+        });
+        armInitRecoveryWatchdog();
         client.initialize().catch((e) =>
-            console.error("[CC] Reinit error:", (e && e.message) || e)
+            handleInitFailure("Disconnect reinit", e)
         );
     }, 3000);
 });
+
+// ── Watchdog: deteksi Chromium crash tanpa event disconnected ───────────────
+// Jika bridge mengklaim ready tapi Chromium tidak responsif selama
+// WATCHDOG_TIMEOUT_MS, reinitialize otomatis (tanpa hapus session = tanpa QR).
+
+const WATCHDOG_INTERVAL_MS = 2 * 60 * 1000;  // cek setiap 2 menit
+const WATCHDOG_TIMEOUT_MS  = 5 * 60 * 1000;  // anggap crash jika > 5 menit tak responsif
+let watchdogTimer = null;
+let watchdogRunning = false;
+
+async function pingClient() {
+    try {
+        // getState() akan throw jika Chromium sudah mati
+        const state = await client.getState();
+        if (state) lastHeartbeat = Date.now();
+    } catch (_) {
+        // Chromium tidak responsif — biarkan watchdog menangani
+    }
+}
+
+function startWatchdog() {
+    if (watchdogRunning) return;
+    watchdogRunning = true;
+    console.log("[CC] Watchdog aktif — cek Chromium setiap 2 menit.");
+
+    watchdogTimer = setInterval(async () => {
+        if (!clientReady) return; // biarkan flow normal yang tangani non-ready
+        await pingClient();
+        const elapsed = Date.now() - lastHeartbeat;
+        if (elapsed > WATCHDOG_TIMEOUT_MS) {
+            console.warn(`[CC] Watchdog: Chromium tidak responsif ${Math.round(elapsed/1000)}s. Reinit...`);
+            clientReady = false;
+            lastHeartbeat = Date.now(); // reset agar tidak trigger lagi segera
+            clearInitRecoveryWatchdog();
+            setBridgeStatus({ state: "disconnected", qrText: "", message: "Watchdog: koneksi terputus, mencoba reconnect..." });
+            try {
+                await client.destroy();
+            } catch (_) { /* abaikan */ }
+            setTimeout(() => {
+                setBridgeStatus({
+                    state: "starting",
+                    qrText: "",
+                    message: "Watchdog: menjalankan ulang bridge...",
+                    whatsappNumber: "",
+                });
+                armInitRecoveryWatchdog();
+                client.initialize().catch((e) =>
+                    handleInitFailure("Watchdog reinit", e)
+                );
+            }, 3000);
+        }
+    }, WATCHDOG_INTERVAL_MS);
+}
 
 // ── incoming messages → forward to backend (NO auto-reply) ───────────────────
 
@@ -162,8 +559,14 @@ async function handleIncoming(msg) {
         if (msg.from === "status@broadcast") return;
         if (String(msg.from || "").endsWith("@g.us")) return;
 
+        // Update heartbeat — ada pesan masuk berarti koneksi masih hidup
+        lastHeartbeat = Date.now();
+
+        const hadMedia = Boolean(msg.hasMedia);
+        const probableMime = (msg._data && msg._data.mimetype) || (String(msg.type || "").toLowerCase() === "image" ? "image/jpeg" : "");
+        const media = await buildMediaPayload(msg);
         const text = String(msg.body || "").trim();
-        if (!text) return;
+        if (!text && !media && !hadMedia) return;
 
         // Get the JID first
         const fromJid = String(msg.from || "");
@@ -190,7 +593,9 @@ async function handleIncoming(msg) {
         // Use real phone number (e.g. 62812...) as user_id for DB
         const userId = realNumber || normalizeNumber(fromJid);
 
-        console.log(`[CC] recv from=${fromJid} number=${userId} name=${displayName} text="${text.slice(0, 80)}"`);
+        const messageText = text || mediaFallbackText((media && media.mimetype) || probableMime);
+
+        console.log(`[CC] recv from=${fromJid} number=${userId} name=${displayName} text="${messageText.slice(0, 80)}" media=${media ? media.mimetype : "-"}`);
 
         // Forward to dashboard backend — do not wait for or send a reply
         axios
@@ -199,14 +604,18 @@ async function handleIncoming(msg) {
                 {
                     user_id: userId,
                     username: displayName,
-                    message: text,
+                    message: messageText,
                     message_id: mid || null,
+                    bridge_key: BRIDGE_KEY,
+                    media,
                 },
                 {
                     headers: {
                         "Content-Type": "application/json",
                         "X-ASKA-CC-TOKEN": INTERNAL_TOKEN,
                     },
+                    maxBodyLength: Infinity,
+                    maxContentLength: Infinity,
                     timeout: 15000,
                 }
             )
@@ -227,7 +636,19 @@ client.on("message_create", (msg) => handleIncoming(msg));
 // ── Express HTTP API for outbound messages ───────────────────────────────────
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: JSON_BODY_LIMIT }));
+app.use((err, _req, res, next) => {
+    if (!err) return next();
+    if (err.type === "entity.too.large") {
+        return res.status(413).json({
+            error: `Payload terlalu besar untuk bridge. Batas JSON saat ini ${JSON_BODY_LIMIT}.`,
+        });
+    }
+    if (err instanceof SyntaxError && "body" in err) {
+        return res.status(400).json({ error: "Invalid JSON payload" });
+    }
+    return next(err);
+});
 
 // Auth middleware
 function authCheck(req, res, next) {
@@ -268,12 +689,15 @@ async function getChatIdentity(chat) {
     return { number, displayName, chatId };
 }
 
-function serializeHistoryMessage(msg, identity) {
-    if (!msg || msg.type !== "chat") return null;
+async function serializeHistoryMessage(msg, identity) {
+    if (!msg) return null;
     if (msg.from === "status@broadcast" || msg.to === "status@broadcast") return null;
 
+    const hadMedia = Boolean(msg.hasMedia);
+    const probableMime = (msg._data && msg._data.mimetype) || (String(msg.type || "").toLowerCase() === "image" ? "image/jpeg" : "");
     const text = String(msg.body || "").trim();
-    if (!text) return null;
+    const media = await buildMediaPayload(msg);
+    if (!text && !media && !hadMedia) return null;
 
     const timestamp = Number(msg.timestamp || 0);
     const createdAt = timestamp > 0 ? new Date(timestamp * 1000).toISOString() : new Date().toISOString();
@@ -282,10 +706,12 @@ function serializeHistoryMessage(msg, identity) {
     return {
         user_id: identity.number,
         username: identity.displayName,
+        bridge_key: BRIDGE_KEY,
         direction: msg.fromMe ? "outbound" : "inbound",
-        message: text,
+        message: text || mediaFallbackText((media && media.mimetype) || probableMime),
         message_id: messageId || null,
         created_at: createdAt,
+        media,
     };
 }
 
@@ -300,12 +726,14 @@ async function postImportBatch(messages) {
     if (!messages.length) return {};
     const response = await axios.post(
         IMPORT_URL,
-        { messages },
+        { bridge_key: BRIDGE_KEY, messages },
         {
             headers: {
                 "Content-Type": "application/json",
                 "X-ASKA-CC-TOKEN": INTERNAL_TOKEN,
             },
+            maxBodyLength: Infinity,
+            maxContentLength: Infinity,
             timeout: 60000,
         }
     );
@@ -313,7 +741,15 @@ async function postImportBatch(messages) {
 }
 
 app.get("/health", (_req, res) => {
-    res.json({ ok: true, state: "running" });
+    res.json({
+        ok: true,
+        state: currentBridgeState || "starting",
+        ready: clientReady,
+        message: currentBridgeMessage,
+        bridgeKey: BRIDGE_KEY,
+        httpPort: HTTP_PORT,
+        whatsappNumber: resolveBridgeSelfNumber(),
+    });
 });
 
 app.post("/sync-history", authCheck, async (req, res) => {
@@ -364,11 +800,34 @@ app.post("/sync-history", authCheck, async (req, res) => {
                     continue;
                 }
 
-                const messages = await chat.fetchMessages({ limit: limitPerChat });
+                // Delay antar chat agar WhatsApp Web internal store siap
+                await new Promise((r) => setTimeout(r, 300));
+
+                let messages = [];
+                try {
+                    messages = await chat.fetchMessages({ limit: limitPerChat });
+                } catch (fetchErr) {
+                    // Retry sekali setelah delay jika store belum siap (waitForChatLoading)
+                    const isStoreErr = (fetchErr && fetchErr.message || "").includes("waitForChatLoading") ||
+                        (fetchErr && fetchErr.message || "").includes("Cannot read properties of undefined");
+                    if (isStoreErr) {
+                        await new Promise((r) => setTimeout(r, 1500));
+                        try {
+                            messages = await chat.fetchMessages({ limit: limitPerChat });
+                        } catch (_retryErr) {
+                            stats.failedChats += 1;
+                            console.warn("[CC] sync chat skip (store not ready):", identity.number);
+                            continue;
+                        }
+                    } else {
+                        throw fetchErr;
+                    }
+                }
+
                 messages.sort((a, b) => Number(a.timestamp || 0) - Number(b.timestamp || 0));
 
                 for (const msg of messages) {
-                    const item = serializeHistoryMessage(msg, identity);
+                    const item = await serializeHistoryMessage(msg, identity);
                     if (!item) {
                         stats.skipped += 1;
                         continue;
@@ -406,9 +865,17 @@ app.post("/sync-history", authCheck, async (req, res) => {
 });
 
 app.post("/send", authCheck, async (req, res) => {
-    const { to, message } = req.body || {};
-    if (!to || !message) {
-        return res.status(400).json({ error: "Missing 'to' or 'message'" });
+    if (!clientReady) {
+        return res.status(409).json({
+            error: `WhatsApp bridge belum ready (${currentBridgeState || "unknown"}). ${currentBridgeMessage || ""}`.trim(),
+        });
+    }
+
+    const { to, message, media } = req.body || {};
+    const hasMessage = String(message || "").trim().length > 0;
+    const hasMedia = Boolean(media && media.data && media.mimetype);
+    if (!to || (!hasMessage && !hasMedia)) {
+        return res.status(400).json({ error: "Missing 'to' or 'message/media'" });
     }
     try {
         let jid;
@@ -421,14 +888,74 @@ app.post("/send", authCheck, async (req, res) => {
             jid = `${sanitized}@c.us`;
         }
 
-        const sent = await client.sendMessage(jid, String(message));
+        let sent;
+        if (hasMedia) {
+            const mimetype = String(media.mimetype || "").trim();
+            const filename = String(media.filename || "attachment").trim() || "attachment";
+            const data = String(media.data || "").replace(/\s+/g, "");
+            if (!isAllowedMediaMime(mimetype)) {
+                return res.status(400).json({ error: "Unsupported media type" });
+            }
+            const size = estimateBase64Bytes(data);
+            const limit = outboundMediaSizeLimit(mimetype);
+            if (Number.isFinite(limit) && limit > 0 && size > limit) {
+                return res.status(413).json({ error: `Media too large. Max ${limit} bytes.` });
+            }
+
+            const messageMedia = new MessageMedia(mimetype, data, filename);
+            const isImage = mimetype.toLowerCase().startsWith("image/");
+            const options = {};
+            if (hasMessage) options.caption = String(message).trim();
+            if (!isImage) options.sendMediaAsDocument = true;
+            sent = await client.sendMessage(jid, messageMedia, options);
+        } else {
+            sent = await client.sendMessage(jid, String(message));
+        }
         const sentId = (sent && sent.id && sent.id._serialized) || "";
         if (sentId) ignoredIds.add(sentId);
-        console.log(`[CC] sent to=${jid} len=${message.length}`);
+        console.log(`[CC] sent to=${jid} len=${String(message || "").length} media=${hasMedia ? media.mimetype : "-"}`);
         res.json({ ok: true, messageId: sentId });
     } catch (err) {
         console.error("[CC] sendMessage error:", (err && err.message) || err);
         res.status(500).json({ error: (err && err.message) || "Send failed" });
+    }
+});
+
+app.post("/edit", authCheck, async (req, res) => {
+    if (!clientReady) {
+        return res.status(409).json({
+            error: `WhatsApp bridge belum ready (${currentBridgeState || "unknown"}). ${currentBridgeMessage || ""}`.trim(),
+        });
+    }
+
+    const { messageId, message } = req.body || {};
+    const cleanMessageId = String(messageId || "").trim();
+    const cleanMessage = String(message || "").trim();
+    if (!cleanMessageId || !cleanMessage) {
+        return res.status(400).json({ error: "Missing 'messageId' or 'message'" });
+    }
+
+    try {
+        const original = await client.getMessageById(cleanMessageId);
+        if (!original) {
+            return res.status(404).json({ error: "Message not found in WhatsApp session" });
+        }
+        if (!original.fromMe) {
+            return res.status(400).json({ error: "Only outbound messages can be edited" });
+        }
+
+        const edited = await original.edit(cleanMessage);
+        if (!edited) {
+            return res.status(409).json({ error: "WhatsApp no longer allows editing this message" });
+        }
+
+        const editedId = (edited && edited.id && edited.id._serialized) || cleanMessageId;
+        if (editedId) ignoredIds.add(editedId);
+        console.log(`[CC] edited message=${cleanMessageId} len=${cleanMessage.length}`);
+        res.json({ ok: true, messageId: editedId });
+    } catch (err) {
+        console.error("[CC] editMessage error:", (err && err.message) || err);
+        res.status(500).json({ error: (err && err.message) || "Edit failed" });
     }
 });
 
@@ -438,18 +965,18 @@ app.listen(HTTP_PORT, () => {
     console.log(`[CC] HTTP API listening on port ${HTTP_PORT}`);
 });
 
-writeStatus({
+setBridgeStatus({
     state: "starting",
     qrText: "",
     message: "Call Center bridge sedang inisialisasi...",
+    whatsappNumber: "",
     sessionPath: SESSION_PATH,
     clientId: CLIENT_ID,
     internalUrl: INTERNAL_URL,
     httpPort: HTTP_PORT,
 });
+armInitRecoveryWatchdog();
 
 client.initialize().catch((err) => {
-    writeStatus({ state: "error", qrText: "", message: (err && err.message) || String(err) });
-    console.error("[CC] Init error:", (err && err.message) || err);
-    process.exit(1);
+    handleInitFailure("Boot", err, true);
 });

@@ -1,0 +1,471 @@
+{% extends "laporan/base_laporan.html" %}
+{% set page_title = "Jawaban: " ~ form.title %}
+
+{% block head_extra %}
+<style>
+    .answer-card {
+        border: 1.5px solid var(--border-soft);
+        border-radius: 14px;
+        background: var(--bg-surface);
+        overflow: hidden;
+        margin-bottom: 1rem;
+    }
+    .answer-card-header {
+        background: var(--bg-subtle);
+        padding: 0.75rem 1.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        border-bottom: 1px solid var(--border-soft);
+        cursor: pointer;
+    }
+    .answer-card-header:hover { background: rgba(13,110,253,0.03); }
+    .answer-card-body {
+        padding: 1rem 1.25rem;
+    }
+    .answer-row {
+        padding: 0.6rem 0;
+        border-bottom: 1px solid var(--border-soft);
+    }
+    .answer-row:last-child { border-bottom: none; }
+    .answer-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-muted);
+        margin-bottom: 0.25rem;
+    }
+    .answer-value {
+        font-size: 0.9rem;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+    .stars-display span { font-size: 1.2rem; }
+    .file-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        background: rgba(13,110,253,0.08);
+        color: #0d6efd;
+        border-radius: 8px;
+        padding: 3px 10px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        text-decoration: none;
+        margin: 2px;
+    }
+    .file-chip:hover { background: rgba(13,110,253,0.14); color: #0a58ca; }
+    .analytics-card {
+        border: 1.5px solid var(--border-soft);
+        border-radius: 14px;
+        background: var(--bg-surface);
+        padding: 1rem 1.25rem;
+        height: 100%;
+    }
+    .analytics-title {
+        font-size: 0.95rem;
+        font-weight: 700;
+        margin-bottom: 0.2rem;
+    }
+    .analytics-meta {
+        color: var(--text-muted);
+        font-size: 0.78rem;
+        margin-bottom: 0.8rem;
+    }
+    .choice-row {
+        display: grid;
+        grid-template-columns: minmax(120px, 1fr) minmax(120px, 2fr) 64px;
+        gap: 0.75rem;
+        align-items: center;
+        margin-bottom: 0.5rem;
+        font-size: 0.85rem;
+    }
+    .choice-bar {
+        height: 10px;
+        border-radius: 999px;
+        background: var(--bg-subtle);
+        overflow: hidden;
+    }
+    .choice-bar-fill {
+        height: 100%;
+        border-radius: inherit;
+        background: #0d6efd;
+    }
+    .metric-chip {
+        border: 1px solid var(--border-soft);
+        border-radius: 10px;
+        padding: 0.55rem 0.7rem;
+        background: var(--bg-subtle);
+    }
+    .metric-chip strong {
+        display: block;
+        font-size: 1.05rem;
+        color: var(--text-primary);
+    }
+    .metric-chip span {
+        color: var(--text-muted);
+        font-size: 0.75rem;
+    }
+    @media (max-width: 576px) {
+        .choice-row {
+            grid-template-columns: 1fr;
+            gap: 0.25rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block portal_content %}
+<section class="mb-4">
+    <div class="card portal-hero border-0 shadow-sm">
+        <div class="card-body">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+                <div>
+                    <a href="{{ url_for('laporan.admin_laporan_list') }}"
+                        class="btn btn-sm btn-outline-secondary mb-2 d-inline-flex align-items-center gap-1">
+                        <i class="bi bi-arrow-left"></i> Kembali
+                    </a>
+                    <h1 class="h3 fw-bold page-title mb-1">{{ form.title }}</h1>
+                    <p class="page-subtitle mb-0">
+                        {{ submissions | length }} jawaban masuk
+                        {% if form.period_deadline_str %}&bull; Deadline periode: {{ form.period_deadline_str }}
+                        {% elif form.deadline_at %}&bull; Deadline: {{ form.deadline_at.strftime('%d %b %Y %H:%M') }}{% endif %}
+                    </p>
+                </div>
+                <div class="d-flex gap-2 flex-wrap">
+                    <a href="{{ url_for('laporan.admin_laporan_export', form_id=form.id, period=filter_period) }}"
+                        class="btn btn-success d-inline-flex align-items-center gap-2">
+                        <i class="bi bi-file-earmark-excel"></i> Download Excel
+                    </a>
+                    <a href="{{ url_for('laporan.admin_laporan_export_no_submission', form_id=form.id, period=filter_period) }}"
+                        class="btn btn-danger d-inline-flex align-items-center gap-2">
+                        <i class="bi bi-file-earmark-excel-fill"></i> Download Excel (Tidak Mengumpulkan)
+                    </a>
+                    <a href="{{ url_for('laporan.admin_laporan_edit', form_id=form.id) }}"
+                        class="btn btn-outline-secondary d-inline-flex align-items-center gap-2">
+                        <i class="bi bi-pencil"></i> Edit Form
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{# Period Filter Form #}
+{% if is_periodic %}
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body py-3">
+        <form method="GET" class="row g-2 align-items-center">
+            <div class="col-auto">
+                <span class="fw-semibold text-muted small text-uppercase"><i class="bi bi-funnel-fill me-1"></i>Filter Periode:</span>
+            </div>
+            <div class="col-auto">
+                <select name="period" class="form-select form-select-sm" style="width: 280px;" onchange="this.form.submit()">
+                    <option value="all" {% if filter_period == 'all' %}selected{% endif %}>Semua Periode</option>
+                    {% for pk, pl in periods %}
+                    <option value="{{ pk }}" {% if filter_period == pk %}selected{% endif %}>{{ pl }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+{% if not submissions %}
+<div class="text-center py-5">
+    <div class="mb-3" style="font-size:3rem;opacity:0.3;"><i class="bi bi-inbox"></i></div>
+    <p class="text-muted">Belum ada jawaban yang masuk untuk form ini.</p>
+</div>
+{% else %}
+
+{% if empty_submitted_count %}
+<div class="alert alert-warning border-0 d-flex flex-wrap align-items-center justify-content-between gap-2" role="alert">
+    <div>
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        Ada {{ empty_submitted_count }} riwayat terkirim tanpa jawaban pada tampilan ini.
+    </div>
+    <form method="POST"
+        action="{{ url_for('laporan.admin_laporan_delete_empty_submissions', form_id=form.id, period=filter_period) }}"
+        onsubmit="return confirmDeleteEmptySubmissions({{ empty_submitted_count }})">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="period" value="{{ filter_period }}">
+        <button type="submit" class="btn btn-sm btn-warning d-inline-flex align-items-center gap-1">
+            <i class="bi bi-trash"></i> Hapus Riwayat Kosong
+        </button>
+    </form>
+</div>
+{% endif %}
+
+{# Summary Stats #}
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <div class="h2 fw-bold text-primary mb-0">{{ submissions | length }}</div>
+            <div class="text-muted small">Total Sasaran Laporan</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <div class="h2 fw-bold text-success mb-0">
+                {{ submissions | selectattr('status', 'equalto', 'submitted') | list | length }}
+            </div>
+            <div class="text-muted small">Terkirim</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <div class="h2 fw-bold text-danger mb-0">
+                {{ submissions | selectattr('status', 'equalto', 'no_submission') | list | length }}
+            </div>
+            <div class="text-muted small">Tidak Mengumpulkan</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <div class="h2 fw-bold text-warning mb-0">
+                {{ submissions | selectattr('status', 'equalto', 'submitted') | map(attribute='school_name') | list | unique | list | length }}
+            </div>
+            <div class="text-muted small">Sekolah Berbeda</div>
+        </div>
+    </div>
+</div>
+
+{# Analytics #}
+<div class="mb-4">
+    <div class="d-flex align-items-center justify-content-between gap-2 mb-3">
+        <h2 class="h5 fw-bold mb-0">Analitik Jawaban</h2>
+        <span class="text-muted small">{{ analytics | length }} pertanyaan dianalisis</span>
+    </div>
+    <div class="row g-3">
+        {% for item in analytics %}
+        {% set field = item.field %}
+        <div class="col-12 col-lg-6">
+            <div class="analytics-card">
+                <div class="analytics-title">{{ field.label }}</div>
+                <div class="analytics-meta">
+                    {{ item.response_count }} terisi &bull; {{ item.empty_count }} kosong &bull; {{ item.response_rate }}% respons
+                </div>
+
+                {% if field.field_type in ('radio', 'checkbox', 'dropdown') %}
+                    {% if item.option_counts %}
+                    {% for opt in item.option_counts %}
+                    <div class="choice-row">
+                        <div class="text-truncate" title="{{ opt.label }}">{{ opt.label }}</div>
+                        <div class="choice-bar" aria-label="{{ opt.percent }}%">
+                            <div class="choice-bar-fill" style="width: {{ opt.percent }}%;"></div>
+                        </div>
+                        <div class="text-end text-muted small">{{ opt.count }} ({{ opt.percent }}%)</div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <p class="text-muted small mb-0">Belum ada pilihan yang dijawab.</p>
+                    {% endif %}
+                {% elif field.field_type in ('number', 'rating', 'formula') %}
+                    <div class="row g-2">
+                        <div class="col-6 col-md-3">
+                            <div class="metric-chip"><strong>{{ item.numeric.avg or '—' }}</strong><span>Rata-rata</span></div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="metric-chip"><strong>{{ item.numeric.min or '—' }}</strong><span>Min</span></div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="metric-chip"><strong>{{ item.numeric.max or '—' }}</strong><span>Max</span></div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="metric-chip"><strong>{{ item.numeric.sum or '—' }}</strong><span>Total</span></div>
+                        </div>
+                    </div>
+                {% elif field.field_type in ('file', 'upload_dokumen', 'upload_gambar') %}
+                    <div class="metric-chip d-inline-block">
+                        <strong>{{ item.file_count }}</strong>
+                        <span>Total file terkirim</span>
+                    </div>
+                {% else %}
+                    {% if item.samples %}
+                    <div class="d-flex flex-column gap-2">
+                        {% for sample in item.samples %}
+                        <div class="text-muted small border rounded-3 p-2">{{ sample }}</div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted small mb-0">Belum ada jawaban teks.</p>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+{# Filter / Search #}
+<div class="mb-3">
+    <div class="input-group">
+        <span class="input-group-text"><i class="bi bi-search"></i></span>
+        <input type="text" class="form-control" id="answerSearch"
+            placeholder="Cari nama sekolah..." oninput="filterAnswers()">
+    </div>
+</div>
+
+{# Answer Cards #}
+<div id="answersContainer">
+{% for sub in submissions %}
+<div class="answer-card {% if sub.status == 'no_submission' %}border-danger-subtle{% endif %}" data-school="{{ (sub.school_name or '') | lower }}">
+    <div class="answer-card-header" onclick="toggleCard(this)">
+        <div class="d-flex align-items-center gap-3">
+            {% if sub.status == 'no_submission' %}
+            <div style="width:40px;height:40px;border-radius:10px;background:rgba(220,53,69,0.1);color:#dc3545;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;">
+                <i class="bi bi-x-lg"></i>
+            </div>
+            {% else %}
+            <div style="width:40px;height:40px;border-radius:10px;background:rgba(13,110,253,0.1);color:#0d6efd;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;">
+                {{ loop.index }}
+            </div>
+            {% endif %}
+            <div>
+                <div class="fw-semibold">{{ sub.school_name }}</div>
+                <div class="text-muted small">
+                    NPSN {{ sub.npsn }} &bull; {{ sub.jenjang }}
+                    {% if sub.submitted_at %}&bull; {{ sub.submitted_at.strftime('%d %b %Y %H:%M') }}{% endif %}
+                    {% if sub.repeat_period_label %}&bull; Periode: {{ sub.repeat_period_label }}{% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            {% if sub.status == 'no_submission' %}
+            <span class="badge bg-danger text-white">Tidak Mengumpulkan</span>
+            {% elif sub.is_very_late %}
+            <span class="badge bg-danger-subtle text-danger">Sangat Terlambat ({{ sub.late_duration_label }})</span>
+            {% elif sub.is_late %}
+            <span class="badge bg-warning-subtle text-warning">Terlambat ({{ sub.late_duration_label }})</span>
+            {% else %}
+            <span class="badge bg-success-subtle text-success">Tepat Waktu</span>
+            {% endif %}
+            {% if sub.status == 'submitted' %}
+            <form method="POST"
+                action="{{ url_for('laporan.admin_laporan_delete_submission', form_id=form.id, submission_id=sub.id, period=filter_period) }}"
+                class="d-inline"
+                onclick="event.stopPropagation()"
+                data-confirm-title="Hapus Riwayat: {{ sub.school_name }}"
+                data-confirm-text="Apakah Anda yakin ingin menghapus seluruh riwayat isian untuk {{ sub.school_name }}? Semua jawaban dan file yang diunggah akan dihapus permanen. Sekolah dapat mengisi ulang jika form masih dibuka."
+                onsubmit='return confirmDeleteSubmission(event, {{ sub.school_name | tojson }})'>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="period" value="{{ filter_period }}">
+                <button type="submit"
+                    class="btn btn-sm btn-outline-danger d-inline-flex align-items-center gap-1">
+                    <i class="bi bi-trash"></i> Hapus Riwayat
+                </button>
+            </form>
+            {% endif %}
+            <i class="bi bi-chevron-down text-muted toggle-icon" style="transition:transform 0.2s;"></i>
+        </div>
+    </div>
+    <div class="answer-card-body" style="display:none;">
+        {% if sub.status == 'no_submission' %}
+        <p class="text-danger mb-0 small fw-medium">
+            <i class="bi bi-x-circle-fill me-1"></i> Sekolah ini tidak mengirimkan laporan untuk periode ini hingga batas waktu yang ditentukan.
+        </p>
+        {% elif not sub.answers %}
+        <p class="text-warning mb-0 small fw-medium">
+            <i class="bi bi-exclamation-triangle-fill me-1"></i>
+            Riwayat terkirim ini tidak memiliki jawaban tersimpan. Hapus riwayat agar sekolah bisa mengisi ulang jika form masih dibuka.
+        </p>
+        {% else %}
+        {% for ans in sub.answers %}
+        {% if ans.field_type not in ('header', 'info') %}
+        <div class="answer-row">
+            <div class="answer-label">{{ ans.label }}</div>
+            {% if ans.field_type in ('file', 'upload_dokumen', 'upload_gambar') %}
+                {% if ans.files %}
+                <div class="d-flex flex-wrap gap-3">
+                    {% for f in ans.files %}
+                    <div class="d-flex flex-column align-items-start border rounded p-2 bg-light">
+                        <a class="file-chip mb-1" href="{{ url_for('laporan.laporan_serve_file', filepath=f.file_path) }}" target="_blank">
+                            <i class="bi bi-paperclip"></i>{{ f.original_name }}
+                        </a>
+                        {% if ans.field_type == 'upload_gambar' or (f.original_name.lower().endswith(('.png', '.jpg', '.jpeg', '.webp', '.gif'))) %}
+                        <div class="mt-1">
+                            <img src="{{ url_for('laporan.laporan_serve_file', filepath=f.file_path) }}" alt="{{ f.original_name }}" class="img-thumbnail" style="max-height: 80px; max-width: 150px; object-fit: cover;">
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <span class="text-muted small">—</span>
+                {% endif %}
+            {% elif ans.field_type == 'rating' %}
+                <div class="stars-display d-flex align-items-center gap-1">
+                    {% set rv = (ans.answer_text or '0') | int %}
+                    {% for i in range(1, 6) %}
+                    <span style="color:{% if i <= rv %}#f59e0b{% else %}#dee2e6{% endif %};">★</span>
+                    {% endfor %}
+                    <span class="text-muted small ms-1">({{ rv }}/5)</span>
+                </div>
+            {% elif ans.field_type == 'checkbox' and ans.answer_json %}
+                <div class="d-flex flex-wrap gap-1">
+                    {% for v in ans.answer_json %}
+                    <span class="badge bg-primary-subtle text-primary">{{ v }}</span>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="answer-value">{{ ans.answer_text or '—' }}</div>
+            {% endif %}
+        </div>
+        {% endif %}
+        {% endfor %}
+        {% endif %}
+        {% if sub.submitted_by_name %}
+        <div class="mt-2 text-muted small"><i class="bi bi-person me-1"></i>Dikirim oleh: {{ sub.submitted_by_name }}</div>
+        {% endif %}
+    </div>
+</div>
+{% endfor %}
+</div>
+
+{% endif %}
+{% endblock %}
+
+{% block portal_scripts %}
+<script>
+
+function toggleCard(header) {
+    var body = header.nextElementSibling;
+    var icon = header.querySelector('.toggle-icon');
+    if (body.style.display === 'none') {
+        body.style.display = '';
+        if (icon) icon.style.transform = 'rotate(180deg)';
+    } else {
+        body.style.display = 'none';
+        if (icon) icon.style.transform = '';
+    }
+}
+
+function filterAnswers() {
+    var q = document.getElementById('answerSearch').value.toLowerCase();
+    document.querySelectorAll('.answer-card').forEach(function(card) {
+        var school = card.getAttribute('data-school') || '';
+        card.style.display = (!q || school.includes(q)) ? '' : 'none';
+    });
+}
+
+function confirmDeleteSubmission(event, schoolName) {
+    event.stopPropagation();
+    return window.confirm(
+        'Apakah Anda yakin ingin menghapus seluruh riwayat isian untuk sekolah:\n\n' +
+        '🏫 ' + (schoolName || 'sekolah ini') + '\n\n' +
+        'Semua jawaban dan file yang diunggah oleh sekolah ini akan dihapus permanen. ' +
+        'Sekolah dapat mengisi ulang jika form masih dibuka. Lanjutkan?'
+    );
+}
+
+function confirmDeleteEmptySubmissions(count) {
+    return window.confirm(
+        'Hapus ' + count + ' riwayat terkirim tanpa jawaban pada periode/tampilan ini? ' +
+        'Sekolah terkait dapat mengisi ulang jika form masih dibuka.'
+    );
+}
+</script>
+{% endblock %}

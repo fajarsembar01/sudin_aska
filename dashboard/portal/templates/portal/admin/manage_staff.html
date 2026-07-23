@@ -115,7 +115,20 @@
                             <div id="assignFeedback" class="alert alert-success d-none py-2 px-3 mb-3 small"></div>
                             <!-- Current Assignments -->
                             <div class="mb-4">
-                                <h6 class="border-bottom pb-2">Sekolah yang Sudah Ditugaskan</h6>
+                                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 border-bottom pb-2 mb-2">
+                                    <h6 class="mb-0">Sekolah yang Sudah Ditugaskan</h6>
+                                    {% if is_admin %}
+                                    <button type="button" class="btn btn-sm btn-outline-danger"
+                                        id="resetSelectedStaffAssignments" disabled>
+                                        <i class="bi bi-arrow-counterclockwise"></i> Reset Penugasan
+                                    </button>
+                                    {% endif %}
+                                </div>
+                                {% if is_admin %}
+                                <p class="small text-muted mb-2">
+                                    Reset hanya menghapus penugasan aktif. Histori penilaian dan draft tetap tersimpan.
+                                </p>
+                                {% endif %}
                                 <div id="currentAssignments">
                                     <p class="text-muted">Pilih staff untuk melihat penugasan</p>
                                 </div>
@@ -496,6 +509,7 @@
                                     data-kecamatan="{{ (item.kecamatan_name or '')|lower }}"
                                     data-kelurahan="{{ (item.kelurahan_name or '')|lower }}"
                                     data-staff="{{ (item.staff_name or '')|lower }}"
+                                    data-staff-id="{{ item.staff_id }}"
                                     data-assignment-id="{{ item.assignment_id }}">
                                     <td>
                                         <input class="form-check-input assignment-select" type="checkbox"
@@ -685,6 +699,7 @@
         const clearQueueBtn = document.getElementById('clearQueueBtn');
         const searchStaff = document.getElementById('searchStaff');
         const assignFeedback = document.getElementById('assignFeedback');
+        const resetSelectedStaffAssignments = document.getElementById('resetSelectedStaffAssignments');
         const periodSelect = document.getElementById('periodSelect');
         const massFilterKecamatan = document.getElementById('massFilterKecamatan');
         const massFilterKelurahan = document.getElementById('massFilterKelurahan');
@@ -1486,6 +1501,9 @@
         // Load assignments for selected staff
         function loadAssignments(staffId) {
             currentAssignments.innerHTML = '<div class="text-center"><div class="spinner-border spinner-border-sm"></div> Memuat...</div>';
+            if (resetSelectedStaffAssignments) {
+                resetSelectedStaffAssignments.disabled = true;
+            }
             const fetchUrl = staffAssignmentsUrlTemplate.replace('0', staffId);
 
             return fetch(fetchUrl)
@@ -1513,14 +1531,60 @@
                     } else {
                         currentAssignments.innerHTML = '<p class="text-muted fst-italic">Belum ada sekolah yang ditugaskan</p>';
                     }
-                    updateStaffBadge(staffId, data.assignments ? data.assignments.length : 0);
-                    return data.assignments ? data.assignments.length : 0;
+                    const assignmentCount = data.assignments ? data.assignments.length : 0;
+                    updateStaffBadge(staffId, assignmentCount);
+                    if (resetSelectedStaffAssignments) {
+                        resetSelectedStaffAssignments.disabled = assignmentCount === 0;
+                    }
+                    return assignmentCount;
                 })
                 .catch(err => {
                     currentAssignments.innerHTML = '<p class="text-danger">Error memuat data</p>';
+                    if (resetSelectedStaffAssignments) {
+                        resetSelectedStaffAssignments.disabled = true;
+                    }
                     console.error(err);
                     return 0;
                 });
+        }
+
+        if (resetSelectedStaffAssignments) {
+            resetSelectedStaffAssignments.addEventListener('click', function () {
+                const staffId = selectedStaffId.value;
+                const staffName = selectedStaffName.textContent || 'staff terpilih';
+                if (!staffId) return;
+                const ok = confirm(`Reset seluruh penugasan aktif untuk ${staffName}? Histori penilaian dan draft tidak akan dihapus.`);
+                if (!ok) return;
+
+                resetSelectedStaffAssignments.disabled = true;
+                fetch(`/portal/admin/staff/${staffId}/assignments/reset`, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    }
+                }).then(res => res.json())
+                    .then(data => {
+                        if (!data.success) {
+                            throw new Error(data.message || 'Gagal mereset penugasan.');
+                        }
+                        if (assignmentsOverviewBody) {
+                            assignmentsOverviewBody
+                                .querySelectorAll(`tr[data-staff-id="${staffId}"]`)
+                                .forEach(row => row.remove());
+                            filterAssignmentsOverview();
+                        }
+                        updateStaffBadge(staffId, 0);
+                        return loadAssignments(staffId).then(() => data);
+                    })
+                    .then(data => {
+                        showFeedback(`${data.deleted || 0} penugasan aktif direset. Histori penilaian tetap tersimpan.`);
+                    })
+                    .catch(err => {
+                        alert(err.message || 'Gagal mereset penugasan.');
+                        loadAssignments(staffId);
+                    });
+            });
         }
 
         // Save batch assignments / requests

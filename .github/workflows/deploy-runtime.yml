@@ -1,0 +1,54 @@
+name: 🚀 Deploy Runtime ASKA
+
+on:
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  deploy-runtime:
+    name: Sync Kode Runtime & Restart Server
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout repo
+        uses: actions/checkout@v4
+
+      - name: 🔑 Setup SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_PRIVATE_KEY }}
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keygen -l -f ~/.ssh/id_ed25519
+          cat >> ~/.ssh/config <<EOF
+          Host ${SERVER_HOST}
+            StrictHostKeyChecking no
+            UserKnownHostsFile /dev/null
+            IdentityFile ~/.ssh/id_ed25519
+          EOF
+
+      - name: 📦 Sync kode runtime ke server
+        run: |
+          rsync -avz --progress \
+            ai_core.py \
+            handlers.py \
+            knowledge_loader.py \
+            utils.py \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_PROJECT_PATH }}/
+          rsync -avz --progress \
+            responses/ \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_PROJECT_PATH }}/responses/
+          rsync -avz --progress \
+            web_aska/handlers.py \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_PROJECT_PATH }}/web_aska/handlers.py
+
+      - name: 🔄 Reload ASKA di server
+        run: |
+          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
+            "cd ${{ secrets.SERVER_PROJECT_PATH }} && \
+             echo '✅ Kode runtime diperbarui!' && \
+             (sudo systemctl restart aska 2>/dev/null || pm2 restart aska 2>/dev/null || echo '⚠️ Restart manual diperlukan')"

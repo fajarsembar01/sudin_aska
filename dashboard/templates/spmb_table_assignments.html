@@ -1,0 +1,74 @@
+{% extends 'penugasan_base.html' %}
+{% block title %}Petugas Meja SPMB - ASKA Insights{% endblock %}
+
+{% block portal_content %}
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+    <div>
+        <div class="text-muted small fw-semibold text-uppercase mb-1">Penugasan</div>
+        <h1 class="h4 fw-bold mb-1">Petugas Meja SPMB</h1>
+        <p class="text-muted mb-0">Atur petugas untuk meja 1 sampai 12 per tanggal layanan.</p>
+    </div>
+    <form method="get" action="{{ url_for('main.spmb_table_assignments') }}" class="d-flex gap-2">
+        <input type="date" name="date" class="form-control" value="{{ selected_date.isoformat() }}">
+        <button type="submit" class="btn btn-outline-primary text-nowrap">
+            <i class="bi bi-calendar3 me-1"></i>Lihat
+        </button>
+    </form>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <form method="post" action="{{ url_for('main.spmb_table_assignments') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <input type="hidden" name="assignment_date" value="{{ selected_date.isoformat() }}">
+
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+                <div>
+                    <h2 class="h6 fw-bold mb-0">Tanggal {{ selected_date.strftime('%d %b %Y') }}</h2>
+                    <div class="text-muted small">{{ officers|length }} user dashboard tersedia sebagai petugas.</div>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-save me-1"></i>Simpan Pengaturan
+                </button>
+            </div>
+
+            <div class="row g-3">
+                {% for item in assignments %}
+                <div class="col-xl-3 col-lg-4 col-md-6">
+                    <div class="border rounded-3 p-3 h-100 bg-body">
+                        <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                            <div class="fw-bold">Meja {{ item.table_number }}</div>
+                            {% if item.officer_user_id %}
+                            <span class="badge text-bg-success">Terisi</span>
+                            {% else %}
+                            <span class="badge text-bg-light border text-muted">Kosong</span>
+                            {% endif %}
+                        </div>
+                        <select name="officer_{{ item.table_number }}" class="form-select form-select-sm">
+                            <option value="">Tidak ada petugas</option>
+                            {% for officer in officers %}
+                            <option value="{{ officer.id }}" {% if officer.id == item.officer_user_id %}selected{% endif %}>
+                                {{ officer.full_name or officer.email }}{% if officer.role %} - {{ officer.role }}{% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        {% if item.updated_at %}
+                        <div class="small text-muted mt-2">
+                            Diperbarui {{ item.updated_at|jakarta('%d %b %H:%M') }}
+                            {% if item.updated_by_name %}oleh {{ item.updated_by_name }}{% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="d-flex justify-content-end mt-4">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-save me-1"></i>Simpan Pengaturan
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

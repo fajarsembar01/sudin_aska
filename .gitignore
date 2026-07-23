@@ -7,7 +7,7 @@ venv_py39/
 .venv/
 .env
 .env.*
-
+.server
 # Cache & pyc
 __pycache__/
 *.pyc
@@ -25,6 +25,8 @@ Thumbs.db
 *.swp
 *.swo
 
+.kiro
+tests
 # Log & PID files
 *.log
 *.pid
@@ -76,3 +78,7 @@ twitter_posts.txt
 
 # Agent config (Gemini/Antigravity)
 .agent/
+.wa_cc_session_a
+
+# WhatsApp CC session aska
+.wa_cc_session_aska/

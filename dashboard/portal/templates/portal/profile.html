@@ -111,6 +111,46 @@
                             <input type="tel" name="whatsapp_number" class="form-control"
                                 value="{{ profile.whatsapp_number or '' }}" placeholder="08123456789">
                         </div>
+                        {% if current_user and current_user.role == 'staff' %}
+                        <div class="mb-3 border rounded-3 p-3">
+                            <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
+                                <div>
+                                    <h6 class="fw-semibold mb-1">
+                                        <i class="bi bi-person-badge me-2"></i>Akun Sosmed Supporter
+                                    </h6>
+                                    <div class="text-muted small">
+                                        Instagram dan TikTok wajib untuk fitur Supporter.
+                                    </div>
+                                </div>
+                                {% if profile.supporter_profile_complete %}
+                                <span class="badge text-bg-success">Lengkap</span>
+                                {% else %}
+                                <span class="badge text-bg-warning">Belum lengkap</span>
+                                {% endif %}
+                            </div>
+                            <div class="row g-2">
+                                {% for key, label, required in supporter_social_fields %}
+                                <div class="col-md-6">
+                                    <label class="form-label small mb-1">
+                                        {{ label }}{% if required %} <span class="text-danger">*</span>{% endif %}
+                                    </label>
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text">@</span>
+                                        <input type="text" name="supporter_social_{{ key }}" class="form-control"
+                                            value="{{ (profile.supporter_socials.get(key) or '')|replace('@', '') }}"
+                                            placeholder="username {{ label }}" autocomplete="off">
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="mb-3">
+                            <label class="form-label">Username/Akun Sosmed (Supporter)</label>
+                            <input type="text" name="social_username" class="form-control"
+                                value="{{ profile.social_username or '' }}" placeholder="@username">
+                        </div>
+                        {% endif %}
                         <div class="d-flex gap-2">
                             <a href="{{ url_for('portal.home') }}" class="btn btn-light w-50">Batal</a>
                             <button type="submit" class="btn btn-primary w-50">

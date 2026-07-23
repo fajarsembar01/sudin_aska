@@ -1,0 +1,158 @@
+name: 🧠 Build Kecerdasan ASKA & Deploy ke Server
+
+on:
+  workflow_dispatch:  # hanya jalan jika dipicu manual dari GitHub Actions UI
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true  # fix Node.js deprecation warning
+
+jobs:
+  build-and-deploy:
+    name: Build Vectorstore & Sync ke Server
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout repo
+        uses: actions/checkout@v4
+
+      - name: 🐍 Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: 📦 Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install \
+            "langchain==0.3.25" \
+            "langchain-community==0.3.23" \
+            "langchain-openai==0.3.18" \
+            "langchain-huggingface==0.1.2" \
+            "faiss-cpu==1.9.0" \
+            "sentence-transformers==3.4.1" \
+            "python-dotenv==1.0.1" \
+            "openai==1.79.0"
+
+      - name: 🧠 Build FAISS Vectorstore
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ASKA_EMBEDDING_BACKEND: openai
+          ASKA_EMBEDDING_MODEL: text-embedding-3-large
+          ASKA_EMBEDDING_BATCH_SIZE: "64"
+          ASKA_ALLOW_REMOTE_EMBEDDING_REINDEX: "1"
+          ASKA_VECTORSTORE_PATH: .aska_vectorstore
+          ASKA_VECTORSTORE_INDEX: kecerdasan
+          ASKA_CHUNK_SIZE: "2000"
+          ASKA_CHUNK_OVERLAP: "200"
+          ASKA_RETRIEVAL_MAX_K: "10"
+          ASKA_RETRIEVAL_MIN_SCORE: "0.35"
+          # LLM key (hanya untuk inisialisasi chain, tidak dipakai embed)
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: |
+          echo "🚀 Memulai proses embedding kecerdasan ASKA..."
+          python - <<'EOF'
+          import sys, os
+          sys.path.insert(0, '.')
+          from knowledge_loader import load_kecerdasan
+          from langchain_openai import OpenAIEmbeddings
+          from langchain_community.vectorstores import FAISS
+          from langchain.text_splitter import RecursiveCharacterTextSplitter
+          import hashlib, json
+          from pathlib import Path
+
+          # Load konten
+          content = load_kecerdasan()
+          print(f"✅ Konten dimuat: {len(content):,} karakter")
+
+          # Split
+          splitter = RecursiveCharacterTextSplitter(
+              chunk_size=int(os.getenv("ASKA_CHUNK_SIZE", "2000")),
+              chunk_overlap=int(os.getenv("ASKA_CHUNK_OVERLAP", "200")),
+              separators=["\n|", "\n## ", "\n\n", "\n", " ", ""],
+              keep_separator=True,
+          )
+          docs = splitter.create_documents([content])
+          print(f"📄 Jumlah chunk: {len(docs)}")
+
+          # Embed
+          embedding = OpenAIEmbeddings(
+              model=os.getenv("ASKA_EMBEDDING_MODEL", "text-embedding-3-large"),
+              openai_api_key=os.getenv("OPENAI_API_KEY"),
+              chunk_size=int(os.getenv("ASKA_EMBEDDING_BATCH_SIZE", "64")),
+          )
+          vectorstore = FAISS.from_documents(docs, embedding)
+          print("🧠 Embedding selesai!")
+
+          # Simpan cache
+          cache_root = Path(os.getenv("ASKA_VECTORSTORE_PATH", ".aska_vectorstore"))
+          index_name = os.getenv("ASKA_VECTORSTORE_INDEX", "kecerdasan")
+          cache_dir = cache_root / index_name
+          metadata_path = cache_root / f"{index_name}.meta.json"
+          cache_dir.parent.mkdir(parents=True, exist_ok=True)
+          vectorstore.save_local(str(cache_dir))
+          doc_hash = hashlib.sha256(content.encode("utf-8")).hexdigest()
+          metadata_path.write_text(json.dumps({
+              "doc_hash": doc_hash,
+              "chunk_size": int(os.getenv("ASKA_CHUNK_SIZE", "2000")),
+              "chunk_overlap": int(os.getenv("ASKA_CHUNK_OVERLAP", "200")),
+              "embedding_signature": {
+                  "provider": "openai",
+                  "model": os.getenv("ASKA_EMBEDDING_MODEL", "text-embedding-3-large"),
+                  "api_base": "https://api.openai.com/v1",
+              },
+          }, indent=2))
+          print(f"💾 Cache tersimpan di: {cache_dir}")
+          EOF
+
+      - name: 🔑 Setup SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_PRIVATE_KEY }}
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+        run: |
+          mkdir -p ~/.ssh
+          # Tulis key via env var agar newline tidak rusak
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          # Verifikasi key valid
+          ssh-keygen -l -f ~/.ssh/id_ed25519
+          # Config SSH
+          cat >> ~/.ssh/config <<EOF
+          Host ${SERVER_HOST}
+            StrictHostKeyChecking no
+            UserKnownHostsFile /dev/null
+            IdentityFile ~/.ssh/id_ed25519
+          EOF
+
+      - name: 📦 Sync kode runtime ke server
+        run: |
+          rsync -avz --progress \
+            ai_core.py \
+            handlers.py \
+            knowledge_loader.py \
+            utils.py \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_PROJECT_PATH }}/
+          rsync -avz --progress \
+            responses/ \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_PROJECT_PATH }}/responses/
+          rsync -avz --progress \
+            web_aska/handlers.py \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_PROJECT_PATH }}/web_aska/handlers.py
+
+      - name: 📤 Sync vectorstore ke server
+        run: |
+          # Sync vectorstore (hasil embedding)
+          rsync -avz --progress --delete \
+            .aska_vectorstore/ \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_PROJECT_PATH }}/.aska_vectorstore/
+          # Sync kecerdasan/ agar doc_hash cocok di server
+          rsync -avz --progress --delete \
+            kecerdasan/ \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_PROJECT_PATH }}/kecerdasan/
+
+      - name: 🔄 Reload ASKA di server
+        run: |
+          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
+            "cd ${{ secrets.SERVER_PROJECT_PATH }} && \
+             echo '✅ Vectorstore diperbarui!' && \
+             (sudo systemctl restart aska 2>/dev/null || pm2 restart aska 2>/dev/null || echo '⚠️ Restart manual diperlukan')"

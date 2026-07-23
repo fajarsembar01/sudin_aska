@@ -399,6 +399,16 @@
                 </div>
             </div>
             <div class="modal-body p-0">
+                <div class="p-3 border-bottom d-none" id="cameraDeviceSelectWrap"
+                    style="background-color: var(--bg-subtle);">
+                    <label class="form-label small fw-semibold mb-1" for="cameraDeviceSelect">
+                        <i class="bi bi-camera-video me-1"></i>Sumber kamera
+                    </label>
+                    <select class="form-select form-select-sm" id="cameraDeviceSelect"
+                        aria-label="Pilih sumber kamera"></select>
+                    <div class="form-text">Di Mac, gunakan Safari lalu pilih kamera iPhone yang tersedia melalui
+                        Continuity Camera.</div>
+                </div>
                 <video id="cameraPreview" autoplay playsinline
                     style="width: 100%; max-height: 60vh; object-fit: cover;"></video>
                 <div class="p-3 small d-flex align-items-center gap-2" id="locationInfo"
@@ -466,6 +476,7 @@
             </div>
             <div class="modal-body">
                 <p class="mb-2">Persyaratan submit belum terpenuhi:</p>
+                <p class="small text-muted mb-2">Klik nama aspek untuk langsung menuju lokasi aspek yang belum dinilai.</p>
                 <ul class="mb-0 ps-3 small" id="submitRequirementList"></ul>
             </div>
             <div class="modal-footer">
@@ -502,6 +513,17 @@
         display: flex;
         align-items: center;
         gap: 0.35rem;
+    }
+
+    .aspect-item {
+        scroll-margin-top: 88px;
+    }
+
+    .aspect-item.aspect-item-highlight {
+        background: rgba(13, 110, 253, 0.08);
+        border-radius: 12px;
+        box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.15);
+        transition: background-color 0.2s ease, box-shadow 0.2s ease;
     }
 
     .room-score-badge {
@@ -742,6 +764,41 @@
         .room-body {
             padding: 0.75rem 0.85rem;
         }
+
+        .assessment-page .aspect-item>.d-flex {
+            flex-wrap: nowrap !important;
+            align-items: flex-start !important;
+            gap: 0.75rem !important;
+        }
+
+        .assessment-page .aspect-item>.d-flex>.flex-grow-1 {
+            min-width: 0;
+        }
+
+        .assessment-page .aspect-name {
+            display: -webkit-box;
+            margin-bottom: 0;
+            overflow: hidden;
+            overflow-wrap: anywhere;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 2;
+            line-height: 1.25;
+        }
+
+        .assessment-page .aspect-name+.btn {
+            flex: 0 0 auto;
+        }
+
+        .assessment-page .score-group {
+            flex: 0 0 auto;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .assessment-page .score-btn {
+            min-width: 38px;
+            height: 40px;
+        }
     }
 </style>
 
@@ -757,6 +814,7 @@
     var currentAddress = null;
     var cameraStream = null;
     var useFrontCamera = false;
+    var selectedCameraDeviceId = '';
     var noteTimeout = null;
     var requiredPhotoCount = {{ photo_min_required }};
     var maxPhotoCount = {{ photo_max_allowed }};
@@ -903,6 +961,76 @@
             cameraStream.getTracks().forEach(function (track) { track.stop(); });
             cameraStream = null;
         }
+    }
+
+    function buildCameraConstraints() {
+        if (selectedCameraDeviceId) {
+            return { video: { deviceId: { exact: selectedCameraDeviceId } }, audio: false };
+        }
+        return { video: { facingMode: { ideal: useFrontCamera ? 'user' : 'environment' } }, audio: false };
+    }
+
+    function getCameraNotFoundMessage() {
+        var userAgent = navigator.userAgent || '';
+        var isMac = /Macintosh|Mac OS X/i.test(userAgent);
+        var isChromium = /Chrome|Chromium|CriOS|Edg|OPR/i.test(userAgent);
+        if (isMac && isChromium) {
+            return 'Chrome tidak menemukan kamera iPhone di Mac. Buka halaman ini di Safari, izinkan kamera, lalu pilih kamera iPhone.';
+        }
+        if (isMac) {
+            return 'Kamera tidak ditemukan. Pastikan iPhone terkunci, dekat dengan Mac, serta Wi-Fi dan Bluetooth aktif.';
+        }
+        return 'Kamera tidak ditemukan di perangkat ini.';
+    }
+
+    function refreshCameraDeviceOptions(stream) {
+        var wrapEl = document.getElementById('cameraDeviceSelectWrap');
+        var selectEl = document.getElementById('cameraDeviceSelect');
+        if (!wrapEl || !selectEl || !navigator.mediaDevices
+            || typeof navigator.mediaDevices.enumerateDevices !== 'function') {
+            return Promise.resolve([]);
+        }
+
+        var activeTrack = stream && typeof stream.getVideoTracks === 'function'
+            ? stream.getVideoTracks()[0]
+            : null;
+        var activeSettings = activeTrack && typeof activeTrack.getSettings === 'function'
+            ? activeTrack.getSettings()
+            : {};
+        var activeDeviceId = activeSettings.deviceId || '';
+
+        return navigator.mediaDevices.enumerateDevices()
+            .then(function (devices) {
+                var cameraDevices = devices.filter(function (device) {
+                    return device.kind === 'videoinput';
+                });
+                selectEl.innerHTML = '';
+                cameraDevices.forEach(function (device, index) {
+                    var option = document.createElement('option');
+                    option.value = device.deviceId;
+                    option.textContent = device.label || ('Kamera ' + (index + 1));
+                    selectEl.appendChild(option);
+                });
+
+                if (activeDeviceId) {
+                    selectedCameraDeviceId = activeDeviceId;
+                }
+                var hasSelectedCamera = cameraDevices.some(function (device) {
+                    return device.deviceId === selectedCameraDeviceId;
+                });
+                if (!hasSelectedCamera && cameraDevices.length) {
+                    selectedCameraDeviceId = cameraDevices[0].deviceId;
+                }
+                if (selectedCameraDeviceId) {
+                    selectEl.value = selectedCameraDeviceId;
+                }
+                wrapEl.classList.toggle('d-none', cameraDevices.length < 2);
+                return cameraDevices;
+            })
+            .catch(function () {
+                wrapEl.classList.add('d-none');
+                return [];
+            });
     }
 
     function formatPhotoCapturedAt(rawCapturedAt) {
@@ -1291,14 +1419,78 @@
     }
 
 
-    function hasUnscoredAspect() {
+    function getUnscoredAspectItems() {
         var groups = document.querySelectorAll('.score-group');
+        var missing = [];
         for (var i = 0; i < groups.length; i++) {
             if (!groups[i].querySelector('.score-btn.selected')) {
-                return true;
+                var roomItem = groups[i].closest('.room-item');
+                var aspectItem = groups[i].closest('.aspect-item');
+                var roomTitle = roomItem ? roomItem.querySelector('.room-header h5') : null;
+                var aspectNameEl = aspectItem ? aspectItem.querySelector('.aspect-name') : null;
+                missing.push({
+                    roomId: groups[i].dataset.schoolRoomId || '',
+                    roomName: roomTitle ? roomTitle.textContent.trim() : '',
+                    aspectId: groups[i].dataset.aspectId || '',
+                    aspectName: aspectNameEl ? aspectNameEl.textContent.trim() : ''
+                });
             }
         }
-        return false;
+        return missing;
+    }
+
+    function clearRoomSearchFilter() {
+        var searchInput = document.getElementById('roomSearchAssessment');
+        if (searchInput && searchInput.value) {
+            searchInput.value = '';
+            searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+    }
+
+    function highlightAspectItem(aspectEl) {
+        if (!aspectEl) return;
+        aspectEl.classList.add('aspect-item-highlight');
+        window.setTimeout(function () {
+            aspectEl.classList.remove('aspect-item-highlight');
+        }, 2200);
+    }
+
+    function openAssessmentAspect(roomId, aspectId) {
+        if (!roomId || !aspectId) return;
+
+        clearRoomSearchFilter();
+
+        var roomCollapse = document.getElementById('room' + roomId);
+        var aspectEl = document.getElementById('aspect-room-' + roomId + '-' + aspectId);
+        var roomHeader = roomCollapse ? roomCollapse.previousElementSibling : null;
+
+        var scrollToAspect = function () {
+            if (!aspectEl) return;
+            highlightAspectItem(aspectEl);
+            aspectEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        };
+
+        if (roomCollapse && window.bootstrap && window.bootstrap.Collapse) {
+            if (roomCollapse.classList.contains('show')) {
+                scrollToAspect();
+                return;
+            }
+
+            roomCollapse.addEventListener('shown.bs.collapse', function onShown() {
+                roomCollapse.removeEventListener('shown.bs.collapse', onShown);
+                window.setTimeout(scrollToAspect, 50);
+            });
+            bootstrap.Collapse.getOrCreateInstance(roomCollapse, { toggle: false }).show();
+            if (roomHeader && typeof roomHeader.scrollIntoView === 'function') {
+                roomHeader.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+            return;
+        }
+
+        if (roomCollapse) {
+            roomCollapse.classList.add('show');
+        }
+        scrollToAspect();
     }
 
     updatePhotoRequirementUI();
@@ -1339,7 +1531,8 @@
                 }
 
                 var missingPhoto = requiredPhotoCount > 0 && photoRoomSet.size < requiredPhotoCount;
-                var missingScore = hasUnscoredAspect();
+                var missingScoreItems = getUnscoredAspectItems();
+                var missingScore = missingScoreItems.length > 0;
                 if (missingPhoto || missingScore) {
                     event.preventDefault();
                     var listEl = document.getElementById('submitRequirementList');
@@ -1352,9 +1545,37 @@
                             listEl.appendChild(liPhoto);
                         }
                         if (missingScore) {
-                            var liScore = document.createElement('li');
-                            liScore.textContent = 'Terdapat aspek yang masih belum dinilai.';
-                            listEl.appendChild(liScore);
+                            var liScoreSummary = document.createElement('li');
+                            liScoreSummary.textContent =
+                                'Terdapat ' + missingScoreItems.length + ' aspek yang masih belum dinilai.';
+                            listEl.appendChild(liScoreSummary);
+
+                            missingScoreItems.forEach(function (item) {
+                                var liScore = document.createElement('li');
+                                liScore.className = 'mt-1';
+
+                                var link = document.createElement('a');
+                                link.href = '#aspect-room-' + item.roomId + '-' + item.aspectId;
+                                link.className = 'link-primary text-decoration-underline';
+                                link.textContent = (item.roomName ? item.roomName + ' - ' : '') + item.aspectName;
+                                link.addEventListener('click', function (linkEvent) {
+                                    linkEvent.preventDefault();
+                                    var modalEl = document.getElementById('photoRequirementModal');
+                                    if (modalEl && window.bootstrap && window.bootstrap.Modal) {
+                                        var modalInstance = bootstrap.Modal.getInstance(modalEl);
+                                        if (modalInstance) {
+                                            modalInstance.hide();
+                                        }
+                                    }
+                                    window.setTimeout(function () {
+                                        openAssessmentAspect(item.roomId, item.aspectId);
+                                    }, 150);
+                                });
+
+                                liScore.appendChild(document.createTextNode('Aspek belum dinilai: '));
+                                liScore.appendChild(link);
+                                listEl.appendChild(liScore);
+                            });
                         }
                     }
                     if (window.bootstrap) {
@@ -1372,7 +1593,7 @@
                         );
                     }
                     if (missingScore) {
-                        fallbackMessages.push('Terdapat ruangan yang masih belum dinilai.');
+                        fallbackMessages.push('Terdapat ' + missingScoreItems.length + ' aspek yang masih belum dinilai.');
                     }
                     showToast(fallbackMessages.join(' '));
                     return;
@@ -1719,7 +1940,7 @@
         var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
         modal.show();
 
-        var constraints = { video: { facingMode: { ideal: useFrontCamera ? 'user' : 'environment' } }, audio: false };
+        var constraints = buildCameraConstraints();
         if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
             if (!window.isSecureContext) {
                 showToast('Akses kamera live wajib HTTPS. Upload dari folder dinonaktifkan.');
@@ -1733,12 +1954,13 @@
                 if (typeof videoEl.play === 'function') {
                     videoEl.play().catch(function () { });
                 }
+                refreshCameraDeviceOptions(stream);
             };
             var handleCameraError = function (err) {
                 var msg = 'Tidak bisa mengakses kamera live. Upload dari folder dinonaktifkan.';
                 if (err && err.name) {
                     if (err.name === 'NotAllowedError') msg = 'Izin kamera ditolak. Aktifkan izin kamera di browser lalu coba lagi.';
-                    else if (err.name === 'NotFoundError') msg = 'Kamera tidak ditemukan di perangkat ini.';
+                    else if (err.name === 'NotFoundError') msg = getCameraNotFoundMessage();
                     else if (err.name === 'NotReadableError') msg = 'Kamera sedang dipakai aplikasi lain.';
                     else if (err.name === 'OverconstrainedError') msg = 'Kamera tidak memenuhi kebutuhan aplikasi.';
                     else if (err.name === 'SecurityError') msg = 'Browser butuh HTTPS untuk mengakses kamera.';
@@ -1831,11 +2053,26 @@
         stopCameraStream();
     });
 
-    document.getElementById('switchCameraBtn').addEventListener('click', function () {
-        useFrontCamera = !useFrontCamera;
+    document.getElementById('cameraDeviceSelect').addEventListener('change', function () {
+        selectedCameraDeviceId = this.value || '';
         stopCameraStream();
         openCameraModal(currentRoomId || 0);
     });
+
+    document.getElementById('switchCameraBtn').addEventListener('click', function () {
+        useFrontCamera = !useFrontCamera;
+        selectedCameraDeviceId = '';
+        stopCameraStream();
+        openCameraModal(currentRoomId || 0);
+    });
+
+    if (navigator.mediaDevices && typeof navigator.mediaDevices.addEventListener === 'function') {
+        navigator.mediaDevices.addEventListener('devicechange', function () {
+            if (cameraStream) {
+                refreshCameraDeviceOptions(cameraStream);
+            }
+        });
+    }
 
     function takePhoto() {
         var video = document.getElementById('cameraPreview');

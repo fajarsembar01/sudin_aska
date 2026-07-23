@@ -1,0 +1,236 @@
+{% extends "laporan/base_laporan.html" %}
+{% set page_title = "Manajemen Form Laporan" %}
+
+{% block portal_content %}
+<section class="mb-4">
+    <div class="card portal-hero border-0 shadow-sm">
+        <div class="card-body">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                <div>
+                    <h1 class="h3 fw-bold page-title mb-1">Form Laporan</h1>
+                    <p class="page-subtitle mb-0">Kelola form laporan yang dikirimkan ke sekolah</p>
+                </div>
+                <a href="{{ url_for('laporan.admin_laporan_create') }}"
+                    class="btn btn-primary d-inline-flex align-items-center gap-2">
+                    <i class="bi bi-plus-lg"></i> Buat Form Baru
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% if not forms %}
+<div class="text-center py-5">
+    <div class="mb-3" style="font-size:3rem;opacity:0.3;"><i class="bi bi-file-earmark-plus"></i></div>
+    <p class="text-muted mb-3">Belum ada form laporan yang dibuat.</p>
+    <a href="{{ url_for('laporan.admin_laporan_create') }}" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-1"></i>Buat Form Pertama
+    </a>
+</div>
+{% else %}
+<div class="row g-3">
+    {% for f in forms %}
+    <div class="col-12 col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
+                    <div>
+                        <h2 class="h6 fw-bold mb-0">{{ f.title }}</h2>
+                        {% if f.description %}
+                        <p class="text-muted small mb-0">{{ f.description | truncate(80) }}</p>
+                        {% endif %}
+                    </div>
+                    {% if f.status == 'draft' %}
+                    <span class="badge bg-warning-subtle text-warning flex-shrink-0">Draft</span>
+                    {% elif f.is_paused %}
+                    <span class="badge bg-warning-subtle text-warning flex-shrink-0">
+                        <i class="bi bi-pause-circle me-1"></i>Dipause
+                    </span>
+                    {% elif f.is_active %}
+                    <span class="badge bg-success-subtle text-success flex-shrink-0">Aktif</span>
+                    {% else %}
+                    <span class="badge bg-secondary-subtle text-secondary flex-shrink-0">Nonaktif</span>
+                    {% endif %}
+                </div>
+
+                <div class="d-flex flex-wrap gap-3 text-muted small mb-3">
+                    <span>
+                        <i class="bi bi-people me-1"></i>
+                        Target:
+                        {% if f.status == 'draft' %}Belum diterbitkan
+                        {% elif f.target_scope == 'all' %}Semua Sekolah
+                        {% elif f.target_scope == 'jenjang' %}Jenjang {{ f.target_jenjang }}
+                        {% else %}Sekolah Tertentu
+                        {% endif %}
+                    </span>
+                    {% if f.status != 'draft' %}
+                    <span>
+                        <i class="bi bi-send me-1"></i>{{ f.submission_count }} jawaban masuk
+                    </span>
+                    {% endif %}
+                    {% if f.period_deadline_str %}
+                    <span><i class="bi bi-calendar-event me-1"></i>Deadline periode: {{ f.period_deadline_str }}</span>
+                    {% elif f.deadline_at %}
+                    <span><i class="bi bi-calendar-event me-1"></i>{{ f.deadline_at.strftime('%d %b %Y') }}</span>
+                    {% endif %}
+                    <span>
+                        <i class="bi bi-arrow-repeat me-1"></i>
+                        {{ f.repeat_policy_label or ('Bisa diisi ulang' if f.allow_multiple else 'Sekali isi') }}
+                    </span>
+                    {% if f.repeat_until_str %}
+                    <span>
+                        <i class="bi bi-calendar-check me-1"></i>Sampai {{ f.repeat_until_str }}
+                    </span>
+                    {% endif %}
+                </div>
+
+                <div class="d-flex flex-wrap gap-2">
+                    {% if f.status == 'draft' %}
+                    <a href="{{ url_for('laporan.admin_laporan_edit', form_id=f.id) }}"
+                        class="btn btn-sm btn-warning d-inline-flex align-items-center gap-1">
+                        <i class="bi bi-pencil-square"></i> Lanjutkan Draft
+                    </a>
+                    {% else %}
+                    <a href="{{ url_for('laporan.admin_laporan_answers', form_id=f.id) }}"
+                        class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1">
+                        <i class="bi bi-table"></i> Jawaban ({{ f.submission_count }})
+                    </a>
+                    <a href="{{ url_for('laporan.admin_laporan_export', form_id=f.id) }}"
+                        class="btn btn-sm btn-outline-success d-inline-flex align-items-center gap-1">
+                        <i class="bi bi-file-earmark-excel"></i> Excel
+                    </a>
+                    <a href="{{ url_for('laporan.admin_laporan_edit', form_id=f.id) }}"
+                        class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1">
+                        <i class="bi bi-pencil"></i> Edit
+                    </a>
+                    <form method="POST" action="{{ url_for('laporan.admin_laporan_pause', form_id=f.id) }}"
+                        class="d-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        {% if f.is_paused %}
+                        <button type="submit"
+                            class="btn btn-sm btn-outline-success d-inline-flex align-items-center gap-1">
+                            <i class="bi bi-play-fill"></i> Unpause
+                        </button>
+                        {% else %}
+                        <button type="submit"
+                            class="btn btn-sm btn-outline-warning d-inline-flex align-items-center gap-1">
+                            <i class="bi bi-pause-fill"></i> Pause
+                        </button>
+                        {% endif %}
+                    </form>
+                    <button type="button"
+                        class="btn btn-sm btn-outline-dark d-inline-flex align-items-center gap-1"
+                        data-caption-id="shareCaption{{ f.id }}"
+                        onclick="copyCaption(this)">
+                        <i class="bi bi-clipboard"></i> Copy Caption
+                    </button>
+                    <button type="button"
+                        class="btn btn-sm btn-success d-inline-flex align-items-center gap-1"
+                        data-caption-id="shareCaption{{ f.id }}"
+                        onclick="shareWhatsapp(this)">
+                        <i class="bi bi-whatsapp"></i> Share WA
+                    </button>
+                    <textarea id="shareCaption{{ f.id }}" class="d-none">{{ f.share_caption | default('') }}</textarea>
+                    {% endif %}
+                    <button type="button" class="btn btn-sm btn-outline-danger d-inline-flex align-items-center gap-1"
+                        onclick="confirmDelete({{ f.id }}, '{{ f.title | e }}', {{ 'true' if f.status == 'draft' else 'false' }})">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent border-top text-muted small py-2 px-3">
+                {% if f.status == 'draft' %}Draft dibuat{% else %}Dibuat{% endif %}
+                oleh {{ f.created_by_name or '—' }} &bull; {{ f.created_at.strftime('%d %b %Y') }}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+{# Delete Modal #}
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Hapus Form</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Anda yakin ingin menghapus form <strong id="deleteFormTitle"></strong>?</p>
+                <p class="text-danger small" id="deleteFormWarning"><i class="bi bi-info-circle me-1"></i>Semua jawaban yang masuk juga akan ikut terhapus secara permanen.</p>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <form id="deleteForm" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-danger">Hapus</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block portal_scripts %}
+<script>
+function confirmDelete(formId, formTitle, isDraft) {
+    document.getElementById('deleteFormTitle').textContent = formTitle;
+    document.getElementById('deleteFormWarning').innerHTML = isDraft
+        ? '<i class="bi bi-info-circle me-1"></i>Draft ini akan dihapus permanen.'
+        : '<i class="bi bi-info-circle me-1"></i>Semua jawaban yang masuk juga akan ikut terhapus secara permanen.';
+    document.getElementById('deleteForm').action = '/laporan/admin/' + formId + '/delete';
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+
+function getCaption(button) {
+    var id = button.getAttribute('data-caption-id');
+    var source = id ? document.getElementById(id) : null;
+    return source ? source.value : '';
+}
+
+function setTemporaryButtonLabel(button, text, iconClass) {
+    var original = button.innerHTML;
+    button.innerHTML = '<i class="bi ' + iconClass + '"></i> ' + text;
+    window.setTimeout(function() {
+        button.innerHTML = original;
+    }, 1800);
+}
+
+function copyCaption(button) {
+    var caption = getCaption(button);
+    if (!caption) return;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(caption).then(function() {
+            setTemporaryButtonLabel(button, 'Tersalin', 'bi-check2');
+        }).catch(function() {
+            fallbackCopyCaption(button, caption);
+        });
+        return;
+    }
+    fallbackCopyCaption(button, caption);
+}
+
+function fallbackCopyCaption(button, caption) {
+    var textarea = document.createElement('textarea');
+    textarea.value = caption;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    try {
+        document.execCommand('copy');
+        setTemporaryButtonLabel(button, 'Tersalin', 'bi-check2');
+    } finally {
+        document.body.removeChild(textarea);
+    }
+}
+
+function shareWhatsapp(button) {
+    var caption = getCaption(button);
+    if (!caption) return;
+    window.open('https://wa.me/?text=' + encodeURIComponent(caption), '_blank', 'noopener,noreferrer');
+}
+</script>
+{% endblock %}

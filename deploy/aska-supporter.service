@@ -1,0 +1,17 @@
+[Unit]
+Description=ASKA Supporter Telegram Bot
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/sudin_aska
+EnvironmentFile=/opt/sudin_aska/.env
+ExecStart=/opt/sudin_aska/venv/bin/python bot_supporter.py
+Restart=always
+RestartSec=5
+# Avoid duplicate getUpdates pollers: only one instance may run per bot token.
+StartLimitIntervalSec=0
+
+[Install]
+WantedBy=multi-user.target

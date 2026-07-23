@@ -48,13 +48,13 @@ conn_kwargs = dict(
 if optional_sslmode:
     conn_kwargs["sslmode"] = optional_sslmode
 
-_POOL: pool.SimpleConnectionPool | None = None
+_POOL: pool.ThreadedConnectionPool | None = None
 
 
-def _get_pool() -> pool.SimpleConnectionPool:
+def _get_pool() -> pool.ThreadedConnectionPool:
     global _POOL
     if _POOL is None:
-        _POOL = pool.SimpleConnectionPool(
+        _POOL = pool.ThreadedConnectionPool(
             minconn=1,
             maxconn=int(os.getenv("DASHBOARD_DB_MAX_CONN", "8")),
             **conn_kwargs,
@@ -65,7 +65,8 @@ def _get_pool() -> pool.SimpleConnectionPool:
 @contextmanager
 def get_cursor(commit: bool = False) -> Generator[DictCursor, None, None]:
     """Yield a DictCursor from the shared connection pool."""
-    connection = _get_pool().getconn()
+    connection_pool = _get_pool()
+    connection = connection_pool.getconn()
     try:
         cursor = connection.cursor(cursor_factory=DictCursor)
         yield cursor
@@ -76,7 +77,7 @@ def get_cursor(commit: bool = False) -> Generator[DictCursor, None, None]:
         raise
     finally:
         cursor.close()
-        _POOL.putconn(connection)
+        connection_pool.putconn(connection)
 
 
 def shutdown_pool() -> None:

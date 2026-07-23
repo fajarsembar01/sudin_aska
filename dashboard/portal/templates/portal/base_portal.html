@@ -923,7 +923,7 @@
                     {% set coordinator_menu_endpoints = [
                     'portal.coordinator_dashboard',
                     'portal.view_my_team',
-                    'coordinator_assignment_requests'
+                    'portal.coordinator_assignment_requests'
                     ] %}
                     <!-- Coordinator: Kelola Tim dropdown -->
                     <li class="nav-item">
@@ -957,7 +957,7 @@
                         </ul>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'portal.coordinator_assessments' %}active{% endif %}"
+                        <a class="nav-link {% if request.endpoint in ['portal.coordinator_assessments', 'portal.assess', 'portal.view_assessment'] %}active{% endif %}"
                             href="{{ url_for('portal.coordinator_assessments') }}">
                             <i class="bi bi-list-check nav-icon"></i>Penilaian Saya
                         </a>
@@ -967,7 +967,7 @@
                     {% if current_user and current_user.role == 'staff' %}
                     <!-- Staff: Tugas Monev -->
                     <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'portal.staff_assignments' %}active{% endif %}"
+                        <a class="nav-link {% if request.endpoint in ['portal.staff_assignments', 'portal.assess', 'portal.view_assessment'] %}active{% endif %}"
                             href="{{ url_for('portal.staff_assignments') }}">
                             <i class="bi bi-list-check nav-icon"></i>Tugas Monev
                         </a>
@@ -987,6 +987,12 @@
                         <a class="nav-link {% if request.endpoint == 'portal.view_my_team' %}active{% endif %}"
                             href="{{ url_for('portal.view_my_team') }}">
                             <i class="bi bi-people nav-icon"></i>Tim Saya
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.blueprint == 'supporter' %}active{% endif %}"
+                            href="{{ url_for('supporter.staff_dashboard') }}">
+                            <i class="bi bi-megaphone nav-icon"></i>Supporter
                         </a>
                     </li>
                     {% endif %}
@@ -1009,11 +1015,11 @@
                     {% endif %} -->
 
                     {% if current_user and current_user.role == 'admin' %}
-                    <!-- Admin: Sekolah menu -->
+                    <!-- Admin: PANBERSS assessment menu -->
                     <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'portal.schools' %}active{% endif %}"
+                        <a class="nav-link {% if request.endpoint in ['portal.schools', 'portal.assess', 'portal.view_assessment'] %}active{% endif %}"
                             href="{{ url_for('portal.schools') }}">
-                            <i class="bi bi-mortarboard nav-icon"></i>Sekolah
+                            <i class="bi bi-list-check nav-icon"></i>Penilaian
                         </a>
                     </li>
                     <!-- Admin dropdown with new Kelola Staff -->
@@ -1033,6 +1039,12 @@
                             <li>
                                 <a class="dropdown-item" href="{{ url_for('portal.admin_periods') }}">
                                     <i class="bi bi-calendar-event me-2"></i>Periode Penilaian
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if request.endpoint == 'portal.admin_draft_analysis' %}active{% endif %}"
+                                    href="{{ url_for('portal.admin_draft_analysis') }}">
+                                    <i class="bi bi-clipboard-data me-2"></i>Cek Draft
                                 </a>
                             </li>
                             <li>
@@ -1163,7 +1175,7 @@
                     <div class="dropdown notification-menu" id="userGuestbookNotifRoot"
                         data-list-url="{{ url_for('portal.user_app_notifications') }}"
                         data-read-url="{{ url_for('portal.user_app_notifications_mark_read') }}"
-                        data-history-url="{% if current_user.role == 'sekolah' %}{{ url_for('daftar_tamu.sekolah_riwayat') }}{% else %}{{ url_for('portal.home') }}{% endif %}">
+                        data-history-url="{% if current_user.role == 'sekolah' %}{{ url_for('daftar_tamu.sekolah_riwayat') }}{% elif current_user.role in ['staff', 'coordinator'] %}{{ url_for('daftar_tamu.user_guestbook_history') }}{% else %}{{ url_for('portal.home') }}{% endif %}">
                         <button class="notification-toggle" type="button" data-bs-toggle="dropdown"
                             id="userGuestbookNotifToggle" aria-expanded="false" aria-label="Notifikasi pengguna">
                             <i class="bi bi-bell"></i>

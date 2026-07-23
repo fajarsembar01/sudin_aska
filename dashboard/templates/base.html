@@ -48,7 +48,7 @@
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     {% set bot_endpoints = ['main.chats', 'main.chat_thread', 'main.feedback', 'main.manage_knowledge',
                     'main.twitter_logs',
-                    'main.notif_logs', 'main.rag_debug_logs'] %}
+                    'main.notif_logs', 'main.rag_debug_logs', 'main.spmb_service_types', 'main.spmb_table_assignments'] %}
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle {% if request.endpoint in bot_endpoints %}active{% endif %}"
                             href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -73,6 +73,20 @@
                                     <i class="bi bi-journal-text me-2 text-primary"></i>Kecerdasan ASKA
                                 </a>
                             </li>
+                            {% if is_admin %}
+                            <li>
+                                <a class="dropdown-item {% if request.endpoint == 'main.spmb_service_types' %}active{% endif %}"
+                                    href="{{ url_for('main.spmb_service_types') }}">
+                                    <i class="bi bi-ui-checks-grid me-2 text-primary"></i>Jenis Pelayanan SPMB
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if request.endpoint == 'main.spmb_table_assignments' %}active{% endif %}"
+                                    href="{{ url_for('main.spmb_table_assignments') }}">
+                                    <i class="bi bi-person-workspace me-2 text-primary"></i>Petugas Meja SPMB
+                                </a>
+                            </li>
+                            {% endif %}
                             <li>
                                 <hr class="dropdown-divider">
                             </li>
@@ -143,6 +157,29 @@
                                 </a>
                             </li>
                             {% endif %}
+                        </ul>
+                    </li>
+                    {% endif %}
+
+                    {% if current_role in ['admin', 'coordinator', 'staff'] %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle {% if request.endpoint and request.endpoint.startswith('penugasan.') %}active{% endif %}"
+                            href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-megaphone nav-icon"></i>Penugasan
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item {% if request.endpoint == 'penugasan.spmb_queue_picker' %}active{% endif %}"
+                                    href="{{ url_for('penugasan.spmb_queue_picker') }}">
+                                    <i class="bi bi-list-ol me-2 text-primary"></i>Pilih Antrian
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if request.endpoint == 'penugasan.spmb_table_claim' %}active{% endif %}"
+                                    href="{{ url_for('penugasan.spmb_table_claim') }}">
+                                    <i class="bi bi-person-check me-2 text-primary"></i>Klaim Operator
+                                </a>
+                            </li>
                         </ul>
                     </li>
                     {% endif %}
@@ -222,8 +259,19 @@
                         </a>
                         <ul class="dropdown-menu">
                             <li>
+                                <a class="dropdown-item" href="{{ url_for('portal.schools') }}">
+                                    <i class="bi bi-list-check me-2"></i>Penilaian PANBERSS
+                                </a>
+                            </li>
+                            <li>
                                 <a class="dropdown-item" href="{{ url_for('portal.admin_stats') }}">
                                     <i class="bi bi-bar-chart me-2"></i>Statistik Penilaian
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if request.endpoint == 'portal.admin_draft_analysis' %}active{% endif %}"
+                                    href="{{ url_for('portal.admin_draft_analysis') }}">
+                                    <i class="bi bi-clipboard-data me-2"></i>Cek Draft
                                 </a>
                             </li>
                             <li>
@@ -248,6 +296,12 @@
                     </li>
                     {% endif %}
                     {% if current_role in ['coordinator', 'staff'] %}
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint in ['portal.coordinator_assessments', 'portal.staff_assignments', 'portal.assess', 'portal.view_assessment'] %}active{% endif %}"
+                            href="{{ url_for('portal.coordinator_assessments') if current_role == 'coordinator' else url_for('portal.staff_assignments') }}">
+                            <i class="bi bi-list-check nav-icon"></i>Penilaian PANBERSS
+                        </a>
+                    </li>
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'auth.view_my_team' %}active{% endif %}"
                             href="{{ url_for('auth.view_my_team') }}">

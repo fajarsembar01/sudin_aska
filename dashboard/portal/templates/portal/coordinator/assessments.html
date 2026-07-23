@@ -5,11 +5,123 @@
 {% block portal_content %}
 {% set periods_sorted = periods|default([]) | sort(attribute='start_date') %}
 
+<style>
+    .coordinator-assignment-card {
+        border: 1px solid rgba(13, 110, 253, 0.08);
+        border-radius: 1rem;
+    }
+
+    .coordinator-assignment-card .badge {
+        font-weight: 600;
+    }
+
+    .coordinator-assignment-actions form {
+        margin: 0;
+    }
+
+    .coordinator-assignment-filter {
+        min-width: 160px;
+    }
+
+    .coordinator-period-card {
+        border: 1px solid rgba(13, 110, 253, 0.15);
+    }
+
+    @media (max-width: 576px) {
+        .coordinator-request-btn {
+            justify-content: center;
+            width: 100%;
+        }
+
+        .coordinator-period-card {
+            padding: 0.75rem 0.9rem;
+        }
+
+        .coordinator-period-card .row {
+            row-gap: 0.5rem;
+        }
+
+        .coordinator-period-card .bi-calendar-event {
+            font-size: 1.2rem;
+        }
+    }
+</style>
+
+{% macro assessment_status(school) -%}
+    {% set is_history = not school.is_active_assignment %}
+    {% set status = school.history_assessment_status if is_history else school.last_assessment_status %}
+    {% if is_history %}
+    <span class="badge bg-dark"><i class="bi bi-clock-history"></i> Histori</span>
+    {% endif %}
+    {% if (not is_history and school.draft_assessment_id) or status == 'draft' %}
+    <span class="badge bg-warning text-dark"><i class="bi bi-pencil"></i> Draft</span>
+    {% elif status == 'verified' %}
+    <span class="badge bg-primary"><i class="bi bi-patch-check"></i> Terverifikasi</span>
+    {% elif status == 'submitted' %}
+    <span class="badge bg-success"><i class="bi bi-check-circle"></i> Selesai</span>
+    {% else %}
+    <span class="badge bg-secondary"><i class="bi bi-circle"></i> Belum Dinilai</span>
+    {% endif %}
+{%- endmacro %}
+
+{% macro assessment_actions(school, mobile=false, selected_period_id=none) -%}
+    {% set is_history = not school.is_active_assignment %}
+    <div class="coordinator-assignment-actions {% if mobile %}d-grid{% else %}d-flex flex-wrap{% endif %} gap-2">
+        {% if is_history and school.history_assessment_id %}
+        <a href="{{ url_for('portal.view_assessment', assessment_id=school.history_assessment_id) }}"
+            class="btn {% if not mobile %}btn-sm {% endif %}btn-outline-primary">
+            <i class="bi bi-eye"></i> Lihat Histori
+        </a>
+        {% elif school.draft_assessment_id %}
+        <a href="{{ url_for('portal.assess', school_id=school.school_id, assessment_id=school.draft_assessment_id) }}"
+            class="btn {% if not mobile %}btn-sm {% endif %}btn-warning start-assessment-btn"
+            data-has-draft="true">
+            <i class="bi bi-pencil-square"></i> Lanjutkan
+        </a>
+        <form action="{{ url_for('portal.delete_draft_route', assessment_id=school.draft_assessment_id) }}"
+            method="POST" onsubmit="return confirm('Hapus draft penilaian ini?');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit"
+                class="btn {% if not mobile %}btn-sm {% endif %}btn-outline-danger {% if mobile %}w-100{% endif %}"
+                title="Hapus Draft">
+                <i class="bi bi-trash"></i>{% if mobile %} Hapus Draft{% endif %}
+            </button>
+        </form>
+        {% elif school.last_assessment_status in ['submitted', 'verified'] and school.last_assessment_id %}
+        <a href="{{ url_for('portal.view_assessment', assessment_id=school.last_assessment_id) }}"
+            class="btn {% if not mobile %}btn-sm {% endif %}btn-outline-primary">
+            <i class="bi bi-box-arrow-up-right"></i> Lihat
+        </a>
+        {% if school.last_assessment_status == 'submitted' %}
+        <form method="POST" action="{{ url_for('portal.request_reopen', assessment_id=school.last_assessment_id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit"
+                class="btn {% if not mobile %}btn-sm {% endif %}btn-warning text-dark {% if mobile %}w-100{% endif %}">
+                <i class="bi bi-arrow-repeat"></i> Ajukan Reopen
+            </button>
+        </form>
+        {% endif %}
+        {% else %}
+        <a href="{{ url_for('portal.assess', school_id=school.school_id, period_id=selected_period_id) if selected_period_id else url_for('portal.assess', school_id=school.school_id) }}"
+            class="btn {% if not mobile %}btn-sm {% endif %}btn-primary start-assessment-btn"
+            data-has-draft="false">
+            <i class="bi bi-clipboard-check"></i> Mulai Penilaian
+        </a>
+        {% endif %}
+    </div>
+    {% if not is_history and school.old_draft_id and school.old_draft_id != school.draft_assessment_id %}
+    <a href="{{ url_for('portal.assess', school_id=school.school_id, assessment_id=school.old_draft_id) }}"
+        class="btn {% if not mobile %}btn-sm {% endif %}btn-outline-warning {% if mobile %}w-100{% endif %} mt-2">
+        <i class="bi bi-clock-history"></i> Lanjutkan draft {{ school.old_draft_period_name or 'bulan lalu' }}
+    </a>
+    {% endif %}
+{%- endmacro %}
+
 <section class="mb-4">
     <div class="card portal-hero border-0 shadow-sm">
         <div class="card-body">
             <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
-                <div class="d-flex align-items-start gap-3 flex-wrap">
+                <div class="d-flex align-items-start gap-3">
                     <span class="icon-badge feature-icon text-primary">
                         <i class="bi bi-clipboard2-check"></i>
                     </span>
@@ -18,157 +130,197 @@
                         <p class="page-subtitle mb-0">Mulai atau lanjutkan penilaian sekolah yang ditugaskan.</p>
                     </div>
                 </div>
-                <div class="d-flex gap-2 flex-wrap">
-                    <a href="{{ url_for('portal.coordinator_assignment_requests') }}"
-                        class="btn btn-outline-primary d-inline-flex align-items-center gap-2">
-                        <i class="bi bi-send"></i>
-                        <span>Ajukan Penugasan</span>
-                    </a>
-                    <a href="{{ url_for('portal.schools') }}"
-                        class="btn btn-primary d-inline-flex align-items-center gap-2">
-                        <i class="bi bi-plus-circle"></i>
-                        <span>Penilaian Baru</span>
-                    </a>
-                </div>
+                <a href="{{ url_for('portal.coordinator_assignment_requests') }}"
+                    class="btn btn-outline-primary d-inline-flex align-items-center gap-2 coordinator-request-btn">
+                    <i class="bi bi-send"></i>
+                    <span>Ajukan Penugasan</span>
+                </a>
             </div>
         </div>
     </div>
 </section>
 
-<section class="row g-3">
-    <div class="col-12">
-        <div class="card border-0 shadow-sm">
-            <div class="card-body">
-                <div class="alert alert-info d-flex align-items-center gap-3">
-                    <i class="bi bi-calendar-event fs-4 text-primary"></i>
-                    <div class="flex-grow-1">
-                        <div class="fw-semibold">Pilih periode untuk penilaian baru</div>
-                        <div class="small text-muted">
-                            {% if active_period_id %}
-                            Periode ini akan dipakai saat membuat draft baru. Draft yang sudah ada tetap menggunakan
-                            periode awalnya.
-                            {% else %}
-                            Tidak ada periode aktif, pilih periode sebelum mulai penilaian.
-                            {% endif %}
+<section>
+    <div class="card border-0 shadow-sm">
+        <div class="card-body">
+            <div class="alert alert-info coordinator-period-card">
+                <div class="row g-3 align-items-center">
+                    <div class="col-12 col-md">
+                        <div class="d-flex align-items-start gap-3">
+                            <i class="bi bi-calendar-event fs-4 text-primary"></i>
+                            <div>
+                                <div class="fw-semibold">Pilih periode</div>
+                                <div class="small text-muted d-none d-sm-block">
+                                    {% if active_period_id %}
+                                    Periode ini dipakai untuk draft baru. Draft yang sudah ada tetap menggunakan periode awalnya.
+                                    {% else %}
+                                    Tidak ada periode aktif, pilih periode sebelum mulai penilaian.
+                                    {% endif %}
+                                </div>
+                                <div class="small text-muted d-block d-sm-none">
+                                    {% if active_period_id %}Untuk draft baru.{% else %}Wajib pilih dulu.{% endif %}
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div style="min-width: 240px;">
-                        <select id="periodSelect" class="form-select form-select-sm border-primary text-primary">
+                    <div class="col-12 col-md-auto">
+                        <select id="periodSelect" class="form-select form-select-sm border-primary text-primary"
+                            aria-label="Periode penilaian">
                             <option value="" {% if not selected_period_id %}selected{% endif %}>
                                 {% if active_period_id %}Periode aktif (default){% else %}-- Pilih periode --{% endif %}
                             </option>
                             {% for p in periods_sorted %}
-                            <option value="{{ p.id }}" {% if selected_period_id and selected_period_id==p.id %}selected{% endif %}>
+                            <option value="{{ p.id }}" {% if selected_period_id and selected_period_id == p.id %}selected{% endif %}>
                                 {{ p.name }}
                             </option>
                             {% endfor %}
                         </select>
                     </div>
                 </div>
+            </div>
 
-                {% if assigned_schools %}
-                <p class="text-muted mb-2">
-                    Anda memiliki <strong>{{ assigned_schools|length }}</strong> sekolah yang ditugaskan.
-                </p>
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle">
-                        <thead class="table-light">
-                            <tr>
-                                <th>No</th>
-                                <th>NPSN</th>
-                                <th>Nama Sekolah</th>
-                                <th>Jenjang</th>
-                                <th>Kecamatan</th>
-                                <th>Periode</th>
-                                <th>Status</th>
-                                <th>Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for school in assigned_schools %}
-                            {% set period_label = school.draft_period_name or school.last_period_name or 'Periode aktif' %}
-                            <tr>
-                                <td>{{ loop.index }}</td>
-                                <td>{{ school.npsn }}</td>
-                                <td class="fw-semibold">{{ school.school_name }}</td>
-                                <td><span class="badge bg-info">{{ school.jenjang }}</span></td>
-                                <td>{{ school.kecamatan_name or '-' }}</td>
-                                <td>
-                                    <span class="badge bg-secondary">{{ period_label }}</span>
-                                    {% if not (school.draft_period_name or school.last_period_name) %}
-                                    <div class="small text-muted">Mengikuti periode aktif saat dibuat</div>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if school.draft_assessment_id %}
-                                    <span class="badge bg-warning text-dark"><i class="bi bi-pencil"></i> Draft</span>
-                                    {% elif school.last_assessment_status == 'verified' %}
-                                    <span class="badge bg-primary"><i class="bi bi-patch-check"></i> Terverifikasi</span>
-                                    {% elif school.last_assessment_status == 'submitted' %}
-                                    <span class="badge bg-success"><i class="bi bi-check-circle"></i> Selesai</span>
-                                    {% else %}
-                                    <span class="badge bg-secondary"><i class="bi bi-circle"></i> Belum Dinilai</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if school.draft_assessment_id %}
-                                    <div class="d-flex gap-2">
-                                        <a href="{{ url_for('portal.assess', school_id=school.school_id, assessment_id=school.draft_assessment_id) }}"
-                                            class="btn btn-sm btn-warning start-assessment-btn" data-has-draft="true">
-                                            <i class="bi bi-pencil-square"></i> Lanjutkan
-                                        </a>
-                                        <form action="{{ url_for('portal.delete_draft_route', assessment_id=school.draft_assessment_id) }}"
-                                            method="POST"
-                                            onsubmit="return confirm('Hapus draft penilaian untuk {{ school.school_name }}?');">
-                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Hapus Draft">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </form>
-                                    </div>
-                                    {% elif school.last_assessment_status in ['submitted', 'verified'] and school.last_assessment_id %}
-                                    <div class="d-flex gap-2">
-                                        <a href="{{ url_for('portal.view_assessment', assessment_id=school.last_assessment_id) }}"
-                                            class="btn btn-sm btn-outline-primary">
-                                            <i class="bi bi-box-arrow-up-right"></i> Lihat
-                                        </a>
-                                        {% if school.last_assessment_status == 'submitted' %}
-                                        <form method="POST"
-                                            action="{{ url_for('portal.request_reopen', assessment_id=school.last_assessment_id) }}">
-                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                            <button type="submit" class="btn btn-sm btn-warning text-dark">
-                                                <i class="bi bi-arrow-repeat"></i> Ajukan Reopen
-                                            </button>
-                                        </form>
-                                        {% endif %}
-                                    </div>
-                                    {% else %}
-                                    <a href="{{ url_for('portal.assess', school_id=school.school_id) }}"
-                                        class="btn btn-sm btn-primary start-assessment-btn" data-has-draft="false">
-                                        <i class="bi bi-clipboard-check"></i> Mulai Penilaian
-                                    </a>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                {% else %}
-                <div class="alert alert-info mb-0" role="alert">
-                    <div class="d-flex align-items-center gap-3">
-                        <i class="bi bi-info-circle fs-2 text-primary"></i>
-                        <div>
-                            <h6 class="fw-semibold mb-1">Belum ada penugasan</h6>
-                            <p class="mb-2 small">Ajukan penugasan ke admin atau pilih sekolah dari daftar untuk mengajukan.</p>
-                            <a href="{{ url_for('portal.coordinator_assignment_requests') }}" class="btn btn-sm btn-outline-primary">
-                                Ajukan Penugasan
-                            </a>
-                        </div>
+            {% if assigned_schools %}
+            {% set active_assignment_count = assigned_schools|selectattr('is_active_assignment')|list|length %}
+            {% set history_assignment_count = assigned_schools|rejectattr('is_active_assignment')|list|length %}
+            <p class="text-muted mb-2">
+                Anda memiliki <strong>{{ active_assignment_count }}</strong> sekolah aktif yang ditugaskan.
+                {% if history_assignment_count %}
+                <span class="ms-1">{{ history_assignment_count }} sekolah lama tetap tampil sebagai histori baca-saja.</span>
+                {% endif %}
+            </p>
+
+            <div class="row g-2 align-items-center mb-3">
+                <div class="col-12 col-md-6">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input type="search" id="coordinatorAssignmentSearch" class="form-control"
+                            placeholder="Cari sekolah, NPSN, kecamatan, alamat..."
+                            aria-label="Cari sekolah yang ditugaskan">
+                        <button class="btn btn-outline-secondary" type="button" id="coordinatorAssignmentSearchClear">
+                            Reset
+                        </button>
                     </div>
                 </div>
-                {% endif %}
+                <div class="col-12 col-md-auto">
+                    <select id="coordinatorAssignmentStatusFilter"
+                        class="form-select form-select-sm coordinator-assignment-filter"
+                        aria-label="Filter status sekolah">
+                        <option value="all" selected>Semua</option>
+                        <option value="NEGERI">Negeri</option>
+                        <option value="SWASTA">Swasta</option>
+                    </select>
+                </div>
             </div>
+
+            <div id="coordinatorAssignmentEmptySearch" class="alert alert-warning d-none" role="alert">
+                <i class="bi bi-search me-2"></i>Tidak ada hasil yang cocok dengan pencarian.
+            </div>
+
+            <div class="d-block d-md-none">
+                <div class="row g-3">
+                    {% for school in assigned_schools %}
+                    {% set is_history = not school.is_active_assignment %}
+                    {% set period_label = (school.history_period_name or 'Tanpa periode') if is_history else school.draft_period_name or school.last_period_name or 'Periode aktif' %}
+                    {% set search_blob = (school.school_name or '') ~ ' ' ~ (school.npsn or '') ~ ' ' ~
+                        (school.jenjang or '') ~ ' ' ~ (school.kecamatan_name or '') ~ ' ' ~ (school.alamat or '') %}
+                    {% set school_status = (school.school_status or 'NEGERI')|upper %}
+                    <div class="col-12 coordinator-assignment-item" data-search="{{ search_blob|lower }}"
+                        data-school-status="{{ school_status }}">
+                        <div class="card shadow-sm coordinator-assignment-card h-100">
+                            <div class="card-body">
+                                <div class="fw-semibold">{{ school.school_name }}</div>
+                                <div class="small text-muted">
+                                    {{ school.npsn }}{% if school.kecamatan_name %} &bull; {{ school.kecamatan_name }}{% endif %}
+                                </div>
+                                <div class="d-flex flex-wrap gap-2 mt-2">
+                                    <span class="badge bg-info">{{ school.jenjang }}</span>
+                                    <span class="badge {% if school_status == 'NEGERI' %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                                        {{ school_status|title }}
+                                    </span>
+                                </div>
+                                <div class="d-flex flex-wrap gap-2 mt-2 align-items-center">
+                                    <span class="badge bg-secondary">{{ period_label }}</span>
+                                    {{ assessment_status(school) }}
+                                    <span class="badge bg-body text-dark border">
+                                        {{ school.total_assessment_count or 0 }} penilaian
+                                    </span>
+                                </div>
+                                {% if not (school.draft_period_name or school.last_period_name) %}
+                                <div class="small text-muted mt-1">Mengikuti periode aktif saat dibuat</div>
+                                {% endif %}
+                                <div class="mt-3">{{ assessment_actions(school, true, selected_period_id) }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="table-responsive d-none d-md-block">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>No</th>
+                            <th>NPSN</th>
+                            <th>Nama Sekolah</th>
+                            <th>Jenjang</th>
+                            <th>Kecamatan</th>
+                            <th>Periode</th>
+                            <th>Status</th>
+                            <th>Jumlah</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for school in assigned_schools %}
+                        {% set is_history = not school.is_active_assignment %}
+                        {% set period_label = (school.history_period_name or 'Tanpa periode') if is_history else school.draft_period_name or school.last_period_name or 'Periode aktif' %}
+                        {% set search_blob = (school.school_name or '') ~ ' ' ~ (school.npsn or '') ~ ' ' ~
+                            (school.jenjang or '') ~ ' ' ~ (school.kecamatan_name or '') ~ ' ' ~ (school.alamat or '') %}
+                        {% set school_status = (school.school_status or 'NEGERI')|upper %}
+                        <tr class="coordinator-assignment-item" data-search="{{ search_blob|lower }}"
+                            data-school-status="{{ school_status }}">
+                            <td>{{ loop.index }}</td>
+                            <td>{{ school.npsn }}</td>
+                            <td class="fw-semibold">{{ school.school_name }}</td>
+                            <td>
+                                <div class="d-flex flex-column align-items-start gap-1">
+                                    <span class="badge bg-info">{{ school.jenjang }}</span>
+                                    <span class="badge {% if school_status == 'NEGERI' %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                                        {{ school_status|title }}
+                                    </span>
+                                </div>
+                            </td>
+                            <td>{{ school.kecamatan_name or '-' }}</td>
+                            <td>
+                                <span class="badge bg-secondary">{{ period_label }}</span>
+                                {% if not (school.draft_period_name or school.last_period_name) %}
+                                <div class="small text-muted">Mengikuti periode aktif saat dibuat</div>
+                                {% endif %}
+                            </td>
+                            <td>{{ assessment_status(school) }}</td>
+                            <td>{{ school.total_assessment_count or 0 }}</td>
+                            <td>{{ assessment_actions(school, false, selected_period_id) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info mb-0" role="alert">
+                <div class="d-flex align-items-center gap-3">
+                    <i class="bi bi-info-circle fs-2 text-primary"></i>
+                    <div>
+                        <h6 class="fw-semibold mb-1">Belum ada penugasan</h6>
+                        <p class="mb-2 small">Ajukan penugasan ke admin untuk mulai menilai sekolah.</p>
+                        <a href="{{ url_for('portal.coordinator_assignment_requests') }}"
+                            class="btn btn-sm btn-outline-primary">
+                            Ajukan Penugasan
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
         </div>
     </div>
 </section>
@@ -176,6 +328,11 @@
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const periodSelect = document.getElementById('periodSelect');
+        const searchInput = document.getElementById('coordinatorAssignmentSearch');
+        const statusFilter = document.getElementById('coordinatorAssignmentStatusFilter');
+        const clearBtn = document.getElementById('coordinatorAssignmentSearchClear');
+        const emptyState = document.getElementById('coordinatorAssignmentEmptySearch');
+        const assignmentItems = Array.from(document.querySelectorAll('.coordinator-assignment-item'));
 
         if (periodSelect) {
             periodSelect.addEventListener('change', function () {
@@ -194,24 +351,44 @@
             });
         }
 
-        document.querySelectorAll('.start-assessment-btn').forEach(btn => {
-            btn.addEventListener('click', function () {
-                if (this.dataset.hasDraft === 'true') {
-                    return; // lanjutkan draft lama, jangan override periodenya
-                }
-                const pid = periodSelect ? periodSelect.value : '';
-                if (!pid) {
-                    return; // pakai periode aktif
-                }
-                try {
-                    const url = new URL(this.href, window.location.origin);
-                    url.searchParams.set('period_id', pid);
-                    this.href = url.toString();
-                } catch (err) {
-                    console.warn('Gagal menambahkan periode ke tautan', err);
-                }
+        function applySearch() {
+            const query = searchInput ? (searchInput.value || '').trim().toLowerCase() : '';
+            const status = statusFilter ? (statusFilter.value || 'all').trim().toUpperCase() : 'ALL';
+            let visible = 0;
+
+            assignmentItems.forEach((item) => {
+                const haystack = (item.dataset.search || '').toLowerCase();
+                const itemStatus = (item.dataset.schoolStatus || '').toUpperCase();
+                const matchesQuery = !query || haystack.includes(query);
+                const matchesStatus = status === 'ALL' || itemStatus === status;
+                const show = matchesQuery && matchesStatus;
+                item.classList.toggle('d-none', !show);
+                if (show) visible += 1;
             });
-        });
+
+            if (emptyState) {
+                emptyState.classList.toggle('d-none', visible !== 0);
+            }
+        }
+
+        if (searchInput) {
+            searchInput.addEventListener('input', applySearch);
+        }
+        if (statusFilter) {
+            statusFilter.addEventListener('change', applySearch);
+        }
+        if (clearBtn && searchInput) {
+            clearBtn.addEventListener('click', function () {
+                searchInput.value = '';
+                if (statusFilter) {
+                    statusFilter.value = 'all';
+                }
+                applySearch();
+                searchInput.focus();
+            });
+        }
+
+        applySearch();
     });
 </script>
 {% endblock %}

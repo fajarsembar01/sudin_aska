@@ -1,0 +1,99 @@
+{% extends "portal/base_portal.html" %}
+{% set page_title = "Penugasan" %}
+
+{% block portal_nav %}
+<nav class="navbar navbar-expand-lg sticky-top">
+    <div class="container-fluid px-lg-4">
+        <a class="navbar-brand" href="{{ url_for('penugasan.spmb_queue_picker') }}">
+            <span class="icon-badge brand-icon text-primary">
+                <i class="bi bi-person-check"></i>
+            </span>
+            <span class="fw-bold">Penugasan</span>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#assignmentNavbar">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="assignmentNavbar">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'penugasan.spmb_table_claim' %}active{% endif %}"
+                        href="{{ url_for('penugasan.spmb_table_claim') }}">
+                        <i class="bi bi-person-check nav-icon"></i>Klaim Operator
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'penugasan.spmb_queue_picker' %}active{% endif %}"
+                        href="{{ url_for('penugasan.spmb_queue_picker') }}">
+                        <i class="bi bi-list-ol nav-icon"></i>Pilih Antrian
+                    </a>
+                </li>
+                {% if current_user and current_user.role == 'admin' %}
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'main.spmb_table_assignments' %}active{% endif %}"
+                        href="{{ url_for('main.spmb_table_assignments') }}">
+                        <i class="bi bi-sliders nav-icon"></i>Atur Petugas
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'main.spmb_service_types' %}active{% endif %}"
+                        href="{{ url_for('main.spmb_service_types') }}">
+                        <i class="bi bi-list-ul nav-icon"></i>Jenis Pelayanan
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+
+            <div class="d-flex align-items-center gap-3 user-nav-actions">
+                {% if current_user and current_user.role in ['admin', 'sekolah', 'staff', 'coordinator'] %}
+                <a href="{{ url_for('main.admin_select_role') if current_user.role == 'admin' else url_for('portal.home') }}"
+                    class="btn btn-outline-secondary btn-sm text-nowrap oss-home-btn">
+                    <i class="bi bi-house me-1"></i><span class="oss-home-label">Home</span>
+                </a>
+                {% endif %}
+                <div class="form-check form-switch mb-0">
+                    <input class="form-check-input" type="checkbox" id="themeToggle" role="switch">
+                    <label class="theme-toggle-label" for="themeToggle">
+                        <i class="bi bi-sun-fill theme-icon theme-icon-sun"></i>
+                        <i class="bi bi-moon-fill theme-icon theme-icon-moon"></i>
+                    </label>
+                </div>
+
+                {% if current_user %}
+                {% set user_display = (current_user.full_name or current_user.email or 'User') %}
+                {% set user_initial = user_display[:1].upper() %}
+                {% set first_name = user_display.split(' ')[0] %}
+                <div class="dropdown user-menu" id="userMenuDropdown">
+                    <button class="user-menu-toggle" type="button" id="userMenuToggle" data-bs-toggle="dropdown"
+                        data-bs-auto-close="outside" aria-expanded="false">
+                        <span class="user-menu-arrow" aria-hidden="true">
+                            <i class="bi bi-chevron-down user-caret"></i>
+                        </span>
+                        <span class="user-name">{{ first_name }}</span>
+                        <span class="user-avatar">{{ user_initial }}</span>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-end user-dropdown" aria-labelledby="userMenuToggle">
+                        <div class="user-dropdown-header">
+                            <span class="user-dropdown-icon text-primary">
+                                <i class="bi bi-person-vcard"></i>
+                            </span>
+                            <div class="user-dropdown-meta">
+                                <div class="user-dropdown-title">{{ user_display }}</div>
+                                <div class="user-dropdown-subtitle">
+                                    <i class="bi bi-envelope me-1"></i>{{ current_user.email }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item user-dropdown-logout d-flex align-items-center gap-2 text-danger"
+                            href="{{ url_for('auth.logout') }}">
+                            <span>Logout</span>
+                            <span class="text-danger"><i class="bi bi-box-arrow-right"></i></span>
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</nav>
+{% endblock %}

@@ -10,6 +10,14 @@ from langchain_core.messages import HumanMessage, AIMessage
 from thinking_messages import get_random_thinking_message
 
 try:
+    from openai import RateLimitError as OpenAIRateLimitError  # type: ignore
+except ImportError:  # pragma: no cover - compatibility layer
+    try:
+        from openai.error import RateLimitError as OpenAIRateLimitError  # type: ignore
+    except (ImportError, AttributeError):  # pragma: no cover - fallback if API changes
+        OpenAIRateLimitError = None
+
+try:
     from zoneinfo import ZoneInfo
 except (ImportError, ModuleNotFoundError):
     ZoneInfo = None
@@ -74,6 +82,7 @@ def normalize_input(text):
         "pendaftar tertua": "umur tertinggi",
         "usia paling muda": "umur terendah",
         "usia paling tua": "umur tertinggi",
+        "perioritas": "prioritas",
         "ranking": "urutan",
         "anbk untuk sd kapan": "anbk untuk sd jadwalnya kapan",
         "kapan anbk sd": "jadwal anbk sd",
@@ -82,6 +91,12 @@ def normalize_input(text):
     }
     for old, new in replacements.items():
         text = text.replace(old, new)
+    text = re.sub(r"\bsman\s*(\d{1,3})\b", r"sma negeri \1 jakarta", text)
+    text = re.sub(r"\bsma\s*(\d{1,3})\b", r"sma negeri \1 jakarta", text)
+    text = re.sub(r"\bsmpn\s*(\d{1,3})\b", r"smp negeri \1 jakarta", text)
+    text = re.sub(r"\bsmp\s*(\d{1,3})\b", r"smp negeri \1 jakarta", text)
+    text = re.sub(r"\bsdn\s*([a-z ]+?)\s*(\d{1,2})\b", r"sdn \1 \2 jakarta", text)
+    text = re.sub(r"\bjakarta(?:\s+jakarta)+\b", "jakarta", text)
     return text
 
 
@@ -97,6 +112,9 @@ def strip_markdown(text):
 
 
 _SIGNATURE_RE = re.compile(r"(?:\s*\n)?[-–—]\s*ASKA\s*$", re.IGNORECASE)
+_EMOJI_RE = re.compile(r"[\U00010000-\U0010FFFF\u2600-\u27BF\u2B00-\u2BFF\uFE00-\uFE0F]")
+_NO_DATA_RE = re.compile(r"^\s*ASKA belum punya data resmi", re.IGNORECASE)
+_TECHNICAL_RE = re.compile(r"^\s*(?:⚠️|😵|🤖|Maaf).*gangguan teknis", re.IGNORECASE)
 
 
 def remove_trailing_signature(text: Optional[str]) -> str:
@@ -105,6 +123,96 @@ def remove_trailing_signature(text: Optional[str]) -> str:
         text = str(text or "")
     cleaned = _SIGNATURE_RE.sub("", text)
     return cleaned.rstrip()
+
+
+def ensure_aska_brand_style(text: Optional[str]) -> str:
+    """Make normal ASKA answers keep brand voice even when the model is stiff."""
+    if not isinstance(text, str):
+        text = str(text or "")
+    cleaned = text.strip()
+    if not cleaned:
+        return cleaned
+    if _NO_DATA_RE.search(cleaned) or _TECHNICAL_RE.search(cleaned):
+        return cleaned
+
+    has_aska = re.search(r"\bASKA\b", cleaned, re.IGNORECASE) is not None
+    has_emoji = _EMOJI_RE.search(cleaned) is not None
+
+    if has_aska and has_emoji:
+        return cleaned
+    if has_aska:
+        return f"{cleaned} ✨"
+    if has_emoji:
+        return f"ASKA cek nih 👇\n\n{cleaned}"
+    return f"ASKA cek nih 👇\n\n{cleaned}"
+
+
+def _iter_exception_chain(exc: BaseException):
+    seen = set()
+    current = exc
+    while current and id(current) not in seen:
+        seen.add(id(current))
+        yield current
+        current = current.__cause__ or current.__context__
+
+
+def is_llm_quota_error(exc: Exception) -> bool:
+    if exc is None:
+        return False
+
+    keywords = (
+        "429",
+        "billing",
+        "free tier",
+        "insufficient_quota",
+        "limit reached",
+        "quota",
+        "rate limit",
+        "rate_limit_exceeded",
+        "requests per minute",
+        "tokens per minute",
+        "too many requests",
+        "exceeded your current quota",
+    )
+
+    for candidate in _iter_exception_chain(exc):
+        if OpenAIRateLimitError and isinstance(candidate, OpenAIRateLimitError):
+            return True
+        message = str(candidate).lower()
+        if any(keyword in message for keyword in keywords):
+            return True
+    return False
+
+
+# Pola tag question yang dipaksakan model di akhir kalimat
+# Contoh: "... membantu, ya? 😊" → "... membantu. 😊"
+_TAG_QUESTION_RE = re.compile(
+    r",?\s*(?:ya|yah|oke|ok|dong|deh|kan|nih|iya)\?\s*(?P<emoji>[\U00010000-\U0010FFFF\u2600-\u27BF\u2B00-\u2BFF\uFE00-\uFE0F]*)\s*$",
+    re.IGNORECASE | re.MULTILINE,
+)
+
+
+def clean_aska_response(text: Optional[str]) -> str:
+    """Hapus tag question berulang ('ya?', 'oke?', 'dong?') di akhir setiap baris
+    yang ditambahkan model secara otomatis dan terasa memaksakan."""
+    if not isinstance(text, str):
+        text = str(text or "")
+
+    def _fix_line(line: str) -> str:
+        m = _TAG_QUESTION_RE.search(line)
+        if not m:
+            return line
+        # Ambil emoji (jika ada) dan jadikan bagian dari kalimat, bukan akhiran "?"
+        emoji_part = (m.group("emoji") or "").strip()
+        base = line[: m.start()].rstrip(",").rstrip()
+        # Pastikan kalimat diakhiri titik kalau belum
+        if base and base[-1] not in ".!?":
+            base += "."
+        return (base + " " + emoji_part).strip() if emoji_part else base
+
+    lines = text.split("\n")
+    cleaned = "\n".join(_fix_line(line) for line in lines)
+    return cleaned.strip()
 
 
 def now_str():

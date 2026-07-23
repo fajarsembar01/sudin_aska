@@ -1,0 +1,474 @@
+{% extends "base_cc.html" %}
+{% set page_title = "Media Manager — Call Center" %}
+
+{% block head_extra %}
+<style>
+    .mm-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: .75rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .mm-controls {
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+        flex-wrap: wrap;
+    }
+
+    .mm-filter-tabs .nav-link {
+        font-size: .82rem;
+        padding: .3rem .7rem;
+    }
+
+    .mm-table-wrap {
+        border: 1px solid var(--bs-border-color);
+        border-radius: .75rem;
+        overflow: hidden;
+    }
+
+    .mm-table {
+        margin-bottom: 0;
+        font-size: .875rem;
+    }
+
+    .mm-table thead th {
+        background: var(--bs-tertiary-bg);
+        font-weight: 600;
+        font-size: .8rem;
+        text-transform: uppercase;
+        letter-spacing: .03em;
+        white-space: nowrap;
+        border-bottom: 1px solid var(--bs-border-color);
+    }
+
+    .mm-table tbody tr:last-child td {
+        border-bottom: 0;
+    }
+
+    .mm-filename {
+        max-width: 260px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-weight: 500;
+    }
+
+    .mm-mime-badge {
+        font-size: .72rem;
+        padding: .2em .5em;
+    }
+
+    .mm-empty {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: var(--bs-secondary-color);
+    }
+
+    .mm-empty i {
+        font-size: 2.5rem;
+        opacity: .35;
+        display: block;
+        margin-bottom: .75rem;
+    }
+
+    .mm-bulk-bar {
+        display: none;
+        align-items: center;
+        gap: .75rem;
+        padding: .6rem 1rem;
+        background: var(--bs-primary-bg-subtle);
+        border: 1px solid var(--bs-primary-border-subtle);
+        border-radius: .6rem;
+        margin-bottom: .75rem;
+        font-size: .875rem;
+    }
+
+    .mm-bulk-bar.visible {
+        display: flex;
+    }
+
+    .mm-total-badge {
+        font-size: .8rem;
+        color: var(--bs-secondary-color);
+    }
+</style>
+{% endblock %}
+
+{% block portal_content %}
+<div class="mm-header">
+    <div>
+        <h4 class="mb-0"><i class="bi bi-folder2-open text-primary me-2"></i>Media Manager</h4>
+        <small class="text-secondary mm-total-badge" id="mmTotalInfo">Memuat...</small>
+    </div>
+    <div class="mm-controls">
+        <select class="form-select form-select-sm" id="mmSortSelect" style="width:auto;">
+            <option value="newest">Terbaru</option>
+            <option value="oldest">Terlama</option>
+            <option value="largest">Terbesar</option>
+            <option value="smallest">Terkecil</option>
+        </select>
+        <a href="{{ url_for('call_center.inbox') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i>Kembali
+        </a>
+    </div>
+</div>
+
+<!-- Filter tabs -->
+<ul class="nav nav-pills mm-filter-tabs mb-3" id="mmFilterTabs">
+    <li class="nav-item">
+        <button class="nav-link active" data-type="all">Semua</button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" data-type="image"><i class="bi bi-image me-1"></i>Gambar</button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" data-type="video"><i class="bi bi-camera-video me-1"></i>Video</button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" data-type="audio"><i class="bi bi-music-note me-1"></i>Audio</button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" data-type="document"><i class="bi bi-file-earmark me-1"></i>Dokumen</button>
+    </li>
+</ul>
+
+<!-- Bulk action bar -->
+<div class="mm-bulk-bar" id="mmBulkBar">
+    <span id="mmBulkCount">0 file dipilih</span>
+    <button class="btn btn-danger btn-sm ms-auto" id="mmBulkDeleteBtn">
+        <i class="bi bi-trash me-1"></i>Hapus yang dipilih
+    </button>
+    <button class="btn btn-outline-secondary btn-sm" id="mmBulkCancelBtn">Batal</button>
+</div>
+
+<!-- Table -->
+<div class="mm-table-wrap">
+    <table class="table mm-table align-middle">
+        <thead>
+            <tr>
+                <th style="width:36px;">
+                    <input type="checkbox" class="form-check-input" id="mmSelectAll" title="Pilih semua">
+                </th>
+                <th>Nama File</th>
+                <th>Ukuran</th>
+                <th>Tipe</th>
+                <th>Tanggal Upload</th>
+                <th style="width:60px;"></th>
+            </tr>
+        </thead>
+        <tbody id="mmTableBody">
+            <tr>
+                <td colspan="6" class="mm-empty">
+                    <i class="bi bi-hourglass-split"></i>
+                    Memuat daftar media...
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- Delete confirmation modal -->
+<div class="modal fade" id="mmDeleteModal" tabindex="-1" aria-labelledby="mmDeleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="mmDeleteModalLabel">
+                    <i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>Konfirmasi Hapus
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+            </div>
+            <div class="modal-body" id="mmDeleteModalBody">
+                Apakah kamu yakin ingin menghapus file ini? Tindakan ini tidak bisa dibatalkan.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-danger" id="mmDeleteConfirmBtn">
+                    <i class="bi bi-trash me-1"></i>Hapus
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block portal_scripts %}
+<script>
+(function () {
+    'use strict';
+
+    var mediaListUrl = '{{ url_for("call_center.api_media_list") }}';
+    var mediaDeleteUrl = '{{ url_for("call_center.api_media_delete") }}';
+    var csrfToken = '{{ csrf_token() }}';
+
+    var sortSelect = document.getElementById('mmSortSelect');
+    var filterTabs = document.getElementById('mmFilterTabs');
+    var tableBody = document.getElementById('mmTableBody');
+    var totalInfo = document.getElementById('mmTotalInfo');
+    var selectAll = document.getElementById('mmSelectAll');
+    var bulkBar = document.getElementById('mmBulkBar');
+    var bulkCount = document.getElementById('mmBulkCount');
+    var bulkDeleteBtn = document.getElementById('mmBulkDeleteBtn');
+    var bulkCancelBtn = document.getElementById('mmBulkCancelBtn');
+    var deleteModalEl = document.getElementById('mmDeleteModal');
+    var deleteModal = deleteModalEl && window.bootstrap ? new window.bootstrap.Modal(deleteModalEl) : null;
+    var deleteModalBody = document.getElementById('mmDeleteModalBody');
+    var deleteConfirmBtn = document.getElementById('mmDeleteConfirmBtn');
+
+    var currentSort = 'newest';
+    var currentType = 'all';
+    var pendingDeletePaths = [];
+
+    // ── Helpers ──────────────────────────────────────────────────────────────
+
+    function escapeHtml(text) {
+        var el = document.createElement('span');
+        el.textContent = String(text || '');
+        return el.innerHTML;
+    }
+
+    function formatBytes(bytes) {
+        var b = Number(bytes) || 0;
+        if (b < 1024) return b + ' B';
+        if (b < 1024 * 1024) return (b / 1024).toFixed(1) + ' KB';
+        return (b / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    function formatDate(isoStr) {
+        if (!isoStr) return '—';
+        try {
+            var d = new Date(isoStr);
+            var pad = function (n) { return String(n).padStart(2, '0'); };
+            return pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear()
+                + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+        } catch (e) {
+            return isoStr;
+        }
+    }
+
+    function mimeCategory(mimeType) {
+        var mt = String(mimeType || '').toLowerCase();
+        if (mt.startsWith('image/')) return 'image';
+        if (mt.startsWith('video/')) return 'video';
+        if (mt.startsWith('audio/')) return 'audio';
+        return 'document';
+    }
+
+    function mimeBadgeClass(mimeType) {
+        var cat = mimeCategory(mimeType);
+        var map = { image: 'text-bg-success', video: 'text-bg-primary', audio: 'text-bg-warning', document: 'text-bg-secondary' };
+        return map[cat] || 'text-bg-secondary';
+    }
+
+    function mimeLabel(mimeType) {
+        var mt = String(mimeType || '').toLowerCase();
+        if (mt.startsWith('image/')) return 'Gambar';
+        if (mt.startsWith('video/')) return 'Video';
+        if (mt.startsWith('audio/')) return 'Audio';
+        if (mt === 'application/pdf') return 'PDF';
+        return 'Dokumen';
+    }
+
+    // ── Render ────────────────────────────────────────────────────────────────
+
+    function renderTable(items, totalSize) {
+        // Update total info
+        var totalText = items.length + ' file';
+        if (totalSize > 0) totalText += ' · ' + formatBytes(totalSize);
+        totalInfo.textContent = totalText;
+
+        if (!items.length) {
+            tableBody.innerHTML = '<tr><td colspan="6" class="mm-empty">'
+                + '<i class="bi bi-folder2-open"></i>'
+                + 'Tidak ada file media yang tersimpan.'
+                + '</td></tr>';
+            selectAll.checked = false;
+            updateBulkBar();
+            return;
+        }
+
+        var rows = items.map(function (item) {
+            var badgeClass = mimeBadgeClass(item.mime_type);
+            var label = mimeLabel(item.mime_type);
+            return '<tr data-path="' + escapeHtml(item.path) + '">'
+                + '<td><input type="checkbox" class="form-check-input mm-row-check" value="' + escapeHtml(item.path) + '"></td>'
+                + '<td><span class="mm-filename" title="' + escapeHtml(item.path) + '">' + escapeHtml(item.filename) + '</span></td>'
+                + '<td class="text-nowrap">' + escapeHtml(formatBytes(item.size)) + '</td>'
+                + '<td><span class="badge mm-mime-badge ' + badgeClass + '">' + label + '</span></td>'
+                + '<td class="text-nowrap">' + escapeHtml(formatDate(item.uploaded_at)) + '</td>'
+                + '<td><button class="btn btn-outline-danger btn-sm mm-delete-btn" data-path="' + escapeHtml(item.path) + '" title="Hapus">'
+                + '<i class="bi bi-trash"></i></button></td>'
+                + '</tr>';
+        });
+
+        tableBody.innerHTML = rows.join('');
+        selectAll.checked = false;
+        updateBulkBar();
+        attachRowEvents();
+    }
+
+    function attachRowEvents() {
+        // Per-row delete buttons
+        tableBody.querySelectorAll('.mm-delete-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var path = this.getAttribute('data-path');
+                confirmDelete([path], 'Hapus file <strong>' + escapeHtml(path.split('/').pop()) + '</strong>?');
+            });
+        });
+
+        // Row checkboxes
+        tableBody.querySelectorAll('.mm-row-check').forEach(function (chk) {
+            chk.addEventListener('change', function () {
+                updateBulkBar();
+                syncSelectAll();
+            });
+        });
+    }
+
+    // ── Selection ─────────────────────────────────────────────────────────────
+
+    function getCheckedPaths() {
+        var checked = [];
+        tableBody.querySelectorAll('.mm-row-check:checked').forEach(function (chk) {
+            checked.push(chk.value);
+        });
+        return checked;
+    }
+
+    function updateBulkBar() {
+        var paths = getCheckedPaths();
+        if (paths.length > 0) {
+            bulkCount.textContent = paths.length + ' file dipilih';
+            bulkBar.classList.add('visible');
+        } else {
+            bulkBar.classList.remove('visible');
+        }
+    }
+
+    function syncSelectAll() {
+        var all = tableBody.querySelectorAll('.mm-row-check');
+        var checked = tableBody.querySelectorAll('.mm-row-check:checked');
+        selectAll.checked = all.length > 0 && checked.length === all.length;
+        selectAll.indeterminate = checked.length > 0 && checked.length < all.length;
+    }
+
+    selectAll.addEventListener('change', function () {
+        var state = this.checked;
+        tableBody.querySelectorAll('.mm-row-check').forEach(function (chk) {
+            chk.checked = state;
+        });
+        updateBulkBar();
+    });
+
+    bulkDeleteBtn.addEventListener('click', function () {
+        var paths = getCheckedPaths();
+        if (!paths.length) return;
+        confirmDelete(paths, 'Hapus <strong>' + paths.length + ' file</strong> yang dipilih?');
+    });
+
+    bulkCancelBtn.addEventListener('click', function () {
+        tableBody.querySelectorAll('.mm-row-check').forEach(function (chk) {
+            chk.checked = false;
+        });
+        selectAll.checked = false;
+        selectAll.indeterminate = false;
+        updateBulkBar();
+    });
+
+    // ── Delete flow ───────────────────────────────────────────────────────────
+
+    function confirmDelete(paths, bodyHtml) {
+        pendingDeletePaths = paths;
+        deleteModalBody.innerHTML = bodyHtml + '<br><small class="text-danger">Tindakan ini tidak bisa dibatalkan.</small>';
+        if (deleteModal) deleteModal.show();
+    }
+
+    deleteConfirmBtn.addEventListener('click', function () {
+        if (!pendingDeletePaths.length) return;
+        var paths = pendingDeletePaths.slice();
+        pendingDeletePaths = [];
+        if (deleteModal) deleteModal.hide();
+        doDelete(paths);
+    });
+
+    function doDelete(paths) {
+        deleteConfirmBtn.disabled = true;
+        fetch(mediaDeleteUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({ paths: paths })
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (data.error) {
+                alert('Gagal menghapus: ' + data.error);
+                return;
+            }
+            // Remove deleted rows from DOM
+            (data.deleted || []).forEach(function (path) {
+                var row = tableBody.querySelector('tr[data-path="' + CSS.escape(path) + '"]');
+                if (row) row.remove();
+            });
+            if (data.failed && data.failed.length) {
+                alert('Beberapa file gagal dihapus:\n' + data.failed.map(function (f) { return f.path + ': ' + f.reason; }).join('\n'));
+            }
+            // Refresh total info after deletion
+            loadMedia();
+        })
+        .catch(function (err) {
+            alert('Error: ' + err.message);
+        })
+        .finally(function () {
+            deleteConfirmBtn.disabled = false;
+            selectAll.checked = false;
+            selectAll.indeterminate = false;
+            updateBulkBar();
+        });
+    }
+
+    // ── Load ──────────────────────────────────────────────────────────────────
+
+    function loadMedia() {
+        var url = mediaListUrl + '?sort=' + encodeURIComponent(currentSort) + '&type=' + encodeURIComponent(currentType);
+        tableBody.innerHTML = '<tr><td colspan="6" class="mm-empty"><i class="bi bi-hourglass-split"></i>Memuat...</td></tr>';
+        totalInfo.textContent = 'Memuat...';
+
+        fetch(url, { credentials: 'same-origin' })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                renderTable(data.items || [], data.total_size || 0);
+            })
+            .catch(function (err) {
+                tableBody.innerHTML = '<tr><td colspan="6" class="mm-empty text-danger">'
+                    + '<i class="bi bi-exclamation-circle"></i>Gagal memuat: ' + escapeHtml(err.message) + '</td></tr>';
+                totalInfo.textContent = '';
+            });
+    }
+
+    // ── Controls ──────────────────────────────────────────────────────────────
+
+    sortSelect.addEventListener('change', function () {
+        currentSort = this.value;
+        loadMedia();
+    });
+
+    filterTabs.querySelectorAll('.nav-link').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            filterTabs.querySelectorAll('.nav-link').forEach(function (b) { b.classList.remove('active'); });
+            this.classList.add('active');
+            currentType = this.getAttribute('data-type');
+            loadMedia();
+        });
+    });
+
+    // Initial load
+    loadMedia();
+})();
+</script>
+{% endblock %}

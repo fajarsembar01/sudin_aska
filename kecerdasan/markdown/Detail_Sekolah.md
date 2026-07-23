@@ -467,8 +467,8 @@
 - **NPSN**: 20104884
 - **Alamat**: Jl. Harpa I Pengangsaan Dua Kelapa Gading RT 008/RW 007
 - **Website**: Belum tersedia
-- **Sosial Media**: Belum tersedia
-- **Nomor Telepon**: Sekolah: 24524675 | Operator: 081213568881
+- **Sosial Media**: Instagram: @sdnpegangsaandua05 | TikTok: Panda05pg | YouTube: @sdnpegangsaandua05pagi54 | WhatsApp Channel: 085782228255
+- **Nomor Telepon**: Sekolah: 24524675 | Operator: 085724566389
 - **Email**: sdn.pandalima@gmail.com
 - **Bangku Kosong**: 12 (Per kelas: 1: 3, 2: 2, 3: 3, 4: 1, 5: 1, 6: 2)
 
@@ -703,7 +703,7 @@
 - **Website**: Belum tersedia
 - **Sosial Media**: Instagram: sdn_tugu_utara_09 | WhatsApp Channel: 082297480909
 - **Nomor Telepon**: Sekolah: 02122492831 | Operator: 089670905480
-- **Email**: sdntuguutara09@gmail.com
+- **Email**: sdntu09@gmail.com
 - **Bangku Kosong**: 10 (Per kelas: 1: 0, 2: 1, 3: 1, 4: 0, 5: 8, 6: 0)
 
 ### SDN TUGU UTARA 14 PAGI
@@ -1038,7 +1038,7 @@
 - **NPSN**: 20100797
 - **Alamat**: JL. RAYA TUGU SEMPER RT 001/RW 009
 - **Website**: https://smanegeri52jkt.sch.id
-- **Sosial Media**: Belum tersedia
+- **Sosial Media**: Instagram: sman52jakarta
 - **Nomor Telepon**: Sekolah: 0214405378 | Operator: 081210476516
 - **Email**: sman52.jkt1@gmail.com
 - **Bangku Kosong**: 14 (Per kelas: 10: 8, 11: 6, 12: 0)

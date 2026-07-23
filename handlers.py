@@ -17,7 +17,7 @@ from rag_logger import save_rag_log
 from responses import (
     ASKA_NO_DATA_RESPONSE,
     ASKA_TECHNICAL_ISSUE_RESPONSE,
-    ASKA_RATE_LIMIT_RESPONSE,
+    get_rate_limit_response,
 )
 from utils import (
     IMG_MD,
@@ -35,6 +35,9 @@ from utils import (
     should_respond,
     resolve_target_message,
     prepare_group_query,
+    clean_aska_response,
+    ensure_aska_brand_style,
+    is_llm_quota_error,
 )
 from account_status import BLOCKING_STATUSES, build_status_notice
 from flows.safety_flow import handle_bullying
@@ -43,45 +46,6 @@ from flows.psych_flow import handle_psych
 from flows.teacher_flow import handle_teacher
 from flows.smalltalk_flow import handle_smalltalk
 from voice_handlers import handle_voice
-
-
-try:
-    from openai import RateLimitError as OpenAIRateLimitError  # type: ignore
-except ImportError:  # pragma: no cover - compatibility layer
-    try:
-        from openai.error import RateLimitError as OpenAIRateLimitError  # type: ignore
-    except (ImportError, AttributeError):  # pragma: no cover - fallback if API changes
-        OpenAIRateLimitError = None
-
-
-def _iter_exception_chain(exc: BaseException):
-    seen = set()
-    current = exc
-    while current and id(current) not in seen:
-        seen.add(id(current))
-        yield current
-        current = current.__cause__ or current.__context__
-
-
-def _is_rate_limit_error(exc: Exception) -> bool:
-    if exc is None:
-        return False
-
-    keywords = (
-        "rate limit",
-        "quota",
-        "limit reached",
-        "too many requests",
-        "exceeded your current quota",
-    )
-
-    for candidate in _iter_exception_chain(exc):
-        if OpenAIRateLimitError and isinstance(candidate, OpenAIRateLimitError):
-            return True
-        message = str(candidate).lower()
-        if any(keyword in message for keyword in keywords):
-            return True
-    return False
 
 
 load_dotenv()
@@ -350,8 +314,10 @@ async def handle_user_query(
         finally:
             typing_task.cancel()
 
-        print(f"[{now_str()}] ?? ASKA AMBIL {len(result['context'])} KONTEN:")
-        for i, doc in enumerate(result["context"], 1):
+        retrieved_context = result.get("context", []) if isinstance(result, dict) else []
+        source_mode = result.get("source_mode") if isinstance(result, dict) else None
+        print(f"[{now_str()}] ASKA PAKAI {len(retrieved_context)} KONTEN FINAL:")
+        for i, doc in enumerate(retrieved_context, 1):
             print(f"  {i}. {doc.page_content[:200]}...")
 
         save_rag_log(
@@ -359,12 +325,18 @@ async def handle_user_query(
             username=username,
             channel="telegram",
             question=normalized_input,
-            chunks=[doc.page_content[:300] for doc in result["context"]],
+            chunks=[doc.page_content[:300] for doc in retrieved_context],
             answer=coerce_to_text(result)[:500],
             response_ms=int((time.perf_counter() - start_time) * 1000),
         )
 
-        response = coerce_to_text(result)
+        response = (
+            coerce_to_text(result)
+            if retrieved_context or source_mode == "general_model"
+            else ASKA_NO_DATA_RESPONSE
+        )
+        response = clean_aska_response(response)  # ← hapus "ya?" yg dipaksakan model
+        response = ensure_aska_brand_style(response)
         if not response.strip():
             response = ASKA_NO_DATA_RESPONSE
 
@@ -411,9 +383,9 @@ async def handle_user_query(
             if isinstance(e, NetworkError):
                 print(f"[{now_str()}] [WARN] Skipping error reply due to network issue: {e}")
             else:
-                rate_limited = _is_rate_limit_error(e)
+                rate_limited = is_llm_quota_error(e)
                 fallback_message = (
-                    ASKA_RATE_LIMIT_RESPONSE if rate_limited else ASKA_TECHNICAL_ISSUE_RESPONSE
+                    get_rate_limit_response() if rate_limited else ASKA_TECHNICAL_ISSUE_RESPONSE
                 )
                 if rate_limited:
                     print(f"[{now_str()}] [WARN] Rate limit detected, sending notice to user.")

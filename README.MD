@@ -140,14 +140,26 @@ ASKA_QA_MODEL=llama-3.1-8b-instant   # bisa ganti gpt-4o, dsb.
 ASKA_QA_TEMPERATURE=0
 ASKA_QA_MAX_TOKENS=350
 
+# Mode fitur
+ASKA_QA_ONLY_MODE=false              # true = hanya chat tanya-jawab (matikan laporan, mode guru, smalltalk)
+ASKA_TEACHER_MODE_ENABLED=true       # abaikan kalau ASKA_QA_ONLY_MODE=true
+ASKA_SMALLTALK_ENABLED=true          # abaikan kalau ASKA_QA_ONLY_MODE=true
+ASKA_REPORTING_ENABLED=false         # aktifkan jika ingin alur laporan
+ASKA_REPORTING_BULLYING_ENABLED=true
+ASKA_REPORTING_PSYCH_ENABLED=true
+ASKA_REPORTING_CORRUPTION_ENABLED=true
+
 # Embedding
 ASKA_EMBEDDING_BACKEND=auto          # auto | openai | local
 ASKA_EMBEDDING_API_KEY=              # pakai OPENAI_API_KEY jika kosong
 ASKA_EMBEDDING_MODEL=text-embedding-3-large
+ASKA_EMBEDDING_BATCH_SIZE=64
 ASKA_EMBEDDING_MODEL_LOCAL=sentence-transformers/all-MiniLM-L6-v2
 ASKA_EMBEDDING_DEVICE=cpu
-ASKA_CHUNK_SIZE=500
-ASKA_CHUNK_OVERLAP=50
+ASKA_CHUNK_SIZE=2000
+ASKA_CHUNK_OVERLAP=200
+ASKA_RETRIEVAL_MAX_K=10
+ASKA_RETRIEVAL_MIN_SCORE=0.35
 ASKA_VECTORSTORE_PATH=.aska_vectorstore
 ASKA_VECTORSTORE_INDEX=kecerdasan
 
@@ -185,7 +197,7 @@ ASKA_WHATSAPP_URL=082143646463       # dipakai tombol WhatsApp di ASKA Insight
 # Call Center WhatsApp (bridge khusus dashboard)
 ###############################################################################
 ASKA_CC_WHATSAPP_INTERNAL_TOKEN=ganti-token-acak-cc-min-24-char
-ASKA_CC_WHATSAPP_INTERNAL_URL=http://127.0.0.1:5001/api/callcenter/inbound
+ASKA_CC_WHATSAPP_INTERNAL_URL=http://127.0.0.1:5002/api/callcenter/inbound
 ASKA_CC_WHATSAPP_SESSION_PATH=.wa_cc_session
 ASKA_CC_WHATSAPP_CLIENT_ID=cc-main
 ASKA_CC_WHATSAPP_STATUS_PATH=runtime/whatsapp_cc_status.json
@@ -292,7 +304,7 @@ ASKA_CC_HTTP_PORT=3200 npm run wa:cc   # lepas override bila port 3100 kosong
 ```
 
 - Buka dashboard `Call Center > Settings > WhatsApp`, tekan Generate QR, lalu scan QR di WhatsApp `Linked Devices`.
-- Pastikan backend dashboard (`web_aska.app` port 5001) sudah jalan; bridge ini meneruskan chat ke endpoint `api/callcenter/inbound` dengan header `X-ASKA-CC-TOKEN` yang sama dengan `ASKA_CC_WHATSAPP_INTERNAL_TOKEN`.
+- Pastikan backend dashboard (`dashboard.app` port 5002) sudah jalan; bridge ini meneruskan chat ke endpoint `api/callcenter/inbound` dengan header `X-ASKA-CC-TOKEN` yang sama dengan `ASKA_CC_WHATSAPP_INTERNAL_TOKEN`.
 
 ### 5. Twitter Worker (opsional)
 
@@ -417,6 +429,9 @@ server {
     listen 80;
     server_name dashboard.sekolah.sch.id;
 
+    # Izinkan upload file hingga 50 MB (sesuaikan dengan DASHBOARD_MAX_UPLOAD_MB)
+    client_max_body_size 50M;
+
     location /static/ {
         alias /opt/ai-agent-sekolah/dashboard/static/;
         expires 30d;
@@ -524,3 +539,10 @@ Lalu masukkan password server Anda (*ketikan tidak akan terlihat, biarkan saja l
 - GitHub: [@sofelijo](https://github.com/sofelijo)
 
 Silakan buka _issue_ atau _pull request_ bila ada saran perbaikan. Semoga membantu sekolah Anda membangun layanan AI dengan cepat! 🙌
+
+
+## restart wa aska
+systemctl restart aska-wa-cc@aska.service
+sleep 20
+systemctl restart aska-wa-cc@main.service
+sleep 20   

@@ -1,0 +1,113 @@
+{% extends "supporter/base_supporter.html" %}
+
+{% block portal_content %}
+<section class="supporter-hero mb-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+    <div>
+      <div class="d-flex align-items-center gap-2 mb-2">
+        <span class="icon-badge feature-icon text-primary"><i class="bi bi-megaphone"></i></span>
+        <h1 class="h3 fw-bold mb-0">Dashboard Supporter</h1>
+      </div>
+      <p class="text-muted mb-0">Kelola task sosial media, verifikasi bukti staff, dan pantau poin global.</p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+      <a class="btn btn-primary" href="{{ url_for('supporter.admin_tasks') }}"><i class="bi bi-plus-circle me-1"></i>Buat Task</a>
+      <a class="btn btn-outline-success" href="{{ url_for('supporter.admin_export') }}"><i class="bi bi-download me-1"></i>Export CSV</a>
+    </div>
+  </div>
+</section>
+
+<section class="row g-3 mb-4">
+  <div class="col-lg-2 col-md-4 col-6"><div class="supporter-stat"><div class="stat-label">Task</div><div class="h2 fw-bold mb-0">{{ stats.total_tasks or 0 }}</div></div></div>
+  <div class="col-lg-2 col-md-4 col-6"><div class="supporter-stat"><div class="stat-label">Aktif</div><div class="h2 fw-bold mb-0">{{ stats.active_tasks or 0 }}</div></div></div>
+  <div class="col-lg-2 col-md-4 col-6"><div class="supporter-stat"><div class="stat-label">Submission</div><div class="h2 fw-bold mb-0">{{ stats.total_submissions or 0 }}</div></div></div>
+  <div class="col-lg-2 col-md-4 col-6"><div class="supporter-stat"><div class="stat-label">Pending</div><div class="h2 fw-bold mb-0">{{ stats.pending_submissions or 0 }}</div></div></div>
+  <div class="col-lg-2 col-md-4 col-6"><div class="supporter-stat"><div class="stat-label">Verified</div><div class="h2 fw-bold mb-0">{{ stats.verified_submissions or 0 }}</div></div></div>
+  <div class="col-lg-2 col-md-4 col-6"><div class="supporter-stat"><div class="stat-label">Poin</div><div class="h2 fw-bold mb-0">{{ stats.total_points or 0 }}</div></div></div>
+</section>
+
+<section class="row g-3">
+  <div class="col-lg-7">
+    <div class="supporter-panel p-3 h-100">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="h6 fw-bold mb-0">Menunggu Verifikasi</h2>
+        <a href="{{ url_for('supporter.admin_submissions') }}" class="btn btn-sm btn-outline-primary">Lihat semua</a>
+      </div>
+      <div class="table-responsive">
+        <table class="table supporter-table align-middle mb-0">
+          <thead><tr><th>Staff</th><th>Task</th><th>Poin</th><th></th></tr></thead>
+          <tbody>
+            {% for item in pending %}
+            <tr>
+              <td><div class="fw-semibold">{{ item.staff_name }}</div><div class="text-muted small">{{ item.staff_email }}</div></td>
+              <td><div class="fw-semibold">{{ item.task_title }}</div><div class="text-muted small">{{ item.submitted_at|jakarta('%d %b %Y %H:%M') }}</div></td>
+              <td>{{ item.potential_points }}</td>
+              <td><a class="btn btn-sm btn-outline-primary" href="{{ url_for('supporter.admin_submissions', q=item.id) }}">Review</a></td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4" class="text-center text-muted py-4">Tidak ada pending submission.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="supporter-panel p-3 h-100">
+      <h2 class="h6 fw-bold mb-3">Leaderboard</h2>
+      {% for row in leaderboard %}
+      <div class="d-flex align-items-center justify-content-between gap-2 py-2 border-bottom">
+        <div class="d-flex align-items-center gap-2">
+          <span class="supporter-rank">{{ row.rank }}</span>
+          <div><div class="fw-semibold">{{ row.staff_name }}</div><div class="text-muted small">{{ row.verified_count }} task verified</div></div>
+        </div>
+        <span class="badge text-bg-success">{{ row.total_points }} poin</span>
+      </div>
+      {% else %}
+      <div class="text-muted small">Belum ada poin verified.</div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="row g-3 mt-1">
+  <div class="col-lg-7">
+    <div class="supporter-panel p-3">
+      <h2 class="h6 fw-bold mb-3">Task Terbaru</h2>
+      <div class="table-responsive">
+        <table class="table supporter-table align-middle mb-0">
+          <thead><tr><th>Task</th><th>Status</th><th>Submission</th><th>Waktu</th></tr></thead>
+          <tbody>
+            {% for task in tasks %}
+            <tr>
+              <td><a class="fw-semibold text-decoration-none" href="{{ url_for('supporter.admin_edit_task', task_id=task.id) }}">{{ task.title }}</a><div class="text-muted small">{{ supporter_platform_labels.get(task.platform, task.platform) }} · {{ task.action_summary }}</div></td>
+              <td><span class="badge text-bg-secondary">{{ supporter_task_status_labels.get(task.status, task.status) }}</span></td>
+              <td>{{ task.submission_count or 0 }}</td>
+              <td class="text-muted small">
+                <div>Deadline: {{ task.deadline_at|jakarta('%d %b %Y %H:%M') if task.deadline_at else '-' }}</div>
+                <div>Berakhir: {{ task.end_at|jakarta('%d %b %Y %H:%M') if task.end_at else '-' }}</div>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4" class="text-center text-muted py-4">Belum ada task.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="supporter-panel p-3">
+      <h2 class="h6 fw-bold mb-3">Log Aktivitas</h2>
+      {% for log in logs %}
+      <div class="py-2 border-bottom">
+        <div class="fw-semibold small">{{ log.summary or log.action }}</div>
+        <div class="text-muted small">{{ log.actor_name or log.actor_email or '-' }} · {{ log.created_at|jakarta('%d %b %Y %H:%M') }}</div>
+      </div>
+      {% else %}
+      <div class="text-muted small">Belum ada log.</div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}
