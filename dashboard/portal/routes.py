@@ -1773,7 +1773,7 @@ def home() -> Response:
     if role == "admin":
         return redirect(url_for("portal.admin_stats"))
 
-    if role == "staff":
+    if role in ("staff", "pengawas", "kasi", "operator"):
         cards = [
             {
                 "title": "PANBERSS",
@@ -1808,6 +1808,13 @@ def home() -> Response:
                 "description": "Selesaikan task sosial media dan kumpulkan poin.",
                 "icon": "bi-megaphone",
                 "href": url_for("supporter.staff_dashboard"),
+                "col_class": "col-lg-4 col-md-6 col-12",
+            },
+            {
+                "title": "Laporan",
+                "description": "Lihat laporan dan riwayat laporan yang masuk.",
+                "icon": "bi-file-earmark-text",
+                "href": url_for("laporan.staff_laporan_list"),
                 "col_class": "col-lg-4 col-md-6 col-12",
             },
             {
@@ -1858,6 +1865,13 @@ def home() -> Response:
                 "description": "Panggil nomor antrian SPMB dari meja operator yang sudah diklaim.",
                 "icon": "bi-list-ol",
                 "href": url_for("penugasan.spmb_queue_picker"),
+                "col_class": "col-md-6 col-12",
+            },
+            {
+                "title": "Laporan",
+                "description": "Lihat laporan dan riwayat laporan yang masuk.",
+                "icon": "bi-file-earmark-text",
+                "href": url_for("laporan.staff_laporan_list"),
                 "col_class": "col-md-6 col-12",
             },
         ]

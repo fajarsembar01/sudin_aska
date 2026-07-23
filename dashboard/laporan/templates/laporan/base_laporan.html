@@ -12,7 +12,7 @@
 
     <!-- Brand -->
     <a class="navbar-brand"
-       href="{{ url_for('laporan.admin_laporan_list') if current_user and current_user.role == 'admin' else url_for('laporan.sekolah_laporan_list') }}">
+       href="{{ url_for('laporan.admin_laporan_list') if current_user and current_user.role == 'admin' else (url_for('laporan.staff_laporan_list') if current_user and current_user.role in ['staff', 'pengawas', 'kasi', 'operator', 'coordinator'] else url_for('laporan.sekolah_laporan_list')) }}">
       <span class="icon-badge brand-icon text-primary">
         <i class="bi bi-file-earmark-text"></i>
       </span>
@@ -75,13 +75,31 @@
 
         {% endif %}
 
+        {# ──── STAFF ──── #}
+        {% if current_user and current_user.role in ['staff', 'pengawas', 'kasi', 'operator', 'coordinator'] %}
+
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint in ['laporan.staff_laporan_list', 'laporan.staff_laporan_fill'] %}active{% endif %}"
+             href="{{ url_for('laporan.staff_laporan_list') }}">
+            <i class="bi bi-file-earmark-check nav-icon"></i>Form Tersedia
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint in ['laporan.staff_laporan_history', 'laporan.staff_laporan_detail', 'laporan.staff_laporan_edit_submission'] %}active{% endif %}"
+             href="{{ url_for('laporan.staff_laporan_history') }}">
+            <i class="bi bi-clock-history nav-icon"></i>Riwayat
+          </a>
+        </li>
+
+        {% endif %}
+
       </ul>
 
       <!-- ── Right-side navbar (sama dengan hospitality) ── -->
       <div class="d-flex align-items-center gap-3 user-nav-actions">
 
         <!-- Home Button -->
-        {% if current_user and current_user.role in ['admin', 'sekolah', 'staff', 'coordinator'] %}
+        {% if current_user and current_user.role in ['admin', 'sekolah', 'staff', 'coordinator', 'pengawas', 'kasi', 'operator'] %}
         <a href="{{ url_for('main.admin_select_role') if current_user.role == 'admin' else url_for('portal.home') }}"
            class="btn btn-outline-secondary btn-sm text-nowrap oss-home-btn">
           <i class="bi bi-house me-1"></i><span class="oss-home-label">Home</span>

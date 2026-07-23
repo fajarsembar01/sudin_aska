@@ -154,7 +154,7 @@
 {% block portal_content %}
 {% if preview_mode %}
 <div class="alert alert-warning border-0 d-flex flex-wrap align-items-center justify-content-between gap-2" role="alert">
-    <div><i class="bi bi-eye-fill me-2"></i>Mode preview admin. Tampilan ini mensimulasikan sisi sekolah dan tidak akan mengirim jawaban.</div>
+    <div><i class="bi bi-eye-fill me-2"></i>Mode preview admin. Tampilan ini mensimulasikan sisi staff dan tidak akan mengirim jawaban.</div>
     <a href="{{ url_for('laporan.admin_laporan_edit', form_id=form.id) }}"
         class="btn btn-sm btn-outline-dark d-inline-flex align-items-center gap-1">
         <i class="bi bi-pencil"></i>Kembali ke Editor
@@ -163,7 +163,7 @@
 {% endif %}
 
 <div class="form-header-card">
-    <a href="{{ url_for('laporan.admin_laporan_edit', form_id=form.id) if preview_mode else (url_for('laporan.sekolah_laporan_detail', submission_id=submission.id) if edit_mode and submission else url_for('laporan.sekolah_laporan_list')) }}"
+    <a href="{{ url_for('laporan.admin_laporan_edit', form_id=form.id) if preview_mode else (url_for('laporan.staff_laporan_detail', submission_id=submission.id) if edit_mode and submission else url_for('laporan.staff_laporan_list')) }}"
         class="btn btn-sm btn-outline-secondary mb-3 d-inline-flex align-items-center gap-1">
         <i class="bi bi-arrow-left"></i> {% if preview_mode %}Kembali ke Editor{% elif edit_mode %}Kembali ke Detail{% else %}Kembali ke Daftar Form{% endif %}
     </a>
@@ -184,8 +184,8 @@
     <p class="text-muted mb-2">{{ form.description }}</p>
     {% endif %}
     <div class="d-flex flex-wrap gap-3 align-items-center text-muted small">
-        {% if school %}
-        <span><i class="bi bi-building me-1"></i>{{ school.name }}</span>
+        {% if staff %}
+        <span><i class="bi bi-person-badge me-1"></i>{{ staff.name }}</span>
         {% endif %}
         {% if form.deadline_str %}
         <span><i class="bi bi-calendar-event me-1"></i>Deadline: {{ form.deadline_str }}</span>
@@ -219,7 +219,7 @@
 </div>
 
 <form id="laporanForm" method="POST"
-    action="{% if preview_mode %}#{% elif edit_mode and submission %}{{ url_for('laporan.sekolah_laporan_edit_submission', submission_id=submission.id) }}{% else %}{{ url_for('laporan.sekolah_laporan_submit', form_id=form.id) }}{% endif %}"
+    action="{% if preview_mode %}#{% elif edit_mode and submission %}{{ url_for('laporan.staff_laporan_edit_submission', submission_id=submission.id) }}{% else %}{{ url_for('laporan.staff_laporan_submit', form_id=form.id) }}{% endif %}"
     enctype="multipart/form-data"
     novalidate>
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -234,7 +234,7 @@
     {% if field.field_type not in ('header', 'info') %}
         {% set ns.q_idx = ns.q_idx + 1 %}
     {% endif %}
-    {% set existing = existing_answers.get(field.id) %}
+    {% set existing = existing_answers.get(field.id) or existing_answers.get(field.id|string) %}
 
     <div class="form-field-card {% if field.field_type in ('header', 'info') %}border-0 bg-transparent px-0{% endif %}" id="field-card-{{ field.id }}">
         
@@ -513,7 +513,7 @@
         <button type="submit" class="btn btn-primary d-inline-flex align-items-center gap-2 px-4"
             id="submitBtn" {% if preview_mode %}disabled{% endif %}>
             <i class="bi {% if preview_mode %}bi-eye{% else %}bi-send-fill{% endif %}"></i>
-            <span>{% if preview_mode %}Preview Tampilan Sekolah{% elif edit_mode %}Simpan Perubahan{% else %}Kirim Laporan{% endif %}</span>
+            <span>{% if preview_mode %}Preview Tampilan Staff{% elif edit_mode %}Simpan Perubahan{% else %}Kirim Laporan{% endif %}</span>
         </button>
     </div>
     {% endif %}
@@ -564,7 +564,6 @@ function showFilePreviews(input, fieldId, mode) {
     Array.from(input.files).forEach(function(file) {
         const item = document.createElement('div');
         if (mode === 'image') {
-            // Preview gambar inline sebagai thumbnail
             item.className = 'file-preview-item d-inline-block me-2 mt-2';
             item.style.cssText = 'border:2px solid var(--border-soft); border-radius:8px; overflow:hidden; position:relative;';
             const img = document.createElement('img');
@@ -716,7 +715,7 @@ function loadPreviousAnswers(formId) {
     btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Mengambil data...';
     if (status) status.textContent = '';
 
-    fetch('/laporan/sekolah/' + formId + '/previous-answers', {
+    fetch('/laporan/staff/' + formId + '/previous-answers', {
         method: 'GET',
         headers: { 'X-Requested-With': 'XMLHttpRequest' }
     })
@@ -743,12 +742,10 @@ function loadPreviousAnswers(formId) {
             var textVal = ans.answer_text || '';
             var jsonVal = ans.answer_json;
 
-            // Skip field file (tidak bisa prefill)
-            if (fieldType === 'file') {
+            if (fieldType === 'file' || fieldType === 'upload_dokumen' || fieldType === 'upload_gambar') {
                 if (textVal || (jsonVal && jsonVal.length)) skippedFiles++;
                 return;
             }
-            // Skip formula (dihitung otomatis)
             if (fieldType === 'formula') return;
 
             if (fieldType === 'checkbox') {
@@ -781,7 +778,6 @@ function loadPreviousAnswers(formId) {
                 }
 
             } else {
-                // text, textarea, number, email, date, time, link
                 var input = document.getElementById('field_' + fieldId);
                 if (!input) return;
                 input.value = textVal;
@@ -791,12 +787,10 @@ function loadPreviousAnswers(formId) {
             }
         });
 
-        // Recalculate formula fields
         if (typeof recalculateFormulaFields === 'function') {
             recalculateFormulaFields();
         }
 
-        // Tampilkan toast
         _showPrevAnswerToast(data.period_label, filledCount, skippedFiles);
 
         if (status) {

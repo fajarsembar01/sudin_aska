@@ -165,6 +165,30 @@
             <textarea name="description" class="form-control" rows="3"
                 placeholder="Jelaskan tujuan form ini dan cara pengisiannya...">{{ form.description if form else '' }}</textarea>
         </div>
+        <div class="mb-3">
+            <label class="form-label fw-semibold">Target Penerima Laporan <span class="text-danger">*</span></label>
+            {% set selected_audience = form.target_audience if form and form.target_audience else 'sekolah' %}
+            <div class="d-flex gap-3">
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="target_audience" id="audience_sekolah"
+                        value="sekolah" {% if selected_audience == 'sekolah' %}checked{% endif %}
+                        onchange="updateTargetAudience()">
+                    <label class="form-check-label fw-semibold" for="audience_sekolah">
+                        <i class="bi bi-building me-1 text-primary"></i> Sekolah
+                    </label>
+                    <div class="text-muted small">Form dikirim ke sekolah, muncul di halaman laporan sekolah.</div>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="target_audience" id="audience_staff"
+                        value="staff" {% if selected_audience == 'staff' %}checked{% endif %}
+                        onchange="updateTargetAudience()">
+                    <label class="form-check-label fw-semibold" for="audience_staff">
+                        <i class="bi bi-person-badge me-1 text-success"></i> Staff
+                    </label>
+                    <div class="text-muted small">Form dikirim ke staff (pengawas, kasi, operator, dll), muncul di halaman laporan staff.</div>
+                </div>
+            </div>
+        </div>
         <div class="row g-3">
             <div class="col-md-3" id="globalDeadlineGroup">
                 <label class="form-label fw-semibold">Deadline Pengisian</label>
@@ -190,7 +214,7 @@
                 </div>
                 <small class="text-muted">Default 3 jam setelah deadline</small>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-3" id="noSubmissionCutoffGroup" {% if selected_audience == 'staff' %}style="display:none;"{% endif %}>
                 <label class="form-label fw-semibold">Tidak Mengumpulkan Setelah</label>
                 <div class="input-group">
                     <input type="number" name="no_submission_after_hours" class="form-control"
@@ -259,7 +283,7 @@
                     <option value="0" {% if form and form.status != 'draft' and not form.is_active %}selected{% endif %}>Nonaktif</option>
                 </select>
             </div>
-            <div class="col-12">
+            <div class="col-12" id="noSubmissionJenjangSection" {% if selected_audience == 'staff' %}style="display:none;"{% endif %}>
                 <label class="form-label fw-semibold">Jenjang yang Dihitung Tidak Mengumpulkan</label>
                 {% set selected_no_submission_jenjangs = laporan_selected_no_submission_jenjangs(form) if form else [] %}
                 {% set selected_no_submission_statuses_val = laporan_selected_no_submission_statuses(form) if form else [] %}
@@ -311,7 +335,7 @@
     </div>
 
     {# ── Target Sekolah ── #}
-    <div class="section-card">
+    <div class="section-card" id="targetSekolahSection" {% if selected_audience == 'staff' %}style="display:none;"{% endif %}>
         <h5><i class="bi bi-bullseye me-2"></i>Target Sekolah</h5>
         <div class="mb-3">
             <label class="form-label fw-semibold">Kirimkan form ke:</label>
@@ -490,6 +514,13 @@
                 </div>
                 <div class="upload-gambar-info mt-2" id="img_info_{{ fid }}"
                     {% if field.field_type != 'upload_gambar' %}style="display:none;"{% endif %}>
+                    {% set img_cfg = field.options_json if field.field_type == 'upload_gambar' and field.options_json else {} %}
+                    <label class="text-muted small fw-semibold">Sumber Gambar:</label>
+                    <select name="field_image_source_{{ fid }}" class="form-select form-select-sm mb-2" style="max-width: 250px;">
+                        <option value="any" {% if not img_cfg or img_cfg.source == 'any' %}selected{% endif %}>Bebas (Galeri atau Kamera)</option>
+                        <option value="camera" {% if img_cfg.source == 'camera' %}selected{% endif %}>Hanya Kamera Langsung</option>
+                        <option value="gallery" {% if img_cfg.source == 'gallery' %}selected{% endif %}>Hanya Upload File/Galeri</option>
+                    </select>
                     <div class="alert alert-success py-2 px-3 mb-0 small">
                         <i class="bi bi-image me-1"></i>
                         <strong>Upload Gambar:</strong> Format diizinkan: JPG, PNG, WEBP, GIF.
@@ -650,7 +681,8 @@ function restoreDraftFields(pairs) {
             link: {
                 url: firstValueFromPairs(pairs, 'field_link_url_' + fid, ''),
                 text: firstValueFromPairs(pairs, 'field_link_text_' + fid, 'Buka Link')
-            }
+            },
+            image_source: firstValueFromPairs(pairs, 'field_image_source_' + fid, 'any')
         };
         addField(fieldData);
     });
@@ -786,6 +818,30 @@ function updateRepeatPolicy() {
     if (allowMultipleInput) allowMultipleInput.value = policy === 'once' ? '0' : '1';
 }
 
+function updateTargetAudience() {
+    var audienceStaff = document.getElementById('audience_staff');
+    var targetSekolahSection = document.getElementById('targetSekolahSection');
+    var noSubmissionJenjangSection = document.getElementById('noSubmissionJenjangSection');
+    var noSubmissionCutoffGroup = document.getElementById('noSubmissionCutoffGroup');
+    if (!audienceStaff || !targetSekolahSection) return;
+    var isStaff = audienceStaff.checked;
+    targetSekolahSection.style.display = isStaff ? 'none' : '';
+    if (noSubmissionJenjangSection) {
+        noSubmissionJenjangSection.style.display = isStaff ? 'none' : '';
+    }
+    if (noSubmissionCutoffGroup) {
+        noSubmissionCutoffGroup.style.display = isStaff ? 'none' : '';
+    }
+    // Jika staff, reset target scope ke 'all' agar tidak simpan data scope sekolah
+    if (isStaff) {
+        var scopeSelect = document.getElementById('targetScopeSelect');
+        if (scopeSelect) {
+            scopeSelect.value = 'all';
+            updateTargetScope();
+        }
+    }
+}
+
 function updateTargetScope() {
     var scope = document.getElementById('targetScopeSelect').value;
     document.getElementById('jenjangGroup').style.display = scope === 'jenjang' ? '' : 'none';
@@ -822,6 +878,8 @@ document.querySelectorAll('#schoolListContainer input[type=checkbox]').forEach(f
 });
 updateTargetScope();
 updateRepeatPolicy();
+updateTargetAudience();
+
 
 function generateId() {
     return 'f_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
@@ -935,6 +993,12 @@ function addField(fieldData) {
             </div>
         </div>
         <div class="upload-gambar-info mt-2" id="img_info_${fid}" style="display:none;">
+            <label class="text-muted small fw-semibold">Sumber Gambar:</label>
+            <select name="field_image_source_${fid}" class="form-select form-select-sm mb-2" style="max-width: 250px;">
+                <option value="any" ${(!fieldData.image_source || fieldData.image_source === 'any') ? 'selected' : ''}>Bebas (Galeri atau Kamera)</option>
+                <option value="camera" ${fieldData.image_source === 'camera' ? 'selected' : ''}>Hanya Kamera Langsung</option>
+                <option value="gallery" ${fieldData.image_source === 'gallery' ? 'selected' : ''}>Hanya Upload File/Galeri</option>
+            </select>
             <div class="alert alert-success py-2 px-3 mb-0 small">
                 <i class="bi bi-image me-1"></i>
                 <strong>Upload Gambar:</strong> Format diizinkan: JPG, PNG, WEBP, GIF.

@@ -89,6 +89,10 @@ def get_form_fields(form_id: int) -> list[dict]:
                         "url": raw_options.get("url") or "",
                         "button_text": raw_options.get("button_text") or "Buka Link",
                     }
+                elif d["field_type"] == "upload_gambar":
+                    d["options_json"] = {
+                        "source": raw_options.get("source") or "any"
+                    }
                 else:
                     d["options_json"] = raw_options.get("choices") or []
             rows.append(d)
@@ -107,13 +111,13 @@ def get_form_target_school_ids(form_id: int) -> list[int]:
 
 def list_forms_for_school(school_id: int, jenjang: Optional[str] = None) -> list[dict]:
     """
-    Return active forms visible to a particular school.
+    Return active forms visible to a particular school (target_audience='sekolah').
     Includes scope=all, scope=jenjang (matching school jenjang), scope=specific (this school targeted).
     """
     with get_cursor() as cur:
         cur.execute(
             """
-            SELECT DISTINCT f.id, f.title, f.description, f.target_scope,
+            SELECT DISTINCT f.id, f.title, f.description, f.target_scope, f.target_audience,
                    f.allow_multiple, f.allow_late, f.very_late_after_minutes,
                    f.no_submission_after_minutes, f.no_submission_jenjangs, f.no_submission_statuses,
                    f.is_paused, f.repeat_policy, f.repeat_until_at,
@@ -126,6 +130,7 @@ def list_forms_for_school(school_id: int, jenjang: Optional[str] = None) -> list
             LEFT JOIN laporan_form_targets ft ON ft.form_id = f.id
             WHERE f.is_active = TRUE
               AND f.status = 'published'
+              AND f.target_audience = 'sekolah'
               AND (
                   f.target_scope = 'all'
                   OR (f.target_scope = 'jenjang' AND f.target_jenjang = %s)
@@ -148,6 +153,7 @@ def can_school_access_form(form_id: int, school_id: int, jenjang: Optional[str] 
             WHERE f.id = %s
               AND f.is_active = TRUE
               AND f.status = 'published'
+              AND f.target_audience = 'sekolah'
               AND (
                   f.target_scope = 'all'
                   OR (f.target_scope = 'jenjang' AND f.target_jenjang = %s)
@@ -160,20 +166,66 @@ def can_school_access_form(form_id: int, school_id: int, jenjang: Optional[str] 
         return cur.fetchone() is not None
 
 
+def list_forms_for_staff(user_id: int) -> list[dict]:
+    """
+    Return active forms visible to staff users (target_audience='staff').
+    Counts submissions by this specific user.
+    """
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT f.id, f.title, f.description, f.target_scope, f.target_audience,
+                   f.allow_multiple, f.allow_late, f.very_late_after_minutes,
+                   f.no_submission_after_minutes,
+                   f.is_paused, f.repeat_policy, f.repeat_until_at,
+                   f.repeat_deadline_time, f.repeat_deadline_day, f.deadline_at, f.created_at,
+                   (
+                       SELECT COUNT(*) FROM laporan_submissions s
+                       WHERE s.form_id = f.id AND s.submitted_by = %s AND s.status = 'submitted'
+                   ) AS submission_count
+            FROM laporan_forms f
+            WHERE f.is_active = TRUE
+              AND f.status = 'published'
+              AND f.target_audience = 'staff'
+            ORDER BY f.created_at DESC
+            """,
+            (user_id,),
+        )
+        return [dict(r) for r in cur.fetchall()]
+
+
+def can_staff_access_form(form_id: int) -> bool:
+    """Check if a form is accessible to staff (target_audience='staff')."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT 1 FROM laporan_forms f
+            WHERE f.id = %s
+              AND f.is_active = TRUE
+              AND f.status = 'published'
+              AND f.target_audience = 'staff'
+            LIMIT 1
+            """,
+            (form_id,),
+        )
+        return cur.fetchone() is not None
+
+
 def create_form(
     title: str,
     description: str,
     target_scope: str,
     target_jenjang: Optional[str],
-    allow_multiple: bool,
-    allow_late: bool,
-    very_late_after_minutes: int,
-    no_submission_after_minutes: Optional[int],
-    no_submission_jenjangs: Optional[str],
-    no_submission_statuses: Optional[str],
-    is_active: bool,
-    deadline_at: Optional[datetime],
-    created_by: int,
+    target_audience: str = "sekolah",
+    allow_multiple: bool = False,
+    allow_late: bool = False,
+    very_late_after_minutes: int = 180,
+    no_submission_after_minutes: Optional[int] = None,
+    no_submission_jenjangs: Optional[str] = None,
+    no_submission_statuses: Optional[str] = None,
+    is_active: bool = True,
+    deadline_at: Optional[datetime] = None,
+    created_by: int = 0,
     status: str = "published",
     repeat_policy: str = "once",
     repeat_until_at: Optional[datetime] = None,
@@ -185,12 +237,13 @@ def create_form(
         cur.execute(
             """
             INSERT INTO laporan_forms
-                (title, description, target_scope, target_jenjang, allow_multiple, allow_late,
+                (title, description, target_scope, target_jenjang, target_audience,
+                 allow_multiple, allow_late,
                  very_late_after_minutes, no_submission_after_minutes, no_submission_jenjangs,
                  no_submission_statuses,
                  is_active, status, repeat_policy, repeat_until_at, repeat_deadline_time,
                  repeat_deadline_day, deadline_at, created_by, updated_by)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id, title, status, created_at
             """,
             (
@@ -198,6 +251,7 @@ def create_form(
                 description,
                 target_scope,
                 target_jenjang,
+                target_audience,
                 allow_multiple,
                 allow_late,
                 very_late_after_minutes,
@@ -238,6 +292,7 @@ def update_form(
     repeat_until_at: Optional[datetime] = None,
     repeat_deadline_time: Optional[time] = None,
     repeat_deadline_day: Optional[int] = None,
+    target_audience: str = "sekolah",
 ) -> None:
     """Update laporan form metadata."""
     with get_cursor(commit=True) as cur:
@@ -245,6 +300,7 @@ def update_form(
             """
             UPDATE laporan_forms SET
                 title=%s, description=%s, target_scope=%s, target_jenjang=%s,
+                target_audience=%s,
                 allow_multiple=%s, allow_late=%s, very_late_after_minutes=%s,
                 no_submission_after_minutes=%s, no_submission_jenjangs=%s,
                 no_submission_statuses=%s,
@@ -259,6 +315,7 @@ def update_form(
                 description,
                 target_scope,
                 target_jenjang,
+                target_audience,
                 allow_multiple,
                 allow_late,
                 very_late_after_minutes,
@@ -344,6 +401,12 @@ def replace_form_fields(form_id: int, fields: list[dict]) -> None:
                     "field_key": field_key,
                     "url": raw_options.get("url") or "",
                     "button_text": raw_options.get("button_text") or "Buka Link",
+                }
+            elif field_type == "upload_gambar":
+                raw_options = raw_options if isinstance(raw_options, dict) else {}
+                options = {
+                    "field_key": field_key,
+                    "source": raw_options.get("source", "any")
                 }
             else:
                 options = {"field_key": field_key}
@@ -553,10 +616,13 @@ def get_submission_with_answers(submission_id: int) -> Optional[dict]:
                    f.repeat_policy AS form_repeat_policy,
                    f.repeat_deadline_time AS form_repeat_deadline_time,
                    f.repeat_deadline_day AS form_repeat_deadline_day,
-                   sc.name AS school_name, sc.npsn, sc.jenjang, u.full_name AS submitted_by_name
+                   COALESCE(sc.name, u.full_name, u.username, 'Staff') AS school_name,
+                   COALESCE(sc.npsn, '-') AS npsn,
+                   COALESCE(sc.jenjang, 'Staff') AS jenjang,
+                   u.full_name AS submitted_by_name
             FROM laporan_submissions s
             JOIN laporan_forms f ON f.id = s.form_id
-            JOIN portal_schools sc ON sc.id = s.school_id
+            LEFT JOIN portal_schools sc ON sc.id = s.school_id
             LEFT JOIN dashboard_users u ON u.id = s.submitted_by
             WHERE s.id = %s
             """,
@@ -606,10 +672,10 @@ def delete_submitted_submission(form_id: int, submission_id: int) -> Optional[di
         cur.execute(
             """
             SELECT s.id, s.form_id, s.school_id, s.status, s.repeat_period_key,
-                   s.repeat_period_label, sc.name AS school_name,
+                   s.repeat_period_label, COALESCE(sc.name, 'Staff') AS school_name,
                    ARRAY_REMOVE(ARRAY_AGG(sf.file_path), NULL) AS file_paths
             FROM laporan_submissions s
-            JOIN portal_schools sc ON sc.id = s.school_id
+            LEFT JOIN portal_schools sc ON sc.id = s.school_id
             LEFT JOIN laporan_submission_answers a ON a.submission_id = s.id
             LEFT JOIN laporan_submission_files sf ON sf.answer_id = a.id
             WHERE s.id = %s AND s.form_id = %s AND s.status = 'submitted'
@@ -679,9 +745,37 @@ def list_school_submissions(school_id: int) -> list[dict]:
         return [dict(r) for r in cur.fetchall()]
 
 
-def get_last_submission_answers(form_id: int, school_id: int) -> Optional[dict]:
+def list_staff_submissions(submitted_by: int) -> list[dict]:
+    """List all submissions by a staff user (for staff's own history view)."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT s.id, s.form_id, s.status, s.submitted_at, s.created_at,
+                   s.is_late, s.late_days, COALESCE(s.late_minutes, s.late_days * 1440, 0) AS late_minutes,
+                   s.repeat_period_key, s.repeat_period_label,
+                   f.title AS form_title, f.description AS form_description,
+                   f.very_late_after_minutes,
+                   f.deadline_at AS form_deadline_at,
+                   f.repeat_policy AS form_repeat_policy,
+                   f.repeat_deadline_time AS form_repeat_deadline_time,
+                   f.repeat_deadline_day AS form_repeat_deadline_day
+            FROM laporan_submissions s
+            JOIN laporan_forms f ON f.id = s.form_id
+            WHERE s.submitted_by = %s AND s.status IN ('submitted')
+            ORDER BY COALESCE(s.submitted_at, s.created_at) DESC, s.id DESC
+            """,
+            (submitted_by,),
+        )
+        return [dict(r) for r in cur.fetchall()]
+
+
+def get_last_submission_answers(
+    form_id: int,
+    school_id: Optional[int] = None,
+    submitted_by: Optional[int] = None,
+) -> Optional[dict]:
     """
-    Fetch the most recent submitted answers for a given form+school.
+    Fetch the most recent submitted answers for a given form+school (or form+staff user).
     Returns a dict with:
       - period_label: label periode submission tersebut
       - answers: {field_id -> {answer_text, answer_json, field_type}}
@@ -690,16 +784,28 @@ def get_last_submission_answers(form_id: int, school_id: int) -> Optional[dict]:
     """
     with get_cursor() as cur:
         # Query 1: ambil submission terakhir
-        cur.execute(
-            """
-            SELECT s.id, s.repeat_period_label
-            FROM laporan_submissions s
-            WHERE s.form_id = %s AND s.school_id = %s AND s.status = 'submitted'
-            ORDER BY s.submitted_at DESC NULLS LAST, s.id DESC
-            LIMIT 1
-            """,
-            (form_id, school_id),
-        )
+        if submitted_by is not None:
+            cur.execute(
+                """
+                SELECT s.id, s.repeat_period_label
+                FROM laporan_submissions s
+                WHERE s.form_id = %s AND s.submitted_by = %s AND s.status = 'submitted'
+                ORDER BY s.submitted_at DESC NULLS LAST, s.id DESC
+                LIMIT 1
+                """,
+                (form_id, submitted_by),
+            )
+        else:
+            cur.execute(
+                """
+                SELECT s.id, s.repeat_period_label
+                FROM laporan_submissions s
+                WHERE s.form_id = %s AND s.school_id = %s AND s.status = 'submitted'
+                ORDER BY s.submitted_at DESC NULLS LAST, s.id DESC
+                LIMIT 1
+                """,
+                (form_id, school_id),
+            )
         row = cur.fetchone()
         if not row:
             return None
@@ -709,7 +815,7 @@ def get_last_submission_answers(form_id: int, school_id: int) -> Optional[dict]:
         # Query 2: batch ambil semua jawaban sekaligus
         cur.execute(
             """
-            SELECT a.field_id, a.answer_text, a.answer_json,
+            SELECT a.id AS answer_id, a.field_id, a.answer_text, a.answer_json,
                    ff.field_type, ff.options_json
             FROM laporan_submission_answers a
             JOIN laporan_form_fields ff ON ff.id = a.field_id
@@ -727,10 +833,18 @@ def get_last_submission_answers(form_id: int, school_id: int) -> Optional[dict]:
                     answer_json = json.loads(answer_json)
                 except Exception:
                     answer_json = None
+            files = []
+            if d.get("field_type") in ("file", "upload_dokumen", "upload_gambar"):
+                cur.execute(
+                    "SELECT id, file_path, original_name, mime_type FROM laporan_submission_files WHERE answer_id = %s",
+                    (d["answer_id"],),
+                )
+                files = [dict(f) for f in cur.fetchall()]
             answers[str(d["field_id"])] = {
                 "answer_text": d.get("answer_text"),
                 "answer_json": answer_json,
                 "field_type": d.get("field_type"),
+                "files": files,
             }
 
         return {
@@ -754,14 +868,16 @@ def list_form_submissions(form_id: int) -> list[dict]:
                    f.repeat_deadline_time AS form_repeat_deadline_time,
                    f.repeat_deadline_day AS form_repeat_deadline_day,
                    f.very_late_after_minutes,
-                   sc.name AS school_name, sc.npsn, sc.jenjang,
+                   COALESCE(sc.name, u.full_name, u.username, 'Staff') AS school_name,
+                   COALESCE(sc.npsn, '-') AS npsn,
+                   COALESCE(sc.jenjang, 'Staff') AS jenjang,
                    u.full_name AS submitted_by_name
             FROM laporan_submissions s
             JOIN laporan_forms f ON f.id = s.form_id
-            JOIN portal_schools sc ON sc.id = s.school_id
+            LEFT JOIN portal_schools sc ON sc.id = s.school_id
             LEFT JOIN dashboard_users u ON u.id = s.submitted_by
             WHERE s.form_id = %s AND s.status IN ('submitted', 'no_submission')
-            ORDER BY s.repeat_period_key DESC NULLS LAST, s.submitted_at DESC NULLS LAST, s.created_at DESC, sc.name ASC
+            ORDER BY s.repeat_period_key DESC NULLS LAST, s.submitted_at DESC NULLS LAST, s.created_at DESC, COALESCE(sc.name, u.full_name, 'Staff') ASC
             """,
             (form_id,),
         )
