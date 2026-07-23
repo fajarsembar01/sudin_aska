@@ -134,13 +134,11 @@ B. Ketentuan Prapendaftaran
 2. Prapendaftaran hanya diikuti oleh CMB sesuai dengan kriteria yang diatur pada Keputusan Gubernur DKI Jakarta Nomor 238 Tahun 2026 tentang Petunjuk Teknis Penerimaan Murid Baru.
 3. Kriteria, mekanisme prapendaftaran, dan dokumen prapendaftaran sesuai dengan ketentuan pada Keputusan Gubernur DKI Jakarta Nomor 238 Tahun 2026 tentang Petunjuk Teknis Penerimaan Murid Baru.
 4. Prapendaftaran dilakukan dengan cara mengakses laman https://sidanira.jakarta.go.id/prapendaftaran;
-5. Layanan sistem informasi prapendaftaran dilaksanakan selama
-24 jam.
+5. Layanan sistem informasi prapendaftaran dilaksanakan selama 24 jam.
 6. Proses prapendaftaran dilaksanakan dengan waktu sebagai berikut:
 a. hari : Senin – Jumat
 b. waktu : 24 Jam
-7. Hari Sabtu, Minggu dan hari Libur Nasional tidak ada pelayanan
-PMB.
+7. Hari Sabtu, Minggu dan hari Libur Nasional tidak ada pelayanan PMB.
 C. Tahapan Prapendaftaran
 1. Pengajuan permohonan prapendaftaran
 CMB mengajukan permohonan Prapendaftaran, dengan tahapan sebagai berikut:
@@ -194,9 +192,7 @@ CMB melakukan pengajuan akun dan verifikasi KK dengan tahapan sebagai berikut:
 6) mengunggah dokumen yang menunjukkan keterangan diri Murid pada halaman depan Rapor/Keterangan Tentang Diri Murid/Ijazah/Akte Kelahiran;
 7) khusus CMB yang diasuh oleh wali, mengunggah Surat Perwalian Anak di Bawah Umur dengan melampirkan Surat Keterangan dari Kelurahan (PM1) atau Putusan/Penetapan Pengadilan;
 8) khusus CMB yang diasuh oleh Kakek/Nenek/Saudara Kandung Ayah/Ibu dari CMB, mengunggah Kartu Keluarga sebelumnya;
-9) mengunggah Surat Pernyataan Tanggung Jawab Mutlak
-(SPTJM) tentang Keabsahan Dokumen dari Orang Tua/Wali
-CMB;
+9) mengunggah Surat Pernyataan Tanggung Jawab Mutlak (SPTJM) tentang Keabsahan Dokumen dari Orang Tua/Wali CMB;
 10) mencetak tanda bukti pengajuan akun yang berisi Nomor Peserta dan PIN /Token untuk Aktivasi; dan
 11) menunggu proses verifikasi ajuan akun dan KK secara daring oleh tim verifikator.
 b. Cek status ajuan akun dan KK
@@ -892,16 +888,16 @@ No. Jabatan Skor
 13. Sertifikat yang diperoleh dengan hasil seleksi ketat (Pramuka, Paskibra, Jumbara, dan Hafiz Quran)
 14. Capaian dalam mengikuti Jambore Nasional, Pramuka Garuda, Paskibra, dan Jumbara Tingkat Skor Internasional 100 Nasional 81 Provinsi 62 Kota/Kab. 43
 15. Capaian dalam mengikuti Hafiz Quran Jumlah Juz Skor
-28 – 30 100
-25-27 94
-22-24 88
-19-21 82
-16-18 76
-13-15 70
-11-12 64
-9-10 58
+- Jumlah Juz 28–30 : Skor 100
+- Jumlah Juz 25–27 : Skor 94
+- Jumlah Juz 22–24 : Skor 88
+- Jumlah Juz 19–21 : Skor 82
+- Jumlah Juz 16–18 : Skor 76
+- Jumlah Juz 13–15 : Skor 70
+- Jumlah Juz 11–12 : Skor 64
+- Jumlah Juz 9–10 : Skor 58
 JAKARTA, OT 2001
-!BU PENDIDIKAN SUS KH DINAS
+IBU PENDIDIKAN SUS KH DINAS
 52 46 40 34 Skar
 KEPALA DAERAH
 Juz PROVINS!
