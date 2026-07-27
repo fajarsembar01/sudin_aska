@@ -162,10 +162,10 @@
                                     {% endif %}
                                 </div>
 
-                                <!-- Foto Lapangan / Bukti Fisik Section -->
+                                <!-- Foto Lapangan / Bukti Kelengkapan Section -->
                                 <div class="mb-3 p-2 bg-white rounded border">
                                     <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-1">
-                                        <h6 class="mb-0 text-sm fw-bold">Foto Lapangan & Bukti Fisik</h6>
+                                        <h6 class="mb-0 text-sm fw-bold">Foto Lapangan & Bukti Kelengkapan</h6>
                                         {% if act.live_photos %}
                                         <span class="badge bg-success-subtle text-success border border-success px-2 py-1" style="font-size: 0.7rem;">
                                             <i class="bi bi-check-circle me-1"></i> Foto Tersedia
@@ -216,6 +216,56 @@
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                         <input type="hidden" name="action" value="validate">
                                         <input type="hidden" name="report_id" value="{{ report.id }}">
+                                        
+                                        <!-- Checklist Kelengkapan Dokumen (2 Pilihan Jelas: Ada / Tidak Ada) -->
+                                        {% if checklists %}
+                                        <div class="card border-0 bg-light shadow-2xs mb-3">
+                                            <div class="card-header bg-white py-2 px-3 d-flex justify-content-between align-items-center border-bottom">
+                                                <h6 class="mb-0 text-xs fw-bold text-dark">
+                                                    <i class="bi bi-card-checklist text-primary me-1"></i> Checklist Kelengkapan Dokumen
+                                                </h6>
+                                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle text-xs">{{ checklists|length }} Item Cek</span>
+                                            </div>
+                                            <div class="card-body p-2 p-sm-3">
+                                                <div class="row g-3">
+                                                    {% for cl in checklists %}
+                                                    {% set res = act.checklist_results.get(cl.id) if act.checklist_results else None %}
+                                                    {% set current_status = res.status if (res and res.status in ['yes', 'no']) else 'no' %}
+                                                    <div class="col-12 col-md-6">
+                                                        <div class="p-3 bg-white rounded border text-xs h-100 d-flex flex-column justify-content-between shadow-2xs">
+                                                            <div class="mb-2">
+                                                                <div class="fw-bold text-dark text-sm mb-1">
+                                                                    <span class="badge bg-light text-dark border me-1">{{ loop.index }}</span> {{ cl.name }}
+                                                                </div>
+                                                                {% if cl.description %}
+                                                                <div class="text-muted text-xs ms-4 mb-2" style="font-size: 0.75rem;">{{ cl.description }}</div>
+                                                                {% endif %}
+                                                            </div>
+                                                            
+                                                            <!-- 2 Tombol Jelas & Besar (Ada / Tidak Ada, Default: Tidak Ada) -->
+                                                            <div class="pt-2 border-top">
+                                                                <div class="btn-group w-100" role="group" aria-label="Status Kelengkapan">
+                                                                    <input type="radio" class="btn-check" name="checklist_{{ cl.id }}" id="cl_{{ act.id }}_{{ cl.id }}_yes" value="yes" autocomplete="off" {% if current_status == 'yes' %}checked{% endif %}>
+                                                                    <label class="btn btn-outline-success text-xs py-2 px-3 fw-bold" for="cl_{{ act.id }}_{{ cl.id }}_yes">
+                                                                        <i class="bi bi-check-circle-fill me-1 fs-6"></i> Ada
+                                                                    </label>
+
+                                                                    <input type="radio" class="btn-check" name="checklist_{{ cl.id }}" id="cl_{{ act.id }}_{{ cl.id }}_no" value="no" autocomplete="off" {% if current_status == 'no' %}checked{% endif %}>
+                                                                    <label class="btn btn-outline-danger text-xs py-2 px-3 fw-bold" for="cl_{{ act.id }}_{{ cl.id }}_no">
+                                                                        <i class="bi bi-x-circle-fill me-1 fs-6"></i> Tidak Ada
+                                                                    </label>
+                                                                </div>
+                                                                <div class="mt-2">
+                                                                    <input type="text" name="checklist_notes_{{ cl.id }}" class="form-control form-control-sm text-xs bg-light" placeholder="Catatan temuan (opsional)..." value="{{ res.notes if res else '' }}">
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    {% endfor %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endif %}
                                         
                                         <div class="row g-2">
                                             <div class="col-12 col-md-4">

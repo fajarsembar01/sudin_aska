@@ -74,7 +74,7 @@ def create_app() -> Flask:
     
     init_oauth(app)
 
-    if os.getenv("ASKA_DASHBOARD_AUTO_INIT", "0").strip().lower() in {"1", "true", "yes"}:
+    if os.getenv("ASKA_DASHBOARD_AUTO_INIT", "1").strip().lower() in {"1", "true", "yes"}:
         try:
             ensure_dashboard_schema()
         except Exception:
