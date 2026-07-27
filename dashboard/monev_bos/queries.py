@@ -897,6 +897,68 @@ def add_audit_log(report_id: int, activity_id: Optional[int], user_id: int, acti
             (report_id, activity_id, user_id, action, details)
         )
 
+
+# --- MASTER NAMA KEGIATAN ---
+def list_master_activities(include_inactive: bool = False, fund_source: Optional[str] = None) -> List[Dict[str, Any]]:
+    with get_cursor() as cur:
+        query = "SELECT * FROM monev_bos_master_activities WHERE 1=1"
+        params: List[Any] = []
+        if not include_inactive:
+            query += " AND is_active = TRUE"
+        if fund_source and fund_source != "ALL":
+            query += " AND (fund_source = %s OR fund_source = 'ALL')"
+            params.append(fund_source)
+        query += " ORDER BY name ASC"
+        cur.execute(query, params)
+        return [dict(row) for row in cur.fetchall()]
+
+def create_master_activity(name: str, code_prefix: Optional[str] = None, fund_source: str = "ALL") -> int:
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            INSERT INTO monev_bos_master_activities (name, code_prefix, fund_source)
+            VALUES (%s, %s, %s)
+            ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+            RETURNING id
+            """,
+            (name.strip(), (code_prefix or "").strip() or None, fund_source)
+        )
+        return cur.fetchone()[0]
+
+def update_master_activity(master_id: int, name: str, code_prefix: Optional[str], fund_source: str, is_active: bool) -> None:
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE monev_bos_master_activities
+            SET name = %s, code_prefix = %s, fund_source = %s, is_active = %s, updated_at = NOW()
+            WHERE id = %s
+            """,
+            (name.strip(), (code_prefix or "").strip() or None, fund_source, is_active, master_id)
+        )
+
+def delete_master_activity(master_id: int) -> None:
+    with get_cursor(commit=True) as cur:
+        cur.execute("DELETE FROM monev_bos_master_activities WHERE id = %s", (master_id,))
+
+def seed_default_master_activities() -> None:
+    defaults = [
+        ("Pemeliharaan Sarana & Alat Pelajaran Komputer", "01.02", "ALL"),
+        ("Penyediaan Bahan Kebersihan & Kebutuhan Sanitasi", "01.03", "ALL"),
+        ("Pembelian Alat Tulis Kantor", "01.01", "ALL"),
+        ("Honorarium Guru Honorer / Tenaga Kependidikan", "02.01", "ALL"),
+        ("Langganan Daya dan Jasa (Listrik/Air/Internet)", "03.01", "ALL"),
+        ("Pemeliharaan Bangunan Sekolah & Ruang Kelas", "01.04", "ALL"),
+        ("Pengadaan Modul & Bahan Ajar Siswa", "04.01", "ALL"),
+        ("Kegiatan Asesmen & Evaluasi Pembelajaran", "05.01", "ALL"),
+        ("Pengembangan Perpustakaan & Literasi", "06.01", "ALL"),
+        ("Kegiatan Ekstrakurikuler & Lomba Siswa", "07.01", "ALL"),
+    ]
+    for name, code, fs in defaults:
+        try:
+            create_master_activity(name, code, fs)
+        except Exception:
+            pass
+
 def get_audit_logs(report_id: int) -> List[Dict[str, Any]]:
     with get_cursor() as cur:
         cur.execute(

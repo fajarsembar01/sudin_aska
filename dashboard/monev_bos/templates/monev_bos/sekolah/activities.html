@@ -100,7 +100,7 @@
                     <thead class="table-light">
                         <tr>
                             <th class="ps-4">Kode Kegiatan</th>
-                            <th>Nama Kegiatan / Uraian</th>
+                            <th>Nama Kegiatan</th>
                             <th>No. BKU</th>
                             <th>Vendor & Barang</th>
                             <th>Realisasi (Rp)</th>
@@ -350,8 +350,13 @@
                     </div>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Nama Kegiatan (Uraian) <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control" name="activity_name" required value="{{ act.activity_name }}">
+                    <label class="form-label fw-bold">Nama Kegiatan <span class="text-danger">*</span></label>
+                    <select class="form-select" name="activity_name" required>
+                        <option value="" disabled>-- Pilih Nama Kegiatan --</option>
+                        {% for master in master_activities %}
+                        <option value="{{ master.name }}" {% if master.name == act.activity_name %}selected{% endif %}>{{ master.name }}{% if master.code_prefix %} ({{ master.code_prefix }}){% endif %}</option>
+                        {% endfor %}
+                    </select>
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Nilai Realisasi (Rp) <span class="text-danger">*</span></label>
@@ -603,8 +608,13 @@
                     </div>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Nama Kegiatan (Uraian) <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control" name="activity_name" required placeholder="Contoh: Pembelian Alat Tulis Kantor">
+                    <label class="form-label fw-bold">Nama Kegiatan <span class="text-danger">*</span></label>
+                    <select class="form-select" name="activity_name" required>
+                        <option value="" disabled selected>-- Pilih Nama Kegiatan --</option>
+                        {% for master in master_activities %}
+                        <option value="{{ master.name }}">{{ master.name }}{% if master.code_prefix %} ({{ master.code_prefix }}){% endif %}</option>
+                        {% endfor %}
+                    </select>
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Nilai Realisasi (Rp) <span class="text-danger">*</span></label>

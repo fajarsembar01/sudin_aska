@@ -31,7 +31,7 @@
                         {% endif %}
                     </a>
                 </li>
-                {% set is_settings_active = request.endpoint in ['monev_bos.admin_periods', 'monev_bos.admin_checklists', 'monev_bos.admin_teams'] %}
+                {% set is_settings_active = request.endpoint in ['monev_bos.admin_periods', 'monev_bos.admin_master_activities', 'monev_bos.admin_checklists', 'monev_bos.admin_teams'] %}
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle {% if is_settings_active %}active{% endif %}" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="bi bi-gear nav-icon"></i>Pengaturan <i class="bi bi-chevron-down ms-1" style="font-size:0.7rem;"></i>
@@ -40,6 +40,11 @@
                         <li>
                             <a class="dropdown-item {% if request.endpoint == 'monev_bos.admin_periods' %}active{% endif %}" href="{{ url_for('monev_bos.admin_periods') }}">
                                 <i class="bi bi-calendar-event me-2"></i>Jadwal & Periode
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item {% if request.endpoint == 'monev_bos.admin_master_activities' %}active{% endif %}" href="{{ url_for('monev_bos.admin_master_activities') }}">
+                                <i class="bi bi-collection me-2"></i>Master Nama Kegiatan
                             </a>
                         </li>
                         <li>

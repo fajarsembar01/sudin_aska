@@ -2304,6 +2304,18 @@ CREATE INDEX IF NOT EXISTS idx_monev_bos_activity_history_activity ON monev_bos_
 """
 
 
+_MONEV_BOS_MASTER_ACTIVITIES_SQL = """
+CREATE TABLE IF NOT EXISTS monev_bos_master_activities (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE,
+    code_prefix TEXT,
+    fund_source TEXT DEFAULT 'ALL' CHECK (fund_source IN ('ALL', 'BOS', 'BOP')),
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
 def ensure_monev_bos_schema() -> None:
     statements = (
         _MONEV_BOS_PERIODS_SQL,
@@ -2314,6 +2326,7 @@ def ensure_monev_bos_schema() -> None:
         _MONEV_BOS_ASSIGNMENTS_SQL,
         _MONEV_BOS_REPORTS_SQL,
         _MONEV_BOS_REPORTS_INDEX_SQL,
+        _MONEV_BOS_MASTER_ACTIVITIES_SQL,
         _MONEV_BOS_ACTIVITIES_SQL,
         _MONEV_BOS_ACTIVITIES_INDEX_SQL,
         "ALTER TABLE monev_bos_activities DROP CONSTRAINT IF EXISTS monev_bos_activities_status_check;",

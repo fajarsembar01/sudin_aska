@@ -140,6 +140,40 @@ def admin_checklists():
     checklists = queries.list_checklists(include_inactive=True)
     return render_template("monev_bos/admin/checklists.html", checklists=checklists)
 
+@monev_bos_bp.route("/admin/master-activities", methods=["GET", "POST"])
+@role_required("admin")
+def admin_master_activities():
+    if request.method == "POST":
+        action = request.form.get("action")
+        if action == "create":
+            name = request.form.get("name")
+            code_prefix = request.form.get("code_prefix")
+            fund_source = request.form.get("fund_source", "ALL")
+            if name:
+                queries.create_master_activity(name, code_prefix, fund_source)
+                flash("Master Nama Kegiatan berhasil ditambahkan", "success")
+            else:
+                flash("Nama kegiatan wajib diisi.", "warning")
+        elif action == "update":
+            master_id = int(request.form.get("master_id"))
+            name = request.form.get("name")
+            code_prefix = request.form.get("code_prefix")
+            fund_source = request.form.get("fund_source", "ALL")
+            is_active = request.form.get("is_active") == "on"
+            if name:
+                queries.update_master_activity(master_id, name, code_prefix, fund_source, is_active)
+                flash("Master Nama Kegiatan berhasil diperbarui", "success")
+            else:
+                flash("Nama kegiatan wajib diisi.", "warning")
+        elif action == "delete":
+            master_id = int(request.form.get("master_id"))
+            queries.delete_master_activity(master_id)
+            flash("Master Nama Kegiatan berhasil dihapus", "success")
+        return redirect(url_for("monev_bos.admin_master_activities"))
+
+    master_activities = queries.list_master_activities(include_inactive=True)
+    return render_template("monev_bos/admin/master_activities.html", master_activities=master_activities)
+
 @monev_bos_bp.route("/admin/edit-requests", methods=["GET", "POST"])
 @role_required("admin")
 def admin_edit_requests():
@@ -590,10 +624,13 @@ def sekolah_activities():
             )
             act["staff_wa_url"] = f"https://wa.me/{act_staff_wa['staff_phone']}?text={urllib.parse.quote(wa_msg_staff)}"
 
+    master_activities = queries.list_master_activities(include_inactive=False, fund_source=fund_source)
+
     return render_template("monev_bos/sekolah/activities.html", 
                            active_period=active_period, 
                            report=report, 
                            activities=activities,
+                           master_activities=master_activities,
                            fund_source=fund_source,
                            total_receipt=total_receipt,
                            total_realized=total_realized,
