@@ -1,0 +1,101 @@
+{% extends "monev_bos/base_monev_bos.html" %}
+
+{% block monev_bos_content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">Laporan MONEV BOS/BOP</h1>
+            <p class="text-muted mb-0">Pilih triwulan yang ingin dilaporkan, lalu isi data penerimaan & kegiatan.</p>
+        </div>
+    </div>
+
+    {% if not active_periods %}
+    <div class="alert alert-warning text-center p-5">
+        <i class="bi bi-calendar-x display-4 text-warning mb-3 d-block"></i>
+        <h4>Belum Ada Periode Pelaporan Dibuka</h4>
+        <p>Saat ini tidak ada triwulan pelaporan MONEV BOS/BOP yang aktif dibuka oleh Admin Sudin.</p>
+    </div>
+    {% else %}
+    
+    <div class="row g-4">
+        {% set status_colors = {
+            'draft': 'secondary',
+            'submitted': 'info',
+            'in_review': 'warning',
+            'completed': 'success',
+            'needs_revision': 'danger'
+        } %}
+        {% set status_labels = {
+            'draft': 'Draft / Sedang Diisi',
+            'submitted': 'Sudah Dikirim',
+            'in_review': 'Sedang Diaudit',
+            'completed': 'Audit Selesai',
+            'needs_revision': 'Butuh Revisi'
+        } %}
+        {% set tw_labels = {1: 'TW I', 2: 'TW II', 3: 'TW III', 4: 'TW IV'} %}
+        {% set tw_months = {1: 'Januari - Maret', 2: 'April - Juni', 3: 'Juli - September', 4: 'Oktober - Desember'} %}
+
+        {% for pr in period_reports %}
+        {% set period = pr.period %}
+        {% set report = pr.report %}
+        <div class="col-lg-6 col-md-6">
+            <div class="card shadow-sm h-100 border-top border-4 {% if report and report.status == 'completed' %}border-success{% elif report and report.status == 'needs_revision' %}border-danger{% elif report %}border-info{% else %}border-primary{% endif %}">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h4 class="mb-0 fw-bold">{{ tw_labels[period.tw] }}</h4>
+                            <small class="text-muted">{{ tw_months[period.tw] }} {{ period.year }}</small>
+                        </div>
+                        <div>
+                            {% if report %}
+                            <span class="badge bg-{{ status_colors[report.status] }} fs-6">{{ status_labels[report.status] }}</span>
+                            {% else %}
+                            <span class="badge bg-light text-dark border fs-6">Belum Dibuat</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <p class="text-muted mb-1">
+                        <i class="bi bi-calendar-event me-1"></i> Deadline: <strong>{{ period.end_date }}</strong>
+                    </p>
+
+                    {% if report %}
+                    <div class="mt-3 mb-3">
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <small class="text-muted d-block">Penerimaan BOS</small>
+                                <strong class="text-success">Rp {{ "{:,.0f}".format(report.bosp_receipt_amount).replace(',', '.') }}</strong>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted d-block">Penerimaan BOP</small>
+                                <strong class="text-info">Rp {{ "{:,.0f}".format(report.bop_receipt_amount).replace(',', '.') }}</strong>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="d-grid gap-2 mt-3">
+                        {% if not report %}
+                        <a href="{{ url_for('monev_bos.sekolah_report_form', period_id=period.id) }}" class="btn btn-primary">
+                            <i class="bi bi-pencil-square me-2"></i> Mulai Isi Laporan
+                        </a>
+                        {% elif report.status in ['draft', 'needs_revision'] %}
+                        <a href="{{ url_for('monev_bos.sekolah_funds', period_id=period.id) }}" class="btn btn-warning fw-bold">
+                            <i class="bi bi-list-check me-2"></i> Lanjutkan Pengisian (BOS / BOP)
+                        </a>
+                        {% else %}
+                        <a href="{{ url_for('monev_bos.sekolah_funds', period_id=period.id) }}" class="btn btn-outline-primary fw-bold">
+                            <i class="bi bi-eye me-2"></i> Lihat Detail Laporan
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    {% endif %}
+
+</div>
+{% endblock %}

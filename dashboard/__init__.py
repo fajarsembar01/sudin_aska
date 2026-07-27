@@ -19,7 +19,7 @@ from .cms.routes import cms_bp
 from .laporan import laporan_bp
 from .db_access import shutdown_pool
 from .queries import fetch_pending_bullying_count, fetch_pending_psych_count, fetch_pending_corruption_count
-from .schema import ensure_dashboard_schema, ensure_laporan_schema
+from .schema import ensure_dashboard_schema, ensure_laporan_schema, ensure_monev_bos_schema
 from utils import to_jakarta
 
 
@@ -61,6 +61,9 @@ def create_app() -> Flask:
     app.register_blueprint(cms_bp)
     app.register_blueprint(laporan_bp)
     
+    from .monev_bos.routes import monev_bos_bp
+    app.register_blueprint(monev_bos_bp)
+    
     # Exempt public API endpoints from CSRF
     from .adiwiyata.routes import api_adiwiyata_likes
     from .routes import api_spmb_evaluations, api_spmb_evaluation_item, api_spmb_queue
@@ -80,6 +83,82 @@ def create_app() -> Flask:
             ensure_laporan_schema()
         except Exception:
             pass
+        try:
+            ensure_monev_bos_schema()
+        except Exception:
+            pass
+
+    @app.before_request
+    def check_mandatory_whatsapp():
+        from flask import request, redirect, url_for, flash, session
+        user = current_user()
+        if not user:
+            return None
+
+        wa_number = (user.get("whatsapp_number") or user.get("phone") or "").strip()
+        role = (user.get("role") or "").strip().lower()
+
+        if not wa_number:
+            try:
+                from .portal.queries import get_dashboard_user_profile
+                db_profile = get_dashboard_user_profile(user["id"])
+                if db_profile:
+                    wa_number = (db_profile.get("whatsapp_number") or db_profile.get("phone") or "").strip()
+
+                # For sekolah role, check Nomor Operator Sekolah (coordinator_phone) from portal_schools
+                if not wa_number and role == "sekolah":
+                    from .portal.routes import _fetch_user_school
+                    school_info = _fetch_user_school(user["id"])
+                    if school_info and school_info.get("metadata"):
+                        meta = school_info.get("metadata") or {}
+                        coord_phone = (meta.get("coordinator_phone") or meta.get("school_phone") or "").strip()
+                        if coord_phone:
+                            wa_number = coord_phone
+                            from .db_access import get_cursor
+                            with get_cursor(commit=True) as cur:
+                                cur.execute(
+                                    "UPDATE dashboard_users SET whatsapp_number = %s, phone = %s WHERE id = %s",
+                                    (coord_phone, coord_phone, user["id"])
+                                )
+
+                if wa_number:
+                    session_user = session.get("user", {})
+                    session_user["whatsapp_number"] = wa_number
+                    session_user["phone"] = wa_number
+                    session["user"] = session_user
+            except Exception:
+                pass
+
+        if wa_number:
+            return None
+
+        path = request.path or ""
+        endpoint = request.endpoint or ""
+
+        # Allow static files and resources
+        if path.startswith("/static") or endpoint.startswith("static"):
+            return None
+
+        # Allow authentication endpoints
+        if path.startswith("/auth") or endpoint.startswith("auth."):
+            return None
+
+        # Allow profile pages and profile APIs so user can fill in WhatsApp number
+        allowed_endpoints = {
+            "portal.profile",
+            "portal.sekolah_profile",
+            "portal.user_profile_settings",
+            "portal.profile_photo",
+            "portal.api_sekolah_profile",
+            "portal.uploaded_file"
+        }
+        if endpoint in allowed_endpoints or "/profile" in path or "/sekolah/profile" in path:
+            return None
+
+        target_url = url_for("portal.sekolah_profile") if role == "sekolah" else url_for("portal.user_profile_settings")
+
+        flash("Demi kelancaran sistem dan koordinasi, silakan isi Nomor Operator Sekolah pada profil sekolah terlebih dahulu.", "warning")
+        return redirect(target_url)
 
     @app.context_processor
     def inject_globals() -> dict:
@@ -140,6 +219,7 @@ def create_app() -> Flask:
                     {"href": url_for("portal.manage_monev_teams"), "title": "Permintaan anggota tim", "subtitle": "Persetujuan anggota monev", "count": admin_pending.get("pending_team_member_requests", 0), "item_id": "adminPendingTeamItem", "count_id": "adminPendingTeamCount", "badge_class": "bg-primary"},
                     {"href": url_for("portal.admin_reopen_requests"), "title": "Permintaan reopen", "subtitle": "Penilaian diajukan untuk dibuka", "count": admin_pending.get("pending_reopen_requests", 0), "item_id": "adminPendingReopenItem", "count_id": "adminPendingReopenCount", "badge_class": "bg-danger"},
                     {"href": url_for("daftar_tamu.admin_validation"), "title": "Verifikasi daftar tamu", "subtitle": "Transaksi buku tamu menunggu validasi", "count": admin_pending.get("pending_guestbook", 0), "item_id": "adminPendingGuestbookItem", "count_id": "adminPendingGuestbookCount", "badge_class": "bg-success"},
+                    {"href": url_for("monev_bos.admin_edit_requests"), "title": "Pengajuan edit Monev BOS/BOP", "subtitle": "Permintaan ubah data kegiatan divalidasi", "count": admin_pending.get("pending_monev_edit_requests", 0), "item_id": "adminPendingMonevEditItem", "count_id": "adminPendingMonevEditCount", "badge_class": "bg-warning text-dark"},
                     {"href": url_for("call_center.inbox"), "title": "Call Center", "subtitle": "Pesan masuk belum dibaca", "count": admin_pending.get("pending_call_center", 0), "item_id": "adminPendingCCItem", "count_id": "adminPendingCCCount", "badge_class": "text-bg-danger"},
                 ]
             except Exception:

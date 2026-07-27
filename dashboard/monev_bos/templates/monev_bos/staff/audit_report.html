@@ -1,0 +1,700 @@
+{% extends "monev_bos/base_monev_bos.html" %}
+
+{% block monev_bos_content %}
+<style>
+    .cursor-pointer { cursor: pointer; transition: background-color 0.15s ease-in-out; }
+    .cursor-pointer:hover { background-color: #f8f9fa !important; }
+    .transition-icon { transition: transform 0.2s ease; }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+    .spin-icon { display: inline-block; animation: spin 4s linear infinite; }
+    
+    @media (max-width: 576px) {
+        .audit-container { padding-left: 8px !important; padding-right: 8px !important; }
+        .activity-item { padding: 0 !important; }
+        .stat-card-title { font-size: 0.68rem !important; }
+        .stat-card-value { font-size: 1rem !important; }
+        .audit-form-box { padding: 10px !important; }
+        .doc-btn { padding: 2px 8px !important; font-size: 0.72rem !important; }
+        .filter-btn-group .btn { padding: 3px 8px !important; font-size: 0.72rem !important; }
+    }
+</style>
+
+<div class="container-fluid py-3 py-md-4 audit-container">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div>
+            <h1 class="h4 h3-md mb-0 text-gray-800 fw-bold">Audit Laporan: {{ report.school_name }}</h1>
+            <p class="text-muted text-sm mb-0">Tahun {{ report.year }} Triwulan {{ report.tw }}</p>
+        </div>
+        <a href="{{ url_for('monev_bos.staff_dashboard') }}" class="btn btn-outline-secondary btn-sm ms-auto">
+            <i class="bi bi-arrow-left me-1"></i> <span class="d-none d-sm-inline">Kembali ke </span>Dashboard
+        </a>
+    </div>
+
+    <!-- Stat Cards Summary (3 Columns Grid / Row) -->
+    <div class="row mb-3 g-2">
+        <div class="col-6 col-md-4">
+            <div class="card bg-success text-white shadow-sm h-100 p-2 p-sm-3 border-0">
+                <span class="text-uppercase text-white-50 fw-semibold stat-card-title" style="font-size: 0.72rem;">Penerimaan BOSP</span>
+                <h5 class="mb-0 fw-bold mt-1 stat-card-value">Rp {{ "{:,.0f}".format(report.bosp_receipt_amount).replace(',', '.') }}</h5>
+            </div>
+        </div>
+        <div class="col-6 col-md-4">
+            <div class="card bg-info text-white shadow-sm h-100 p-2 p-sm-3 border-0">
+                <span class="text-uppercase text-white-50 fw-semibold stat-card-title" style="font-size: 0.72rem;">Penerimaan BOP</span>
+                <h5 class="mb-0 fw-bold mt-1 stat-card-value">Rp {{ "{:,.0f}".format(report.bop_receipt_amount).replace(',', '.') }}</h5>
+            </div>
+        </div>
+        <div class="col-12 col-md-4">
+            <div class="card shadow-sm h-100 p-2 p-sm-3 border-1">
+                <span class="text-uppercase text-muted fw-semibold mb-1 d-block stat-card-title" style="font-size: 0.72rem;">Status Audit Laporan</span>
+                <form action="{{ url_for('monev_bos.staff_audit_report', report_id=report.id) }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="action" value="update_report_status">
+                    <select name="status" class="form-select form-select-sm fw-semibold" onchange="this.form.submit()">
+                        <option value="submitted" {% if report.status == 'submitted' %}selected{% endif %}>Menunggu Audit</option>
+                        <option value="in_review" {% if report.status == 'in_review' %}selected{% endif %}>Sedang Diaudit</option>
+                        <option value="needs_revision" {% if report.status == 'needs_revision' %}selected{% endif %}>Butuh Revisi</option>
+                        <option value="completed" {% if report.status == 'completed' %}selected{% endif %}>Audit Selesai</option>
+                    </select>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <!-- Kolom Utama: Daftar Kegiatan -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-3 border-0">
+                <div class="card-header bg-white py-2.5 px-3">
+                    <!-- Baris 1: Judul & Filter Kategori -->
+                    <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                        <h6 class="m-0 font-weight-bold text-primary text-sm">Daftar Kegiatan Audit</h6>
+                        <div class="btn-group btn-group-sm filter-btn-group" role="group" id="fundSourceFilter">
+                            <button type="button" class="btn btn-outline-secondary active py-1 px-2" data-filter="all">
+                                Semua <span class="badge bg-secondary ms-1" id="countAll">{{ activities|length }}</span>
+                            </button>
+                            <button type="button" class="btn btn-outline-success py-1 px-2" data-filter="BOS">
+                                BOSP <span class="badge bg-success ms-1" id="countBOS">{{ activities|selectattr('fund_source', 'equalto', 'BOS')|list|length }}</span>
+                            </button>
+                            <button type="button" class="btn btn-outline-info py-1 px-2" data-filter="BOP">
+                                BOP <span class="badge bg-info ms-1" id="countBOP">{{ activities|selectattr('fund_source', 'equalto', 'BOP')|list|length }}</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Baris 2: Search Bar Full Width -->
+                    <div class="input-group input-group-sm w-100">
+                        <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
+                        <input type="text" id="activitySearchInput" class="form-control border-start-0 bg-light" placeholder="Cari kode kegiatan, uraian, vendor, BKU...">
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for act in activities %}
+                        <div class="list-group-item p-0 activity-item border-bottom" data-fund="{{ act.fund_source }}" id="activityItem{{ act.id }}" data-status="{{ act.status }}" data-activity-id="{{ act.id }}">
+                            <!-- Header Item (Click to Expand / Collapse) -->
+                            <div class="p-2 p-sm-3 activity-header cursor-pointer bg-white" onclick="toggleActivity('{{ act.id }}')">
+                                <div class="d-flex justify-content-between align-items-center mb-1 gap-2">
+                                    <div class="d-flex align-items-center gap-1 flex-wrap">
+                                        <span class="badge {% if act.fund_source == 'BOS' %}bg-success{% else %}bg-info{% endif %}" style="font-size: 0.68rem; padding: 3px 6px;">{{ act.fund_source }}</span>
+                                        <strong class="text-dark" style="font-size: 0.85rem;">{{ act.activity_code }}</strong>
+                                        <span class="text-success fw-bold text-xs ms-1">Rp {{ "{:,.0f}".format(act.realized_amount).replace(',', '.') }}</span>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-1 flex-shrink-0 ms-auto">
+                                        <div id="statusBadgeContainer{{ act.id }}">
+                                            {% if act.status == 'valid' %}
+                                            <span class="badge bg-success" style="font-size: 0.7rem;"><i class="bi bi-check-circle me-1"></i>Sesuai</span>
+                                            {% elif act.status == 'invalid' %}
+                                            <span class="badge bg-danger" style="font-size: 0.7rem;"><i class="bi bi-x-circle me-1"></i>Revisi</span>
+                                            {% elif act.status == 'in_review' %}
+                                            <span class="badge bg-info text-dark" style="font-size: 0.7rem;"><i class="bi bi-gear-wide-connected me-1 spin-icon"></i>Proses Audit</span>
+                                            {% else %}
+                                            <span class="badge bg-warning text-dark" style="font-size: 0.7rem;"><i class="bi bi-hourglass-split me-1"></i>Pending</span>
+                                            {% endif %}
+                                        </div>
+                                        <i class="bi bi-chevron-down text-muted transition-icon ms-1" id="toggleIcon{{ act.id }}" style="font-size: 0.85rem;"></i>
+                                    </div>
+                                </div>
+                                <!-- Uraian Kegiatan (Full Width - Tidak Terpotong) -->
+                                <div class="text-gray-800 fw-semibold" style="font-size: 0.84rem; line-height: 1.3;">{{ act.activity_name }}</div>
+                            </div>
+
+                            <!-- Detail Content (Collapsed by default) -->
+                            <div class="activity-body p-3 p-md-4 bg-light border-top" id="activityBody{{ act.id }}" style="display: none;">
+                                <!-- Realisasi & Info Compact Row -->
+                                <div class="row g-2 mb-3 text-sm bg-white p-2 rounded border">
+                                    <div class="col-6 col-sm-6">
+                                        <small class="text-muted d-block" style="font-size: 0.72rem;">Realisasi Pengeluaran:</small>
+                                        <strong class="text-success" style="font-size: 0.9rem;">Rp {{ "{:,.0f}".format(act.realized_amount).replace(',', '.') }}</strong>
+                                    </div>
+                                    <div class="col-6 col-sm-6">
+                                        <small class="text-muted d-block" style="font-size: 0.72rem;">No. BKU:</small>
+                                        <span class="fw-semibold text-dark">{{ act.bku_number or '-' }}</span>
+                                    </div>
+                                    <div class="col-6 col-sm-6">
+                                        <small class="text-muted d-block" style="font-size: 0.72rem;">Vendor / Toko:</small>
+                                        <span class="text-dark">{{ act.vendor_name or '-' }}</span>
+                                    </div>
+                                    <div class="col-6 col-sm-6">
+                                        <small class="text-muted d-block" style="font-size: 0.72rem;">Barang (Qty):</small>
+                                        <span class="text-dark">{{ act.item_name or '-' }} ({{ act.item_quantity }}x)</span>
+                                    </div>
+                                </div>
+
+                                <!-- Dokumen Pendukung (Modal Preview - No New Tab!) -->
+                                <div class="mb-3 d-flex align-items-center flex-wrap gap-2 text-sm">
+                                    <span class="text-muted fw-semibold" style="font-size: 0.78rem;">Dokumen:</span>
+                                    {% if act.docs.get('invoice') %}
+                                    <button type="button" onclick="previewDoc('/{{ act.docs['invoice'].file_path }}', 'Faktur Toko - {{ act.activity_code }}')" class="btn btn-sm btn-outline-secondary doc-btn py-1 px-2 rounded-pill">
+                                        <i class="bi bi-receipt me-1"></i> Faktur
+                                    </button>
+                                    {% else %}
+                                    <span class="badge bg-light text-muted border text-xs">No Faktur</span>
+                                    {% endif %}
+                                    
+                                    {% if act.docs.get('transfer') %}
+                                    <button type="button" onclick="previewDoc('/{{ act.docs['transfer'].file_path }}', 'Bukti Transfer - {{ act.activity_code }}')" class="btn btn-sm btn-outline-secondary doc-btn py-1 px-2 rounded-pill">
+                                        <i class="bi bi-bank me-1"></i> Transfer
+                                    </button>
+                                    {% else %}
+                                    <span class="badge bg-light text-muted border text-xs">No Transfer</span>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Foto Lapangan / Bukti Fisik Section -->
+                                <div class="mb-3 p-2 bg-white rounded border">
+                                    <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-1">
+                                        <h6 class="mb-0 text-sm fw-bold">Foto Lapangan & Bukti Fisik</h6>
+                                        {% if act.live_photos %}
+                                        <span class="badge bg-success-subtle text-success border border-success px-2 py-1" style="font-size: 0.7rem;">
+                                            <i class="bi bi-check-circle me-1"></i> Foto Tersedia
+                                        </span>
+                                        {% else %}
+                                        <span class="badge bg-warning-subtle text-warning border border-warning px-2 py-1" style="font-size: 0.7rem;">
+                                            <i class="bi bi-exclamation-triangle me-1"></i> Belum Ada Foto
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="d-flex gap-2 flex-wrap mb-1 align-items-center">
+                                        {% for photo in act.live_photos %}
+                                        <div class="position-relative d-inline-block">
+                                            <a href="javascript:void(0)" onclick='previewDoc("/{{ photo.file_path }}", "Foto Lapangan ({% if photo.doc_type == "field_photo" %}Sekolah{% else %}Staff{% endif %}) - {{ act.activity_code }}")'>
+                                                <img src="/{{ photo.file_path }}" alt="Foto Lapangan" class="img-thumbnail shadow-sm" style="height: 75px; width: 75px; object-fit: cover;">
+                                            </a>
+                                            {% if photo.doc_type == 'field_photo' %}
+                                            <span class="badge bg-info position-absolute bottom-0 start-0 m-1" style="font-size: 0.6rem;">Sekolah</span>
+                                            {% else %}
+                                            <span class="badge bg-success position-absolute bottom-0 start-0 m-1" style="font-size: 0.6rem;">Staff</span>
+                                            {% endif %}
+                                        </div>
+                                        {% else %}
+                                        <p class="text-muted text-xs fst-italic mb-0">Sekolah belum mengunggah foto. Verifikasi dokumen atau ambil foto live jika survey lokasi.</p>
+                                        {% endfor %}
+                                    </div>
+
+                                    {% if act.live_photos %}
+                                    <div class="d-flex align-items-center gap-2 mt-2 pt-1 border-top flex-wrap">
+                                        <small class="text-success text-xs"><i class="bi bi-shield-check me-1"></i> Siap diverifikasi di bawah.</small>
+                                        <button type="button" class="btn btn-xs btn-outline-secondary ms-auto text-nowrap py-1 px-2" onclick="openCameraModal({{ act.id }})">
+                                            <i class="bi bi-camera me-1"></i> Foto Live Tambahan
+                                        </button>
+                                    </div>
+                                    {% else %}
+                                    <div class="mt-2">
+                                        <button type="button" class="btn btn-sm btn-primary py-1 px-2 text-xs" onclick="openCameraModal({{ act.id }})">
+                                            <i class="bi bi-camera me-1"></i> Ambil Foto Live (Staff)
+                                        </button>
+                                    </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Form Validasi -->
+                                <div class="bg-white p-3 border rounded shadow-sm audit-form-box">
+                                    <form action="{{ url_for('monev_bos.staff_audit_activity', activity_id=act.id) }}" method="POST" class="validate-activity-form" data-activity-id="{{ act.id }}">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <input type="hidden" name="action" value="validate">
+                                        <input type="hidden" name="report_id" value="{{ report.id }}">
+                                        
+                                        <div class="row g-2">
+                                            <div class="col-12 col-md-4">
+                                                <label class="form-label text-xs fw-bold mb-1">Status Audit</label>
+                                                <select name="status" class="form-select form-select-sm" required>
+                                                    <option value="valid" {% if act.status == 'valid' or act.status in ['pending', 'in_review'] %}selected{% endif %}>Sesuai</option>
+                                                    <option value="invalid" {% if act.status == 'invalid' %}selected{% endif %}>Tidak Sesuai (Revisi)</option>
+                                                    <option value="in_review" {% if act.status == 'in_review' %}selected{% endif %}>Proses Audit (Sedang Diaudit)</option>
+                                                    <option value="pending" {% if act.status == 'pending' %}selected{% endif %}>Pending</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-12 col-md-8">
+                                                <label class="form-label text-xs fw-bold mb-1">Catatan Audit</label>
+                                                <textarea name="audit_notes" class="form-control form-control-sm" rows="1" placeholder="Opsional (wajib jika tidak sesuai)">{{ act.audit_notes or '' }}</textarea>
+                                            </div>
+                                        </div>
+                                        <div class="text-end mt-2">
+                                            <button type="submit" class="btn btn-sm btn-primary py-1 px-3">Simpan Validasi</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="p-4 text-center text-muted" id="emptyActivities">
+                            Sekolah belum mengisi kegiatan pengeluaran.
+                        </div>
+                        {% endfor %}
+                        <div class="p-4 text-center text-muted" id="noFilterResults" style="display:none;">
+                            <i class="bi bi-funnel me-1"></i> Tidak ada kegiatan untuk sumber dana ini.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Kolom Kanan: Log Audit Trail -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm mb-3 border-0">
+                <div class="card-header bg-white py-2 px-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary text-sm"><i class="bi bi-clock-history me-1"></i> Log Audit Tim</h6>
+                    <span class="badge bg-light text-muted border text-xs">{{ audit_logs|length }} log</span>
+                </div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush text-sm" style="max-height: 350px; overflow-y: auto;">
+                        {% for log in audit_logs %}
+                        <li class="list-group-item p-2 p-sm-3 text-xs">
+                            <div class="d-flex w-100 justify-content-between mb-1">
+                                <strong>{{ log.user_name }}</strong>
+                                <small class="text-muted">{{ log.created_at|jakarta('%d %b %H:%M') }}</small>
+                            </div>
+                            <p class="mb-0 text-muted">{{ log.details }}</p>
+                            {% if log.activity_name %}
+                            <small class="text-primary d-block mt-1">Kegiatan: {{ log.activity_name }}</small>
+                            {% endif %}
+                        </li>
+                        {% else %}
+                        <li class="list-group-item text-muted text-center py-3 text-xs">Belum ada riwayat audit.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Document Preview (Tanpa Buka New Tab di Mobile) -->
+<div class="modal fade" id="docPreviewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header py-2 px-3 bg-light">
+                <h6 class="modal-title fw-bold text-dark text-sm" id="docPreviewTitle">Pratinjau Dokumen</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-2 text-center" id="docPreviewBody" style="min-height: 250px;">
+                <!-- Dynamically injected via JS -->
+            </div>
+            <div class="modal-footer py-2 px-3 justify-content-between">
+                <a id="docDownloadBtn" href="#" target="_blank" class="btn btn-sm btn-outline-primary py-1 px-2 text-xs">
+                    <i class="bi bi-download me-1"></i> Buka File Asli
+                </a>
+                <button type="button" class="btn btn-sm btn-secondary py-1 px-3" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Camera HTML5 -->
+<div class="modal fade" id="cameraModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white py-2 px-3">
+                <h6 class="modal-title"><i class="bi bi-camera me-1"></i> Ambil Foto Live</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" onclick="stopCamera()"></button>
+            </div>
+            <div class="modal-body p-0 bg-dark text-center position-relative">
+                <video id="videoElement" autoplay playsinline style="width: 100%; max-height: 65vh; object-fit: cover;"></video>
+                <canvas id="canvasElement" style="display:none;"></canvas>
+                <img id="previewImage" style="display:none; width: 100%; max-height: 65vh; object-fit: contain;" />
+                
+                <div id="cameraControls" class="p-3 bg-dark">
+                    <button type="button" class="btn btn-lg btn-light rounded-circle" id="captureBtn" style="width: 55px; height: 55px;" onclick="capturePhoto()">
+                        <i class="bi bi-camera-fill fs-4"></i>
+                    </button>
+                </div>
+                
+                <div id="previewControls" class="p-3 bg-dark" style="display:none;">
+                    <form id="uploadPhotoForm" action="" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="action" value="upload_photo">
+                        <input type="hidden" name="report_id" value="{{ report.id }}">
+                        <input type="hidden" name="live_photo_data" id="livePhotoData" value="">
+                        
+                        <div class="d-flex justify-content-between">
+                            <button type="button" class="btn btn-sm btn-outline-light" onclick="retakePhoto()">Ulangi</button>
+                            <button type="submit" class="btn btn-sm btn-primary" id="uploadBtn">Simpan Foto</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let videoStream;
+    const video = document.getElementById('videoElement');
+    const canvas = document.getElementById('canvasElement');
+    const preview = document.getElementById('previewImage');
+    const cameraControls = document.getElementById('cameraControls');
+    const previewControls = document.getElementById('previewControls');
+    const uploadForm = document.getElementById('uploadPhotoForm');
+    const livePhotoDataInput = document.getElementById('livePhotoData');
+    
+    function closeActivity(otherId) {
+        const body = document.getElementById('activityBody' + otherId);
+        const icon = document.getElementById('toggleIcon' + otherId);
+        const item = document.getElementById('activityItem' + otherId);
+        if (!body || !item) return;
+
+        if (body.style.display !== 'none') {
+            body.style.display = 'none';
+            if (icon) {
+                icon.classList.remove('bi-chevron-up');
+                icon.classList.add('bi-chevron-down');
+            }
+
+            const currentStatus = item.getAttribute('data-status');
+            const origStatus = item.getAttribute('data-original-status');
+            if (currentStatus === 'in_review' && origStatus) {
+                item.setAttribute('data-status', origStatus);
+                item.removeAttribute('data-original-status');
+                
+                const badgeContainer = document.getElementById('statusBadgeContainer' + otherId);
+                if (badgeContainer) {
+                    if (origStatus === 'invalid') {
+                        badgeContainer.innerHTML = '<span class="badge bg-danger" style="font-size: 0.7rem;"><i class="bi bi-x-circle me-1"></i>Revisi</span>';
+                    } else if (origStatus === 'valid') {
+                        badgeContainer.innerHTML = '<span class="badge bg-success" style="font-size: 0.7rem;"><i class="bi bi-check-circle me-1"></i>Sesuai</span>';
+                    } else {
+                        badgeContainer.innerHTML = '<span class="badge bg-warning text-dark" style="font-size: 0.7rem;"><i class="bi bi-hourglass-split me-1"></i>Pending</span>';
+                    }
+                }
+
+                const formData = new FormData();
+                formData.append('csrf_token', '{{ csrf_token() }}');
+                formData.append('action', 'cancel_audit');
+                formData.append('original_status', origStatus);
+                formData.append('report_id', '{{ report.id }}');
+
+                fetch('{{ url_for("monev_bos.staff_audit_activity", activity_id=0) }}'.replace('0', otherId), {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': '{{ csrf_token() }}'
+                    },
+                    body: formData
+                }).catch(err => console.error('Error cancelling audit:', err));
+            }
+        }
+    }
+
+    function toggleActivity(id) {
+        const body = document.getElementById('activityBody' + id);
+        const icon = document.getElementById('toggleIcon' + id);
+        const item = document.getElementById('activityItem' + id);
+        if (!body || !item) return;
+
+        const isCurrentlyHidden = (body.style.display === 'none' || body.style.display === '');
+
+        // Accordion: Close all other open activity items
+        document.querySelectorAll('.activity-item').forEach(otherItem => {
+            const otherId = otherItem.getAttribute('data-activity-id');
+            if (otherId && String(otherId) !== String(id)) {
+                closeActivity(otherId);
+            }
+        });
+
+        if (isCurrentlyHidden) {
+            body.style.display = 'block';
+            if (icon) {
+                icon.classList.remove('bi-chevron-down');
+                icon.classList.add('bi-chevron-up');
+            }
+
+            const currentStatus = item.getAttribute('data-status');
+            if (currentStatus === 'pending' || currentStatus === 'invalid') {
+                item.setAttribute('data-original-status', currentStatus);
+                item.setAttribute('data-status', 'in_review');
+                
+                const badgeContainer = document.getElementById('statusBadgeContainer' + id);
+                if (badgeContainer) {
+                    badgeContainer.innerHTML = '<span class="badge bg-info text-dark" style="font-size: 0.7rem;"><i class="bi bi-gear-wide-connected me-1 spin-icon"></i>Proses Audit</span>';
+                }
+
+                const formData = new FormData();
+                formData.append('csrf_token', '{{ csrf_token() }}');
+                formData.append('action', 'start_audit');
+                formData.append('report_id', '{{ report.id }}');
+
+                fetch('{{ url_for("monev_bos.staff_audit_activity", activity_id=0) }}'.replace('0', id), {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': '{{ csrf_token() }}'
+                    },
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(data => {
+                    console.log('Activity audit started:', data);
+                })
+                .catch(err => console.error('Error starting activity audit:', err));
+            }
+        } else {
+            closeActivity(id);
+        }
+    }
+
+    function previewDoc(url, title) {
+        document.getElementById('docPreviewTitle').textContent = title || 'Pratinjau Dokumen';
+        document.getElementById('docDownloadBtn').href = url;
+        const body = document.getElementById('docPreviewBody');
+        const ext = url.split('.').pop().toLowerCase().split('?')[0];
+        
+        if (['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp'].includes(ext)) {
+            body.innerHTML = '<img src="' + url + '" class="img-fluid rounded shadow-sm" style="max-height: 70vh; object-fit: contain;" />';
+        } else {
+            body.innerHTML = '<iframe src="' + url + '" style="width: 100%; height: 65vh; border: none;" class="rounded"></iframe>';
+        }
+        
+        const modal = new bootstrap.Modal(document.getElementById('docPreviewModal'));
+        modal.show();
+    }
+
+    function openCameraModal(activityId) {
+        uploadForm.action = "{{ url_for('monev_bos.staff_audit_activity', activity_id=0) }}".replace('0', activityId);
+        const myModal = new bootstrap.Modal(document.getElementById('cameraModal'));
+        myModal.show();
+        startCamera();
+    }
+    
+    function startCamera() {
+        retakePhoto();
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: 'environment' } 
+            })
+            .then(function(stream) {
+                videoStream = stream;
+                video.srcObject = stream;
+                video.play();
+            })
+            .catch(function(error) {
+                console.error("Camera error:", error);
+                alert("Gagal mengakses kamera. Pastikan browser memiliki izin akses kamera.");
+            });
+        } else {
+            alert("Browser Anda tidak mendukung fitur kamera HTML5.");
+        }
+    }
+    
+    function stopCamera() {
+        if (videoStream) {
+            videoStream.getTracks().forEach(track => track.stop());
+            videoStream = null;
+        }
+    }
+    
+    function capturePhoto() {
+        const MAX_WIDTH = 800;
+        let width = video.videoWidth;
+        let height = video.videoHeight;
+        
+        if (width > MAX_WIDTH) {
+            height = height * (MAX_WIDTH / width);
+            width = MAX_WIDTH;
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, width, height);
+        
+        ctx.font = '14px Arial';
+        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        ctx.fillRect(5, height - 25, 250, 20);
+        ctx.fillStyle = 'white';
+        ctx.fillText(new Date().toLocaleString('id-ID'), 10, height - 10);
+        
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        preview.src = dataUrl;
+        livePhotoDataInput.value = dataUrl;
+        
+        video.style.display = 'none';
+        cameraControls.style.display = 'none';
+        preview.style.display = 'block';
+        previewControls.style.display = 'block';
+    }
+    
+    function retakePhoto() {
+        video.style.display = 'block';
+        cameraControls.style.display = 'block';
+        preview.style.display = 'none';
+        previewControls.style.display = 'none';
+        livePhotoDataInput.value = '';
+    }
+    
+    document.getElementById('cameraModal').addEventListener('hidden.bs.modal', function () {
+        stopCamera();
+    });
+
+    // --- Combined Search & Fund Source Filter ---
+    (function () {
+        var filterGroup = document.getElementById('fundSourceFilter');
+        var searchInput = document.getElementById('activitySearchInput');
+        var items = document.querySelectorAll('.activity-item');
+        var noResults = document.getElementById('noFilterResults');
+        var currentFundFilter = 'all';
+
+        function applyFilters() {
+            var searchQuery = searchInput ? searchInput.value.toLowerCase().trim() : '';
+            var visibleCount = 0;
+
+            items.forEach(function (item) {
+                var fund = item.getAttribute('data-fund');
+                var textContent = (item.textContent || item.innerText).toLowerCase();
+
+                var matchesFund = (currentFundFilter === 'all' || fund === currentFundFilter);
+                var matchesSearch = (!searchQuery || textContent.indexOf(searchQuery) !== -1);
+
+                var show = matchesFund && matchesSearch;
+                item.style.display = show ? '' : 'none';
+                if (show) visibleCount++;
+            });
+
+            if (noResults) {
+                noResults.style.display = (items.length > 0 && visibleCount === 0) ? '' : 'none';
+            }
+        }
+
+        if (filterGroup) {
+            var buttons = filterGroup.querySelectorAll('[data-filter]');
+            buttons.forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    currentFundFilter = btn.getAttribute('data-filter');
+                    buttons.forEach(function (b) { b.classList.remove('active'); });
+                    btn.classList.add('active');
+                    applyFilters();
+
+                    if (currentFundFilter !== 'all') {
+                        history.replaceState(null, '', '#' + currentFundFilter);
+                    } else {
+                        history.replaceState(null, '', window.location.pathname + window.location.search);
+                    }
+                });
+            });
+        }
+
+        if (searchInput) {
+            searchInput.addEventListener('input', applyFilters);
+        }
+
+        var hash = window.location.hash.replace('#', '');
+        if (hash === 'BOS' || hash === 'BOP') {
+            currentFundFilter = hash;
+            if (filterGroup) {
+                var btn = filterGroup.querySelector('[data-filter="' + hash + '"]');
+                if (btn) {
+                    filterGroup.querySelectorAll('[data-filter]').forEach(function (b) { b.classList.remove('active'); });
+                    btn.classList.add('active');
+                }
+            }
+            applyFilters();
+        }
+    })();
+
+    // --- AJAX Validation Form Handler ---
+    document.querySelectorAll('.validate-activity-form').forEach(form => {
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalBtnHtml = submitBtn ? submitBtn.innerHTML : 'Simpan Validasi';
+
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Menyimpan...';
+            }
+
+            const formData = new FormData(this);
+            const csrfToken = formData.get('csrf_token') || '{{ csrf_token() }}';
+
+            fetch(this.action, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': csrfToken,
+                    'Accept': 'application/json'
+                },
+                body: formData
+            })
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error('HTTP error ' + res.status);
+                }
+                return res.json();
+            })
+            .then(data => {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="bi bi-check2-circle me-1"></i> Tersimpan!';
+                    setTimeout(() => { submitBtn.innerHTML = originalBtnHtml; }, 2000);
+                }
+
+                if (data.success) {
+                    const actId = data.activity_id;
+                    const status = data.status;
+                    const item = document.getElementById('activityItem' + actId);
+                    if (item) {
+                        item.setAttribute('data-status', status);
+                        item.removeAttribute('data-original-status');
+                    }
+
+                    const badgeContainer = document.getElementById('statusBadgeContainer' + actId);
+                    if (badgeContainer) {
+                        if (status === 'valid') {
+                            badgeContainer.innerHTML = '<span class="badge bg-success" style="font-size: 0.7rem;"><i class="bi bi-check-circle me-1"></i>Sesuai</span>';
+                        } else if (status === 'invalid') {
+                            badgeContainer.innerHTML = '<span class="badge bg-danger" style="font-size: 0.7rem;"><i class="bi bi-x-circle me-1"></i>Revisi</span>';
+                        } else if (status === 'in_review') {
+                            badgeContainer.innerHTML = '<span class="badge bg-info text-dark" style="font-size: 0.7rem;"><i class="bi bi-gear-wide-connected me-1 spin-icon"></i>Proses Audit</span>';
+                        } else {
+                            badgeContainer.innerHTML = '<span class="badge bg-warning text-dark" style="font-size: 0.7rem;"><i class="bi bi-hourglass-split me-1"></i>Pending</span>';
+                        }
+                    }
+
+                    let toast = document.getElementById('validationToast');
+                    if (!toast) {
+                        toast = document.createElement('div');
+                        toast.id = 'validationToast';
+                        toast.className = 'alert alert-success position-fixed top-0 end-0 m-3 shadow-lg border-2 z-3';
+                        toast.style.zIndex = '9999';
+                        document.body.appendChild(toast);
+                    }
+                    toast.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i> ' + (data.message || 'Hasil validasi berhasil disimpan.');
+                    toast.style.display = 'block';
+                    setTimeout(() => { toast.style.display = 'none'; }, 3500);
+                }
+            })
+            .catch(err => {
+                console.error('Validation save error:', err);
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalBtnHtml;
+                }
+                form.submit();
+            });
+        });
+    });
+</script>
+{% endblock %}

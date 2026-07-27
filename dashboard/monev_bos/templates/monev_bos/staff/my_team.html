@@ -1,0 +1,79 @@
+{% extends "monev_bos/base_monev_bos.html" %}
+
+{% block monev_bos_content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">Manajemen Tim: {{ team.name }}</h1>
+            <p class="text-muted mb-0">Kelola anggota tim Anda untuk pelaksanaan audit silang.</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Daftar Anggota Tim</h6>
+                    {% if team.is_leader %}
+                    <span class="badge bg-success"><i class="bi bi-star-fill"></i> Anda Ketua Tim</span>
+                    {% else %}
+                    <span class="badge bg-secondary">Anggota Tim</span>
+                    {% endif %}
+                </div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush">
+                        {% for member in members %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center p-3">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                    {{ member.full_name[:1]|upper }}
+                                </div>
+                                <div>
+                                    <h6 class="mb-0 fw-bold">{{ member.full_name }} {% if member.id == team.leader_id %}<i class="bi bi-star-fill text-warning ms-1" title="Ketua Tim"></i>{% endif %}</h6>
+                                    <small class="text-muted">{{ member.email }}</small>
+                                </div>
+                            </div>
+                            {% if team.is_leader and member.id != team.leader_id %}
+                            <form action="{{ url_for('monev_bos.staff_my_team') }}" method="POST" onsubmit="return confirm('Keluarkan anggota ini dari tim?');">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input type="hidden" name="action" value="remove_member">
+                                <input type="hidden" name="staff_id" value="{{ member.id }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Keluarkan</button>
+                            </form>
+                            {% endif %}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        {% if team.is_leader %}
+        <div class="col-md-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Tambah Anggota</h6>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('monev_bos.staff_my_team') }}" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="action" value="add_member">
+                        <div class="mb-3">
+                            <label class="form-label">Pilih Staff</label>
+                            <select class="form-select" name="staff_id" required>
+                                <option value="">-- Pilih Staff --</option>
+                                {% for staff in available_staff %}
+                                <option value="{{ staff.id }}">{{ staff.full_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100"><i class="bi bi-person-plus me-1"></i> Tambahkan ke Tim</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

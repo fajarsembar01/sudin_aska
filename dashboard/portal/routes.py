@@ -1683,6 +1683,17 @@ def _save_school_profile(school_id: int, data: dict) -> None:
                 """,
                 (data.get("alamat"), data.get("kelurahan_id"), json.dumps(meta_fields), school_id),
             )
+        
+        phone_val = data.get("coordinator_phone") or data.get("school_phone")
+        if phone_val:
+            cur.execute(
+                """
+                UPDATE dashboard_users
+                SET whatsapp_number = %s, phone = %s, updated_at = NOW()
+                WHERE school_id = %s OR id = %s
+                """,
+                (phone_val, phone_val, school_id, school_id)
+            )
 
 
 def _sanitize_phone(phone: str) -> str:
@@ -1808,6 +1819,13 @@ def home() -> Response:
                 "description": "Selesaikan task sosial media dan kumpulkan poin.",
                 "icon": "bi-megaphone",
                 "href": url_for("supporter.staff_dashboard"),
+                "col_class": "col-lg-4 col-md-6 col-12",
+            },
+            {
+                "title": "MONEV BOS/BOP",
+                "description": "Monitoring dan evaluasi keuangan BOS/BOP sekolah.",
+                "icon": "bi-cash-coin",
+                "href": url_for("monev_bos.index"),
                 "col_class": "col-lg-4 col-md-6 col-12",
             },
             {
@@ -1996,11 +2014,10 @@ def sekolah_home() -> Response:
             "col_class": "col-lg-4 col-md-6 col-12",
         },
         {
-            "title": "Coming Soon",
-            "description": "Layanan tambahan sedang disiapkan.",
-            "icon": "bi-hourglass-split",
-            "href": "#",
-            "disabled": True,
+            "title": "MONEV BOS/BOP",
+            "description": "Laporan realisasi dana BOS dan BOP sekolah per triwulan.",
+            "icon": "bi-cash-coin",
+            "href": url_for("monev_bos.index"),
             "col_class": "col-lg-4 col-md-6 col-12",
         },
     ]
@@ -5440,6 +5457,12 @@ def sekolah_profile() -> Response:
             flash("Data belum tersimpan. Periksa detail di bawah.", "warning")
         else:
             _save_school_profile(school["id"], payload)
+            phone_val = payload.get("coordinator_phone") or payload.get("school_phone")
+            if phone_val:
+                session_user = session.get("user", {})
+                session_user["whatsapp_number"] = phone_val
+                session_user["phone"] = phone_val
+                session["user"] = session_user
             flash("Profil sekolah berhasil diperbarui.", "success")
             return redirect(url_for("portal.sekolah_profile"))
 
@@ -5868,8 +5891,9 @@ def admin_reopen_requests() -> Response:
 @role_required("admin")
 def admin_pending_summary() -> Response:
     """Return pending confirmation counts for admin notification polling."""
+    include_cc = (request.args.get("include_cc", "0") in ["1", "true"]) or ("call-center" in (request.referrer or "") or "call_center" in (request.referrer or ""))
     try:
-        return jsonify(fetch_admin_pending_summary())
+        return jsonify(fetch_admin_pending_summary(include_call_center=include_cc))
     except Exception:
         current_app.logger.exception("Failed to fetch admin pending summary")
         return jsonify(
@@ -5879,6 +5903,7 @@ def admin_pending_summary() -> Response:
                 "pending_team_member_requests": 0,
                 "pending_reopen_requests": 0,
                 "pending_guestbook": 0,
+                "pending_monev_edit_requests": 0,
                 "pending_call_center": 0,
                 "total": 0,
             }
@@ -5891,8 +5916,9 @@ def admin_pending_preview() -> Response:
     """Return pending preview data for admin quick actions."""
     limit = request.args.get("limit", type=int) or 3
     limit = max(1, min(limit, 10))
+    include_cc = (request.args.get("include_cc", "0") in ["1", "true"]) or ("call-center" in (request.referrer or "") or "call_center" in (request.referrer or ""))
     try:
-        return jsonify(fetch_admin_pending_preview(limit_per_type=limit))
+        return jsonify(fetch_admin_pending_preview(limit_per_type=limit, include_call_center=include_cc))
     except Exception:
         current_app.logger.exception("Failed to fetch admin pending preview")
         return jsonify(
@@ -8311,6 +8337,15 @@ def inject_permissions():
                 "item_id": "adminPendingGuestbookItem",
                 "count_id": "adminPendingGuestbookCount",
                 "badge_class": "bg-success",
+            },
+            {
+                "href": url_for("monev_bos.admin_edit_requests"),
+                "title": "Pengajuan edit Monev BOS/BOP",
+                "subtitle": "Permintaan ubah data kegiatan divalidasi",
+                "count": admin_pending.get("pending_monev_edit_requests", 0),
+                "item_id": "adminPendingMonevEditItem",
+                "count_id": "adminPendingMonevEditCount",
+                "badge_class": "bg-warning text-dark",
             },
             {
                 "href": url_for("call_center.inbox"),

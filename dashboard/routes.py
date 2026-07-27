@@ -588,10 +588,10 @@ def admin_select_role() -> Response:
             "href": url_for("cms.layanan_publik"),
         },
         {
-            "title": "Coming Soon",
-            "description": "Menu sedang disiapkan.",
-            "icon": "bi-hourglass-split",
-            "disabled": True,
+            "title": "MONEV BOS/BOP",
+            "description": "Kelola tim dan laporan MONEV keuangan sekolah.",
+            "icon": "bi-cash-coin",
+            "href": url_for("monev_bos.index"),
         },
         {
             "title": "Coming Soon",

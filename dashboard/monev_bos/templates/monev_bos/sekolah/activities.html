@@ -1,0 +1,793 @@
+{% extends "monev_bos/base_monev_bos.html" %}
+
+{% block monev_bos_content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">
+                Kegiatan Dana {% if fund_source == 'BOS' %}BOS (BOSP){% else %}BOP{% endif %}
+            </h1>
+            <p class="text-muted mb-0">Laporan TW {{ active_period.tw }} Tahun {{ active_period.year }}</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('monev_bos.sekolah_funds', period_id=active_period.id) }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i> Pilih Sumber Dana
+            </a>
+        </div>
+    </div>
+
+    <!-- Tab / Nav Switcher Antara BOS dan BOP -->
+    <div class="d-flex gap-2 mb-4">
+        <a href="{{ url_for('monev_bos.sekolah_activities', period_id=active_period.id, fund_source='BOS') }}" 
+           class="btn btn-lg {% if fund_source == 'BOS' %}btn-success shadow-sm fw-bold{% else %}btn-outline-success{% endif %}">
+            <i class="bi bi-cash-stack me-1"></i> Dana BOS (BOSP)
+        </a>
+        <a href="{{ url_for('monev_bos.sekolah_activities', period_id=active_period.id, fund_source='BOP') }}" 
+           class="btn btn-lg {% if fund_source == 'BOP' %}btn-info text-white shadow-sm fw-bold{% else %}btn-outline-info{% endif %}">
+            <i class="bi bi-wallet2 me-1"></i> Dana BOP
+        </a>
+    </div>
+
+    <!-- WhatsApp Reopen Prompt Banner -->
+    {% if wa_prompt %}
+    <div class="alert alert-success border-2 shadow-sm d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+        <div>
+            <h6 class="fw-bold mb-1"><i class="bi bi-check-circle-fill me-1"></i> Pengajuan Reopen Edit Berhasil Dikirim!</h6>
+            <span class="text-sm">Silakan konfirmasi ke Admin Wilayah Kecamatan <strong>{{ wa_prompt.kecamatan_name }}</strong> ({{ wa_prompt.admin_name }}) via WhatsApp untuk membuka kunci edit kegiatan <strong>{{ wa_prompt.activity_code }}</strong>.</span>
+        </div>
+        <a href="{{ wa_prompt.wa_url }}" target="_blank" class="btn btn-success fw-bold text-nowrap px-3 py-2 shadow-sm">
+            <i class="bi bi-whatsapp me-1"></i> Kirim WhatsApp Ke Admin Wilayah
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- WhatsApp Revision Confirmation Prompt Banner -->
+    {% if wa_revision_prompt %}
+    <div class="alert alert-info border-2 shadow-sm d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+        <div>
+            <h6 class="fw-bold mb-1"><i class="bi bi-check-circle-fill me-1"></i> Perbaikan Kegiatan Berhasil Disimpan!</h6>
+            <span class="text-sm">Silakan konfirmasi ke Staff Auditor <strong>{{ wa_revision_prompt.staff_name }}</strong> via WhatsApp untuk melakukan validasi ulang kegiatan <strong>{{ wa_revision_prompt.activity_code }}</strong>.</span>
+        </div>
+        <a href="{{ wa_revision_prompt.wa_url }}" target="_blank" class="btn btn-success fw-bold text-nowrap px-3 py-2 shadow-sm">
+            <i class="bi bi-whatsapp me-1"></i> Kirim WhatsApp Ke Staff Audit
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- Ringkasan Anggaran Sumber Dana Yang Dipilih -->
+    <div class="row mb-4 g-3">
+        <div class="col-md-4">
+            <div class="card {% if fund_source == 'BOS' %}bg-success{% else %}bg-info{% endif %} text-white shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="text-uppercase mb-2 text-white-50">Total Penerimaan {{ fund_source }}</h6>
+                    <h3 class="mb-0">Rp {{ "{:,.0f}".format(total_receipt).replace(',', '.') }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-white border-start border-4 border-warning shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="text-uppercase mb-2 text-muted">Total Pengeluaran Realisasi</h6>
+                    <h3 class="mb-0 text-warning">Rp {{ "{:,.0f}".format(total_realized).replace(',', '.') }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-white border-start border-4 {% if remaining_balance < 0 %}border-danger{% else %}border-primary{% endif %} shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="text-uppercase mb-2 text-muted">Sisa Saldo Anggaran</h6>
+                    <h3 class="mb-0 {% if remaining_balance < 0 %}text-danger{% else %}text-primary{% endif %}">
+                        Rp {{ "{:,.0f}".format(remaining_balance).replace(',', '.') }}
+                    </h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Kegiatan Table -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <h6 class="m-0 font-weight-bold text-primary">Daftar Kegiatan {{ fund_source }} ({{ activities|length }} kegiatan)</h6>
+            {% if report.status in ['draft', 'needs_revision'] %}
+            <button class="btn btn-sm {% if fund_source == 'BOS' %}btn-success{% else %}btn-info text-white{% endif %} fw-bold" data-bs-toggle="modal" data-bs-target="#addActivityModal">
+                <i class="bi bi-plus-lg me-1"></i> Tambah Kegiatan {{ fund_source }}
+            </button>
+            {% endif %}
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Kode Kegiatan</th>
+                            <th>Nama Kegiatan / Uraian</th>
+                            <th>No. BKU</th>
+                            <th>Vendor & Barang</th>
+                            <th>Realisasi (Rp)</th>
+                            <th>Dokumen</th>
+                            <th>Status Audit</th>
+                            <th class="text-end pe-4">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for act in activities %}
+                        <tr>
+                            <td class="ps-4 fw-bold">{{ act.activity_code }}</td>
+                            <td>
+                                <strong>{{ act.activity_name }}</strong>
+                            </td>
+                            <td><span class="badge bg-light text-dark border">{{ act.bku_number or '-' }}</span></td>
+                            <td>
+                                <small class="d-block"><strong>Toko/Vendor:</strong> {{ act.vendor_name or '-' }}</small>
+                                <small class="text-muted"><strong>Barang:</strong> {{ act.item_name or '-' }} ({{ act.item_quantity }} qty)</small>
+                            </td>
+                            <td class="fw-bold text-success">Rp {{ "{:,.0f}".format(act.realized_amount).replace(',', '.') }}</td>
+                            <td>
+                                {% if act.docs.get('invoice') %}
+                                <a href="/{{ act.docs['invoice'].file_path }}" target="_blank" class="badge bg-secondary text-decoration-none me-1"><i class="bi bi-receipt"></i> Faktur</a>
+                                {% else %}
+                                <span class="badge bg-light text-dark border me-1">No Faktur</span>
+                                {% endif %}
+                                
+                                {% if act.docs.get('transfer') %}
+                                <a href="/{{ act.docs['transfer'].file_path }}" target="_blank" class="badge bg-secondary text-decoration-none me-1"><i class="bi bi-bank"></i> Bukti Trf</a>
+                                {% else %}
+                                <span class="badge bg-light text-dark border me-1">No Transfer</span>
+                                {% endif %}
+
+                                {% if act.docs.get('field_photo') %}
+                                <a href="/{{ act.docs['field_photo'].file_path }}" target="_blank" class="badge bg-info text-decoration-none"><i class="bi bi-camera"></i> Foto Lapangan</a>
+                                {% else %}
+                                <span class="badge bg-light text-muted border">No Foto</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if act.status == 'pending' %}
+                                <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split"></i> Pending</span>
+                                {% elif act.status == 'valid' %}
+                                <span class="badge bg-success"><i class="bi bi-check-circle"></i> Sesuai</span>
+                                {% elif act.status == 'invalid' %}
+                                <span class="badge bg-danger"><i class="bi bi-x-circle"></i> Revisi</span>
+                                {% endif %}
+                                {% if act.pending_edit_request %}
+                                <br><span class="badge bg-info text-dark mt-1" style="font-size:0.68rem;"><i class="bi bi-clock-history me-1"></i>Menunggu Persetujuan</span>
+                                {% endif %}
+                                {% if act.audit_notes %}
+                                <br><small class="text-danger"><i class="bi bi-info-circle"></i> {{ act.audit_notes | truncate(40) }}</small>
+                                {% endif %}
+                                {% if act.history %}
+                                <br><button class="btn btn-link btn-sm p-0 text-muted" style="font-size:0.72rem;" data-bs-toggle="modal" data-bs-target="#historyModal{{ act.id }}"><i class="bi bi-clock-history me-1"></i>{{ act.history|length }} riwayat</button>
+                                {% endif %}
+                            </td>
+                            <td class="text-end pe-4">
+                                <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#viewActivityModal{{ act.id }}">
+                                    <i class="bi bi-eye"></i> Detail
+                                </button>
+                                {% if report.status in ['draft', 'needs_revision'] %}
+                                    {% if act.status == 'valid' %}
+                                    {# ---- Sesuai: Harus lewat admin ---- #}
+                                     {% if act.pending_edit_request %}
+                                     {# Ada pengajuan yg sedang menunggu #}
+                                     <div class="d-inline-flex align-items-center gap-1">
+                                         <span class="badge bg-warning text-dark me-1" title="Menunggu persetujuan admin">
+                                             <i class="bi bi-clock-history me-1"></i> Menunggu Reopen
+                                         </span>
+                                         {% if act.wa_url %}
+                                         <a href="{{ act.wa_url }}" target="_blank" class="btn btn-sm btn-success text-nowrap" title="Kirim Pesan WhatsApp ke Admin Wilayah (Kecamatan)">
+                                             <i class="bi bi-whatsapp me-1"></i> WA Admin Wilayah
+                                         </a>
+                                         {% endif %}
+                                     </div>
+                                     {% else %}
+                                     <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#requestEditModal{{ act.id }}" title="Kegiatan Sesuai - Butuh persetujuan admin untuk edit">
+                                         <i class="bi bi-send me-1"></i> Ajukan Reopen
+                                     </button>
+                                     {% endif %}
+                                    {# Hapus untuk kegiatan valid juga butuh pengajuan #}
+                                    <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#infoValidModal{{ act.id }}" title="Kegiatan Sesuai tidak dapat dihapus langsung">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+
+                                    {% elif act.status == 'invalid' %}
+                                    {# ---- Revisi: boleh edit langsung, history tersimpan ---- #}
+                                    <button type="button" class="btn btn-sm btn-outline-warning" data-bs-toggle="modal" data-bs-target="#editActivityModal{{ act.id }}">
+                                        <i class="bi bi-pencil me-1"></i> Edit
+                                    </button>
+                                    <form action="{{ url_for('monev_bos.sekolah_activities', period_id=active_period.id, fund_source=fund_source) }}" method="POST" class="d-inline" onsubmit="return confirm('Hapus kegiatan ini?');">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <input type="hidden" name="action" value="delete_activity">
+                                        <input type="hidden" name="activity_id" value="{{ act.id }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                    </form>
+
+                                    {% else %}
+                                    {# ---- Pending: edit & hapus bebas ---- #}
+                                     {% if act.staff_wa_url %}
+                                     <a href="{{ act.staff_wa_url }}" target="_blank" class="btn btn-sm btn-success text-nowrap" title="Kirim Pesan WhatsApp Konfirmasi Revisi ke Staff Auditor">
+                                         <i class="bi bi-whatsapp me-1"></i> WA Staff Audit
+                                     </a>
+                                     {% endif %}
+                                    <button type="button" class="btn btn-sm btn-outline-warning" data-bs-toggle="modal" data-bs-target="#editActivityModal{{ act.id }}">
+                                        <i class="bi bi-pencil me-1"></i> Edit
+                                    </button>
+                                    <form action="{{ url_for('monev_bos.sekolah_activities', period_id=active_period.id, fund_source=fund_source) }}" method="POST" class="d-inline" onsubmit="return confirm('Hapus kegiatan ini?');">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <input type="hidden" name="action" value="delete_activity">
+                                        <input type="hidden" name="activity_id" value="{{ act.id }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                    </form>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center py-5 text-muted">
+                                <i class="bi bi-folder-x display-6 mb-3 d-block text-gray-300"></i>
+                                Belum ada kegiatan Dana {{ fund_source }} yang ditambahkan.<br>
+                                {% if report.status in ['draft', 'needs_revision'] %}
+                                Klik <strong>Tambah Kegiatan {{ fund_source }}</strong> untuk mulai mengisi pengeluaran.
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Modals Detail & Edit (di luar table agar render benar) -->
+{% for act in activities %}
+<!-- Modal Detail Kegiatan -->
+<div class="modal fade" id="viewActivityModal{{ act.id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Detail Kegiatan ({{ act.fund_source }})</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <p class="mb-1 text-muted text-sm">Kode Kegiatan</p>
+                        <p class="fw-bold">{{ act.activity_code }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p class="mb-1 text-muted text-sm">Nama Kegiatan</p>
+                        <p class="fw-bold">{{ act.activity_name }}</p>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <p class="mb-1 text-muted text-sm">Nilai Realisasi</p>
+                        <p class="fw-bold fs-5 text-primary">Rp {{ "{:,.0f}".format(act.realized_amount).replace(',', '.') }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p class="mb-1 text-muted text-sm">NO BKU</p>
+                        <p class="fw-bold">{{ act.bku_number or '-' }}</p>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <p class="mb-1 text-muted text-sm">Nama Toko/Vendor</p>
+                        <p class="fw-bold">{{ act.vendor_name or '-' }}</p>
+                    </div>
+                    <div class="col-md-4">
+                        <p class="mb-1 text-muted text-sm">Nama Barang</p>
+                        <p class="fw-bold">{{ act.item_name or '-' }}</p>
+                    </div>
+                    <div class="col-md-4">
+                        <p class="mb-1 text-muted text-sm">Jumlah Barang</p>
+                        <p class="fw-bold">{{ act.item_quantity or '0' }}</p>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <p class="mb-1 text-muted text-sm">Spesifikasi Barang</p>
+                    <p class="fw-bold">{{ act.item_specs or '-' }}</p>
+                </div>
+                
+                {% if act.docs.get('field_photo') %}
+                <div class="mb-3">
+                    <p class="mb-1 text-muted text-sm">Foto Kegiatan / Lapangan (Sekolah)</p>
+                    <a href="/{{ act.docs['field_photo'].file_path }}" target="_blank">
+                        <img src="/{{ act.docs['field_photo'].file_path }}" alt="Foto Kegiatan" class="img-thumbnail" style="max-height: 140px; object-fit: cover;">
+                    </a>
+                </div>
+                {% endif %}
+
+                {% if act.audit_notes %}
+                <div class="alert alert-danger mt-3">
+                    <h6 class="alert-heading"><i class="bi bi-exclamation-triangle"></i> Catatan Audit</h6>
+                    <p class="mb-0">{{ act.audit_notes }}</p>
+                </div>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Edit Kegiatan (untuk pending & invalid/revisi) -->
+{% if report.status in ['draft', 'needs_revision'] and act.status in ['pending', 'invalid'] %}
+<div class="modal fade" id="editActivityModal{{ act.id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <form action="{{ url_for('monev_bos.sekolah_activities', period_id=active_period.id, fund_source=fund_source) }}" method="POST" enctype="multipart/form-data" class="modal-content">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="action" value="edit_activity">
+            <input type="hidden" name="activity_id" value="{{ act.id }}">
+            <input type="hidden" name="fund_source" value="{{ fund_source }}">
+
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-pencil-square me-1"></i> Edit Kegiatan
+                    {% if act.status == 'invalid' %}
+                    <span class="badge bg-danger ms-2" style="font-size:0.75rem;">Revisi</span>
+                    {% endif %}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                {% if act.status == 'invalid' %}
+                <div class="alert alert-warning py-2 mb-3">
+                    <i class="bi bi-exclamation-triangle me-1"></i>
+                    <strong>Data lama akan disimpan sebagai riwayat</strong> sebelum perubahan diterapkan.
+                    {% if act.audit_notes %}<br><small class="text-danger"><strong>Catatan audit:</strong> {{ act.audit_notes }}</small>{% endif %}
+                </div>
+                {% endif %}
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Kode Kegiatan <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="activity_code" required value="{{ act.activity_code }}">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">No. BKU <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="bku_number" required value="{{ act.bku_number or '' }}">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Nama Kegiatan (Uraian) <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" name="activity_name" required value="{{ act.activity_name }}">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Nilai Realisasi (Rp) <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text fw-bold">Rp</span>
+                        <input type="text" inputmode="numeric" class="form-control rupiah-input" name="realized_amount" required value="{{ '{:,.0f}'.format(act.realized_amount).replace(',', '.') }}">
+                    </div>
+                </div>
+                <h6 class="mt-4 mb-3 border-bottom pb-2 text-primary">Detail Barang & Vendor</h6>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Nama Toko/Vendor</label>
+                        <input type="text" class="form-control" name="vendor_name" value="{{ act.vendor_name or '' }}">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Nama Barang</label>
+                        <input type="text" class="form-control" name="item_name" value="{{ act.item_name or '' }}">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-8 mb-3">
+                        <label class="form-label">Spesifikasi Barang</label>
+                        <input type="text" class="form-control" name="item_specs" value="{{ act.item_specs or '' }}">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Jumlah Barang</label>
+                        <input type="number" class="form-control" name="item_quantity" value="{{ act.item_quantity or 1 }}">
+                    </div>
+                </div>
+                <h6 class="mt-4 mb-3 border-bottom pb-2 text-primary">Upload Dokumen (Opsional)</h6>
+                <div class="alert alert-info text-sm py-2">
+                    <i class="bi bi-info-circle me-1"></i> Kosongkan jika tidak ingin mengganti dokumen. Dokumen lama tetap tersimpan.
+                </div>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Faktur / Invoice</label>
+                        {% if act.docs.get('invoice') %}
+                        <div class="mb-1"><a href="/{{ act.docs['invoice'].file_path }}" target="_blank" class="badge bg-secondary text-decoration-none"><i class="bi bi-receipt"></i> Lihat Saat Ini</a></div>
+                        {% endif %}
+                        <input type="file" class="form-control" name="doc_invoice" accept=".pdf,.jpg,.jpeg,.png">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Bukti Transfer</label>
+                        {% if act.docs.get('transfer') %}
+                        <div class="mb-1"><a href="/{{ act.docs['transfer'].file_path }}" target="_blank" class="badge bg-secondary text-decoration-none"><i class="bi bi-bank"></i> Lihat Saat Ini</a></div>
+                        {% endif %}
+                        <input type="file" class="form-control" name="doc_transfer" accept=".pdf,.jpg,.jpeg,.png">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Foto Lapangan</label>
+                        {% if act.docs.get('field_photo') %}
+                        <div class="mb-1"><a href="/{{ act.docs['field_photo'].file_path }}" target="_blank" class="badge bg-info text-decoration-none"><i class="bi bi-camera"></i> Lihat Saat Ini</a></div>
+                        {% endif %}
+                        <input type="file" class="form-control" name="doc_field_photo" accept=".pdf,.jpg,.jpeg,.png">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="submit" class="btn btn-warning fw-bold">
+                    <i class="bi bi-check-lg me-1"></i>
+                    {% if act.status == 'invalid' %}Simpan & Perbarui Data{% else %}Simpan Perubahan{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<!-- Modal Ajukan Reopen Edit (untuk kegiatan valid/sesuai) -->
+{% if report.status in ['draft', 'needs_revision'] and act.status == 'valid' and not act.pending_edit_request %}
+<div class="modal fade" id="requestEditModal{{ act.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <form action="{{ url_for('monev_bos.sekolah_activities', period_id=active_period.id, fund_source=fund_source) }}" method="POST" class="modal-content border-0 shadow">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="action" value="request_edit">
+            <input type="hidden" name="activity_id" value="{{ act.id }}">
+            <input type="hidden" name="fund_source" value="{{ fund_source }}">
+            <div class="modal-header border-0 bg-primary text-white">
+                <h5 class="modal-title fw-bold"><i class="bi bi-unlock me-2"></i>Ajukan Reopen Edit Kegiatan</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body py-3">
+                <div class="alert alert-warning py-2 text-sm mb-3">
+                    <i class="bi bi-shield-lock me-1"></i>
+                    Kegiatan <strong>{{ act.activity_code }}</strong> sudah divalidasi sebagai <strong>Sesuai</strong>.<br>
+                    Pengajuan ini akan dikirim ke <strong>Admin</strong> untuk pembukaan kunci edit.
+                </div>
+                <div class="mb-3 p-3 bg-light rounded text-sm">
+                    <div class="fw-bold text-dark mb-1">{{ act.activity_code }} - {{ act.activity_name }}</div>
+                    <div class="text-muted">Realisasi: Rp {{ '{:,.0f}'.format(act.realized_amount).replace(',', '.') }}</div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold text-sm">Alasan Pengajuan Reopen / Edit <span class="text-danger">*</span></label>
+                    <textarea class="form-control" name="reason" rows="3" required placeholder="Contoh: Terdapat perbaikan nominal nota belanja & lampiran bukti fisik..."></textarea>
+                </div>
+                <div class="alert alert-info py-2 text-xs mb-0">
+                    <i class="bi bi-clock-history me-1"></i>
+                    Setelah disetujui admin, kunci edit akan terbuka dan data kegiatan saat ini akan otomatis tersimpan dalam <strong>Riwayat Perubahan</strong>.
+                </div>
+            </div>
+            <div class="modal-footer border-0 gap-2">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+                <button type="submit" class="btn btn-primary btn-sm fw-bold">
+                    <i class="bi bi-send me-1"></i> Kirim Pengajuan Reopen
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<!-- Modal Riwayat Perubahan Data -->
+{% if act.history %}
+<div class="modal fade" id="historyModal{{ act.id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold"><i class="bi bi-clock-history me-2 text-secondary"></i>Riwayat Perubahan — {{ act.activity_code }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="timeline">
+                {% for h in act.history %}
+                <div class="card border-0 border-start border-3 border-warning mb-3 ps-3 py-2">
+                    <div class="d-flex justify-content-between align-items-start mb-1">
+                        <div>
+                            <small class="text-muted"><i class="bi bi-person me-1"></i>{{ h.changed_by_name or h.changed_by_email }}</small>
+                            {% if h.activity_status_at_change %}
+                            <span class="badge ms-1 {% if h.activity_status_at_change == 'invalid' %}bg-danger{% elif h.activity_status_at_change == 'valid' %}bg-success{% else %}bg-secondary{% endif %}" style="font-size:0.65rem;">{{ h.activity_status_at_change }}</span>
+                            {% endif %}
+                        </div>
+                        <small class="text-muted">{{ h.created_at.strftime('%d/%m/%Y %H:%M') if h.created_at else '-' }}</small>
+                    </div>
+                    {% if h.change_reason %}
+                    <small class="text-muted fst-italic mb-2"><i class="bi bi-chat-left-text me-1"></i>{{ h.change_reason }}</small>
+                    {% endif %}
+                    <div class="row g-1">
+                        {% set prev = h.previous_data %}
+                        {% for key, label in [('activity_code','Kode'), ('activity_name','Uraian'), ('realized_amount','Realisasi'), ('vendor_name','Vendor'), ('bku_number','BKU'), ('item_name','Barang'), ('item_specs','Spesifikasi'), ('item_quantity','Jumlah')] %}
+                        {% if prev.get(key) %}
+                        <div class="col-6 col-sm-4">
+                            <small class="text-muted d-block" style="font-size:0.68rem;">{{ label }} (lama)</small>
+                            <span class="text-dark" style="font-size:0.8rem;">{% if key == 'realized_amount' %}Rp {{ '{:,.0f}'.format(prev[key]|float).replace(',','.') }}{% else %}{{ prev[key] }}{% endif %}</span>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{# ---- Modal Info: Kegiatan Sesuai tidak bisa dihapus/diedit langsung ---- #}
+{% if act.status == 'valid' %}
+<div class="modal fade" id="infoValidModal{{ act.id }}" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 bg-success text-white">
+                <h5 class="modal-title fw-bold"><i class="bi bi-shield-check me-2"></i>Kegiatan Sudah Divalidasi</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <div class="mb-3">
+                    <i class="bi bi-lock-fill text-success" style="font-size: 3rem;"></i>
+                </div>
+                <h6 class="fw-bold mb-2">Kegiatan <span class="text-success">{{ act.activity_code }}</span> telah divalidasi sebagai <span class="text-success">Sesuai</span></h6>
+                <p class="text-muted mb-3">
+                    Kegiatan yang sudah dinyatakan <strong>Sesuai</strong> oleh tim monev tidak dapat diedit atau dihapus secara langsung.<br>
+                    Jika terdapat kesalahan data, gunakan tombol <strong>"Ajukan Edit"</strong> untuk mengirimkan permohonan perubahan kepada admin.
+                </p>
+                <div class="alert alert-warning py-2 text-sm text-start">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Pengajuan hapus kegiatan dapat dilakukan melalui admin atau koordinator tim monev secara langsung.
+                </div>
+            </div>
+            <div class="modal-footer border-0 justify-content-center gap-2">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Tutup</button>
+                {% if not act.pending_edit_request %}
+                <button type="button" class="btn btn-primary fw-bold" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#requestEditModal{{ act.id }}">
+                    <i class="bi bi-send me-1"></i> Ajukan Edit ke Admin
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endfor %}
+
+<!-- Modal Tambah Kegiatan -->
+<div class="modal fade" id="addActivityModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <form action="{{ url_for('monev_bos.sekolah_activities', period_id=active_period.id, fund_source=fund_source) }}" method="POST" enctype="multipart/form-data" class="modal-content">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="action" value="add_activity">
+            <input type="hidden" name="fund_source" value="{{ fund_source }}">
+
+            <div class="modal-header">
+                <h5 class="modal-title">Tambah Kegiatan Dana {{ fund_source }}</h5>
+                <div class="d-flex align-items-center gap-2">
+                    <button type="button" class="btn btn-sm btn-warning text-dark fw-bold" onclick="fillDummyData()">
+                        <i class="bi bi-magic me-1"></i> Auto Fill Dummy
+                    </button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-light border mb-3 d-flex align-items-center justify-content-between">
+                    <span>Sumber Dana Laporan:</span>
+                    <span class="badge {% if fund_source == 'BOS' %}bg-success{% else %}bg-info{% endif %} fs-6 fw-bold">
+                        Dana {{ fund_source }} ({% if fund_source == 'BOS' %}BOSP Pusat{% else %}BOP{% endif %})
+                    </span>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Kode Kegiatan <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="activity_code" required placeholder="Contoh: 01.02.03">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">No. BKU <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="bku_number" required placeholder="Contoh: BKU/001/2026">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Nama Kegiatan (Uraian) <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" name="activity_name" required placeholder="Contoh: Pembelian Alat Tulis Kantor">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Nilai Realisasi (Rp) <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text fw-bold">Rp</span>
+                        <input type="text" inputmode="numeric" class="form-control rupiah-input" name="realized_amount" id="realizedAmount" required placeholder="0">
+                    </div>
+                    <div class="form-text mt-1 d-flex justify-content-between align-items-center">
+                        <span>Nominal pengeluaran</span>
+                        <span class="badge bg-primary-subtle text-primary border border-primary fw-bold px-2 py-1" id="realizedAmountPreview">Rp 0</span>
+                    </div>
+                </div>
+                
+                <h6 class="mt-4 mb-3 border-bottom pb-2 text-primary">Detail Barang & Vendor</h6>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Nama Toko/Vendor</label>
+                        <input type="text" class="form-control" name="vendor_name">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Nama Barang</label>
+                        <input type="text" class="form-control" name="item_name">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-8 mb-3">
+                        <label class="form-label">Spesifikasi Barang</label>
+                        <input type="text" class="form-control" name="item_specs" placeholder="Merk, Ukuran, dsb">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Jumlah Barang</label>
+                        <input type="number" class="form-control" name="item_quantity" value="1">
+                    </div>
+                </div>
+
+                <h6 class="mt-4 mb-3 border-bottom pb-2 text-primary">Upload Dokumen Pendukung</h6>
+                <div class="alert alert-info text-sm">
+                    <i class="bi bi-info-circle me-1"></i> Format file yang didukung: PDF, JPG, PNG. Gambar akan otomatis dikompresi maksimal 100KB.
+                </div>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Faktur / Invoice Toko <span class="text-danger">*</span></label>
+                        <input type="file" class="form-control" name="doc_invoice" accept=".pdf,.jpg,.jpeg,.png" required>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Bukti Transfer / Pembayaran <span class="text-danger">*</span></label>
+                        <input type="file" class="form-control" name="doc_transfer" accept=".pdf,.jpg,.jpeg,.png" required>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Foto Kegiatan / Lapangan <small class="text-muted">(Opsional)</small></label>
+                        <input type="file" class="form-control" name="doc_field_photo" accept=".pdf,.jpg,.jpeg,.png">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <button type="button" class="btn btn-outline-warning text-dark fw-bold" onclick="fillDummyData()">
+                    <i class="bi bi-magic me-1"></i> Auto Fill Dummy Data
+                </button>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn {% if fund_source == 'BOS' %}btn-success{% else %}btn-info text-white{% endif %} fw-bold">
+                        Simpan Kegiatan {{ fund_source }}
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function generateDummyFile(name, labelText) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 500;
+    canvas.height = 350;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#f8f9fa';
+    ctx.fillRect(0, 0, 500, 350);
+    ctx.fillStyle = '#198754';
+    ctx.fillRect(0, 0, 500, 50);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 18px sans-serif';
+    ctx.fillText(labelText, 20, 33);
+    
+    ctx.fillStyle = '#212529';
+    ctx.font = 'bold 16px sans-serif';
+    ctx.fillText('BUKTI PELAPORAN TESTING DUMMY', 30, 100);
+    ctx.font = '14px sans-serif';
+    ctx.fillStyle = '#495057';
+    ctx.fillText('Tanggal: ' + new Date().toLocaleString('id-ID'), 30, 140);
+    ctx.fillText('Sistem: ASKA MONEV BOS/BOP', 30, 170);
+    ctx.fillText('Status: File Auto Generated for Testing', 30, 200);
+    
+    ctx.strokeStyle = '#dee2e6';
+    ctx.strokeRect(20, 70, 460, 240);
+
+    return new Promise(resolve => {
+        canvas.toBlob(blob => {
+            const file = new File([blob], name, { type: 'image/jpeg' });
+            resolve(file);
+        }, 'image/jpeg', 0.85);
+    });
+}
+
+async function fillDummyData() {
+    const fundSource = "{{ fund_source }}";
+    const form = document.querySelector('#addActivityModal form');
+    
+    if (fundSource === 'BOS') {
+        const randNum = Math.floor(10 + Math.random() * 89);
+        form.querySelector('[name="activity_code"]').value = '01.02.' + randNum;
+        form.querySelector('[name="bku_number"]').value = 'BKU/BOS/' + (100 + randNum) + '/2026';
+        form.querySelector('[name="activity_name"]').value = 'Pemeliharaan Sarana & Alat Pelajaran Komputer';
+        form.querySelector('[name="realized_amount"]').value = '5.450.000';
+        form.querySelector('[name="vendor_name"]').value = 'CV Media Tekno Nusantara';
+        form.querySelector('[name="item_name"]').value = 'Tinta & Toner Printer HP/Epson';
+        form.querySelector('[name="item_specs"]').value = 'HP 85A Black & Epson 003 Set Original';
+        form.querySelector('[name="item_quantity"]').value = '5';
+    } else {
+        const randNum = Math.floor(10 + Math.random() * 89);
+        form.querySelector('[name="activity_code"]').value = '02.04.' + randNum;
+        form.querySelector('[name="bku_number"]').value = 'BKU/BOP/' + (200 + randNum) + '/2026';
+        form.querySelector('[name="activity_name"]').value = 'Penyediaan Bahan Kebersihan & Kebutuhan Sanitasi';
+        form.querySelector('[name="realized_amount"]').value = '3.800.000';
+        form.querySelector('[name="vendor_name"]').value = 'Toko Kebersihan Sehat Mandiri';
+        form.querySelector('[name="item_name"]').value = 'Sabun Cuci Tangan & Disinfektan';
+        form.querySelector('[name="item_specs"]').value = 'Liquid Hand Soap 5L & Sanitizer 500ml';
+        form.querySelector('[name="item_quantity"]').value = '8';
+    }
+    
+    // Trigger rupiah preview update
+    const realizedInput = form.querySelector('[name="realized_amount"]');
+    if (realizedInput) {
+        realizedInput.dispatchEvent(new Event('input'));
+    }
+    
+    // Generate dummy image files for invoice, transfer & field photo
+    try {
+        const timestamp = Date.now();
+        const invoiceFile = await generateDummyFile('faktur_dummy_' + timestamp + '.jpg', 'FAKTUR / INVOICE DUMMY TEST');
+        const transferFile = await generateDummyFile('bukti_transfer_dummy_' + timestamp + '.jpg', 'BUKTI TRANSFER DUMMY TEST');
+        const fieldPhotoFile = await generateDummyFile('foto_kegiatan_dummy_' + timestamp + '.jpg', 'FOTO KEGIATAN LAPANGAN DUMMY');
+        
+        const dtInv = new DataTransfer();
+        dtInv.items.add(invoiceFile);
+        form.querySelector('[name="doc_invoice"]').files = dtInv.files;
+        
+        const dtTrf = new DataTransfer();
+        dtTrf.items.add(transferFile);
+        form.querySelector('[name="doc_transfer"]').files = dtTrf.files;
+
+        const dtPhoto = new DataTransfer();
+        dtPhoto.items.add(fieldPhotoFile);
+        const photoInput = form.querySelector('[name="doc_field_photo"]');
+        if (photoInput) {
+            photoInput.files = dtPhoto.files;
+        }
+    } catch(e) {
+        console.log('Dummy file attach note:', e);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    function formatRupiah(value) {
+        let clean = value.toString().replace(/\D/g, '');
+        if (!clean) return '0';
+        return new Intl.NumberFormat('id-ID').format(clean);
+    }
+
+    document.querySelectorAll('.rupiah-input').forEach(function(input) {
+        let previewId = input.id + 'Preview';
+        let previewElem = document.getElementById(previewId);
+
+        function updateFormat() {
+            let formatted = formatRupiah(input.value);
+            input.value = formatted;
+            if (previewElem) {
+                previewElem.textContent = 'Rp ' + formatted;
+            }
+        }
+
+        input.addEventListener('input', updateFormat);
+        updateFormat();
+    });
+
+    // Validasi & Info Auto-Kompresi 100KB untuk File Upload
+    document.querySelectorAll('input[type="file"]').forEach(function(fileInput) {
+        fileInput.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                const file = this.files[0];
+                const isImage = file.type.startsWith('image/');
+                const maxSize = 100 * 1024; // 100KB
+                
+                if (!isImage && file.size > maxSize) {
+                    const fileSizeKB = (file.size / 1024).toFixed(1);
+                    alert('Ukuran dokumen PDF (' + fileSizeKB + ' KB) melebihi 100 KB! Silakan pilih file PDF yang lebih kecil.');
+                    this.value = '';
+                }
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
