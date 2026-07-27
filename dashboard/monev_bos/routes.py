@@ -685,16 +685,19 @@ def staff_audit_report(report_id):
     with queries.get_cursor(commit=True) as cur:
         cur.execute("UPDATE monev_bos_activities SET status = 'pending' WHERE report_id = %s AND status = 'in_review'", (report_id,))
 
+    checklists = queries.list_checklists(include_inactive=False)
     activities = queries.list_activities(report_id)
     for act in activities:
         docs = queries.get_activity_docs(act["id"])
         act["docs"] = {doc["doc_type"]: doc for doc in docs}
         # get live photos & school field photos list
         act["live_photos"] = [doc for doc in docs if doc["doc_type"] in ["live_photo", "field_photo"]]
+        # get checklist results for this activity
+        act["checklist_results"] = queries.get_activity_checklist_results(act["id"])
         
     audit_logs = queries.get_audit_logs(report_id)
     
-    return render_template("monev_bos/staff/audit_report.html", report=report, activities=activities, audit_logs=audit_logs)
+    return render_template("monev_bos/staff/audit_report.html", report=report, activities=activities, audit_logs=audit_logs, checklists=checklists)
 
 import base64
 import uuid

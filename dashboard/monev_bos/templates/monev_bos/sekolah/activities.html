@@ -391,21 +391,38 @@
                         {% if act.docs.get('invoice') %}
                         <div class="mb-1"><a href="/{{ act.docs['invoice'].file_path }}" target="_blank" class="badge bg-secondary text-decoration-none"><i class="bi bi-receipt"></i> Lihat Saat Ini</a></div>
                         {% endif %}
-                        <input type="file" class="form-control" name="doc_invoice" accept=".pdf,.jpg,.jpeg,.png">
+                        <input type="file" class="form-control" name="doc_invoice" accept="image/*,.pdf">
+                        <div class="form-text text-muted"><i class="bi bi-info-circle me-1"></i>Bisa pilih dari galeri atau ambil foto</div>
                     </div>
                     <div class="col-md-4 mb-3">
                         <label class="form-label">Bukti Transfer</label>
                         {% if act.docs.get('transfer') %}
                         <div class="mb-1"><a href="/{{ act.docs['transfer'].file_path }}" target="_blank" class="badge bg-secondary text-decoration-none"><i class="bi bi-bank"></i> Lihat Saat Ini</a></div>
                         {% endif %}
-                        <input type="file" class="form-control" name="doc_transfer" accept=".pdf,.jpg,.jpeg,.png">
+                        <input type="file" class="form-control" name="doc_transfer" accept="image/*,.pdf">
+                        <div class="form-text text-muted"><i class="bi bi-info-circle me-1"></i>Bisa pilih dari galeri atau ambil foto</div>
                     </div>
                     <div class="col-md-4 mb-3">
                         <label class="form-label">Foto Lapangan</label>
                         {% if act.docs.get('field_photo') %}
                         <div class="mb-1"><a href="/{{ act.docs['field_photo'].file_path }}" target="_blank" class="badge bg-info text-decoration-none"><i class="bi bi-camera"></i> Lihat Saat Ini</a></div>
                         {% endif %}
-                        <input type="file" class="form-control" name="doc_field_photo" accept=".pdf,.jpg,.jpeg,.png">
+                        <!-- Hidden file input (diisi via JS dari kamera) -->
+                        <input type="file" class="d-none" name="doc_field_photo" id="editFieldPhotoInput{{ act.id }}" accept="image/*">
+                        <!-- Tombol buka kamera -->
+                        <div id="editFieldPhotoCameraWidget{{ act.id }}">
+                            <button type="button" class="btn btn-info text-white w-100 fw-semibold" onclick="openCameraWidget('editFieldPhotoInput{{ act.id }}','editFieldPhotoCameraWidget{{ act.id }}','editFieldPhotoPreview{{ act.id }}')">
+                                <i class="bi bi-camera-fill me-2"></i> Buka Kamera & Ambil Foto
+                            </button>
+                            <div class="form-text text-muted"><i class="bi bi-info-circle me-1"></i>Kosongkan jika tidak ingin mengganti foto</div>
+                        </div>
+                        <!-- Preview hasil foto -->
+                        <div id="editFieldPhotoPreview{{ act.id }}" class="mt-2 d-none">
+                            <img src="" alt="Preview Foto" class="img-thumbnail w-100" style="max-height:160px;object-fit:cover;">
+                            <button type="button" class="btn btn-sm btn-outline-danger mt-1 w-100" onclick="resetCameraWidget('editFieldPhotoInput{{ act.id }}','editFieldPhotoCameraWidget{{ act.id }}','editFieldPhotoPreview{{ act.id }}')">
+                                <i class="bi bi-arrow-counterclockwise me-1"></i> Ambil Ulang
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -446,7 +463,7 @@
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-semibold text-sm">Alasan Pengajuan Reopen / Edit <span class="text-danger">*</span></label>
-                    <textarea class="form-control" name="reason" rows="3" required placeholder="Contoh: Terdapat perbaikan nominal nota belanja & lampiran bukti fisik..."></textarea>
+                    <textarea class="form-control" name="reason" rows="3" required placeholder="Contoh: Terdapat perbaikan nominal nota belanja & lampiran bukti kelengkapan..."></textarea>
                 </div>
                 <div class="alert alert-info py-2 text-xs mb-0">
                     <i class="bi bi-clock-history me-1"></i>
@@ -630,15 +647,32 @@
                 <div class="row">
                     <div class="col-md-4 mb-3">
                         <label class="form-label">Faktur / Invoice Toko <span class="text-danger">*</span></label>
-                        <input type="file" class="form-control" name="doc_invoice" accept=".pdf,.jpg,.jpeg,.png" required>
+                        <input type="file" class="form-control" name="doc_invoice" accept="image/*,.pdf" required>
+                        <div class="form-text text-muted"><i class="bi bi-info-circle me-1"></i>Bisa pilih dari galeri atau ambil foto</div>
                     </div>
                     <div class="col-md-4 mb-3">
                         <label class="form-label">Bukti Transfer / Pembayaran <span class="text-danger">*</span></label>
-                        <input type="file" class="form-control" name="doc_transfer" accept=".pdf,.jpg,.jpeg,.png" required>
+                        <input type="file" class="form-control" name="doc_transfer" accept="image/*,.pdf" required>
+                        <div class="form-text text-muted"><i class="bi bi-info-circle me-1"></i>Bisa pilih dari galeri atau ambil foto</div>
                     </div>
                     <div class="col-md-4 mb-3">
                         <label class="form-label">Foto Kegiatan / Lapangan <small class="text-muted">(Opsional)</small></label>
-                        <input type="file" class="form-control" name="doc_field_photo" accept=".pdf,.jpg,.jpeg,.png">
+                        <!-- Hidden file input (diisi via JS dari kamera) -->
+                        <input type="file" class="d-none" name="doc_field_photo" id="fieldPhotoInput" accept="image/*">
+                        <!-- Tombol buka kamera -->
+                        <div id="fieldPhotoCameraWidget">
+                            <button type="button" class="btn btn-info text-white w-100 fw-semibold" onclick="openCameraWidget('fieldPhotoInput', 'fieldPhotoCameraWidget', 'fieldPhotoPreview')">
+                                <i class="bi bi-camera-fill me-2"></i> Buka Kamera & Ambil Foto
+                            </button>
+                            <div class="form-text text-muted"><i class="bi bi-info-circle me-1"></i>Klik tombol untuk membuka kamera</div>
+                        </div>
+                        <!-- Preview hasil foto -->
+                        <div id="fieldPhotoPreview" class="mt-2 d-none">
+                            <img src="" alt="Preview Foto" class="img-thumbnail w-100" style="max-height:160px;object-fit:cover;">
+                            <button type="button" class="btn btn-sm btn-outline-danger mt-1 w-100" onclick="resetCameraWidget('fieldPhotoInput','fieldPhotoCameraWidget','fieldPhotoPreview')">
+                                <i class="bi bi-arrow-counterclockwise me-1"></i> Ambil Ulang
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -789,5 +823,120 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+</script>
+<!-- Modal Kamera Lapangan -->
+<div class="modal fade" id="cameraModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white py-2">
+                <h6 class="modal-title mb-0"><i class="bi bi-camera-fill me-2"></i>Ambil Foto Lapangan</h6>
+                <button type="button" class="btn-close btn-close-white" onclick="closeCameraModal()"></button>
+            </div>
+            <div class="modal-body p-0 bg-black text-center" style="min-height:300px;position:relative;">
+                <video id="cameraStream" autoplay playsinline muted style="width:100%;max-height:360px;object-fit:cover;display:block;"></video>
+                <canvas id="cameraCanvas" style="display:none;"></canvas>
+                <!-- Loading indicator -->
+                <div id="cameraLoading" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:white;">
+                    <div class="spinner-border text-light mb-2"></div>
+                    <div class="small">Membuka kamera...</div>
+                </div>
+            </div>
+            <div class="modal-footer bg-dark justify-content-center gap-3 py-3">
+                <button type="button" class="btn btn-outline-secondary text-white" onclick="closeCameraModal()">
+                    <i class="bi bi-x-lg me-1"></i> Batal
+                </button>
+                <button type="button" class="btn btn-danger fw-bold px-4" id="captureBtn" onclick="capturePhoto()" disabled>
+                    <i class="bi bi-circle-fill me-2"></i> Ambil Foto
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ===== Camera Widget Logic =====
+let _cameraStream = null;
+let _cameraTargetInput = null;
+let _cameraTargetWidget = null;
+let _cameraTargetPreview = null;
+
+function openCameraWidget(inputId, widgetId, previewId) {
+    _cameraTargetInput = document.getElementById(inputId);
+    _cameraTargetWidget = document.getElementById(widgetId);
+    _cameraTargetPreview = document.getElementById(previewId);
+
+    const modal = new bootstrap.Modal(document.getElementById('cameraModal'));
+    modal.show();
+
+    document.getElementById('cameraLoading').style.display = 'block';
+    document.getElementById('captureBtn').disabled = true;
+    document.getElementById('cameraStream').style.display = 'none';
+
+    const constraints = {
+        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
+    };
+
+    navigator.mediaDevices.getUserMedia(constraints)
+        .then(function(stream) {
+            _cameraStream = stream;
+            const video = document.getElementById('cameraStream');
+            video.srcObject = stream;
+            video.onloadedmetadata = function() {
+                video.play();
+                document.getElementById('cameraLoading').style.display = 'none';
+                video.style.display = 'block';
+                document.getElementById('captureBtn').disabled = false;
+            };
+        })
+        .catch(function(err) {
+            document.getElementById('cameraLoading').innerHTML = '<i class="bi bi-exclamation-triangle-fill text-warning" style="font-size:2rem;"></i><div class="small mt-2">Kamera tidak dapat diakses.<br>Pastikan izin kamera diberikan.<br><small class="text-secondary">' + err.message + '</small></div>';
+            console.error('Camera error:', err);
+        });
+}
+
+function capturePhoto() {
+    const video = document.getElementById('cameraStream');
+    const canvas = document.getElementById('cameraCanvas');
+    canvas.width = video.videoWidth || 1280;
+    canvas.height = video.videoHeight || 720;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    canvas.toBlob(function(blob) {
+        const timestamp = Date.now();
+        const file = new File([blob], 'foto_lapangan_' + timestamp + '.jpg', { type: 'image/jpeg' });
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        _cameraTargetInput.files = dt.files;
+
+        // Tampilkan preview
+        const previewImg = _cameraTargetPreview.querySelector('img');
+        previewImg.src = URL.createObjectURL(blob);
+        _cameraTargetWidget.style.display = 'none';
+        _cameraTargetPreview.classList.remove('d-none');
+
+        closeCameraModal();
+    }, 'image/jpeg', 0.85);
+}
+
+function closeCameraModal() {
+    if (_cameraStream) {
+        _cameraStream.getTracks().forEach(t => t.stop());
+        _cameraStream = null;
+    }
+    const video = document.getElementById('cameraStream');
+    video.srcObject = null;
+    const modalEl = document.getElementById('cameraModal');
+    const bsModal = bootstrap.Modal.getInstance(modalEl);
+    if (bsModal) bsModal.hide();
+}
+
+function resetCameraWidget(inputId, widgetId, previewId) {
+    document.getElementById(inputId).value = '';
+    document.getElementById(widgetId).style.display = 'block';
+    document.getElementById(previewId).classList.add('d-none');
+    const img = document.getElementById(previewId).querySelector('img');
+    if (img) img.src = '';
+}
 </script>
 {% endblock %}

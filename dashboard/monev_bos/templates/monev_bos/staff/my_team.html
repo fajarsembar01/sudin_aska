@@ -60,10 +60,10 @@
                         <input type="hidden" name="action" value="add_member">
                         <div class="mb-3">
                             <label class="form-label">Pilih Staff</label>
-                            <select class="form-select" name="staff_id" required>
+                            <select class="form-select ts-select" name="staff_id" required data-placeholder="Ketik nama staff untuk mencari...">
                                 <option value="">-- Pilih Staff --</option>
                                 {% for staff in available_staff %}
-                                <option value="{{ staff.id }}">{{ staff.full_name }}</option>
+                                <option value="{{ staff.id }}">{{ staff.full_name }} {% if staff.email %}({{ staff.email }}){% endif %}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -76,4 +76,29 @@
     </div>
 
 </div>
+
+<!-- Tom Select for searchable dropdowns -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css">
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    if (window.TomSelect) {
+        var selectEl = document.querySelector('select.ts-select');
+        if (selectEl) {
+            new TomSelect(selectEl, {
+                create: false,
+                allowEmptyOption: true,
+                placeholder: selectEl.getAttribute('data-placeholder') || 'Ketik nama staff untuk mencari...',
+                searchField: ['text'],
+                plugins: ['clear_button'],
+                render: {
+                    no_results: function () {
+                        return '<div class="no-results p-2 text-muted text-center text-sm">Tidak ada staff yang cocok</div>';
+                    }
+                }
+            });
+        }
+    }
+});
+</script>
 {% endblock %}

@@ -2267,6 +2267,43 @@ _MONEV_BOS_AUDIT_LOGS_INDEX_SQL = """
 CREATE INDEX IF NOT EXISTS idx_monev_bos_audit_logs_report ON monev_bos_audit_logs (report_id);
 """
 
+_MONEV_BOS_EDIT_REQUESTS_SQL = """
+CREATE TABLE IF NOT EXISTS monev_bos_edit_requests (
+    id SERIAL PRIMARY KEY,
+    activity_id INTEGER NOT NULL REFERENCES monev_bos_activities(id) ON DELETE CASCADE,
+    requested_by INTEGER NOT NULL REFERENCES dashboard_users(id) ON DELETE CASCADE,
+    reason TEXT NOT NULL,
+    requested_data JSONB,
+    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+    reviewed_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    review_notes TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_MONEV_BOS_EDIT_REQUESTS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_monev_bos_edit_requests_activity ON monev_bos_edit_requests (activity_id);
+CREATE INDEX IF NOT EXISTS idx_monev_bos_edit_requests_status ON monev_bos_edit_requests (status);
+"""
+
+_MONEV_BOS_ACTIVITY_HISTORY_SQL = """
+CREATE TABLE IF NOT EXISTS monev_bos_activity_history (
+    id SERIAL PRIMARY KEY,
+    activity_id INTEGER NOT NULL REFERENCES monev_bos_activities(id) ON DELETE CASCADE,
+    changed_by INTEGER NOT NULL REFERENCES dashboard_users(id) ON DELETE CASCADE,
+    previous_data JSONB,
+    change_reason TEXT,
+    activity_status_at_change TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_MONEV_BOS_ACTIVITY_HISTORY_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_monev_bos_activity_history_activity ON monev_bos_activity_history (activity_id);
+"""
+
+
 def ensure_monev_bos_schema() -> None:
     statements = (
         _MONEV_BOS_PERIODS_SQL,
@@ -2288,6 +2325,10 @@ def ensure_monev_bos_schema() -> None:
         _MONEV_BOS_CHECKLIST_RESULTS_SQL,
         _MONEV_BOS_AUDIT_LOGS_SQL,
         _MONEV_BOS_AUDIT_LOGS_INDEX_SQL,
+        _MONEV_BOS_EDIT_REQUESTS_SQL,
+        _MONEV_BOS_EDIT_REQUESTS_INDEX_SQL,
+        _MONEV_BOS_ACTIVITY_HISTORY_SQL,
+        _MONEV_BOS_ACTIVITY_HISTORY_INDEX_SQL,
     )
     for i, statement in enumerate(statements):
         try:
