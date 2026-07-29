@@ -252,17 +252,103 @@ def admin_teams():
 @role_required("sekolah")
 def sekolah_dashboard():
     user = current_user()
-    active_periods = queries.get_active_periods()
+    school_info = queries.get_school_kecamatan_and_admin_wa(user["id"])
     
-    # Build report status per period
-    period_reports = []
-    for p in active_periods:
-        report = queries.get_school_report(user["id"], p["id"])
-        period_reports.append({"period": p, "report": report})
+    # Available years filter
+    available_years = queries.get_available_years()
+    current_year = datetime.now().year
+    if current_year not in available_years:
+        available_years.insert(0, current_year)
+    if not available_years:
+        available_years = [2026, 2025]
     
-    return render_template("monev_bos/sekolah/dashboard.html", 
-                           active_periods=active_periods,
-                           period_reports=period_reports)
+    selected_year = request.args.get("year", type=int)
+    if not selected_year or selected_year not in available_years:
+        selected_year = available_years[0]
+        
+    existing_periods = queries.list_periods_by_year(selected_year)
+    period_map = {p["tw"]: p for p in existing_periods}
+
+    tw_cards = []
+    tw_names = {1: "TW I", 2: "TW II", 3: "TW III", 4: "TW IV"}
+    tw_months = {1: "Januari - Maret", 2: "April - Juni", 3: "Juli - September", 4: "Oktober - Desember"}
+
+    for tw in range(1, 5):
+        period = period_map.get(tw)
+        if period:
+            period_id = period["id"]
+            is_active = period["is_active"]
+            report = queries.get_school_report(user["id"], period_id)
+        else:
+            period_id = None
+            is_active = False
+            report = None
+
+        bosp_receipt = float(report["bosp_receipt_amount"]) if report and report.get("bosp_receipt_amount") else 0.0
+        bop_receipt = float(report["bop_receipt_amount"]) if report and report.get("bop_receipt_amount") else 0.0
+        total_receipt = bosp_receipt + bop_receipt
+
+        activities = queries.list_activities(report["id"]) if report else []
+        bos_realized = float(sum(a["realized_amount"] for a in activities if a["fund_source"] == "BOS"))
+        bop_realized = float(sum(a["realized_amount"] for a in activities if a["fund_source"] == "BOP"))
+        total_realized = float(sum(a["realized_amount"] for a in activities))
+        remaining_balance = total_receipt - total_realized
+
+        valid_count = sum(1 for a in activities if a["status"] == "valid")
+        invalid_count = sum(1 for a in activities if a["status"] == "invalid")
+        in_review_count = sum(1 for a in activities if a["status"] == "in_review")
+        pending_count = sum(1 for a in activities if a["status"] == "pending")
+
+        status_key = "closed"
+        if is_active:
+            if not report:
+                status_key = "unfilled"
+            else:
+                status_key = report["status"]
+
+        card = {
+            "tw": tw,
+            "tw_label": tw_names[tw],
+            "tw_months": tw_months[tw],
+            "period": period,
+            "period_id": period_id,
+            "is_active": is_active,
+            "report": report,
+            "status_key": status_key,
+            "bosp_receipt": bosp_receipt,
+            "bop_receipt": bop_receipt,
+            "total_receipt": total_receipt,
+            "bos_realized": bos_realized,
+            "bop_realized": bop_realized,
+            "total_realized": total_realized,
+            "remaining_balance": remaining_balance,
+            "total_activities": len(activities),
+            "valid_count": valid_count,
+            "invalid_count": invalid_count,
+            "in_review_count": in_review_count,
+            "pending_count": pending_count,
+        }
+        tw_cards.append(card)
+
+    year_stats = {
+        "total_bosp_receipt": sum(c["bosp_receipt"] for c in tw_cards),
+        "total_bop_receipt": sum(c["bop_receipt"] for c in tw_cards),
+        "total_receipt": sum(c["total_receipt"] for c in tw_cards),
+        "total_realized": sum(c["total_realized"] for c in tw_cards),
+        "total_remaining": sum(c["remaining_balance"] for c in tw_cards),
+        "filled_tw_count": sum(1 for c in tw_cards if c["report"]),
+        "completed_tw_count": sum(1 for c in tw_cards if c["report"] and c["report"]["status"] == "completed"),
+        "revision_tw_count": sum(1 for c in tw_cards if c["report"] and c["report"]["status"] == "needs_revision"),
+    }
+
+    return render_template(
+        "monev_bos/sekolah/dashboard.html",
+        selected_year=selected_year,
+        available_years=available_years,
+        tw_cards=tw_cards,
+        year_stats=year_stats,
+        school_info=school_info
+    )
 
 def _parse_float(val) -> float:
     if not val:
@@ -379,33 +465,46 @@ def _save_uploaded_file(file, base_dir, sub_path, max_size_bytes=100 * 1024):
     
     filename = secure_filename(file.filename)
     ext = os.path.splitext(filename)[1].lower()
+    if ext not in [".jpg", ".jpeg", ".png", ".webp", ".bmp"]:
+        return None, "Dokumen hanya menerima file gambar (JPG, PNG, WEBP, atau BMP)."
     
     upload_dir = os.path.join(base_dir, sub_path)
     os.makedirs(upload_dir, exist_ok=True)
     
-    # Auto-compress images to <= 100KB
-    if ext in [".jpg", ".jpeg", ".png", ".webp", ".bmp"]:
-        try:
-            compressed_bytes = _compress_image_file(file, target_kb=100)
-            save_name = os.path.splitext(filename)[0] + ".jpg"
-            file_path = os.path.join(upload_dir, save_name)
-            with open(file_path, "wb") as f:
-                f.write(compressed_bytes)
-            return f"static/uploads/{sub_path}/{save_name}", None
-        except Exception as e:
-            file.seek(0) # Fallback to normal save if error
-            
-    # For PDFs and non-images, check size limit
-    file.seek(0, os.SEEK_END)
-    file_size = file.tell()
-    file.seek(0)
-    
-    if file_size > max_size_bytes:
-        return None, f"Ukuran file {file.filename} ({round(file_size/1024, 1)} KB) melebihi batas maksimal 100 KB."
-        
-    file_path = os.path.join(upload_dir, filename)
-    file.save(file_path)
-    return f"static/uploads/{sub_path}/{filename}", None
+    try:
+        compressed_bytes = _compress_image_file(file, target_kb=max_size_bytes // 1024)
+        save_name = os.path.splitext(filename)[0] + ".jpg"
+        file_path = os.path.join(upload_dir, save_name)
+        with open(file_path, "wb") as f:
+            f.write(compressed_bytes)
+        return f"static/uploads/{sub_path}/{save_name}", None
+    except Exception:
+        return None, "File gambar gagal diproses. Pastikan file tidak rusak."
+
+def _save_camera_photo(data_url, base_dir, sub_path):
+    if not data_url:
+        return None, "Foto kegiatan wajib diambil langsung dari kamera."
+    if "," not in data_url:
+        return None, "Format foto kamera tidak valid."
+
+    try:
+        header, encoded = data_url.split(",", 1)
+        if not header.startswith("data:image/"):
+            return None, "Format foto kamera harus berupa gambar."
+        image_bytes = base64.b64decode(encoded)
+        img = Image.open(io.BytesIO(image_bytes))
+        if img.mode in ("RGBA", "P"):
+            img = img.convert("RGB")
+
+        upload_dir = os.path.join(base_dir, sub_path)
+        os.makedirs(upload_dir, exist_ok=True)
+        filename = f"camera_{uuid.uuid4().hex[:10]}.jpg"
+        file_path = os.path.join(upload_dir, filename)
+        img.thumbnail((1200, 1200), Image.Resampling.LANCZOS)
+        img.save(file_path, format="JPEG", quality=75, optimize=True)
+        return f"static/uploads/{sub_path}/{filename}", None
+    except Exception:
+        return None, "Foto kamera gagal diproses. Silakan ambil ulang foto."
 
 @monev_bos_bp.route("/sekolah/activities", methods=["GET", "POST"])
 @role_required("sekolah")
@@ -447,21 +546,44 @@ def sekolah_activities():
             }
             activity_id = queries.create_activity(report["id"], target_fund_source, data)
             
-            # Handle file uploads
+            # Handle mandatory document uploads (Faktur/Kwitansi & Bukti Transfer)
+            base_dir = os.path.join(monev_bos_bp.root_path, "..", "static", "uploads")
+            doc_inv_file = request.files.get("doc_invoice")
+            doc_tf_file = request.files.get("doc_transfer")
+
+            if not doc_inv_file or not doc_inv_file.filename:
+                queries.delete_activity(activity_id)
+                flash("Dokumen Faktur/Kwitansi wajib diunggah.", "danger")
+                return redirect(url_for("monev_bos.sekolah_activities", period_id=period_id, fund_source=fund_source))
+
+            if not doc_tf_file or not doc_tf_file.filename:
+                queries.delete_activity(activity_id)
+                flash("Dokumen Bukti Transfer wajib diunggah.", "danger")
+                return redirect(url_for("monev_bos.sekolah_activities", period_id=period_id, fund_source=fund_source))
+
+            # Handle optional camera photo (Foto Kegiatan / Lapangan)
+            field_photo_data = request.form.get("field_photo_data")
+            if field_photo_data:
+                saved_path, err_msg = _save_camera_photo(field_photo_data, base_dir, f"monev_bos/{report['id']}/{activity_id}/field_photo")
+                if err_msg:
+                    queries.delete_activity(activity_id)
+                    flash(err_msg, "danger")
+                    return redirect(url_for("monev_bos.sekolah_activities", period_id=period_id, fund_source=fund_source))
+                queries.add_activity_doc(activity_id, "field_photo", saved_path, 0, user["id"])
+
+            # Handle mandatory document file uploads
             has_error = False
-            for doc_type in ["transfer", "invoice", "field_photo"]:
+            for doc_type in ["invoice", "transfer"]:
                 file = request.files.get(f"doc_{doc_type}")
                 if file and file.filename != '':
                     sub_path = f"monev_bos/{report['id']}/{activity_id}/{doc_type}"
-                    base_dir = os.path.join(monev_bos_bp.root_path, "..", "static", "uploads")
                     saved_path, err_msg = _save_uploaded_file(file, base_dir, sub_path, max_size_bytes=100 * 1024)
-                    
                     if err_msg:
                         flash(err_msg, "danger")
                         has_error = True
                     elif saved_path:
                         queries.add_activity_doc(activity_id, doc_type, saved_path, file.content_length or 0, user["id"])
-            
+
             if not has_error:
                 flash("Kegiatan berhasil ditambahkan.", "success")
             
@@ -557,12 +679,20 @@ def sekolah_activities():
                         "activity_code": act["activity_code"]
                     }
             
+            field_photo_data = request.form.get("field_photo_data")
+            if field_photo_data:
+                base_dir = os.path.join(monev_bos_bp.root_path, "..", "static", "uploads")
+                saved_path, err_msg = _save_camera_photo(field_photo_data, base_dir, f"monev_bos/{report['id']}/{activity_id}/field_photo")
+                if err_msg:
+                    flash(err_msg, "danger")
+                    return redirect(url_for("monev_bos.sekolah_activities", period_id=period_id, fund_source=fund_source))
+                queries.add_activity_doc(activity_id, "field_photo", saved_path, 0, user["id"])
+
             # Handle optional file re-uploads
-            for doc_type in ["transfer", "invoice", "field_photo"]:
+            for doc_type in ["transfer", "invoice"]:
                 file = request.files.get(f"doc_{doc_type}")
                 if file and file.filename != '':
                     sub_path = f"monev_bos/{report['id']}/{activity_id}/{doc_type}"
-                    base_dir = os.path.join(monev_bos_bp.root_path, "..", "static", "uploads")
                     saved_path, err_msg = _save_uploaded_file(file, base_dir, sub_path, max_size_bytes=100 * 1024)
                     
                     if err_msg:
@@ -731,10 +861,37 @@ def staff_audit_report(report_id):
         act["live_photos"] = [doc for doc in docs if doc["doc_type"] in ["live_photo", "field_photo"]]
         # get checklist results for this activity
         act["checklist_results"] = queries.get_activity_checklist_results(act["id"])
+
+    activity_groups_by_name = {}
+    for act in activities:
+        name = (act.get("activity_name") or "Tanpa nama kegiatan").strip()
+        group = activity_groups_by_name.setdefault(name, {
+            "name": name,
+            "total": 0,
+            "pending": 0,
+            "in_review": 0,
+            "valid": 0,
+            "invalid": 0,
+            "ready_review": 0,
+            "ready_submit": 0,
+        })
+        group["total"] += 1
+        status = act.get("status") or "pending"
+        if status in group:
+            group[status] += 1
+
+    activity_groups = list(activity_groups_by_name.values())
         
     audit_logs = queries.get_audit_logs(report_id)
     
-    return render_template("monev_bos/staff/audit_report.html", report=report, activities=activities, audit_logs=audit_logs, checklists=checklists)
+    return render_template(
+        "monev_bos/staff/audit_report.html",
+        report=report,
+        activities=activities,
+        activity_groups=activity_groups,
+        audit_logs=audit_logs,
+        checklists=checklists,
+    )
 
 import base64
 import uuid

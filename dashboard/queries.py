@@ -4772,3 +4772,312 @@ def fetch_admin_activity_page(
         "total_pages": total_pages,
         "actor_label": actor_label or "Admin",
     }
+
+
+# ===== SYSTEM SETTINGS QUERIES =====
+
+DEFAULT_SYSTEM_SETTINGS = [
+    # General Settings
+    {
+        "setting_key": "app_name",
+        "setting_value": "Dashboard SUDIN ASKA",
+        "category": "general",
+        "description": "Nama utama aplikasi dashboard",
+        "is_secret": False,
+    },
+    {
+        "setting_key": "app_subtitle",
+        "setting_value": "Sistem Informasi & Layanan Terpadu Suku Dinas Pendidikan",
+        "category": "general",
+        "description": "Sub-judul / tagline portal",
+        "is_secret": False,
+    },
+    {
+        "setting_key": "organization_name",
+        "setting_value": "Suku Dinas Pendidikan Wilayah 1 Jakarta Utara",
+        "category": "general",
+        "description": "Nama instansi / organisasi pengelola",
+        "is_secret": False,
+    },
+    {
+        "setting_key": "support_email",
+        "setting_value": "support@sudinaska.id",
+        "category": "general",
+        "description": "Email kontak bantuan teknis",
+        "is_secret": False,
+    },
+    {
+        "setting_key": "support_phone",
+        "setting_value": "021-43930000",
+        "category": "general",
+        "description": "Nomor telepon / WhatsApp hotline",
+        "is_secret": False,
+    },
+    {
+        "setting_key": "maintenance_mode",
+        "setting_value": "false",
+        "category": "general",
+        "description": "Mode pemeliharaan sistem (true/false)",
+        "is_secret": False,
+    },
+    {
+        "setting_key": "maintenance_message",
+        "setting_value": "Sistem sedang dalam pemeliharaan berkala. Silakan kembali beberapa saat lagi.",
+        "category": "general",
+        "description": "Pesan yang ditampilkan saat mode pemeliharaan aktif",
+        "is_secret": False,
+    },
+    {
+        "setting_key": "session_timeout_minutes",
+        "setting_value": "120",
+        "category": "general",
+        "description": "Durasi batas waktu sesi inaktif (dalam menit)",
+        "is_secret": False,
+    },
+    {
+        "setting_key": "allow_user_registration",
+        "setting_value": "false",
+        "category": "general",
+        "description": "Izinkan registrasi pengguna baru secara mandiri",
+        "is_secret": False,
+    },
+    # Notification Settings
+    {
+        "setting_key": "telegram_notifications_enabled",
+        "setting_value": "true",
+        "category": "notification",
+        "description": "Status pengiriman notifikasi Telegram",
+        "is_secret": False,
+    },
+    {
+        "setting_key": "telegram_bot_token",
+        "setting_value": "",
+        "category": "notification",
+        "description": "Token Bot Telegram untuk notifikasi sistem",
+        "is_secret": True,
+    },
+    {
+        "setting_key": "telegram_chat_id",
+        "setting_value": "",
+        "category": "notification",
+        "description": "ID Chat / Grup Telegram penerima notifikasi",
+        "is_secret": False,
+    },
+    {
+        "setting_key": "whatsapp_notifications_enabled",
+        "setting_value": "true",
+        "category": "notification",
+        "description": "Status notifikasi via WhatsApp Gateway",
+        "is_secret": False,
+    },
+    {
+        "setting_key": "email_notifications_enabled",
+        "setting_value": "false",
+        "category": "notification",
+        "description": "Status pengiriman email notifikasi",
+        "is_secret": False,
+    },
+    {
+        "setting_key": "notify_on_new_login",
+        "setting_value": "true",
+        "category": "notification",
+        "description": "Kirim notifikasi saat ada login admin baru",
+        "is_secret": False,
+    },
+    {
+        "setting_key": "notify_on_system_error",
+        "setting_value": "true",
+        "category": "notification",
+        "description": "Kirim alert notifikasi jika terjadi error kritis sistem",
+        "is_secret": False,
+    },
+    {
+        "setting_key": "notify_daily_summary",
+        "setting_value": "true",
+        "category": "notification",
+        "description": "Kirim ringkasan statistik harian",
+        "is_secret": False,
+    },
+    # API Settings
+    {
+        "setting_key": "openai_api_key",
+        "setting_value": "",
+        "category": "api",
+        "description": "API Key OpenAI untuk fitur kecerdasan/AI",
+        "is_secret": True,
+    },
+    {
+        "setting_key": "gemini_api_key",
+        "setting_value": "",
+        "category": "api",
+        "description": "API Key Google Gemini AI",
+        "is_secret": True,
+    },
+    {
+        "setting_key": "whatsapp_api_endpoint",
+        "setting_value": "",
+        "category": "api",
+        "description": "URL Endpoint WhatsApp Gateway API",
+        "is_secret": False,
+    },
+    {
+        "setting_key": "whatsapp_api_key",
+        "setting_value": "",
+        "category": "api",
+        "description": "API Key WhatsApp Gateway",
+        "is_secret": True,
+    },
+    {
+        "setting_key": "telegram_webhook_url",
+        "setting_value": "",
+        "category": "api",
+        "description": "URL Webhook Telegram Bot",
+        "is_secret": False,
+    },
+    {
+        "setting_key": "api_rate_limit_per_min",
+        "setting_value": "60",
+        "category": "api",
+        "description": "Batas maksimum panggilan API per menit",
+        "is_secret": False,
+    },
+    {
+        "setting_key": "api_access_enabled",
+        "setting_value": "true",
+        "category": "api",
+        "description": "Status akses API eksternal",
+        "is_secret": False,
+    },
+]
+
+
+def ensure_default_system_settings() -> None:
+    """Ensure system_settings table has default settings populated."""
+    try:
+        with get_cursor(commit=True) as cur:
+            for item in DEFAULT_SYSTEM_SETTINGS:
+                cur.execute(
+                    """
+                    INSERT INTO system_settings (setting_key, setting_value, category, description, is_secret)
+                    VALUES (%s, %s, %s, %s, %s)
+                    ON CONFLICT (setting_key) DO NOTHING;
+                    """,
+                    (
+                        item["setting_key"],
+                        item["setting_value"],
+                        item["category"],
+                        item["description"],
+                        item["is_secret"],
+                    ),
+                )
+    except Exception as exc:
+        import logging
+        logging.warning("Error ensuring default system settings: %s", exc)
+
+
+def get_all_system_settings() -> Dict[str, Dict[str, Any]]:
+    """Retrieve all system settings mapped by setting_key."""
+    ensure_default_system_settings()
+    results: Dict[str, Dict[str, Any]] = {}
+    try:
+        with get_cursor() as cur:
+            cur.execute(
+                """
+                SELECT setting_key, setting_value, category, description, is_secret, updated_at, updated_by
+                FROM system_settings
+                ORDER BY category, setting_key;
+                """
+            )
+            rows = cur.fetchall()
+            for row in rows:
+                key = row["setting_key"]
+                results[key] = {
+                    "setting_key": key,
+                    "setting_value": row["setting_value"] or "",
+                    "category": row["category"],
+                    "description": row["description"] or "",
+                    "is_secret": bool(row["is_secret"]),
+                    "updated_at": row["updated_at"],
+                    "updated_by": row["updated_by"],
+                }
+    except Exception as exc:
+        import logging
+        logging.warning("Error fetching system settings: %s", exc)
+        for item in DEFAULT_SYSTEM_SETTINGS:
+            results[item["setting_key"]] = {
+                "setting_key": item["setting_key"],
+                "setting_value": item["setting_value"],
+                "category": item["category"],
+                "description": item["description"],
+                "is_secret": item["is_secret"],
+                "updated_at": None,
+                "updated_by": None,
+            }
+    return results
+
+
+def get_system_settings_dict() -> Dict[str, str]:
+    """Get key -> string value mapping of all system settings."""
+    settings = get_all_system_settings()
+    return {k: v["setting_value"] for k, v in settings.items()}
+
+
+def get_system_setting(key: str, default: str = "") -> str:
+    """Get single system setting value by key."""
+    settings = get_system_settings_dict()
+    return settings.get(key, default)
+
+
+def update_system_settings(settings_data: Dict[str, str], user_id: Optional[int] = None) -> bool:
+    """Batch update system settings from key-value dictionary."""
+    ensure_default_system_settings()
+    if not settings_data:
+        return True
+    try:
+        with get_cursor(commit=True) as cur:
+            for key, val in settings_data.items():
+                cur.execute(
+                    """
+                    INSERT INTO system_settings (setting_key, setting_value, updated_at, updated_by)
+                    VALUES (%s, %s, NOW(), %s)
+                    ON CONFLICT (setting_key) DO UPDATE
+                    SET setting_value = EXCLUDED.setting_value,
+                        updated_at = NOW(),
+                        updated_by = EXCLUDED.updated_by;
+                    """,
+                    (key, str(val), user_id),
+                )
+        return True
+    except Exception as exc:
+        import logging
+        logging.error("Error updating system settings: %s", exc)
+        return False
+
+
+def get_system_diagnostic_info() -> Dict[str, Any]:
+    """Get system health and diagnostic information for settings page."""
+    import sys
+    import platform
+    info = {
+        "db_connected": False,
+        "python_version": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
+        "platform": platform.platform(),
+        "total_users": 0,
+        "admin_users": 0,
+        "server_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S WIB"),
+    }
+    try:
+        with get_cursor() as cur:
+            cur.execute("SELECT COUNT(*) AS total FROM dashboard_users;")
+            res = cur.fetchone()
+            info["total_users"] = res["total"] if res else 0
+
+            cur.execute("SELECT COUNT(*) AS total FROM dashboard_users WHERE role = 'admin';")
+            res_admin = cur.fetchone()
+            info["admin_users"] = res_admin["total"] if res_admin else 0
+            info["db_connected"] = True
+    except Exception:
+        info["db_connected"] = False
+
+    return info
+

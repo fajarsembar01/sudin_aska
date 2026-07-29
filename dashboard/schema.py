@@ -1489,10 +1489,45 @@ CREATE INDEX IF NOT EXISTS idx_cc_message_drafts_admin ON cc_message_drafts (adm
 CREATE INDEX IF NOT EXISTS idx_cc_message_drafts_admin_category ON cc_message_drafts (admin_user_id, category);
 """
 
+_SYSTEM_SETTINGS_SQL = """
+CREATE TABLE IF NOT EXISTS system_settings (
+    setting_key VARCHAR(100) PRIMARY KEY,
+    setting_value TEXT,
+    category VARCHAR(50) NOT NULL DEFAULT 'general',
+    description TEXT,
+    is_secret BOOLEAN NOT NULL DEFAULT FALSE,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL
+);
+"""
+
+_PUBLIC_API_KEYS_SQL = """
+CREATE TABLE IF NOT EXISTS public_api_keys (
+    id SERIAL PRIMARY KEY,
+    client_name VARCHAR(150) NOT NULL,
+    contact_email VARCHAR(150),
+    api_key VARCHAR(100) UNIQUE NOT NULL,
+    scopes JSONB NOT NULL DEFAULT '["schools:read"]'::jsonb,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    notes TEXT,
+    last_used_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL
+);
+"""
+
+_PUBLIC_API_KEYS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_public_api_keys_key ON public_api_keys (api_key);
+CREATE INDEX IF NOT EXISTS idx_public_api_keys_active ON public_api_keys (is_active);
+"""
+
 def ensure_dashboard_schema() -> None:
     """Create core dashboard tables when they do not yet exist."""
     statements: Iterable[str] = (
         _DASHBOARD_USERS_SQL,
+        _SYSTEM_SETTINGS_SQL,
+        _PUBLIC_API_KEYS_SQL,
+        _PUBLIC_API_KEYS_INDEX_SQL,
         _SCHOOL_CLASSES_SQL,
         _STUDENTS_SQL,
         _STUDENTS_CLASS_INDEX_SQL,

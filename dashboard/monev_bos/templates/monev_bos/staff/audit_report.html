@@ -3,55 +3,82 @@
 {% block monev_bos_content %}
 <style>
     .cursor-pointer { cursor: pointer; transition: background-color 0.15s ease-in-out; }
-    .cursor-pointer:hover { background-color: #f8f9fa !important; }
+    .cursor-pointer:hover { background-color: rgba(0, 0, 0, 0.03) !important; }
     .transition-icon { transition: transform 0.2s ease; }
     @keyframes spin { 100% { transform: rotate(360deg); } }
     .spin-icon { display: inline-block; animation: spin 4s linear infinite; }
+    .activity-summary-mobile-item { border-bottom: 1px solid var(--bs-border-color); }
+    .activity-summary-mobile-item:last-child { border-bottom: 0; }
     
     @media (max-width: 576px) {
         .audit-container { padding-left: 8px !important; padding-right: 8px !important; }
         .activity-item { padding: 0 !important; }
-        .stat-card-title { font-size: 0.68rem !important; }
-        .stat-card-value { font-size: 1rem !important; }
-        .audit-form-box { padding: 10px !important; }
-        .doc-btn { padding: 2px 8px !important; font-size: 0.72rem !important; }
-        .filter-btn-group .btn { padding: 3px 8px !important; font-size: 0.72rem !important; }
+        .stat-card-title { font-size: 0.65rem !important; }
+        .stat-card-value { font-size: 0.9rem !important; }
+        .audit-form-box { padding: 12px !important; }
+        .doc-btn { padding: 3px 8px !important; font-size: 0.72rem !important; }
+        .filter-btn-group .btn { padding: 4px 8px !important; font-size: 0.72rem !important; }
+        .activity-summary-card .card-header { padding: 10px 12px !important; }
+        .activity-summary-mobile-item { padding: 10px 12px !important; }
+        .activity-summary-mobile-title { font-size: 0.78rem !important; line-height: 1.25; }
+        .activity-summary-chip { min-width: 36px; padding: 4px 6px !important; font-size: 0.68rem !important; }
     }
 </style>
 
 <div class="container-fluid py-3 py-md-4 audit-container">
-    <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <!-- Header Responsive Bar -->
+    <div class="d-flex justify-content-between align-items-sm-center mb-3 flex-column flex-sm-row gap-2">
         <div>
-            <h1 class="h4 h3-md mb-0 text-gray-800 fw-bold">Audit Laporan: {{ report.school_name }}</h1>
-            <p class="text-muted text-sm mb-0">Tahun {{ report.year }} Triwulan {{ report.tw }}</p>
+            <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                <h1 class="h5 h4-md mb-0 text-body fw-bold">Audit Laporan: {{ report.school_name }}</h1>
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill text-xs">
+                    <i class="bi bi-calendar3 me-1"></i> Tahun {{ report.year or '2026' }} &bull; TW {{ report.tw or 'I' }}
+                </span>
+            </div>
+            <p class="text-body-secondary small mb-0 d-none d-sm-block">Monitoring dan validasi kegiatan laporan pertanggungjawaban sekolah</p>
         </div>
-        <a href="{{ url_for('monev_bos.staff_dashboard') }}" class="btn btn-outline-secondary btn-sm ms-auto">
-            <i class="bi bi-arrow-left me-1"></i> <span class="d-none d-sm-inline">Kembali ke </span>Dashboard
-        </a>
+        <div class="align-self-start align-self-sm-center">
+            <a href="{{ url_for('monev_bos.staff_dashboard') }}" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+                <i class="bi bi-arrow-left me-1.5"></i> Dashboard
+            </a>
+        </div>
     </div>
 
-    <!-- Stat Cards Summary (3 Columns Grid / Row) -->
-    <div class="row mb-3 g-2">
-        <div class="col-6 col-md-4">
-            <div class="card bg-success text-white shadow-sm h-100 p-2 p-sm-3 border-0">
-                <span class="text-uppercase text-white-50 fw-semibold stat-card-title" style="font-size: 0.72rem;">Penerimaan BOSP</span>
-                <h5 class="mb-0 fw-bold mt-1 stat-card-value">Rp {{ "{:,.0f}".format(report.bosp_receipt_amount).replace(',', '.') }}</h5>
+    <!-- Stat Summary Cards (3 Columns / Responsive) -->
+    <div class="row mb-3 g-2 g-sm-3">
+        <div class="col-12 col-sm-4">
+            <div class="card bg-body border shadow-xs h-100 p-2.5 p-sm-3 rounded-3">
+                <div class="d-flex align-items-center gap-2.5">
+                    <div class="rounded-3 p-2 bg-success-subtle text-success d-flex align-items-center justify-content-center flex-shrink-0" style="width: 38px; height: 38px;">
+                        <i class="bi bi-cash-stack fs-5"></i>
+                    </div>
+                    <div>
+                        <span class="text-uppercase text-body-secondary fw-bold d-block text-xs">Penerimaan BOSP</span>
+                        <h5 class="mb-0 fw-bold text-success">Rp {{ "{:,.0f}".format(report.bosp_receipt_amount).replace(',', '.') }}</h5>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="col-6 col-md-4">
-            <div class="card bg-info text-white shadow-sm h-100 p-2 p-sm-3 border-0">
-                <span class="text-uppercase text-white-50 fw-semibold stat-card-title" style="font-size: 0.72rem;">Penerimaan BOP</span>
-                <h5 class="mb-0 fw-bold mt-1 stat-card-value">Rp {{ "{:,.0f}".format(report.bop_receipt_amount).replace(',', '.') }}</h5>
+        <div class="col-12 col-sm-4">
+            <div class="card bg-body border shadow-xs h-100 p-2.5 p-sm-3 rounded-3">
+                <div class="d-flex align-items-center gap-2.5">
+                    <div class="rounded-3 p-2 bg-info-subtle text-info-emphasis d-flex align-items-center justify-content-center flex-shrink-0" style="width: 38px; height: 38px;">
+                        <i class="bi bi-wallet2 fs-5"></i>
+                    </div>
+                    <div>
+                        <span class="text-uppercase text-body-secondary fw-bold d-block text-xs">Penerimaan BOP</span>
+                        <h5 class="mb-0 fw-bold text-info-emphasis">Rp {{ "{:,.0f}".format(report.bop_receipt_amount).replace(',', '.') }}</h5>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="col-12 col-md-4">
-            <div class="card shadow-sm h-100 p-2 p-sm-3 border-1">
-                <span class="text-uppercase text-muted fw-semibold mb-1 d-block stat-card-title" style="font-size: 0.72rem;">Status Audit Laporan</span>
+        <div class="col-12 col-sm-4">
+            <div class="card bg-body border shadow-xs h-100 p-2.5 p-sm-3 rounded-3">
+                <span class="text-uppercase text-body-secondary fw-semibold mb-1 d-block stat-card-title" style="font-size: 0.68rem;">Status Audit Laporan</span>
                 <form action="{{ url_for('monev_bos.staff_audit_report', report_id=report.id) }}" method="POST">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="action" value="update_report_status">
-                    <select name="status" class="form-select form-select-sm fw-semibold" onchange="this.form.submit()">
+                    <select name="status" class="form-select form-select-sm fw-bold text-xs" onchange="this.form.submit()">
                         <option value="submitted" {% if report.status == 'submitted' %}selected{% endif %}>Menunggu Audit</option>
                         <option value="in_review" {% if report.status == 'in_review' %}selected{% endif %}>Sedang Diaudit</option>
                         <option value="needs_revision" {% if report.status == 'needs_revision' %}selected{% endif %}>Butuh Revisi</option>
@@ -62,22 +89,103 @@
         </div>
     </div>
 
+    {% if activity_groups %}
+    <div class="card shadow-sm mb-3 border-0 activity-summary-card">
+        <div class="card-header bg-body-tertiary py-2.5 px-3 d-flex justify-content-between align-items-center gap-2">
+            <div>
+                <h6 class="m-0 font-weight-bold text-primary text-sm">Ringkasan per Nama Kegiatan</h6>
+                <p class="text-body-secondary mb-0 d-none d-md-block" style="font-size: 0.75rem;">Klik pada baris untuk melihat detail transaksi.</p>
+            </div>
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle text-xs">{{ activity_groups|length }} kegiatan</span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive d-none d-md-block">
+                <table class="table table-sm align-middle mb-0">
+                    <thead class="table-light">
+                        <tr class="text-xs">
+                            <th class="text-center" style="width: 52px;">No</th>
+                            <th>Nama Kegiatan</th>
+                            <th class="text-center">Total Transaksi</th>
+                            <th class="text-center">Belum Assign</th>
+                            <th class="text-center">Sedang Diperiksa</th>
+                            <th class="text-center">Selesai Dicek</th>
+                            <th class="text-center">Siap Review</th>
+                            <th class="text-center">Siap Submit</th>
+                            <th class="text-center" style="width: 70px;">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for group in activity_groups %}
+                        <tr class="text-xs align-middle">
+                            <td class="text-center fw-bold">{{ loop.index }}</td>
+                            <td class="fw-semibold text-body">{{ group.name }}</td>
+                            <td class="text-center fw-bold">{{ group.total }}</td>
+                            <td class="text-center text-primary fw-bold">{{ group.pending }}</td>
+                            <td class="text-center text-warning fw-bold">{{ group.in_review }}</td>
+                            <td class="text-center text-success fw-bold">{{ group.valid }}</td>
+                            <td class="text-center text-info fw-bold">{{ group.ready_review }}</td>
+                            <td class="text-center text-primary fw-bold">{{ group.ready_submit }}</td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-sm btn-outline-primary activity-summary-open" data-activity-name="{{ group.name }}" title="Lihat transaksi" aria-pressed="false">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="d-md-none">
+                {% for group in activity_groups %}
+                <div class="activity-summary-mobile-item">
+                    <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                        <div class="fw-bold text-body activity-summary-mobile-title">{{ group.name }}</div>
+                        <div class="d-flex align-items-center gap-1 flex-shrink-0">
+                            <span class="badge bg-body-tertiary text-body border">{{ group.total }} trx</span>
+                            <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 activity-summary-open" data-activity-name="{{ group.name }}" title="Lihat transaksi" aria-pressed="false">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="d-flex flex-wrap gap-1">
+                        <span class="badge bg-primary-subtle text-primary border activity-summary-chip">Belum {{ group.pending }}</span>
+                        <span class="badge bg-warning-subtle text-warning-emphasis border activity-summary-chip">Cek {{ group.in_review }}</span>
+                        <span class="badge bg-success-subtle text-success border activity-summary-chip">Selesai {{ group.valid }}</span>
+                        {% if group.invalid %}
+                        <span class="badge bg-danger-subtle text-danger border activity-summary-chip">Revisi {{ group.invalid }}</span>
+                        {% endif %}
+                        {% if group.ready_review %}
+                        <span class="badge bg-info-subtle text-info-emphasis border activity-summary-chip">Review {{ group.ready_review }}</span>
+                        {% endif %}
+                        {% if group.ready_submit %}
+                        <span class="badge bg-secondary-subtle text-secondary-emphasis border activity-summary-chip">Submit {{ group.ready_submit }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <div class="row g-3">
         <!-- Kolom Utama: Daftar Kegiatan -->
         <div class="col-lg-8">
             <div class="card shadow-sm mb-3 border-0">
-                <div class="card-header bg-white py-2.5 px-3">
+                <div class="card-header bg-body-tertiary py-2.5 px-3">
                     <!-- Baris 1: Judul & Filter Kategori -->
                     <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
-                        <h6 class="m-0 font-weight-bold text-primary text-sm">Daftar Kegiatan Audit</h6>
+                        <h6 class="m-0 font-weight-bold text-primary text-sm">
+                            Daftar Kegiatan Audit <span class="badge bg-primary-subtle text-primary border ms-1">{{ activities|length }}</span>
+                        </h6>
                         <div class="btn-group btn-group-sm filter-btn-group" role="group" id="fundSourceFilter">
-                            <button type="button" class="btn btn-outline-secondary active py-1 px-2" data-filter="all">
+                            <button type="button" class="btn btn-outline-secondary active py-1 px-2 text-xs" data-filter="all">
                                 Semua <span class="badge bg-secondary ms-1" id="countAll">{{ activities|length }}</span>
                             </button>
-                            <button type="button" class="btn btn-outline-success py-1 px-2" data-filter="BOS">
+                            <button type="button" class="btn btn-outline-success py-1 px-2 text-xs" data-filter="BOS">
                                 BOSP <span class="badge bg-success ms-1" id="countBOS">{{ activities|selectattr('fund_source', 'equalto', 'BOS')|list|length }}</span>
                             </button>
-                            <button type="button" class="btn btn-outline-info py-1 px-2" data-filter="BOP">
+                            <button type="button" class="btn btn-outline-info py-1 px-2 text-xs" data-filter="BOP">
                                 BOP <span class="badge bg-info ms-1" id="countBOP">{{ activities|selectattr('fund_source', 'equalto', 'BOP')|list|length }}</span>
                             </button>
                         </div>
@@ -85,8 +193,8 @@
                     
                     <!-- Baris 2: Search Bar Full Width -->
                     <div class="input-group input-group-sm w-100">
-                        <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
-                        <input type="text" id="activitySearchInput" class="form-control border-start-0 bg-light" placeholder="Cari kode kegiatan, uraian, vendor, BKU...">
+                        <span class="input-group-text bg-body border-end-0 text-body-secondary"><i class="bi bi-search"></i></span>
+                        <input type="text" id="activitySearchInput" class="form-control border-start-0 bg-body" placeholder="Cari kode kegiatan, uraian, vendor, BKU...">
                     </div>
                 </div>
                 <div class="card-body p-0">
@@ -94,12 +202,12 @@
                         {% for act in activities %}
                         <div class="list-group-item p-0 activity-item border-bottom" data-fund="{{ act.fund_source }}" id="activityItem{{ act.id }}" data-status="{{ act.status }}" data-activity-id="{{ act.id }}">
                             <!-- Header Item (Click to Expand / Collapse) -->
-                            <div class="p-2 p-sm-3 activity-header cursor-pointer bg-white" onclick="toggleActivity('{{ act.id }}')">
-                                <div class="d-flex justify-content-between align-items-center mb-1 gap-2">
-                                    <div class="d-flex align-items-center gap-1 flex-wrap">
+                            <div class="p-2.5 p-sm-3 activity-header cursor-pointer bg-body" onclick="toggleActivity('{{ act.id }}')">
+                                <div class="d-flex justify-content-between align-items-center mb-1.5 gap-2">
+                                    <div class="d-flex align-items-center gap-1.5 flex-wrap">
                                         <span class="badge {% if act.fund_source == 'BOS' %}bg-success{% else %}bg-info{% endif %}" style="font-size: 0.68rem; padding: 3px 6px;">{{ act.fund_source }}</span>
-                                        <strong class="text-dark" style="font-size: 0.85rem;">{{ act.activity_code }}</strong>
-                                        <span class="text-success fw-bold text-xs ms-1">Rp {{ "{:,.0f}".format(act.realized_amount).replace(',', '.') }}</span>
+                                        <strong class="text-body font-monospace" style="font-size: 0.85rem;">{{ act.activity_code }}</strong>
+                                        <span class="text-success fw-bold text-xs">Rp {{ "{:,.0f}".format(act.realized_amount).replace(',', '.') }}</span>
                                     </div>
                                     <div class="d-flex align-items-center gap-1 flex-shrink-0 ms-auto">
                                         <div id="statusBadgeContainer{{ act.id }}">
@@ -113,44 +221,56 @@
                                             <span class="badge bg-warning text-dark" style="font-size: 0.7rem;"><i class="bi bi-hourglass-split me-1"></i>Pending</span>
                                             {% endif %}
                                         </div>
-                                        <i class="bi bi-chevron-down text-muted transition-icon ms-1" id="toggleIcon{{ act.id }}" style="font-size: 0.85rem;"></i>
+                                        <i class="bi bi-chevron-down text-body-secondary transition-icon ms-1" id="toggleIcon{{ act.id }}" style="font-size: 0.85rem;"></i>
                                     </div>
                                 </div>
-                                <!-- Uraian Kegiatan (Full Width - Tidak Terpotong) -->
-                                <div class="text-gray-800 fw-semibold" style="font-size: 0.84rem; line-height: 1.3;">{{ act.activity_name }}</div>
+
+                                <!-- Uraian Kegiatan & Auditor Name -->
+                                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                    <div class="text-body fw-semibold flex-grow-1" style="font-size: 0.84rem; line-height: 1.3;">{{ act.activity_name }}</div>
+                                    {% if act.auditor_name %}
+                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill text-xs fw-normal flex-shrink-0" id="auditorBadge{{ act.id }}">
+                                        <i class="bi bi-person-check me-1"></i> Auditor: <strong>{{ act.auditor_name }}</strong>
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill text-xs fw-normal flex-shrink-0" id="auditorBadge{{ act.id }}" style="display: none;">
+                                        <i class="bi bi-person-check me-1"></i> Auditor: <strong>-</strong>
+                                    </span>
+                                    {% endif %}
+                                </div>
                             </div>
 
                             <!-- Detail Content (Collapsed by default) -->
-                            <div class="activity-body p-3 p-md-4 bg-light border-top" id="activityBody{{ act.id }}" style="display: none;">
+                            <div class="activity-body p-2.5 p-sm-4 bg-body-tertiary border-top" id="activityBody{{ act.id }}" style="display: none;">
                                 <!-- Realisasi & Info Compact Row -->
-                                <div class="row g-2 mb-3 text-sm bg-white p-2 rounded border">
+                                <div class="row g-2 mb-3 text-sm bg-body p-2 rounded border">
                                     <div class="col-6 col-sm-6">
-                                        <small class="text-muted d-block" style="font-size: 0.72rem;">Realisasi Pengeluaran:</small>
+                                        <small class="text-body-secondary d-block" style="font-size: 0.72rem;">Realisasi Pengeluaran:</small>
                                         <strong class="text-success" style="font-size: 0.9rem;">Rp {{ "{:,.0f}".format(act.realized_amount).replace(',', '.') }}</strong>
                                     </div>
                                     <div class="col-6 col-sm-6">
-                                        <small class="text-muted d-block" style="font-size: 0.72rem;">No. BKU:</small>
-                                        <span class="fw-semibold text-dark">{{ act.bku_number or '-' }}</span>
+                                        <small class="text-body-secondary d-block" style="font-size: 0.72rem;">No. BKU:</small>
+                                        <span class="fw-semibold text-body font-monospace">{{ act.bku_number or '-' }}</span>
                                     </div>
                                     <div class="col-6 col-sm-6">
-                                        <small class="text-muted d-block" style="font-size: 0.72rem;">Vendor / Toko:</small>
-                                        <span class="text-dark">{{ act.vendor_name or '-' }}</span>
+                                        <small class="text-body-secondary d-block" style="font-size: 0.72rem;">Vendor / Toko:</small>
+                                        <span class="text-body">{{ act.vendor_name or '-' }}</span>
                                     </div>
                                     <div class="col-6 col-sm-6">
-                                        <small class="text-muted d-block" style="font-size: 0.72rem;">Barang (Qty):</small>
-                                        <span class="text-dark">{{ act.item_name or '-' }} ({{ act.item_quantity }}x)</span>
+                                        <small class="text-body-secondary d-block" style="font-size: 0.72rem;">Barang (Qty):</small>
+                                        <span class="text-body">{{ act.item_name or '-' }} ({{ act.item_quantity }}x)</span>
                                     </div>
                                 </div>
 
                                 <!-- Dokumen Pendukung (Modal Preview - No New Tab!) -->
                                 <div class="mb-3 d-flex align-items-center flex-wrap gap-2 text-sm">
-                                    <span class="text-muted fw-semibold" style="font-size: 0.78rem;">Dokumen:</span>
+                                    <span class="text-body-secondary fw-semibold" style="font-size: 0.78rem;">Dokumen:</span>
                                     {% if act.docs.get('invoice') %}
                                     <button type="button" onclick="previewDoc('/{{ act.docs['invoice'].file_path }}', 'Faktur Toko - {{ act.activity_code }}')" class="btn btn-sm btn-outline-secondary doc-btn py-1 px-2 rounded-pill">
                                         <i class="bi bi-receipt me-1"></i> Faktur
                                     </button>
                                     {% else %}
-                                    <span class="badge bg-light text-muted border text-xs">No Faktur</span>
+                                    <span class="badge bg-body-tertiary text-body-secondary border text-xs">No Faktur</span>
                                     {% endif %}
                                     
                                     {% if act.docs.get('transfer') %}
@@ -158,12 +278,12 @@
                                         <i class="bi bi-bank me-1"></i> Transfer
                                     </button>
                                     {% else %}
-                                    <span class="badge bg-light text-muted border text-xs">No Transfer</span>
+                                    <span class="badge bg-body-tertiary text-body-secondary border text-xs">No Transfer</span>
                                     {% endif %}
                                 </div>
 
-                                <!-- Foto Lapangan / Bukti Kelengkapan Section -->
-                                <div class="mb-3 p-2 bg-white rounded border">
+                                 <!-- Foto Lapangan / Bukti Kelengkapan Section -->
+                                <div class="mb-3 p-2 bg-body rounded border">
                                     <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-1">
                                         <h6 class="mb-0 text-sm fw-bold">Foto Lapangan & Bukti Kelengkapan</h6>
                                         {% if act.live_photos %}
@@ -190,7 +310,7 @@
                                             {% endif %}
                                         </div>
                                         {% else %}
-                                        <p class="text-muted text-xs fst-italic mb-0">Sekolah belum mengunggah foto. Verifikasi dokumen atau ambil foto live jika survey lokasi.</p>
+                                        <p class="text-body-secondary text-xs fst-italic mb-0">Sekolah belum mengunggah foto. Verifikasi dokumen atau ambil foto live jika survey lokasi.</p>
                                         {% endfor %}
                                     </div>
 
@@ -211,7 +331,7 @@
                                 </div>
 
                                 <!-- Form Validasi -->
-                                <div class="bg-white p-3 border rounded shadow-sm audit-form-box">
+                                <div class="bg-body p-2.5 p-sm-3 border rounded shadow-sm audit-form-box">
                                     <form action="{{ url_for('monev_bos.staff_audit_activity', activity_id=act.id) }}" method="POST" class="validate-activity-form" data-activity-id="{{ act.id }}">
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                         <input type="hidden" name="action" value="validate">
@@ -219,9 +339,9 @@
                                         
                                         <!-- Checklist Kelengkapan Dokumen (2 Pilihan Jelas: Ada / Tidak Ada) -->
                                         {% if checklists %}
-                                        <div class="card border-0 bg-light shadow-2xs mb-3">
-                                            <div class="card-header bg-white py-2 px-3 d-flex justify-content-between align-items-center border-bottom">
-                                                <h6 class="mb-0 text-xs fw-bold text-dark">
+                                        <div class="card border-0 bg-body-tertiary shadow-2xs mb-3">
+                                            <div class="card-header bg-body py-2 px-3 d-flex justify-content-between align-items-center border-bottom">
+                                                <h6 class="mb-0 text-xs fw-bold text-body">
                                                     <i class="bi bi-card-checklist text-primary me-1"></i> Checklist Kelengkapan Dokumen
                                                 </h6>
                                                 <span class="badge bg-primary-subtle text-primary border border-primary-subtle text-xs">{{ checklists|length }} Item Cek</span>
@@ -232,13 +352,13 @@
                                                     {% set res = act.checklist_results.get(cl.id) if act.checklist_results else None %}
                                                     {% set current_status = res.status if (res and res.status in ['yes', 'no']) else 'no' %}
                                                     <div class="col-12 col-md-6">
-                                                        <div class="p-3 bg-white rounded border text-xs h-100 d-flex flex-column justify-content-between shadow-2xs">
+                                                        <div class="p-2.5 p-sm-3 bg-body rounded border text-xs h-100 d-flex flex-column justify-content-between shadow-2xs">
                                                             <div class="mb-2">
-                                                                <div class="fw-bold text-dark text-sm mb-1">
-                                                                    <span class="badge bg-light text-dark border me-1">{{ loop.index }}</span> {{ cl.name }}
+                                                                <div class="fw-bold text-body text-sm mb-1">
+                                                                    <span class="badge bg-body-tertiary text-body border me-1">{{ loop.index }}</span> {{ cl.name }}
                                                                 </div>
                                                                 {% if cl.description %}
-                                                                <div class="text-muted text-xs ms-4 mb-2" style="font-size: 0.75rem;">{{ cl.description }}</div>
+                                                                <div class="text-body-secondary text-xs ms-4 mb-2" style="font-size: 0.75rem;">{{ cl.description }}</div>
                                                                 {% endif %}
                                                             </div>
                                                             
@@ -246,17 +366,17 @@
                                                             <div class="pt-2 border-top">
                                                                 <div class="btn-group w-100" role="group" aria-label="Status Kelengkapan">
                                                                     <input type="radio" class="btn-check" name="checklist_{{ cl.id }}" id="cl_{{ act.id }}_{{ cl.id }}_yes" value="yes" autocomplete="off" {% if current_status == 'yes' %}checked{% endif %}>
-                                                                    <label class="btn btn-outline-success text-xs py-2 px-3 fw-bold" for="cl_{{ act.id }}_{{ cl.id }}_yes">
-                                                                        <i class="bi bi-check-circle-fill me-1 fs-6"></i> Ada
+                                                                    <label class="btn btn-outline-success text-xs py-1.5 px-2 fw-bold" for="cl_{{ act.id }}_{{ cl.id }}_yes">
+                                                                        <i class="bi bi-check-circle-fill me-1"></i> Ada
                                                                     </label>
 
                                                                     <input type="radio" class="btn-check" name="checklist_{{ cl.id }}" id="cl_{{ act.id }}_{{ cl.id }}_no" value="no" autocomplete="off" {% if current_status == 'no' %}checked{% endif %}>
-                                                                    <label class="btn btn-outline-danger text-xs py-2 px-3 fw-bold" for="cl_{{ act.id }}_{{ cl.id }}_no">
-                                                                        <i class="bi bi-x-circle-fill me-1 fs-6"></i> Tidak Ada
+                                                                    <label class="btn btn-outline-danger text-xs py-1.5 px-2 fw-bold" for="cl_{{ act.id }}_{{ cl.id }}_no">
+                                                                        <i class="bi bi-x-circle-fill me-1"></i> Tidak Ada
                                                                     </label>
                                                                 </div>
                                                                 <div class="mt-2">
-                                                                    <input type="text" name="checklist_notes_{{ cl.id }}" class="form-control form-control-sm text-xs bg-light" placeholder="Catatan temuan (opsional)..." value="{{ res.notes if res else '' }}">
+                                                                    <input type="text" name="checklist_notes_{{ cl.id }}" class="form-control form-control-sm text-xs bg-body-tertiary" placeholder="Catatan temuan (opsional)..." value="{{ res.notes if res else '' }}">
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -267,34 +387,31 @@
                                         </div>
                                         {% endif %}
                                         
-                                        <div class="row g-2">
-                                            <div class="col-12 col-md-4">
-                                                <label class="form-label text-xs fw-bold mb-1">Status Audit</label>
-                                                <select name="status" class="form-select form-select-sm" required>
-                                                    <option value="valid" {% if act.status == 'valid' or act.status in ['pending', 'in_review'] %}selected{% endif %}>Sesuai</option>
-                                                    <option value="invalid" {% if act.status == 'invalid' %}selected{% endif %}>Tidak Sesuai (Revisi)</option>
-                                                    <option value="in_review" {% if act.status == 'in_review' %}selected{% endif %}>Proses Audit (Sedang Diaudit)</option>
-                                                    <option value="pending" {% if act.status == 'pending' %}selected{% endif %}>Pending</option>
-                                                </select>
-                                            </div>
-                                            <div class="col-12 col-md-8">
-                                                <label class="form-label text-xs fw-bold mb-1">Catatan Audit</label>
-                                                <textarea name="audit_notes" class="form-control form-control-sm" rows="1" placeholder="Opsional (wajib jika tidak sesuai)">{{ act.audit_notes or '' }}</textarea>
-                                            </div>
+                                        <!-- Catatan Audit -->
+                                        <div class="mb-3">
+                                            <label class="form-label text-xs fw-bold mb-1">Catatan Audit / Temuan</label>
+                                            <textarea name="audit_notes" class="form-control form-control-sm bg-body-tertiary" rows="2" placeholder="Tuliskan catatan audit temuan atau instruksi revisi untuk sekolah (opsional)...">{{ act.audit_notes or '' }}</textarea>
                                         </div>
-                                        <div class="text-end mt-2">
-                                            <button type="submit" class="btn btn-sm btn-primary py-1 px-3">Simpan Validasi</button>
+
+                                        <!-- 2 Tombol Utama Validasi (1 Baris: Kiri Perlu Revisi, Kanan Sesuai) -->
+                                        <div class="d-flex gap-2 pt-2 border-top">
+                                            <button type="submit" name="status" value="invalid" class="btn btn-sm btn-danger py-2 px-2.5 fw-bold flex-fill shadow-2xs">
+                                                <i class="bi bi-x-circle-fill me-1"></i> Perlu Revisi
+                                            </button>
+                                            <button type="submit" name="status" value="valid" class="btn btn-sm btn-success py-2 px-2.5 fw-bold flex-fill shadow-2xs">
+                                                <i class="bi bi-check-circle-fill me-1"></i> Sesuai (Valid)
+                                            </button>
                                         </div>
                                     </form>
                                 </div>
                             </div>
                         </div>
                         {% else %}
-                        <div class="p-4 text-center text-muted" id="emptyActivities">
+                        <div class="p-4 text-center text-body-secondary" id="emptyActivities">
                             Sekolah belum mengisi kegiatan pengeluaran.
                         </div>
                         {% endfor %}
-                        <div class="p-4 text-center text-muted" id="noFilterResults" style="display:none;">
+                        <div class="p-4 text-center text-body-secondary" id="noFilterResults" style="display:none;">
                             <i class="bi bi-funnel me-1"></i> Tidak ada kegiatan untuk sumber dana ini.
                         </div>
                     </div>
@@ -305,9 +422,9 @@
         <!-- Kolom Kanan: Log Audit Trail -->
         <div class="col-lg-4">
             <div class="card shadow-sm mb-3 border-0">
-                <div class="card-header bg-white py-2 px-3 d-flex justify-content-between align-items-center">
+                <div class="card-header bg-body-tertiary py-2 px-3 d-flex justify-content-between align-items-center">
                     <h6 class="m-0 font-weight-bold text-primary text-sm"><i class="bi bi-clock-history me-1"></i> Log Audit Tim</h6>
-                    <span class="badge bg-light text-muted border text-xs">{{ audit_logs|length }} log</span>
+                    <span class="badge bg-body-tertiary text-body-secondary border text-xs">{{ audit_logs|length }} log</span>
                 </div>
                 <div class="card-body p-0">
                     <ul class="list-group list-group-flush text-sm" style="max-height: 350px; overflow-y: auto;">
@@ -315,15 +432,15 @@
                         <li class="list-group-item p-2 p-sm-3 text-xs">
                             <div class="d-flex w-100 justify-content-between mb-1">
                                 <strong>{{ log.user_name }}</strong>
-                                <small class="text-muted">{{ log.created_at|jakarta('%d %b %H:%M') }}</small>
+                                <small class="text-body-secondary">{{ log.created_at|jakarta('%d %b %H:%M') }}</small>
                             </div>
-                            <p class="mb-0 text-muted">{{ log.details }}</p>
+                            <p class="mb-0 text-body-secondary">{{ log.details }}</p>
                             {% if log.activity_name %}
                             <small class="text-primary d-block mt-1">Kegiatan: {{ log.activity_name }}</small>
                             {% endif %}
                         </li>
                         {% else %}
-                        <li class="list-group-item text-muted text-center py-3 text-xs">Belum ada riwayat audit.</li>
+                        <li class="list-group-item text-body-secondary text-center py-3 text-xs">Belum ada riwayat audit.</li>
                         {% endfor %}
                     </ul>
                 </div>
@@ -336,8 +453,8 @@
 <div class="modal fade" id="docPreviewModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content border-0 shadow">
-            <div class="modal-header py-2 px-3 bg-light">
-                <h6 class="modal-title fw-bold text-dark text-sm" id="docPreviewTitle">Pratinjau Dokumen</h6>
+            <div class="modal-header py-2 px-3 bg-body-tertiary">
+                <h6 class="modal-title fw-bold text-body text-sm" id="docPreviewTitle">Pratinjau Dokumen</h6>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-2 text-center" id="docPreviewBody" style="min-height: 250px;">
@@ -607,6 +724,17 @@
         var noResults = document.getElementById('noFilterResults');
         var currentFundFilter = 'all';
 
+        function syncSummaryButtons() {
+            var activeName = searchInput ? searchInput.value.trim() : '';
+            document.querySelectorAll('.activity-summary-open').forEach(function (btn) {
+                var isActive = activeName && btn.getAttribute('data-activity-name') === activeName;
+                btn.classList.toggle('active', !!isActive);
+                btn.classList.toggle('btn-primary', !!isActive);
+                btn.classList.toggle('btn-outline-primary', !isActive);
+                btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+            });
+        }
+
         function applyFilters() {
             var searchQuery = searchInput ? searchInput.value.toLowerCase().trim() : '';
             var visibleCount = 0;
@@ -626,7 +754,38 @@
             if (noResults) {
                 noResults.style.display = (items.length > 0 && visibleCount === 0) ? '' : 'none';
             }
+            syncSummaryButtons();
         }
+
+        document.querySelectorAll('.activity-summary-open').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var name = btn.getAttribute('data-activity-name') || '';
+                var currentSearch = searchInput ? searchInput.value.trim() : '';
+                var shouldClear = currentSearch === name;
+                if (searchInput) {
+                    searchInput.value = shouldClear ? '' : name;
+                    currentFundFilter = 'all';
+                    if (filterGroup) {
+                        filterGroup.querySelectorAll('[data-filter]').forEach(function (b) { b.classList.remove('active'); });
+                        var allBtn = filterGroup.querySelector('[data-filter="all"]');
+                        if (allBtn) allBtn.classList.add('active');
+                    }
+                    applyFilters();
+                }
+
+                if (shouldClear) {
+                    return;
+                }
+
+                var firstVisible = Array.prototype.find.call(items, function (item) {
+                    return item.style.display !== 'none';
+                });
+                var scrollTarget = firstVisible || document.getElementById('activitySearchInput');
+                if (scrollTarget) {
+                    scrollTarget.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
 
         if (filterGroup) {
             var buttons = filterGroup.querySelectorAll('[data-filter]');
@@ -668,8 +827,8 @@
     document.querySelectorAll('.validate-activity-form').forEach(form => {
         form.addEventListener('submit', function (e) {
             e.preventDefault();
-            const submitBtn = this.querySelector('button[type="submit"]');
-            const originalBtnHtml = submitBtn ? submitBtn.innerHTML : 'Simpan Validasi';
+            const submitBtn = e.submitter || this.querySelector('button[type="submit"]');
+            const originalBtnHtml = submitBtn ? submitBtn.innerHTML : 'Simpan';
 
             if (submitBtn) {
                 submitBtn.disabled = true;
@@ -677,6 +836,9 @@
             }
 
             const formData = new FormData(this);
+            if (e.submitter && e.submitter.name && e.submitter.value) {
+                formData.set(e.submitter.name, e.submitter.value);
+            }
             const csrfToken = formData.get('csrf_token') || '{{ csrf_token() }}';
 
             fetch(this.action, {
@@ -720,6 +882,14 @@
                             badgeContainer.innerHTML = '<span class="badge bg-info text-dark" style="font-size: 0.7rem;"><i class="bi bi-gear-wide-connected me-1 spin-icon"></i>Proses Audit</span>';
                         } else {
                             badgeContainer.innerHTML = '<span class="badge bg-warning text-dark" style="font-size: 0.7rem;"><i class="bi bi-hourglass-split me-1"></i>Pending</span>';
+                        }
+                    }
+
+                    if (data.auditor_name) {
+                        const auditorBadge = document.getElementById('auditorBadge' + actId);
+                        if (auditorBadge) {
+                            auditorBadge.innerHTML = '<i class="bi bi-person-check me-1"></i> Auditor: <strong>' + data.auditor_name + '</strong>';
+                            auditorBadge.style.display = 'inline-block';
                         }
                     }
 

@@ -17,6 +17,7 @@ from .call_center import call_center_api_bp, call_center_bp
 from .penugasan import penugasan_bp
 from .cms.routes import cms_bp
 from .laporan import laporan_bp
+from .pengaturan import pengaturan_bp
 from .db_access import shutdown_pool
 from .queries import fetch_pending_bullying_count, fetch_pending_psych_count, fetch_pending_corruption_count
 from .schema import ensure_dashboard_schema, ensure_laporan_schema, ensure_monev_bos_schema
@@ -63,6 +64,7 @@ def create_app() -> Flask:
     
     from .monev_bos.routes import monev_bos_bp
     app.register_blueprint(monev_bos_bp)
+    app.register_blueprint(pengaturan_bp)
     
     # Exempt public API endpoints from CSRF
     from .adiwiyata.routes import api_adiwiyata_likes

@@ -129,7 +129,13 @@ def create_team(name: str, leader_id: Optional[int]) -> int:
             "INSERT INTO monev_bos_teams (name, leader_id) VALUES (%s, %s) RETURNING id",
             (name, leader_id)
         )
-        return cur.fetchone()[0]
+        team_id = cur.fetchone()[0]
+        if leader_id:
+            cur.execute(
+                "INSERT INTO monev_bos_team_members (team_id, staff_id) VALUES (%s, %s) ON CONFLICT DO NOTHING",
+                (team_id, leader_id)
+            )
+        return team_id
 
 def delete_team(team_id: int) -> None:
     with get_cursor(commit=True) as cur:
@@ -141,6 +147,11 @@ def update_team_leader(team_id: int, leader_id: Optional[int]) -> None:
             "UPDATE monev_bos_teams SET leader_id = %s, updated_at = NOW() WHERE id = %s",
             (leader_id, team_id)
         )
+        if leader_id:
+            cur.execute(
+                "INSERT INTO monev_bos_team_members (team_id, staff_id) VALUES (%s, %s) ON CONFLICT DO NOTHING",
+                (team_id, leader_id)
+            )
 
 # --- ASSIGNMENTS ---
 def list_assignments(period_id: int) -> List[Dict[str, Any]]:
@@ -230,8 +241,8 @@ def list_activities(report_id: int) -> List[Dict[str, Any]]:
                 SELECT l.user_id, du.full_name
                 FROM monev_bos_audit_logs l
                 JOIN dashboard_users du ON l.user_id = du.id
-                WHERE l.activity_id = a.id AND l.action = 'VALIDATE'
-                ORDER BY l.created_at DESC
+                WHERE l.activity_id = a.id
+                ORDER BY l.id DESC
                 LIMIT 1
             ) u ON TRUE
             WHERE a.report_id = %s
@@ -636,11 +647,14 @@ def get_team_members(team_id: int) -> List[Dict[str, Any]]:
     with get_cursor() as cur:
         cur.execute(
             """
-            SELECT u.id, u.full_name, u.email, u.role
-            FROM monev_bos_team_members tm
-            JOIN dashboard_users u ON tm.staff_id = u.id
-            WHERE tm.team_id = %s
-            ORDER BY u.full_name ASC
+            SELECT u.id, u.full_name, u.email, u.role,
+                   (t.leader_id = u.id) as is_leader
+            FROM monev_bos_teams t
+            JOIN dashboard_users u ON (u.id = t.leader_id OR u.id IN (
+                SELECT staff_id FROM monev_bos_team_members WHERE team_id = t.id
+            ))
+            WHERE t.id = %s
+            ORDER BY (t.leader_id = u.id) DESC, u.full_name ASC
             """,
             (team_id,)
         )
@@ -665,20 +679,42 @@ def get_schools_for_team(team_id: int, period_id: int) -> List[Dict[str, Any]]:
     with get_cursor() as cur:
         cur.execute(
             """
-            SELECT s.id as school_id, s.full_name as school_name, 
+            SELECT s.id as school_id, s.full_name as school_name, s.email as school_email,
+                   COALESCE(
+                       NULLIF(TRIM(s.whatsapp_number), ''),
+                       NULLIF(TRIM(s.phone), ''),
+                       NULLIF(TRIM(ps.metadata->>'operator_phone'), ''),
+                       NULLIF(TRIM(ps.metadata->>'phone'), ''),
+                       NULLIF(TRIM(ps.metadata->>'coordinator_phone'), '')
+                   ) as school_phone,
                    r.id as report_id, r.status as report_status,
                    r.bosp_receipt_amount, r.bop_receipt_amount,
                    (SELECT COUNT(*) FROM monev_bos_activities a WHERE a.report_id = r.id) as total_activities,
                    (SELECT COUNT(*) FROM monev_bos_activities a WHERE a.report_id = r.id AND a.status IN ('valid', 'invalid')) as audited_activities
             FROM monev_bos_assignments a
             JOIN dashboard_users s ON a.school_id = s.id
+            LEFT JOIN portal_schools ps ON ps.user_id = s.id
             LEFT JOIN monev_bos_reports r ON r.school_id = s.id AND r.period_id = a.period_id
             WHERE a.team_id = %s AND a.period_id = %s
             ORDER BY s.full_name ASC
             """,
             (team_id, period_id)
         )
-        return [dict(row) for row in cur.fetchall()]
+        rows = [dict(row) for row in cur.fetchall()]
+        from urllib.parse import quote
+        for row in rows:
+            phone = row.get("school_phone")
+            if phone:
+                clean = "".join(c for c in str(phone) if c.isdigit())
+                if clean.startswith("0"):
+                    clean = "62" + clean[1:]
+                elif not clean.startswith("62") and clean:
+                    clean = "62" + clean
+                msg = f"Halo Operator {row['school_name']}, kami dari Tim Audit MONEV BOS/BOP Sudin Pendidikan..."
+                row["wa_url"] = f"https://wa.me/{clean}?text={quote(msg)}"
+            else:
+                row["wa_url"] = None
+        return rows
 
 def get_auditor_staff_wa_for_report(report_id: int, school_id: int, period_id: int, activity_id: Optional[int] = None) -> Dict[str, Any]:
     """Retrieves staff auditor name and WhatsApp phone number who specifically audited/validated this activity or report."""

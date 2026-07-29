@@ -973,13 +973,6 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if request.blueprint == 'monev_bos' %}active{% endif %}"
-                            href="{{ url_for('monev_bos.index') }}">
-                            <i class="bi bi-cash-coin nav-icon"></i>MONEV BOS
-                        </a>
-                    </li>
-
-                    <li class="nav-item">
                         <a class="nav-link {% if request.endpoint in ['portal.staff_follow_ups', 'portal.follow_up_detail'] %}active{% endif %}"
                             href="{{ url_for('portal.staff_follow_ups') }}">
                             <i class="bi bi-tools nav-icon"></i>Tindak Lanjut
@@ -1026,12 +1019,6 @@
                         <a class="nav-link {% if request.endpoint in ['portal.schools', 'portal.assess', 'portal.view_assessment'] %}active{% endif %}"
                             href="{{ url_for('portal.schools') }}">
                             <i class="bi bi-list-check nav-icon"></i>Penilaian
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.blueprint == 'monev_bos' %}active{% endif %}"
-                            href="{{ url_for('monev_bos.index') }}">
-                            <i class="bi bi-cash-coin nav-icon"></i>MONEV BOS
                         </a>
                     </li>
                     <!-- Admin dropdown with new Kelola Staff -->
@@ -1147,12 +1134,6 @@
                             <span class="badge rounded-pill text-bg-danger ms-2{% if follow_up_badge <= 0 %} d-none{% endif %}">
                                 {{ follow_up_badge }}
                             </span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.blueprint == 'monev_bos' %}active{% endif %}"
-                            href="{{ url_for('monev_bos.index') }}">
-                            <i class="bi bi-cash-coin nav-icon"></i>MONEV BOS
                         </a>
                     </li>
                     <!-- <li class="nav-item">

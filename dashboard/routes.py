@@ -594,10 +594,10 @@ def admin_select_role() -> Response:
             "href": url_for("monev_bos.index"),
         },
         {
-            "title": "Coming Soon",
-            "description": "Menu sedang disiapkan.",
-            "icon": "bi-hourglass-split",
-            "disabled": True,
+            "title": "Pengaturan",
+            "description": "Kelola notifikasi, API, dan pengaturan umum aplikasi.",
+            "icon": "bi-gear-fill",
+            "href": url_for("pengaturan.admin_settings"),
         },
         {
             "title": "Coming Soon",

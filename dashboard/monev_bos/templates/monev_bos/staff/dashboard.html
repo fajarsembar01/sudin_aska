@@ -1,50 +1,128 @@
 {% extends "monev_bos/base_monev_bos.html" %}
 
 {% block monev_bos_content %}
-<div class="container-fluid py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h1 class="h3 mb-0 text-gray-800">Tugas Audit MONEV BOS/BOP</h1>
-            <p class="text-muted mb-0">Daftar sekolah yang ditugaskan ke tim Anda.</p>
+<style>
+    .staff-hero-card {
+        border-radius: 16px;
+        background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
+        color: #ffffff;
+    }
+    [data-bs-theme="dark"] .staff-hero-card {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .school-card-item {
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+        border-radius: 12px;
+    }
+    .school-card-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.08) !important;
+    }
+    @media (max-width: 576px) {
+        .staff-container { padding-left: 10px !important; padding-right: 10px !important; }
+        .school-actions { width: 100%; justify-content: flex-end; margin-top: 8px; }
+        .school-actions .btn { flex: 1; text-align: center; }
+    }
+</style>
+
+<div class="container-fluid py-3 py-md-4 staff-container">
+    <!-- Header Hero Banner -->
+    <div class="card staff-hero-card shadow-sm border-0 mb-4 overflow-hidden">
+        <div class="card-body p-3 p-md-4">
+            <div class="row align-items-center g-3">
+                <div class="col-md-8">
+                    <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                        <span class="badge border rounded-pill px-2.5 py-1" style="background: rgba(255, 255, 255, 0.2); color: #ffffff !important; border-color: rgba(255, 255, 255, 0.35) !important; font-size: 0.75rem;">
+                            <i class="bi bi-person-badge me-1"></i> Auditor Staff
+                        </span>
+                        {% if active_period %}
+                        <span class="badge border rounded-pill px-2.5 py-1" style="background: rgba(255, 255, 255, 0.2); color: #ffffff !important; border-color: rgba(255, 255, 255, 0.35) !important; font-size: 0.75rem;">
+                            <i class="bi bi-calendar3 me-1"></i> TW {{ active_period.tw }} - {{ active_period.year }}
+                        </span>
+                        {% endif %}
+                    </div>
+                    <h2 class="h4 h3-md fw-bold mb-1 text-white">Tugas Audit MONEV BOS/BOP</h2>
+                    <p class="text-white-50 small mb-0">
+                        Monitoring dan validasi kelengkapan dokumen pengeluaran sekolah yang ditugaskan.
+                    </p>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <a href="{{ url_for('monev_bos.staff_my_team') }}" class="btn btn-light text-primary fw-bold rounded-pill px-3 py-2 text-xs shadow-sm">
+                        <i class="bi bi-people-fill me-1.5"></i> Manajemen Tim Saya
+                    </a>
+                </div>
+            </div>
         </div>
     </div>
 
     {% if not active_period %}
-    <div class="alert alert-warning text-center p-5">
-        <i class="bi bi-calendar-x display-4 text-warning mb-3"></i>
-        <h4>Belum Ada Periode Aktif</h4>
-        <p>Saat ini tidak ada periode pelaporan MONEV BOS/BOP yang aktif dibuka oleh Admin Sudin.</p>
+    <div class="card bg-body border shadow-xs text-center p-4 p-md-5 rounded-4">
+        <div class="card-body">
+            <i class="bi bi-calendar-x display-4 text-warning mb-3 d-block"></i>
+            <h4 class="fw-bold text-body">Belum Ada Periode Aktif</h4>
+            <p class="text-body-secondary small mb-0">Saat ini tidak ada periode pelaporan MONEV BOS/BOP yang dibuka oleh Admin Sudin.</p>
+        </div>
     </div>
     {% elif not teams %}
-    <div class="alert alert-info text-center p-5">
-        <i class="bi bi-person-x display-4 text-info mb-3"></i>
-        <h4>Belum Masuk Tim</h4>
-        <p>Anda belum dimasukkan ke tim MONEV manapun. Hubungi Ketua Tim atau Admin.</p>
+    <div class="card bg-body border shadow-xs text-center p-4 p-md-5 rounded-4">
+        <div class="card-body">
+            <i class="bi bi-person-x display-4 text-info mb-3 d-block"></i>
+            <h4 class="fw-bold text-body">Belum Terdaftar di Tim</h4>
+            <p class="text-body-secondary small mb-0">Anda belum dimasukkan ke tim MONEV manapun. Silakan hubungi Ketua Tim atau Admin Sudin.</p>
+        </div>
     </div>
     {% else %}
-    
-    <div class="card shadow-sm mb-4 border-top border-primary border-4">
-        <div class="card-body p-4">
-            <h5 class="mb-3">Tim Anda: <strong>{{ teams[0].name }}</strong></h5>
-            <p class="text-muted mb-4">
-                Periode Aktif: TW {{ active_period.tw }} Tahun {{ active_period.year }} <br>
-                <i class="bi bi-calendar-event me-1"></i> Buka dari {{ active_period.start_date|jakarta('%d %B %Y') }} sampai {{ active_period.end_date|jakarta('%d %B %Y') }}
-            </p>
-            
-            <h6 class="font-weight-bold text-primary mb-3">Daftar Sekolah Penugasan:</h6>
-            <div class="list-group">
-                {% for school in assigned_schools %}
-                <a href="{% if school.report_id %}{{ url_for('monev_bos.staff_audit_report', report_id=school.report_id) }}{% else %}#{% endif %}" 
-                   class="list-group-item list-group-item-action d-flex justify-content-between align-items-center p-3 {% if not school.report_id %}disabled bg-light{% endif %}">
+
+    <!-- Info Tim & Quick Search -->
+    <div class="card bg-body border shadow-xs mb-4 rounded-3">
+        <div class="card-body p-3 p-md-4">
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                <div>
+                    <h5 class="fw-bold mb-1 text-body">
+                        Tim: <span class="text-primary">{{ teams[0].name }}</span>
+                    </h5>
+                    <small class="text-body-secondary">
+                        <i class="bi bi-clock me-1"></i> Batas Pelaporan: {{ active_period.end_date|jakarta('%d %B %Y') }}
+                    </small>
+                </div>
+                <div>
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1.5 rounded-pill" style="font-size: 0.78rem;">
+                        <i class="bi bi-building me-1"></i> {{ assigned_schools|length }} Sekolah Penugasan
+                    </span>
+                </div>
+            </div>
+
+            <!-- Instant Search Input -->
+            <div class="input-group input-group-sm">
+                <span class="input-group-text bg-body-tertiary border-end-0 text-body-secondary"><i class="bi bi-search"></i></span>
+                <input type="text" id="staffSchoolSearch" class="form-control border-start-0 bg-body-tertiary" placeholder="Cari nama sekolah penugasan...">
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista Sekolah Penugasan (Cards Layout) -->
+    <h6 class="fw-bold mb-3 text-body">Daftar Sekolah & Status Audit</h6>
+
+    <div class="row g-3" id="schoolListContainer">
+        {% for school in assigned_schools %}
+        <div class="col-12 col-md-6 school-card-wrapper">
+            <div class="card school-card-item bg-body border shadow-xs h-100 p-3">
+                <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
                     <div>
-                        <h6 class="mb-1 fw-bold">{{ school.school_name }}</h6>
+                        <h6 class="fw-bold mb-1 text-body school-name-text">{{ school.school_name }}</h6>
+                        <small class="text-body-secondary d-block text-xs">
+                            <i class="bi bi-envelope me-1"></i>{{ school.school_email or '-' }}
+                        </small>
+                    </div>
+                    <div class="text-end">
                         {% if not school.report_id %}
-                        <small class="text-muted"><i class="bi bi-exclamation-circle"></i> Sekolah belum membuat laporan.</small>
+                        <span class="badge bg-body-tertiary text-body-secondary border px-2.5 py-1 text-xs">Belum Ada Laporan</span>
                         {% else %}
                             {% set status_colors = {
                                 'draft': 'secondary',
-                                'submitted': 'info',
-                                'in_review': 'warning',
+                                'submitted': 'info text-dark',
+                                'in_review': 'info text-dark',
                                 'completed': 'success',
                                 'needs_revision': 'danger'
                             } %}
@@ -55,25 +133,97 @@
                                 'completed': 'Audit Selesai',
                                 'needs_revision': 'Revisi'
                             } %}
-                            <span class="badge bg-{{ status_colors[school.report_status] }} me-2">{{ status_labels[school.report_status] }}</span>
-                            <small class="text-muted">Progres Audit: {{ school.audited_activities }} / {{ school.total_activities }} Kegiatan</small>
+                            <span class="badge bg-{{ status_colors[school.report_status] }} px-2.5 py-1 text-xs">
+                                {{ status_labels[school.report_status] }}
+                            </span>
                         {% endif %}
                     </div>
-                    {% if school.report_id %}
-                    <i class="bi bi-chevron-right text-primary"></i>
-                    {% endif %}
-                </a>
-                {% else %}
-                <div class="text-center py-4 text-muted">
-                    <i class="bi bi-journal-x fs-1 mb-2 d-block text-gray-300"></i>
-                    Belum ada sekolah yang ditugaskan ke tim ini.
                 </div>
-                {% endfor %}
+
+                <!-- Progress Audit Bar -->
+                {% if school.report_id %}
+                <div class="my-2 p-2 bg-body-tertiary rounded border">
+                    <div class="d-flex justify-content-between align-items-center text-xs mb-1">
+                        <span class="text-body-secondary">Progres Audit Kegiatan:</span>
+                        <strong class="text-body">{{ school.audited_activities }} / {{ school.total_activities }} Selesai</strong>
+                    </div>
+                    {% set percent = (school.audited_activities / school.total_activities * 100) if school.total_activities > 0 else 0 %}
+                    <div class="progress" style="height: 4px;">
+                        <div class="progress-bar {% if percent == 100 %}bg-success{% else %}bg-primary{% endif %}" role="progressbar" style="width: {{ percent|round(1) }}%;"></div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Footer Actions: WhatsApp Operator & Audit Button -->
+                <div class="d-flex justify-content-between align-items-center mt-auto pt-2 border-top gap-2 flex-wrap school-actions">
+                    <!-- WhatsApp Button to Operator -->
+                    {% if school.wa_url %}
+                    <a href="{{ school.wa_url }}" target="_blank" class="btn btn-sm btn-success px-2.5 py-1 text-xs text-nowrap shadow-2xs" title="Hubungi Nomor WhatsApp Operator Sekolah">
+                        <i class="bi bi-whatsapp me-1"></i> WA Operator
+                    </a>
+                    {% else %}
+                    <button type="button" class="btn btn-sm btn-outline-secondary px-2.5 py-1 text-xs text-nowrap" disabled title="Nomor WhatsApp Operator belum diisi di profil sekolah">
+                        <i class="bi bi-whatsapp me-1"></i> WA Operator
+                    </button>
+                    {% endif %}
+
+                    <!-- Audit Report Link Button -->
+                    {% if school.report_id %}
+                    <a href="{{ url_for('monev_bos.staff_audit_report', report_id=school.report_id) }}" class="btn btn-sm btn-primary px-3 py-1 text-xs fw-bold text-nowrap shadow-2xs">
+                        <i class="bi bi-shield-check me-1"></i> Audit Laporan
+                    </a>
+                    {% else %}
+                    <button class="btn btn-sm btn-body-tertiary text-body-secondary border px-3 py-1 text-xs disabled" disabled>
+                        <i class="bi bi-lock me-1"></i> Belum Submit
+                    </button>
+                    {% endif %}
+                </div>
             </div>
         </div>
+        {% else %}
+        <div class="col-12 text-center py-5 text-body-secondary">
+            <i class="bi bi-journal-x display-6 mb-2 d-block opacity-50"></i>
+            Belum ada sekolah yang ditugaskan ke tim ini.
+        </div>
+        {% endfor %}
     </div>
-    
-    {% endif %}
 
+    <!-- Empty Search State -->
+    <div id="noStaffSchoolFound" class="card bg-body border shadow-xs text-center p-4 rounded-3 mt-3" style="display: none;">
+        <i class="bi bi-search display-6 text-body-secondary mb-2 d-block opacity-50"></i>
+        <h6 class="fw-bold text-body mb-1">Sekolah Tidak Ditemukan</h6>
+        <p class="text-body-secondary small mb-0">Tidak ada sekolah penugasan yang sesuai dengan kata kunci pencarian.</p>
+    </div>
+
+    {% endif %}
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const searchInput = document.getElementById('staffSchoolSearch');
+    if (!searchInput) return;
+
+    searchInput.addEventListener('input', function () {
+        const query = this.value.toLowerCase().trim();
+        const wrappers = document.querySelectorAll('.school-card-wrapper');
+        let visibleCount = 0;
+
+        wrappers.forEach(wrapper => {
+            const schoolName = wrapper.querySelector('.school-name-text');
+            const text = schoolName ? schoolName.textContent.toLowerCase() : wrapper.textContent.toLowerCase();
+            if (text.includes(query)) {
+                wrapper.style.display = '';
+                visibleCount++;
+            } else {
+                wrapper.style.display = 'none';
+            }
+        });
+
+        const emptyMsg = document.getElementById('noStaffSchoolFound');
+        if (emptyMsg) {
+            emptyMsg.style.display = (visibleCount === 0 && wrappers.length > 0) ? 'block' : 'none';
+        }
+    });
+});
+</script>
 {% endblock %}
