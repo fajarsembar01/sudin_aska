@@ -330,12 +330,13 @@
                                     {% endif %}
                                 </div>
 
-                                <!-- Form Validasi -->
+                                 <!-- Form Validasi -->
                                 <div class="bg-body p-2.5 p-sm-3 border rounded shadow-sm audit-form-box">
                                     <form action="{{ url_for('monev_bos.staff_audit_activity', activity_id=act.id) }}" method="POST" class="validate-activity-form" data-activity-id="{{ act.id }}">
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                         <input type="hidden" name="action" value="validate">
                                         <input type="hidden" name="report_id" value="{{ report.id }}">
+                                        <input type="hidden" name="status" class="activity-status-input" value="">
                                         
                                         <!-- Checklist Kelengkapan Dokumen (2 Pilihan Jelas: Ada / Tidak Ada) -->
                                         {% if checklists %}
@@ -395,10 +396,10 @@
 
                                         <!-- 2 Tombol Utama Validasi (1 Baris: Kiri Perlu Revisi, Kanan Sesuai) -->
                                         <div class="d-flex gap-2 pt-2 border-top">
-                                            <button type="submit" name="status" value="invalid" class="btn btn-sm btn-danger py-2 px-2.5 fw-bold flex-fill shadow-2xs">
+                                            <button type="submit" name="status" value="invalid" onclick="this.form.querySelector('.activity-status-input').value='invalid';" class="btn btn-sm btn-danger py-2 px-2.5 fw-bold flex-fill shadow-2xs">
                                                 <i class="bi bi-x-circle-fill me-1"></i> Perlu Revisi
                                             </button>
-                                            <button type="submit" name="status" value="valid" class="btn btn-sm btn-success py-2 px-2.5 fw-bold flex-fill shadow-2xs">
+                                            <button type="submit" name="status" value="valid" onclick="this.form.querySelector('.activity-status-input').value='valid';" class="btn btn-sm btn-success py-2 px-2.5 fw-bold flex-fill shadow-2xs">
                                                 <i class="bi bi-check-circle-fill me-1"></i> Sesuai (Valid)
                                             </button>
                                         </div>
@@ -838,6 +839,14 @@
             const formData = new FormData(this);
             if (e.submitter && e.submitter.name && e.submitter.value) {
                 formData.set(e.submitter.name, e.submitter.value);
+            }
+            if (!formData.get('status')) {
+                const hiddenStatus = this.querySelector('.activity-status-input');
+                if (hiddenStatus && hiddenStatus.value) {
+                    formData.set('status', hiddenStatus.value);
+                } else if (submitBtn && submitBtn.value) {
+                    formData.set('status', submitBtn.value);
+                }
             }
             const csrfToken = formData.get('csrf_token') || '{{ csrf_token() }}';
 

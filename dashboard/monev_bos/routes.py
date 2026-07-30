@@ -841,10 +841,11 @@ def staff_audit_report(report_id):
         action = request.form.get("action")
         if action == "update_report_status":
             status = request.form.get("status")
-            queries.get_cursor(commit=True).execute(
-                "UPDATE monev_bos_reports SET status = %s WHERE id = %s", 
-                (status, report_id)
-            )
+            with queries.get_cursor(commit=True) as cur:
+                cur.execute(
+                    "UPDATE monev_bos_reports SET status = %s WHERE id = %s", 
+                    (status, report_id)
+                )
             queries.add_audit_log(report_id, None, user["id"], "UPDATE_STATUS", f"Mengubah status laporan menjadi {status}")
             flash(f"Status laporan diubah menjadi {status}", "success")
             return redirect(url_for("monev_bos.staff_audit_report", report_id=report_id))
@@ -901,84 +902,100 @@ import uuid
 def staff_audit_activity(activity_id):
     user = current_user()
     act = queries.get_activity_by_id(activity_id)
+    
+    if not act:
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.headers.get("Accept") == "application/json":
+            return jsonify({"success": False, "message": "Kegiatan tidak ditemukan."}), 404
+        flash("Kegiatan tidak ditemukan.", "danger")
+        return redirect(url_for("monev_bos.staff_dashboard"))
+
     report_id_raw = request.form.get("report_id")
     if report_id_raw:
         try:
             report_id = int(report_id_raw)
         except (ValueError, TypeError):
-            report_id = act.get("report_id") if act else 1
+            report_id = act.get("report_id") or 1
     else:
-        report_id = act.get("report_id") if act else 1
+        report_id = act.get("report_id") or 1
     
     action = request.form.get("action")
     
-    if action == "validate":
-        status = request.form.get("status")
-        notes = request.form.get("audit_notes")
-        queries.update_activity_audit(activity_id, status, notes)
-        
-        # Save checklist
-        checklists = queries.list_checklists(include_inactive=False)
-        for cl in checklists:
-            cl_status = request.form.get(f"checklist_{cl['id']}")
-            cl_notes = request.form.get(f"checklist_notes_{cl['id']}")
-            if cl_status:
-                queries.save_checklist_result(activity_id, cl['id'], cl_status, cl_notes, user["id"])
+    try:
+        if action == "validate":
+            status = request.form.get("status")
+            if not status or status not in ["valid", "invalid", "in_review", "pending"]:
+                if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.headers.get("Accept") == "application/json":
+                    return jsonify({"success": False, "message": "Pilih status validasi yang sesuai."}), 400
+                flash("Pilih status validasi yang valid (Sesuai atau Perlu Revisi).", "warning")
+                return redirect(url_for("monev_bos.staff_audit_report", report_id=report_id))
+
+            notes = request.form.get("audit_notes") or ""
+            queries.update_activity_audit(activity_id, status, notes)
+            
+            # Save checklist
+            checklists = queries.list_checklists(include_inactive=False)
+            for cl in checklists:
+                cl_status = request.form.get(f"checklist_{cl['id']}")
+                cl_notes = request.form.get(f"checklist_notes_{cl['id']}") or ""
+                if cl_status and cl_status in ["yes", "no", "na"]:
+                    queries.save_checklist_result(activity_id, cl['id'], cl_status, cl_notes, user["id"])
+                    
+            status_label = "Sesuai" if status == "valid" else ("Tidak Sesuai (Revisi)" if status == "invalid" else ("Proses Audit" if status == "in_review" else "Pending"))
+            queries.add_audit_log(report_id, activity_id, user["id"], "VALIDATE", f"Memvalidasi kegiatan status '{status_label}'" + (f": {notes}" if notes else ""))
+            
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.headers.get("Accept") == "application/json":
+                return jsonify({
+                    "success": True,
+                    "status": status,
+                    "status_label": status_label,
+                    "activity_id": activity_id,
+                    "auditor_name": user.get("full_name") or user.get("email") or "Staff",
+                    "message": f"Hasil validasi kegiatan berhasil disimpan ({status_label})."
+                })
+
+            flash("Hasil validasi kegiatan berhasil disimpan.", "success")
+            return redirect(url_for("monev_bos.staff_audit_report", report_id=report_id))
+
+        elif action == "start_audit":
+            if act and act.get("status") in ["pending", "invalid"]:
+                queries.update_activity_audit(activity_id, "in_review", act.get("audit_notes") or "")
+                staff_name = user.get("full_name") or user.get("email") or "Staff"
+                return jsonify({"success": True, "status": "in_review", "original_status": act.get("status"), "message": f"Status kegiatan diubah ke Proses Audit oleh {staff_name}"})
+            return jsonify({"success": True, "status": act.get("status") if act else "pending"})
+
+        elif action == "cancel_audit":
+            target_status = request.form.get("original_status") or "pending"
+            if target_status not in ["pending", "invalid"]:
+                target_status = "pending"
+            if act and act.get("status") == "in_review":
+                queries.update_activity_audit(activity_id, target_status, act.get("audit_notes") or "")
+                return jsonify({"success": True, "status": target_status, "message": f"Status dikembalikan ke {target_status}"})
+            return jsonify({"success": True, "status": act.get("status") if act else target_status})
+            
+        elif action == "upload_photo":
+            image_data = request.form.get("live_photo_data")
+            if image_data:
+                header, encoded = image_data.split(",", 1)
+                data = base64.b64decode(encoded)
                 
-        status_label = "Sesuai" if status == "valid" else ("Tidak Sesuai (Revisi)" if status == "invalid" else ("Proses Audit" if status == "in_review" else "Pending"))
-        queries.add_audit_log(report_id, activity_id, user["id"], "VALIDATE", f"Memvalidasi kegiatan status '{status_label}'" + (f": {notes}" if notes else ""))
-        
+                filename = f"live_{uuid.uuid4().hex[:8]}.jpg"
+                upload_dir = os.path.join(monev_bos_bp.root_path, "..", "static", "uploads", "monev_bos", str(report_id), str(activity_id), "live_photo")
+                os.makedirs(upload_dir, exist_ok=True)
+                
+                file_path = os.path.join(upload_dir, filename)
+                with open(file_path, "wb") as f:
+                    f.write(data)
+                    
+                db_path = f"static/uploads/monev_bos/{report_id}/{activity_id}/live_photo/{filename}"
+                queries.add_activity_doc(activity_id, "live_photo", db_path, len(data), user["id"])
+                queries.add_audit_log(report_id, activity_id, user["id"], "UPLOAD_PHOTO", "Mengambil foto live lapangan")
+                flash("Foto live berhasil disimpan.", "success")
+
+    except Exception as e:
+        import logging
+        logging.error(f"Error processing staff audit activity {activity_id}: {e}", exc_info=True)
         if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.headers.get("Accept") == "application/json":
-            return jsonify({
-                "success": True,
-                "status": status,
-                "status_label": status_label,
-                "activity_id": activity_id,
-                "auditor_name": user.get("full_name") or user.get("email") or "Staff",
-                "message": f"Hasil validasi kegiatan berhasil disimpan ({status_label})."
-            })
+            return jsonify({"success": False, "message": f"Terjadi kesalahan pada server saat memproses validasi: {str(e)}"}), 500
+        flash("Terjadi kesalahan pada server saat memproses validasi kegiatan.", "danger")
 
-        flash("Hasil validasi kegiatan berhasil disimpan.", "success")
-        return redirect(url_for("monev_bos.staff_audit_report", report_id=report_id))
-
-    elif action == "start_audit":
-        act = queries.get_activity_by_id(activity_id)
-        if act and act.get("status") in ["pending", "invalid"]:
-            queries.update_activity_audit(activity_id, "in_review", act.get("audit_notes") or "")
-            staff_name = user.get("full_name") or user.get("email") or "Staff"
-            return jsonify({"success": True, "status": "in_review", "original_status": act.get("status"), "message": f"Status kegiatan diubah ke Proses Audit oleh {staff_name}"})
-        return jsonify({"success": True, "status": act.get("status") if act else "pending"})
-
-    elif action == "cancel_audit":
-        act = queries.get_activity_by_id(activity_id)
-        target_status = request.form.get("original_status") or "pending"
-        if target_status not in ["pending", "invalid"]:
-            target_status = "pending"
-        if act and act.get("status") == "in_review":
-            queries.update_activity_audit(activity_id, target_status, act.get("audit_notes") or "")
-            return jsonify({"success": True, "status": target_status, "message": f"Status dikembalikan ke {target_status}"})
-        return jsonify({"success": True, "status": act.get("status") if act else target_status})
-        
-    elif action == "upload_photo":
-        # Handle Base64 image from JS camera
-        image_data = request.form.get("live_photo_data")
-        if image_data:
-            # Format: data:image/jpeg;base64,...
-            header, encoded = image_data.split(",", 1)
-            data = base64.b64decode(encoded)
-            
-            # Generate path
-            filename = f"live_{uuid.uuid4().hex[:8]}.jpg"
-            upload_dir = os.path.join(monev_bos_bp.root_path, "..", "static", "uploads", "monev_bos", str(report_id), str(activity_id), "live_photo")
-            os.makedirs(upload_dir, exist_ok=True)
-            
-            file_path = os.path.join(upload_dir, filename)
-            with open(file_path, "wb") as f:
-                f.write(data)
-                
-            db_path = f"static/uploads/monev_bos/{report_id}/{activity_id}/live_photo/{filename}"
-            queries.add_activity_doc(activity_id, "live_photo", db_path, len(data), user["id"])
-            queries.add_audit_log(report_id, activity_id, user["id"], "UPLOAD_PHOTO", "Mengambil foto live lapangan")
-            flash("Foto live berhasil disimpan.", "success")
-            
     return redirect(url_for("monev_bos.staff_audit_report", report_id=report_id))
