@@ -1,19 +1,20 @@
 from typing import Optional
 
 from db import save_chat
+from reporting_flags import qa_only_mode_enabled, smalltalk_enabled
 from responses import (
     contains_inappropriate_language,
-    get_advice_response,
     get_acknowledgement_response,
+    get_advice_response,
     get_farewell_response,
     get_greeting_response,
     get_qa_only_greeting_response,
-    get_simple_response,
-    get_time_based_greeting_response,
     get_relationship_advice_response,
     get_self_intro_response,
+    get_simple_response,
     get_status_response,
     get_thank_you_response,
+    get_time_based_greeting_response,
     is_acknowledgement_message,
     is_farewell_message,
     is_greeting_message,
@@ -22,7 +23,6 @@ from responses import (
     is_status_message,
     is_thank_you_message,
 )
-from reporting_flags import qa_only_mode_enabled, smalltalk_enabled
 from utils import send_typing_once
 
 
@@ -69,13 +69,12 @@ async def handle_smalltalk(
     # Greeting
     if is_greeting_message(normalized_input):
         await send_typing_once(context.bot, update.effective_chat.id, delay=0.2)
-        response = (
-            get_time_based_greeting_response(normalized_input, user_name=username)
-            or (
-                get_qa_only_greeting_response(user_name=username)
-                if qa_only_mode_enabled()
-                else get_greeting_response(user_name=username)
-            )
+        response = get_time_based_greeting_response(
+            normalized_input, user_name=username
+        ) or (
+            get_qa_only_greeting_response(user_name=username)
+            if qa_only_mode_enabled()
+            else get_greeting_response(user_name=username)
         )
         await reply_message.reply_text(response, parse_mode="Markdown")
         save_chat(user_id, "ASKA", response, role="aska", topic=topic)

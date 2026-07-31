@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import random
 
-
 RATE_LIMIT_RESPONSES: tuple[str, ...] = (
     "Maaf ya, ASKA lagi agak kewalahan karena yang nanya rame banget sampai antreannya numpuk 😵‍💫💬\n"
     "Coba tanya lagi beberapa saat lagi ya. 🙏✨",

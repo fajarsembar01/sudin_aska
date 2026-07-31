@@ -5,9 +5,9 @@ import os
 from typing import Dict, List, Optional, Sequence, Tuple
 
 import psycopg2
+from dotenv import load_dotenv
 from psycopg2 import sql
 from psycopg2.extras import RealDictCursor
-from dotenv import load_dotenv
 
 # Urutan tabel memastikan dependensi foreign key terpenuhi lebih dulu.
 TABLES_IN_ORDER: Sequence[str] = (
@@ -166,45 +166,56 @@ def _format_value(value) -> str:
     return f"'{text}'"
 
 
-def _fetch_rows(cur, table: str, columns: List[str], valid_refs: Dict[str, set]) -> List[Dict[str, object]]:
-    order_clause = sql.SQL(" ORDER BY {}").format(sql.Identifier("id")) if "id" in columns else sql.SQL("")
-    query = sql.SQL("SELECT {} FROM {}").format(
-        sql.SQL(", ").join(sql.Identifier(c) for c in columns),
-        sql.Identifier(table),
-    ) + order_clause
+def _fetch_rows(
+    cur, table: str, columns: List[str], valid_refs: Dict[str, set]
+) -> List[Dict[str, object]]:
+    order_clause = (
+        sql.SQL(" ORDER BY {}").format(sql.Identifier("id"))
+        if "id" in columns
+        else sql.SQL("")
+    )
+    query = (
+        sql.SQL("SELECT {} FROM {}").format(
+            sql.SQL(", ").join(sql.Identifier(c) for c in columns),
+            sql.Identifier(table),
+        )
+        + order_clause
+    )
     cur.execute(query)
     all_rows = list(cur.fetchall())
-    
+
     # Validate foreign key references
     filtered_rows = []
     skipped = 0
     for row in all_rows:
         skip_row = False
-        
+
         # Check school_room_id
-        if 'school_room_id' in columns and row.get('school_room_id'):
-            if row['school_room_id'] not in valid_refs.get('portal_school_rooms', set()):
+        if "school_room_id" in columns and row.get("school_room_id"):
+            if row["school_room_id"] not in valid_refs.get(
+                "portal_school_rooms", set()
+            ):
                 skipped += 1
                 skip_row = True
-        
+
         # Check aspect_id
-        if not skip_row and 'aspect_id' in columns and row.get('aspect_id'):
-            if row['aspect_id'] not in valid_refs.get('portal_aspects', set()):
+        if not skip_row and "aspect_id" in columns and row.get("aspect_id"):
+            if row["aspect_id"] not in valid_refs.get("portal_aspects", set()):
                 skipped += 1
                 skip_row = True
-        
+
         # Check assessment_id
-        if not skip_row and 'assessment_id' in columns and row.get('assessment_id'):
-            if row['assessment_id'] not in valid_refs.get('portal_assessments', set()):
+        if not skip_row and "assessment_id" in columns and row.get("assessment_id"):
+            if row["assessment_id"] not in valid_refs.get("portal_assessments", set()):
                 skipped += 1
                 skip_row = True
-        
+
         if not skip_row:
             filtered_rows.append(row)
-    
+
     if skipped > 0:
         print(f"  ⚠️  Skipped {skipped} rows with invalid foreign keys in {table}")
-    
+
     return filtered_rows
 
 
@@ -224,30 +235,32 @@ def _sequence_setval_statements(cur, table: str) -> List[str]:
         if not seq:
             continue
         stmts.append(
-            f"SELECT setval('{seq}', COALESCE((SELECT MAX(\"{col}\") FROM \"{table}\"), 1), TRUE);"
+            f'SELECT setval(\'{seq}\', COALESCE((SELECT MAX("{col}") FROM "{table}"), 1), TRUE);'
         )
     return stmts
 
 
 def export_portal_clean(output_file: str = "portal_export_clean.sql") -> None:
     conn = get_connection()
-    
+
     # Build valid reference IDs
     valid_refs = {}
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute("SELECT id FROM portal_school_rooms")
-        valid_refs['portal_school_rooms'] = set(row['id'] for row in cur.fetchall())
-        
+        valid_refs["portal_school_rooms"] = set(row["id"] for row in cur.fetchall())
+
         cur.execute("SELECT id FROM portal_aspects")
-        valid_refs['portal_aspects'] = set(row['id'] for row in cur.fetchall())
-        
+        valid_refs["portal_aspects"] = set(row["id"] for row in cur.fetchall())
+
         cur.execute("SELECT id FROM portal_assessments")
-        valid_refs['portal_assessments'] = set(row['id'] for row in cur.fetchall())
-    
-    print(f"Valid IDs: school_rooms={len(valid_refs['portal_school_rooms'])}, "
-          f"aspects={len(valid_refs['portal_aspects'])}, "
-          f"assessments={len(valid_refs['portal_assessments'])}")
-    
+        valid_refs["portal_assessments"] = set(row["id"] for row in cur.fetchall())
+
+    print(
+        f"Valid IDs: school_rooms={len(valid_refs['portal_school_rooms'])}, "
+        f"aspects={len(valid_refs['portal_aspects'])}, "
+        f"assessments={len(valid_refs['portal_assessments'])}"
+    )
+
     with conn.cursor(cursor_factory=RealDictCursor) as cur, open(
         output_file, "w", encoding="utf-8"
     ) as f:
@@ -268,11 +281,11 @@ def export_portal_clean(output_file: str = "portal_export_clean.sql") -> None:
 
             f.write(f"-- Data for table: {table}\n")
             rows = _fetch_rows(cur, table, columns, valid_refs)
-            
+
             # Store IDs for this table
-            if table not in valid_refs and 'id' in columns:
-                valid_refs[table] = set(row['id'] for row in rows)
-            
+            if table not in valid_refs and "id" in columns:
+                valid_refs[table] = set(row["id"] for row in rows)
+
             col_list = ", ".join(f'"{c}"' for c in columns)
             for row in rows:
                 values = [_format_value(row[col]) for col in columns]

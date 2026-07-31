@@ -4,6 +4,7 @@ from typing import Optional
 from telegram.error import NetworkError
 
 from db import save_chat
+from reporting_flags import reporting_enabled
 from responses import (
     CorruptionResponse,
     get_corruption_howto_response,
@@ -11,9 +12,12 @@ from responses import (
     is_corruption_report_intent,
     mentions_corruption_only,
 )
-from reporting_flags import reporting_enabled
-from utils import now_str, send_typing_once, strip_markdown
-from utils import send_and_update_thinking_bubble
+from utils import (
+    now_str,
+    send_and_update_thinking_bubble,
+    send_typing_once,
+    strip_markdown,
+)
 
 
 async def handle_corruption(
@@ -38,7 +42,9 @@ async def handle_corruption(
         return False
     # Corruption flow session management
     corruption_sessions = context.chat_data.setdefault("corruption_sessions", {})
-    corruption_session: Optional[CorruptionResponse] = corruption_sessions.get(storage_key)
+    corruption_session: Optional[CorruptionResponse] = corruption_sessions.get(
+        storage_key
+    )
 
     if corruption_session:
         # User is in an ongoing corruption flow
@@ -47,19 +53,33 @@ async def handle_corruption(
             sent_successfully = False
             for i in range(10):  # Retry up to 10 times as in original
                 try:
-                    await send_typing_once(context.bot, update.effective_chat.id, delay=0.2)
+                    await send_typing_once(
+                        context.bot, update.effective_chat.id, delay=0.2
+                    )
                     await reply_message.reply_text(response, parse_mode="Markdown")
-                    save_chat(user_id, "ASKA", strip_markdown(response), role="aska", topic=topic)
+                    save_chat(
+                        user_id,
+                        "ASKA",
+                        strip_markdown(response),
+                        role="aska",
+                        topic=topic,
+                    )
                     sent_successfully = True
-                    print(f"[{now_str()}] Successfully sent corruption flow message on attempt {i+1}.")
+                    print(
+                        f"[{now_str()}] Successfully sent corruption flow message on attempt {i+1}."
+                    )
                     break
                 except NetworkError as e:  # pragma: no cover
-                    print(f"[{now_str()}] Network error sending corruption flow message (attempt {i+1}/10): {e}")
+                    print(
+                        f"[{now_str()}] Network error sending corruption flow message (attempt {i+1}/10): {e}"
+                    )
                     if i < 9:
                         await asyncio.sleep(5)
 
             if not sent_successfully:
-                print(f"[{now_str()}] Failed to send corruption flow message after retries.")
+                print(
+                    f"[{now_str()}] Failed to send corruption flow message after retries."
+                )
 
             if getattr(corruption_session, "state", "") == "idle":
                 corruption_sessions.pop(storage_key, None)

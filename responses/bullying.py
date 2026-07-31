@@ -31,7 +31,7 @@ _BULLYING_KEYWORDS: tuple[str, ...] = (
     "dikeroyok",
     "kekerasan",
     "disakiti",
-      ### PENAMBAHAN GEN Z ###
+    ### PENAMBAHAN GEN Z ###
     "dijahatin",
     "dijahilin",
     "diganggu",
@@ -80,7 +80,7 @@ _PRONOUN_HINTS: tuple[str, ...] = (
     "adikku",
     "temanku",
     "temenku",
-      ### PENAMBAHAN GEN Z ###
+    ### PENAMBAHAN GEN Z ###
     "doi",
     "dia",
     "bestie",
@@ -110,7 +110,8 @@ _SEXUAL_KEYWORDS: tuple[str, ...] = (
     "dilecehin",
     "digodain",
     "dikirim foto aneh",
-    "pap aneh", "dimintain pap",
+    "pap aneh",
+    "dimintain pap",
     "grooming",
     "digrepe",
     "dipeluk",
@@ -154,8 +155,12 @@ _REPORT_PATTERNS: tuple[re.Pattern[str], ...] = (
         r"\b(?:aku|saya|gue|gw|gua|teman(?:ku)?|temen(?:ku)?|adik(?:ku)?|kakak(?:ku)?|keponakan|adik|teman|temen)\s+"
         r"(?:lagi\s+|sedang\s+)?di[\s-]*[a-z]*?(bul|bully|buly|buli|tindas|keroyok|ancam|sakiti|peleceh|cabuli|pukul|tampar|tendang)\b"
     ),
-    re.compile(r"\bkorban\s+(?:bully|bullying|perundungan|intimidasi|penindasan|pelecehan)\b"),
-    re.compile(r"\bada\s+(?:kejadian\s+)?(?:bully|bullying|perundungan|intimidasi|pemalakan|pelecehan|pemukulan)\b"),
+    re.compile(
+        r"\bkorban\s+(?:bully|bullying|perundungan|intimidasi|penindasan|pelecehan)\b"
+    ),
+    re.compile(
+        r"\bada\s+(?:kejadian\s+)?(?:bully|bullying|perundungan|intimidasi|pemalakan|pelecehan|pemukulan)\b"
+    ),
     re.compile(r"\blagi\s*(?:dibully|dibuli|diintimidasi)\b"),
 )
 
@@ -219,7 +224,11 @@ _STAGE_PROMPTS: dict[str, tuple[str, ...]] = {
     ),
 }
 
-_LLM_MODEL = os.getenv("ASKA_BULLYING_MODEL") or os.getenv("ASKA_QA_MODEL") or "llama-3.1-8b-instant"
+_LLM_MODEL = (
+    os.getenv("ASKA_BULLYING_MODEL")
+    or os.getenv("ASKA_QA_MODEL")
+    or "llama-3.1-8b-instant"
+)
 _LLM_TEMPERATURE = float(os.getenv("ASKA_BULLYING_TEMPERATURE", "0.4"))
 _LLM_MAX_OUTPUT_TOKENS = int(os.getenv("ASKA_BULLYING_MAX_TOKENS", "280"))
 _llm_client: Optional[OpenAI] = None
@@ -233,7 +242,8 @@ _LLM_API_BASE = (
 )
 
 _STOP_KEYWORDS: tuple[str, ...] = (
-    "udah","dah",
+    "udah",
+    "dah",
     "udah kok",
     "udah ya",
     "udahan",
@@ -311,7 +321,9 @@ def _get_llm_client() -> Optional[OpenAI]:
             or os.getenv("OPENAI_API_KEY")
         )
         if not api_key:
-            print("[BULLYING] GROQ_API_KEY atau OPENAI_API_KEY belum di-set; respons bullying dimatikan.")
+            print(
+                "[BULLYING] GROQ_API_KEY atau OPENAI_API_KEY belum di-set; respons bullying dimatikan."
+            )
             _llm_client_failed = True
             return None
         try:
@@ -336,13 +348,17 @@ def _sanitize_report_text(text: Optional[str]) -> str:
     return cleaned
 
 
-def _generate_bullying_response_via_llm(category: str, report_text: Optional[str]) -> Optional[str]:
+def _generate_bullying_response_via_llm(
+    category: str, report_text: Optional[str]
+) -> Optional[str]:
     client = _get_llm_client()
     if client is None:
         return None
 
     category_label = _CATEGORY_LABELS.get(category, _CATEGORY_LABELS[CATEGORY_GENERAL])
-    safety_hint = _CATEGORY_SAFETY_HINTS.get(category, _CATEGORY_SAFETY_HINTS[CATEGORY_GENERAL])
+    safety_hint = _CATEGORY_SAFETY_HINTS.get(
+        category, _CATEGORY_SAFETY_HINTS[CATEGORY_GENERAL]
+    )
     report_excerpt = _sanitize_report_text(report_text)
 
     system_message = (
@@ -475,9 +491,7 @@ def _generate_bullying_conversation_via_llm(
         "tetap jadi pendengar suportif, validasi emosi mereka, dan bantu mikirin langkah aman tanpa menginterogasi.",
     )
     next_stage_objective = (
-        _STAGE_OBJECTIVES.get(next_stage or "", "")
-        if next_stage
-        else ""
+        _STAGE_OBJECTIVES.get(next_stage or "", "") if next_stage else ""
     )
 
     if severity == "critical":
@@ -491,18 +505,12 @@ def _generate_bullying_conversation_via_llm(
             "atau orang dewasa tepercaya."
         )
     else:
-        severity_hint = (
-            "Tetap ingatkan untuk cerita ke guru BK atau orang dewasa yang dipercaya biar kasusnya ditangani."
-        )
+        severity_hint = "Tetap ingatkan untuk cerita ke guru BK atau orang dewasa yang dipercaya biar kasusnya ditangani."
 
     if next_stage_objective:
-        transition_hint = (
-            f"Ajak perlahan menuju tahap {next_stage} (fokus: {next_stage_objective}) setelah merespon curhatnya."
-        )
+        transition_hint = f"Ajak perlahan menuju tahap {next_stage} (fokus: {next_stage_objective}) setelah merespon curhatnya."
     else:
-        transition_hint = (
-            "Fokus di tahap sekarang dan ajak mereka lanjut cerita atau pikirkan langkah aman berikutnya."
-        )
+        transition_hint = "Fokus di tahap sekarang dan ajak mereka lanjut cerita atau pikirkan langkah aman berikutnya."
 
     system_message = (
         "Kamu ASKA, sahabat digital gen Z yang empatik buat siswa sekolah dasar. "
@@ -608,7 +616,9 @@ def get_bullying_followup_response(
     if live_response:
         return live_response
 
-    bucket = _FOLLOWUP_FALLBACKS.get(category) or _FOLLOWUP_FALLBACKS.get(CATEGORY_GENERAL, ())
+    bucket = _FOLLOWUP_FALLBACKS.get(category) or _FOLLOWUP_FALLBACKS.get(
+        CATEGORY_GENERAL, ()
+    )
     if not bucket:
         bucket = (
             "Aku denger kok ceritamu. Pelan-pelan aja lanjutinnya, aku di sini nemenin 💛",
@@ -630,13 +640,9 @@ def get_bullying_followup_response(
             "Kalau situasinya bahaya, minta pendampingan atau hubungi layanan darurat ya 🙏🚨"
         )
     elif severity == "high":
-        response = (
-            f"{response}\n\nUtamain keselamatan kamu. Kalau pelaku masih ngeganggu, segera jauhi dan panggil guru atau satpam sekolah ya 🛡️"
-        )
+        response = f"{response}\n\nUtamain keselamatan kamu. Kalau pelaku masih ngeganggu, segera jauhi dan panggil guru atau satpam sekolah ya 🛡️"
     else:
-        response = (
-            f"{response}\n\nJangan lupa kabarin guru BK atau orang dewasa yang kamu percaya biar mereka bisa bantu proses lanjut 💛"
-        )
+        response = f"{response}\n\nJangan lupa kabarin guru BK atau orang dewasa yang kamu percaya biar mereka bisa bantu proses lanjut 💛"
 
     return response
 
@@ -700,13 +706,19 @@ def detect_bullying_category(message: str) -> Optional[str]:
     physical_hit = _contains_any(normalized, _PHYSICAL_KEYWORDS) or any(
         pattern.search(normalized) for pattern in _PHYSICAL_PATTERNS
     )
-    has_core_keyword = _contains_any(normalized, _BULLYING_KEYWORDS) or sexual_hit or physical_hit
+    has_core_keyword = (
+        _contains_any(normalized, _BULLYING_KEYWORDS) or sexual_hit or physical_hit
+    )
     has_signal = _contains_any(normalized, _REPORT_SIGNALS) or any(
         pattern.search(normalized) for pattern in _REPORT_PATTERNS
     )
     pronoun_present = _contains_any(normalized, _PRONOUN_HINTS)
-    location_hint = any(hint in normalized for hint in ("kelas", "sekolah", "teman", "kawan"))
-    has_context = has_signal or (pronoun_present and (location_hint or sexual_hit or physical_hit))
+    location_hint = any(
+        hint in normalized for hint in ("kelas", "sekolah", "teman", "kawan")
+    )
+    has_context = has_signal or (
+        pronoun_present and (location_hint or sexual_hit or physical_hit)
+    )
 
     if not has_core_keyword or not has_context:
         return None

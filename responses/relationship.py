@@ -93,6 +93,7 @@ RELATIONSHIP_ADVICE_RESPONSES = (
     "Kalau masih bingung, DM guru BK atau panggil ASKA lagi; kita siap jadi support system biar kamu tetap on track 👩‍🏫🤝.",
 )
 
+
 def _contains_any(haystack: Iterable[str], needles: Iterable[str]) -> bool:
     """Return True when any item from needles appears in haystack."""
     return any(item in haystack for item in needles)
@@ -109,7 +110,9 @@ def is_relationship_question(text: str) -> bool:
     if tokens & CORE_RELATIONSHIP_KEYWORDS:
         return True
 
-    if any(keyword in token for token in tokens for keyword in CORE_RELATIONSHIP_KEYWORDS):
+    if any(
+        keyword in token for token in tokens for keyword in CORE_RELATIONSHIP_KEYWORDS
+    ):
         return True
 
     if any(phrase in lowered for phrase in RELATIONSHIP_PHRASES):
@@ -124,5 +127,3 @@ def is_relationship_question(text: str) -> bool:
 def get_relationship_advice_response() -> str:
     """Return a random teacher-style advice response for romance questions."""
     return random.choice(RELATIONSHIP_ADVICE_RESPONSES)
-
-

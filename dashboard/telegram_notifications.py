@@ -1,21 +1,25 @@
 from __future__ import annotations
 
 import ipaddress
+import json
 import mimetypes
 import os
-import json
-from pathlib import Path
 import socket
 import urllib.parse
 import urllib.request
 import uuid
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 
 from flask import has_request_context, request
 
-from .db_access import get_cursor
-from .queries import fetch_telegram_notification_settings, list_telegram_notification_groups
 from utils import current_jakarta_time, to_jakarta
+
+from .db_access import get_cursor
+from .queries import (
+    fetch_telegram_notification_settings,
+    list_telegram_notification_groups,
+)
 
 
 def _resolve_bot_token() -> Optional[str]:
@@ -60,10 +64,9 @@ def _prefer_lan_base_url(value: Optional[str]) -> str:
     if not should_swap:
         try:
             host_ip = ipaddress.ip_address(hostname)
-            should_swap = (
-                isinstance(host_ip, ipaddress.IPv4Address)
-                and host_ip in ipaddress.ip_network("172.16.0.0/12")
-            )
+            should_swap = isinstance(
+                host_ip, ipaddress.IPv4Address
+            ) and host_ip in ipaddress.ip_network("172.16.0.0/12")
         except ValueError:
             should_swap = False
 
@@ -79,7 +82,9 @@ def _prefer_lan_base_url(value: Optional[str]) -> str:
         return clean
 
     netloc = lan_ip if parsed.port is None else f"{lan_ip}:{parsed.port}"
-    return urllib.parse.urlunsplit((parsed.scheme, netloc, parsed.path, parsed.query, parsed.fragment))
+    return urllib.parse.urlunsplit(
+        (parsed.scheme, netloc, parsed.path, parsed.query, parsed.fragment)
+    )
 
 
 def _dashboard_base_url() -> str:
@@ -97,8 +102,7 @@ def _dashboard_base_url() -> str:
 
 def _list_admin_recipients() -> List[Dict[str, Any]]:
     with get_cursor() as cur:
-        cur.execute(
-            """
+        cur.execute("""
             SELECT
                 ta.telegram_username,
                 tu.telegram_user_id
@@ -106,16 +110,14 @@ def _list_admin_recipients() -> List[Dict[str, Any]]:
             JOIN dashboard_users u ON u.id = ta.dashboard_user_id AND u.role = 'admin'
             LEFT JOIN telegram_users tu ON LOWER(tu.username) = LOWER(ta.telegram_username)
             ORDER BY LOWER(ta.telegram_username) ASC
-            """
-        )
+            """)
         rows = cur.fetchall()
     return [dict(row) for row in rows]
 
 
 def _ensure_guestbook_delivery_schema() -> None:
     with get_cursor(commit=True) as cur:
-        cur.execute(
-            """
+        cur.execute("""
             CREATE TABLE IF NOT EXISTS telegram_guestbook_delivery_messages (
                 transaction_id BIGINT NOT NULL,
                 chat_id BIGINT NOT NULL,
@@ -124,14 +126,11 @@ def _ensure_guestbook_delivery_schema() -> None:
                 updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 PRIMARY KEY (transaction_id, chat_id)
             )
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE INDEX IF NOT EXISTS idx_tg_guestbook_delivery_chat
             ON telegram_guestbook_delivery_messages (chat_id)
-            """
-        )
+            """)
 
 
 def upsert_guestbook_delivery_message(
@@ -293,7 +292,9 @@ def _encode_multipart_form(
     for key, value in fields.items():
         chunks.append(f"--{boundary}\r\n".encode("utf-8"))
         chunks.append(
-            f'Content-Disposition: form-data; name="{key}"\r\n\r\n{value}\r\n'.encode("utf-8")
+            f'Content-Disposition: form-data; name="{key}"\r\n\r\n{value}\r\n'.encode(
+                "utf-8"
+            )
         )
 
     chunks.append(f"--{boundary}\r\n".encode("utf-8"))
@@ -555,7 +556,10 @@ def _build_detail_photo_rows(
     detail_button = None
     clean_detail_url = str(detail_url or "").strip()
     if clean_detail_url:
-        detail_button = {"text": "📄 Detail", "url": _prefer_lan_base_url(clean_detail_url)}
+        detail_button = {
+            "text": "📄 Detail",
+            "url": _prefer_lan_base_url(clean_detail_url),
+        }
 
     normalized_photos = [
         {"text": _with_button_icon(btn.get("text")), "url": btn.get("url")}
@@ -584,14 +588,19 @@ def _filter_guestbook_photo_buttons(
         return []
 
     has_profile_button = any(
-        "foto profil" in str(btn.get("text") or "").strip().lower() for btn in photo_buttons
+        "foto profil" in str(btn.get("text") or "").strip().lower()
+        for btn in photo_buttons
     )
     filtered: list[dict] = []
     for button in photo_buttons:
         label = str(button.get("text") or "").strip().lower()
         if remove_transaction_photo and "foto transaksi" in label:
             continue
-        if prefer_profile_over_previous and has_profile_button and "foto sebelumnya" in label:
+        if (
+            prefer_profile_over_previous
+            and has_profile_button
+            and "foto sebelumnya" in label
+        ):
             continue
         filtered.append(button)
     return filtered
@@ -625,7 +634,9 @@ def _infer_guestbook_detail_url_from_photo_links(
         parsed = urllib.parse.urlsplit(raw_url)
         if parsed.scheme not in {"http", "https"} or not parsed.netloc:
             continue
-        base_url = urllib.parse.urlunsplit((parsed.scheme, parsed.netloc, "", "", "")).rstrip("/")
+        base_url = urllib.parse.urlunsplit(
+            (parsed.scheme, parsed.netloc, "", "", "")
+        ).rstrip("/")
         if not base_url:
             continue
         return f"{base_url}/daftar-tamu/public/detail/{int(transaction_id)}"
@@ -678,7 +689,9 @@ def _build_guest_preview(
     if not normalized_names:
         clean_summary = str(guest_summary or "").strip()
         if clean_summary:
-            summary_parts = [part.strip() for part in clean_summary.split(",") if part.strip()]
+            summary_parts = [
+                part.strip() for part in clean_summary.split(",") if part.strip()
+            ]
             normalized_names = summary_parts or [clean_summary]
 
     if not normalized_names:
@@ -700,9 +713,14 @@ def _status_label_with_icon(status_label: Optional[str]) -> str:
             break
 
     lowered = label.lower()
-    if any(keyword in lowered for keyword in ("disetujui", "terverifikasi", "verified", "approved", "acc")):
+    if any(
+        keyword in lowered
+        for keyword in ("disetujui", "terverifikasi", "verified", "approved", "acc")
+    ):
         return "✅ Terverifikasi"
-    if any(keyword in lowered for keyword in ("ditolak", "tolak", "rejected", "invalid")):
+    if any(
+        keyword in lowered for keyword in ("ditolak", "tolak", "rejected", "invalid")
+    ):
         return "❌ Ditolak"
     if any(keyword in lowered for keyword in ("pending", "menunggu", "review")):
         return "⏳ Menunggu Verifikasi"
@@ -1030,8 +1048,14 @@ def _build_guestbook_keyboard(
     if transaction_id:
         keyboard.append(
             [
-                {"text": "✅ Setujui", "callback_data": f"guestbook:approve:{transaction_id}"},
-                {"text": "❌ Tolak", "callback_data": f"guestbook:reject:{transaction_id}"},
+                {
+                    "text": "✅ Setujui",
+                    "callback_data": f"guestbook:approve:{transaction_id}",
+                },
+                {
+                    "text": "❌ Tolak",
+                    "callback_data": f"guestbook:reject:{transaction_id}",
+                },
             ]
         )
         resolved_detail_url = (detail_url or "").strip() or _build_guestbook_detail_url(

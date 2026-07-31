@@ -4,9 +4,9 @@ import os
 from contextlib import contextmanager
 from typing import Generator, Optional
 
+from dotenv import load_dotenv
 from psycopg2 import pool
 from psycopg2.extras import DictCursor
-from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -18,6 +18,7 @@ def _normalize_db_host(value: str | None) -> str | None:
     if clean.lower() == "localhost":
         return "127.0.0.1"
     return clean
+
 
 REQUIRED_KEYS = [
     "DB_NAME",

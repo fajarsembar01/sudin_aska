@@ -1489,6 +1489,7 @@ CREATE INDEX IF NOT EXISTS idx_cc_message_drafts_admin ON cc_message_drafts (adm
 CREATE INDEX IF NOT EXISTS idx_cc_message_drafts_admin_category ON cc_message_drafts (admin_user_id, category);
 """
 
+
 def ensure_dashboard_schema() -> None:
     """Create core dashboard tables when they do not yet exist."""
     statements: Iterable[str] = (
@@ -1797,7 +1798,7 @@ def ensure_dashboard_schema() -> None:
         _LAPORAN_SUBMISSION_FILES_SQL,
         _LAPORAN_SUBMISSION_FILES_INDEX_SQL,
     )
-    
+
     # Execute statements one by one to ensure partial success and better error reporting
     for i, statement in enumerate(statements):
         try:
@@ -2130,4 +2131,8 @@ def ensure_cms_artikel_schema() -> None:
             raise
 
 
-__all__ = ["ensure_dashboard_schema", "ensure_cms_artikel_schema", "ensure_laporan_schema"]
+__all__ = [
+    "ensure_dashboard_schema",
+    "ensure_cms_artikel_schema",
+    "ensure_laporan_schema",
+]

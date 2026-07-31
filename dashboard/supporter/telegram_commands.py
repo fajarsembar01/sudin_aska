@@ -8,6 +8,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
 
 from db import save_chat
+
 from .queries import (
     delete_supporter_telegram_group_by_chat_id,
     get_submission_detail,
@@ -17,7 +18,12 @@ from .queries import (
     review_submission_action,
     upsert_supporter_telegram_group,
 )
-from .telegram import ACTION_LABELS, PLATFORM_LABELS, STATUS_LABELS, notify_supporter_status_update
+from .telegram import (
+    ACTION_LABELS,
+    PLATFORM_LABELS,
+    STATUS_LABELS,
+    notify_supporter_status_update,
+)
 
 
 def _normalize_username(username: Optional[str]) -> Optional[str]:
@@ -46,10 +52,14 @@ def _log_command(update: Update, text: str) -> None:
     try:
         save_chat(user.id, username, text, role="user", topic="supporter_notif")
     except Exception:
-        logging.getLogger("telegram.supporter").exception("Gagal menyimpan log command supporter.")
+        logging.getLogger("telegram.supporter").exception(
+            "Gagal menyimpan log command supporter."
+        )
 
 
-async def _reply(update: Update, text: str, *, reply_markup: Optional[InlineKeyboardMarkup] = None) -> None:
+async def _reply(
+    update: Update, text: str, *, reply_markup: Optional[InlineKeyboardMarkup] = None
+) -> None:
     message = update.effective_message
     if message:
         await message.reply_text(text, reply_markup=reply_markup)
@@ -59,9 +69,15 @@ def _submission_markup(submission_id: int) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         [
             [
-                InlineKeyboardButton("Verifikasi", callback_data=f"supporter:verify:{submission_id}"),
-                InlineKeyboardButton("Revisi", callback_data=f"supporter:revision:{submission_id}"),
-                InlineKeyboardButton("Tolak", callback_data=f"supporter:reject:{submission_id}"),
+                InlineKeyboardButton(
+                    "Verifikasi", callback_data=f"supporter:verify:{submission_id}"
+                ),
+                InlineKeyboardButton(
+                    "Revisi", callback_data=f"supporter:revision:{submission_id}"
+                ),
+                InlineKeyboardButton(
+                    "Tolak", callback_data=f"supporter:reject:{submission_id}"
+                ),
             ]
         ]
     )
@@ -103,7 +119,9 @@ async def supporter_pending(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     logger = logging.getLogger("telegram.supporter")
     admin = _authorize_admin(update)
     if not admin:
-        await _reply(update, "Akun ini belum terdaftar sebagai admin Telegram Supporter.")
+        await _reply(
+            update, "Akun ini belum terdaftar sebagai admin Telegram Supporter."
+        )
         return
     _log_command(update, "/pending")
     try:
@@ -117,14 +135,22 @@ async def supporter_pending(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         return
     await _reply(update, f"Submission pending: {len(rows)} item terbaru.")
     for item in rows:
-        await _reply(update, _submission_text(item), reply_markup=_submission_markup(int(item["id"])))
+        await _reply(
+            update,
+            _submission_text(item),
+            reply_markup=_submission_markup(int(item["id"])),
+        )
 
 
-async def supporter_register_group(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def supporter_register_group(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> None:
     logger = logging.getLogger("telegram.supporter")
     admin = _authorize_admin(update)
     if not admin:
-        await _reply(update, "Akun ini belum terdaftar sebagai admin Telegram Supporter.")
+        await _reply(
+            update, "Akun ini belum terdaftar sebagai admin Telegram Supporter."
+        )
         return
     _log_command(update, "/register_group")
     chat = update.effective_chat
@@ -144,11 +170,15 @@ async def supporter_register_group(update: Update, context: ContextTypes.DEFAULT
     await _reply(update, "Grup ini berhasil didaftarkan untuk notifikasi Supporter.")
 
 
-async def supporter_unregister_group(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def supporter_unregister_group(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> None:
     logger = logging.getLogger("telegram.supporter")
     admin = _authorize_admin(update)
     if not admin:
-        await _reply(update, "Akun ini belum terdaftar sebagai admin Telegram Supporter.")
+        await _reply(
+            update, "Akun ini belum terdaftar sebagai admin Telegram Supporter."
+        )
         return
     _log_command(update, "/unregister_group")
     chat = update.effective_chat
@@ -161,17 +191,28 @@ async def supporter_unregister_group(update: Update, context: ContextTypes.DEFAU
         logger.exception("Gagal menghapus grup Supporter.")
         await _reply(update, "Gagal menghapus grup Supporter.")
         return
-    await _reply(update, "Grup dihapus dari notifikasi Supporter." if deleted else "Grup ini belum terdaftar.")
+    await _reply(
+        update,
+        (
+            "Grup dihapus dari notifikasi Supporter."
+            if deleted
+            else "Grup ini belum terdaftar."
+        ),
+    )
 
 
-async def handle_supporter_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def handle_supporter_callback(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> None:
     logger = logging.getLogger("telegram.supporter")
     query = update.callback_query
     if not query or not query.data:
         return
     admin = _authorize_admin(update)
     if not admin:
-        await query.answer("Akun ini belum terdaftar sebagai admin Supporter.", show_alert=True)
+        await query.answer(
+            "Akun ini belum terdaftar sebagai admin Supporter.", show_alert=True
+        )
         return
 
     # Acknowledge immediately so the Telegram button stops showing the spinner.
@@ -295,7 +336,9 @@ async def handle_supporter_callback(update: Update, context: ContextTypes.DEFAUL
         await asyncio.to_thread(
             notify_supporter_status_update,
             submission_id=submission_id,
-            exclude_chat_ids={int(source_chat_id)} if source_chat_id is not None else None,
+            exclude_chat_ids=(
+                {int(source_chat_id)} if source_chat_id is not None else None
+            ),
         )
     except Exception:
         logger.exception("Gagal broadcast status Supporter.")

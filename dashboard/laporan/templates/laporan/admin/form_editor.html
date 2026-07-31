@@ -205,6 +205,14 @@
                 <small class="text-muted">Jika diizinkan, dihitung ke dalam KPI</small>
             </div>
             <div class="col-md-3">
+                <label class="form-label fw-semibold">Sifat Laporan</label>
+                <select name="is_mandatory" class="form-select">
+                    <option value="1" {% if not form or form.is_mandatory %}selected{% endif %}>Wajib</option>
+                    <option value="0" {% if form and not form.is_mandatory %}selected{% endif %}>Tidak Wajib (Opsional)</option>
+                </select>
+                <small class="text-muted">Jika Opsional, tidak akan ada keterangan "Tidak Mengumpulkan"</small>
+            </div>
+            <div class="col-md-3">
                 <label class="form-label fw-semibold">Sangat Terlambat Setelah</label>
                 <div class="input-group">
                     <input type="number" name="very_late_after_hours" class="form-control"
@@ -247,7 +255,7 @@
                 <label class="form-label fw-semibold">Diisi Ulang Sampai</label>
                 <input type="date" name="repeat_until_date" class="form-control"
                     value="{{ laporan_date_input_value(form.repeat_until_at) if form else '' }}">
-                <small class="text-muted">Tanggal terakhir periode dibuka. Jamnya mengikuti deadline periode.</small>
+                <small class="text-muted">Kosongkan untuk jadwal tanpa batas (berjalan terus). Jika diisi, ini adalah tanggal terakhir form dibuka.</small>
             </div>
             <div class="col-md-3" id="repeatDeadlineDayGroup" style="display:none;">
                 <label class="form-label fw-semibold" id="repeatDeadlineDayLabel">Hari Deadline</label>

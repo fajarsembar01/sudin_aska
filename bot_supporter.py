@@ -13,7 +13,6 @@ from dashboard.supporter.telegram_commands import (
     supporter_unregister_group,
 )
 
-
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
@@ -24,12 +23,17 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 
 def _load_token() -> str:
     load_dotenv()
-    return resolve_supporter_bot_token() or (os.getenv("TELEGRAM_SUPPORTER_BOT_TOKEN") or "").strip()
+    return (
+        resolve_supporter_bot_token()
+        or (os.getenv("TELEGRAM_SUPPORTER_BOT_TOKEN") or "").strip()
+    )
 
 
 TOKEN = _load_token()
 if not TOKEN:
-    logging.error("Token bot Supporter tidak ditemukan. Set TELEGRAM_SUPPORTER_BOT_TOKEN.")
+    logging.error(
+        "Token bot Supporter tidak ditemukan. Set TELEGRAM_SUPPORTER_BOT_TOKEN."
+    )
     raise SystemExit(1)
 
 app = ApplicationBuilder().token(TOKEN).build()

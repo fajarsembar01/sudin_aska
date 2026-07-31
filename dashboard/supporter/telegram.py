@@ -23,7 +23,6 @@ from .queries import (
     upsert_supporter_delivery_message,
 )
 
-
 SUPPORTER_BOT_TOKEN_SETTING = "telegram_bot_token"
 
 
@@ -65,7 +64,9 @@ def test_supporter_bot_connection() -> Dict[str, Any]:
     url = f"https://api.telegram.org/bot{token}/getMe"
     try:
         req = urllib.request.Request(url, method="GET")
-        with urllib.request.urlopen(req, timeout=8) as resp:  # nosec - external API call
+        with urllib.request.urlopen(
+            req, timeout=8
+        ) as resp:  # nosec - external API call
             payload = json.loads(resp.read().decode("utf-8") or "{}")
     except urllib.error.HTTPError as exc:
         detail = ""
@@ -76,12 +77,18 @@ def test_supporter_bot_connection() -> Dict[str, Any]:
             detail = ""
         if exc.code in (401, 404):
             return {"ok": False, "error": detail or "Token bot tidak valid."}
-        return {"ok": False, "error": detail or f"Gagal menghubungi Telegram (HTTP {exc.code})."}
+        return {
+            "ok": False,
+            "error": detail or f"Gagal menghubungi Telegram (HTTP {exc.code}).",
+        }
     except Exception as exc:  # noqa: BLE001 - network/timeout errors
         return {"ok": False, "error": f"Gagal menghubungi Telegram: {exc}"}
 
     if not payload.get("ok"):
-        return {"ok": False, "error": payload.get("description") or "Token bot tidak valid."}
+        return {
+            "ok": False,
+            "error": payload.get("description") or "Token bot tidak valid.",
+        }
 
     result = payload.get("result") or {}
     return {
@@ -119,14 +126,18 @@ def _submission_admin_url(submission_id: int) -> Optional[str]:
 
 def _points_breakdown(detail: Dict[str, Any]) -> tuple[int, int, int]:
     """Return (points_per_action, total_points, action_count) for a submission."""
-    action_count = int(detail.get("action_count") or len(detail.get("action_types") or []) or 1)
+    action_count = int(
+        detail.get("action_count") or len(detail.get("action_types") or []) or 1
+    )
     action_count = max(1, action_count)
     total = int(detail.get("potential_points") or 0)
     per_action = round(total / action_count) if action_count else total
     return per_action, total, action_count
 
 
-def _build_submission_text(detail: Dict[str, Any], *, status_update: bool = False) -> str:
+def _build_submission_text(
+    detail: Dict[str, Any], *, status_update: bool = False
+) -> str:
     submitted_at = to_jakarta(detail.get("submitted_at"))
     reviewed_at = to_jakarta(detail.get("reviewed_at"))
     end_at = to_jakarta(detail.get("end_at"))
@@ -141,7 +152,9 @@ def _build_submission_text(detail: Dict[str, Any], *, status_update: bool = Fals
         f"Status: {STATUS_LABELS.get(detail.get('status'), detail.get('status') or '-')}",
     ]
     if action_count > 1:
-        lines.append(f"Poin per aksi: {per_action} (total {total_points} untuk {action_count} aksi)")
+        lines.append(
+            f"Poin per aksi: {per_action} (total {total_points} untuk {action_count} aksi)"
+        )
     else:
         lines.append(f"Poin: {total_points}")
     if detail.get("penalty_percent"):
@@ -164,14 +177,19 @@ def _build_submission_text(detail: Dict[str, Any], *, status_update: bool = Fals
 def _decision_markup(submission_id: int) -> Dict[str, Any]:
     rows: list[list[dict]] = [
         [
-            {"text": "Verifikasi", "callback_data": f"supporter:verify:{submission_id}"},
+            {
+                "text": "Verifikasi",
+                "callback_data": f"supporter:verify:{submission_id}",
+            },
             {"text": "Revisi", "callback_data": f"supporter:revision:{submission_id}"},
             {"text": "Tolak", "callback_data": f"supporter:reject:{submission_id}"},
         ]
     ]
     detail_url = _submission_admin_url(submission_id)
     if detail_url:
-        rows.append([{"text": "Buka dashboard", "url": _prefer_lan_base_url(detail_url)}])
+        rows.append(
+            [{"text": "Buka dashboard", "url": _prefer_lan_base_url(detail_url)}]
+        )
     return {"inline_keyboard": rows}
 
 
@@ -179,14 +197,25 @@ def _action_decision_markup(submission_id: int, action_key: str) -> Dict[str, An
     """Per-action verify/revise/reject buttons."""
     rows: list[list[dict]] = [
         [
-            {"text": "✅ Verifikasi", "callback_data": f"supporter:verify:{submission_id}:{action_key}"},
-            {"text": "✏️ Revisi", "callback_data": f"supporter:revision:{submission_id}:{action_key}"},
-            {"text": "❌ Tolak", "callback_data": f"supporter:reject:{submission_id}:{action_key}"},
+            {
+                "text": "✅ Verifikasi",
+                "callback_data": f"supporter:verify:{submission_id}:{action_key}",
+            },
+            {
+                "text": "✏️ Revisi",
+                "callback_data": f"supporter:revision:{submission_id}:{action_key}",
+            },
+            {
+                "text": "❌ Tolak",
+                "callback_data": f"supporter:reject:{submission_id}:{action_key}",
+            },
         ]
     ]
     detail_url = _submission_admin_url(submission_id)
     if detail_url:
-        rows.append([{"text": "Buka dashboard", "url": _prefer_lan_base_url(detail_url)}])
+        rows.append(
+            [{"text": "Buka dashboard", "url": _prefer_lan_base_url(detail_url)}]
+        )
     return {"inline_keyboard": rows}
 
 
@@ -215,7 +244,9 @@ def _deliver_one(
         )
         if ok:
             return ok, message_id
-    return _send_telegram_message_with_meta(token, chat_id, text, reply_markup=reply_markup)
+    return _send_telegram_message_with_meta(
+        token, chat_id, text, reply_markup=reply_markup
+    )
 
 
 def _broadcast_supporter_message(
@@ -299,7 +330,12 @@ def send_supporter_test_broadcast() -> Dict[str, Any]:
     """Send a test message to all reachable supporter admins and groups."""
     token = resolve_supporter_bot_token()
     if not token:
-        return {"ok": False, "error": "Token bot belum dikonfigurasi.", "sent": 0, "group_sent": 0}
+        return {
+            "ok": False,
+            "error": "Token bot belum dikonfigurasi.",
+            "sent": 0,
+            "group_sent": 0,
+        }
 
     now = to_jakarta(current_jakarta_time())
     when = f" ({now:%d %b %Y %H:%M} WIB)" if now else ""
@@ -325,7 +361,9 @@ def _supporter_photo_ref(rel_path: Optional[str]) -> Optional[str]:
     return f"uploads/supporter/{normalized}"
 
 
-def _collect_action_screenshots(detail: Dict[str, Any]) -> list[tuple[Optional[str], str]]:
+def _collect_action_screenshots(
+    detail: Dict[str, Any],
+) -> list[tuple[Optional[str], str]]:
     """Return ordered (action_key, photo_ref) pairs for a submission's screenshots."""
     metadata = detail.get("metadata") or {}
     if isinstance(metadata, str):
@@ -416,7 +454,11 @@ def notify_supporter_submission(*, submission_id: int) -> Dict[str, Any]:
     for index, (action_key, photo_ref) in enumerate(pairs):
         is_last = index == total - 1
         # Per-action verification: each message gets its own buttons.
-        markup = _action_decision_markup(submission_id, action_key) if action_key else _decision_markup(submission_id)
+        markup = (
+            _action_decision_markup(submission_id, action_key)
+            if action_key
+            else _decision_markup(submission_id)
+        )
         caption = _build_action_caption(
             detail,
             action_key,

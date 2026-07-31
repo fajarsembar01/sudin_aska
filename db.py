@@ -5,14 +5,21 @@ import os
 import random
 import re
 import secrets
-from typing import Optional, List, Dict, Any, Tuple
 from datetime import datetime, timedelta, timezone
+from typing import Any, Dict, List, Optional, Tuple
 
 import psycopg2
-from psycopg2 import extensions, InterfaceError, OperationalError, ProgrammingError, IntegrityError
-from psycopg2.extras import Json, RealDictCursor
 from dotenv import load_dotenv
-from account_status import ACCOUNT_STATUS_CHOICES, ACCOUNT_STATUS_ACTIVE
+from psycopg2 import (
+    IntegrityError,
+    InterfaceError,
+    OperationalError,
+    ProgrammingError,
+    extensions,
+)
+from psycopg2.extras import Json, RealDictCursor
+
+from account_status import ACCOUNT_STATUS_ACTIVE, ACCOUNT_STATUS_CHOICES
 
 # Muat variabel dari file .env
 load_dotenv()
@@ -25,6 +32,7 @@ def _normalize_db_host(value: str | None) -> str | None:
     if clean.lower() == "localhost":
         return "127.0.0.1"
     return clean
+
 
 # Ambil variabel koneksi dari environment
 DB_NAME = os.getenv("DB_NAME")
@@ -80,6 +88,8 @@ CHAT_CHANNEL_EXPRESSION = (
     "WHEN topic = 'twitter' THEN 'twitter' "
     "WHEN topic = 'whatsapp' THEN 'whatsapp' ELSE 'telegram' END)"
 )
+
+
 def _chat_logs_has_topic_column(force_refresh: bool = False) -> bool:
     """
     Periksa sekali apakah tabel chat_logs memiliki kolom 'topic'.
@@ -122,12 +132,12 @@ def _chat_logs_has_channel_column(force_refresh: bool = False) -> bool:
         _CHAT_CHANNEL_AVAILABLE = cur.fetchone() is not None
     return _CHAT_CHANNEL_AVAILABLE
 
+
 def _ensure_chat_logs_schema() -> None:
     """Pastikan tabel chat_logs dan semua kolomnya tersedia."""
     global _CHAT_TOPIC_AVAILABLE, _CHAT_CHANNEL_AVAILABLE
     with conn.cursor() as cur:
-        cur.execute(
-            """
+        cur.execute("""
             CREATE TABLE IF NOT EXISTS chat_logs (
                 id SERIAL PRIMARY KEY,
                 user_id BIGINT,
@@ -137,16 +147,14 @@ def _ensure_chat_logs_schema() -> None:
                 created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 response_time_ms INTEGER
             );
-            """
-        )
+            """)
         # Tambahkan kolom 'topic' jika belum ada, untuk menjaga kompatibilitas
         if not _chat_logs_has_topic_column(force_refresh=True):
             cur.execute("ALTER TABLE chat_logs ADD COLUMN topic TEXT")
             _CHAT_TOPIC_AVAILABLE = True  # Update cache
         if not _chat_logs_has_channel_column(force_refresh=True):
             cur.execute("ALTER TABLE chat_logs ADD COLUMN channel TEXT")
-            cur.execute(
-                """
+            cur.execute("""
                 UPDATE chat_logs
                 SET channel = CASE
                     WHEN topic = 'web' THEN 'web'
@@ -155,13 +163,13 @@ def _ensure_chat_logs_schema() -> None:
                     ELSE 'telegram'
                 END
                 WHERE channel IS NULL
-                """
+                """)
+            cur.execute(
+                "ALTER TABLE chat_logs ALTER COLUMN channel SET DEFAULT 'telegram'"
             )
-            cur.execute("ALTER TABLE chat_logs ALTER COLUMN channel SET DEFAULT 'telegram'")
             _CHAT_CHANNEL_AVAILABLE = True
         else:
-            cur.execute(
-                """
+            cur.execute("""
                 UPDATE chat_logs
                 SET channel = CASE
                     WHEN topic = 'web' THEN 'web'
@@ -170,15 +178,14 @@ def _ensure_chat_logs_schema() -> None:
                     ELSE 'telegram'
                 END
                 WHERE channel IS NULL
-                """
-            )
+                """)
     conn.commit()
+
 
 def _ensure_bullying_schema() -> None:
     """Pastikan tabel dan kolom pendukung pelaporan bullying tersedia."""
     with conn.cursor() as cur:
-        cur.execute(
-            """
+        cur.execute("""
             CREATE TABLE IF NOT EXISTS bullying_reports (
                 id SERIAL PRIMARY KEY,
                 chat_log_id INTEGER UNIQUE REFERENCES chat_logs(id) ON DELETE CASCADE,
@@ -200,15 +207,14 @@ def _ensure_bullying_schema() -> None:
                 escalated BOOLEAN NOT NULL DEFAULT FALSE,
                 CONSTRAINT bullying_reports_status_check CHECK (status IN ('pending', 'in_progress', 'resolved', 'spam'))
             );
-            """
-        )
+            """)
     conn.commit()
+
 
 def _ensure_psych_schema() -> None:
     """Pastikan tabel laporan konseling psikologis tersedia."""
     with conn.cursor() as cur:
-        cur.execute(
-            """
+        cur.execute("""
             CREATE TABLE IF NOT EXISTS psych_reports (
                 id SERIAL PRIMARY KEY,
                 chat_log_id INTEGER REFERENCES chat_logs(id) ON DELETE SET NULL,
@@ -223,8 +229,7 @@ def _ensure_psych_schema() -> None:
                 updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 CHECK (status IN ('open', 'in_progress', 'resolved', 'archived'))
             );
-            """
-        )
+            """)
     conn.commit()
 
 
@@ -245,8 +250,7 @@ def _reset_chat_logs_sequence() -> None:
 def _ensure_feedback_schema() -> None:
     """Pastikan tabel chat_feedback tersedia untuk menyimpan feedback like/dislike."""
     with conn.cursor() as cur:
-        cur.execute(
-            """
+        cur.execute("""
             CREATE TABLE IF NOT EXISTS chat_feedback (
                 id SERIAL PRIMARY KEY,
                 chat_log_id INTEGER NOT NULL REFERENCES chat_logs(id) ON DELETE CASCADE,
@@ -257,32 +261,23 @@ def _ensure_feedback_schema() -> None:
                 updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 UNIQUE (chat_log_id, user_id)
             );
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE INDEX IF NOT EXISTS idx_chat_feedback_chat_log 
             ON chat_feedback (chat_log_id);
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE INDEX IF NOT EXISTS idx_chat_feedback_user 
             ON chat_feedback (user_id);
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE INDEX IF NOT EXISTS idx_chat_feedback_type 
             ON chat_feedback (feedback_type);
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE INDEX IF NOT EXISTS idx_chat_feedback_created 
             ON chat_feedback (created_at DESC);
-            """
-        )
+            """)
     conn.commit()
 
 
@@ -440,7 +435,9 @@ def save_feedback(
     _ensure_feedback_schema()
 
     if feedback_type not in ("like", "dislike"):
-        raise ValueError(f"Invalid feedback_type: {feedback_type}. Must be 'like' or 'dislike'")
+        raise ValueError(
+            f"Invalid feedback_type: {feedback_type}. Must be 'like' or 'dislike'"
+        )
 
     try:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
@@ -506,7 +503,9 @@ def delete_feedback(chat_log_id: int, user_id: int) -> bool:
     return deleted_count > 0
 
 
-def get_feedback_status(chat_log_ids: List[int], user_id: int) -> Dict[int, Optional[Dict[str, Any]]]:
+def get_feedback_status(
+    chat_log_ids: List[int], user_id: int
+) -> Dict[int, Optional[Dict[str, Any]]]:
     """
     Ambil status feedback untuk multiple chat messages dari user tertentu.
 
@@ -584,8 +583,7 @@ def get_feedback_by_chat_log(chat_log_id: int) -> List[Dict[str, Any]]:
 def _ensure_user_schema() -> None:
     """Pastikan tabel untuk pengguna web (web_users) tersedia."""
     with conn.cursor() as cur:
-        cur.execute(
-            """
+        cur.execute("""
             CREATE TABLE IF NOT EXISTS web_users (
                 id SERIAL PRIMARY KEY,
                 email TEXT UNIQUE NOT NULL,
@@ -606,9 +604,7 @@ def _ensure_user_schema() -> None:
                 metadata JSONB,
                 CONSTRAINT web_users_status_check CHECK (status IN (%s))
             );
-            """
-            % STATUS_ENUM_SQL
-        )
+            """ % STATUS_ENUM_SQL)
     conn.commit()
     # Tambahkan kolom baru jika belum ada (untuk versi lama)
     altered = False
@@ -669,30 +665,25 @@ def _ensure_user_schema() -> None:
     )
     if altered:
         with conn.cursor() as cur:
-            cur.execute(
-                """
+            cur.execute("""
                 UPDATE web_users
                 SET access_tier = COALESCE(access_tier, 'full')
-                """
-            )
+                """)
         conn.commit()
     if not _constraint_exists("web_users", "web_users_status_check"):
         with conn.cursor() as cur:
-            cur.execute(
-                f"""
+            cur.execute(f"""
                 ALTER TABLE web_users
                 ADD CONSTRAINT web_users_status_check
                 CHECK (status IN ({STATUS_ENUM_SQL}))
-                """
-            )
+                """)
         conn.commit()
 
 
 def _ensure_guestbook_general_schema() -> None:
     """Pastikan tabel buku tamu umum (web) tersedia."""
     with conn.cursor() as cur:
-        cur.execute(
-            """
+        cur.execute("""
             CREATE TABLE IF NOT EXISTS daftar_tamu_general_transactions (
                 id SERIAL PRIMARY KEY,
                 school_id INTEGER NOT NULL REFERENCES portal_schools(id) ON DELETE CASCADE,
@@ -707,28 +698,20 @@ def _ensure_guestbook_general_schema() -> None:
                 created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
             );
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE INDEX IF NOT EXISTS idx_daftar_tamu_general_transactions_school
             ON daftar_tamu_general_transactions (school_id);
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE INDEX IF NOT EXISTS idx_daftar_tamu_general_transactions_status
             ON daftar_tamu_general_transactions (status);
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE INDEX IF NOT EXISTS idx_daftar_tamu_general_transactions_visit_at
             ON daftar_tamu_general_transactions (visit_at DESC);
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE TABLE IF NOT EXISTS daftar_tamu_general_transaction_guests (
                 id SERIAL PRIMARY KEY,
                 transaction_id INTEGER NOT NULL REFERENCES daftar_tamu_general_transactions(id) ON DELETE CASCADE,
@@ -740,22 +723,16 @@ def _ensure_guestbook_general_schema() -> None:
                 email TEXT,
                 created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
             );
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE INDEX IF NOT EXISTS idx_daftar_tamu_general_transaction_guests_tx
             ON daftar_tamu_general_transaction_guests (transaction_id);
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE INDEX IF NOT EXISTS idx_daftar_tamu_general_transaction_guests_guest
             ON daftar_tamu_general_transaction_guests (general_guest_id);
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE TABLE IF NOT EXISTS daftar_tamu_purpose_keywords (
                 id SERIAL PRIMARY KEY,
                 keyword TEXT NOT NULL UNIQUE,
@@ -764,22 +741,16 @@ def _ensure_guestbook_general_schema() -> None:
                 created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
             );
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE INDEX IF NOT EXISTS idx_daftar_tamu_purpose_keywords_active
             ON daftar_tamu_purpose_keywords (active);
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE INDEX IF NOT EXISTS idx_daftar_tamu_purpose_keywords_keyword
             ON daftar_tamu_purpose_keywords (lower(keyword));
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE TABLE IF NOT EXISTS daftar_tamu_contact_priority (
                 id SERIAL PRIMARY KEY,
                 contact_key TEXT NOT NULL UNIQUE,
@@ -789,14 +760,11 @@ def _ensure_guestbook_general_schema() -> None:
                 created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
             );
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE INDEX IF NOT EXISTS idx_daftar_tamu_contact_priority_active
             ON daftar_tamu_contact_priority (active);
-            """
-        )
+            """)
     conn.commit()
     if _table_exists("daftar_tamu_general_guests"):
         _ensure_column("daftar_tamu_general_guests", "email", "email TEXT")
@@ -825,7 +793,9 @@ def _ensure_guestbook_general_schema() -> None:
             "deleted_by",
             "deleted_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL",
         )
-        _ensure_column("daftar_tamu_general_guests", "deleted_at", "deleted_at TIMESTAMPTZ")
+        _ensure_column(
+            "daftar_tamu_general_guests", "deleted_at", "deleted_at TIMESTAMPTZ"
+        )
     if _table_exists("daftar_tamu_general_transaction_guests"):
         _ensure_column(
             "daftar_tamu_general_transaction_guests",
@@ -842,8 +812,7 @@ def _ensure_guestbook_general_schema() -> None:
 def _ensure_guestbook_hospitality_schema() -> None:
     """Pastikan tabel review hospitality untuk buku tamu umum tersedia."""
     with conn.cursor() as cur:
-        cur.execute(
-            """
+        cur.execute("""
             CREATE TABLE IF NOT EXISTS hospitality_guestbook_reviews (
                 id SERIAL PRIMARY KEY,
                 transaction_id INTEGER NOT NULL REFERENCES daftar_tamu_general_transactions(id) ON DELETE CASCADE,
@@ -857,34 +826,24 @@ def _ensure_guestbook_hospitality_schema() -> None:
                 updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 CONSTRAINT hospitality_guestbook_reviews_rating_check CHECK (rating IS NULL OR rating BETWEEN 1 AND 5)
             );
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE UNIQUE INDEX IF NOT EXISTS uq_hosp_guestbook_reviews_transaction
             ON hospitality_guestbook_reviews (transaction_id);
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE INDEX IF NOT EXISTS idx_hosp_guestbook_reviews_school
             ON hospitality_guestbook_reviews (school_id);
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE INDEX IF NOT EXISTS idx_hosp_guestbook_reviews_status
             ON hospitality_guestbook_reviews (status);
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE INDEX IF NOT EXISTS idx_hosp_guestbook_reviews_completed_at
             ON hospitality_guestbook_reviews (completed_at DESC);
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE TABLE IF NOT EXISTS hospitality_guestbook_extra_questions (
                 id SERIAL PRIMARY KEY,
                 question_text TEXT NOT NULL,
@@ -894,16 +853,12 @@ def _ensure_guestbook_hospitality_schema() -> None:
                 created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
             );
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE INDEX IF NOT EXISTS idx_hosp_extra_questions_active_order
             ON hospitality_guestbook_extra_questions (active, sort_order, id);
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE TABLE IF NOT EXISTS hospitality_guestbook_extra_answers (
                 id SERIAL PRIMARY KEY,
                 review_id INTEGER NOT NULL REFERENCES hospitality_guestbook_reviews(id) ON DELETE CASCADE,
@@ -913,24 +868,21 @@ def _ensure_guestbook_hospitality_schema() -> None:
                 updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 UNIQUE (review_id, question_id)
             );
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE INDEX IF NOT EXISTS idx_hosp_extra_answers_review
             ON hospitality_guestbook_extra_answers (review_id);
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE INDEX IF NOT EXISTS idx_hosp_extra_answers_question
             ON hospitality_guestbook_extra_answers (question_id);
-            """
-        )
+            """)
     conn.commit()
 
 
-def list_guestbook_purpose_keywords(*, active_only: bool = True, limit: int = 50) -> List[str]:
+def list_guestbook_purpose_keywords(
+    *, active_only: bool = True, limit: int = 50
+) -> List[str]:
     _ensure_guestbook_general_schema()
     safe_limit = max(1, min(int(limit or 50), 500))
 
@@ -987,14 +939,12 @@ def list_guestbook_contact_priorities(*, active_only: bool = True) -> List[str]:
 
     where_sql = "WHERE active = TRUE" if active_only else ""
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
-        cur.execute(
-            f"""
+        cur.execute(f"""
             SELECT contact_key
             FROM daftar_tamu_contact_priority
             {where_sql}
             ORDER BY sort_order ASC, id ASC
-            """
-        )
+            """)
         rows = cur.fetchall() or []
     return [row.get("contact_key") for row in rows if row.get("contact_key")]
 
@@ -1036,7 +986,9 @@ def _sanitize_guest_chat_links(raw_links: Any) -> List[Dict[str, Any]]:
         )
         if len(cleaned) >= 12:
             break
-    cleaned.sort(key=lambda x: (int(x.get("sort_order") or 0), str(x.get("label") or "").lower()))
+    cleaned.sort(
+        key=lambda x: (int(x.get("sort_order") or 0), str(x.get("label") or "").lower())
+    )
     return cleaned
 
 
@@ -1049,8 +1001,7 @@ def _ensure_guest_chat_bubble_schema(*, force_refresh: bool = False) -> None:
     with conn.cursor() as cur:
         # Gunakan advisory lock untuk mencegah deadlock saat gunicorn workers melakukan CREATE/ALTER TABLE bersamaan
         cur.execute("SELECT pg_advisory_xact_lock(777123)")
-        cur.execute(
-            """
+        cur.execute("""
             CREATE TABLE IF NOT EXISTS daftar_tamu_guest_chat_bubbles (
                 id BIGSERIAL PRIMARY KEY,
                 message_text TEXT NOT NULL,
@@ -1067,16 +1018,12 @@ def _ensure_guest_chat_bubble_schema(*, force_refresh: bool = False) -> None:
                 created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
             );
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE INDEX IF NOT EXISTS idx_dt_guest_chat_bubbles_order
             ON daftar_tamu_guest_chat_bubbles (active, sort_order, id);
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE TABLE IF NOT EXISTS daftar_tamu_guest_chat_quick_questions (
                 id BIGSERIAL PRIMARY KEY,
                 bubble_id BIGINT NOT NULL REFERENCES daftar_tamu_guest_chat_bubbles(id) ON DELETE CASCADE,
@@ -1086,28 +1033,20 @@ def _ensure_guest_chat_bubble_schema(*, force_refresh: bool = False) -> None:
                 created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
             );
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE INDEX IF NOT EXISTS idx_dt_guest_chat_quick_questions_bubble
             ON daftar_tamu_guest_chat_quick_questions (bubble_id, active, sort_order, id);
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             ALTER TABLE daftar_tamu_guest_chat_bubbles
             ADD COLUMN IF NOT EXISTS direct_links JSONB NOT NULL DEFAULT '[]'::jsonb
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             ALTER TABLE daftar_tamu_guest_chat_bubbles
             ADD COLUMN IF NOT EXISTS media_autoplay BOOLEAN NOT NULL DEFAULT FALSE
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE TABLE IF NOT EXISTS daftar_tamu_guest_chat_settings (
                 id INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),
                 chat_limit INTEGER NOT NULL DEFAULT 2 CHECK (chat_limit BETWEEN 1 AND 50),
@@ -1122,20 +1061,15 @@ def _ensure_guest_chat_bubble_schema(*, force_refresh: bool = False) -> None:
                 updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 updated_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL
             );
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             ALTER TABLE daftar_tamu_guest_chat_settings
             ADD COLUMN IF NOT EXISTS limit_reached_links JSONB NOT NULL DEFAULT '[]'::jsonb
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             ALTER TABLE daftar_tamu_guest_chat_settings
             ADD COLUMN IF NOT EXISTS limit_reached_media_autoplay BOOLEAN NOT NULL DEFAULT FALSE
-            """
-        )
+            """)
         cur.execute("SELECT COUNT(*) FROM daftar_tamu_guest_chat_bubbles")
         total = int(cur.fetchone()[0] or 0)
         if total == 0:
@@ -1184,7 +1118,10 @@ def _ensure_guest_chat_bubble_schema(*, force_refresh: bool = False) -> None:
                 )
                 VALUES (%s, %s, TRUE, 'none', NULL, NULL, FALSE, FALSE, FALSE, NULL)
                 """,
-                ("ASKA bisa bantu info libur semester, PPDB, KJP, kontak sekolah, dan layanan lainnya.", 20),
+                (
+                    "ASKA bisa bantu info libur semester, PPDB, KJP, kontak sekolah, dan layanan lainnya.",
+                    20,
+                ),
             )
 
             if first_bubble_id > 0:
@@ -1207,8 +1144,7 @@ def _ensure_guest_chat_bubble_schema(*, force_refresh: bool = False) -> None:
                         """,
                         (first_bubble_id, question_text, idx * 10),
                     )
-        cur.execute(
-            """
+        cur.execute("""
             INSERT INTO daftar_tamu_guest_chat_settings (
                 id,
                 chat_limit,
@@ -1236,8 +1172,7 @@ def _ensure_guest_chat_bubble_schema(*, force_refresh: bool = False) -> None:
                 NULL
             )
             ON CONFLICT (id) DO NOTHING
-            """
-        )
+            """)
     conn.commit()
     _GUEST_CHAT_SCHEMA_READY = True
 
@@ -1246,8 +1181,7 @@ def list_public_guest_chat_bubbles(*, active_only: bool = True) -> List[Dict[str
     _ensure_guest_chat_bubble_schema()
     where_sql = "WHERE b.active = TRUE" if active_only else ""
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
-        cur.execute(
-            f"""
+        cur.execute(f"""
             SELECT
                 b.id,
                 b.message_text,
@@ -1263,8 +1197,7 @@ def list_public_guest_chat_bubbles(*, active_only: bool = True) -> List[Dict[str
             FROM daftar_tamu_guest_chat_bubbles b
             {where_sql}
             ORDER BY b.sort_order ASC, b.id ASC
-            """
-        )
+            """)
         bubble_rows = [dict(row) for row in cur.fetchall() or []]
 
         if not bubble_rows:
@@ -1291,7 +1224,9 @@ def list_public_guest_chat_bubbles(*, active_only: bool = True) -> List[Dict[str
 
     by_id = {int(item["id"]): item for item in bubble_rows}
     for bubble in bubble_rows:
-        bubble["media_type"] = _normalize_guest_chat_media_type(bubble.get("media_type"))
+        bubble["media_type"] = _normalize_guest_chat_media_type(
+            bubble.get("media_type")
+        )
         bubble["direct_links"] = _sanitize_guest_chat_links(bubble.get("direct_links"))
         bubble["media_loop"] = bool(bubble.get("media_loop"))
         bubble["media_autoplay"] = bool(bubble.get("media_autoplay"))
@@ -1317,8 +1252,7 @@ def list_public_guest_chat_bubbles(*, active_only: bool = True) -> List[Dict[str
 def get_public_guest_chat_settings() -> Dict[str, Any]:
     _ensure_guest_chat_bubble_schema()
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
-        cur.execute(
-            """
+        cur.execute("""
             SELECT
                 id,
                 chat_limit,
@@ -1334,8 +1268,7 @@ def get_public_guest_chat_settings() -> Dict[str, Any]:
             FROM daftar_tamu_guest_chat_settings
             WHERE id = 1
             LIMIT 1
-            """
-        )
+            """)
         row = dict(cur.fetchone() or {})
 
     if not row:
@@ -1354,11 +1287,15 @@ def get_public_guest_chat_settings() -> Dict[str, Any]:
         }
     row["chat_limit"] = max(1, min(int(row.get("chat_limit") or 2), 50))
     row["limit_reached_message"] = (row.get("limit_reached_message") or "").strip()
-    row["limit_reached_media_type"] = _normalize_guest_chat_media_type(row.get("limit_reached_media_type"))
+    row["limit_reached_media_type"] = _normalize_guest_chat_media_type(
+        row.get("limit_reached_media_type")
+    )
     row["limit_reached_media_loop"] = bool(row.get("limit_reached_media_loop"))
     row["limit_reached_media_autoplay"] = bool(row.get("limit_reached_media_autoplay"))
     row["limit_reached_video_muted"] = bool(row.get("limit_reached_video_muted"))
-    row["limit_reached_links"] = _sanitize_guest_chat_links(row.get("limit_reached_links"))
+    row["limit_reached_links"] = _sanitize_guest_chat_links(
+        row.get("limit_reached_links")
+    )
     if row["limit_reached_media_type"] != "video":
         row["limit_reached_video_muted"] = False
     return row
@@ -1387,8 +1324,7 @@ def _backfill_telegram_users() -> None:
     """Buat data user Telegram dari chat_logs jika table kosong/belum lengkap."""
     _ensure_chat_logs_schema()
     with conn.cursor() as cur:
-        cur.execute(
-            f"""
+        cur.execute(f"""
             INSERT INTO telegram_users (
                 telegram_user_id,
                 username,
@@ -1405,16 +1341,14 @@ def _backfill_telegram_users() -> None:
               AND {CHAT_CHANNEL_EXPRESSION} = 'telegram'
             GROUP BY user_id
             ON CONFLICT (telegram_user_id) DO NOTHING
-            """
-        )
+            """)
     conn.commit()
 
 
 def _ensure_telegram_user_schema() -> None:
     """Pastikan tabel telegram_users tersedia dan terisi dari chat_logs."""
     with conn.cursor() as cur:
-        cur.execute(
-            f"""
+        cur.execute(f"""
             CREATE TABLE IF NOT EXISTS telegram_users (
                 id SERIAL PRIMARY KEY,
                 telegram_user_id BIGINT UNIQUE NOT NULL,
@@ -1429,20 +1363,15 @@ def _ensure_telegram_user_schema() -> None:
                 metadata JSONB,
                 CONSTRAINT telegram_users_status_check CHECK (status IN ({STATUS_ENUM_SQL}))
             );
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE UNIQUE INDEX IF NOT EXISTS idx_telegram_users_user
             ON telegram_users (telegram_user_id)
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE INDEX IF NOT EXISTS idx_telegram_users_status
             ON telegram_users (status)
-            """
-        )
+            """)
     conn.commit()
     _backfill_telegram_users()
 
@@ -1488,8 +1417,7 @@ def _backfill_whatsapp_users() -> None:
     """Buat data user WhatsApp dari chat_logs jika table kosong/belum lengkap."""
     _ensure_chat_logs_schema()
     with conn.cursor() as cur:
-        cur.execute(
-            f"""
+        cur.execute(f"""
             INSERT INTO whatsapp_users (
                 whatsapp_user_id,
                 display_name,
@@ -1506,16 +1434,14 @@ def _backfill_whatsapp_users() -> None:
               AND {CHAT_CHANNEL_EXPRESSION} = 'whatsapp'
             GROUP BY user_id
             ON CONFLICT (whatsapp_user_id) DO NOTHING
-            """
-        )
+            """)
     conn.commit()
 
 
 def _ensure_whatsapp_user_schema() -> None:
     """Pastikan tabel whatsapp_users tersedia dan terisi dari chat_logs."""
     with conn.cursor() as cur:
-        cur.execute(
-            f"""
+        cur.execute(f"""
             CREATE TABLE IF NOT EXISTS whatsapp_users (
                 id SERIAL PRIMARY KEY,
                 whatsapp_user_id BIGINT UNIQUE NOT NULL,
@@ -1530,20 +1456,15 @@ def _ensure_whatsapp_user_schema() -> None:
                 metadata JSONB,
                 CONSTRAINT whatsapp_users_status_check CHECK (status IN ({STATUS_ENUM_SQL}))
             );
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE UNIQUE INDEX IF NOT EXISTS idx_whatsapp_users_user
             ON whatsapp_users (whatsapp_user_id)
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE INDEX IF NOT EXISTS idx_whatsapp_users_status
             ON whatsapp_users (status)
-            """
-        )
+            """)
     conn.commit()
     _backfill_whatsapp_users()
 
@@ -1594,6 +1515,7 @@ def _calculate_due_at(category: str) -> datetime:
         return base + timedelta(hours=24)
     return base + timedelta(hours=48)
 
+
 def record_psych_report(
     chat_log_id: Optional[int],
     user_id: Optional[int],
@@ -1640,6 +1562,7 @@ def record_psych_report(
         row = cur.fetchone()
     conn.commit()
     return int(row[0]) if row else None
+
 
 def record_bullying_report(
     chat_log_id: int,
@@ -1803,7 +1726,9 @@ def save_chat(
                     except Exception:
                         topic_supported = False
                     else:
-                        topic_supported = _chat_logs_has_topic_column(force_refresh=True)
+                        topic_supported = _chat_logs_has_topic_column(
+                            force_refresh=True
+                        )
                 if topic_supported:
                     cur.execute(
                         "UPDATE chat_logs SET topic = %s WHERE id = %s",
@@ -1827,6 +1752,7 @@ def save_chat(
 
     conn.commit()
     return inserted_id
+
 
 def get_chat_history(user_id: int, limit: int, offset: int = 0) -> List[Dict[str, Any]]:
     """
@@ -2035,7 +1961,16 @@ def create_public_guestbook_transaction(
                         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, NULL)
                         RETURNING id
                         """,
-                        (full_name, email, phone, instansi, jabatan, is_parent, student_class, student_name),
+                        (
+                            full_name,
+                            email,
+                            phone,
+                            instansi,
+                            jabatan,
+                            is_parent,
+                            student_class,
+                            student_name,
+                        ),
                     )
                     guest_row = cur.fetchone()
                     guest_id = int(guest_row["id"]) if guest_row else None
@@ -2055,7 +1990,17 @@ def create_public_guestbook_transaction(
                     )
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """,
-                    (transaction_id, guest_id, full_name, phone, instansi, jabatan, email, student_class, student_name),
+                    (
+                        transaction_id,
+                        guest_id,
+                        full_name,
+                        phone,
+                        instansi,
+                        jabatan,
+                        email,
+                        student_class,
+                        student_name,
+                    ),
                 )
 
             if transaction_id:
@@ -2087,12 +2032,22 @@ def create_public_guestbook_transaction(
         raise ValueError("Failed to create transaction")
     return {
         "transaction_id": transaction_id,
-        "review_id": int(review_row["id"]) if review_row and review_row.get("id") is not None else None,
-        "review_token": review_row["review_token"] if review_row and review_row.get("review_token") else review_token,
+        "review_id": (
+            int(review_row["id"])
+            if review_row and review_row.get("id") is not None
+            else None
+        ),
+        "review_token": (
+            review_row["review_token"]
+            if review_row and review_row.get("review_token")
+            else review_token
+        ),
     }
 
 
-def _fetch_public_guestbook_review_detail(where_sql: str, params: tuple[Any, ...]) -> Optional[Dict[str, Any]]:
+def _fetch_public_guestbook_review_detail(
+    where_sql: str, params: tuple[Any, ...]
+) -> Optional[Dict[str, Any]]:
     _ensure_guestbook_hospitality_schema()
     query = f"""
         SELECT
@@ -2165,18 +2120,18 @@ def _fetch_public_guestbook_review_detail(where_sql: str, params: tuple[Any, ...
     return detail
 
 
-def list_public_guestbook_extra_questions(*, active_only: bool = True) -> List[Dict[str, Any]]:
+def list_public_guestbook_extra_questions(
+    *, active_only: bool = True
+) -> List[Dict[str, Any]]:
     _ensure_guestbook_hospitality_schema()
     where_sql = "WHERE active = TRUE" if active_only else ""
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
-        cur.execute(
-            f"""
+        cur.execute(f"""
             SELECT id, question_text, sort_order, active
             FROM hospitality_guestbook_extra_questions
             {where_sql}
             ORDER BY sort_order ASC, id ASC
-            """
-        )
+            """)
         rows = cur.fetchall() or []
     return [dict(row) for row in rows]
 
@@ -2188,10 +2143,14 @@ def get_public_guestbook_review_by_token(review_token: str) -> Optional[Dict[str
     return _fetch_public_guestbook_review_detail("r.review_token = %s", (clean_token,))
 
 
-def get_public_guestbook_review_by_transaction(transaction_id: int) -> Optional[Dict[str, Any]]:
+def get_public_guestbook_review_by_transaction(
+    transaction_id: int,
+) -> Optional[Dict[str, Any]]:
     if not transaction_id:
         return None
-    return _fetch_public_guestbook_review_detail("r.transaction_id = %s", (transaction_id,))
+    return _fetch_public_guestbook_review_detail(
+        "r.transaction_id = %s", (transaction_id,)
+    )
 
 
 def submit_public_guestbook_review(
@@ -2216,14 +2175,12 @@ def submit_public_guestbook_review(
 
     try:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute(
-                """
+            cur.execute("""
                 SELECT id
                 FROM hospitality_guestbook_extra_questions
                 WHERE active = TRUE
                 ORDER BY sort_order ASC, id ASC
-                """
-            )
+                """)
             active_questions = [int(item["id"]) for item in (cur.fetchall() or [])]
             normalized_extra: Dict[int, int] = {}
             for qid in active_questions:
@@ -2235,7 +2192,9 @@ def submit_public_guestbook_review(
                 except (TypeError, ValueError):
                     rating_value = 0
                 if rating_value < 1 or rating_value > 5:
-                    raise ValueError("Semua aspek tambahan wajib diisi bintang 1 sampai 5.")
+                    raise ValueError(
+                        "Semua aspek tambahan wajib diisi bintang 1 sampai 5."
+                    )
                 normalized_extra[qid] = rating_value
 
             cur.execute(
@@ -2290,6 +2249,7 @@ def submit_public_guestbook_review(
     if not updated:
         return dict(row)
     return dict(updated)
+
 
 def get_or_create_web_user(
     email: str,
@@ -2431,6 +2391,7 @@ def get_or_create_web_user(
         new_user = cur.fetchone()
     conn.commit()
     return new_user
+
 
 def _maybe_reset_quota(
     cur,
@@ -2722,11 +2683,11 @@ def consume_chat_quota(user_id: int) -> Dict[str, Any]:
             "limited_reason": row.get("limited_reason") or DEFAULT_LIMITED_REASON,
         }
 
+
 def _ensure_corruption_schema() -> None:
     """Pastikan tabel untuk laporan korupsi (corruption_reports) tersedia."""
     with conn.cursor() as cur:
-        cur.execute(
-            """
+        cur.execute("""
             CREATE TABLE IF NOT EXISTS corruption_reports (
                 id SERIAL PRIMARY KEY,
                 ticket_id TEXT UNIQUE NOT NULL,
@@ -2740,9 +2701,9 @@ def _ensure_corruption_schema() -> None:
                 updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 CHECK (status IN ('open', 'in_progress', 'resolved', 'archived'))
             );
-            """
-        )
+            """)
     conn.commit()
+
 
 def record_corruption_report(data: Dict[str, Any]) -> Optional[int]:
     """Simpan laporan korupsi ke tabel khusus."""
@@ -2772,6 +2733,7 @@ def record_corruption_report(data: Dict[str, Any]) -> Optional[int]:
     conn.commit()
     return int(row[0]) if row else None
 
+
 def get_corruption_report(ticket_id: str) -> Optional[Dict[str, Any]]:
     """Ambil detail laporan korupsi berdasarkan tiket."""
     if not ticket_id:
@@ -2800,11 +2762,11 @@ def get_corruption_report(ticket_id: str) -> Optional[Dict[str, Any]]:
 
     return report
 
+
 def _ensure_twitter_log_schema() -> None:
     """Pastikan tabel penyimpanan log worker Twitter tersedia."""
     with conn.cursor() as cur:
-        cur.execute(
-            """
+        cur.execute("""
             CREATE TABLE IF NOT EXISTS twitter_worker_logs (
                 id SERIAL PRIMARY KEY,
                 level TEXT NOT NULL,
@@ -2814,21 +2776,17 @@ def _ensure_twitter_log_schema() -> None:
                 twitter_user_id BIGINT,
                 created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
             );
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE INDEX IF NOT EXISTS idx_twitter_worker_logs_created
             ON twitter_worker_logs (created_at DESC);
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE INDEX IF NOT EXISTS idx_twitter_worker_logs_level
             ON twitter_worker_logs (level);
-            """
-        )
+            """)
     conn.commit()
+
 
 def record_twitter_log(
     level: str,
@@ -2885,8 +2843,9 @@ def record_twitter_log(
                 )
                 """,
                 (MAX_TWITTER_LOG_ROWS,),
-                )
+            )
     conn.commit()
+
 
 def ensure_db_schema() -> None:
     """Create or update core database tables when explicitly requested."""

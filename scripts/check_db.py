@@ -6,14 +6,16 @@ with app.app_context():
     try:
         with get_cursor() as cur:
             print("--- Assessment Status Counts ---")
-            cur.execute("SELECT status, count(*) FROM portal_assessments GROUP BY status")
+            cur.execute(
+                "SELECT status, count(*) FROM portal_assessments GROUP BY status"
+            )
             rows = cur.fetchall()
             if not rows:
                 print("No assessments found.")
             else:
                 for row in rows:
                     print(row)
-            
+
             print("\n--- Recent Assessments Query Check ---")
             cur.execute("""
                 SELECT 
@@ -27,6 +29,6 @@ with app.app_context():
             recents = cur.fetchall()
             for r in recents:
                 print(r)
-                
+
     except Exception as e:
         print(f"Error: {e}")
