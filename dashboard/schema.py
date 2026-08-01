@@ -2215,7 +2215,7 @@ CREATE TABLE IF NOT EXISTS monev_bos_reports (
     period_id INTEGER NOT NULL REFERENCES monev_bos_periods(id) ON DELETE RESTRICT,
     bosp_receipt_amount NUMERIC(15,2) NOT NULL DEFAULT 0,
     bop_receipt_amount NUMERIC(15,2) NOT NULL DEFAULT 0,
-    status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'submitted', 'in_review', 'completed', 'needs_revision')),
+    status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'submitted', 'in_review', 'completed', 'needs_revision', 'completed_with_notes')),
     assigned_team_id INTEGER REFERENCES monev_bos_teams(id) ON DELETE SET NULL,
     submitted_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -2237,6 +2237,7 @@ CREATE TABLE IF NOT EXISTS monev_bos_activities (
     fund_source TEXT NOT NULL CHECK (fund_source IN ('BOS', 'BOP')),
     activity_code TEXT NOT NULL,
     activity_name TEXT NOT NULL,
+    account_code TEXT,
     realized_amount NUMERIC(15,2) NOT NULL DEFAULT 0,
     vendor_name TEXT,
     bku_number TEXT,
@@ -2351,8 +2352,67 @@ CREATE TABLE IF NOT EXISTS monev_bos_master_activities (
 );
 """
 
+_MONEV_BOS_VENDORS_SQL = """
+CREATE TABLE IF NOT EXISTS monev_bos_vendors (
+    id SERIAL PRIMARY KEY,
+    school_id INTEGER REFERENCES dashboard_users(id) ON DELETE CASCADE,
+    name VARCHAR(200) NOT NULL,
+    npwp VARCHAR(50),
+    phone VARCHAR(50),
+    address TEXT,
+    owner_name VARCHAR(150),
+    bank_name VARCHAR(100),
+    bank_account VARCHAR(100),
+    status VARCHAR(30) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'verified', 'rejected')),
+    rejection_reason TEXT,
+    verified_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    verified_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_MONEV_BOS_VENDORS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_monev_bos_vendors_school ON monev_bos_vendors (school_id);
+CREATE INDEX IF NOT EXISTS idx_monev_bos_vendors_status ON monev_bos_vendors (status);
+"""
+
+_MONEV_BOS_CHECKLIST_MASTER_ACTIVITIES_SQL = """
+CREATE TABLE IF NOT EXISTS monev_bos_checklist_master_activities (
+    checklist_id INTEGER NOT NULL REFERENCES monev_bos_checklists(id) ON DELETE CASCADE,
+    master_activity_id INTEGER NOT NULL REFERENCES monev_bos_master_activities(id) ON DELETE CASCADE,
+    PRIMARY KEY (checklist_id, master_activity_id)
+);
+"""
+
+_MONEV_BOS_EXPENSE_TYPES_SQL = """
+CREATE TABLE IF NOT EXISTS monev_bos_expense_types (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE,
+    code TEXT,
+    description TEXT,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_MONEV_BOS_CHECKLIST_EXPENSE_TYPES_SQL = """
+CREATE TABLE IF NOT EXISTS monev_bos_checklist_expense_types (
+    checklist_id INTEGER NOT NULL REFERENCES monev_bos_checklists(id) ON DELETE CASCADE,
+    expense_type_id INTEGER NOT NULL REFERENCES monev_bos_expense_types(id) ON DELETE CASCADE,
+    PRIMARY KEY (checklist_id, expense_type_id)
+);
+"""
+
+
 def ensure_monev_bos_schema() -> None:
     statements = (
+        _MONEV_BOS_VENDORS_SQL,
+        _MONEV_BOS_VENDORS_INDEX_SQL,
+        "ALTER TABLE monev_bos_vendors DROP CONSTRAINT IF EXISTS monev_bos_vendors_school_id_fkey;",
+        "ALTER TABLE monev_bos_vendors ADD CONSTRAINT monev_bos_vendors_school_id_fkey FOREIGN KEY (school_id) REFERENCES dashboard_users(id) ON DELETE CASCADE;",
         _MONEV_BOS_PERIODS_SQL,
         _MONEV_BOS_PERIODS_INDEX_SQL,
         _MONEV_BOS_CHECKLISTS_SQL,
@@ -2362,14 +2422,22 @@ def ensure_monev_bos_schema() -> None:
         _MONEV_BOS_REPORTS_SQL,
         _MONEV_BOS_REPORTS_INDEX_SQL,
         _MONEV_BOS_MASTER_ACTIVITIES_SQL,
+        _MONEV_BOS_EXPENSE_TYPES_SQL,
         _MONEV_BOS_ACTIVITIES_SQL,
         _MONEV_BOS_ACTIVITIES_INDEX_SQL,
+        "ALTER TABLE monev_bos_activities ADD COLUMN IF NOT EXISTS vendor_id INTEGER REFERENCES monev_bos_vendors(id) ON DELETE SET NULL;",
+        "ALTER TABLE monev_bos_activities ADD COLUMN IF NOT EXISTS activity_type_id INTEGER REFERENCES monev_bos_master_activities(id) ON DELETE SET NULL;",
+        "ALTER TABLE monev_bos_activities ADD COLUMN IF NOT EXISTS expense_type_id INTEGER REFERENCES monev_bos_expense_types(id) ON DELETE SET NULL;",
+        "ALTER TABLE monev_bos_activities ADD COLUMN IF NOT EXISTS account_code TEXT;",
         "ALTER TABLE monev_bos_activities DROP CONSTRAINT IF EXISTS monev_bos_activities_status_check;",
         "ALTER TABLE monev_bos_activities ADD CONSTRAINT monev_bos_activities_status_check CHECK (status IN ('pending', 'in_review', 'valid', 'invalid'));",
         _MONEV_BOS_ACTIVITY_DOCS_SQL,
         _MONEV_BOS_ACTIVITY_DOCS_INDEX_SQL,
         "ALTER TABLE monev_bos_activity_docs DROP CONSTRAINT IF EXISTS monev_bos_activity_docs_doc_type_check;",
         "ALTER TABLE monev_bos_activity_docs ADD CONSTRAINT monev_bos_activity_docs_doc_type_check CHECK (doc_type IN ('transfer', 'invoice', 'live_photo', 'physical_proof', 'field_photo'));",
+        _MONEV_BOS_CHECKLISTS_SQL,
+        _MONEV_BOS_CHECKLIST_MASTER_ACTIVITIES_SQL,
+        _MONEV_BOS_CHECKLIST_EXPENSE_TYPES_SQL,
         _MONEV_BOS_CHECKLIST_RESULTS_SQL,
         _MONEV_BOS_AUDIT_LOGS_SQL,
         _MONEV_BOS_AUDIT_LOGS_INDEX_SQL,

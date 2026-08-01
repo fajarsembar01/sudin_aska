@@ -156,7 +156,7 @@
         {% for card in tw_cards %}
         <div class="col-12 col-md-6">
             <div class="card tw-card shadow-sm h-100 position-relative 
-                {% if card.status_key == 'completed' %}border-top border-4 border-success
+                {% if card.status_key in ['completed', 'completed_with_notes'] %}border-top border-4 border-success
                 {% elif card.status_key == 'needs_revision' %}border-top border-4 border-danger
                 {% elif card.status_key in ['submitted', 'in_review'] %}border-top border-4 border-primary
                 {% elif card.status_key == 'draft' %}border-top border-4 border-warning
@@ -180,6 +180,10 @@
                                 {% if card.status_key == 'completed' %}
                                 <span class="badge bg-success text-white px-2.5 py-1.5 shadow-xs" style="font-size: 0.75rem;">
                                     <i class="bi bi-check-circle-fill me-1"></i>Audit Selesai
+                                </span>
+                                {% elif card.status_key == 'completed_with_notes' %}
+                                <span class="badge bg-warning text-dark px-2.5 py-1.5 shadow-xs" style="font-size: 0.75rem;">
+                                    <i class="bi bi-check-circle-fill me-1"></i>Selesai dengan Catatan
                                 </span>
                                 {% elif card.status_key == 'needs_revision' %}
                                 <span class="badge bg-danger text-white px-2.5 py-1.5 shadow-xs" style="font-size: 0.75rem;">

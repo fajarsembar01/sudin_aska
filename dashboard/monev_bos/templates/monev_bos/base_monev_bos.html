@@ -31,7 +31,7 @@
                         {% endif %}
                     </a>
                 </li>
-                {% set is_settings_active = request.endpoint in ['monev_bos.admin_periods', 'monev_bos.admin_master_activities', 'monev_bos.admin_checklists', 'monev_bos.admin_teams'] %}
+                {% set is_settings_active = request.endpoint in ['monev_bos.admin_periods', 'monev_bos.admin_master_activities', 'monev_bos.admin_expense_types', 'monev_bos.admin_checklists', 'monev_bos.admin_teams'] %}
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle {% if is_settings_active %}active{% endif %}" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="bi bi-gear nav-icon"></i>Pengaturan <i class="bi bi-chevron-down ms-1" style="font-size:0.7rem;"></i>
@@ -48,6 +48,11 @@
                             </a>
                         </li>
                         <li>
+                            <a class="dropdown-item {% if request.endpoint == 'monev_bos.admin_expense_types' %}active{% endif %}" href="{{ url_for('monev_bos.admin_expense_types') }}">
+                                <i class="bi bi-wallet2 me-2"></i>Master Jenis Belanja
+                            </a>
+                        </li>
+                        <li>
                             <a class="dropdown-item {% if request.endpoint == 'monev_bos.admin_checklists' %}active{% endif %}" href="{{ url_for('monev_bos.admin_checklists') }}">
                                 <i class="bi bi-list-check me-2"></i>Checklist Kelengkapan
                             </a>
@@ -55,6 +60,11 @@
                         <li>
                             <a class="dropdown-item {% if request.endpoint == 'monev_bos.admin_teams' %}active{% endif %}" href="{{ url_for('monev_bos.admin_teams') }}">
                                 <i class="bi bi-people me-2"></i>Tim & Penugasan
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item {% if request.endpoint == 'monev_bos.admin_vendors' %}active{% endif %}" href="{{ url_for('monev_bos.admin_vendors') }}">
+                                <i class="bi bi-shop me-2"></i>Verifikasi Vendor
                             </a>
                         </li>
                     </ul>
@@ -67,6 +77,11 @@
                         <i class="bi bi-journal-text nav-icon"></i>Laporan Saya
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'monev_bos.sekolah_vendors' %}active{% endif %}" href="{{ url_for('monev_bos.sekolah_vendors') }}">
+                        <i class="bi bi-shop nav-icon"></i>Vendor
+                    </a>
+                </li>
                 {% endif %}
 
                 {% if current_user and current_user.role == 'staff' %}
@@ -76,6 +91,11 @@
                         {% if submitted_reports_count and submitted_reports_count > 0 %}
                         <span class="badge bg-warning text-dark rounded-pill ms-1">{{ submitted_reports_count }}</span>
                         {% endif %}
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'monev_bos.admin_vendors' %}active{% endif %}" href="{{ url_for('monev_bos.admin_vendors') }}">
+                        <i class="bi bi-shop nav-icon"></i>Verifikasi Vendor
                     </a>
                 </li>
                 <li class="nav-item">
@@ -154,6 +174,30 @@
 
 {% block portal_content %}
 <div class="monev-bos-content">
-    {% block monev_bos_content %}{% endblock %}
+    {% block monev_bos_content %}
+        {% block content %}{% endblock %}
+    {% endblock %}
 </div>
+
+<script>
+document.addEventListener('input', function (e) {
+    if (e.target && e.target.classList.contains('rupiah-input')) {
+        let cursorPosition = e.target.selectionStart || 0;
+        let originalLength = e.target.value.length;
+        let rawVal = e.target.value.replace(/\D/g, '');
+        if (rawVal) {
+            let formatted = parseInt(rawVal, 10).toLocaleString('id-ID');
+            e.target.value = formatted;
+            let newLength = formatted.length;
+            let diff = newLength - originalLength;
+            let newPos = Math.max(0, cursorPosition + diff);
+            try {
+                e.target.setSelectionRange(newPos, newPos);
+            } catch (err) {}
+        } else {
+            e.target.value = '';
+        }
+    }
+});
+</script>
 {% endblock %}

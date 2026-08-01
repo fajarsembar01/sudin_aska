@@ -71,8 +71,15 @@
                     <div class="rounded-3 p-2 bg-success-subtle text-success d-flex align-items-center justify-content-center flex-shrink-0" style="width: 40px; height: 40px;">
                         <i class="bi bi-wallet2 fs-5"></i>
                     </div>
-                    <div>
-                        <span class="text-uppercase text-body-secondary fw-bold text-xs d-block mb-0.5">Total Penerimaan {{ fund_source }}</span>
+                    <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between align-items-center mb-0.5">
+                            <span class="text-uppercase text-body-secondary fw-bold text-xs">Total Penerimaan {{ fund_source }}</span>
+                            {% if report.status in ['draft', 'needs_revision'] %}
+                            <button type="button" class="btn btn-xs btn-outline-success py-0 px-1.5 ms-1" data-bs-toggle="modal" data-bs-target="#editReceiptModal" title="Edit Nominal Penerimaan">
+                                <i class="bi bi-pencil-fill text-xs"></i> Edit
+                            </button>
+                            {% endif %}
+                        </div>
                         <h5 class="fw-bold text-success mb-0">Rp {{ "{:,.0f}".format(total_receipt).replace(',', '.') }}</h5>
                     </div>
                 </div>
@@ -155,28 +162,29 @@
                 <table class="table table-hover align-middle mb-0" style="font-size: 0.85rem;">
                     <thead class="table-light">
                         <tr>
-                            <th class="ps-3 ps-md-4" width="9%">Kode</th>
-                            <th width="24%">Nama Kegiatan & Vendor</th>
-                            <th width="12%">No. BKU</th>
-                            <th width="13%" class="text-end">Realisasi</th>
+                            <th class="ps-3 ps-md-4" width="30%">Nama Kegiatan & Vendor</th>
+                            <th width="15%">No. BKU</th>
+                            <th width="15%" class="text-end">Realisasi</th>
                             <th width="15%">Dokumen</th>
-                            <th width="15%">Status Audit</th>
+                            <th width="13%">Status Audit</th>
                             <th class="text-end pe-3 pe-md-4" width="12%">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for act in activities %}
                         <tr class="sekolah-act-row">
-                            <td class="ps-3 ps-md-4 font-monospace fw-bold text-body">{{ act.activity_code }}</td>
-                            <td>
+                            <td class="ps-3 ps-md-4">
                                 <strong class="text-body d-block">{{ act.activity_name }}</strong>
                                 <small class="text-body-secondary d-block mt-0.5">
                                     <i class="bi bi-shop me-1"></i>{{ act.vendor_name or '-' }}
-                                    {% if act.item_name %}&bull; {{ act.item_name }} ({{ act.item_quantity }} qty){% endif %}
+                                    {% if act.item_name %}&bull; {{ act.item_name }}{% endif %}
                                 </small>
                             </td>
                             <td>
                                 <span class="badge bg-body-tertiary text-body border font-monospace" style="font-size: 0.72rem;">{{ act.bku_number or '-' }}</span>
+                                {% if act.account_code %}
+                                <small class="d-block text-body-secondary font-monospace text-xs mt-0.5" title="Kode Rekening">Rek: {{ act.account_code }}</small>
+                                {% endif %}
                             </td>
                             <td class="text-end fw-bold text-success text-nowrap">
                                 Rp {{ "{:,.0f}".format(act.realized_amount).replace(',', '.') }}
@@ -184,8 +192,8 @@
                             <td>
                                 <div class="d-flex flex-wrap gap-1">
                                     {% if act.docs.get('invoice') %}
-                                    <a href="/{{ act.docs['invoice'].file_path }}" target="_blank" class="badge bg-secondary-subtle text-secondary-emphasis border text-decoration-none" title="Lihat Faktur">
-                                        <i class="bi bi-receipt me-1"></i>Faktur
+                                    <a href="/{{ act.docs['invoice'].file_path }}" target="_blank" class="badge bg-secondary-subtle text-secondary-emphasis border text-decoration-none" title="Lihat Faktur & Kwitansi">
+                                        <i class="bi bi-receipt me-1"></i>Faktur & Kwitansi
                                     </a>
                                     {% endif %}
                                     
@@ -196,7 +204,7 @@
                                     {% endif %}
 
                                     {% if act.docs.get('field_photo') %}
-                                    <a href="/{{ act.docs['field_photo'].file_path }}" target="_blank" class="badge bg-info-subtle text-info-emphasis border text-decoration-none" title="Lihat Foto Lapangan">
+                                    <a href="/{{ act.docs['field_photo'].file_path }}" target="_blank" class="badge bg-info-subtle text-info-emphasis border text-decoration-none" title="Lihat Foto Kegiatan / Barang">
                                         <i class="bi bi-camera me-1"></i>Foto
                                     </a>
                                     {% endif %}
@@ -351,7 +359,7 @@
                             <small class="text-body-secondary me-1 text-xs">Dokumen:</small>
                             {% if act.docs.get('invoice') %}
                             <a href="/{{ act.docs['invoice'].file_path }}" target="_blank" class="badge bg-secondary-subtle text-secondary-emphasis border text-decoration-none text-xs">
-                                <i class="bi bi-receipt me-1"></i>Faktur
+                                <i class="bi bi-receipt me-1"></i>Faktur & Kwitansi
                             </a>
                             {% endif %}
                             {% if act.docs.get('transfer') %}
@@ -464,46 +472,36 @@
             <div class="modal-body">
                 <div class="row mb-3">
                     <div class="col-md-6">
-                        <p class="mb-1 text-body-secondary text-xs">Kode Kegiatan</p>
-                        <p class="fw-bold font-monospace text-body">{{ act.activity_code }}</p>
-                    </div>
-                    <div class="col-md-6">
                         <p class="mb-1 text-body-secondary text-xs">Nama Kegiatan</p>
                         <p class="fw-bold text-body">{{ act.activity_name }}</p>
                     </div>
-                </div>
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <p class="mb-1 text-body-secondary text-xs">Nilai Realisasi</p>
-                        <p class="fw-bold fs-5 text-success">Rp {{ "{:,.0f}".format(act.realized_amount).replace(',', '.') }}</p>
-                    </div>
-                    <div class="col-md-6">
+                    <div class="col-md-3">
                         <p class="mb-1 text-body-secondary text-xs">No. BKU</p>
                         <p class="fw-bold font-monospace text-body">{{ act.bku_number or '-' }}</p>
                     </div>
+                    <div class="col-md-3">
+                        <p class="mb-1 text-body-secondary text-xs">Kode Rekening</p>
+                        <p class="fw-bold font-monospace text-body">{{ act.account_code or '-' }}</p>
+                    </div>
                 </div>
                 <div class="row mb-3">
+                    <div class="col-md-4">
+                        <p class="mb-1 text-body-secondary text-xs">Nilai Realisasi</p>
+                        <p class="fw-bold fs-5 text-success">Rp {{ "{:,.0f}".format(act.realized_amount).replace(',', '.') }}</p>
+                    </div>
                     <div class="col-md-4">
                         <p class="mb-1 text-body-secondary text-xs">Nama Toko/Vendor</p>
                         <p class="fw-bold text-body">{{ act.vendor_name or '-' }}</p>
                     </div>
                     <div class="col-md-4">
-                        <p class="mb-1 text-body-secondary text-xs">Nama Barang</p>
+                        <p class="mb-1 text-body-secondary text-xs">Detail Kegiatan</p>
                         <p class="fw-bold text-body">{{ act.item_name or '-' }}</p>
                     </div>
-                    <div class="col-md-4">
-                        <p class="mb-1 text-body-secondary text-xs">Jumlah Barang</p>
-                        <p class="fw-bold text-body">{{ act.item_quantity or '0' }}</p>
-                    </div>
-                </div>
-                <div class="mb-3">
-                    <p class="mb-1 text-body-secondary text-xs">Spesifikasi Barang</p>
-                    <p class="fw-bold text-body">{{ act.item_specs or '-' }}</p>
                 </div>
                 
                 {% if act.docs.get('field_photo') %}
                 <div class="mb-3">
-                    <p class="mb-1 text-body-secondary text-xs">Foto Kegiatan / Lapangan (Sekolah)</p>
+                    <p class="mb-1 text-body-secondary text-xs">Foto Kegiatan / Barang (Sekolah)</p>
                     <a href="/{{ act.docs['field_photo'].file_path }}" target="_blank">
                         <img src="/{{ act.docs['field_photo'].file_path }}" alt="Foto Kegiatan" class="img-thumbnail" style="max-height: 140px; object-fit: cover;">
                     </a>
@@ -576,15 +574,15 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label fw-bold">Kode Kegiatan <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" name="activity_code" required value="{{ act.activity_code }}">
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label fw-bold">No. BKU <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" name="bku_number" required value="{{ act.bku_number or '' }}">
-                    </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Jenis Belanja <span class="text-danger">*</span></label>
+                    <select class="form-select" name="expense_type_id" required>
+                        <option value="" disabled>-- Pilih Jenis Belanja --</option>
+                        {% for et in expense_types %}
+                        <option value="{{ et.id }}" {% if act.expense_type_id == et.id %}selected{% endif %}>{{ et.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <div class="form-text text-xs text-muted">Jenis Belanja menentukan item kelengkapan berkas yang wajib diperiksa auditor.</div>
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-bold">Nama Kegiatan <span class="text-danger">*</span></label>
@@ -595,41 +593,54 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Nilai Realisasi (Rp) <span class="text-danger">*</span></label>
-                    <div class="input-group">
-                        <span class="input-group-text fw-bold">Rp</span>
-                        <input type="text" inputmode="numeric" class="form-control rupiah-input" name="realized_amount" required value="{{ '{:,.0f}'.format(act.realized_amount).replace(',', '.') }}">
-                    </div>
-                </div>
-                <h6 class="mt-4 mb-3 border-bottom pb-2 text-primary fw-bold">Detail Barang & Vendor</h6>
                 <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label fw-bold">Nama Toko/Vendor</label>
-                        <input type="text" class="form-control" name="vendor_name" value="{{ act.vendor_name or '' }}">
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label fw-bold">Nama Barang</label>
-                        <input type="text" class="form-control" name="item_name" value="{{ act.item_name or '' }}">
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-8 mb-3">
-                        <label class="form-label fw-bold">Spesifikasi Barang</label>
-                        <input type="text" class="form-control" name="item_specs" value="{{ act.item_specs or '' }}">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label fw-bold">No. BKU <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="bku_number" required value="{{ act.bku_number or '' }}" placeholder="Contoh: BKU/001/2026">
                     </div>
                     <div class="col-md-4 mb-3">
-                        <label class="form-label fw-bold">Jumlah Barang</label>
-                        <input type="number" class="form-control" name="item_quantity" min="0" value="{{ act.item_quantity or 0 }}">
+                        <label class="form-label fw-bold">Kode Rekening</label>
+                        <input type="text" class="form-control" name="account_code" value="{{ act.account_code or '' }}" placeholder="Contoh: 5.1.02.01.01.0024">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label fw-bold">Nilai Realisasi (Rp) <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text fw-bold">Rp</span>
+                            <input type="text" inputmode="numeric" class="form-control rupiah-input" name="realized_amount" required value="{{ '{:,.0f}'.format(act.realized_amount).replace(',', '.') }}">
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label fw-bold mb-0">Nama Toko/Vendor</label>
+                            <a href="{{ url_for('monev_bos.sekolah_vendors') }}" target="_blank" class="text-decoration-none small text-primary fw-semibold">
+                                <i class="bi bi-plus-circle me-1"></i>Daftarkan Vendor Baru
+                            </a>
+                        </div>
+                        <select class="form-select" name="vendor_id">
+                            <option value="">-- Pilih Vendor Terverifikasi --</option>
+                            {% for v in verified_vendors %}
+                                <option value="{{ v.id }}" {% if act.vendor_id == v.id or (not act.vendor_id and act.vendor_name == v.name) %}selected{% endif %}>
+                                    {{ v.name }}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}
+                                </option>
+                            {% endfor %}
+                            {% if act.vendor_name and not act.vendor_id %}
+                                <option value="" selected>{{ act.vendor_name }}</option>
+                            {% endif %}
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Detail Kegiatan</label>
+                        <input type="text" class="form-control" name="item_name" value="{{ act.item_name or '' }}" placeholder="Contoh: Pembelian Tinta Printer HP / Bahan Kebersihan">
                     </div>
                 </div>
                 
-                <h6 class="mt-4 mb-3 border-bottom pb-2 text-primary fw-bold">Upload / Ganti Dokumen</h6>
                 <div class="row g-3 align-items-stretch">
                     <div class="col-md-4">
                         <div class="p-3 border rounded bg-light-subtle h-100 d-flex flex-column justify-content-between">
-                            <label class="form-label fw-bold text-dark mb-2 text-truncate" title="Dokumen Faktur/Kwitansi">
-                                Faktur/Kwitansi <span class="text-danger">*</span>
+                            <label class="form-label fw-bold text-dark mb-2 text-truncate" title="Dokumen Faktur & Kwitansi">
+                                Faktur & Kwitansi <span class="text-danger">*</span>
                             </label>
                             <div class="d-grid gap-2">
                                 <input type="file" class="d-none image-doc-input" name="doc_invoice" accept="image/*">
@@ -642,11 +653,7 @@
                                         <i class="bi bi-camera-fill me-1"></i> Kamera
                                     </button>
                                 </div>
-                                <div class="small text-muted image-doc-file-name mt-1 text-center text-truncate">
-                                    {% if act.invoice_path %}
-                                        <span class="text-success fw-semibold"><i class="bi bi-check-circle me-1"></i>Ada file terunggah</span>
-                                    {% endif %}
-                                </div>
+                                <img class="img-thumbnail mt-1 image-doc-preview w-100 {% if not act.invoice_path %}d-none{% endif %}" src="{% if act.invoice_path %}/{{ act.invoice_path }}{% endif %}" alt="Preview Faktur & Kwitansi" style="max-height: 90px; object-fit: cover;">
                             </div>
                         </div>
                     </div>
@@ -666,30 +673,22 @@
                                         <i class="bi bi-camera-fill me-1"></i> Kamera
                                     </button>
                                 </div>
-                                <div class="small text-muted image-doc-file-name mt-1 text-center text-truncate">
-                                    {% if act.transfer_path %}
-                                        <span class="text-success fw-semibold"><i class="bi bi-check-circle me-1"></i>Ada file terunggah</span>
-                                    {% endif %}
-                                </div>
+                                <img class="img-thumbnail mt-1 image-doc-preview w-100 {% if not act.transfer_path %}d-none{% endif %}" src="{% if act.transfer_path %}/{{ act.transfer_path }}{% endif %}" alt="Preview Bukti Transfer" style="max-height: 90px; object-fit: cover;">
                             </div>
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="p-3 border rounded bg-light-subtle h-100 d-flex flex-column justify-content-between">
-                            <label class="form-label fw-bold text-dark mb-2 text-truncate" title="Foto Kegiatan / Lapangan">
-                                Foto Kegiatan / Lapangan
+                            <label class="form-label fw-bold text-dark mb-2 text-truncate" title="Foto Kegiatan / Barang">
+                                Foto Kegiatan / Barang
                             </label>
                             <div class="d-grid gap-2">
                                 <input type="hidden" name="field_photo_data" class="camera-photo-data">
                                 <button type="button" class="btn btn-sm btn-outline-primary w-100 camera-photo-btn text-nowrap" data-preview="editPhotoPreview{{ act.id }}">
                                     <i class="bi bi-camera-fill me-1"></i> Ambil Foto Kamera
                                 </button>
-                                <img id="editPhotoPreview{{ act.id }}" class="img-thumbnail mt-1 d-none camera-photo-preview w-100" alt="Preview Foto Kegiatan" style="max-height: 90px; object-fit: cover;">
-                                <div class="small text-muted mt-1 text-center text-truncate">
-                                    {% if act.activity_photo_path %}
-                                        <span class="text-success fw-semibold"><i class="bi bi-check-circle me-1"></i>Ada foto kegiatan</span>
-                                    {% endif %}
-                                </div>
+                                {% set photo_path = act.docs['field_photo'].file_path if (act.docs and act.docs.get('field_photo')) else act.activity_photo_path %}
+                                <img id="editPhotoPreview{{ act.id }}" class="img-thumbnail mt-1 camera-photo-preview w-100 {% if not photo_path %}d-none{% endif %}" src="{% if photo_path %}/{{ photo_path }}{% endif %}" alt="Preview Foto Kegiatan" style="max-height: 90px; object-fit: cover;">
                             </div>
                         </div>
                     </div>
@@ -757,20 +756,15 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <div class="d-flex justify-content-end mb-2">
-                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="autofillDemoData('{{ fund_source }}')">
-                        <i class="bi bi-magic me-1"></i> Isi Contoh Data (Demo)
-                    </button>
-                </div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label fw-bold">Kode Kegiatan <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" name="activity_code" required placeholder="Contoh: 01.02.03">
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label fw-bold">No. BKU <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" name="bku_number" required placeholder="Contoh: BKU/001/2026">
-                    </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Jenis Belanja <span class="text-danger">*</span></label>
+                    <select class="form-select" name="expense_type_id" required>
+                        <option value="" disabled selected>-- Pilih Jenis Belanja --</option>
+                        {% for et in expense_types %}
+                        <option value="{{ et.id }}">{{ et.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <div class="form-text text-xs text-muted">Jenis Belanja menentukan item kelengkapan berkas yang wajib diperiksa auditor.</div>
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-bold">Nama Kegiatan <span class="text-danger">*</span></label>
@@ -781,46 +775,49 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Nilai Realisasi (Rp) <span class="text-danger">*</span></label>
-                    <div class="input-group">
-                        <span class="input-group-text fw-bold">Rp</span>
-                        <input type="text" inputmode="numeric" class="form-control rupiah-input" name="realized_amount" id="realizedAmount" required placeholder="0">
-                    </div>
-                    <div class="form-text mt-1 d-flex justify-content-between align-items-center">
-                        <span>Nominal pengeluaran</span>
-                        <span class="badge bg-primary-subtle text-primary border border-primary fw-bold px-2 py-1" id="realizedAmountPreview">Rp 0</span>
-                    </div>
-                </div>
-                
-                <h6 class="mt-4 mb-3 border-bottom pb-2 text-primary fw-bold">Detail Barang & Vendor</h6>
                 <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label fw-bold">Nama Toko/Vendor</label>
-                        <input type="text" class="form-control" name="vendor_name" placeholder="Contoh: CV Media Nusantara">
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label fw-bold">Nama Barang</label>
-                        <input type="text" class="form-control" name="item_name" placeholder="Contoh: Tinta Printer HP">
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-8 mb-3">
-                        <label class="form-label fw-bold">Spesifikasi Barang</label>
-                        <input type="text" class="form-control" name="item_specs" placeholder="Contoh: HP 85A Black Original">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label fw-bold">No. BKU <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="bku_number" required placeholder="Contoh: BKU/001/2026">
                     </div>
                     <div class="col-md-4 mb-3">
-                        <label class="form-label fw-bold">Jumlah Barang</label>
-                        <input type="number" class="form-control" name="item_quantity" min="0" value="1">
+                        <label class="form-label fw-bold">Kode Rekening</label>
+                        <input type="text" class="form-control" name="account_code" placeholder="Contoh: 5.1.02.01.01.0024">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label fw-bold">Nilai Realisasi (Rp) <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text fw-bold">Rp</span>
+                            <input type="text" inputmode="numeric" class="form-control rupiah-input" name="realized_amount" id="realizedAmount" required placeholder="0">
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label fw-bold mb-0">Nama Toko/Vendor</label>
+                            <a href="{{ url_for('monev_bos.sekolah_vendors') }}" target="_blank" class="text-decoration-none small text-primary fw-semibold">
+                                <i class="bi bi-plus-circle me-1"></i>Daftarkan Vendor Baru
+                            </a>
+                        </div>
+                        <select class="form-select" name="vendor_id">
+                            <option value="">-- Pilih Vendor Terverifikasi --</option>
+                            {% for v in verified_vendors %}
+                                <option value="{{ v.id }}">{{ v.name }}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Detail Kegiatan</label>
+                        <input type="text" class="form-control" name="item_name" placeholder="Contoh: Pembelian Tinta Printer HP / Bahan Kebersihan">
                     </div>
                 </div>
                 
-                <h6 class="mt-4 mb-3 border-bottom pb-2 text-primary fw-bold">Upload Dokumen Laporan</h6>
                 <div class="row g-3 align-items-stretch">
                     <div class="col-md-4">
                         <div class="p-3 border rounded bg-light-subtle h-100 d-flex flex-column justify-content-between">
-                            <label class="form-label fw-bold text-dark mb-2 text-truncate" title="Faktur/Kwitansi">
-                                Faktur/Kwitansi <span class="text-danger">*</span>
+                            <label class="form-label fw-bold text-dark mb-2 text-truncate" title="Faktur & Kwitansi">
+                                Faktur & Kwitansi <span class="text-danger">*</span>
                             </label>
                             <div class="d-grid gap-2">
                                 <input type="file" class="d-none image-doc-input" name="doc_invoice" accept="image/*" required>
@@ -833,7 +830,7 @@
                                         <i class="bi bi-camera-fill me-1"></i> Kamera
                                     </button>
                                 </div>
-                                <div class="small text-muted image-doc-file-name mt-1 text-center text-truncate"></div>
+                                <img class="img-thumbnail mt-1 image-doc-preview w-100 d-none" alt="Preview Faktur & Kwitansi" style="max-height: 90px; object-fit: cover;">
                             </div>
                         </div>
                     </div>
@@ -853,30 +850,34 @@
                                         <i class="bi bi-camera-fill me-1"></i> Kamera
                                     </button>
                                 </div>
-                                <div class="small text-muted image-doc-file-name mt-1 text-center text-truncate"></div>
+                                <img class="img-thumbnail mt-1 image-doc-preview w-100 d-none" alt="Preview Bukti Transfer" style="max-height: 90px; object-fit: cover;">
                             </div>
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="p-3 border rounded bg-light-subtle h-100 d-flex flex-column justify-content-between">
-                            <label class="form-label fw-bold text-dark mb-2 text-truncate" title="Foto Kegiatan / Lapangan">
-                                Foto Kegiatan / Lapangan
+                            <label class="form-label fw-bold text-dark mb-2 text-truncate" title="Foto Kegiatan / Barang">
+                                Foto Kegiatan / Barang
                             </label>
                             <div class="d-grid gap-2">
                                 <input type="hidden" name="field_photo_data" class="camera-photo-data">
                                 <button type="button" class="btn btn-sm btn-outline-primary w-100 camera-photo-btn text-nowrap" data-preview="addPhotoPreview">
                                     <i class="bi bi-camera-fill me-1"></i> Ambil Foto Kamera
                                 </button>
-                                <img id="addPhotoPreview" class="img-thumbnail mt-1 d-none camera-photo-preview w-100" alt="Preview Foto Kegiatan" style="max-height: 90px; object-fit: cover;">
-                                <div class="small text-muted mt-1 text-center text-truncate"></div>
+                                <img id="addPhotoPreview" class="img-thumbnail mt-1 camera-photo-preview w-100 d-none" alt="Preview Foto Kegiatan" style="max-height: 90px; object-fit: cover;">
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                <button type="submit" class="btn btn-success fw-bold">Simpan Kegiatan</button>
+            <div class="modal-footer d-flex justify-content-between align-items-center">
+                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="autofillDemoData('{{ fund_source }}')">
+                    <i class="bi bi-magic me-1"></i> Isi Contoh Data (Demo)
+                </button>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-success fw-bold">Simpan Kegiatan</button>
+                </div>
             </div>
         </form>
     </div>
@@ -911,12 +912,28 @@
 let schoolCameraStream = null;
 let activeCameraInput = null;
 let activeCameraPreview = null;
+let activeDocInput = null;
+let activeDocFileNameEl = null;
 let capturedSchoolPhoto = '';
 
-function openSchoolCamera(button) {
+function dataURLtoFile(dataurl, filename) {
+    let arr = dataurl.split(','),
+        mime = arr[0].match(/:(.*?);/)[1],
+        bstr = atob(arr[1]),
+        n = bstr.length,
+        u8arr = new Uint8Array(n);
+    while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new File([u8arr], filename, { type: mime });
+}
+
+function openSchoolCamera(button, docInput = null, fileNameEl = null) {
     const form = button.closest('form');
     activeCameraInput = form ? form.querySelector('.camera-photo-data') : null;
-    activeCameraPreview = document.getElementById(button.getAttribute('data-preview'));
+    activeCameraPreview = button.getAttribute('data-preview') ? document.getElementById(button.getAttribute('data-preview')) : null;
+    activeDocInput = docInput;
+    activeDocFileNameEl = fileNameEl;
     capturedSchoolPhoto = '';
     document.getElementById('schoolCameraPreview').classList.add('d-none');
     document.getElementById('schoolCameraVideo').classList.remove('d-none');
@@ -940,7 +957,7 @@ function startSchoolCamera() {
             video.srcObject = stream;
             video.play();
         })
-        .catch(() => alert('Kamera tidak dapat diakses. Pastikan izin kamera sudah diberikan.'));
+        .catch(() => alert('Kamera tidak dapat diakses. Pastikan izin kamera sudah diberikan di browser.'));
 }
 
 function stopSchoolCamera() {
@@ -987,11 +1004,30 @@ function retakeSchoolPhoto() {
 }
 
 function useSchoolPhoto() {
-    if (!capturedSchoolPhoto || !activeCameraInput) return;
-    activeCameraInput.value = capturedSchoolPhoto;
-    if (activeCameraPreview) {
-        activeCameraPreview.src = capturedSchoolPhoto;
-        activeCameraPreview.classList.remove('d-none');
+    if (!capturedSchoolPhoto) return;
+
+    if (activeDocInput) {
+        const fieldName = activeDocInput.getAttribute('name') || 'dokumen';
+        const file = dataURLtoFile(capturedSchoolPhoto, fieldName + '_kamera.jpg');
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        activeDocInput.files = dt.files;
+
+        const wrapper = activeDocInput.closest('.d-grid');
+        const previewImg = wrapper ? wrapper.querySelector('.image-doc-preview') : null;
+        if (previewImg) {
+            previewImg.src = capturedSchoolPhoto;
+            previewImg.classList.remove('d-none');
+        }
+        if (activeDocFileNameEl) {
+            activeDocFileNameEl.innerHTML = '<span class="text-success fw-semibold text-xs"><i class="bi bi-check-circle me-1"></i>Foto kamera terpasang</span>';
+        }
+    } else if (activeCameraInput) {
+        activeCameraInput.value = capturedSchoolPhoto;
+        if (activeCameraPreview) {
+            activeCameraPreview.src = capturedSchoolPhoto;
+            activeCameraPreview.classList.remove('d-none');
+        }
     }
     const modal = bootstrap.Modal.getInstance(document.getElementById('schoolCameraModal'));
     if (modal) modal.hide();
@@ -1013,8 +1049,9 @@ document.addEventListener('click', function (event) {
     const cameraButton = event.target.closest('.image-doc-camera-btn');
     if (cameraButton) {
         const wrapper = cameraButton.closest('.d-grid');
-        const input = wrapper ? wrapper.querySelector('.image-doc-camera-input') : null;
-        if (input) input.click();
+        const docInput = wrapper ? wrapper.querySelector('.image-doc-input') : null;
+        const fileNameEl = wrapper ? wrapper.querySelector('.image-doc-file-name') : null;
+        openSchoolCamera(cameraButton, docInput, fileNameEl);
     }
 });
 
@@ -1026,9 +1063,23 @@ document.addEventListener('change', function (event) {
 
     const wrapper = input.closest('.d-grid');
     const fileName = wrapper ? wrapper.querySelector('.image-doc-file-name') : null;
+    const previewImg = wrapper ? wrapper.querySelector('.image-doc-preview') : null;
     const selectedFile = input.files && input.files[0] ? input.files[0] : null;
-    if (fileName) {
-        fileName.textContent = selectedFile ? selectedFile.name : '';
+
+    if (selectedFile) {
+        if (selectedFile.type && selectedFile.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                if (previewImg) {
+                    previewImg.src = e.target.result;
+                    previewImg.classList.remove('d-none');
+                }
+            };
+            reader.readAsDataURL(selectedFile);
+        }
+        if (fileName) {
+            fileName.innerHTML = '<span class="text-success fw-semibold text-xs"><i class="bi bi-check-circle me-1"></i>' + selectedFile.name + '</span>';
+        }
     }
 
     if (input.classList.contains('image-doc-camera-input') && selectedFile && wrapper) {
@@ -1057,33 +1108,113 @@ document.addEventListener('submit', function (event) {
     }
 });
 
+function createSampleImageDataUrl(text, bgColor) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 600;
+    canvas.height = 400;
+    const ctx = canvas.getContext('2d');
+    
+    ctx.fillStyle = bgColor || '#f8f9fa';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    ctx.strokeStyle = '#94a3b8';
+    ctx.lineWidth = 6;
+    ctx.strokeRect(15, 15, canvas.width - 30, canvas.height - 30);
+    
+    ctx.fillStyle = '#1e293b';
+    ctx.font = 'bold 26px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(text, canvas.width / 2, canvas.height / 2 - 10);
+    
+    ctx.fillStyle = '#475569';
+    ctx.font = '16px sans-serif';
+    ctx.fillText('SAMPLE DOKUMEN DEMO', canvas.width / 2, canvas.height / 2 + 30);
+    
+    return canvas.toDataURL('image/jpeg', 0.82);
+}
+
 function autofillDemoData(fundSource) {
     const form = document.querySelector('#addActivityModal form');
-    if (fundSource === 'BOS') {
-        const randNum = Math.floor(10 + Math.random() * 89);
-        form.querySelector('[name="activity_code"]').value = '01.02.' + randNum;
-        form.querySelector('[name="bku_number"]').value = 'BKU/BOS/' + (100 + randNum) + '/2026';
-        form.querySelector('[name="activity_name"]').value = 'Pemeliharaan Sarana & Alat Pelajaran Komputer';
-        form.querySelector('[name="realized_amount"]').value = '5.450.000';
-        form.querySelector('[name="vendor_name"]').value = 'CV Media Tekno Nusantara';
-        form.querySelector('[name="item_name"]').value = 'Tinta & Toner Printer HP/Epson';
-        form.querySelector('[name="item_specs"]').value = 'HP 85A Black & Epson 003 Set Original';
-        form.querySelector('[name="item_quantity"]').value = '5';
-    } else {
-        const randNum = Math.floor(10 + Math.random() * 89);
-        form.querySelector('[name="activity_code"]').value = '02.04.' + randNum;
-        form.querySelector('[name="bku_number"]').value = 'BKU/BOP/' + (200 + randNum) + '/2026';
-        form.querySelector('[name="activity_name"]').value = 'Penyediaan Bahan Kebersihan & Kebutuhan Sanitasi';
-        form.querySelector('[name="realized_amount"]').value = '3.800.000';
-        form.querySelector('[name="vendor_name"]').value = 'Toko Kebersihan Sehat Mandiri';
-        form.querySelector('[name="item_name"]').value = 'Sabun Cuci Tangan & Disinfektan';
-        form.querySelector('[name="item_specs"]').value = 'Liquid Hand Soap 5L & Sanitizer 500ml';
-        form.querySelector('[name="item_quantity"]').value = '8';
-    }
+    if (!form) return;
+
+    const randNum = Math.floor(10 + Math.random() * 89);
     
+    const bkuInput = form.querySelector('[name="bku_number"]');
+    if (bkuInput) bkuInput.value = 'BKU/' + (fundSource || 'BOS') + '/' + (100 + randNum) + '/2026';
+
+    const accountCodeInput = form.querySelector('[name="account_code"]');
+    if (accountCodeInput) accountCodeInput.value = '5.1.02.01.01.00' + randNum;
+
+    const expenseSelect = form.querySelector('[name="expense_type_id"]');
+    if (expenseSelect && expenseSelect.options.length > 1) {
+        expenseSelect.selectedIndex = 1;
+    }
+
+    const activitySelect = form.querySelector('[name="activity_name"]');
+    if (activitySelect && activitySelect.options.length > 1) {
+        activitySelect.selectedIndex = 1;
+    }
+
     const realizedInput = form.querySelector('[name="realized_amount"]');
     if (realizedInput) {
+        realizedInput.value = (fundSource === 'BOS' ? '5.450.000' : '3.800.000');
         realizedInput.dispatchEvent(new Event('input'));
+    }
+
+    const vendorSelect = form.querySelector('[name="vendor_id"]');
+    if (vendorSelect && vendorSelect.options.length > 1) {
+        vendorSelect.selectedIndex = 1;
+    }
+
+    const itemInput = form.querySelector('[name="item_name"]');
+    if (itemInput) {
+        itemInput.value = (fundSource === 'BOS' ? 'Pembelian Tinta & Toner Printer HP/Epson' : 'Pengadaan Sabun Cuci Tangan & Disinfektan');
+    }
+
+    // Auto-fill Demo Image for Faktur & Kwitansi
+    const invoiceInput = form.querySelector('[name="doc_invoice"]');
+    if (invoiceInput) {
+        const demoInvoiceUrl = createSampleImageDataUrl('FAKTUR & KWITANSI', '#dcfce7');
+        const file = dataURLtoFile(demoInvoiceUrl, 'demo_faktur.jpg');
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        invoiceInput.files = dt.files;
+        
+        const wrapper = invoiceInput.closest('.d-grid');
+        const previewImg = wrapper ? wrapper.querySelector('.image-doc-preview') : null;
+        if (previewImg) {
+            previewImg.src = demoInvoiceUrl;
+            previewImg.classList.remove('d-none');
+        }
+    }
+
+    // Auto-fill Demo Image for Bukti Transfer
+    const transferInput = form.querySelector('[name="doc_transfer"]');
+    if (transferInput) {
+        const demoTransferUrl = createSampleImageDataUrl('BUKTI TRANSFER', '#fef9c3');
+        const file = dataURLtoFile(demoTransferUrl, 'demo_transfer.jpg');
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        transferInput.files = dt.files;
+        
+        const wrapper = transferInput.closest('.d-grid');
+        const previewImg = wrapper ? wrapper.querySelector('.image-doc-preview') : null;
+        if (previewImg) {
+            previewImg.src = demoTransferUrl;
+            previewImg.classList.remove('d-none');
+        }
+    }
+
+    // Auto-fill Demo Image for Foto Kegiatan / Barang
+    const photoDataInput = form.querySelector('[name="field_photo_data"]');
+    const addPhotoPreview = form.querySelector('#addPhotoPreview');
+    if (photoDataInput) {
+        const demoFieldUrl = createSampleImageDataUrl('FOTO KEGIATAN / BARANG', '#e0f2fe');
+        photoDataInput.value = demoFieldUrl;
+        if (addPhotoPreview) {
+            addPhotoPreview.src = demoFieldUrl;
+            addPhotoPreview.classList.remove('d-none');
+        }
     }
 }
 
@@ -1122,4 +1253,42 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 </script>
+
+<!-- Modal Edit Total Penerimaan -->
+{% if report and report.status in ['draft', 'needs_revision'] %}
+<div class="modal fade" id="editReceiptModal" tabindex="-1" aria-labelledby="editReceiptModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form action="{{ url_for('monev_bos.sekolah_activities', period_id=active_period.id, fund_source=fund_source) }}" method="POST" class="modal-content">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="action" value="update_receipts">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="editReceiptModalLabel"><i class="bi bi-pencil-square text-success me-2"></i>Edit Total Penerimaan {{ fund_source }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Nominal Penerimaan Dana {{ fund_source }} (TW {{ active_period.tw }}) <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text fw-bold">Rp</span>
+                        {% if fund_source == 'BOS' %}
+                        <input type="text" inputmode="numeric" class="form-control rupiah-input fw-bold" name="bosp_amount" required value="{{ '{:,.0f}'.format(report.bosp_receipt_amount or 0).replace(',', '.') }}">
+                        <input type="hidden" name="bop_amount" value="{{ '{:,.0f}'.format(report.bop_receipt_amount or 0).replace(',', '.') }}">
+                        {% else %}
+                        <input type="text" inputmode="numeric" class="form-control rupiah-input fw-bold" name="bop_amount" required value="{{ '{:,.0f}'.format(report.bop_receipt_amount or 0).replace(',', '.') }}">
+                        <input type="hidden" name="bosp_amount" value="{{ '{:,.0f}'.format(report.bosp_receipt_amount or 0).replace(',', '.') }}">
+                        {% endif %}
+                    </div>
+                    <div class="form-text text-xs text-muted mt-1">
+                        Masukkan total nominal penerimaan dana {{ fund_source }} yang diterima sekolah pada Triwulan {{ active_period.tw }}.
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="submit" class="btn btn-success fw-bold px-4">Simpan Perubahan</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
 {% endblock %}

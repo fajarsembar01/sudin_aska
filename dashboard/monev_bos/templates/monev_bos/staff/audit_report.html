@@ -37,54 +37,106 @@
             </div>
             <p class="text-body-secondary small mb-0 d-none d-sm-block">Monitoring dan validasi kegiatan laporan pertanggungjawaban sekolah</p>
         </div>
-        <div class="align-self-start align-self-sm-center">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <div class="d-flex align-items-center gap-1.5 bg-body border rounded-pill px-3 py-1 shadow-2xs">
+                <span class="text-body-secondary fw-bold text-xs text-nowrap"><i class="bi bi-clipboard-check me-1"></i>Status Audit:</span>
+                <form action="{{ url_for('monev_bos.staff_audit_report', report_id=report.id) }}" method="POST" class="m-0">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="action" value="update_report_status">
+                    <select name="status" class="form-select form-select-sm fw-bold text-xs border-0 bg-transparent py-0 pe-4 shadow-none" onchange="this.form.submit()">
+                        <option value="submitted" {% if report.status == 'submitted' %}selected{% endif %}>Menunggu Audit</option>
+                        <option value="in_review" {% if report.status == 'in_review' %}selected{% endif %}>Sedang Diaudit</option>
+                        <option value="needs_revision" {% if report.status == 'needs_revision' %}selected{% endif %}>Butuh Revisi</option>
+                        <option value="completed_with_notes" {% if report.status == 'completed_with_notes' %}selected{% endif %}>Selesai dengan Catatan</option>
+                        <option value="completed" {% if report.status == 'completed' %}selected{% endif %}>Audit Selesai</option>
+                    </select>
+                </form>
+            </div>
             <a href="{{ url_for('monev_bos.staff_dashboard') }}" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
                 <i class="bi bi-arrow-left me-1.5"></i> Dashboard
             </a>
         </div>
     </div>
 
-    <!-- Stat Summary Cards (3 Columns / Responsive) -->
+    <!-- Segmented Control Tab Switcher (BOS / BOP) -->
+    <div class="mb-3">
+        <div class="p-1 bg-body-tertiary rounded-pill border d-flex align-items-center gap-1 shadow-2xs w-100 w-sm-auto d-inline-flex">
+            <a href="{{ url_for('monev_bos.staff_audit_report', report_id=report.id, fund_source='BOS') }}" 
+               class="flex-fill text-center px-3 py-1.5 rounded-pill fw-bold text-xs d-inline-flex align-items-center justify-content-center text-decoration-none transition-all {% if fund_source == 'BOS' %}bg-success text-white shadow-xs{% else %}text-body-secondary{% endif %}">
+                <i class="bi bi-cash-stack me-1.5"></i> Dana BOSP
+            </a>
+            <a href="{{ url_for('monev_bos.staff_audit_report', report_id=report.id, fund_source='BOP') }}" 
+               class="flex-fill text-center px-3 py-1.5 rounded-pill fw-bold text-xs d-inline-flex align-items-center justify-content-center text-decoration-none transition-all {% if fund_source == 'BOP' %}bg-info text-dark shadow-xs{% else %}text-body-secondary{% endif %}">
+                <i class="bi bi-wallet2 me-1.5"></i> Dana BOP
+            </a>
+        </div>
+    </div>
+
+    <!-- Ringkasan Anggaran (3 Modern Metric Cards - Identik dengan Role Sekolah) -->
     <div class="row mb-3 g-2 g-sm-3">
         <div class="col-12 col-sm-4">
-            <div class="card bg-body border shadow-xs h-100 p-2.5 p-sm-3 rounded-3">
-                <div class="d-flex align-items-center gap-2.5">
-                    <div class="rounded-3 p-2 bg-success-subtle text-success d-flex align-items-center justify-content-center flex-shrink-0" style="width: 38px; height: 38px;">
-                        <i class="bi bi-cash-stack fs-5"></i>
-                    </div>
-                    <div>
-                        <span class="text-uppercase text-body-secondary fw-bold d-block text-xs">Penerimaan BOSP</span>
-                        <h5 class="mb-0 fw-bold text-success">Rp {{ "{:,.0f}".format(report.bosp_receipt_amount).replace(',', '.') }}</h5>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-12 col-sm-4">
-            <div class="card bg-body border shadow-xs h-100 p-2.5 p-sm-3 rounded-3">
-                <div class="d-flex align-items-center gap-2.5">
-                    <div class="rounded-3 p-2 bg-info-subtle text-info-emphasis d-flex align-items-center justify-content-center flex-shrink-0" style="width: 38px; height: 38px;">
+            <div class="card bg-body border shadow-xs h-100 p-3 rounded-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-3 p-2 bg-success-subtle text-success d-flex align-items-center justify-content-center flex-shrink-0" style="width: 40px; height: 40px;">
                         <i class="bi bi-wallet2 fs-5"></i>
                     </div>
+                    <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between align-items-center mb-0.5">
+                            <span class="text-uppercase text-body-secondary fw-bold text-xs">TOTAL PENERIMAAN {{ fund_source }}</span>
+                        </div>
+                        <h5 class="fw-bold text-success mb-0">Rp {{ "{:,.0f}".format(total_receipt).replace(',', '.') }}</h5>
+                    </div>
+                </div>
+                <div class="mt-2.5 pt-2 border-top d-flex justify-content-between align-items-center text-xs text-body-secondary">
+                    <span><i class="bi bi-check2-circle text-success me-1"></i>Penerimaan TW {{ report.tw or 'I' }}</span>
+                    <span class="badge bg-success-subtle text-success border border-success-subtle">Aktif</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-4">
+            <div class="card bg-body border shadow-xs h-100 p-3 rounded-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-3 p-2 bg-warning-subtle text-warning-emphasis d-flex align-items-center justify-content-center flex-shrink-0" style="width: 40px; height: 40px;">
+                        <i class="bi bi-cart-check fs-5"></i>
+                    </div>
                     <div>
-                        <span class="text-uppercase text-body-secondary fw-bold d-block text-xs">Penerimaan BOP</span>
-                        <h5 class="mb-0 fw-bold text-info-emphasis">Rp {{ "{:,.0f}".format(report.bop_receipt_amount).replace(',', '.') }}</h5>
+                        <span class="text-uppercase text-body-secondary fw-bold text-xs d-block mb-0.5">TOTAL PENGELUARAN REALISASI</span>
+                        <h5 class="fw-bold text-warning-emphasis mb-0">Rp {{ "{:,.0f}".format(total_realized).replace(',', '.') }}</h5>
+                    </div>
+                </div>
+                <div class="mt-2.5 pt-2 border-top">
+                    <div class="d-flex justify-content-between align-items-center text-xs mb-1">
+                        <span class="text-body-secondary">Terserap:</span>
+                        <strong class="text-warning-emphasis">{{ percent_spent|round(1) }}%</strong>
+                    </div>
+                    <div class="progress bg-body-tertiary" style="height: 5px;">
+                        <div class="progress-bar bg-warning" role="progressbar" style="width: {{ percent_spent|round(1) }}%;"></div>
                     </div>
                 </div>
             </div>
         </div>
         <div class="col-12 col-sm-4">
-            <div class="card bg-body border shadow-xs h-100 p-2.5 p-sm-3 rounded-3">
-                <span class="text-uppercase text-body-secondary fw-semibold mb-1 d-block stat-card-title" style="font-size: 0.68rem;">Status Audit Laporan</span>
-                <form action="{{ url_for('monev_bos.staff_audit_report', report_id=report.id) }}" method="POST">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <input type="hidden" name="action" value="update_report_status">
-                    <select name="status" class="form-select form-select-sm fw-bold text-xs" onchange="this.form.submit()">
-                        <option value="submitted" {% if report.status == 'submitted' %}selected{% endif %}>Menunggu Audit</option>
-                        <option value="in_review" {% if report.status == 'in_review' %}selected{% endif %}>Sedang Diaudit</option>
-                        <option value="needs_revision" {% if report.status == 'needs_revision' %}selected{% endif %}>Butuh Revisi</option>
-                        <option value="completed" {% if report.status == 'completed' %}selected{% endif %}>Audit Selesai</option>
-                    </select>
-                </form>
+            <div class="card bg-body border shadow-xs h-100 p-3 rounded-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-3 p-2 {% if remaining_balance < 0 %}bg-danger-subtle text-danger{% else %}bg-primary-subtle text-primary{% endif %} d-flex align-items-center justify-content-center flex-shrink-0" style="width: 40px; height: 40px;">
+                        <i class="bi bi-piggy-bank fs-5"></i>
+                    </div>
+                    <div>
+                        <span class="text-uppercase text-body-secondary fw-bold text-xs d-block mb-0.5">SISA SALDO ANGGARAN</span>
+                        <h5 class="fw-bold {% if remaining_balance < 0 %}text-danger{% else %}text-primary{% endif %} mb-0">
+                            Rp {{ "{:,.0f}".format(remaining_balance).replace(',', '.') }}
+                        </h5>
+                    </div>
+                </div>
+                <div class="mt-2.5 pt-2 border-top d-flex justify-content-between align-items-center text-xs">
+                    {% if remaining_balance >= 0 %}
+                    <span class="text-success"><i class="bi bi-shield-check me-1"></i>Saldo Anggaran Tersedia</span>
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle">Aman</span>
+                    {% else %}
+                    <span class="text-danger"><i class="bi bi-exclamation-octagon me-1"></i>Pengeluaran Defisit</span>
+                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Defisit</span>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
@@ -173,22 +225,11 @@
         <div class="col-lg-8">
             <div class="card shadow-sm mb-3 border-0">
                 <div class="card-header bg-body-tertiary py-2.5 px-3">
-                    <!-- Baris 1: Judul & Filter Kategori -->
+                    <!-- Baris 1: Judul -->
                     <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
                         <h6 class="m-0 font-weight-bold text-primary text-sm">
                             Daftar Kegiatan Audit <span class="badge bg-primary-subtle text-primary border ms-1">{{ activities|length }}</span>
                         </h6>
-                        <div class="btn-group btn-group-sm filter-btn-group" role="group" id="fundSourceFilter">
-                            <button type="button" class="btn btn-outline-secondary active py-1 px-2 text-xs" data-filter="all">
-                                Semua <span class="badge bg-secondary ms-1" id="countAll">{{ activities|length }}</span>
-                            </button>
-                            <button type="button" class="btn btn-outline-success py-1 px-2 text-xs" data-filter="BOS">
-                                BOSP <span class="badge bg-success ms-1" id="countBOS">{{ activities|selectattr('fund_source', 'equalto', 'BOS')|list|length }}</span>
-                            </button>
-                            <button type="button" class="btn btn-outline-info py-1 px-2 text-xs" data-filter="BOP">
-                                BOP <span class="badge bg-info ms-1" id="countBOP">{{ activities|selectattr('fund_source', 'equalto', 'BOP')|list|length }}</span>
-                            </button>
-                        </div>
                     </div>
                     
                     <!-- Baris 2: Search Bar Full Width -->
@@ -248,29 +289,33 @@
                                         <small class="text-body-secondary d-block" style="font-size: 0.72rem;">Realisasi Pengeluaran:</small>
                                         <strong class="text-success" style="font-size: 0.9rem;">Rp {{ "{:,.0f}".format(act.realized_amount).replace(',', '.') }}</strong>
                                     </div>
-                                    <div class="col-6 col-sm-6">
-                                        <small class="text-body-secondary d-block" style="font-size: 0.72rem;">No. BKU:</small>
-                                        <span class="fw-semibold text-body font-monospace">{{ act.bku_number or '-' }}</span>
-                                    </div>
-                                    <div class="col-6 col-sm-6">
-                                        <small class="text-body-secondary d-block" style="font-size: 0.72rem;">Vendor / Toko:</small>
-                                        <span class="text-body">{{ act.vendor_name or '-' }}</span>
-                                    </div>
-                                    <div class="col-6 col-sm-6">
-                                        <small class="text-body-secondary d-block" style="font-size: 0.72rem;">Barang (Qty):</small>
-                                        <span class="text-body">{{ act.item_name or '-' }} ({{ act.item_quantity }}x)</span>
-                                    </div>
+                                    <div class="col-6 col-sm-3">
+                                         <small class="text-body-secondary d-block" style="font-size: 0.72rem;">No. BKU:</small>
+                                         <span class="fw-semibold text-body font-monospace">{{ act.bku_number or '-' }}</span>
+                                     </div>
+                                     <div class="col-6 col-sm-3">
+                                         <small class="text-body-secondary d-block" style="font-size: 0.72rem;">Kode Rekening:</small>
+                                         <span class="fw-semibold text-body font-monospace">{{ act.account_code or '-' }}</span>
+                                     </div>
+                                     <div class="col-6 col-sm-3">
+                                         <small class="text-body-secondary d-block" style="font-size: 0.72rem;">Vendor / Toko:</small>
+                                         <span class="text-body">{{ act.vendor_name or '-' }}</span>
+                                     </div>
+                                     <div class="col-6 col-sm-3">
+                                         <small class="text-body-secondary d-block" style="font-size: 0.72rem;">Detail Kegiatan:</small>
+                                         <span class="text-body">{{ act.item_name or '-' }}</span>
+                                     </div>
                                 </div>
 
                                 <!-- Dokumen Pendukung (Modal Preview - No New Tab!) -->
                                 <div class="mb-3 d-flex align-items-center flex-wrap gap-2 text-sm">
                                     <span class="text-body-secondary fw-semibold" style="font-size: 0.78rem;">Dokumen:</span>
                                     {% if act.docs.get('invoice') %}
-                                    <button type="button" onclick="previewDoc('/{{ act.docs['invoice'].file_path }}', 'Faktur Toko - {{ act.activity_code }}')" class="btn btn-sm btn-outline-secondary doc-btn py-1 px-2 rounded-pill">
-                                        <i class="bi bi-receipt me-1"></i> Faktur
+                                    <button type="button" onclick="previewDoc('/{{ act.docs['invoice'].file_path }}', 'Faktur & Kwitansi - {{ act.activity_code }}')" class="btn btn-sm btn-outline-secondary doc-btn py-1 px-2 rounded-pill">
+                                        <i class="bi bi-receipt me-1"></i> Faktur & Kwitansi
                                     </button>
                                     {% else %}
-                                    <span class="badge bg-body-tertiary text-body-secondary border text-xs">No Faktur</span>
+                                    <span class="badge bg-body-tertiary text-body-secondary border text-xs">Tanpa Faktur & Kwitansi</span>
                                     {% endif %}
                                     
                                     {% if act.docs.get('transfer') %}
@@ -339,52 +384,64 @@
                                         <input type="hidden" name="status" class="activity-status-input" value="">
                                         
                                         <!-- Checklist Kelengkapan Dokumen (2 Pilihan Jelas: Ada / Tidak Ada) -->
-                                        {% if checklists %}
+                                        {% set act_checklists = act.checklists if act.checklists else checklists %}
+                                        {% if act_checklists %}
                                         <div class="card border-0 bg-body-tertiary shadow-2xs mb-3">
                                             <div class="card-header bg-body py-2 px-3 d-flex justify-content-between align-items-center border-bottom">
                                                 <h6 class="mb-0 text-xs fw-bold text-body">
                                                     <i class="bi bi-card-checklist text-primary me-1"></i> Checklist Kelengkapan Dokumen
+                                                    {% if act.expense_type_name %}
+                                                    <span class="badge bg-info-subtle text-info border border-info-subtle text-xs ms-1"><i class="bi bi-wallet2 me-1"></i>{{ act.expense_type_name }}</span>
+                                                    {% endif %}
                                                 </h6>
-                                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle text-xs">{{ checklists|length }} Item Cek</span>
+                                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle text-xs">{{ act_checklists|length }} Item Cek</span>
                                             </div>
-                                            <div class="card-body p-2 p-sm-3">
-                                                <div class="row g-3">
-                                                    {% for cl in checklists %}
-                                                    {% set res = act.checklist_results.get(cl.id) if act.checklist_results else None %}
-                                                    {% set current_status = res.status if (res and res.status in ['yes', 'no']) else 'no' %}
-                                                    <div class="col-12 col-md-6">
-                                                        <div class="p-2.5 p-sm-3 bg-body rounded border text-xs h-100 d-flex flex-column justify-content-between shadow-2xs">
-                                                            <div class="mb-2">
-                                                                <div class="fw-bold text-body text-sm mb-1">
-                                                                    <span class="badge bg-body-tertiary text-body border me-1">{{ loop.index }}</span> {{ cl.name }}
-                                                                </div>
-                                                                {% if cl.description %}
-                                                                <div class="text-body-secondary text-xs ms-4 mb-2" style="font-size: 0.75rem;">{{ cl.description }}</div>
-                                                                {% endif %}
-                                                            </div>
-                                                            
-                                                            <!-- 2 Tombol Jelas & Besar (Ada / Tidak Ada, Default: Tidak Ada) -->
-                                                            <div class="pt-2 border-top">
-                                                                <div class="btn-group w-100" role="group" aria-label="Status Kelengkapan">
-                                                                    <input type="radio" class="btn-check" name="checklist_{{ cl.id }}" id="cl_{{ act.id }}_{{ cl.id }}_yes" value="yes" autocomplete="off" {% if current_status == 'yes' %}checked{% endif %}>
-                                                                    <label class="btn btn-outline-success text-xs py-1.5 px-2 fw-bold" for="cl_{{ act.id }}_{{ cl.id }}_yes">
-                                                                        <i class="bi bi-check-circle-fill me-1"></i> Ada
-                                                                    </label>
+                                             <div class="card-body p-2 p-sm-3">
+                                                 <div class="row g-2">
+                                                     {% for cl in act_checklists %}
+                                                     {% set res = act.checklist_results.get(cl.id) if act.checklist_results else None %}
+                                                     {% set current_status = res.status if (res and res.status in ['yes', 'no']) else 'no' %}
+                                                     {% set has_notes = res and res.notes %}
+                                                     <div class="col-12">
+                                                         <div class="p-2 px-3 bg-body rounded border text-xs shadow-2xs">
+                                                             <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                                                 <div class="d-flex align-items-center gap-2">
+                                                                     <span class="badge bg-body-tertiary text-body border me-1">{{ loop.index }}</span>
+                                                                     <span class="fw-bold text-body text-sm mb-0">{{ cl.name }}</span>
+                                                                     {% if cl.description %}
+                                                                     <span class="text-body-secondary text-xs d-none d-md-inline" style="font-size: 0.75rem;">({{ cl.description }})</span>
+                                                                     {% endif %}
+                                                                 </div>
+                                                                 
+                                                                 <div class="d-flex align-items-center gap-2">
+                                                                     <div class="btn-group" role="group" aria-label="Status Kelengkapan">
+                                                                         <input type="radio" class="btn-check" name="checklist_{{ cl.id }}" id="cl_{{ act.id }}_{{ cl.id }}_yes" value="yes" autocomplete="off" {% if current_status == 'yes' %}checked{% endif %}>
+                                                                         <label class="btn btn-outline-success btn-sm text-xs py-1 px-2.5 fw-bold" for="cl_{{ act.id }}_{{ cl.id }}_yes">
+                                                                             <i class="bi bi-check-circle-fill me-1"></i> Ada
+                                                                         </label>
 
-                                                                    <input type="radio" class="btn-check" name="checklist_{{ cl.id }}" id="cl_{{ act.id }}_{{ cl.id }}_no" value="no" autocomplete="off" {% if current_status == 'no' %}checked{% endif %}>
-                                                                    <label class="btn btn-outline-danger text-xs py-1.5 px-2 fw-bold" for="cl_{{ act.id }}_{{ cl.id }}_no">
-                                                                        <i class="bi bi-x-circle-fill me-1"></i> Tidak Ada
-                                                                    </label>
-                                                                </div>
-                                                                <div class="mt-2">
-                                                                    <input type="text" name="checklist_notes_{{ cl.id }}" class="form-control form-control-sm text-xs bg-body-tertiary" placeholder="Catatan temuan (opsional)..." value="{{ res.notes if res else '' }}">
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    {% endfor %}
-                                                </div>
-                                            </div>
+                                                                         <input type="radio" class="btn-check" name="checklist_{{ cl.id }}" id="cl_{{ act.id }}_{{ cl.id }}_no" value="no" autocomplete="off" {% if current_status == 'no' %}checked{% endif %}>
+                                                                         <label class="btn btn-outline-danger btn-sm text-xs py-1 px-2.5 fw-bold" for="cl_{{ act.id }}_{{ cl.id }}_no">
+                                                                             <i class="bi bi-x-circle-fill me-1"></i> Tidak Ada
+                                                                         </label>
+                                                                     </div>
+
+                                                                     <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 {% if has_notes %}active btn-secondary text-white{% endif %}" 
+                                                                             onclick="toggleChecklistNote('cl_note_{{ act.id }}_{{ cl.id }}')" 
+                                                                             title="Catatan Temuan (Opsional)">
+                                                                         <i class="bi bi-pencil-fill text-xs"></i>
+                                                                     </button>
+                                                                 </div>
+                                                             </div>
+
+                                                             <div id="cl_note_{{ act.id }}_{{ cl.id }}" class="mt-2 {% if not has_notes %}d-none{% endif %}">
+                                                                 <input type="text" name="checklist_notes_{{ cl.id }}" class="form-control form-control-sm text-xs bg-body-tertiary" placeholder="Catatan temuan (opsional)..." value="{{ res.notes if res else '' }}">
+                                                             </div>
+                                                         </div>
+                                                     </div>
+                                                     {% endfor %}
+                                                 </div>
+                                             </div>
                                         </div>
                                         {% endif %}
                                         
@@ -717,13 +774,11 @@
         stopCamera();
     });
 
-    // --- Combined Search & Fund Source Filter ---
+    // --- Search Bar Filter ---
     (function () {
-        var filterGroup = document.getElementById('fundSourceFilter');
         var searchInput = document.getElementById('activitySearchInput');
         var items = document.querySelectorAll('.activity-item');
         var noResults = document.getElementById('noFilterResults');
-        var currentFundFilter = 'all';
 
         function syncSummaryButtons() {
             var activeName = searchInput ? searchInput.value.trim() : '';
@@ -741,13 +796,8 @@
             var visibleCount = 0;
 
             items.forEach(function (item) {
-                var fund = item.getAttribute('data-fund');
                 var textContent = (item.textContent || item.innerText).toLowerCase();
-
-                var matchesFund = (currentFundFilter === 'all' || fund === currentFundFilter);
-                var matchesSearch = (!searchQuery || textContent.indexOf(searchQuery) !== -1);
-
-                var show = matchesFund && matchesSearch;
+                var show = (!searchQuery || textContent.indexOf(searchQuery) !== -1);
                 item.style.display = show ? '' : 'none';
                 if (show) visibleCount++;
             });
@@ -765,12 +815,6 @@
                 var shouldClear = currentSearch === name;
                 if (searchInput) {
                     searchInput.value = shouldClear ? '' : name;
-                    currentFundFilter = 'all';
-                    if (filterGroup) {
-                        filterGroup.querySelectorAll('[data-filter]').forEach(function (b) { b.classList.remove('active'); });
-                        var allBtn = filterGroup.querySelector('[data-filter="all"]');
-                        if (allBtn) allBtn.classList.add('active');
-                    }
                     applyFilters();
                 }
 
@@ -778,49 +822,19 @@
                     return;
                 }
 
-                var firstVisible = Array.prototype.find.call(items, function (item) {
-                    return item.style.display !== 'none';
+                var firstMatch = Array.from(items).find(function (item) {
+                    var textContent = (item.textContent || item.innerText).toLowerCase();
+                    return textContent.indexOf(name.toLowerCase()) !== -1;
                 });
-                var scrollTarget = firstVisible || document.getElementById('activitySearchInput');
-                if (scrollTarget) {
-                    scrollTarget.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+                if (firstMatch) {
+                    firstMatch.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }
             });
         });
 
-        if (filterGroup) {
-            var buttons = filterGroup.querySelectorAll('[data-filter]');
-            buttons.forEach(function (btn) {
-                btn.addEventListener('click', function () {
-                    currentFundFilter = btn.getAttribute('data-filter');
-                    buttons.forEach(function (b) { b.classList.remove('active'); });
-                    btn.classList.add('active');
-                    applyFilters();
-
-                    if (currentFundFilter !== 'all') {
-                        history.replaceState(null, '', '#' + currentFundFilter);
-                    } else {
-                        history.replaceState(null, '', window.location.pathname + window.location.search);
-                    }
-                });
-            });
-        }
-
         if (searchInput) {
             searchInput.addEventListener('input', applyFilters);
-        }
-
-        var hash = window.location.hash.replace('#', '');
-        if (hash === 'BOS' || hash === 'BOP') {
-            currentFundFilter = hash;
-            if (filterGroup) {
-                var btn = filterGroup.querySelector('[data-filter="' + hash + '"]');
-                if (btn) {
-                    filterGroup.querySelectorAll('[data-filter]').forEach(function (b) { b.classList.remove('active'); });
-                    btn.classList.add('active');
-                }
-            }
-            applyFilters();
         }
     })();
 
@@ -925,5 +939,16 @@
             });
         });
     });
+
+    function toggleChecklistNote(id) {
+        const el = document.getElementById(id);
+        if (el) {
+            el.classList.toggle('d-none');
+            if (!el.classList.contains('d-none')) {
+                const input = el.querySelector('input');
+                if (input) input.focus();
+            }
+        }
+    }
 </script>
 {% endblock %}

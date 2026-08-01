@@ -117,11 +117,12 @@ def admin_periods():
 def admin_checklists():
     if request.method == "POST":
         action = request.form.get("action")
+        expense_type_ids = [int(x) for x in request.form.getlist("expense_type_ids") if x.isdigit()]
         if action == "create":
             name = request.form.get("name")
             description = request.form.get("description")
             sort_order = int(request.form.get("sort_order", 0))
-            queries.create_checklist(name, description, sort_order)
+            queries.create_checklist(name, description, sort_order, expense_type_ids=expense_type_ids)
             flash("Checklist berhasil ditambahkan", "success")
         elif action == "update":
             checklist_id = int(request.form.get("checklist_id"))
@@ -129,7 +130,7 @@ def admin_checklists():
             description = request.form.get("description")
             sort_order = int(request.form.get("sort_order", 0))
             is_active = request.form.get("is_active") == "on"
-            queries.update_checklist(checklist_id, name, description, sort_order, is_active)
+            queries.update_checklist(checklist_id, name, description, sort_order, is_active, expense_type_ids=expense_type_ids)
             flash("Checklist berhasil diupdate", "success")
         elif action == "delete":
             checklist_id = int(request.form.get("checklist_id"))
@@ -138,7 +139,8 @@ def admin_checklists():
         return redirect(url_for("monev_bos.admin_checklists"))
 
     checklists = queries.list_checklists(include_inactive=True)
-    return render_template("monev_bos/admin/checklists.html", checklists=checklists)
+    expense_types = queries.list_expense_types(include_inactive=False)
+    return render_template("monev_bos/admin/checklists.html", checklists=checklists, expense_types=expense_types)
 
 @monev_bos_bp.route("/admin/master-activities", methods=["GET", "POST"])
 @role_required("admin")
@@ -173,6 +175,42 @@ def admin_master_activities():
 
     master_activities = queries.list_master_activities(include_inactive=True)
     return render_template("monev_bos/admin/master_activities.html", master_activities=master_activities)
+
+
+@monev_bos_bp.route("/admin/expense-types", methods=["GET", "POST"])
+@role_required("admin")
+def admin_expense_types():
+    if request.method == "POST":
+        action = request.form.get("action")
+        if action == "create":
+            name = (request.form.get("name") or "").strip()
+            code = (request.form.get("code") or "").strip()
+            description = (request.form.get("description") or "").strip()
+            sort_order = int(request.form.get("sort_order", 0) or 0)
+            if name:
+                queries.create_expense_type(name, code, description, sort_order)
+                flash("Jenis Belanja berhasil ditambahkan.", "success")
+            else:
+                flash("Nama Jenis Belanja wajib diisi.", "warning")
+        elif action == "update":
+            expense_type_id = int(request.form.get("expense_type_id"))
+            name = (request.form.get("name") or "").strip()
+            code = (request.form.get("code") or "").strip()
+            description = (request.form.get("description") or "").strip()
+            sort_order = int(request.form.get("sort_order", 0) or 0)
+            is_active = request.form.get("is_active") == "on"
+            if name and expense_type_id:
+                queries.update_expense_type(expense_type_id, name, code, description, sort_order, is_active)
+                flash("Jenis Belanja berhasil diperbarui.", "success")
+        elif action == "delete":
+            expense_type_id = int(request.form.get("expense_type_id"))
+            if expense_type_id:
+                queries.delete_expense_type(expense_type_id)
+                flash("Jenis Belanja berhasil dihapus.", "success")
+        return redirect(url_for("monev_bos.admin_expense_types"))
+
+    expense_types = queries.list_expense_types(include_inactive=True)
+    return render_template("monev_bos/admin/expense_types.html", expense_types=expense_types)
 
 @monev_bos_bp.route("/admin/edit-requests", methods=["GET", "POST"])
 @role_required("admin")
@@ -337,7 +375,7 @@ def sekolah_dashboard():
         "total_realized": sum(c["total_realized"] for c in tw_cards),
         "total_remaining": sum(c["remaining_balance"] for c in tw_cards),
         "filled_tw_count": sum(1 for c in tw_cards if c["report"]),
-        "completed_tw_count": sum(1 for c in tw_cards if c["report"] and c["report"]["status"] == "completed"),
+        "completed_tw_count": sum(1 for c in tw_cards if c["report"] and c["report"]["status"] in ["completed", "completed_with_notes"]),
         "revision_tw_count": sum(1 for c in tw_cards if c["report"] and c["report"]["status"] == "needs_revision"),
     }
 
@@ -532,13 +570,38 @@ def sekolah_activities():
 
     if request.method == "POST":
         action = request.form.get("action")
+        if action == "update_receipts":
+            if report and report["status"] not in ["draft", "needs_revision"]:
+                flash("Laporan sudah tidak bisa diubah.", "warning")
+                return redirect(url_for("monev_bos.sekolah_activities", period_id=period_id, fund_source=fund_source))
+            
+            bosp = _parse_float(request.form.get("bosp_amount"))
+            bop = _parse_float(request.form.get("bop_amount"))
+            queries.save_school_report_receipts(user["id"], active_period["id"], bosp, bop)
+            flash(f"Total Penerimaan Dana {fund_source} berhasil diperbarui.", "success")
+            return redirect(url_for("monev_bos.sekolah_activities", period_id=period_id, fund_source=fund_source))
+
         if action == "add_activity":
             target_fund_source = request.form.get("fund_source", fund_source)
+            vendor_id_raw = request.form.get("vendor_id")
+            vendor_id = int(vendor_id_raw) if vendor_id_raw and vendor_id_raw.isdigit() else None
+            vendor_name = request.form.get("vendor_name")
+            if vendor_id and not vendor_name:
+                v_obj = queries.get_vendor_by_id(vendor_id)
+                if v_obj:
+                    vendor_name = v_obj["name"]
+
+            expense_type_id_raw = request.form.get("expense_type_id")
+            expense_type_id = int(expense_type_id_raw) if expense_type_id_raw and expense_type_id_raw.isdigit() else None
+
             data = {
-                "activity_code": request.form.get("activity_code"),
+                "activity_code": request.form.get("activity_code") or request.form.get("bku_number") or "-",
                 "activity_name": request.form.get("activity_name"),
+                "account_code": request.form.get("account_code"),
+                "expense_type_id": expense_type_id,
                 "realized_amount": _parse_float(request.form.get("realized_amount")),
-                "vendor_name": request.form.get("vendor_name"),
+                "vendor_id": vendor_id,
+                "vendor_name": vendor_name,
                 "bku_number": request.form.get("bku_number"),
                 "item_name": request.form.get("item_name"),
                 "item_specs": request.form.get("item_specs"),
@@ -553,7 +616,7 @@ def sekolah_activities():
 
             if not doc_inv_file or not doc_inv_file.filename:
                 queries.delete_activity(activity_id)
-                flash("Dokumen Faktur/Kwitansi wajib diunggah.", "danger")
+                flash("Dokumen Faktur & Kwitansi wajib diunggah.", "danger")
                 return redirect(url_for("monev_bos.sekolah_activities", period_id=period_id, fund_source=fund_source))
 
             if not doc_tf_file or not doc_tf_file.filename:
@@ -561,15 +624,22 @@ def sekolah_activities():
                 flash("Dokumen Bukti Transfer wajib diunggah.", "danger")
                 return redirect(url_for("monev_bos.sekolah_activities", period_id=period_id, fund_source=fund_source))
 
-            # Handle optional camera photo (Foto Kegiatan / Lapangan)
-            field_photo_data = request.form.get("field_photo_data")
-            if field_photo_data:
-                saved_path, err_msg = _save_camera_photo(field_photo_data, base_dir, f"monev_bos/{report['id']}/{activity_id}/field_photo")
-                if err_msg:
-                    queries.delete_activity(activity_id)
-                    flash(err_msg, "danger")
-                    return redirect(url_for("monev_bos.sekolah_activities", period_id=period_id, fund_source=fund_source))
-                queries.add_activity_doc(activity_id, "field_photo", saved_path, 0, user["id"])
+            # Handle optional camera photo or file upload (Foto Kegiatan / Barang)
+            field_photo_file = request.files.get("doc_field_photo") or request.files.get("field_photo")
+            if field_photo_file and field_photo_file.filename != '':
+                sub_path = f"monev_bos/{report['id']}/{activity_id}/field_photo"
+                saved_path, err_msg = _save_uploaded_file(field_photo_file, base_dir, sub_path, max_size_bytes=100 * 1024)
+                if saved_path:
+                    queries.add_activity_doc(activity_id, "field_photo", saved_path, field_photo_file.content_length or 0, user["id"])
+            else:
+                field_photo_data = request.form.get("field_photo_data")
+                if field_photo_data:
+                    saved_path, err_msg = _save_camera_photo(field_photo_data, base_dir, f"monev_bos/{report['id']}/{activity_id}/field_photo")
+                    if err_msg:
+                        queries.delete_activity(activity_id)
+                        flash(err_msg, "danger")
+                        return redirect(url_for("monev_bos.sekolah_activities", period_id=period_id, fund_source=fund_source))
+                    queries.add_activity_doc(activity_id, "field_photo", saved_path, 0, user["id"])
 
             # Handle mandatory document file uploads
             has_error = False
@@ -643,11 +713,25 @@ def sekolah_activities():
             if was_invalid:
                 queries.save_activity_history(activity_id, user["id"], reason="Perbaikan data oleh sekolah saat status Revisi")
 
+            vendor_id_raw = request.form.get("vendor_id")
+            vendor_id = int(vendor_id_raw) if vendor_id_raw and vendor_id_raw.isdigit() else None
+            vendor_name = request.form.get("vendor_name")
+            if vendor_id and not vendor_name:
+                v_obj = queries.get_vendor_by_id(vendor_id)
+                if v_obj:
+                    vendor_name = v_obj["name"]
+
+            expense_type_id_raw = request.form.get("expense_type_id")
+            expense_type_id = int(expense_type_id_raw) if expense_type_id_raw and expense_type_id_raw.isdigit() else None
+
             data = {
-                "activity_code": request.form.get("activity_code"),
+                "activity_code": request.form.get("activity_code") or (act and act.get("activity_code")) or request.form.get("bku_number") or "-",
                 "activity_name": request.form.get("activity_name"),
+                "account_code": request.form.get("account_code"),
+                "expense_type_id": expense_type_id,
                 "realized_amount": _parse_float(request.form.get("realized_amount")),
-                "vendor_name": request.form.get("vendor_name"),
+                "vendor_id": vendor_id,
+                "vendor_name": vendor_name,
                 "bku_number": request.form.get("bku_number"),
                 "item_name": request.form.get("item_name"),
                 "item_specs": request.form.get("item_specs"),
@@ -679,14 +763,25 @@ def sekolah_activities():
                         "activity_code": act["activity_code"]
                     }
             
-            field_photo_data = request.form.get("field_photo_data")
-            if field_photo_data:
+            # Handle optional field photo (file upload or camera)
+            field_photo_file = request.files.get("doc_field_photo") or request.files.get("field_photo")
+            if field_photo_file and field_photo_file.filename != '':
                 base_dir = os.path.join(monev_bos_bp.root_path, "..", "static", "uploads")
-                saved_path, err_msg = _save_camera_photo(field_photo_data, base_dir, f"monev_bos/{report['id']}/{activity_id}/field_photo")
+                sub_path = f"monev_bos/{report['id']}/{activity_id}/field_photo"
+                saved_path, err_msg = _save_uploaded_file(field_photo_file, base_dir, sub_path, max_size_bytes=100 * 1024)
                 if err_msg:
                     flash(err_msg, "danger")
-                    return redirect(url_for("monev_bos.sekolah_activities", period_id=period_id, fund_source=fund_source))
-                queries.add_activity_doc(activity_id, "field_photo", saved_path, 0, user["id"])
+                elif saved_path:
+                    queries.add_activity_doc(activity_id, "field_photo", saved_path, field_photo_file.content_length or 0, user["id"])
+            else:
+                field_photo_data = request.form.get("field_photo_data")
+                if field_photo_data:
+                    base_dir = os.path.join(monev_bos_bp.root_path, "..", "static", "uploads")
+                    saved_path, err_msg = _save_camera_photo(field_photo_data, base_dir, f"monev_bos/{report['id']}/{activity_id}/field_photo")
+                    if err_msg:
+                        flash(err_msg, "danger")
+                        return redirect(url_for("monev_bos.sekolah_activities", period_id=period_id, fund_source=fund_source))
+                    queries.add_activity_doc(activity_id, "field_photo", saved_path, 0, user["id"])
 
             # Handle optional file re-uploads
             for doc_type in ["transfer", "invoice"]:
@@ -755,12 +850,16 @@ def sekolah_activities():
             act["staff_wa_url"] = f"https://wa.me/{act_staff_wa['staff_phone']}?text={urllib.parse.quote(wa_msg_staff)}"
 
     master_activities = queries.list_master_activities(include_inactive=False, fund_source=fund_source)
+    expense_types = queries.list_expense_types(include_inactive=False)
+    verified_vendors = queries.get_verified_vendors_for_school(report["school_id"])
 
     return render_template("monev_bos/sekolah/activities.html", 
                            active_period=active_period, 
                            report=report, 
                            activities=activities,
                            master_activities=master_activities,
+                           expense_types=expense_types,
+                           verified_vendors=verified_vendors,
                            fund_source=fund_source,
                            total_receipt=total_receipt,
                            total_realized=total_realized,
@@ -853,8 +952,13 @@ def staff_audit_report(report_id):
     with queries.get_cursor(commit=True) as cur:
         cur.execute("UPDATE monev_bos_activities SET status = 'pending' WHERE report_id = %s AND status = 'in_review'", (report_id,))
 
+    fund_source = request.args.get("fund_source", "BOS").upper()
+    if fund_source not in ["BOS", "BOP"]:
+        fund_source = "BOS"
+
     checklists = queries.list_checklists(include_inactive=False)
-    activities = queries.list_activities(report_id)
+    all_activities = queries.list_activities(report_id)
+    activities = [act for act in all_activities if (act.get("fund_source") or "BOS").upper() == fund_source]
     for act in activities:
         docs = queries.get_activity_docs(act["id"])
         act["docs"] = {doc["doc_type"]: doc for doc in docs}
@@ -862,6 +966,7 @@ def staff_audit_report(report_id):
         act["live_photos"] = [doc for doc in docs if doc["doc_type"] in ["live_photo", "field_photo"]]
         # get checklist results for this activity
         act["checklist_results"] = queries.get_activity_checklist_results(act["id"])
+        act["checklists"] = queries.get_checklists_for_activity(act.get("expense_type_id"))
 
     activity_groups_by_name = {}
     for act in activities:
@@ -885,13 +990,23 @@ def staff_audit_report(report_id):
         
     audit_logs = queries.get_audit_logs(report_id)
     
+    total_receipt = float(report.get("bosp_receipt_amount") or 0) if fund_source == "BOS" else float(report.get("bop_receipt_amount") or 0)
+    total_realized = sum(float(act.get("realized_amount") or 0) for act in activities)
+    remaining_balance = total_receipt - total_realized
+    percent_spent = (total_realized / total_receipt * 100) if total_receipt > 0 else 0
+    
     return render_template(
         "monev_bos/staff/audit_report.html",
         report=report,
+        fund_source=fund_source,
         activities=activities,
         activity_groups=activity_groups,
         audit_logs=audit_logs,
         checklists=checklists,
+        total_receipt=total_receipt,
+        total_realized=total_realized,
+        remaining_balance=remaining_balance,
+        percent_spent=percent_spent,
     )
 
 import base64
@@ -932,8 +1047,8 @@ def staff_audit_activity(activity_id):
             notes = request.form.get("audit_notes") or ""
             queries.update_activity_audit(activity_id, status, notes)
             
-            # Save checklist
-            checklists = queries.list_checklists(include_inactive=False)
+            # Save checklist (filtered by activity's expense_type_id)
+            checklists = queries.get_checklists_for_activity(act.get("expense_type_id"))
             for cl in checklists:
                 cl_status = request.form.get(f"checklist_{cl['id']}")
                 cl_notes = request.form.get(f"checklist_notes_{cl['id']}") or ""
@@ -999,3 +1114,106 @@ def staff_audit_activity(activity_id):
         flash("Terjadi kesalahan pada server saat memproses validasi kegiatan.", "danger")
 
     return redirect(url_for("monev_bos.staff_audit_report", report_id=report_id))
+
+
+# --- VENDOR MANAGEMENT ROUTES ---
+
+@monev_bos_bp.route("/sekolah/vendors", methods=["GET", "POST"])
+@role_required("sekolah")
+def sekolah_vendors():
+    user = current_user()
+    school_id = user["id"]
+
+    if request.method == "POST":
+        action = request.form.get("action", "")
+        if action == "create_vendor":
+            name = (request.form.get("name") or "").strip()
+            npwp = (request.form.get("npwp") or "").strip()
+            phone = (request.form.get("phone") or "").strip()
+            address = (request.form.get("address") or "").strip()
+            owner_name = (request.form.get("owner_name") or "").strip()
+            bank_name = (request.form.get("bank_name") or "").strip()
+            bank_account = (request.form.get("bank_account") or "").strip()
+
+            if not name:
+                flash("Nama toko / vendor wajib diisi.", "warning")
+            else:
+                data = {
+                    "name": name,
+                    "npwp": npwp,
+                    "phone": phone,
+                    "address": address,
+                    "owner_name": owner_name,
+                    "bank_name": bank_name,
+                    "bank_account": bank_account,
+                }
+                new_id = queries.create_vendor(school_id, data)
+                if new_id:
+                    flash(f"Vendor '{name}' berhasil didaftarkan dan menunggu verifikasi admin/staff.", "success")
+                else:
+                    flash("Gagal mendaftarkan vendor.", "danger")
+            return redirect(url_for("monev_bos.sekolah_vendors"))
+
+        elif action == "delete_vendor":
+            vendor_id = request.form.get("vendor_id", type=int)
+            if vendor_id and queries.delete_vendor(vendor_id, school_id):
+                flash("Pendaftaran vendor berhasil dihapus.", "success")
+            else:
+                flash("Gagal menghapus vendor.", "danger")
+            return redirect(url_for("monev_bos.sekolah_vendors"))
+
+    search_query = request.args.get("q", "").strip()
+    status_filter = request.args.get("status", "")
+    vendors = queries.list_school_vendors(school_id, status_filter if status_filter in ["pending", "verified", "rejected"] else None, search_query=search_query)
+    master_banks = queries.get_master_banks()
+    return render_template("monev_bos/sekolah/vendors.html", vendors=vendors, status_filter=status_filter, search_query=search_query, master_banks=master_banks)
+
+
+@monev_bos_bp.route("/admin/vendors", methods=["GET", "POST"])
+@role_required("admin", "staff")
+def admin_vendors():
+    user = current_user()
+
+    if request.method == "POST":
+        action = request.form.get("action", "")
+        vendor_id = request.form.get("vendor_id", type=int)
+
+        if action == "verify_vendor" and vendor_id:
+            if queries.update_vendor_status(vendor_id, "verified", user["id"]):
+                v_obj = queries.get_vendor_by_id(vendor_id)
+                v_name = v_obj["name"] if v_obj else "Vendor"
+                flash(f"Vendor '{v_name}' berhasil diverifikasi dan disetujui.", "success")
+            else:
+                flash("Gagal memverifikasi vendor.", "danger")
+            return redirect(url_for("monev_bos.admin_vendors", status=request.args.get("status", ""), q=request.args.get("q", "")))
+
+        elif action == "reject_vendor" and vendor_id:
+            reason = (request.form.get("rejection_reason") or "").strip()
+            if not reason:
+                flash("Alasan penolakan vendor wajib diisi.", "warning")
+            else:
+                if queries.update_vendor_status(vendor_id, "rejected", user["id"], rejection_reason=reason):
+                    flash("Vendor berhasil ditolak.", "info")
+                else:
+                    flash("Gagal menolak vendor.", "danger")
+            return redirect(url_for("monev_bos.admin_vendors", status=request.args.get("status", ""), q=request.args.get("q", "")))
+
+        elif action == "update_master_banks":
+            if user.get("role") != "admin":
+                flash("Hanya Admin yang berhak mengubah daftar pilihan bank.", "danger")
+                return redirect(url_for("monev_bos.admin_vendors", status=request.args.get("status", ""), q=request.args.get("q", "")))
+
+            bank_lines = request.form.get("bank_list", "").splitlines()
+            bank_list = [b.strip() for b in bank_lines if b.strip()]
+            if queries.save_master_banks(bank_list, user["id"]):
+                flash("Daftar master pilihan bank berhasil diperbarui.", "success")
+            else:
+                flash("Gagal memperbarui daftar bank.", "danger")
+            return redirect(url_for("monev_bos.admin_vendors", status=request.args.get("status", ""), q=request.args.get("q", "")))
+
+    search_query = request.args.get("q", "").strip()
+    status_filter = request.args.get("status", "")
+    vendors = queries.list_all_vendors_for_admin(status_filter if status_filter in ["pending", "verified", "rejected"] else None, search_query=search_query)
+    master_banks = queries.get_master_banks()
+    return render_template("monev_bos/admin/admin_vendors.html", vendors=vendors, status_filter=status_filter, search_query=search_query, master_banks=master_banks)
+

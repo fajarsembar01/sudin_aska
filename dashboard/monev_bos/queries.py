@@ -74,17 +74,73 @@ def update_period_deadline(period_id: int, deadline: date) -> None:
             (deadline, period_id)
         )
 
-# --- CHECKLISTS ---
-def list_checklists(include_inactive: bool = False) -> List[Dict[str, Any]]:
+# --- CHECKLISTS & EXPENSE TYPES (JENIS BELANJA) ---
+
+def list_expense_types(include_inactive: bool = False) -> List[Dict[str, Any]]:
     with get_cursor() as cur:
-        query = "SELECT * FROM monev_bos_checklists"
+        query = "SELECT * FROM monev_bos_expense_types"
         if not include_inactive:
             query += " WHERE is_active = TRUE"
         query += " ORDER BY sort_order ASC, id ASC"
         cur.execute(query)
         return [dict(row) for row in cur.fetchall()]
 
-def create_checklist(name: str, description: str, sort_order: int) -> int:
+
+def create_expense_type(name: str, code: str, description: str, sort_order: int) -> int:
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            INSERT INTO monev_bos_expense_types (name, code, description, sort_order)
+            VALUES (%s, %s, %s, %s) RETURNING id
+            """,
+            (name, code, description, sort_order)
+        )
+        return cur.fetchone()[0]
+
+
+def update_expense_type(expense_type_id: int, name: str, code: str, description: str, sort_order: int, is_active: bool) -> None:
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE monev_bos_expense_types
+            SET name = %s, code = %s, description = %s, sort_order = %s, is_active = %s, updated_at = NOW()
+            WHERE id = %s
+            """,
+            (name, code, description, sort_order, is_active, expense_type_id)
+        )
+
+
+def delete_expense_type(expense_type_id: int) -> None:
+    with get_cursor(commit=True) as cur:
+        cur.execute("DELETE FROM monev_bos_expense_types WHERE id = %s", (expense_type_id,))
+
+
+def list_checklists(include_inactive: bool = False) -> List[Dict[str, Any]]:
+    with get_cursor() as cur:
+        query = """
+            SELECT c.*, 
+                   COALESCE(
+                       json_agg(
+                           json_build_object('id', et.id, 'name', et.name, 'code', et.code)
+                       ) FILTER (WHERE et.id IS NOT NULL), '[]'
+                   ) AS expense_types
+            FROM monev_bos_checklists c
+            LEFT JOIN monev_bos_checklist_expense_types cet ON cet.checklist_id = c.id
+            LEFT JOIN monev_bos_expense_types et ON et.id = cet.expense_type_id
+        """
+        if not include_inactive:
+            query += " WHERE c.is_active = TRUE"
+        query += " GROUP BY c.id ORDER BY c.sort_order ASC, c.id ASC"
+        cur.execute(query)
+        results = []
+        for row in cur.fetchall():
+            d = dict(row)
+            d['expense_type_ids'] = [e['id'] for e in d.get('expense_types', []) if isinstance(e, dict) and 'id' in e]
+            results.append(d)
+        return results
+
+
+def create_checklist(name: str, description: str, sort_order: int, expense_type_ids: Optional[List[int]] = None) -> int:
     with get_cursor(commit=True) as cur:
         cur.execute(
             """
@@ -93,9 +149,17 @@ def create_checklist(name: str, description: str, sort_order: int) -> int:
             """,
             (name, description, sort_order)
         )
-        return cur.fetchone()[0]
+        checklist_id = cur.fetchone()[0]
+        if expense_type_ids:
+            for et_id in expense_type_ids:
+                cur.execute(
+                    "INSERT INTO monev_bos_checklist_expense_types (checklist_id, expense_type_id) VALUES (%s, %s) ON CONFLICT DO NOTHING",
+                    (checklist_id, et_id)
+                )
+        return checklist_id
 
-def update_checklist(checklist_id: int, name: str, description: str, sort_order: int, is_active: bool) -> None:
+
+def update_checklist(checklist_id: int, name: str, description: str, sort_order: int, is_active: bool, expense_type_ids: Optional[List[int]] = None) -> None:
     with get_cursor(commit=True) as cur:
         cur.execute(
             """
@@ -105,10 +169,38 @@ def update_checklist(checklist_id: int, name: str, description: str, sort_order:
             """,
             (name, description, sort_order, is_active, checklist_id)
         )
+        cur.execute("DELETE FROM monev_bos_checklist_expense_types WHERE checklist_id = %s", (checklist_id,))
+        if expense_type_ids:
+            for et_id in expense_type_ids:
+                cur.execute(
+                    "INSERT INTO monev_bos_checklist_expense_types (checklist_id, expense_type_id) VALUES (%s, %s) ON CONFLICT DO NOTHING",
+                    (checklist_id, et_id)
+                )
+
 
 def delete_checklist(checklist_id: int) -> None:
     with get_cursor(commit=True) as cur:
         cur.execute("DELETE FROM monev_bos_checklists WHERE id = %s", (checklist_id,))
+
+
+def get_checklists_for_activity(expense_type_id: Optional[int] = None) -> List[Dict[str, Any]]:
+    """Get active checklists that apply to a specific expense type (or all if expense_type_id is None)."""
+    with get_cursor() as cur:
+        if not expense_type_id:
+            return list_checklists(include_inactive=False)
+
+        cur.execute(
+            """
+            SELECT DISTINCT c.*
+            FROM monev_bos_checklists c
+            LEFT JOIN monev_bos_checklist_expense_types cet ON cet.checklist_id = c.id
+            WHERE c.is_active = TRUE
+              AND (cet.expense_type_id = %s OR NOT EXISTS (SELECT 1 FROM monev_bos_checklist_expense_types WHERE checklist_id = c.id))
+            ORDER BY c.sort_order ASC, c.id ASC
+            """,
+            (expense_type_id,)
+        )
+        return [dict(row) for row in cur.fetchall()]
 
 # --- TEAMS ---
 def list_teams() -> List[Dict[str, Any]]:
@@ -235,8 +327,10 @@ def list_activities(report_id: int) -> List[Dict[str, Any]]:
         cur.execute(
             """
             SELECT a.*, 
+                   ma.name AS activity_type_name,
                    u.full_name AS auditor_name
             FROM monev_bos_activities a
+            LEFT JOIN monev_bos_master_activities ma ON a.activity_type_id = ma.id
             LEFT JOIN LATERAL (
                 SELECT l.user_id, du.full_name
                 FROM monev_bos_audit_logs l
@@ -257,13 +351,13 @@ def create_activity(report_id: int, fund_source: str, data: Dict[str, Any]) -> i
         cur.execute(
             """
             INSERT INTO monev_bos_activities 
-            (report_id, fund_source, activity_code, activity_name, realized_amount, vendor_name, bku_number, item_name, item_specs, item_quantity)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id
+            (report_id, fund_source, activity_code, activity_name, account_code, realized_amount, vendor_name, vendor_id, bku_number, item_name, item_specs, item_quantity, activity_type_id, expense_type_id)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id
             """,
             (
-                report_id, fund_source, data['activity_code'], data['activity_name'],
-                data['realized_amount'], data.get('vendor_name'), data.get('bku_number'),
-                data.get('item_name'), data.get('item_specs'), data.get('item_quantity')
+                report_id, fund_source, data['activity_code'], data['activity_name'], data.get('account_code'),
+                data['realized_amount'], data.get('vendor_name'), data.get('vendor_id'), data.get('bku_number'),
+                data.get('item_name'), data.get('item_specs'), data.get('item_quantity'), data.get('activity_type_id'), data.get('expense_type_id')
             )
         )
         return cur.fetchone()[0]
@@ -273,14 +367,16 @@ def update_activity(activity_id: int, data: Dict[str, Any]) -> None:
         cur.execute(
             """
             UPDATE monev_bos_activities 
-            SET activity_code = %s, activity_name = %s, realized_amount = %s,
-                vendor_name = %s, bku_number = %s, item_name = %s, item_specs = %s, item_quantity = %s
+            SET activity_code = %s, activity_name = %s, account_code = %s, realized_amount = %s,
+                vendor_name = %s, vendor_id = %s, bku_number = %s, item_name = %s, item_specs = %s, item_quantity = %s,
+                activity_type_id = %s, expense_type_id = %s
             WHERE id = %s
             """,
             (
-                data['activity_code'], data['activity_name'], data['realized_amount'],
-                data.get('vendor_name'), data.get('bku_number'),
+                data['activity_code'], data['activity_name'], data.get('account_code'), data['realized_amount'],
+                data.get('vendor_name'), data.get('vendor_id'), data.get('bku_number'),
                 data.get('item_name'), data.get('item_specs'), data.get('item_quantity'),
+                data.get('activity_type_id'), data.get('expense_type_id'),
                 activity_id
             )
         )
@@ -1009,3 +1105,201 @@ def get_audit_logs(report_id: int) -> List[Dict[str, Any]]:
             (report_id,)
         )
         return [dict(row) for row in cur.fetchall()]
+
+
+# --- VENDOR MANAGEMENT QUERIES ---
+
+def list_school_vendors(school_id: int, status_filter: str = None, search_query: str = None) -> List[Dict[str, Any]]:
+    """List vendors registered by a specific school."""
+    query = """
+        SELECT v.*, u.full_name AS verified_by_name
+        FROM monev_bos_vendors v
+        LEFT JOIN dashboard_users u ON u.id = v.verified_by
+        WHERE v.school_id = %s
+    """
+    params = [school_id]
+    if status_filter:
+        query += " AND v.status = %s"
+        params.append(status_filter)
+    if search_query:
+        query += " AND (v.name ILIKE %s OR v.npwp ILIKE %s OR v.phone ILIKE %s OR v.owner_name ILIKE %s OR v.bank_name ILIKE %s OR v.address ILIKE %s)"
+        pattern = f"%{search_query.strip()}%"
+        params.extend([pattern] * 6)
+    query += " ORDER BY v.created_at DESC"
+
+    with get_cursor() as cur:
+        cur.execute(query, tuple(params))
+        return [dict(row) for row in cur.fetchall()]
+
+
+def list_all_vendors_for_admin(status_filter: str = None, search_query: str = None) -> List[Dict[str, Any]]:
+    """List all vendor registration requests for admin/staff verification."""
+    query = """
+        SELECT v.*, 
+               COALESCE(ps.name, u_school.full_name) AS school_name, 
+               ps.npsn, 
+               u.full_name AS verified_by_name
+        FROM monev_bos_vendors v
+        JOIN dashboard_users u_school ON u_school.id = v.school_id
+        LEFT JOIN portal_schools ps ON ps.id = u_school.school_id
+        LEFT JOIN dashboard_users u ON u.id = v.verified_by
+        WHERE 1=1
+    """
+    params = []
+    if status_filter:
+        query += " AND v.status = %s"
+        params.append(status_filter)
+    if search_query:
+        query += " AND (v.name ILIKE %s OR v.npwp ILIKE %s OR v.phone ILIKE %s OR v.owner_name ILIKE %s OR COALESCE(ps.name, u_school.full_name) ILIKE %s)"
+        pattern = f"%{search_query.strip()}%"
+        params.extend([pattern] * 5)
+    query += " ORDER BY v.created_at DESC"
+
+    with get_cursor() as cur:
+        cur.execute(query, tuple(params))
+        return [dict(row) for row in cur.fetchall()]
+
+
+def get_verified_vendors_for_school(school_id: int) -> List[Dict[str, Any]]:
+    """Get all verified vendors for a school dropdown."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT id, name, npwp, phone, address, owner_name, bank_name, bank_account
+            FROM monev_bos_vendors
+            WHERE school_id = %s AND status = 'verified'
+            ORDER BY name ASC
+            """,
+            (school_id,)
+        )
+        return [dict(row) for row in cur.fetchall()]
+
+
+def get_vendor_by_id(vendor_id: int) -> Optional[Dict[str, Any]]:
+    """Get single vendor by ID."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT v.*, 
+                   COALESCE(ps.name, u_school.full_name) AS school_name, 
+                   ps.npsn
+            FROM monev_bos_vendors v
+            JOIN dashboard_users u_school ON u_school.id = v.school_id
+            LEFT JOIN portal_schools ps ON ps.id = u_school.school_id
+            WHERE v.id = %s
+            """,
+            (vendor_id,)
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
+def create_vendor(school_id: int, data: Dict[str, Any]) -> int:
+    """Create a new vendor registration for a school."""
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            INSERT INTO monev_bos_vendors 
+            (school_id, name, npwp, phone, address, owner_name, bank_name, bank_account, status)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'pending')
+            RETURNING id
+            """,
+            (
+                school_id,
+                data.get("name", "").strip(),
+                data.get("npwp", "").strip() or None,
+                data.get("phone", "").strip() or None,
+                data.get("address", "").strip() or None,
+                data.get("owner_name", "").strip() or None,
+                data.get("bank_name", "").strip() or None,
+                data.get("bank_account", "").strip() or None,
+            )
+        )
+        return cur.fetchone()[0]
+
+
+def update_vendor_status(vendor_id: int, new_status: str, verifier_user_id: int, rejection_reason: str = None) -> bool:
+    """Approve (verify) or Reject a vendor request."""
+    if new_status not in ["verified", "rejected"]:
+        return False
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE monev_bos_vendors
+            SET status = %s,
+                verified_by = %s,
+                verified_at = NOW(),
+                rejection_reason = %s,
+                updated_at = NOW()
+            WHERE id = %s
+            """,
+            (new_status, verifier_user_id, rejection_reason if new_status == "rejected" else None, vendor_id)
+        )
+        return cur.rowcount > 0
+
+
+def delete_vendor(vendor_id: int, school_id: Optional[int] = None) -> bool:
+    """Delete vendor if pending or owned by school."""
+    query = "DELETE FROM monev_bos_vendors WHERE id = %s"
+    params = [vendor_id]
+    if school_id:
+        query += " AND school_id = %s"
+        params.append(school_id)
+    with get_cursor(commit=True) as cur:
+        cur.execute(query, tuple(params))
+        return cur.rowcount > 0
+
+
+DEFAULT_MASTER_BANKS = [
+    "Bank DKI",
+    "Bank DKI Syariah",
+    "Bank Mandiri",
+    "Bank BCA",
+    "Bank BRI",
+    "Bank BNI",
+    "Bank Syariah Indonesia (BSI)",
+    "Bank Tabungan Negara (BTN)",
+    "Bank Permata",
+    "Bank Danamon",
+    "Bank CIMB Niaga"
+]
+
+
+def get_master_banks() -> List[str]:
+    """Fetch list of master banks from system_settings or default list."""
+    with get_cursor() as cur:
+        cur.execute("SELECT setting_value FROM system_settings WHERE setting_key = 'master_bank_list'")
+        row = cur.fetchone()
+        if row and row["setting_value"]:
+            try:
+                import json
+                banks = json.loads(row["setting_value"])
+                if isinstance(banks, list) and len(banks) > 0:
+                    return [str(b).strip() for b in banks if str(b).strip()]
+            except Exception:
+                pass
+    return DEFAULT_MASTER_BANKS
+
+
+def save_master_banks(bank_list: List[str], user_id: Optional[int] = None) -> bool:
+    """Save master bank list to system_settings."""
+    import json
+    cleaned_banks = [b.strip() for b in bank_list if b and b.strip()]
+    if not cleaned_banks:
+        cleaned_banks = DEFAULT_MASTER_BANKS
+    setting_value = json.dumps(cleaned_banks)
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            INSERT INTO system_settings (setting_key, setting_value, category, description, is_secret, updated_at, updated_by)
+            VALUES ('master_bank_list', %s, 'monev_bos', 'Daftar pilihan nama bank vendor sekolah', FALSE, NOW(), %s)
+            ON CONFLICT (setting_key) DO UPDATE
+            SET setting_value = EXCLUDED.setting_value,
+                updated_at = NOW(),
+                updated_by = EXCLUDED.updated_by
+            """,
+            (setting_value, user_id)
+        )
+        return True
+
+
