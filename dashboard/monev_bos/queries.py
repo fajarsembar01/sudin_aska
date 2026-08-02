@@ -328,9 +328,11 @@ def list_activities(report_id: int) -> List[Dict[str, Any]]:
             """
             SELECT a.*, 
                    ma.name AS activity_type_name,
+                   et.name AS expense_type_name,
                    u.full_name AS auditor_name
             FROM monev_bos_activities a
             LEFT JOIN monev_bos_master_activities ma ON a.activity_type_id = ma.id
+            LEFT JOIN monev_bos_expense_types et ON a.expense_type_id = et.id
             LEFT JOIN LATERAL (
                 SELECT l.user_id, du.full_name
                 FROM monev_bos_audit_logs l
@@ -340,7 +342,7 @@ def list_activities(report_id: int) -> List[Dict[str, Any]]:
                 LIMIT 1
             ) u ON TRUE
             WHERE a.report_id = %s
-            ORDER BY a.fund_source, a.activity_code
+            ORDER BY a.fund_source, a.bku_number, a.activity_code
             """,
             (report_id,)
         )
@@ -1301,5 +1303,121 @@ def save_master_banks(bank_list: List[str], user_id: Optional[int] = None) -> bo
             (setting_value, user_id)
         )
         return True
+
+
+# --- MASTER KODE REKENING ---
+def init_account_codes_table() -> None:
+    """Create monev_bos_account_codes table if it does not exist."""
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS monev_bos_account_codes (
+                id SERIAL PRIMARY KEY,
+                code VARCHAR(100) UNIQUE NOT NULL,
+                name VARCHAR(255),
+                description TEXT,
+                is_active BOOLEAN DEFAULT TRUE,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+            );
+            """
+        )
+
+
+def list_account_codes(include_inactive: bool = False) -> List[Dict[str, Any]]:
+    init_account_codes_table()
+    with get_cursor() as cur:
+        query = "SELECT * FROM monev_bos_account_codes WHERE 1=1"
+        if not include_inactive:
+            query += " AND is_active = TRUE"
+        query += " ORDER BY code ASC"
+        cur.execute(query)
+        return [dict(row) for row in cur.fetchall()]
+
+
+def create_account_code(code: str, name: Optional[str] = None, description: Optional[str] = None) -> int:
+    init_account_codes_table()
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            INSERT INTO monev_bos_account_codes (code, name, description)
+            VALUES (%s, %s, %s)
+            ON CONFLICT (code) DO UPDATE 
+            SET name = EXCLUDED.name, description = EXCLUDED.description, is_active = TRUE, updated_at = NOW()
+            RETURNING id
+            """,
+            (code.strip(), (name or "").strip() or None, (description or "").strip() or None)
+        )
+        return cur.fetchone()[0]
+
+
+def update_account_code(account_code_id: int, code: str, name: Optional[str], description: Optional[str], is_active: bool) -> None:
+    init_account_codes_table()
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE monev_bos_account_codes
+            SET code = %s, name = %s, description = %s, is_active = %s, updated_at = NOW()
+            WHERE id = %s
+            """,
+            (code.strip(), (name or "").strip() or None, (description or "").strip() or None, is_active, account_code_id)
+        )
+
+
+def delete_account_code(account_code_id: int) -> None:
+    init_account_codes_table()
+    with get_cursor(commit=True) as cur:
+        cur.execute("DELETE FROM monev_bos_account_codes WHERE id = %s", (account_code_id,))
+
+
+def get_assigned_auditors_for_school(school_id: int, period_id: int) -> Dict[str, Any]:
+    """Return assigned team info and list of auditor staff members (including team leader) for a school and period."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT t.name AS team_name,
+                   u.id AS staff_id,
+                   u.full_name AS staff_name,
+                   u.nip AS staff_nip,
+                   (t.leader_id = u.id) AS is_leader
+            FROM monev_bos_assignments ass
+            JOIN monev_bos_teams t ON ass.team_id = t.id
+            JOIN dashboard_users u ON (u.id = t.leader_id OR u.id IN (SELECT staff_id FROM monev_bos_team_members WHERE team_id = t.id))
+            WHERE ass.school_id = %s AND ass.period_id = %s
+            ORDER BY (t.leader_id = u.id) DESC, u.full_name ASC
+            """,
+            (school_id, period_id)
+        )
+        rows = cur.fetchall()
+        if not rows:
+            cur.execute(
+                """
+                SELECT DISTINCT u.id AS staff_id,
+                       u.full_name AS staff_name,
+                       u.nip AS staff_nip,
+                       FALSE AS is_leader
+                FROM monev_bos_reports r
+                JOIN monev_bos_activities a ON r.id = a.report_id
+                JOIN monev_bos_activity_history h ON a.id = h.activity_id
+                JOIN dashboard_users u ON h.actor_id = u.id
+                WHERE r.school_id = %s AND r.period_id = %s
+                  AND u.role IN ('staff', 'admin')
+                ORDER BY u.full_name ASC
+                """,
+                (school_id, period_id)
+            )
+            hist_rows = cur.fetchall()
+            if hist_rows:
+                return {
+                    "team_name": "Tim Verifikator Monev",
+                    "members": [dict(r) for r in hist_rows]
+                }
+            return {"team_name": None, "members": []}
+
+        return {
+            "team_name": rows[0]["team_name"],
+            "members": [dict(r) for r in rows]
+        }
+
 
 

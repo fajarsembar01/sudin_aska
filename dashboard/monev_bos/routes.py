@@ -13,6 +13,23 @@ def index():
     else:
         return redirect(url_for("monev_bos.staff_dashboard"))
 
+@monev_bos_bp.before_request
+def enforce_headmaster_info_for_sekolah():
+    user = current_user()
+    if user and user.get("role") == "sekolah":
+        try:
+            from dashboard.portal.routes import _fetch_user_school, _normalize_metadata
+            school = _fetch_user_school(user["id"])
+            if school:
+                meta = _normalize_metadata(school.get("metadata"))
+                h_name = (meta.get("headmaster_name") or "").strip()
+                h_nip = (meta.get("headmaster_nip") or "").strip()
+                if not h_name or not h_nip or h_name == "-" or h_nip == "-":
+                    flash("Mohon lengkapi Data Kepala Sekolah (Nama & NIP) pada Profil Sekolah terlebih dahulu untuk mengakses Monev BOS/BOP.", "warning")
+                    return redirect(url_for("portal.sekolah_profile"))
+        except Exception:
+            pass
+
 @monev_bos_bp.context_processor
 def inject_monev_bos_context() -> dict:
     user = current_user()
@@ -210,7 +227,41 @@ def admin_expense_types():
         return redirect(url_for("monev_bos.admin_expense_types"))
 
     expense_types = queries.list_expense_types(include_inactive=True)
-    return render_template("monev_bos/admin/expense_types.html", expense_types=expense_types)
+    return render_template("monev_bos/admin/master_expense_types.html", expense_types=expense_types)
+
+
+@monev_bos_bp.route("/admin/account-codes", methods=["GET", "POST"])
+@role_required("admin")
+def admin_account_codes():
+    if request.method == "POST":
+        action = request.form.get("action")
+        if action == "create":
+            code = (request.form.get("code") or "").strip()
+            name = (request.form.get("name") or "").strip()
+            description = (request.form.get("description") or "").strip()
+            if code:
+                queries.create_account_code(code, name, description)
+                flash("Master Kode Rekening berhasil ditambahkan.", "success")
+            else:
+                flash("Kode Rekening wajib diisi.", "warning")
+        elif action == "update":
+            account_code_id = int(request.form.get("account_code_id"))
+            code = (request.form.get("code") or "").strip()
+            name = (request.form.get("name") or "").strip()
+            description = (request.form.get("description") or "").strip()
+            is_active = request.form.get("is_active") == "on"
+            if code and account_code_id:
+                queries.update_account_code(account_code_id, code, name, description, is_active)
+                flash("Master Kode Rekening berhasil diperbarui.", "success")
+        elif action == "delete":
+            account_code_id = int(request.form.get("account_code_id"))
+            if account_code_id:
+                queries.delete_account_code(account_code_id)
+                flash("Master Kode Rekening berhasil dihapus.", "success")
+        return redirect(url_for("monev_bos.admin_account_codes"))
+
+    account_codes = queries.list_account_codes(include_inactive=True)
+    return render_template("monev_bos/admin/master_account_codes.html", account_codes=account_codes)
 
 @monev_bos_bp.route("/admin/edit-requests", methods=["GET", "POST"])
 @role_required("admin")
@@ -851,7 +902,18 @@ def sekolah_activities():
 
     master_activities = queries.list_master_activities(include_inactive=False, fund_source=fund_source)
     expense_types = queries.list_expense_types(include_inactive=False)
+    account_codes = queries.list_account_codes(include_inactive=False)
     verified_vendors = queries.get_verified_vendors_for_school(report["school_id"])
+
+    auditor_team = queries.get_assigned_auditors_for_school(report["school_id"], active_period["id"])
+    
+    from dashboard.portal.routes import _fetch_user_school, _normalize_metadata
+    school_info_data = _fetch_user_school(user["id"])
+    school_meta = _normalize_metadata(school_info_data.get("metadata")) if school_info_data else {}
+    headmaster_info = {
+        "name": school_meta.get("headmaster_name") or "-",
+        "nip": school_meta.get("headmaster_nip") or "-"
+    }
 
     return render_template("monev_bos/sekolah/activities.html", 
                            active_period=active_period, 
@@ -859,6 +921,7 @@ def sekolah_activities():
                            activities=activities,
                            master_activities=master_activities,
                            expense_types=expense_types,
+                           account_codes=account_codes,
                            verified_vendors=verified_vendors,
                            fund_source=fund_source,
                            total_receipt=total_receipt,
@@ -867,7 +930,223 @@ def sekolah_activities():
                            wa_prompt=wa_prompt,
                            wa_revision_prompt=wa_revision_prompt,
                            admin_info=admin_info,
-                           staff_wa_info=staff_wa_info)
+                           staff_wa_info=staff_wa_info,
+                           auditor_team=auditor_team,
+                           headmaster_info=headmaster_info)
+
+@monev_bos_bp.route("/sekolah/activities/export", methods=["GET"])
+@role_required("sekolah")
+def sekolah_activities_export():
+    import io
+    from flask import send_file
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    from openpyxl.utils import get_column_letter
+    from datetime import datetime
+
+    user = current_user()
+    period_id = request.args.get("period_id", type=int)
+    fund_source = request.args.get("fund_source", "BOS")
+    if fund_source not in ["BOS", "BOP"]:
+        fund_source = "BOS"
+
+    if not period_id:
+        flash("Periode tidak ditemukan.", "warning")
+        return redirect(url_for("monev_bos.sekolah_dashboard"))
+
+    active_periods = queries.get_active_periods()
+    active_period = next((p for p in active_periods if p["id"] == period_id), None)
+    if not active_period:
+        flash("Periode tidak ditemukan.", "warning")
+        return redirect(url_for("monev_bos.sekolah_dashboard"))
+
+    report = queries.get_school_report(user["id"], active_period["id"])
+    if not report:
+        flash("Data laporan tidak ditemukan.", "warning")
+        return redirect(url_for("monev_bos.sekolah_activities", period_id=period_id, fund_source=fund_source))
+
+    all_activities = queries.list_activities(report["id"])
+    activities = [a for a in all_activities if a["fund_source"] == fund_source]
+
+    total_receipt = report["bosp_receipt_amount"] if fund_source == "BOS" else report["bop_receipt_amount"]
+    total_realized = sum(a["realized_amount"] for a in activities)
+    remaining_balance = total_receipt - total_realized
+
+    wb = Workbook()
+    ws = wb.active
+    label_fund = "BOSP" if fund_source == "BOS" else "BOP"
+    ws.title = f"Laporan {label_fund}"
+
+    title_font = Font(name="Calibri", size=13, bold=True, color="1F4E78")
+    header_font = Font(name="Calibri", size=10, bold=True, color="FFFFFF")
+    bold_font = Font(name="Calibri", size=10, bold=True)
+    normal_font = Font(name="Calibri", size=10)
+
+    header_fill = PatternFill(start_color="1B5E20" if fund_source == "BOS" else "0277BD", end_color="1B5E20" if fund_source == "BOS" else "0277BD", fill_type="solid")
+    summary_fill = PatternFill(start_color="F1F8E9" if fund_source == "BOS" else "E0F7FA", end_color="F1F8E9" if fund_source == "BOS" else "E0F7FA", fill_type="solid")
+
+    thin_border = Border(
+        left=Side(style='thin', color='D9D9D9'),
+        right=Side(style='thin', color='D9D9D9'),
+        top=Side(style='thin', color='D9D9D9'),
+        bottom=Side(style='thin', color='D9D9D9')
+    )
+
+    school_name = user.get("full_name") or user.get("username") or "Sekolah"
+
+    ws["A1"] = f"LAPORAN PERTANGGUNGJAWABAN DANA {label_fund}"
+    ws["A1"].font = title_font
+    ws["A2"] = f"Nama Sekolah: {school_name}"
+    ws["A2"].font = bold_font
+    ws["A3"] = f"Periode: Triwulan {active_period['tw']} Tahun {active_period['year']}"
+    ws["A3"].font = normal_font
+    ws["A4"] = f"Tanggal Unduh: {datetime.now().strftime('%d-%m-%Y %H:%M')}"
+    ws["A4"].font = normal_font
+
+    ws["A6"] = f"Total Penerimaan Dana {label_fund}"
+    ws["B6"] = total_receipt
+    ws["B6"].number_format = '#,##0'
+
+    ws["A7"] = "Total Realisasi Pengeluaran"
+    ws["B7"] = total_realized
+    ws["B7"].number_format = '#,##0'
+
+    ws["A8"] = "Sisa Saldo"
+    ws["B8"] = remaining_balance
+    ws["B8"].number_format = '#,##0'
+
+    for row in range(6, 9):
+        ws[f"A{row}"].font = bold_font
+        ws[f"B{row}"].font = bold_font
+        ws[f"A{row}"].fill = summary_fill
+        ws[f"B{row}"].fill = summary_fill
+
+    headers = [
+        "No",
+        "Jenis Belanja",
+        "Nama Kegiatan",
+        "No. BKU",
+        "Kode Rekening",
+        "Nama Toko / Vendor",
+        "Detail Kegiatan",
+        "Nilai Realisasi (Rp)",
+        "Status Audit"
+    ]
+
+    start_row = 10
+    for col_idx, header in enumerate(headers, 1):
+        cell = ws.cell(row=start_row, column=col_idx, value=header)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+
+    status_labels = {
+        "draft": "Draft",
+        "pending": "Menunggu Validasi",
+        "approved": "Disetujui",
+        "needs_revision": "Perlu Perbaikan",
+        "rejected": "Ditolak"
+    }
+
+    current_row = start_row + 1
+    for idx, act in enumerate(activities, 1):
+        status_text = status_labels.get(act.get("status", "draft"), act.get("status", "-"))
+
+        ws.cell(row=current_row, column=1, value=idx).alignment = Alignment(horizontal="center")
+        ws.cell(row=current_row, column=2, value=act.get("expense_type_name") or "-")
+        ws.cell(row=current_row, column=3, value=act.get("activity_name") or "-")
+        ws.cell(row=current_row, column=4, value=act.get("bku_number") or act.get("activity_code") or "-").alignment = Alignment(horizontal="center")
+        ws.cell(row=current_row, column=5, value=act.get("account_code") or "-").alignment = Alignment(horizontal="center")
+        ws.cell(row=current_row, column=6, value=act.get("vendor_name") or "-")
+        ws.cell(row=current_row, column=7, value=act.get("item_name") or act.get("item_specs") or "-")
+
+        realized_cell = ws.cell(row=current_row, column=8, value=float(act.get("realized_amount") or 0))
+        realized_cell.number_format = '#,##0'
+
+        ws.cell(row=current_row, column=9, value=status_text).alignment = Alignment(horizontal="center")
+
+        for col_idx in range(1, 10):
+            ws.cell(row=current_row, column=col_idx).border = thin_border
+            ws.cell(row=current_row, column=col_idx).font = normal_font
+
+        current_row += 1
+
+    ws.cell(row=current_row, column=1, value="")
+    ws.cell(row=current_row, column=2, value="")
+    ws.cell(row=current_row, column=3, value="")
+    ws.cell(row=current_row, column=4, value="")
+    ws.cell(row=current_row, column=5, value="")
+    ws.cell(row=current_row, column=6, value="")
+    total_label_cell = ws.cell(row=current_row, column=7, value="TOTAL REALISASI")
+    total_label_cell.font = bold_font
+    total_label_cell.alignment = Alignment(horizontal="right")
+
+    total_sum_cell = ws.cell(row=current_row, column=8, value=total_realized)
+    total_sum_cell.font = bold_font
+    total_sum_cell.number_format = '#,##0'
+
+    ws.cell(row=current_row, column=9, value="")
+
+    for col_idx in range(1, 10):
+        cell = ws.cell(row=current_row, column=col_idx)
+        cell.border = thin_border
+        cell.fill = summary_fill
+
+    # Signature & Auditor Section in Excel Export
+    auditor_team = queries.get_assigned_auditors_for_school(report["school_id"], active_period["id"])
+    from dashboard.portal.routes import _fetch_user_school, _normalize_metadata
+    school_info_data = _fetch_user_school(user["id"])
+    school_meta = _normalize_metadata(school_info_data.get("metadata")) if school_info_data else {}
+    headmaster_info = {
+        "name": school_meta.get("headmaster_name") or "-",
+        "nip": school_meta.get("headmaster_nip") or "-"
+    }
+
+    sig_start_row = current_row + 3
+    date_str = datetime.now().strftime('%d-%m-%Y')
+    
+    ws.cell(row=sig_start_row, column=6, value=f"Jakarta, {date_str}").font = normal_font
+    
+    ws.cell(row=sig_start_row + 1, column=2, value="Mengetahui / Menyetujui,").font = normal_font
+    ws.cell(row=sig_start_row + 2, column=2, value=f"Kepala {school_name}").font = bold_font
+    
+    ws.cell(row=sig_start_row + 6, column=2, value=f"( {headmaster_info['name']} )").font = bold_font
+    ws.cell(row=sig_start_row + 7, column=2, value=f"NIP. {headmaster_info['nip']}").font = normal_font
+    
+    team_title = f"Tim Auditor Monev ({auditor_team['team_name']}):" if auditor_team.get("team_name") else "Tim Verifikator / Auditor Monev:"
+    ws.cell(row=sig_start_row + 1, column=6, value=team_title).font = bold_font
+    
+    auditor_members = auditor_team.get("members") or []
+    if auditor_members:
+        for idx, m in enumerate(auditor_members, 1):
+            role_badge = " (Ketua Tim)" if m.get("is_leader") else ""
+            nip_str = f" - NIP. {m['staff_nip']}" if m.get("staff_nip") else ""
+            ws.cell(row=sig_start_row + 1 + idx, column=6, value=f"{idx}. {m['staff_name']}{role_badge}{nip_str}").font = normal_font
+    else:
+        ws.cell(row=sig_start_row + 2, column=6, value="- Tim Monev Wilayah").font = normal_font
+
+    for col in ws.columns:
+        max_len = 0
+        col_letter = get_column_letter(col[0].column)
+        for cell in col:
+            val = str(cell.value or "")
+            if len(val) > max_len:
+                max_len = len(val)
+        ws.column_dimensions[col_letter].width = min(max(max_len + 3, 12), 50)
+
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    clean_school = "".join([c for c in school_name if c.isalnum() or c in [' ', '_']]).rstrip().replace(" ", "_")
+    filename = f"Laporan_Monev_{label_fund}_{clean_school}_TW{active_period['tw']}_{active_period['year']}.xlsx"
+
+    return send_file(
+        output,
+        as_attachment=True,
+        download_name=filename,
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
 
 @monev_bos_bp.route("/staff")
 @role_required("staff", "admin")

@@ -1274,6 +1274,8 @@ def _compute_missing_profile_fields(school: dict | None) -> list[str]:
         "school_phone": "Nomor telepon sekolah",
         "coordinator_phone": "Nomor operator sekolah",
         "cs_email": "Email sekolah untuk CS",
+        "headmaster_name": "Nama Kepala Sekolah",
+        "headmaster_nip": "NIP Kepala Sekolah",
         "rt": "RT",
         "rw": "RW",
         "postal_code": "Kode Pos",
@@ -1546,6 +1548,8 @@ def _build_profile_payload(form_data: dict) -> dict:
         "staff_count": _clean_int(form_data.get("staff_count")),
         "school_phone": _clean_phone(form_data.get("school_phone")),
         "coordinator_phone": _clean_phone(form_data.get("coordinator_phone")),
+        "headmaster_name": (form_data.get("headmaster_name") or "").strip(),
+        "headmaster_nip": (form_data.get("headmaster_nip") or "").strip(),
         "fax": (form_data.get("fax") or "").strip(),
         "cs_email": (form_data.get("cs_email") or "").strip(),
         "website": (form_data.get("website") or "").strip(),
@@ -1623,6 +1627,10 @@ def _validate_profile_data(payload: dict, *, jenjang: str | None = None) -> list
         errors.append("Email sekolah (CS) wajib diisi.")
     elif not email_re.match(cs_email):
         errors.append("Format email sekolah (CS) tidak valid.")
+    if not payload.get("headmaster_name"):
+        errors.append("Nama Kepala Sekolah wajib diisi.")
+    if not payload.get("headmaster_nip"):
+        errors.append("NIP Kepala Sekolah wajib diisi (ketik '-' jika belum ada NIP/Swasta).")
     return errors
 
 
@@ -1689,7 +1697,7 @@ def _save_school_profile(school_id: int, data: dict) -> None:
             cur.execute(
                 """
                 UPDATE dashboard_users
-                SET whatsapp_number = %s, phone = %s, updated_at = NOW()
+                SET whatsapp_number = %s, phone = %s
                 WHERE school_id = %s OR id = %s
                 """,
                 (phone_val, phone_val, school_id, school_id)
@@ -1976,6 +1984,11 @@ def sekolah_home() -> Response:
     subtitle = ""
     if school and school.get("name") and school.get("npsn"):
         subtitle = f"{school.get('name')} • NPSN {school.get('npsn')}"
+    meta = _normalize_metadata(school.get("metadata")) if school else {}
+    h_name = (meta.get("headmaster_name") or "").strip()
+    h_nip = (meta.get("headmaster_nip") or "").strip()
+    headmaster_incomplete = not bool(h_name and h_nip and h_name != "-" and h_nip != "-")
+
     cards = [
          {
              "title": "PANBERSS",
@@ -2017,7 +2030,8 @@ def sekolah_home() -> Response:
             "title": "MONEV BOS/BOP",
             "description": "Laporan realisasi dana BOS dan BOP sekolah per triwulan.",
             "icon": "bi-cash-coin",
-            "href": url_for("monev_bos.index"),
+            "href": url_for("portal.sekolah_profile") if headmaster_incomplete else url_for("monev_bos.index"),
+            "requires_headmaster": headmaster_incomplete,
             "col_class": "col-lg-4 col-md-6 col-12",
         },
     ]

@@ -31,7 +31,7 @@
                         {% endif %}
                     </a>
                 </li>
-                {% set is_settings_active = request.endpoint in ['monev_bos.admin_periods', 'monev_bos.admin_master_activities', 'monev_bos.admin_expense_types', 'monev_bos.admin_checklists', 'monev_bos.admin_teams'] %}
+                {% set is_settings_active = request.endpoint in ['monev_bos.admin_periods', 'monev_bos.admin_master_activities', 'monev_bos.admin_expense_types', 'monev_bos.admin_account_codes', 'monev_bos.admin_checklists', 'monev_bos.admin_teams'] %}
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle {% if is_settings_active %}active{% endif %}" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="bi bi-gear nav-icon"></i>Pengaturan <i class="bi bi-chevron-down ms-1" style="font-size:0.7rem;"></i>
@@ -50,6 +50,11 @@
                         <li>
                             <a class="dropdown-item {% if request.endpoint == 'monev_bos.admin_expense_types' %}active{% endif %}" href="{{ url_for('monev_bos.admin_expense_types') }}">
                                 <i class="bi bi-wallet2 me-2"></i>Master Jenis Belanja
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item {% if request.endpoint == 'monev_bos.admin_account_codes' %}active{% endif %}" href="{{ url_for('monev_bos.admin_account_codes') }}">
+                                <i class="bi bi-hash me-2"></i>Master Kode Rekening
                             </a>
                         </li>
                         <li>

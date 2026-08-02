@@ -15,7 +15,13 @@
             </div>
             <p class="text-body-secondary small mb-0">Kelola rincian pengeluaran dan upload dokumen pertanggungjawaban sekolah</p>
         </div>
-        <div>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <a href="{{ url_for('monev_bos.sekolah_activities_export', period_id=active_period.id, fund_source=fund_source) }}" class="btn btn-sm btn-success rounded-pill px-3 shadow-xs">
+                <i class="bi bi-file-earmark-excel me-1.5"></i> Download Laporan Excel
+            </a>
+            <button type="button" onclick="window.print()" class="btn btn-sm btn-outline-primary rounded-pill px-3 shadow-xs">
+                <i class="bi bi-printer me-1.5"></i> Cetak / PDF
+            </button>
             <a href="{{ url_for('monev_bos.sekolah_funds', period_id=active_period.id) }}" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
                 <i class="bi bi-arrow-left me-1.5"></i> Pilih Sumber Dana
             </a>
@@ -455,6 +461,47 @@
                 </div>
             </div>
         </div>
+        <!-- Tanda Tangan & Tim Verifikator/Auditor Monev -->
+        <div class="card border-0 shadow-sm mt-4 signature-section">
+            <div class="card-body p-4">
+                <div class="row align-items-start g-4">
+                    <!-- TTD Kepala Sekolah -->
+                    <div class="col-md-6 text-center">
+                        <p class="mb-1 text-body-secondary small">Mengetahui / Menyetujui,</p>
+                        <p class="fw-bold mb-4 text-body">Kepala {{ report.school_name or 'Sekolah' }}</p>
+                        <div style="height: 65px;"></div>
+                        <p class="fw-bold mb-0 text-body border-bottom d-inline-block px-4 pb-1">{{ headmaster_info.name if headmaster_info else '-' }}</p>
+                        <p class="text-body-secondary small mb-0 mt-1">NIP. {{ headmaster_info.nip if headmaster_info else '-' }}</p>
+                    </div>
+
+                    <!-- Tim Auditor Monev -->
+                    <div class="col-md-6 text-center">
+                        <p class="mb-1 text-body-secondary small">Tim Verifikator / Auditor Monev:</p>
+                        <p class="fw-bold mb-3 text-body">
+                            {% if auditor_team and auditor_team.team_name %}
+                                {{ auditor_team.team_name }}
+                            {% else %}
+                                Tim Monev Wilayah / Sudin Pendidikan
+                            {% endif %}
+                        </p>
+                        {% if auditor_team and auditor_team.members %}
+                            <div class="d-inline-block text-start">
+                                {% for m in auditor_team.members %}
+                                <div class="mb-2 small">
+                                    <i class="bi bi-person-check-fill text-success me-1.5"></i>
+                                    <span class="fw-bold text-body">{{ m.staff_name }}</span>
+                                    {% if m.is_leader %}<span class="badge bg-primary text-white text-xs ms-1">Ketua</span>{% endif %}
+                                    {% if m.staff_nip %}<br><span class="text-body-secondary ms-4 text-xs">NIP. {{ m.staff_nip }}</span>{% endif %}
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-body-secondary small fst-italic">Tim verifikator wilayah kecamatan</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
         </div>
     </div>
 </div>
@@ -600,7 +647,14 @@
                     </div>
                     <div class="col-md-4 mb-3">
                         <label class="form-label fw-bold">Kode Rekening</label>
-                        <input type="text" class="form-control" name="account_code" value="{{ act.account_code or '' }}" placeholder="Contoh: 5.1.02.01.01.0024">
+                        <select class="form-select" name="account_code">
+                            <option value="">-- Pilih Kode Rekening --</option>
+                            {% for ac in account_codes %}
+                            <option value="{{ ac.code }}" {% if act.account_code == ac.code %}selected{% endif %}>
+                                {{ ac.code }}{% if ac.name %} - {{ ac.name }}{% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
                     </div>
                     <div class="col-md-4 mb-3">
                         <label class="form-label fw-bold">Nilai Realisasi (Rp) <span class="text-danger">*</span></label>
@@ -782,7 +836,14 @@
                     </div>
                     <div class="col-md-4 mb-3">
                         <label class="form-label fw-bold">Kode Rekening</label>
-                        <input type="text" class="form-control" name="account_code" placeholder="Contoh: 5.1.02.01.01.0024">
+                        <select class="form-select" name="account_code">
+                            <option value="">-- Pilih Kode Rekening --</option>
+                            {% for ac in account_codes %}
+                            <option value="{{ ac.code }}">
+                                {{ ac.code }}{% if ac.name %} - {{ ac.name }}{% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
                     </div>
                     <div class="col-md-4 mb-3">
                         <label class="form-label fw-bold">Nilai Realisasi (Rp) <span class="text-danger">*</span></label>
@@ -1142,8 +1203,10 @@ function autofillDemoData(fundSource) {
     const bkuInput = form.querySelector('[name="bku_number"]');
     if (bkuInput) bkuInput.value = 'BKU/' + (fundSource || 'BOS') + '/' + (100 + randNum) + '/2026';
 
-    const accountCodeInput = form.querySelector('[name="account_code"]');
-    if (accountCodeInput) accountCodeInput.value = '5.1.02.01.01.00' + randNum;
+    const accountCodeSelect = form.querySelector('[name="account_code"]');
+    if (accountCodeSelect && accountCodeSelect.options.length > 1) {
+        accountCodeSelect.selectedIndex = 1;
+    }
 
     const expenseSelect = form.querySelector('[name="expense_type_id"]');
     if (expenseSelect && expenseSelect.options.length > 1) {
@@ -1291,4 +1354,31 @@ document.addEventListener('DOMContentLoaded', function () {
     </div>
 </div>
 {% endif %}
+
+<style>
+@media print {
+    .sidebar, nav, header, footer, .btn, .modal, .alert, .no-print, [data-bs-toggle], .badge {
+        display: none !important;
+    }
+    body {
+        background-color: #fff !important;
+        color: #000 !important;
+    }
+    .container-fluid {
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    .card {
+        border: 1px solid #ddd !important;
+        box-shadow: none !important;
+    }
+    .table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+    }
+    .table th, .table td {
+        border: 1px solid #000 !important;
+    }
+}
+</style>
 {% endblock %}
