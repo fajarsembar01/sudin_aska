@@ -76,6 +76,8 @@ ADMIN_PERFORMANCE_FEATURE_LABELS: Dict[str, str] = {
     "hospitality": "Hospitality",
     "daftar_tamu": "Daftar Tamu",
     "call_center": "Call Center",
+    "monev_bos": "Monev BOS/BOP",
+    "laporan": "Laporan",
 }
 
 
@@ -4295,6 +4297,115 @@ def fetch_admin_activity_events() -> List[Dict[str, Any]]:
             JOIN dashboard_users u ON u.id = l.user_id
             WHERE l.user_id IS NOT NULL
               AND u.role = 'admin'
+            """
+        )
+        events.extend(_normalize_admin_performance_event(dict(row)) for row in cur.fetchall())
+
+        cur.execute(
+            """
+            SELECT
+                'monev_bos_audit_logs' AS source,
+                'monev_bos' AS feature_key,
+                l.created_at,
+                l.user_id AS actor_user_id,
+                u.full_name AS actor_name,
+                u.email AS actor_email,
+                COALESCE(u.full_name, u.email, 'Admin') AS actor_label,
+                UPPER(l.action) AS action,
+                CASE WHEN l.activity_id IS NULL THEN 'MONEV_REPORT' ELSE 'MONEV_ACTIVITY' END AS target_type,
+                COALESCE(l.activity_id, l.report_id) AS target_id,
+                COALESCE(a.activity_name, school.full_name, 'Laporan Monev #' || l.report_id::text) AS target_name,
+                COALESCE(l.details, '') AS detail_text
+            FROM monev_bos_audit_logs l
+            JOIN dashboard_users u ON u.id = l.user_id
+            JOIN monev_bos_reports r ON r.id = l.report_id
+            LEFT JOIN dashboard_users school ON school.id = r.school_id
+            LEFT JOIN monev_bos_activities a ON a.id = l.activity_id
+            WHERE u.role = 'admin'
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM dashboard_admin_action_logs logged
+                  WHERE logged.feature_key = 'monev_bos'
+                    AND logged.user_id = l.user_id
+                    AND logged.target_type = CASE
+                        WHEN l.activity_id IS NULL THEN 'MONEV_REPORT'
+                        ELSE 'MONEV_ACTIVITY'
+                    END
+                    AND logged.target_id = COALESCE(l.activity_id, l.report_id)
+                    AND logged.action = UPPER(l.action)
+                    AND logged.created_at BETWEEN l.created_at - INTERVAL '5 minutes'
+                                              AND l.created_at + INTERVAL '5 minutes'
+              )
+            """
+        )
+        events.extend(_normalize_admin_performance_event(dict(row)) for row in cur.fetchall())
+
+        cur.execute(
+            """
+            SELECT
+                'laporan_forms_created' AS source,
+                'laporan' AS feature_key,
+                f.created_at,
+                f.created_by AS actor_user_id,
+                creator.full_name AS actor_name,
+                creator.email AS actor_email,
+                COALESCE(creator.full_name, creator.email, 'Admin') AS actor_label,
+                'CREATE' AS action,
+                'LAPORAN_FORM' AS target_type,
+                f.id AS target_id,
+                f.title AS target_name,
+                jsonb_build_object('status', f.status, 'target_scope', f.target_scope)::text AS detail_text
+            FROM laporan_forms f
+            JOIN dashboard_users creator ON creator.id = f.created_by
+            WHERE creator.role = 'admin'
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM dashboard_admin_action_logs logged
+                  WHERE logged.feature_key = 'laporan'
+                    AND logged.user_id = f.created_by
+                    AND logged.target_type = 'LAPORAN_FORM'
+                    AND logged.target_id = f.id
+                    AND logged.created_at BETWEEN f.created_at - INTERVAL '5 minutes'
+                                              AND f.created_at + INTERVAL '5 minutes'
+              )
+            """
+        )
+        events.extend(_normalize_admin_performance_event(dict(row)) for row in cur.fetchall())
+
+        cur.execute(
+            """
+            SELECT
+                'laporan_forms_updated' AS source,
+                'laporan' AS feature_key,
+                f.updated_at AS created_at,
+                f.updated_by AS actor_user_id,
+                updater.full_name AS actor_name,
+                updater.email AS actor_email,
+                COALESCE(updater.full_name, updater.email, 'Admin') AS actor_label,
+                'UPDATE_SNAPSHOT' AS action,
+                'LAPORAN_FORM' AS target_type,
+                f.id AS target_id,
+                f.title AS target_name,
+                jsonb_build_object(
+                    'status', f.status,
+                    'is_active', f.is_active,
+                    'is_paused', f.is_paused,
+                    'target_scope', f.target_scope
+                )::text AS detail_text
+            FROM laporan_forms f
+            JOIN dashboard_users updater ON updater.id = f.updated_by
+            WHERE updater.role = 'admin'
+              AND f.updated_at > f.created_at + INTERVAL '1 second'
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM dashboard_admin_action_logs logged
+                  WHERE logged.feature_key = 'laporan'
+                    AND logged.user_id = f.updated_by
+                    AND logged.target_type = 'LAPORAN_FORM'
+                    AND logged.target_id = f.id
+                    AND logged.created_at BETWEEN f.updated_at - INTERVAL '5 minutes'
+                                              AND f.updated_at + INTERVAL '5 minutes'
+              )
             """
         )
         events.extend(_normalize_admin_performance_event(dict(row)) for row in cur.fetchall())

@@ -49,6 +49,15 @@ jobs:
             dashboard/monev_bos/routes.py \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_PROJECT_PATH }}/dashboard/monev_bos/routes.py
           rsync -avz --progress \
+            dashboard/laporan/routes.py \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_PROJECT_PATH }}/dashboard/laporan/routes.py
+          rsync -avz --progress \
+            dashboard/queries.py \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_PROJECT_PATH }}/dashboard/queries.py
+          rsync -avz --progress \
+            dashboard/templates/admin_performance.html \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_PROJECT_PATH }}/dashboard/templates/admin_performance.html
+          rsync -avz --progress \
             dashboard/monev_bos/templates/monev_bos/sekolah/activities.html \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_PROJECT_PATH }}/dashboard/monev_bos/templates/monev_bos/sekolah/activities.html
           rsync -avz --progress \

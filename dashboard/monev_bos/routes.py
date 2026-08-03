@@ -1,6 +1,38 @@
 from flask import Blueprint, current_app, render_template, request, jsonify, flash, redirect, url_for, session
 from dashboard.auth import role_required, current_user
+from dashboard.queries import record_admin_action
 from . import monev_bos_bp, queries
+
+
+def _record_monev_admin_action(
+    action: str,
+    target_type: str,
+    *,
+    target_id: int = None,
+    target_name: str = None,
+    metadata: dict = None,
+) -> None:
+    """Record successful Monev mutations performed by an admin without breaking the main action."""
+    user = current_user() or {}
+    if user.get("role") != "admin":
+        return
+    try:
+        record_admin_action(
+            user_id=user.get("id"),
+            feature_key="monev_bos",
+            action=action,
+            target_type=target_type,
+            target_id=target_id,
+            target_name=target_name,
+            metadata=metadata,
+        )
+    except Exception:
+        current_app.logger.exception(
+            "Failed to record Monev BOS admin action %s on %s #%s",
+            action,
+            target_type,
+            target_id,
+        )
 
 @monev_bos_bp.route("/")
 @role_required("admin", "staff", "sekolah")
@@ -94,19 +126,33 @@ def admin_periods():
         if action == "generate_year":
             year = int(request.form.get("year"))
             queries.ensure_periods_for_year(year)
+            _record_monev_admin_action(
+                "GENERATE",
+                "MONEV_PERIOD_YEAR",
+                target_name=f"Periode {year}",
+                metadata={"year": year},
+            )
             flash(f"Periode TW 1-4 Tahun {year} berhasil disiapkan.", "success")
         elif action == "set_active":
             period_id = int(request.form.get("period_id"))
             queries.set_active_period(period_id)
+            _record_monev_admin_action("ACTIVATE", "MONEV_PERIOD", target_id=period_id)
             flash("Periode berhasil diaktifkan.", "success")
         elif action == "deactivate":
             period_id = int(request.form.get("period_id"))
             queries.deactivate_period(period_id)
+            _record_monev_admin_action("DEACTIVATE", "MONEV_PERIOD", target_id=period_id)
             flash("Periode berhasil dinonaktifkan.", "success")
         elif action == "set_deadline":
             period_id = int(request.form.get("period_id"))
             deadline = datetime.strptime(request.form.get("deadline"), "%Y-%m-%d").date()
             queries.update_period_deadline(period_id, deadline)
+            _record_monev_admin_action(
+                "UPDATE_DEADLINE",
+                "MONEV_PERIOD",
+                target_id=period_id,
+                metadata={"deadline": deadline.isoformat()},
+            )
             flash("Deadline berhasil diperbarui.", "success")
         return redirect(url_for("monev_bos.admin_periods"))
     
@@ -139,7 +185,14 @@ def admin_checklists():
             name = request.form.get("name")
             description = request.form.get("description")
             sort_order = int(request.form.get("sort_order", 0))
-            queries.create_checklist(name, description, sort_order, expense_type_ids=expense_type_ids)
+            checklist_id = queries.create_checklist(name, description, sort_order, expense_type_ids=expense_type_ids)
+            _record_monev_admin_action(
+                "CREATE",
+                "MONEV_CHECKLIST",
+                target_id=checklist_id,
+                target_name=name,
+                metadata={"expense_type_ids": expense_type_ids},
+            )
             flash("Checklist berhasil ditambahkan", "success")
         elif action == "update":
             checklist_id = int(request.form.get("checklist_id"))
@@ -148,10 +201,18 @@ def admin_checklists():
             sort_order = int(request.form.get("sort_order", 0))
             is_active = request.form.get("is_active") == "on"
             queries.update_checklist(checklist_id, name, description, sort_order, is_active, expense_type_ids=expense_type_ids)
+            _record_monev_admin_action(
+                "UPDATE",
+                "MONEV_CHECKLIST",
+                target_id=checklist_id,
+                target_name=name,
+                metadata={"is_active": is_active, "expense_type_ids": expense_type_ids},
+            )
             flash("Checklist berhasil diupdate", "success")
         elif action == "delete":
             checklist_id = int(request.form.get("checklist_id"))
             queries.delete_checklist(checklist_id)
+            _record_monev_admin_action("DELETE", "MONEV_CHECKLIST", target_id=checklist_id)
             flash("Checklist berhasil dihapus", "success")
         return redirect(url_for("monev_bos.admin_checklists"))
 
@@ -169,7 +230,14 @@ def admin_master_activities():
             code_prefix = request.form.get("code_prefix")
             fund_source = request.form.get("fund_source", "ALL")
             if name:
-                queries.create_master_activity(name, code_prefix, fund_source)
+                master_id = queries.create_master_activity(name, code_prefix, fund_source)
+                _record_monev_admin_action(
+                    "CREATE",
+                    "MONEV_MASTER_ACTIVITY",
+                    target_id=master_id,
+                    target_name=name,
+                    metadata={"code_prefix": code_prefix, "fund_source": fund_source},
+                )
                 flash("Master Nama Kegiatan berhasil ditambahkan", "success")
             else:
                 flash("Nama kegiatan wajib diisi.", "warning")
@@ -181,12 +249,20 @@ def admin_master_activities():
             is_active = request.form.get("is_active") == "on"
             if name:
                 queries.update_master_activity(master_id, name, code_prefix, fund_source, is_active)
+                _record_monev_admin_action(
+                    "UPDATE",
+                    "MONEV_MASTER_ACTIVITY",
+                    target_id=master_id,
+                    target_name=name,
+                    metadata={"code_prefix": code_prefix, "fund_source": fund_source, "is_active": is_active},
+                )
                 flash("Master Nama Kegiatan berhasil diperbarui", "success")
             else:
                 flash("Nama kegiatan wajib diisi.", "warning")
         elif action == "delete":
             master_id = int(request.form.get("master_id"))
             queries.delete_master_activity(master_id)
+            _record_monev_admin_action("DELETE", "MONEV_MASTER_ACTIVITY", target_id=master_id)
             flash("Master Nama Kegiatan berhasil dihapus", "success")
         return redirect(url_for("monev_bos.admin_master_activities"))
 
@@ -205,7 +281,14 @@ def admin_expense_types():
             description = (request.form.get("description") or "").strip()
             sort_order = int(request.form.get("sort_order", 0) or 0)
             if name:
-                queries.create_expense_type(name, code, description, sort_order)
+                expense_type_id = queries.create_expense_type(name, code, description, sort_order)
+                _record_monev_admin_action(
+                    "CREATE",
+                    "MONEV_EXPENSE_TYPE",
+                    target_id=expense_type_id,
+                    target_name=name,
+                    metadata={"code": code, "sort_order": sort_order},
+                )
                 flash("Jenis Belanja berhasil ditambahkan.", "success")
             else:
                 flash("Nama Jenis Belanja wajib diisi.", "warning")
@@ -218,11 +301,19 @@ def admin_expense_types():
             is_active = request.form.get("is_active") == "on"
             if name and expense_type_id:
                 queries.update_expense_type(expense_type_id, name, code, description, sort_order, is_active)
+                _record_monev_admin_action(
+                    "UPDATE",
+                    "MONEV_EXPENSE_TYPE",
+                    target_id=expense_type_id,
+                    target_name=name,
+                    metadata={"code": code, "sort_order": sort_order, "is_active": is_active},
+                )
                 flash("Jenis Belanja berhasil diperbarui.", "success")
         elif action == "delete":
             expense_type_id = int(request.form.get("expense_type_id"))
             if expense_type_id:
                 queries.delete_expense_type(expense_type_id)
+                _record_monev_admin_action("DELETE", "MONEV_EXPENSE_TYPE", target_id=expense_type_id)
                 flash("Jenis Belanja berhasil dihapus.", "success")
         return redirect(url_for("monev_bos.admin_expense_types"))
 
@@ -240,7 +331,13 @@ def admin_account_codes():
             name = (request.form.get("name") or "").strip()
             description = (request.form.get("description") or "").strip()
             if code:
-                queries.create_account_code(code, name, description)
+                account_code_id = queries.create_account_code(code, name, description)
+                _record_monev_admin_action(
+                    "CREATE",
+                    "MONEV_ACCOUNT_CODE",
+                    target_id=account_code_id,
+                    target_name=f"{code} - {name}" if name else code,
+                )
                 flash("Master Kode Rekening berhasil ditambahkan.", "success")
             else:
                 flash("Kode Rekening wajib diisi.", "warning")
@@ -252,11 +349,19 @@ def admin_account_codes():
             is_active = request.form.get("is_active") == "on"
             if code and account_code_id:
                 queries.update_account_code(account_code_id, code, name, description, is_active)
+                _record_monev_admin_action(
+                    "UPDATE",
+                    "MONEV_ACCOUNT_CODE",
+                    target_id=account_code_id,
+                    target_name=f"{code} - {name}" if name else code,
+                    metadata={"is_active": is_active},
+                )
                 flash("Master Kode Rekening berhasil diperbarui.", "success")
         elif action == "delete":
             account_code_id = int(request.form.get("account_code_id"))
             if account_code_id:
                 queries.delete_account_code(account_code_id)
+                _record_monev_admin_action("DELETE", "MONEV_ACCOUNT_CODE", target_id=account_code_id)
                 flash("Master Kode Rekening berhasil dihapus.", "success")
         return redirect(url_for("monev_bos.admin_account_codes"))
 
@@ -274,9 +379,21 @@ def admin_edit_requests():
 
         if action == "approve":
             queries.approve_edit_request(request_id, user["id"], review_notes or None)
+            _record_monev_admin_action(
+                "APPROVE",
+                "MONEV_EDIT_REQUEST",
+                target_id=request_id,
+                metadata={"has_review_notes": bool(review_notes)},
+            )
             flash("Pengajuan edit telah disetujui dan data kegiatan berhasil diperbarui.", "success")
         elif action == "reject":
             queries.reject_edit_request(request_id, user["id"], review_notes or None)
+            _record_monev_admin_action(
+                "REJECT",
+                "MONEV_EDIT_REQUEST",
+                target_id=request_id,
+                metadata={"has_review_notes": bool(review_notes)},
+            )
             flash("Pengajuan edit ditolak.", "info")
 
         return redirect(url_for("monev_bos.admin_edit_requests"))
@@ -298,27 +415,48 @@ def admin_teams():
             name = request.form.get("name")
             leader_id = request.form.get("leader_id")
             leader_id = int(leader_id) if leader_id else None
-            queries.create_team(name, leader_id)
+            team_id = queries.create_team(name, leader_id)
+            _record_monev_admin_action(
+                "CREATE",
+                "MONEV_TEAM",
+                target_id=team_id,
+                target_name=name,
+                metadata={"leader_id": leader_id},
+            )
             flash("Tim berhasil dibuat", "success")
         elif action == "update_leader":
             team_id = int(request.form.get("team_id"))
             leader_id = request.form.get("leader_id")
             leader_id = int(leader_id) if leader_id else None
             queries.update_team_leader(team_id, leader_id)
+            _record_monev_admin_action(
+                "UPDATE_LEADER",
+                "MONEV_TEAM",
+                target_id=team_id,
+                metadata={"leader_id": leader_id},
+            )
             flash("Ketua tim berhasil diupdate", "success")
         elif action == "delete":
             team_id = int(request.form.get("team_id"))
             queries.delete_team(team_id)
+            _record_monev_admin_action("DELETE", "MONEV_TEAM", target_id=team_id)
             flash("Tim berhasil dihapus", "success")
         elif action == "assign":
             team_id = int(request.form.get("team_id"))
             school_id = int(request.form.get("school_id"))
             period_id = int(request.form.get("period_id"))
             queries.assign_team_to_school(team_id, school_id, period_id)
+            _record_monev_admin_action(
+                "ASSIGN",
+                "MONEV_SCHOOL_ASSIGNMENT",
+                target_id=school_id,
+                metadata={"team_id": team_id, "period_id": period_id},
+            )
             flash("Sekolah berhasil ditugaskan ke tim", "success")
         elif action == "unassign":
             assignment_id = int(request.form.get("assignment_id"))
             queries.unassign_school(assignment_id)
+            _record_monev_admin_action("UNASSIGN", "MONEV_SCHOOL_ASSIGNMENT", target_id=assignment_id)
             flash("Tugas sekolah berhasil dilepas", "success")
         return redirect(url_for("monev_bos.admin_teams"))
 
@@ -1201,9 +1339,21 @@ def staff_my_team():
         
         if action == "add_member":
             queries.add_team_member(team["id"], staff_id)
+            _record_monev_admin_action(
+                "ADD_MEMBER",
+                "MONEV_TEAM_MEMBER",
+                target_id=staff_id,
+                metadata={"team_id": team["id"]},
+            )
             flash("Anggota berhasil ditambahkan.", "success")
         elif action == "remove_member":
             queries.remove_team_member(team["id"], staff_id)
+            _record_monev_admin_action(
+                "REMOVE_MEMBER",
+                "MONEV_TEAM_MEMBER",
+                target_id=staff_id,
+                metadata={"team_id": team["id"]},
+            )
             flash("Anggota berhasil dihapus.", "success")
             
         return redirect(url_for("monev_bos.staff_my_team"))
@@ -1237,6 +1387,13 @@ def staff_audit_report(report_id):
                     (status, report_id)
                 )
             queries.add_audit_log(report_id, None, user["id"], "UPDATE_STATUS", f"Mengubah status laporan menjadi {status}")
+            _record_monev_admin_action(
+                "UPDATE_STATUS",
+                "MONEV_REPORT",
+                target_id=report_id,
+                target_name=report.get("school_name"),
+                metadata={"status": status},
+            )
             flash(f"Status laporan diubah menjadi {status}", "success")
             return redirect(url_for("monev_bos.staff_audit_report", report_id=report_id))
     # Reset any stale in_review activity statuses back to pending when loading page
@@ -1348,6 +1505,13 @@ def staff_audit_activity(activity_id):
                     
             status_label = "Sesuai" if status == "valid" else ("Tidak Sesuai (Revisi)" if status == "invalid" else ("Proses Audit" if status == "in_review" else "Pending"))
             queries.add_audit_log(report_id, activity_id, user["id"], "VALIDATE", f"Memvalidasi kegiatan status '{status_label}'" + (f": {notes}" if notes else ""))
+            _record_monev_admin_action(
+                "VALIDATE",
+                "MONEV_ACTIVITY",
+                target_id=activity_id,
+                target_name=act.get("activity_name"),
+                metadata={"report_id": report_id, "status": status, "has_notes": bool(notes)},
+            )
             
             if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.headers.get("Accept") == "application/json":
                 return jsonify({
@@ -1365,6 +1529,13 @@ def staff_audit_activity(activity_id):
         elif action == "start_audit":
             if act and act.get("status") in ["pending", "invalid"]:
                 queries.update_activity_audit(activity_id, "in_review", act.get("audit_notes") or "")
+                _record_monev_admin_action(
+                    "START_AUDIT",
+                    "MONEV_ACTIVITY",
+                    target_id=activity_id,
+                    target_name=act.get("activity_name"),
+                    metadata={"report_id": report_id, "previous_status": act.get("status")},
+                )
                 staff_name = user.get("full_name") or user.get("email") or "Staff"
                 return jsonify({"success": True, "status": "in_review", "original_status": act.get("status"), "message": f"Status kegiatan diubah ke Proses Audit oleh {staff_name}"})
             return jsonify({"success": True, "status": act.get("status") if act else "pending"})
@@ -1375,6 +1546,13 @@ def staff_audit_activity(activity_id):
                 target_status = "pending"
             if act and act.get("status") == "in_review":
                 queries.update_activity_audit(activity_id, target_status, act.get("audit_notes") or "")
+                _record_monev_admin_action(
+                    "CANCEL_AUDIT",
+                    "MONEV_ACTIVITY",
+                    target_id=activity_id,
+                    target_name=act.get("activity_name"),
+                    metadata={"report_id": report_id, "restored_status": target_status},
+                )
                 return jsonify({"success": True, "status": target_status, "message": f"Status dikembalikan ke {target_status}"})
             return jsonify({"success": True, "status": act.get("status") if act else target_status})
             
@@ -1395,6 +1573,13 @@ def staff_audit_activity(activity_id):
                 db_path = f"static/uploads/monev_bos/{report_id}/{activity_id}/live_photo/{filename}"
                 queries.add_activity_doc(activity_id, "live_photo", db_path, len(data), user["id"])
                 queries.add_audit_log(report_id, activity_id, user["id"], "UPLOAD_PHOTO", "Mengambil foto live lapangan")
+                _record_monev_admin_action(
+                    "UPLOAD_PHOTO",
+                    "MONEV_ACTIVITY",
+                    target_id=activity_id,
+                    target_name=act.get("activity_name"),
+                    metadata={"report_id": report_id},
+                )
                 flash("Foto live berhasil disimpan.", "success")
 
     except Exception as e:
@@ -1473,6 +1658,12 @@ def admin_vendors():
             if queries.update_vendor_status(vendor_id, "verified", user["id"]):
                 v_obj = queries.get_vendor_by_id(vendor_id)
                 v_name = v_obj["name"] if v_obj else "Vendor"
+                _record_monev_admin_action(
+                    "VERIFY_APPROVE",
+                    "MONEV_VENDOR",
+                    target_id=vendor_id,
+                    target_name=v_name,
+                )
                 flash(f"Vendor '{v_name}' berhasil diverifikasi dan disetujui.", "success")
             else:
                 flash("Gagal memverifikasi vendor.", "danger")
@@ -1484,6 +1675,14 @@ def admin_vendors():
                 flash("Alasan penolakan vendor wajib diisi.", "warning")
             else:
                 if queries.update_vendor_status(vendor_id, "rejected", user["id"], rejection_reason=reason):
+                    v_obj = queries.get_vendor_by_id(vendor_id)
+                    _record_monev_admin_action(
+                        "VERIFY_REJECT",
+                        "MONEV_VENDOR",
+                        target_id=vendor_id,
+                        target_name=v_obj.get("name") if v_obj else None,
+                        metadata={"has_rejection_reason": True},
+                    )
                     flash("Vendor berhasil ditolak.", "info")
                 else:
                     flash("Gagal menolak vendor.", "danger")
@@ -1497,6 +1696,12 @@ def admin_vendors():
             bank_lines = request.form.get("bank_list", "").splitlines()
             bank_list = [b.strip() for b in bank_lines if b.strip()]
             if queries.save_master_banks(bank_list, user["id"]):
+                _record_monev_admin_action(
+                    "UPDATE",
+                    "MONEV_MASTER_BANKS",
+                    target_name="Daftar Bank Vendor",
+                    metadata={"bank_count": len(bank_list)},
+                )
                 flash("Daftar master pilihan bank berhasil diperbarui.", "success")
             else:
                 flash("Gagal memperbarui daftar bank.", "danger")
