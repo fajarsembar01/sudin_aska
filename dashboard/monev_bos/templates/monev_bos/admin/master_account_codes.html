@@ -23,6 +23,7 @@
                             <th width="40%">Uraian / Nama Rekening</th>
                             <th width="15%">Keterangan</th>
                             <th width="10%">Status</th>
+                            <th>Admin Input</th>
                             <th class="text-end pe-4" width="10%">Aksi</th>
                         </tr>
                     </thead>
@@ -42,6 +43,7 @@
                                 <span class="badge bg-secondary">Nonaktif</span>
                                 {% endif %}
                             </td>
+                            <td>{{ item.input_admin_name or 'Tidak ada' }}</td>
                             <td class="text-end pe-4">
                                 <button type="button" class="btn btn-sm btn-outline-primary me-1" 
                                     data-bs-toggle="modal" data-bs-target="#editCodeModal{{ item.id }}">
@@ -96,7 +98,7 @@
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="6" class="text-center py-4 text-body-secondary">Belum ada data Master Kode Rekening.</td>
+                            <td colspan="7" class="text-center py-4 text-body-secondary">Belum ada data Master Kode Rekening.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -104,6 +106,8 @@
             </div>
         </div>
     </div>
+
+    {% include "monev_bos/admin/_master_activity_history.html" %}
 </div>
 
 <!-- Modal Tambah Master Kode Rekening -->

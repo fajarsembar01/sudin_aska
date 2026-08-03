@@ -167,13 +167,16 @@ def admin_periods():
     # Always ensure all 4 TW exist for selected year (fixes missing or wrong dates)
     queries.ensure_periods_for_year(selected_year)
     periods = queries.list_periods_by_year(selected_year)
+    queries.attach_period_admin_input_names(periods)
     available_years = queries.get_available_years()
+    activity_logs = queries.list_admin_action_history(["MONEV_PERIOD_YEAR", "MONEV_PERIOD"])
     
     return render_template("monev_bos/admin/periods.html", 
                            periods=periods, 
                            available_years=available_years,
                            selected_year=selected_year,
-                           current_year=current_year)
+                           current_year=current_year,
+                           activity_logs=activity_logs)
 
 @monev_bos_bp.route("/admin/checklists", methods=["GET", "POST"])
 @role_required("admin")
@@ -217,8 +220,15 @@ def admin_checklists():
         return redirect(url_for("monev_bos.admin_checklists"))
 
     checklists = queries.list_checklists(include_inactive=True)
+    queries.attach_admin_input_names(checklists, "MONEV_CHECKLIST")
     expense_types = queries.list_expense_types(include_inactive=False)
-    return render_template("monev_bos/admin/checklists.html", checklists=checklists, expense_types=expense_types)
+    activity_logs = queries.list_admin_action_history(["MONEV_CHECKLIST"])
+    return render_template(
+        "monev_bos/admin/checklists.html",
+        checklists=checklists,
+        expense_types=expense_types,
+        activity_logs=activity_logs,
+    )
 
 @monev_bos_bp.route("/admin/master-activities", methods=["GET", "POST"])
 @role_required("admin")
@@ -267,7 +277,13 @@ def admin_master_activities():
         return redirect(url_for("monev_bos.admin_master_activities"))
 
     master_activities = queries.list_master_activities(include_inactive=True)
-    return render_template("monev_bos/admin/master_activities.html", master_activities=master_activities)
+    queries.attach_admin_input_names(master_activities, "MONEV_MASTER_ACTIVITY")
+    activity_logs = queries.list_admin_action_history(["MONEV_MASTER_ACTIVITY"])
+    return render_template(
+        "monev_bos/admin/master_activities.html",
+        master_activities=master_activities,
+        activity_logs=activity_logs,
+    )
 
 
 @monev_bos_bp.route("/admin/expense-types", methods=["GET", "POST"])
@@ -318,7 +334,13 @@ def admin_expense_types():
         return redirect(url_for("monev_bos.admin_expense_types"))
 
     expense_types = queries.list_expense_types(include_inactive=True)
-    return render_template("monev_bos/admin/expense_types.html", expense_types=expense_types)
+    queries.attach_admin_input_names(expense_types, "MONEV_EXPENSE_TYPE")
+    activity_logs = queries.list_admin_action_history(["MONEV_EXPENSE_TYPE"])
+    return render_template(
+        "monev_bos/admin/expense_types.html",
+        expense_types=expense_types,
+        activity_logs=activity_logs,
+    )
 
 
 @monev_bos_bp.route("/admin/account-codes", methods=["GET", "POST"])
@@ -366,7 +388,13 @@ def admin_account_codes():
         return redirect(url_for("monev_bos.admin_account_codes"))
 
     account_codes = queries.list_account_codes(include_inactive=True)
-    return render_template("monev_bos/admin/master_account_codes.html", account_codes=account_codes)
+    queries.attach_admin_input_names(account_codes, "MONEV_ACCOUNT_CODE")
+    activity_logs = queries.list_admin_action_history(["MONEV_ACCOUNT_CODE"])
+    return render_template(
+        "monev_bos/admin/master_account_codes.html",
+        account_codes=account_codes,
+        activity_logs=activity_logs,
+    )
 
 @monev_bos_bp.route("/admin/edit-requests", methods=["GET", "POST"])
 @role_required("admin")
@@ -461,10 +489,20 @@ def admin_teams():
         return redirect(url_for("monev_bos.admin_teams"))
 
     teams = queries.list_teams()
+    queries.attach_admin_input_names(teams, "MONEV_TEAM")
     staff_users = queries.get_staff_users()
     sekolah_users = queries.get_sekolah_users()
     active_period = queries.get_active_period()
     assignments = queries.list_assignments(active_period["id"]) if active_period else []
+    queries.attach_admin_input_names(
+        assignments,
+        "MONEV_SCHOOL_ASSIGNMENT",
+        actions=["ASSIGN"],
+        item_id_field="school_id",
+    )
+    activity_logs = queries.list_admin_action_history(
+        ["MONEV_TEAM", "MONEV_TEAM_MEMBER", "MONEV_SCHOOL_ASSIGNMENT"]
+    )
 
     return render_template(
         "monev_bos/admin/teams.html", 
@@ -472,7 +510,8 @@ def admin_teams():
         staff_users=staff_users,
         sekolah_users=sekolah_users,
         active_period=active_period,
-        assignments=assignments
+        assignments=assignments,
+        activity_logs=activity_logs,
     )
 
 @monev_bos_bp.route("/sekolah")
@@ -1712,4 +1751,3 @@ def admin_vendors():
     vendors = queries.list_all_vendors_for_admin(status_filter if status_filter in ["pending", "verified", "rejected"] else None, search_query=search_query)
     master_banks = queries.get_master_banks()
     return render_template("monev_bos/admin/admin_vendors.html", vendors=vendors, status_filter=status_filter, search_query=search_query, master_banks=master_banks)
-

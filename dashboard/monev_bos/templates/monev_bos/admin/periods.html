@@ -55,6 +55,7 @@
                             <th>Rentang Waktu</th>
                             <th>Deadline Pelaporan</th>
                             <th>Status</th>
+                            <th>Admin Input</th>
                             <th class="text-end pe-4">Aksi</th>
                         </tr>
                     </thead>
@@ -83,6 +84,7 @@
                                 <span class="badge bg-secondary">Nonaktif</span>
                                 {% endif %}
                             </td>
+                            <td>{{ period.input_admin_name or 'Tidak ada' }}</td>
                             <td class="text-end pe-4">
                                 {% if period.is_active %}
                                 <form action="{{ url_for('monev_bos.admin_periods') }}" method="POST" class="d-inline">
@@ -107,7 +109,7 @@
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="5" class="text-center py-5 text-muted">
+                            <td colspan="6" class="text-center py-5 text-muted">
                                 Belum ada data periode untuk tahun ini. Klik <strong>Generate</strong> di atas untuk menyiapkan TW 1-4.
                             </td>
                         </tr>
@@ -117,5 +119,7 @@
             </div>
         </div>
     </div>
+
+    {% include "monev_bos/admin/_master_activity_history.html" %}
 </div>
 {% endblock %}

@@ -2,6 +2,105 @@ from dashboard.db_access import get_cursor
 from typing import List, Dict, Any, Optional
 from datetime import date
 
+
+def attach_admin_input_names(
+    items: List[Dict[str, Any]],
+    target_type: str,
+    *,
+    actions: Optional[List[str]] = None,
+    item_id_field: str = "id",
+) -> List[Dict[str, Any]]:
+    """Attach the earliest recorded admin creator to master rows."""
+    for item in items:
+        item["input_admin_name"] = "Tidak ada"
+    target_ids = [int(item[item_id_field]) for item in items if item.get(item_id_field) is not None]
+    if not target_ids:
+        return items
+
+    action_names = [str(action).strip().upper() for action in (actions or ["CREATE"])]
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT DISTINCT ON (log.target_id)
+                   log.target_id,
+                   COALESCE(admin.full_name, admin.email, 'Tidak ada') AS admin_name
+            FROM dashboard_admin_action_logs log
+            LEFT JOIN dashboard_users admin ON admin.id = log.user_id
+            WHERE log.feature_key = 'monev_bos'
+              AND log.target_type = %s
+              AND log.target_id = ANY(%s)
+              AND log.action = ANY(%s)
+            ORDER BY log.target_id, log.created_at ASC, log.id ASC
+            """,
+            (target_type, target_ids, action_names),
+        )
+        creator_map = {int(row["target_id"]): row["admin_name"] for row in cur.fetchall()}
+
+    for item in items:
+        item_id = item.get(item_id_field)
+        if item_id is not None:
+            item["input_admin_name"] = creator_map.get(int(item_id), "Tidak ada")
+    return items
+
+
+def attach_period_admin_input_names(periods: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Attach the admin who generated each period year, when that history exists."""
+    for period in periods:
+        period["input_admin_name"] = "Tidak ada"
+    target_names = sorted({f"Periode {period['year']}" for period in periods if period.get("year") is not None})
+    if not target_names:
+        return periods
+
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT DISTINCT ON (log.target_name)
+                   log.target_name,
+                   COALESCE(admin.full_name, admin.email, 'Tidak ada') AS admin_name
+            FROM dashboard_admin_action_logs log
+            LEFT JOIN dashboard_users admin ON admin.id = log.user_id
+            WHERE log.feature_key = 'monev_bos'
+              AND log.target_type = 'MONEV_PERIOD_YEAR'
+              AND log.action = 'GENERATE'
+              AND log.target_name = ANY(%s)
+            ORDER BY log.target_name, log.created_at ASC, log.id ASC
+            """,
+            (target_names,),
+        )
+        creator_map = {row["target_name"]: row["admin_name"] for row in cur.fetchall()}
+
+    for period in periods:
+        period["input_admin_name"] = creator_map.get(f"Periode {period.get('year')}", "Tidak ada")
+    return periods
+
+
+def list_admin_action_history(target_types: List[str], limit: int = 50) -> List[Dict[str, Any]]:
+    """Return recent centralized admin actions for selected Monev master targets."""
+    normalized_targets = [str(target).strip().upper() for target in target_types if target]
+    if not normalized_targets:
+        return []
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT log.id,
+                   log.created_at,
+                   log.action,
+                   log.target_type,
+                   log.target_id,
+                   log.target_name,
+                   log.metadata,
+                   COALESCE(admin.full_name, admin.email, 'Tidak ada') AS admin_name
+            FROM dashboard_admin_action_logs log
+            LEFT JOIN dashboard_users admin ON admin.id = log.user_id
+            WHERE log.feature_key = 'monev_bos'
+              AND log.target_type = ANY(%s)
+            ORDER BY log.created_at DESC, log.id DESC
+            LIMIT %s
+            """,
+            (normalized_targets, max(1, min(int(limit), 200))),
+        )
+        return [dict(row) for row in cur.fetchall()]
+
 # --- PERIODS ---
 
 # Default TW date ranges (fixed)
@@ -1418,6 +1517,4 @@ def get_assigned_auditors_for_school(school_id: int, period_id: int) -> Dict[str
             "team_name": rows[0]["team_name"],
             "members": [dict(r) for r in rows]
         }
-
-
 

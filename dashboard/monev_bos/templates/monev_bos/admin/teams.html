@@ -67,6 +67,9 @@
                                 <span class="text-danger">Belum Ditunjuk</span>
                                 {% endif %}
                             </div>
+                            <div class="text-sm mt-1">
+                                <strong>Admin Input:</strong> {{ team.input_admin_name or 'Tidak ada' }}
+                            </div>
                         </div>
 
                         <!-- Modal Edit Tim -->
@@ -126,6 +129,7 @@
                                 <tr>
                                     <th class="ps-3">Sekolah</th>
                                     <th>Tim Ditugaskan</th>
+                                    <th>Admin Input</th>
                                     <th class="text-end pe-3">Aksi</th>
                                 </tr>
                             </thead>
@@ -134,6 +138,7 @@
                                 <tr>
                                     <td class="ps-3 fw-bold">{{ assign.school_name }}</td>
                                     <td><span class="badge bg-info">{{ assign.team_name }}</span></td>
+                                    <td>{{ assign.input_admin_name or 'Tidak ada' }}</td>
                                     <td class="text-end pe-3">
                                         <form action="{{ url_for('monev_bos.admin_teams') }}" method="POST" class="d-inline" onsubmit="return confirm('Lepas tugas sekolah ini dari tim?');">
                                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -147,7 +152,7 @@
                                 </tr>
                                 {% else %}
                                 <tr>
-                                    <td colspan="3" class="text-center py-4 text-muted">
+                                    <td colspan="4" class="text-center py-4 text-muted">
                                         {% if not active_period %}
                                         Aktifkan periode terlebih dahulu.
                                         {% else %}
@@ -163,6 +168,8 @@
             </div>
         </div>
     </div>
+
+    {% include "monev_bos/admin/_master_activity_history.html" %}
 </div>
 
 <!-- Modal Create Team -->

@@ -21,6 +21,7 @@
                             <th class="ps-4" style="width: 80px;">No. Urut</th>
                             <th>Nama Jenis Belanja</th>
                             <th>Status</th>
+                            <th>Admin Input</th>
                             <th class="text-end pe-4">Aksi</th>
                         </tr>
                     </thead>
@@ -37,6 +38,7 @@
                                     <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1">Nonaktif</span>
                                     {% endif %}
                                 </td>
+                                <td>{{ item.input_admin_name or 'Tidak ada' }}</td>
                                 <td class="text-end pe-4">
                                     <button type="button" class="btn btn-sm btn-outline-primary me-1" 
                                         data-bs-toggle="modal" data-bs-target="#editExpenseTypeModal{{ item.id }}" title="Edit">
@@ -55,7 +57,7 @@
                             {% endfor %}
                         {% else %}
                             <tr>
-                                <td colspan="4" class="text-center py-5 text-muted">
+                                <td colspan="5" class="text-center py-5 text-muted">
                                     <i class="bi bi-wallet2 fs-1 d-block mb-2 opacity-50"></i>
                                     Belum ada data Jenis Belanja.
                                 </td>
@@ -66,6 +68,8 @@
             </div>
         </div>
     </div>
+
+    {% include "monev_bos/admin/_master_activity_history.html" %}
 </div>
 
 <!-- Modal Edit (Rendered Outside Table) -->
