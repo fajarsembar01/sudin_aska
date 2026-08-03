@@ -227,7 +227,7 @@ def admin_expense_types():
         return redirect(url_for("monev_bos.admin_expense_types"))
 
     expense_types = queries.list_expense_types(include_inactive=True)
-    return render_template("monev_bos/admin/master_expense_types.html", expense_types=expense_types)
+    return render_template("monev_bos/admin/expense_types.html", expense_types=expense_types)
 
 
 @monev_bos_bp.route("/admin/account-codes", methods=["GET", "POST"])
