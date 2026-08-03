@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, jsonify, flash, redirect, url_for, session
+from flask import Blueprint, current_app, render_template, request, jsonify, flash, redirect, url_for, session
 from dashboard.auth import role_required, current_user
 from . import monev_bos_bp, queries
 
@@ -902,14 +902,26 @@ def sekolah_activities():
 
     master_activities = queries.list_master_activities(include_inactive=False, fund_source=fund_source)
     expense_types = queries.list_expense_types(include_inactive=False)
-    account_codes = queries.list_account_codes(include_inactive=False)
+    try:
+        account_codes = queries.list_account_codes(include_inactive=False)
+    except Exception:
+        current_app.logger.exception("Failed to load Monev BOS account codes")
+        account_codes = []
     verified_vendors = queries.get_verified_vendors_for_school(report["school_id"])
 
-    auditor_team = queries.get_assigned_auditors_for_school(report["school_id"], active_period["id"])
-    
-    from dashboard.portal.routes import _fetch_user_school, _normalize_metadata
-    school_info_data = _fetch_user_school(user["id"])
-    school_meta = _normalize_metadata(school_info_data.get("metadata")) if school_info_data else {}
+    try:
+        auditor_team = queries.get_assigned_auditors_for_school(report["school_id"], active_period["id"])
+    except Exception:
+        current_app.logger.exception("Failed to load assigned Monev BOS auditors")
+        auditor_team = {"team_name": None, "members": []}
+
+    try:
+        from dashboard.portal.routes import _fetch_user_school, _normalize_metadata
+        school_info_data = _fetch_user_school(user["id"])
+        school_meta = _normalize_metadata(school_info_data.get("metadata")) if school_info_data else {}
+    except Exception:
+        current_app.logger.exception("Failed to load Monev BOS school metadata")
+        school_meta = {}
     headmaster_info = {
         "name": school_meta.get("headmaster_name") or "-",
         "nip": school_meta.get("headmaster_nip") or "-"

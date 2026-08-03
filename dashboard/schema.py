@@ -2398,6 +2398,18 @@ CREATE TABLE IF NOT EXISTS monev_bos_expense_types (
 );
 """
 
+_MONEV_BOS_ACCOUNT_CODES_SQL = """
+CREATE TABLE IF NOT EXISTS monev_bos_account_codes (
+    id SERIAL PRIMARY KEY,
+    code VARCHAR(100) UNIQUE NOT NULL,
+    name VARCHAR(255),
+    description TEXT,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
 _MONEV_BOS_CHECKLIST_EXPENSE_TYPES_SQL = """
 CREATE TABLE IF NOT EXISTS monev_bos_checklist_expense_types (
     checklist_id INTEGER NOT NULL REFERENCES monev_bos_checklists(id) ON DELETE CASCADE,
@@ -2423,6 +2435,7 @@ def ensure_monev_bos_schema() -> None:
         _MONEV_BOS_REPORTS_INDEX_SQL,
         _MONEV_BOS_MASTER_ACTIVITIES_SQL,
         _MONEV_BOS_EXPENSE_TYPES_SQL,
+        _MONEV_BOS_ACCOUNT_CODES_SQL,
         _MONEV_BOS_ACTIVITIES_SQL,
         _MONEV_BOS_ACTIVITIES_INDEX_SQL,
         "ALTER TABLE monev_bos_activities ADD COLUMN IF NOT EXISTS vendor_id INTEGER REFERENCES monev_bos_vendors(id) ON DELETE SET NULL;",
