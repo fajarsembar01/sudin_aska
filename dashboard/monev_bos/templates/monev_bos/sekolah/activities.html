@@ -633,7 +633,7 @@
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-bold">Nama Kegiatan <span class="text-danger">*</span></label>
-                    <select class="form-select" name="activity_name" required>
+                    <select class="form-select searchable-activity-select" name="activity_name" required data-placeholder="Cari nama kegiatan...">
                         <option value="" disabled>-- Pilih Nama Kegiatan --</option>
                         {% for master in master_activities %}
                         <option value="{{ master.name }}" {% if master.name == act.activity_name %}selected{% endif %}>{{ master.name }}{% if master.code_prefix %} ({{ master.code_prefix }}){% endif %}</option>
@@ -647,15 +647,22 @@
                     </div>
                     <div class="col-md-4 mb-3">
                         <label class="form-label fw-bold">Kode Rekening</label>
-                        <input type="search" class="form-control searchable-account-code" name="account_code"
-                            value="{{ act.account_code or '' }}" list="accountCodeOptions{{ act.id }}"
-                            placeholder="Cari kode atau nama rekening..." autocomplete="off">
-                        <datalist id="accountCodeOptions{{ act.id }}">
+                        <select class="form-select searchable-account-select" name="account_code" data-placeholder="Cari kode atau nama rekening...">
+                            <option value="">-- Pilih Kode Rekening --</option>
+                            {% set account_code_state = namespace(found=false) %}
                             {% for ac in account_codes %}
-                            <option value="{{ ac.code }}">{{ ac.code }}{% if ac.name %} - {{ ac.name }}{% endif %}</option>
+                            {% if ac.code == act.account_code %}{% set account_code_state.found = true %}{% endif %}
+                            <option value="{{ ac.code }}" {% if ac.code == act.account_code %}selected{% endif %}>{{ ac.code }}{% if ac.name %} - {{ ac.name }}{% endif %}</option>
                             {% endfor %}
-                        </datalist>
+                            {% if act.account_code and not account_code_state.found %}
+                            <option value="{{ act.account_code }}" selected>{{ act.account_code }}</option>
+                            {% endif %}
+                        </select>
+                        {% if account_codes %}
                         <div class="form-text text-xs text-muted">Ketik kode atau nama rekening untuk mencari.</div>
+                        {% else %}
+                        <div class="form-text text-xs text-warning">Belum ada kode rekening aktif. Hubungi admin untuk mengisi Master Kode Rekening.</div>
+                        {% endif %}
                     </div>
                     <div class="col-md-4 mb-3">
                         <label class="form-label fw-bold">Nilai Realisasi (Rp) <span class="text-danger">*</span></label>
@@ -823,7 +830,7 @@
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-bold">Nama Kegiatan <span class="text-danger">*</span></label>
-                    <select class="form-select" name="activity_name" required>
+                    <select class="form-select searchable-activity-select" name="activity_name" required data-placeholder="Cari nama kegiatan...">
                         <option value="" disabled selected>-- Pilih Nama Kegiatan --</option>
                         {% for master in master_activities %}
                         <option value="{{ master.name }}">{{ master.name }}{% if master.code_prefix %} ({{ master.code_prefix }}){% endif %}</option>
@@ -837,14 +844,17 @@
                     </div>
                     <div class="col-md-4 mb-3">
                         <label class="form-label fw-bold">Kode Rekening</label>
-                        <input type="search" class="form-control searchable-account-code" name="account_code"
-                            list="accountCodeOptionsAdd" placeholder="Cari kode atau nama rekening..." autocomplete="off">
-                        <datalist id="accountCodeOptionsAdd">
+                        <select class="form-select searchable-account-select" name="account_code" data-placeholder="Cari kode atau nama rekening...">
+                            <option value="">-- Pilih Kode Rekening --</option>
                             {% for ac in account_codes %}
                             <option value="{{ ac.code }}">{{ ac.code }}{% if ac.name %} - {{ ac.name }}{% endif %}</option>
                             {% endfor %}
-                        </datalist>
+                        </select>
+                        {% if account_codes %}
                         <div class="form-text text-xs text-muted">Ketik kode atau nama rekening untuk mencari.</div>
+                        {% else %}
+                        <div class="form-text text-xs text-warning">Belum ada kode rekening aktif. Hubungi admin untuk mengisi Master Kode Rekening.</div>
+                        {% endif %}
                     </div>
                     <div class="col-md-4 mb-3">
                         <label class="form-label fw-bold">Nilai Realisasi (Rp) <span class="text-danger">*</span></label>
@@ -970,6 +980,8 @@
     </div>
 </div>
 
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css">
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
 <script>
 let schoolCameraStream = null;
 let activeCameraInput = null;
@@ -977,6 +989,44 @@ let activeCameraPreview = null;
 let activeDocInput = null;
 let activeDocFileNameEl = null;
 let capturedSchoolPhoto = '';
+
+function initActivitySearchableSelects(container) {
+    if (!window.TomSelect) return;
+
+    const selects = (container || document).querySelectorAll(
+        'select.searchable-activity-select, select.searchable-account-select'
+    );
+    selects.forEach(function (select) {
+        if (select.tomselect) return;
+
+        const tom = new TomSelect(select, {
+            create: false,
+            allowEmptyOption: true,
+            placeholder: select.getAttribute('data-placeholder') || 'Ketik untuk mencari...',
+            searchField: ['text'],
+            plugins: select.required ? [] : ['clear_button'],
+            render: {
+                no_results: function () {
+                    return '<div class="no-results">Data tidak ditemukan</div>';
+                }
+            }
+        });
+
+        if (tom.getValue() === '') {
+            tom.clear(true);
+            tom.inputState();
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    initActivitySearchableSelects(document);
+    document.querySelectorAll('.modal').forEach(function (modal) {
+        modal.addEventListener('shown.bs.modal', function () {
+            initActivitySearchableSelects(modal);
+        });
+    });
+});
 
 function dataURLtoFile(dataurl, filename) {
     let arr = dataurl.split(','),
@@ -1204,11 +1254,13 @@ function autofillDemoData(fundSource) {
     const bkuInput = form.querySelector('[name="bku_number"]');
     if (bkuInput) bkuInput.value = 'BKU/' + (fundSource || 'BOS') + '/' + (100 + randNum) + '/2026';
 
-    const accountCodeInput = form.querySelector('[name="account_code"]');
-    if (accountCodeInput) {
-        const optionList = accountCodeInput.list;
-        if (optionList && optionList.options.length > 0) {
-            accountCodeInput.value = optionList.options[0].value;
+    const accountCodeSelect = form.querySelector('[name="account_code"]');
+    if (accountCodeSelect && accountCodeSelect.options.length > 1) {
+        const firstAccountCode = accountCodeSelect.options[1].value;
+        if (accountCodeSelect.tomselect) {
+            accountCodeSelect.tomselect.setValue(firstAccountCode);
+        } else {
+            accountCodeSelect.value = firstAccountCode;
         }
     }
 
@@ -1219,7 +1271,12 @@ function autofillDemoData(fundSource) {
 
     const activitySelect = form.querySelector('[name="activity_name"]');
     if (activitySelect && activitySelect.options.length > 1) {
-        activitySelect.selectedIndex = 1;
+        const firstActivity = activitySelect.options[1].value;
+        if (activitySelect.tomselect) {
+            activitySelect.tomselect.setValue(firstActivity);
+        } else {
+            activitySelect.value = firstActivity;
+        }
     }
 
     const realizedInput = form.querySelector('[name="realized_amount"]');
