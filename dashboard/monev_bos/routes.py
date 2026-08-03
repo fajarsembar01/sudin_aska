@@ -996,10 +996,12 @@ def sekolah_activities():
                         "activity_code": act["activity_code"]
                     }
             
+            # Shared upload directory for optional field photo and document replacements.
+            base_dir = os.path.join(monev_bos_bp.root_path, "..", "static", "uploads")
+
             # Handle optional field photo (file upload or camera)
             field_photo_file = request.files.get("doc_field_photo") or request.files.get("field_photo")
             if field_photo_file and field_photo_file.filename != '':
-                base_dir = os.path.join(monev_bos_bp.root_path, "..", "static", "uploads")
                 sub_path = f"monev_bos/{report['id']}/{activity_id}/field_photo"
                 saved_path, err_msg = _save_uploaded_file(field_photo_file, base_dir, sub_path, max_size_bytes=100 * 1024)
                 if err_msg:
@@ -1009,7 +1011,6 @@ def sekolah_activities():
             else:
                 field_photo_data = request.form.get("field_photo_data")
                 if field_photo_data:
-                    base_dir = os.path.join(monev_bos_bp.root_path, "..", "static", "uploads")
                     saved_path, err_msg = _save_camera_photo(field_photo_data, base_dir, f"monev_bos/{report['id']}/{activity_id}/field_photo")
                     if err_msg:
                         flash(err_msg, "danger")
@@ -1085,6 +1086,20 @@ def sekolah_activities():
     master_activities = queries.list_master_activities(include_inactive=False, fund_source=fund_source)
     expense_types = queries.list_expense_types(include_inactive=False)
     try:
+        active_checklists = queries.list_checklists(include_inactive=False)
+        checklist_requirements_by_expense_type = {
+            str(expense_type["id"]): [
+                checklist["name"]
+                for checklist in active_checklists
+                if not checklist.get("expense_type_ids")
+                or expense_type["id"] in checklist.get("expense_type_ids", [])
+            ]
+            for expense_type in expense_types
+        }
+    except Exception:
+        current_app.logger.exception("Failed to load checklist requirements by expense type")
+        checklist_requirements_by_expense_type = {}
+    try:
         account_codes = queries.list_account_codes(include_inactive=False)
     except Exception:
         current_app.logger.exception("Failed to load Monev BOS account codes")
@@ -1115,6 +1130,7 @@ def sekolah_activities():
                            activities=activities,
                            master_activities=master_activities,
                            expense_types=expense_types,
+                           checklist_requirements_by_expense_type=checklist_requirements_by_expense_type,
                            account_codes=account_codes,
                            verified_vendors=verified_vendors,
                            fund_source=fund_source,

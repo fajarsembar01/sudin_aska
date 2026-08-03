@@ -19,9 +19,23 @@
             <a href="{{ url_for('monev_bos.sekolah_activities_export', period_id=active_period.id, fund_source=fund_source) }}" class="btn btn-sm btn-success rounded-pill px-3 shadow-xs">
                 <i class="bi bi-file-earmark-excel me-1.5"></i> Download Laporan Excel
             </a>
-            <button type="button" onclick="window.print()" class="btn btn-sm btn-outline-primary rounded-pill px-3 shadow-xs">
-                <i class="bi bi-printer me-1.5"></i> Cetak / PDF
-            </button>
+            <div class="dropdown">
+                <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3 shadow-xs dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-printer me-1.5"></i> Cetak / PDF
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                    <li>
+                        <button type="button" class="dropdown-item" onclick="openActivitiesPrintDialog(false)">
+                            <i class="bi bi-printer me-2"></i>Cetak ke Printer
+                        </button>
+                    </li>
+                    <li>
+                        <button type="button" class="dropdown-item" onclick="openActivitiesPrintDialog(true)" title="Pilih Save as PDF pada tujuan printer">
+                            <i class="bi bi-file-earmark-pdf me-2"></i>Simpan sebagai PDF
+                        </button>
+                    </li>
+                </ul>
+            </div>
             <a href="{{ url_for('monev_bos.sekolah_funds', period_id=active_period.id) }}" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
                 <i class="bi bi-arrow-left me-1.5"></i> Pilih Sumber Dana
             </a>
@@ -29,7 +43,7 @@
     </div>
 
     <!-- Segmented Control Tab Switcher (BOS / BOP) -->
-    <div class="mb-3">
+    <div class="mb-3 no-print">
         <div class="p-1 bg-body-tertiary rounded-pill border d-flex align-items-center gap-1 shadow-2xs w-100 w-sm-auto d-inline-flex">
             <a href="{{ url_for('monev_bos.sekolah_activities', period_id=active_period.id, fund_source='BOS') }}" 
                class="flex-fill text-center px-3 py-1.5 rounded-pill fw-bold text-xs d-inline-flex align-items-center justify-content-center text-decoration-none transition-all {% if fund_source == 'BOS' %}bg-success text-white shadow-xs{% else %}text-body-secondary{% endif %}">
@@ -145,7 +159,7 @@
 
     <!-- Data Kegiatan Table -->
     <div class="card shadow-sm mb-4 border-0">
-        <div class="card-header bg-body-tertiary py-3 px-3 px-md-4 border-bottom">
+        <div class="card-header bg-body-tertiary py-3 px-3 px-md-4 border-bottom no-print">
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
                 <h6 class="m-0 fw-bold text-body">
                     Daftar Kegiatan {{ fund_source }} <span class="badge bg-primary-subtle text-primary border ms-1" id="activityCountBadge">{{ activities|length }} Kegiatan</span>
@@ -198,19 +212,19 @@
                             <td>
                                 <div class="d-flex flex-wrap gap-1">
                                     {% if act.docs.get('invoice') %}
-                                    <a href="/{{ act.docs['invoice'].file_path }}" target="_blank" class="badge bg-secondary-subtle text-secondary-emphasis border text-decoration-none" title="Lihat Faktur & Kwitansi">
+                                    <a href="/{{ act.docs['invoice'].file_path }}" class="badge bg-secondary-subtle text-secondary-emphasis border text-decoration-none activity-doc-preview-link" data-doc-title="Faktur & Kwitansi - {{ act.activity_name }}" title="Lihat Faktur & Kwitansi">
                                         <i class="bi bi-receipt me-1"></i>Faktur & Kwitansi
                                     </a>
                                     {% endif %}
                                     
                                     {% if act.docs.get('transfer') %}
-                                    <a href="/{{ act.docs['transfer'].file_path }}" target="_blank" class="badge bg-secondary-subtle text-secondary-emphasis border text-decoration-none" title="Lihat Bukti Transfer">
+                                    <a href="/{{ act.docs['transfer'].file_path }}" class="badge bg-secondary-subtle text-secondary-emphasis border text-decoration-none activity-doc-preview-link" data-doc-title="Bukti Transfer - {{ act.activity_name }}" title="Lihat Bukti Transfer">
                                         <i class="bi bi-bank me-1"></i>Transfer
                                     </a>
                                     {% endif %}
 
                                     {% if act.docs.get('field_photo') %}
-                                    <a href="/{{ act.docs['field_photo'].file_path }}" target="_blank" class="badge bg-info-subtle text-info-emphasis border text-decoration-none" title="Lihat Foto Kegiatan / Barang">
+                                    <a href="/{{ act.docs['field_photo'].file_path }}" class="badge bg-info-subtle text-info-emphasis border text-decoration-none activity-doc-preview-link" data-doc-title="Foto Kegiatan / Barang - {{ act.activity_name }}" title="Lihat Foto Kegiatan / Barang">
                                         <i class="bi bi-camera me-1"></i>Foto
                                     </a>
                                     {% endif %}
@@ -362,19 +376,18 @@
 
                         <!-- Baris 4: Dokumen Badges -->
                         <div class="d-flex align-items-center flex-wrap gap-1 mb-2">
-                            <small class="text-body-secondary me-1 text-xs">Dokumen:</small>
                             {% if act.docs.get('invoice') %}
-                            <a href="/{{ act.docs['invoice'].file_path }}" target="_blank" class="badge bg-secondary-subtle text-secondary-emphasis border text-decoration-none text-xs">
+                            <a href="/{{ act.docs['invoice'].file_path }}" class="badge bg-secondary-subtle text-secondary-emphasis border text-decoration-none text-xs activity-doc-preview-link" data-doc-title="Faktur & Kwitansi - {{ act.activity_name }}">
                                 <i class="bi bi-receipt me-1"></i>Faktur & Kwitansi
                             </a>
                             {% endif %}
                             {% if act.docs.get('transfer') %}
-                            <a href="/{{ act.docs['transfer'].file_path }}" target="_blank" class="badge bg-secondary-subtle text-secondary-emphasis border text-decoration-none text-xs">
+                            <a href="/{{ act.docs['transfer'].file_path }}" class="badge bg-secondary-subtle text-secondary-emphasis border text-decoration-none text-xs activity-doc-preview-link" data-doc-title="Bukti Transfer - {{ act.activity_name }}">
                                 <i class="bi bi-bank me-1"></i>Transfer
                             </a>
                             {% endif %}
                             {% if act.docs.get('field_photo') %}
-                            <a href="/{{ act.docs['field_photo'].file_path }}" target="_blank" class="badge bg-info-subtle text-info-emphasis border text-decoration-none text-xs">
+                            <a href="/{{ act.docs['field_photo'].file_path }}" class="badge bg-info-subtle text-info-emphasis border text-decoration-none text-xs activity-doc-preview-link" data-doc-title="Foto Kegiatan / Barang - {{ act.activity_name }}">
                                 <i class="bi bi-camera me-1"></i>Foto
                             </a>
                             {% endif %}
@@ -466,7 +479,7 @@
             <div class="card-body p-4">
                 <div class="row align-items-start g-4">
                     <!-- TTD Kepala Sekolah -->
-                    <div class="col-md-6 text-center">
+                    <div class="col-md-6 text-center signature-column signature-headmaster">
                         <p class="mb-1 text-body-secondary small">Mengetahui / Menyetujui,</p>
                         <p class="fw-bold mb-4 text-body">Kepala {{ report.school_name or 'Sekolah' }}</p>
                         <div style="height: 65px;"></div>
@@ -475,15 +488,8 @@
                     </div>
 
                     <!-- Tim Auditor Monev -->
-                    <div class="col-md-6 text-center">
-                        <p class="mb-1 text-body-secondary small">Tim Verifikator / Auditor Monev:</p>
-                        <p class="fw-bold mb-3 text-body">
-                            {% if auditor_team and auditor_team.team_name %}
-                                {{ auditor_team.team_name }}
-                            {% else %}
-                                Tim Monev Wilayah / Sudin Pendidikan
-                            {% endif %}
-                        </p>
+                    <div class="col-md-6 text-center signature-column signature-auditors">
+                        <p class="mb-3 text-body-secondary small">Tim Verifikator / Auditor Monev:</p>
                         {% if auditor_team and auditor_team.members %}
                             <div class="d-inline-block text-start">
                                 {% for m in auditor_team.members %}
@@ -549,7 +555,7 @@
                 {% if act.docs.get('field_photo') %}
                 <div class="mb-3">
                     <p class="mb-1 text-body-secondary text-xs">Foto Kegiatan / Barang (Sekolah)</p>
-                    <a href="/{{ act.docs['field_photo'].file_path }}" target="_blank">
+                    <a href="/{{ act.docs['field_photo'].file_path }}" class="activity-doc-preview-link" data-doc-title="Foto Kegiatan / Barang - {{ act.activity_name }}">
                         <img src="/{{ act.docs['field_photo'].file_path }}" alt="Foto Kegiatan" class="img-thumbnail" style="max-height: 140px; object-fit: cover;">
                     </a>
                 </div>
@@ -629,7 +635,9 @@
                         <option value="{{ et.id }}" {% if act.expense_type_id == et.id %}selected{% endif %}>{{ et.name }}</option>
                         {% endfor %}
                     </select>
-                    <div class="form-text text-xs text-muted">Jenis Belanja menentukan item kelengkapan berkas yang wajib diperiksa auditor.</div>
+                    <div class="form-text text-xs audit-requirements" data-audit-requirements>
+                        <span class="text-muted">Pilih Jenis Belanja untuk melihat kelengkapan yang diperiksa auditor.</span>
+                    </div>
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-bold">Nama Kegiatan <span class="text-danger">*</span></label>
@@ -713,7 +721,10 @@
                                         <i class="bi bi-camera-fill me-1"></i> Kamera
                                     </button>
                                 </div>
-                                <img class="img-thumbnail mt-1 image-doc-preview w-100 {% if not act.invoice_path %}d-none{% endif %}" src="{% if act.invoice_path %}/{{ act.invoice_path }}{% endif %}" alt="Preview Faktur & Kwitansi" style="max-height: 90px; object-fit: cover;">
+                                {% set invoice_doc = act.docs.get('invoice') if act.docs else none %}
+                                {% set invoice_filename = invoice_doc.file_path|replace('static/', '', 1) if invoice_doc else '' %}
+                                <img class="img-thumbnail mt-1 image-doc-preview w-100 {% if not invoice_doc %}d-none{% endif %}" src="{% if invoice_doc %}{{ url_for('static', filename=invoice_filename) }}{% endif %}" alt="Preview Faktur & Kwitansi" style="max-height: 120px; object-fit: contain;">
+                                {% if invoice_doc %}<div class="form-text text-xs text-success"><i class="bi bi-check-circle me-1"></i>Faktur & Kwitansi tersimpan.</div>{% endif %}
                             </div>
                         </div>
                     </div>
@@ -733,22 +744,35 @@
                                         <i class="bi bi-camera-fill me-1"></i> Kamera
                                     </button>
                                 </div>
-                                <img class="img-thumbnail mt-1 image-doc-preview w-100 {% if not act.transfer_path %}d-none{% endif %}" src="{% if act.transfer_path %}/{{ act.transfer_path }}{% endif %}" alt="Preview Bukti Transfer" style="max-height: 90px; object-fit: cover;">
+                                {% set transfer_doc = act.docs.get('transfer') if act.docs else none %}
+                                {% set transfer_filename = transfer_doc.file_path|replace('static/', '', 1) if transfer_doc else '' %}
+                                <img class="img-thumbnail mt-1 image-doc-preview w-100 {% if not transfer_doc %}d-none{% endif %}" src="{% if transfer_doc %}{{ url_for('static', filename=transfer_filename) }}{% endif %}" alt="Preview Bukti Transfer" style="max-height: 120px; object-fit: contain;">
+                                {% if transfer_doc %}<div class="form-text text-xs text-success"><i class="bi bi-check-circle me-1"></i>Bukti Transfer tersimpan.</div>{% endif %}
                             </div>
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="p-3 border rounded bg-light-subtle h-100 d-flex flex-column justify-content-between">
-                            <label class="form-label fw-bold text-dark mb-2 text-truncate" title="Foto Kegiatan / Barang">
-                                Foto Kegiatan / Barang
+                            <label class="form-label fw-bold text-dark mb-2 text-truncate" title="Foto Kegiatan / Barang (Opsional)">
+                                Foto Kegiatan / Barang <span class="text-muted fw-normal">(Opsional)</span>
                             </label>
                             <div class="d-grid gap-2">
                                 <input type="hidden" name="field_photo_data" class="camera-photo-data">
+                                <input type="file" name="field_photo" class="d-none field-photo-file-input" accept="image/*">
                                 <button type="button" class="btn btn-sm btn-outline-primary w-100 camera-photo-btn text-nowrap" data-preview="editPhotoPreview{{ act.id }}">
                                     <i class="bi bi-camera-fill me-1"></i> Ambil Foto Kamera
                                 </button>
-                                {% set photo_path = act.docs['field_photo'].file_path if (act.docs and act.docs.get('field_photo')) else act.activity_photo_path %}
-                                <img id="editPhotoPreview{{ act.id }}" class="img-thumbnail mt-1 camera-photo-preview w-100 {% if not photo_path %}d-none{% endif %}" src="{% if photo_path %}/{{ photo_path }}{% endif %}" alt="Preview Foto Kegiatan" style="max-height: 90px; object-fit: cover;">
+                                {% set field_photo = act.docs.get('field_photo') if act.docs else none %}
+                                {% if field_photo %}
+                                {% set field_photo_filename = field_photo.file_path|replace('static/', '', 1) %}
+                                <a href="{{ url_for('static', filename=field_photo_filename) }}" target="_blank" class="d-block">
+                                    <img id="editPhotoPreview{{ act.id }}" class="img-thumbnail mt-1 camera-photo-preview w-100" src="{{ url_for('static', filename=field_photo_filename) }}" alt="Foto Kegiatan / Barang saat ini" style="max-height: 160px; object-fit: contain;">
+                                </a>
+                                <div class="form-text text-xs text-success field-photo-status"><i class="bi bi-check-circle me-1"></i>Foto kegiatan/barang saat ini.</div>
+                                {% else %}
+                                <img id="editPhotoPreview{{ act.id }}" class="img-thumbnail mt-1 camera-photo-preview w-100 d-none" alt="Preview Foto Kegiatan" style="max-height: 160px; object-fit: contain;">
+                                <div class="form-text text-xs text-muted field-photo-status">Belum ada foto kegiatan/barang. Foto bersifat opsional.</div>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -824,7 +848,9 @@
                         <option value="{{ et.id }}">{{ et.name }}</option>
                         {% endfor %}
                     </select>
-                    <div class="form-text text-xs text-muted">Jenis Belanja menentukan item kelengkapan berkas yang wajib diperiksa auditor.</div>
+                    <div class="form-text text-xs audit-requirements" data-audit-requirements>
+                        <span class="text-muted">Pilih Jenis Belanja untuk melihat kelengkapan yang diperiksa auditor.</span>
+                    </div>
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-bold">Nama Kegiatan <span class="text-danger">*</span></label>
@@ -924,15 +950,17 @@
                     </div>
                     <div class="col-md-4">
                         <div class="p-3 border rounded bg-light-subtle h-100 d-flex flex-column justify-content-between">
-                            <label class="form-label fw-bold text-dark mb-2 text-truncate" title="Foto Kegiatan / Barang">
-                                Foto Kegiatan / Barang
+                            <label class="form-label fw-bold text-dark mb-2 text-truncate" title="Foto Kegiatan / Barang (Opsional)">
+                                Foto Kegiatan / Barang <span class="text-muted fw-normal">(Opsional)</span>
                             </label>
                             <div class="d-grid gap-2">
                                 <input type="hidden" name="field_photo_data" class="camera-photo-data">
+                                <input type="file" name="field_photo" class="d-none field-photo-file-input" accept="image/*">
                                 <button type="button" class="btn btn-sm btn-outline-primary w-100 camera-photo-btn text-nowrap" data-preview="addPhotoPreview">
                                     <i class="bi bi-camera-fill me-1"></i> Ambil Foto Kamera
                                 </button>
                                 <img id="addPhotoPreview" class="img-thumbnail mt-1 camera-photo-preview w-100 d-none" alt="Preview Foto Kegiatan" style="max-height: 90px; object-fit: cover;">
+                                <div class="form-text text-xs text-muted field-photo-status">Foto kegiatan/barang bersifat opsional.</div>
                             </div>
                         </div>
                     </div>
@@ -976,6 +1004,23 @@
     </div>
 </div>
 
+<div class="modal fade" id="activityDocumentPreviewModal" tabindex="-1" aria-labelledby="activityDocumentPreviewTitle" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="activityDocumentPreviewTitle">Preview Dokumen</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+            </div>
+            <div class="modal-body p-2 p-md-3 text-center bg-body-tertiary">
+                <img id="activityDocumentPreviewImage" src="" alt="Preview dokumen kegiatan" class="img-fluid rounded border bg-white" style="max-height: 78vh; object-fit: contain;">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css">
 <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
 <script>
@@ -985,6 +1030,67 @@ let activeCameraPreview = null;
 let activeDocInput = null;
 let activeDocFileNameEl = null;
 let capturedSchoolPhoto = '';
+const activitiesPrintTitle = {{ ('Laporan Monev ' ~ fund_source ~ ' TW' ~ active_period.tw ~ ' ' ~ active_period.year)|tojson }};
+const auditRequirementsByExpenseType = {{ checklist_requirements_by_expense_type|default({})|tojson }};
+
+function openActivitiesPrintDialog(saveAsPdf) {
+    const originalTitle = document.title;
+    if (saveAsPdf) {
+        document.title = activitiesPrintTitle;
+    }
+
+    const restoreTitle = function () {
+        document.title = originalTitle;
+    };
+    window.addEventListener('afterprint', restoreTitle, { once: true });
+    window.print();
+    window.setTimeout(restoreTitle, 1000);
+}
+
+function updateAuditRequirements(form) {
+    if (!form) return;
+
+    const expenseTypeSelect = form.querySelector('[name="expense_type_id"]');
+    const container = form.querySelector('[data-audit-requirements]');
+    if (!expenseTypeSelect || !container) return;
+
+    const expenseTypeId = expenseTypeSelect.value;
+    const requirements = auditRequirementsByExpenseType[String(expenseTypeId)] || [];
+    container.replaceChildren();
+
+    if (!expenseTypeId) {
+        const prompt = document.createElement('span');
+        prompt.className = 'text-muted';
+        prompt.textContent = 'Pilih Jenis Belanja untuk melihat kelengkapan yang diperiksa auditor.';
+        container.appendChild(prompt);
+        return;
+    }
+
+    if (!requirements.length) {
+        const empty = document.createElement('span');
+        empty.className = 'text-warning';
+        empty.textContent = 'Belum ada kelengkapan audit yang ditetapkan untuk Jenis Belanja ini.';
+        container.appendChild(empty);
+        return;
+    }
+
+    const content = document.createElement('span');
+    content.className = 'text-body-secondary';
+
+    const title = document.createElement('span');
+    title.className = 'fw-semibold';
+    title.textContent = 'Kelengkapan yang diperiksa auditor: ';
+    content.appendChild(title);
+
+    content.appendChild(document.createTextNode(requirements.join(', ')));
+    container.appendChild(content);
+}
+
+function initAuditRequirements(container) {
+    (container || document).querySelectorAll('[data-audit-requirements]').forEach(function (requirements) {
+        updateAuditRequirements(requirements.closest('form'));
+    });
+}
 
 function initActivitySearchableSelects(container) {
     if (!window.TomSelect) return;
@@ -1017,11 +1123,19 @@ function initActivitySearchableSelects(container) {
 
 document.addEventListener('DOMContentLoaded', function () {
     initActivitySearchableSelects(document);
+    initAuditRequirements(document);
     document.querySelectorAll('.modal').forEach(function (modal) {
         modal.addEventListener('shown.bs.modal', function () {
             initActivitySearchableSelects(modal);
+            initAuditRequirements(modal);
         });
     });
+});
+
+document.addEventListener('change', function (event) {
+    if (event.target && event.target.matches('[name="expense_type_id"]')) {
+        updateAuditRequirements(event.target.closest('form'));
+    }
 });
 
 function dataURLtoFile(dataurl, filename) {
@@ -1132,9 +1246,22 @@ function useSchoolPhoto() {
         }
     } else if (activeCameraInput) {
         activeCameraInput.value = capturedSchoolPhoto;
+        const form = activeCameraInput.closest('form');
+        const fieldPhotoFileInput = form ? form.querySelector('.field-photo-file-input') : null;
+        if (fieldPhotoFileInput) {
+            const fieldPhotoFile = dataURLtoFile(capturedSchoolPhoto, 'foto_kegiatan_kamera.jpg');
+            const fieldPhotoTransfer = new DataTransfer();
+            fieldPhotoTransfer.items.add(fieldPhotoFile);
+            fieldPhotoFileInput.files = fieldPhotoTransfer.files;
+        }
         if (activeCameraPreview) {
             activeCameraPreview.src = capturedSchoolPhoto;
             activeCameraPreview.classList.remove('d-none');
+        }
+        const photoStatus = form ? form.querySelector('.field-photo-status') : null;
+        if (photoStatus) {
+            photoStatus.className = 'form-text text-xs text-success field-photo-status';
+            photoStatus.innerHTML = '<i class="bi bi-check-circle me-1"></i>Foto baru siap disimpan.';
         }
     }
     const modal = bootstrap.Modal.getInstance(document.getElementById('schoolCameraModal'));
@@ -1142,6 +1269,18 @@ function useSchoolPhoto() {
 }
 
 document.addEventListener('click', function (event) {
+    const documentPreviewLink = event.target.closest('.activity-doc-preview-link');
+    if (documentPreviewLink) {
+        event.preventDefault();
+        const previewModal = document.getElementById('activityDocumentPreviewModal');
+        const previewImage = document.getElementById('activityDocumentPreviewImage');
+        const previewTitle = document.getElementById('activityDocumentPreviewTitle');
+        previewImage.src = documentPreviewLink.href;
+        previewTitle.textContent = documentPreviewLink.getAttribute('data-doc-title') || 'Preview Dokumen';
+        bootstrap.Modal.getOrCreateInstance(previewModal).show();
+        return;
+    }
+
     const button = event.target.closest('.camera-photo-btn');
     if (button) {
         openSchoolCamera(button);
@@ -1161,6 +1300,10 @@ document.addEventListener('click', function (event) {
         const fileNameEl = wrapper ? wrapper.querySelector('.image-doc-file-name') : null;
         openSchoolCamera(cameraButton, docInput, fileNameEl);
     }
+});
+
+document.getElementById('activityDocumentPreviewModal').addEventListener('hidden.bs.modal', function () {
+    document.getElementById('activityDocumentPreviewImage').src = '';
 });
 
 document.addEventListener('change', function (event) {
@@ -1202,19 +1345,6 @@ document.addEventListener('change', function (event) {
 });
 
 document.getElementById('schoolCameraModal').addEventListener('hidden.bs.modal', stopSchoolCamera);
-
-document.addEventListener('submit', function (event) {
-    const form = event.target;
-    const photoInput = form.querySelector('.camera-photo-data');
-    if (photoInput && !photoInput.value) {
-        event.preventDefault();
-        alert('Foto kegiatan wajib diambil langsung dari kamera sebelum menyimpan.');
-        const photoButton = form.querySelector('.camera-photo-btn');
-        if (photoButton) {
-            photoButton.focus();
-        }
-    }
-});
 
 function createSampleImageDataUrl(text, bgColor) {
     const canvas = document.createElement('canvas');
@@ -1435,6 +1565,28 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     .table th, .table td {
         border: 1px solid #000 !important;
+    }
+    .signature-section {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    }
+    .signature-section .card-body > .row {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        align-items: flex-start !important;
+    }
+    .signature-section .signature-column {
+        display: block !important;
+        flex: 0 0 50% !important;
+        width: 50% !important;
+        max-width: 50% !important;
+    }
+    .signature-section .signature-headmaster {
+        order: 1 !important;
+    }
+    .signature-section .signature-auditors {
+        order: 2 !important;
     }
 }
 </style>
