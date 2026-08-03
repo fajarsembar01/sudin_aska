@@ -45,6 +45,12 @@ jobs:
           rsync -avz --progress \
             web_aska/handlers.py \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_PROJECT_PATH }}/web_aska/handlers.py
+          rsync -avz --progress \
+            dashboard/monev_bos/routes.py \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_PROJECT_PATH }}/dashboard/monev_bos/routes.py
+          rsync -avz --progress \
+            dashboard/schema.py \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_PROJECT_PATH }}/dashboard/schema.py
 
       - name: 🔄 Reload ASKA di server
         run: |
@@ -52,3 +58,10 @@ jobs:
             "cd ${{ secrets.SERVER_PROJECT_PATH }} && \
              echo '✅ Kode runtime diperbarui!' && \
              (sudo systemctl restart aska 2>/dev/null || pm2 restart aska 2>/dev/null || echo '⚠️ Restart manual diperlukan')"
+
+      - name: 🔄 Restart dashboard
+        run: |
+          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
+            "cd ${{ secrets.SERVER_PROJECT_PATH }} && \
+             sudo systemctl restart aska-dashboard.service && \
+             sudo systemctl is-active aska-dashboard.service"
