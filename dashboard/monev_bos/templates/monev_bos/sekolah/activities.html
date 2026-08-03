@@ -658,9 +658,7 @@
                             <option value="{{ act.account_code }}" selected>{{ act.account_code }}</option>
                             {% endif %}
                         </select>
-                        {% if account_codes %}
-                        <div class="form-text text-xs text-muted">Ketik kode atau nama rekening untuk mencari.</div>
-                        {% else %}
+                        {% if not account_codes %}
                         <div class="form-text text-xs text-warning">Belum ada kode rekening aktif. Hubungi admin untuk mengisi Master Kode Rekening.</div>
                         {% endif %}
                     </div>
@@ -850,9 +848,7 @@
                             <option value="{{ ac.code }}">{{ ac.code }}{% if ac.name %} - {{ ac.name }}{% endif %}</option>
                             {% endfor %}
                         </select>
-                        {% if account_codes %}
-                        <div class="form-text text-xs text-muted">Ketik kode atau nama rekening untuk mencari.</div>
-                        {% else %}
+                        {% if not account_codes %}
                         <div class="form-text text-xs text-warning">Belum ada kode rekening aktif. Hubungi admin untuk mengisi Master Kode Rekening.</div>
                         {% endif %}
                     </div>
