@@ -276,13 +276,18 @@ def admin_master_activities():
             flash("Master Nama Kegiatan berhasil dihapus", "success")
         return redirect(url_for("monev_bos.admin_master_activities"))
 
-    master_activities = queries.list_master_activities(include_inactive=True)
+    search_query = request.args.get("q", "").strip()
+    master_activities = queries.list_master_activities(
+        include_inactive=True,
+        search_query=search_query,
+    )
     queries.attach_admin_input_names(master_activities, "MONEV_MASTER_ACTIVITY")
     activity_logs = queries.list_admin_action_history(["MONEV_MASTER_ACTIVITY"])
     return render_template(
         "monev_bos/admin/master_activities.html",
         master_activities=master_activities,
         activity_logs=activity_logs,
+        search_query=search_query,
     )
 
 

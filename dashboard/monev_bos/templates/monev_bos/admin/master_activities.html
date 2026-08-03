@@ -13,6 +13,38 @@
     </div>
 
     <div class="card shadow-sm border-0">
+        <div class="card-body border-bottom">
+            <form method="GET" action="{{ url_for('monev_bos.admin_master_activities') }}" class="row g-2 align-items-center">
+                <div class="col-md-7 col-lg-5">
+                    <label for="masterActivitySearch" class="visually-hidden">Cari kegiatan</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-body border-end-0">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input
+                            type="search"
+                            class="form-control border-start-0"
+                            id="masterActivitySearch"
+                            name="q"
+                            value="{{ search_query }}"
+                            placeholder="Cari nama kegiatan atau prefiks kode..."
+                            autocomplete="off"
+                        >
+                    </div>
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-primary">Cari</button>
+                </div>
+                {% if search_query %}
+                <div class="col-auto">
+                    <a href="{{ url_for('monev_bos.admin_master_activities') }}" class="btn btn-outline-secondary">Reset</a>
+                </div>
+                <div class="col-12 col-md-auto ms-md-auto text-body-secondary small">
+                    {{ master_activities|length }} hasil untuk “{{ search_query }}”
+                </div>
+                {% endif %}
+            </form>
+        </div>
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
@@ -114,7 +146,13 @@
                         </div>
                         {% else %}
                         <tr>
-                            <td colspan="7" class="text-center py-4 text-muted">Belum ada master nama kegiatan.</td>
+                            <td colspan="7" class="text-center py-4 text-muted">
+                                {% if search_query %}
+                                Tidak ada kegiatan yang cocok dengan pencarian “{{ search_query }}”.
+                                {% else %}
+                                Belum ada master nama kegiatan.
+                                {% endif %}
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>

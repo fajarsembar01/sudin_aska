@@ -1132,7 +1132,11 @@ def add_audit_log(report_id: int, activity_id: Optional[int], user_id: int, acti
 
 
 # --- MASTER NAMA KEGIATAN ---
-def list_master_activities(include_inactive: bool = False, fund_source: Optional[str] = None) -> List[Dict[str, Any]]:
+def list_master_activities(
+    include_inactive: bool = False,
+    fund_source: Optional[str] = None,
+    search_query: Optional[str] = None,
+) -> List[Dict[str, Any]]:
     with get_cursor() as cur:
         query = "SELECT * FROM monev_bos_master_activities WHERE 1=1"
         params: List[Any] = []
@@ -1141,6 +1145,10 @@ def list_master_activities(include_inactive: bool = False, fund_source: Optional
         if fund_source and fund_source != "ALL":
             query += " AND (fund_source = %s OR fund_source = 'ALL')"
             params.append(fund_source)
+        if search_query:
+            query += " AND (name ILIKE %s OR COALESCE(code_prefix, '') ILIKE %s)"
+            search_pattern = f"%{search_query.strip()}%"
+            params.extend([search_pattern, search_pattern])
         query += " ORDER BY name ASC"
         cur.execute(query, params)
         return [dict(row) for row in cur.fetchall()]
@@ -1517,4 +1525,3 @@ def get_assigned_auditors_for_school(school_id: int, period_id: int) -> Dict[str
             "team_name": rows[0]["team_name"],
             "members": [dict(r) for r in rows]
         }
-
