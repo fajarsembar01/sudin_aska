@@ -9,6 +9,36 @@
     .spin-icon { display: inline-block; animation: spin 4s linear infinite; }
     .activity-summary-mobile-item { border-bottom: 1px solid var(--bs-border-color); }
     .activity-summary-mobile-item:last-child { border-bottom: 0; }
+    .audit-progress-sticky {
+        position: sticky;
+        top: var(--monev-navbar-height, 64px);
+        z-index: 1015;
+        margin: 0 auto 0.75rem;
+        max-width: 760px;
+    }
+    .audit-progress-compact {
+        position: relative;
+        height: 24px;
+        border-radius: 999px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    .audit-progress-label {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 12px;
+        color: #fff;
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+        pointer-events: none;
+    }
+    .audit-autosave-status { min-height: 1rem; }
+    .audit-checklist-item { min-width: 0; }
     
     @media (max-width: 576px) {
         .audit-container { padding-left: 8px !important; padding-right: 8px !important; }
@@ -22,23 +52,56 @@
         .activity-summary-mobile-item { padding: 10px 12px !important; }
         .activity-summary-mobile-title { font-size: 0.78rem !important; line-height: 1.25; }
         .activity-summary-chip { min-width: 36px; padding: 4px 6px !important; font-size: 0.68rem !important; }
+        .audit-container { padding-top: 48px !important; }
+        .audit-progress-sticky {
+            position: fixed;
+            top: calc(var(--monev-navbar-height, 64px) + 6px);
+            left: 12px;
+            right: 12px;
+            margin: 0;
+        }
+        .audit-page-header > div,
+        .audit-page-header .audit-header-actions,
+        .audit-page-header .audit-status-control { width: 100%; }
+        .audit-page-header .audit-status-control { justify-content: space-between; }
+        .audit-page-header .audit-status-control form { flex: 1; }
+        .audit-page-header .audit-status-control select { width: 100%; }
+        .audit-checklist-item > .d-flex { align-items: stretch !important; }
+        .audit-checklist-label,
+        .audit-checklist-actions { width: 100%; }
+        .audit-checklist-actions .btn-group { flex: 1; }
+        .audit-checklist-actions .btn-group label { flex: 1; }
+        .audit-validation-actions { flex-direction: column; }
+        .audit-validation-actions .btn { width: 100%; }
+        .activity-header .badge { white-space: normal; }
     }
 </style>
 
 <div class="container-fluid py-3 py-md-4 audit-container">
+    <div class="audit-progress-sticky">
+        <div class="progress audit-progress-compact bg-secondary" aria-label="Kelengkapan dokumen {{ fund_source }}">
+            <div class="progress-bar bg-success" id="checklistSummaryBar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ audit_metrics.checklist_percent|round(1) }}" style="width: {{ audit_metrics.checklist_percent|round(1) }}%;"></div>
+            <span class="audit-progress-label">
+                Kelengkapan {{ fund_source }}&nbsp;
+                <span id="checklistSummaryCounts">{{ audit_metrics.checklist_yes }}/{{ audit_metrics.checklist_total }}</span>&nbsp;•&nbsp;
+                <span id="checklistSummaryPercent">{{ audit_metrics.checklist_percent|round(1) }}%</span>
+            </span>
+        </div>
+    </div>
+
     <!-- Header Responsive Bar -->
-    <div class="d-flex justify-content-between align-items-sm-center mb-3 flex-column flex-sm-row gap-2">
+    <div class="d-flex justify-content-between align-items-sm-center mb-3 flex-column flex-sm-row gap-2 audit-page-header">
         <div>
             <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
-                <h1 class="h5 h4-md mb-0 text-body fw-bold">Audit Laporan: {{ report.school_name }}</h1>
+                <h1 class="h5 h4-md mb-0 text-body fw-bold">{{ report.school_name }}</h1>
                 <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill text-xs">
                     <i class="bi bi-calendar3 me-1"></i> Tahun {{ report.year or '2026' }} &bull; TW {{ report.tw or 'I' }}
                 </span>
             </div>
             <p class="text-body-secondary small mb-0 d-none d-sm-block">Monitoring dan validasi kegiatan laporan pertanggungjawaban sekolah</p>
         </div>
-        <div class="d-flex align-items-center gap-2 flex-wrap">
-            <div class="d-flex align-items-center gap-1.5 bg-body border rounded-pill px-3 py-1 shadow-2xs">
+        <div class="d-flex align-items-center gap-2 flex-wrap audit-header-actions">
+            <div class="d-flex align-items-center gap-1.5 bg-body border rounded-pill px-3 py-1 shadow-2xs audit-status-control">
                 <span class="text-body-secondary fw-bold text-xs text-nowrap"><i class="bi bi-clipboard-check me-1"></i>Status Audit:</span>
                 <form action="{{ url_for('monev_bos.staff_audit_report', report_id=report.id) }}" method="POST" class="m-0">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -141,27 +204,9 @@
         </div>
     </div>
 
-    <!-- Ringkasan Kelengkapan Audit untuk sumber dana aktif -->
+    <!-- Ringkasan penggunaan foto untuk sumber dana aktif -->
     <div class="row mb-3 g-2 g-sm-3">
-        <div class="col-12 col-md-6">
-            <div class="card bg-body border shadow-xs h-100 p-3 rounded-3">
-                <div class="d-flex justify-content-between align-items-start gap-3">
-                    <div>
-                        <span class="text-uppercase text-body-secondary fw-bold text-xs d-block">Kelengkapan Dokumen {{ fund_source }}</span>
-                        <div class="d-flex align-items-baseline gap-2 mt-1">
-                            <h4 class="fw-bold text-success mb-0" id="checklistSummaryPercent">{{ audit_metrics.checklist_percent|round(1) }}%</h4>
-                            <span class="text-body-secondary text-xs" id="checklistSummaryCounts">{{ audit_metrics.checklist_yes }} ada, {{ audit_metrics.checklist_no }} tidak ada</span>
-                        </div>
-                    </div>
-                    <div class="rounded-3 p-2 bg-success-subtle text-success"><i class="bi bi-card-checklist fs-5"></i></div>
-                </div>
-                <div class="progress bg-body-tertiary mt-3" style="height: 7px;">
-                    <div class="progress-bar bg-success" id="checklistSummaryBar" role="progressbar" style="width: {{ audit_metrics.checklist_percent|round(1) }}%;"></div>
-                </div>
-                <small class="text-body-secondary mt-2" id="checklistSummaryTotal">Total {{ audit_metrics.checklist_total }} item wajib dari {{ audit_metrics.activities_total }} kegiatan.</small>
-            </div>
-        </div>
-        <div class="col-12 col-md-6">
+        <div class="col-12">
             <div class="card bg-body border shadow-xs h-100 p-3 rounded-3">
                 <div class="d-flex justify-content-between align-items-start gap-3">
                     <div>
@@ -456,13 +501,16 @@
                                         {% set act_checklists = act.checklists if act.checklists else checklists %}
                                         {% if act_checklists %}
                                         <div class="card border-0 bg-body-tertiary shadow-2xs mb-3">
-                                            <div class="card-header bg-body py-2 px-3 d-flex justify-content-between align-items-center border-bottom">
-                                                <h6 class="mb-0 text-xs fw-bold text-body">
-                                                    <i class="bi bi-card-checklist text-primary me-1"></i> Checklist Kelengkapan Dokumen
-                                                    {% if act.expense_type_name %}
-                                                    <span class="badge bg-info-subtle text-info border border-info-subtle text-xs ms-1"><i class="bi bi-wallet2 me-1"></i>{{ act.expense_type_name }}</span>
-                                                    {% endif %}
-                                                </h6>
+                                            <div class="card-header bg-body py-2 px-3 d-flex justify-content-between align-items-center border-bottom gap-2 flex-wrap">
+                                                <div>
+                                                    <h6 class="mb-0 text-xs fw-bold text-body">
+                                                        <i class="bi bi-card-checklist text-primary me-1"></i> Checklist Kelengkapan Dokumen
+                                                        {% if act.expense_type_name %}
+                                                        <span class="badge bg-info-subtle text-info border border-info-subtle text-xs ms-1"><i class="bi bi-wallet2 me-1"></i>{{ act.expense_type_name }}</span>
+                                                        {% endif %}
+                                                    </h6>
+                                                    <small class="audit-autosave-status text-body-secondary d-block mt-1" data-save-status>Perubahan tersimpan otomatis</small>
+                                                </div>
                                                 <span class="badge bg-primary-subtle text-primary border border-primary-subtle text-xs">{{ act_checklists|length }} Item Cek</span>
                                             </div>
                                              <div class="card-body p-2 p-sm-3">
@@ -472,9 +520,9 @@
                                                      {% set current_status = res.status if (res and res.status in ['yes', 'no']) else 'no' %}
                                                      {% set has_notes = res and res.notes %}
                                                      <div class="col-12">
-                                                         <div class="p-2 px-3 bg-body rounded border text-xs shadow-2xs">
+                                                         <div class="p-2 px-3 bg-body rounded border text-xs shadow-2xs audit-checklist-item">
                                                              <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                                                                 <div class="d-flex align-items-center gap-2">
+                                                                 <div class="d-flex align-items-center gap-2 audit-checklist-label">
                                                                      <span class="badge bg-body-tertiary text-body border me-1">{{ loop.index }}</span>
                                                                      <span class="fw-bold text-body text-sm mb-0">{{ cl.name }}</span>
                                                                      {% if cl.description %}
@@ -482,7 +530,7 @@
                                                                      {% endif %}
                                                                  </div>
                                                                  
-                                                                 <div class="d-flex align-items-center gap-2">
+                                                                 <div class="d-flex align-items-center gap-2 audit-checklist-actions">
                                                                      <div class="btn-group" role="group" aria-label="Status Kelengkapan">
                                                                          <input type="radio" class="btn-check" name="checklist_{{ cl.id }}" id="cl_{{ act.id }}_{{ cl.id }}_yes" value="yes" autocomplete="off" {% if current_status == 'yes' %}checked{% endif %}>
                                                                          <label class="btn btn-outline-success btn-sm text-xs py-1 px-2.5 fw-bold" for="cl_{{ act.id }}_{{ cl.id }}_yes">
@@ -521,7 +569,7 @@
                                         </div>
 
                                         <!-- 2 Tombol Utama Validasi (1 Baris: Kiri Perlu Revisi, Kanan Sesuai) -->
-                                        <div class="d-flex gap-2 pt-2 border-top">
+                                        <div class="d-flex gap-2 pt-2 border-top audit-validation-actions">
                                             <button type="submit" name="status" value="invalid" onclick="this.form.querySelector('.activity-status-input').value='invalid';" class="btn btn-sm btn-danger py-2 px-2.5 fw-bold flex-fill shadow-2xs">
                                                 <i class="bi bi-x-circle-fill me-1"></i> Perlu Revisi
                                             </button>
@@ -962,26 +1010,174 @@
             }
         });
 
-        const no = total - yes;
         const percent = total ? (yes / total * 100) : 0;
         const percentEl = document.getElementById('checklistSummaryPercent');
         const countsEl = document.getElementById('checklistSummaryCounts');
         const barEl = document.getElementById('checklistSummaryBar');
         if (percentEl) percentEl.textContent = percent.toFixed(1) + '%';
-        if (countsEl) countsEl.textContent = yes + ' ada, ' + no + ' tidak ada';
-        if (barEl) barEl.style.width = percent.toFixed(1) + '%';
+        if (countsEl) countsEl.textContent = yes + '/' + total;
+        if (barEl) {
+            barEl.style.width = percent.toFixed(1) + '%';
+            barEl.setAttribute('aria-valuenow', percent.toFixed(1));
+        }
     }
+
+    // Draft checklist dan catatan disimpan tanpa mengubah status validasi kegiatan.
+    const auditAutosaveStates = new WeakMap();
+    const dirtyAuditForms = new Set();
+
+    function setAuditSaveStatus(form, state, message) {
+        const statusEl = form.querySelector('[data-save-status]');
+        const globalStatus = document.getElementById('globalAuditSaveStatus');
+        const classes = {
+            saving: 'text-primary',
+            saved: 'text-success',
+            error: 'text-danger'
+        };
+        const icon = state === 'saving'
+            ? '<span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>'
+            : (state === 'saved' ? '<i class="bi bi-cloud-check me-1"></i>' : '<i class="bi bi-cloud-slash me-1"></i>');
+
+        [statusEl, globalStatus].forEach(function (el) {
+            if (!el) return;
+            el.classList.remove('text-primary', 'text-success', 'text-danger', 'text-body-secondary');
+            el.classList.add(classes[state] || 'text-body-secondary');
+            el.innerHTML = icon + message;
+        });
+    }
+
+    function getAuditAutosaveState(form) {
+        if (!auditAutosaveStates.has(form)) {
+            auditAutosaveStates.set(form, { timer: null, inFlight: false, pending: false });
+        }
+        return auditAutosaveStates.get(form);
+    }
+
+    function buildAuditDraftData(form) {
+        const data = new FormData(form);
+        data.set('action', 'autosave_details');
+        data.delete('status');
+        return data;
+    }
+
+    function saveAuditDraft(form) {
+        const state = getAuditAutosaveState(form);
+        if (state.inFlight) {
+            state.pending = true;
+            return;
+        }
+
+        state.inFlight = true;
+        state.pending = false;
+        setAuditSaveStatus(form, 'saving', 'Menyimpan…');
+        const data = buildAuditDraftData(form);
+        const csrfToken = data.get('csrf_token') || '{{ csrf_token() }}';
+
+        fetch(form.getAttribute('action'), {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': csrfToken,
+                'Accept': 'application/json'
+            },
+            body: data,
+            keepalive: true
+        })
+        .then(async function (response) {
+            const result = await response.json().catch(function () { return {}; });
+            if (!response.ok || !result.success) {
+                throw new Error(result.message || 'Gagal menyimpan otomatis.');
+            }
+            return result;
+        })
+        .then(function () {
+            if (!state.pending) {
+                dirtyAuditForms.delete(form);
+                setAuditSaveStatus(form, 'saved', 'Tersimpan otomatis');
+            }
+        })
+        .catch(function (error) {
+            console.error('Audit autosave error:', error);
+            setAuditSaveStatus(form, 'error', 'Belum tersimpan');
+        })
+        .finally(function () {
+            state.inFlight = false;
+            if (state.pending) {
+                state.pending = false;
+                saveAuditDraft(form);
+            }
+        });
+    }
+
+    function scheduleAuditAutosave(form, immediate) {
+        const state = getAuditAutosaveState(form);
+        dirtyAuditForms.add(form);
+        window.clearTimeout(state.timer);
+        setAuditSaveStatus(form, 'saving', 'Menunggu disimpan…');
+        if (immediate) {
+            saveAuditDraft(form);
+        } else {
+            state.timer = window.setTimeout(function () { saveAuditDraft(form); }, 650);
+        }
+    }
+
+    function updateNavbarOffset() {
+        const navbar = document.querySelector('nav.navbar, .navbar.sticky-top');
+        const height = navbar ? Math.ceil(navbar.getBoundingClientRect().height) : 64;
+        document.documentElement.style.setProperty('--monev-navbar-height', height + 'px');
+    }
+
+    updateNavbarOffset();
+    window.addEventListener('resize', updateNavbarOffset);
+
+    document.querySelectorAll('.validate-activity-form').forEach(function (form) {
+        form.querySelectorAll('input[type="radio"][name^="checklist_"]').forEach(function (radio) {
+            radio.addEventListener('change', function () {
+                refreshChecklistMetricsFromForms();
+                scheduleAuditAutosave(form, true);
+            });
+        });
+
+        form.querySelectorAll('input[name^="checklist_notes_"], textarea[name="audit_notes"]').forEach(function (field) {
+            field.addEventListener('input', function () {
+                scheduleAuditAutosave(form, false);
+            });
+            field.addEventListener('change', function () {
+                scheduleAuditAutosave(form, true);
+            });
+        });
+    });
+
+    refreshChecklistMetricsFromForms();
+
+    window.addEventListener('pagehide', function () {
+        dirtyAuditForms.forEach(function (form) {
+            const state = getAuditAutosaveState(form);
+            window.clearTimeout(state.timer);
+            navigator.sendBeacon(form.getAttribute('action'), buildAuditDraftData(form));
+        });
+    });
 
     // --- AJAX Validation Form Handler ---
     document.querySelectorAll('.validate-activity-form').forEach(form => {
-        form.addEventListener('submit', function (e) {
+        form.addEventListener('submit', async function (e) {
             e.preventDefault();
+            const autosaveState = getAuditAutosaveState(this);
+            window.clearTimeout(autosaveState.timer);
+            autosaveState.pending = false;
+            dirtyAuditForms.delete(this);
             const submitBtn = e.submitter || this.querySelector('button[type="submit"]');
             const originalBtnHtml = submitBtn ? submitBtn.innerHTML : 'Simpan';
 
             if (submitBtn) {
                 submitBtn.disabled = true;
                 submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Menyimpan...';
+            }
+
+            // Biarkan request draft yang sudah berjalan selesai lebih dulu agar
+            // respons lama tidak menimpa detail terbaru dari validasi akhir.
+            while (autosaveState.inFlight) {
+                await new Promise(function (resolve) { window.setTimeout(resolve, 50); });
             }
 
             const formData = new FormData(this);
@@ -998,7 +1194,7 @@
             }
             const csrfToken = formData.get('csrf_token') || '{{ csrf_token() }}';
 
-            fetch(this.action, {
+            fetch(this.getAttribute('action'), {
                 method: 'POST',
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',

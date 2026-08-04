@@ -1179,6 +1179,14 @@ def update_activity_audit(activity_id: int, status: str, notes: str) -> None:
             (status, notes, activity_id)
         )
 
+def update_activity_audit_notes(activity_id: int, notes: str) -> None:
+    """Persist draft audit notes without changing the activity validation status."""
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            "UPDATE monev_bos_activities SET audit_notes = %s, updated_at = NOW() WHERE id = %s",
+            (notes, activity_id)
+        )
+
 def save_checklist_result(activity_id: int, checklist_id: int, status: str, notes: str, user_id: int) -> None:
     with get_cursor(commit=True) as cur:
         cur.execute(

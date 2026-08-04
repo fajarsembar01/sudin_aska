@@ -1936,6 +1936,31 @@ def staff_audit_activity(activity_id):
                 "message": "Foto kembali disahkan." if is_valid else "Foto berhasil dianulir dan tidak dihitung.",
             })
 
+        if action == "autosave_details":
+            notes = request.form.get("audit_notes") or ""
+            queries.update_activity_audit_notes(activity_id, notes)
+
+            # Save exactly the active checklist fields rendered and submitted by
+            # the form. Some legacy activities have no/mismatched expense type,
+            # so filtering again here can silently discard a visible choice.
+            checklists = queries.list_checklists(include_inactive=False)
+            saved_items = 0
+            for cl in checklists:
+                cl_status = request.form.get(f"checklist_{cl['id']}")
+                cl_notes = request.form.get(f"checklist_notes_{cl['id']}") or ""
+                if cl_status in {"yes", "no", "na"}:
+                    queries.save_checklist_result(
+                        activity_id, cl["id"], cl_status, cl_notes, user["id"]
+                    )
+                    saved_items += 1
+
+            return jsonify({
+                "success": True,
+                "activity_id": activity_id,
+                "saved_items": saved_items,
+                "message": "Perubahan audit tersimpan otomatis.",
+            })
+
         if action == "validate":
             status = request.form.get("status")
             if not status or status not in ["valid", "invalid", "in_review", "pending"]:
@@ -1947,8 +1972,8 @@ def staff_audit_activity(activity_id):
             notes = request.form.get("audit_notes") or ""
             queries.update_activity_audit(activity_id, status, notes)
             
-            # Save checklist (filtered by activity's expense_type_id)
-            checklists = queries.get_checklists_for_activity(act.get("expense_type_id"))
+            # Save active checklist fields submitted by the rendered form.
+            checklists = queries.list_checklists(include_inactive=False)
             for cl in checklists:
                 cl_status = request.form.get(f"checklist_{cl['id']}")
                 cl_notes = request.form.get(f"checklist_notes_{cl['id']}") or ""
