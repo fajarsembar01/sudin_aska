@@ -1,6 +1,7 @@
 from dashboard.db_access import get_cursor
 from typing import List, Dict, Any, Optional
 from datetime import date
+import json
 
 
 def attach_admin_input_names(
@@ -807,22 +808,54 @@ def cancel_edit_request(activity_id: int) -> None:
 # --- ACTIVITY DOCS ---
 def get_activity_docs(activity_id: int) -> List[Dict[str, Any]]:
     with get_cursor() as cur:
-        cur.execute("SELECT * FROM monev_bos_activity_docs WHERE activity_id = %s", (activity_id,))
+        cur.execute(
+            "SELECT * FROM monev_bos_activity_docs WHERE activity_id = %s ORDER BY created_at, id",
+            (activity_id,),
+        )
         return [dict(row) for row in cur.fetchall()]
 
-def add_activity_doc(activity_id: int, doc_type: str, file_path: str, file_size: int, user_id: int) -> None:
+def add_activity_doc(activity_id: int, doc_type: str, file_path: str, file_size: int, user_id: int) -> int:
     with get_cursor(commit=True) as cur:
-        # Menghapus dokumen dengan tipe yang sama (jika re-upload) kecuali untuk live_photo/physical_proof (bisa banyak)
-        if doc_type in ['transfer', 'invoice', 'field_photo']:
+        # Dokumen utama hanya satu. Foto sekolah/staff dan bukti fisik boleh lebih dari satu.
+        if doc_type in ['transfer', 'invoice']:
             cur.execute("DELETE FROM monev_bos_activity_docs WHERE activity_id = %s AND doc_type = %s", (activity_id, doc_type))
             
         cur.execute(
             """
             INSERT INTO monev_bos_activity_docs (activity_id, doc_type, file_path, file_size, uploaded_by)
             VALUES (%s, %s, %s, %s, %s)
+            RETURNING id
             """,
             (activity_id, doc_type, file_path, file_size, user_id)
         )
+        return int(cur.fetchone()[0])
+
+
+def set_field_photo_audit_validity(
+    activity_id: int,
+    doc_id: int,
+    is_valid: bool,
+    user_id: int,
+    notes: Optional[str] = None,
+) -> Optional[Dict[str, Any]]:
+    """Anulir atau sahkan kembali satu foto sekolah tanpa menghapus bukti aslinya."""
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE monev_bos_activity_docs
+            SET is_audit_valid = %s,
+                photo_audit_notes = %s,
+                photo_audited_by = %s,
+                photo_audited_at = NOW()
+            WHERE id = %s
+              AND activity_id = %s
+              AND doc_type = 'field_photo'
+            RETURNING *
+            """,
+            (is_valid, notes or None, user_id, doc_id, activity_id),
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
 # --- STAFF TEAMS & MEMBERS ---
 def get_teams_for_staff(staff_id: int) -> List[Dict[str, Any]]:
     with get_cursor() as cur:
@@ -1525,3 +1558,335 @@ def get_assigned_auditors_for_school(school_id: int, period_id: int) -> Dict[str
             "team_name": rows[0]["team_name"],
             "members": [dict(r) for r in rows]
         }
+
+
+# --- STORY & POST SEKOLAH ---
+def create_school_post(
+    school_user_id: int,
+    title: str,
+    photo_path: str,
+    photo_size: int,
+    latitude: float,
+    longitude: float,
+    location_accuracy: Optional[float],
+    location_text: str,
+    actor_id: int,
+) -> int:
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            INSERT INTO monev_bos_school_posts
+                (school_user_id, title, photo_path, photo_size, latitude, longitude,
+                 location_accuracy, location_text, created_by)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            RETURNING id
+            """,
+            (
+                school_user_id,
+                title.strip(),
+                photo_path,
+                photo_size,
+                latitude,
+                longitude,
+                location_accuracy,
+                location_text,
+                actor_id,
+            ),
+        )
+        post_id = int(cur.fetchone()[0])
+        cur.execute(
+            """
+            INSERT INTO monev_bos_story_audit_logs
+                (post_id, school_user_id, actor_id, action, details)
+            VALUES (%s, %s, %s, 'CREATE', %s::jsonb)
+            """,
+            (
+                post_id,
+                school_user_id,
+                actor_id,
+                json.dumps({"title": title.strip(), "location_text": location_text}),
+            ),
+        )
+        return post_id
+
+
+def get_school_post(post_id: int, *, include_deleted: bool = False) -> Optional[Dict[str, Any]]:
+    with get_cursor() as cur:
+        query = """
+            SELECT p.*,
+                   COALESCE(s.name, owner.full_name, owner.email, 'Sekolah') AS school_name,
+                   s.logo_url AS school_logo_url,
+                   COALESCE(creator.full_name, creator.email, 'Tidak ada') AS creator_name,
+                   COALESCE(deleter.full_name, deleter.email, 'Tidak ada') AS deleter_name
+            FROM monev_bos_school_posts p
+            JOIN dashboard_users owner ON owner.id = p.school_user_id
+            LEFT JOIN portal_schools s ON s.id = owner.school_id
+            LEFT JOIN dashboard_users creator ON creator.id = p.created_by
+            LEFT JOIN dashboard_users deleter ON deleter.id = p.deleted_by
+            WHERE p.id = %s
+        """
+        if not include_deleted:
+            query += " AND p.deleted_at IS NULL"
+        cur.execute(query, (post_id,))
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
+def get_school_post_profile(school_user_id: int) -> Optional[Dict[str, Any]]:
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT owner.id AS school_user_id,
+                   COALESCE(s.name, owner.full_name, owner.email, 'Sekolah') AS school_name,
+                   s.logo_url AS school_logo_url,
+                   s.npsn,
+                   s.alamat,
+                   COUNT(p.id) FILTER (WHERE p.deleted_at IS NULL) AS post_count
+            FROM dashboard_users owner
+            LEFT JOIN portal_schools s ON s.id = owner.school_id
+            LEFT JOIN monev_bos_school_posts p ON p.school_user_id = owner.id
+            WHERE owner.id = %s AND owner.role = 'sekolah'
+            GROUP BY owner.id, s.name, s.logo_url, s.npsn, s.alamat
+            """,
+            (school_user_id,),
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
+def list_school_posts(
+    *,
+    school_user_id: Optional[int] = None,
+    search_query: str = "",
+    limit: int = 100,
+) -> List[Dict[str, Any]]:
+    with get_cursor() as cur:
+        query = """
+            SELECT p.*,
+                   COALESCE(s.name, owner.full_name, owner.email, 'Sekolah') AS school_name,
+                   s.logo_url AS school_logo_url,
+                   CASE WHEN p.story_expires_at > NOW() THEN TRUE ELSE FALSE END AS is_active_story
+            FROM monev_bos_school_posts p
+            JOIN dashboard_users owner ON owner.id = p.school_user_id
+            LEFT JOIN portal_schools s ON s.id = owner.school_id
+            WHERE p.deleted_at IS NULL
+        """
+        params: List[Any] = []
+        if school_user_id is not None:
+            query += " AND p.school_user_id = %s"
+            params.append(school_user_id)
+        if search_query.strip():
+            pattern = f"%{search_query.strip()}%"
+            query += """
+                AND (
+                    p.title ILIKE %s OR p.location_text ILIKE %s OR
+                    COALESCE(s.name, owner.full_name, owner.email, '') ILIKE %s
+                )
+            """
+            params.extend([pattern, pattern, pattern])
+        query += " ORDER BY p.created_at DESC, p.id DESC LIMIT %s"
+        params.append(max(1, min(int(limit), 500)))
+        cur.execute(query, params)
+        return [dict(row) for row in cur.fetchall()]
+
+
+def list_active_story_groups(limit: int = 200) -> List[Dict[str, Any]]:
+    posts = list_school_posts(limit=limit)
+    active_posts = [post for post in posts if post.get("is_active_story")]
+    groups: Dict[int, Dict[str, Any]] = {}
+    for post in reversed(active_posts):
+        school_user_id = int(post["school_user_id"])
+        group = groups.setdefault(
+            school_user_id,
+            {
+                "school_user_id": school_user_id,
+                "school_name": post.get("school_name") or "Sekolah",
+                "school_logo_url": post.get("school_logo_url"),
+                "posts": [],
+            },
+        )
+        group["posts"].append(post)
+    return sorted(
+        groups.values(),
+        key=lambda group: group["posts"][-1]["created_at"] if group["posts"] else date.min,
+        reverse=True,
+    )
+
+
+def get_activity_post_link(activity_id: int) -> Optional[Dict[str, Any]]:
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT link.*, p.title AS post_title, p.photo_path AS post_photo_path
+            FROM monev_bos_activity_post_links link
+            JOIN monev_bos_school_posts p ON p.id = link.post_id
+            WHERE link.activity_id = %s
+            """,
+            (activity_id,),
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
+def get_activity_post_links(activity_id: int) -> List[Dict[str, Any]]:
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT link.*, p.title AS post_title, p.photo_path AS post_photo_path
+            FROM monev_bos_activity_post_links link
+            JOIN monev_bos_school_posts p ON p.id = link.post_id
+            WHERE link.activity_id = %s
+            ORDER BY link.linked_at, link.id
+            """,
+            (activity_id,),
+        )
+        return [dict(row) for row in cur.fetchall()]
+
+
+def unlink_activity_post(activity_id: int) -> None:
+    with get_cursor(commit=True) as cur:
+        cur.execute("DELETE FROM monev_bos_activity_post_links WHERE activity_id = %s", (activity_id,))
+
+
+def link_post_to_activity(activity_id: int, post_id: int, school_user_id: int, actor_id: int) -> int:
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            SELECT id, title, photo_path, photo_size
+            FROM monev_bos_school_posts
+            WHERE id = %s AND school_user_id = %s AND deleted_at IS NULL
+            FOR UPDATE
+            """,
+            (post_id, school_user_id),
+        )
+        post = cur.fetchone()
+        if not post:
+            raise ValueError("Postingan sekolah tidak ditemukan.")
+
+        cur.execute(
+            "SELECT id FROM monev_bos_activity_post_links WHERE activity_id = %s AND post_id = %s",
+            (activity_id, post_id),
+        )
+        existing_link = cur.fetchone()
+        if existing_link:
+            return int(existing_link["id"])
+
+        cur.execute(
+            """
+            INSERT INTO monev_bos_activity_docs
+                (activity_id, doc_type, file_path, file_size, uploaded_by)
+            VALUES (%s, 'field_photo', %s, %s, %s)
+            RETURNING id
+            """,
+            (activity_id, post["photo_path"], post["photo_size"], actor_id),
+        )
+        doc_id = int(cur.fetchone()[0])
+        cur.execute(
+            """
+            INSERT INTO monev_bos_activity_post_links
+                (activity_id, post_id, activity_doc_id, linked_by)
+            VALUES (%s, %s, %s, %s)
+            RETURNING id
+            """,
+            (activity_id, post_id, doc_id, actor_id),
+        )
+        link_id = int(cur.fetchone()[0])
+        cur.execute(
+            """
+            INSERT INTO monev_bos_story_audit_logs
+                (post_id, school_user_id, activity_id, actor_id, action, details)
+            VALUES (%s, %s, %s, %s, 'LINK_ACTIVITY', %s::jsonb)
+            """,
+            (
+                post_id,
+                school_user_id,
+                activity_id,
+                actor_id,
+                json.dumps({"activity_doc_id": doc_id, "post_title": post["title"]}),
+            ),
+        )
+        return link_id
+
+
+def list_post_activity_links(post_id: int) -> List[Dict[str, Any]]:
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT link.*, doc.file_path, a.report_id
+            FROM monev_bos_activity_post_links link
+            JOIN monev_bos_activities a ON a.id = link.activity_id
+            LEFT JOIN monev_bos_activity_docs doc ON doc.id = link.activity_doc_id
+            WHERE link.post_id = %s
+            ORDER BY link.id
+            """,
+            (post_id,),
+        )
+        return [dict(row) for row in cur.fetchall()]
+
+
+def finalize_school_post_delete(
+    post_id: int,
+    actor_id: int,
+    school_user_id: int,
+    copied_links: List[Dict[str, Any]],
+    details: Dict[str, Any],
+) -> None:
+    """Atomically repoint linked activity docs, mark the post deleted, and write its audit log."""
+    with get_cursor(commit=True) as cur:
+        for copied in copied_links:
+            cur.execute(
+                "UPDATE monev_bos_activity_docs SET file_path = %s, file_size = %s WHERE id = %s",
+                (copied["copied_path"], copied["copied_size"], copied["activity_doc_id"]),
+            )
+            if cur.rowcount != 1:
+                raise ValueError("Dokumen kegiatan tertaut tidak ditemukan.")
+            cur.execute(
+                """
+                UPDATE monev_bos_activity_post_links
+                SET copied_on_post_delete_at = NOW()
+                WHERE id = %s
+                """,
+                (copied["link_id"],),
+            )
+            if cur.rowcount != 1:
+                raise ValueError("Tautan postingan ke kegiatan tidak ditemukan.")
+
+        cur.execute(
+            """
+            UPDATE monev_bos_school_posts
+            SET deleted_at = NOW(), deleted_by = %s
+            WHERE id = %s AND deleted_at IS NULL
+            """,
+            (actor_id, post_id),
+        )
+        if cur.rowcount != 1:
+            raise ValueError("Postingan tidak ditemukan atau sudah dihapus.")
+        cur.execute(
+            """
+            INSERT INTO monev_bos_story_audit_logs
+                (post_id, school_user_id, actor_id, action, details)
+            VALUES (%s, %s, %s, 'DELETE', %s::jsonb)
+            """,
+            (post_id, school_user_id, actor_id, json.dumps(details)),
+        )
+
+
+def list_story_audit_logs(limit: int = 100) -> List[Dict[str, Any]]:
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT log.*,
+                   COALESCE(actor.full_name, actor.email, 'Tidak ada') AS actor_name,
+                   COALESCE(s.name, owner.full_name, owner.email, 'Sekolah') AS school_name,
+                   p.title AS post_title
+            FROM monev_bos_story_audit_logs log
+            LEFT JOIN dashboard_users actor ON actor.id = log.actor_id
+            LEFT JOIN dashboard_users owner ON owner.id = log.school_user_id
+            LEFT JOIN portal_schools s ON s.id = owner.school_id
+            LEFT JOIN monev_bos_school_posts p ON p.id = log.post_id
+            ORDER BY log.created_at DESC, log.id DESC
+            LIMIT %s
+            """,
+            (max(1, min(int(limit), 500)),),
+        )
+        return [dict(row) for row in cur.fetchall()]

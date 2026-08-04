@@ -64,6 +64,12 @@ jobs:
             dashboard/monev_bos/templates/monev_bos/sekolah/activities.html \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_PROJECT_PATH }}/dashboard/monev_bos/templates/monev_bos/sekolah/activities.html
           rsync -avz --progress \
+            dashboard/monev_bos/templates/monev_bos/base_monev_bos.html \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_PROJECT_PATH }}/dashboard/monev_bos/templates/monev_bos/base_monev_bos.html
+          rsync -avz --progress \
+            dashboard/monev_bos/templates/monev_bos/social/ \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_PROJECT_PATH }}/dashboard/monev_bos/templates/monev_bos/social/
+          rsync -avz --progress \
             dashboard/monev_bos/templates/monev_bos/admin/ \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_PROJECT_PATH }}/dashboard/monev_bos/templates/monev_bos/admin/
           rsync -avz --progress \

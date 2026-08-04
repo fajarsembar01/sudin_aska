@@ -2,6 +2,9 @@ from flask import Blueprint, current_app, render_template, request, jsonify, fla
 from dashboard.auth import role_required, current_user
 from dashboard.queries import record_admin_action
 from . import monev_bos_bp, queries
+import base64
+import shutil
+import uuid
 
 
 def _record_monev_admin_action(
@@ -100,11 +103,19 @@ def inject_monev_bos_context() -> dict:
         except Exception:
             pass
 
+    active_story_groups = []
+    if user and user.get("role") in ["admin", "staff", "coordinator", "sekolah"]:
+        try:
+            active_story_groups = queries.list_active_story_groups()
+        except Exception:
+            current_app.logger.exception("Failed to load active Monev school stories")
+
     return {
         "app_title": "MONEV BOS/BOP",
         "admin_pending": admin_pending,
         "user_app_notifications": user_app_notifications,
         "submitted_reports_count": submitted_reports_count,
+        "active_story_groups": active_story_groups,
         "undo_window_seconds": 7,
     }
 
@@ -698,7 +709,7 @@ def sekolah_funds():
 
 import os
 import io
-from PIL import Image
+from PIL import Image, ImageOps
 from werkzeug.utils import secure_filename
 
 def _compress_image_file(file_storage, target_kb=100) -> bytes:
@@ -776,6 +787,230 @@ def _save_camera_photo(data_url, base_dir, sub_path):
         return f"static/uploads/{sub_path}/{filename}", None
     except Exception:
         return None, "Foto kamera gagal diproses. Silakan ambil ulang foto."
+
+
+def _save_story_camera_photo(data_url: str, school_user_id: int) -> tuple:
+    """Save a camera-only story photo as JPEG capped at 200 KB."""
+    if not data_url or "," not in data_url:
+        return None, 0, "Foto story wajib diambil melalui kamera."
+
+    try:
+        header, encoded = data_url.split(",", 1)
+        if not header.startswith("data:image/"):
+            return None, 0, "Format foto story tidak valid."
+        image_bytes = base64.b64decode(encoded, validate=True)
+        image = ImageOps.exif_transpose(Image.open(io.BytesIO(image_bytes)))
+        if image.mode != "RGB":
+            image = image.convert("RGB")
+        image.thumbnail((1600, 1600), Image.Resampling.LANCZOS)
+
+        target_bytes = 200 * 1024
+        quality = 85
+        output = io.BytesIO()
+        while True:
+            output = io.BytesIO()
+            image.save(output, format="JPEG", quality=quality, optimize=True)
+            if output.tell() <= target_bytes:
+                break
+            if quality > 35:
+                quality -= 10
+                continue
+            width, height = image.size
+            if width <= 320 or height <= 320:
+                return None, 0, "Foto tidak dapat dikompres hingga maksimal 200 KB."
+            image = image.resize(
+                (max(320, int(width * 0.82)), max(320, int(height * 0.82))),
+                Image.Resampling.LANCZOS,
+            )
+
+        relative_dir = f"monev_bos/stories/{school_user_id}"
+        upload_root = os.path.join(monev_bos_bp.root_path, "..", "static", "uploads")
+        upload_dir = os.path.join(upload_root, relative_dir)
+        os.makedirs(upload_dir, exist_ok=True)
+        filename = f"story_{uuid.uuid4().hex}.jpg"
+        absolute_path = os.path.join(upload_dir, filename)
+        with open(absolute_path, "wb") as file_handle:
+            file_handle.write(output.getvalue())
+        return f"static/uploads/{relative_dir}/{filename}", output.tell(), None
+    except Exception:
+        current_app.logger.exception("Failed to process Monev school story photo")
+        return None, 0, "Foto story gagal diproses. Silakan ambil ulang."
+
+
+def _absolute_dashboard_file_path(relative_path: str) -> str:
+    return os.path.normpath(os.path.join(monev_bos_bp.root_path, "..", (relative_path or "").lstrip("/")))
+
+
+@monev_bos_bp.route("/posts")
+@role_required("admin", "staff", "coordinator", "sekolah")
+def school_posts_explore():
+    search_query = request.args.get("q", "").strip()
+    posts = queries.list_school_posts(search_query=search_query, limit=300)
+    audit_logs = queries.list_story_audit_logs(limit=100) if current_user().get("role") == "admin" else []
+    return render_template(
+        "monev_bos/social/posts.html",
+        posts=posts,
+        search_query=search_query,
+        audit_logs=audit_logs,
+    )
+
+
+@monev_bos_bp.route("/schools/<int:school_user_id>/posts")
+@role_required("admin", "staff", "coordinator", "sekolah")
+def school_posts_profile(school_user_id: int):
+    profile = queries.get_school_post_profile(school_user_id)
+    if not profile:
+        flash("Profil sekolah tidak ditemukan.", "warning")
+        return redirect(url_for("monev_bos.school_posts_explore"))
+    search_query = request.args.get("q", "").strip()
+    posts = queries.list_school_posts(
+        school_user_id=school_user_id,
+        search_query=search_query,
+        limit=300,
+    )
+    return render_template(
+        "monev_bos/social/school_profile.html",
+        profile=profile,
+        posts=posts,
+        search_query=search_query,
+    )
+
+
+@monev_bos_bp.route("/stories/create", methods=["POST"])
+@role_required("sekolah")
+def create_school_story():
+    user = current_user()
+    title = (request.form.get("title") or "").strip()
+    photo_data = request.form.get("photo_data") or ""
+    try:
+        latitude = float(request.form.get("latitude"))
+        longitude = float(request.form.get("longitude"))
+        accuracy_raw = request.form.get("location_accuracy")
+        location_accuracy = float(accuracy_raw) if accuracy_raw else None
+    except (TypeError, ValueError):
+        flash("Lokasi GPS wajib tersedia sebelum story diposting.", "danger")
+        return redirect(request.referrer or url_for("monev_bos.school_posts_explore"))
+
+    if not title:
+        flash("Judul foto wajib diisi.", "danger")
+        return redirect(request.referrer or url_for("monev_bos.school_posts_explore"))
+    if len(title) > 200:
+        flash("Judul foto maksimal 200 karakter.", "danger")
+        return redirect(request.referrer or url_for("monev_bos.school_posts_explore"))
+    if not (-90 <= latitude <= 90 and -180 <= longitude <= 180):
+        flash("Koordinat GPS tidak valid.", "danger")
+        return redirect(request.referrer or url_for("monev_bos.school_posts_explore"))
+
+    photo_path, photo_size, error = _save_story_camera_photo(photo_data, int(user["id"]))
+    if error:
+        flash(error, "danger")
+        return redirect(request.referrer or url_for("monev_bos.school_posts_explore"))
+
+    location_text = f"{latitude:.6f}, {longitude:.6f}"
+    try:
+        post_id = queries.create_school_post(
+            school_user_id=int(user["id"]),
+            title=title,
+            photo_path=photo_path,
+            photo_size=photo_size,
+            latitude=latitude,
+            longitude=longitude,
+            location_accuracy=location_accuracy,
+            location_text=location_text,
+            actor_id=int(user["id"]),
+        )
+    except Exception:
+        try:
+            os.remove(_absolute_dashboard_file_path(photo_path))
+        except OSError:
+            pass
+        raise
+
+    flash("Story berhasil diposting dan tersimpan permanen di profil sekolah.", "success")
+    return redirect(url_for("monev_bos.school_posts_profile", school_user_id=user["id"], _anchor=f"post-{post_id}"))
+
+
+@monev_bos_bp.route("/posts/<int:post_id>/delete", methods=["POST"])
+@role_required("admin", "sekolah")
+def delete_school_post(post_id: int):
+    user = current_user()
+    post = queries.get_school_post(post_id)
+    if not post:
+        flash("Postingan tidak ditemukan.", "warning")
+        return redirect(url_for("monev_bos.school_posts_explore"))
+    if user.get("role") == "sekolah" and int(post["school_user_id"]) != int(user["id"]):
+        flash("Anda tidak berhak menghapus postingan sekolah lain.", "danger")
+        return redirect(url_for("monev_bos.school_posts_explore"))
+
+    source_path = _absolute_dashboard_file_path(post["photo_path"])
+    links = queries.list_post_activity_links(post_id)
+    prepared_copies = []
+    try:
+        if links and not os.path.isfile(source_path):
+            raise FileNotFoundError("File postingan sumber tidak ditemukan.")
+        for link in links:
+            if not link.get("activity_doc_id"):
+                continue
+            relative_dir = f"monev_bos/{link['report_id']}/{link['activity_id']}/field_photo"
+            destination_dir = os.path.join(
+                monev_bos_bp.root_path,
+                "..",
+                "static",
+                "uploads",
+                relative_dir,
+            )
+            os.makedirs(destination_dir, exist_ok=True)
+            filename = f"post_{post_id}_{uuid.uuid4().hex[:10]}.jpg"
+            destination = os.path.join(destination_dir, filename)
+            shutil.copy2(source_path, destination)
+            prepared_copies.append(
+                (
+                    link,
+                    destination,
+                    f"static/uploads/{relative_dir}/{filename}",
+                    os.path.getsize(destination),
+                )
+            )
+
+        copied_links = [
+            {
+                "link_id": int(link["id"]),
+                "activity_doc_id": int(link["activity_doc_id"]),
+                "copied_path": copied_path,
+                "copied_size": copied_size,
+            }
+            for link, _destination, copied_path, copied_size in prepared_copies
+        ]
+        queries.finalize_school_post_delete(
+            post_id,
+            int(user["id"]),
+            int(post["school_user_id"]),
+            copied_links,
+            {"title": post["title"], "copied_activity_count": len(prepared_copies)},
+        )
+    except Exception as exc:
+        for _link, destination, _copied_path, _copied_size in prepared_copies:
+            try:
+                os.remove(destination)
+            except OSError:
+                pass
+        current_app.logger.exception("Failed to delete Monev school post %s", post_id)
+        flash(f"Postingan gagal dihapus: {exc}", "danger")
+        return redirect(url_for("monev_bos.school_posts_profile", school_user_id=post["school_user_id"]))
+
+    try:
+        os.remove(source_path)
+    except OSError:
+        pass
+    _record_monev_admin_action(
+        "DELETE",
+        "MONEV_SCHOOL_POST",
+        target_id=post_id,
+        target_name=post["title"],
+        metadata={"school_user_id": post["school_user_id"], "copied_activity_count": len(prepared_copies)},
+    )
+    flash("Postingan berhasil dihapus. Foto kegiatan yang tertaut sudah diamankan.", "success")
+    return redirect(url_for("monev_bos.school_posts_profile", school_user_id=post["school_user_id"]))
 
 @monev_bos_bp.route("/sekolah/activities", methods=["GET", "POST"])
 @role_required("sekolah")
@@ -858,21 +1093,35 @@ def sekolah_activities():
                 return redirect(url_for("monev_bos.sekolah_activities", period_id=period_id, fund_source=fund_source))
 
             # Handle optional camera photo or file upload (Foto Kegiatan / Barang)
-            field_photo_file = request.files.get("doc_field_photo") or request.files.get("field_photo")
-            if field_photo_file and field_photo_file.filename != '':
+            story_post_ids_raw = request.form.getlist("story_post_ids") or request.form.getlist("story_post_id")
+            story_post_ids = [int(value) for value in story_post_ids_raw if value and value.isdigit()]
+            field_photo_files = request.files.getlist("doc_field_photo") + request.files.getlist("field_photo")
+            for field_photo_file in [file for file in field_photo_files if file and file.filename]:
                 sub_path = f"monev_bos/{report['id']}/{activity_id}/field_photo"
                 saved_path, err_msg = _save_uploaded_file(field_photo_file, base_dir, sub_path, max_size_bytes=100 * 1024)
+                if err_msg:
+                    queries.delete_activity(activity_id)
+                    flash(err_msg, "danger")
+                    return redirect(url_for("monev_bos.sekolah_activities", period_id=period_id, fund_source=fund_source))
                 if saved_path:
                     queries.add_activity_doc(activity_id, "field_photo", saved_path, field_photo_file.content_length or 0, user["id"])
-            else:
-                field_photo_data = request.form.get("field_photo_data")
-                if field_photo_data:
-                    saved_path, err_msg = _save_camera_photo(field_photo_data, base_dir, f"monev_bos/{report['id']}/{activity_id}/field_photo")
-                    if err_msg:
-                        queries.delete_activity(activity_id)
-                        flash(err_msg, "danger")
-                        return redirect(url_for("monev_bos.sekolah_activities", period_id=period_id, fund_source=fund_source))
-                    queries.add_activity_doc(activity_id, "field_photo", saved_path, 0, user["id"])
+            for field_photo_data in request.form.getlist("field_photo_data"):
+                if not field_photo_data:
+                    continue
+                saved_path, err_msg = _save_camera_photo(field_photo_data, base_dir, f"monev_bos/{report['id']}/{activity_id}/field_photo")
+                if err_msg:
+                    queries.delete_activity(activity_id)
+                    flash(err_msg, "danger")
+                    return redirect(url_for("monev_bos.sekolah_activities", period_id=period_id, fund_source=fund_source))
+                queries.add_activity_doc(activity_id, "field_photo", saved_path, 0, user["id"])
+            if story_post_ids:
+                try:
+                    for story_post_id in story_post_ids:
+                        queries.link_post_to_activity(activity_id, story_post_id, int(user["id"]), int(user["id"]))
+                except ValueError as exc:
+                    queries.delete_activity(activity_id)
+                    flash(str(exc), "danger")
+                    return redirect(url_for("monev_bos.sekolah_activities", period_id=period_id, fund_source=fund_source))
 
             # Handle mandatory document file uploads
             has_error = False
@@ -1000,22 +1249,31 @@ def sekolah_activities():
             base_dir = os.path.join(monev_bos_bp.root_path, "..", "static", "uploads")
 
             # Handle optional field photo (file upload or camera)
-            field_photo_file = request.files.get("doc_field_photo") or request.files.get("field_photo")
-            if field_photo_file and field_photo_file.filename != '':
+            story_post_ids_raw = request.form.getlist("story_post_ids") or request.form.getlist("story_post_id")
+            story_post_ids = [int(value) for value in story_post_ids_raw if value and value.isdigit()]
+            field_photo_files = request.files.getlist("doc_field_photo") + request.files.getlist("field_photo")
+            for field_photo_file in [file for file in field_photo_files if file and file.filename]:
                 sub_path = f"monev_bos/{report['id']}/{activity_id}/field_photo"
                 saved_path, err_msg = _save_uploaded_file(field_photo_file, base_dir, sub_path, max_size_bytes=100 * 1024)
                 if err_msg:
                     flash(err_msg, "danger")
                 elif saved_path:
                     queries.add_activity_doc(activity_id, "field_photo", saved_path, field_photo_file.content_length or 0, user["id"])
-            else:
-                field_photo_data = request.form.get("field_photo_data")
-                if field_photo_data:
-                    saved_path, err_msg = _save_camera_photo(field_photo_data, base_dir, f"monev_bos/{report['id']}/{activity_id}/field_photo")
-                    if err_msg:
-                        flash(err_msg, "danger")
-                        return redirect(url_for("monev_bos.sekolah_activities", period_id=period_id, fund_source=fund_source))
-                    queries.add_activity_doc(activity_id, "field_photo", saved_path, 0, user["id"])
+            for field_photo_data in request.form.getlist("field_photo_data"):
+                if not field_photo_data:
+                    continue
+                saved_path, err_msg = _save_camera_photo(field_photo_data, base_dir, f"monev_bos/{report['id']}/{activity_id}/field_photo")
+                if err_msg:
+                    flash(err_msg, "danger")
+                    return redirect(url_for("monev_bos.sekolah_activities", period_id=period_id, fund_source=fund_source))
+                queries.add_activity_doc(activity_id, "field_photo", saved_path, 0, user["id"])
+            if story_post_ids:
+                try:
+                    for story_post_id in story_post_ids:
+                        queries.link_post_to_activity(activity_id, story_post_id, int(user["id"]), int(user["id"]))
+                except ValueError as exc:
+                    flash(str(exc), "danger")
+                    return redirect(url_for("monev_bos.sekolah_activities", period_id=period_id, fund_source=fund_source))
 
             # Handle optional file re-uploads
             for doc_type in ["transfer", "invoice"]:
@@ -1053,6 +1311,9 @@ def sekolah_activities():
     for act in activities:
         docs = queries.get_activity_docs(act["id"])
         act["docs"] = {doc["doc_type"]: doc for doc in docs}
+        act["field_photos"] = [doc for doc in docs if doc["doc_type"] == "field_photo"]
+        post_links = queries.get_activity_post_links(act["id"])
+        act["linked_story_post_ids"] = [link["post_id"] for link in post_links]
         act["history"] = queries.get_activity_history(act["id"])
         act["pending_edit_request"] = queries.get_edit_request_by_activity(act["id"])
         if act["pending_edit_request"] and admin_info.get("admin_phone"):
@@ -1084,6 +1345,7 @@ def sekolah_activities():
             act["staff_wa_url"] = f"https://wa.me/{act_staff_wa['staff_phone']}?text={urllib.parse.quote(wa_msg_staff)}"
 
     master_activities = queries.list_master_activities(include_inactive=False, fund_source=fund_source)
+    school_story_posts = queries.list_school_posts(school_user_id=int(user["id"]), limit=300)
     expense_types = queries.list_expense_types(include_inactive=False)
     try:
         active_checklists = queries.list_checklists(include_inactive=False)
@@ -1129,6 +1391,7 @@ def sekolah_activities():
                            report=report, 
                            activities=activities,
                            master_activities=master_activities,
+                           school_story_posts=school_story_posts,
                            expense_types=expense_types,
                            checklist_requirements_by_expense_type=checklist_requirements_by_expense_type,
                            account_codes=account_codes,
@@ -1467,14 +1730,53 @@ def staff_audit_report(report_id):
     checklists = queries.list_checklists(include_inactive=False)
     all_activities = queries.list_activities(report_id)
     activities = [act for act in all_activities if (act.get("fund_source") or "BOS").upper() == fund_source]
+    checklist_yes = 0
+    checklist_total = 0
+    activities_with_school_photo = 0
     for act in activities:
         docs = queries.get_activity_docs(act["id"])
         act["docs"] = {doc["doc_type"]: doc for doc in docs}
-        # get live photos & school field photos list
+        act["school_photos"] = [doc for doc in docs if doc["doc_type"] == "field_photo"]
+        act["valid_school_photos"] = [
+            doc for doc in act["school_photos"] if doc.get("is_audit_valid", True)
+        ]
+        act["invalid_school_photos"] = [
+            doc for doc in act["school_photos"] if not doc.get("is_audit_valid", True)
+        ]
+        act["staff_photos"] = [doc for doc in docs if doc["doc_type"] == "live_photo"]
         act["live_photos"] = [doc for doc in docs if doc["doc_type"] in ["live_photo", "field_photo"]]
+        act["has_school_live_photo"] = bool(act["valid_school_photos"])
+        if act["has_school_live_photo"]:
+            activities_with_school_photo += 1
         # get checklist results for this activity
         act["checklist_results"] = queries.get_activity_checklist_results(act["id"])
         act["checklists"] = queries.get_checklists_for_activity(act.get("expense_type_id"))
+        act["checklist_total"] = len(act["checklists"])
+        act["checklist_yes"] = sum(
+            1
+            for checklist in act["checklists"]
+            if (act["checklist_results"].get(checklist["id"]) or {}).get("status") == "yes"
+        )
+        act["checklist_no"] = act["checklist_total"] - act["checklist_yes"]
+        act["checklist_percent"] = (
+            act["checklist_yes"] / act["checklist_total"] * 100
+            if act["checklist_total"] else 0
+        )
+        checklist_yes += act["checklist_yes"]
+        checklist_total += act["checklist_total"]
+
+    audit_metrics = {
+        "checklist_yes": checklist_yes,
+        "checklist_no": checklist_total - checklist_yes,
+        "checklist_total": checklist_total,
+        "checklist_percent": (checklist_yes / checklist_total * 100) if checklist_total else 0,
+        "activities_with_school_photo": activities_with_school_photo,
+        "activities_without_school_photo": len(activities) - activities_with_school_photo,
+        "activities_total": len(activities),
+        "school_photo_percent": (
+            activities_with_school_photo / len(activities) * 100 if activities else 0
+        ),
+    }
 
     activity_groups_by_name = {}
     for act in activities:
@@ -1511,14 +1813,12 @@ def staff_audit_report(report_id):
         activity_groups=activity_groups,
         audit_logs=audit_logs,
         checklists=checklists,
+        audit_metrics=audit_metrics,
         total_receipt=total_receipt,
         total_realized=total_realized,
         remaining_balance=remaining_balance,
         percent_spent=percent_spent,
     )
-
-import base64
-import uuid
 
 @monev_bos_bp.route("/staff/audit/activity/<int:activity_id>", methods=["POST"])
 @role_required("staff", "admin")
@@ -1544,6 +1844,48 @@ def staff_audit_activity(activity_id):
     action = request.form.get("action")
     
     try:
+        if action in {"annul_school_photo", "restore_school_photo"}:
+            doc_id_raw = request.form.get("doc_id")
+            try:
+                doc_id = int(doc_id_raw)
+            except (TypeError, ValueError):
+                return jsonify({"success": False, "message": "Foto sekolah tidak valid."}), 400
+
+            is_valid = action == "restore_school_photo"
+            reason = (request.form.get("reason") or "").strip()
+            if not is_valid and not reason:
+                return jsonify({"success": False, "message": "Alasan anulir wajib diisi."}), 400
+
+            updated_photo = queries.set_field_photo_audit_validity(
+                activity_id,
+                doc_id,
+                is_valid,
+                int(user["id"]),
+                reason if not is_valid else "Disahkan kembali oleh auditor",
+            )
+            if not updated_photo:
+                return jsonify({"success": False, "message": "Foto sekolah tidak ditemukan."}), 404
+
+            audit_action = "RESTORE_SCHOOL_PHOTO" if is_valid else "ANNUL_SCHOOL_PHOTO"
+            audit_detail = (
+                "Mengesahkan kembali foto kegiatan/barang sekolah"
+                if is_valid
+                else f"Menganulir foto kegiatan/barang sekolah: {reason}"
+            )
+            queries.add_audit_log(report_id, activity_id, user["id"], audit_action, audit_detail)
+            _record_monev_admin_action(
+                audit_action,
+                "MONEV_ACTIVITY_PHOTO",
+                target_id=doc_id,
+                target_name=act.get("activity_name"),
+                metadata={"report_id": report_id, "activity_id": activity_id, "reason": reason},
+            )
+            return jsonify({
+                "success": True,
+                "is_valid": is_valid,
+                "message": "Foto kembali disahkan." if is_valid else "Foto berhasil dianulir dan tidak dihitung.",
+            })
+
         if action == "validate":
             status = request.form.get("status")
             if not status or status not in ["valid", "invalid", "in_review", "pending"]:

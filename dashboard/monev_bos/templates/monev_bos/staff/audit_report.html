@@ -141,6 +141,46 @@
         </div>
     </div>
 
+    <!-- Ringkasan Kelengkapan Audit untuk sumber dana aktif -->
+    <div class="row mb-3 g-2 g-sm-3">
+        <div class="col-12 col-md-6">
+            <div class="card bg-body border shadow-xs h-100 p-3 rounded-3">
+                <div class="d-flex justify-content-between align-items-start gap-3">
+                    <div>
+                        <span class="text-uppercase text-body-secondary fw-bold text-xs d-block">Kelengkapan Dokumen {{ fund_source }}</span>
+                        <div class="d-flex align-items-baseline gap-2 mt-1">
+                            <h4 class="fw-bold text-success mb-0" id="checklistSummaryPercent">{{ audit_metrics.checklist_percent|round(1) }}%</h4>
+                            <span class="text-body-secondary text-xs" id="checklistSummaryCounts">{{ audit_metrics.checklist_yes }} ada, {{ audit_metrics.checklist_no }} tidak ada</span>
+                        </div>
+                    </div>
+                    <div class="rounded-3 p-2 bg-success-subtle text-success"><i class="bi bi-card-checklist fs-5"></i></div>
+                </div>
+                <div class="progress bg-body-tertiary mt-3" style="height: 7px;">
+                    <div class="progress-bar bg-success" id="checklistSummaryBar" role="progressbar" style="width: {{ audit_metrics.checklist_percent|round(1) }}%;"></div>
+                </div>
+                <small class="text-body-secondary mt-2" id="checklistSummaryTotal">Total {{ audit_metrics.checklist_total }} item wajib dari {{ audit_metrics.activities_total }} kegiatan.</small>
+            </div>
+        </div>
+        <div class="col-12 col-md-6">
+            <div class="card bg-body border shadow-xs h-100 p-3 rounded-3">
+                <div class="d-flex justify-content-between align-items-start gap-3">
+                    <div>
+                        <span class="text-uppercase text-body-secondary fw-bold text-xs d-block">Penggunaan Foto Live Sekolah</span>
+                        <div class="d-flex align-items-baseline gap-2 mt-1">
+                            <h4 class="fw-bold text-info mb-0">{{ audit_metrics.school_photo_percent|round(1) }}%</h4>
+                            <span class="text-body-secondary text-xs">{{ audit_metrics.activities_with_school_photo }} dari {{ audit_metrics.activities_total }} kegiatan</span>
+                        </div>
+                    </div>
+                    <div class="rounded-3 p-2 bg-info-subtle text-info"><i class="bi bi-camera-fill fs-5"></i></div>
+                </div>
+                <div class="progress bg-body-tertiary mt-3" style="height: 7px;">
+                    <div class="progress-bar bg-info" role="progressbar" style="width: {{ audit_metrics.school_photo_percent|round(1) }}%;"></div>
+                </div>
+                <small class="text-body-secondary mt-2">Hanya foto kamera sekolah atau tautan story yang sah; foto staff dan foto yang dianulir tidak dihitung.</small>
+            </div>
+        </div>
+    </div>
+
     {% if activity_groups %}
     <div class="card shadow-sm mb-3 border-0 activity-summary-card">
         <div class="card-header bg-body-tertiary py-2.5 px-3 d-flex justify-content-between align-items-center gap-2">
@@ -269,6 +309,19 @@
                                 <!-- Uraian Kegiatan & Auditor Name -->
                                 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
                                     <div class="text-body fw-semibold flex-grow-1" style="font-size: 0.84rem; line-height: 1.3;">{{ act.activity_name }}</div>
+                                    <div class="d-flex align-items-center gap-1 flex-wrap">
+                                        <span class="badge {% if act.checklist_percent == 100 %}bg-success-subtle text-success{% else %}bg-warning-subtle text-warning-emphasis{% endif %} border text-xs" id="activityChecklistBadge{{ act.id }}">
+                                            <i class="bi bi-card-checklist me-1"></i>Kelengkapan {{ act.checklist_yes }}/{{ act.checklist_total }} ({{ act.checklist_percent|round(1) }}%)
+                                        </span>
+                                        {% if act.has_school_live_photo %}
+                                        <span class="badge bg-info-subtle text-info border text-xs"><i class="bi bi-camera-fill me-1"></i>Foto sah: {{ act.valid_school_photos|length }}</span>
+                                        {% else %}
+                                        <span class="badge bg-danger-subtle text-danger border text-xs"><i class="bi bi-camera me-1"></i>Tanpa foto sekolah</span>
+                                        {% endif %}
+                                        {% if act.invalid_school_photos %}
+                                        <span class="badge bg-danger-subtle text-danger border text-xs"><i class="bi bi-slash-circle me-1"></i>Dianulir: {{ act.invalid_school_photos|length }}</span>
+                                        {% endif %}
+                                    </div>
                                     {% if act.auditor_name %}
                                     <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill text-xs fw-normal flex-shrink-0" id="auditorBadge{{ act.id }}">
                                         <i class="bi bi-person-check me-1"></i> Auditor: <strong>{{ act.auditor_name }}</strong>
@@ -331,25 +384,38 @@
                                 <div class="mb-3 p-2 bg-body rounded border">
                                     <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-1">
                                         <h6 class="mb-0 text-sm fw-bold">Foto Lapangan & Bukti Kelengkapan</h6>
-                                        {% if act.live_photos %}
+                                        {% if act.has_school_live_photo %}
                                         <span class="badge bg-success-subtle text-success border border-success px-2 py-1" style="font-size: 0.7rem;">
-                                            <i class="bi bi-check-circle me-1"></i> Foto Tersedia
+                                            <i class="bi bi-check-circle me-1"></i> {{ act.valid_school_photos|length }} Foto Sekolah Sah (Dihitung)
                                         </span>
                                         {% else %}
-                                        <span class="badge bg-warning-subtle text-warning border border-warning px-2 py-1" style="font-size: 0.7rem;">
-                                            <i class="bi bi-exclamation-triangle me-1"></i> Belum Ada Foto
+                                        <span class="badge bg-danger-subtle text-danger border border-danger px-2 py-1" style="font-size: 0.7rem;">
+                                            <i class="bi bi-exclamation-triangle me-1"></i> Tidak Ada Foto Sekolah Sah
                                         </span>
                                         {% endif %}
                                     </div>
                                     
                                     <div class="d-flex gap-2 flex-wrap mb-1 align-items-center">
                                         {% for photo in act.live_photos %}
-                                        <div class="position-relative d-inline-block">
+                                        <div class="position-relative d-inline-block {% if photo.doc_type == 'field_photo' and not photo.is_audit_valid %}opacity-50{% endif %}" style="vertical-align: top; {% if photo.doc_type == 'field_photo' and not photo.is_audit_valid %}width: 120px;{% endif %}">
                                             <a href="javascript:void(0)" onclick='previewDoc("/{{ photo.file_path }}", "Foto Lapangan ({% if photo.doc_type == "field_photo" %}Sekolah{% else %}Staff{% endif %}) - {{ act.activity_code }}")'>
                                                 <img src="/{{ photo.file_path }}" alt="Foto Lapangan" class="img-thumbnail shadow-sm" style="height: 75px; width: 75px; object-fit: cover;">
                                             </a>
                                             {% if photo.doc_type == 'field_photo' %}
-                                            <span class="badge bg-info position-absolute bottom-0 start-0 m-1" style="font-size: 0.6rem;">Sekolah</span>
+                                                {% if photo.is_audit_valid %}
+                                                <span class="badge bg-info position-absolute bottom-0 start-0 m-1" style="font-size: 0.6rem;">Sekolah · Sah</span>
+                                                <button type="button" class="btn btn-danger position-absolute top-0 end-0 m-1 p-0 rounded-circle" style="width: 22px; height: 22px; line-height: 18px;" title="Anulir foto" onclick="event.stopPropagation(); auditSchoolPhoto({{ act.id }}, {{ photo.id }}, false)">
+                                                    <i class="bi bi-x" style="font-size: 0.75rem;"></i>
+                                                </button>
+                                                {% else %}
+                                                <span class="badge bg-danger position-absolute bottom-0 start-0 m-1" style="font-size: 0.6rem;">Tidak Sah</span>
+                                                <button type="button" class="btn btn-success position-absolute top-0 end-0 m-1 p-0 rounded-circle" style="width: 22px; height: 22px; line-height: 18px;" title="Sahkan kembali" onclick="event.stopPropagation(); auditSchoolPhoto({{ act.id }}, {{ photo.id }}, true)">
+                                                    <i class="bi bi-arrow-counterclockwise" style="font-size: 0.65rem;"></i>
+                                                </button>
+                                                {% if photo.photo_audit_notes %}
+                                                <small class="d-block text-danger text-xs text-truncate mt-1" title="{{ photo.photo_audit_notes }}">Alasan: {{ photo.photo_audit_notes }}</small>
+                                                {% endif %}
+                                                {% endif %}
                                             {% else %}
                                             <span class="badge bg-success position-absolute bottom-0 start-0 m-1" style="font-size: 0.6rem;">Staff</span>
                                             {% endif %}
@@ -359,15 +425,18 @@
                                         {% endfor %}
                                     </div>
 
-                                    {% if act.live_photos %}
+                                    {% if act.has_school_live_photo %}
                                     <div class="d-flex align-items-center gap-2 mt-2 pt-1 border-top flex-wrap">
-                                        <small class="text-success text-xs"><i class="bi bi-shield-check me-1"></i> Siap diverifikasi di bawah.</small>
+                                        <small class="text-success text-xs"><i class="bi bi-shield-check me-1"></i>Foto sekolah masuk perhitungan laporan.</small>
                                         <button type="button" class="btn btn-xs btn-outline-secondary ms-auto text-nowrap py-1 px-2" onclick="openCameraModal({{ act.id }})">
                                             <i class="bi bi-camera me-1"></i> Foto Live Tambahan
                                         </button>
                                     </div>
                                     {% else %}
                                     <div class="mt-2">
+                                        {% if act.staff_photos %}
+                                        <small class="text-danger text-xs d-block mb-2"><i class="bi bi-info-circle me-1"></i>Foto staff tersedia, tetapi tidak masuk perhitungan foto sekolah.</small>
+                                        {% endif %}
                                         <button type="button" class="btn btn-sm btn-primary py-1 px-2 text-xs" onclick="openCameraModal({{ act.id }})">
                                             <i class="bi bi-camera me-1"></i> Ambil Foto Live (Staff)
                                         </button>
@@ -696,6 +765,41 @@
         modal.show();
     }
 
+    function auditSchoolPhoto(activityId, docId, restore) {
+        let reason = '';
+        if (!restore) {
+            reason = window.prompt('Alasan foto kegiatan/barang ini tidak sah:') || '';
+            if (!reason.trim()) return;
+        } else if (!window.confirm('Sahkan kembali foto kegiatan/barang ini?')) {
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('csrf_token', '{{ csrf_token() }}');
+        formData.append('action', restore ? 'restore_school_photo' : 'annul_school_photo');
+        formData.append('report_id', '{{ report.id }}');
+        formData.append('doc_id', String(docId));
+        formData.append('reason', reason.trim());
+
+        fetch('{{ url_for("monev_bos.staff_audit_activity", activity_id=0) }}'.replace('0', activityId), {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            },
+            body: formData
+        })
+        .then(async function (response) {
+            const data = await response.json();
+            if (!response.ok || !data.success) throw new Error(data.message || 'Gagal memperbarui status foto.');
+            window.location.reload();
+        })
+        .catch(function (error) {
+            alert(error.message || 'Gagal memperbarui status foto.');
+        });
+    }
+
     function openCameraModal(activityId) {
         uploadForm.action = "{{ url_for('monev_bos.staff_audit_activity', activity_id=0) }}".replace('0', activityId);
         const myModal = new bootstrap.Modal(document.getElementById('cameraModal'));
@@ -838,6 +942,36 @@
         }
     })();
 
+    function refreshChecklistMetricsFromForms() {
+        let total = 0;
+        let yes = 0;
+
+        document.querySelectorAll('.validate-activity-form').forEach(function (form) {
+            const checked = Array.from(form.querySelectorAll('input[type="radio"][name^="checklist_"]:checked'));
+            const activityYes = checked.filter(function (radio) { return radio.value === 'yes'; }).length;
+            const activityTotal = checked.length;
+            total += activityTotal;
+            yes += activityYes;
+
+            const activityId = form.getAttribute('data-activity-id');
+            const badge = document.getElementById('activityChecklistBadge' + activityId);
+            if (badge) {
+                const percent = activityTotal ? (activityYes / activityTotal * 100) : 0;
+                badge.className = 'badge border text-xs ' + (percent === 100 ? 'bg-success-subtle text-success' : 'bg-warning-subtle text-warning-emphasis');
+                badge.innerHTML = '<i class="bi bi-card-checklist me-1"></i>Kelengkapan ' + activityYes + '/' + activityTotal + ' (' + percent.toFixed(1) + '%)';
+            }
+        });
+
+        const no = total - yes;
+        const percent = total ? (yes / total * 100) : 0;
+        const percentEl = document.getElementById('checklistSummaryPercent');
+        const countsEl = document.getElementById('checklistSummaryCounts');
+        const barEl = document.getElementById('checklistSummaryBar');
+        if (percentEl) percentEl.textContent = percent.toFixed(1) + '%';
+        if (countsEl) countsEl.textContent = yes + ' ada, ' + no + ' tidak ada';
+        if (barEl) barEl.style.width = percent.toFixed(1) + '%';
+    }
+
     // --- AJAX Validation Form Handler ---
     document.querySelectorAll('.validate-activity-form').forEach(form => {
         form.addEventListener('submit', function (e) {
@@ -915,6 +1049,8 @@
                             auditorBadge.style.display = 'inline-block';
                         }
                     }
+
+                    refreshChecklistMetricsFromForms();
 
                     let toast = document.getElementById('validationToast');
                     if (!toast) {

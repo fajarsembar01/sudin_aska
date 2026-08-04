@@ -109,6 +109,14 @@
                     </a>
                 </li>
                 {% endif %}
+
+                {% if current_user and current_user.role in ['admin', 'staff', 'coordinator', 'sekolah'] %}
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint in ['monev_bos.school_posts_explore', 'monev_bos.school_posts_profile'] %}active{% endif %}" href="{{ url_for('monev_bos.school_posts_explore') }}">
+                        <i class="bi bi-images nav-icon"></i>Story & Post
+                    </a>
+                </li>
+                {% endif %}
             </ul>
 
             <div class="d-flex align-items-center gap-3 user-nav-actions">
@@ -179,6 +187,7 @@
 
 {% block portal_content %}
 <div class="monev-bos-content">
+    {% include "monev_bos/social/_story_strip.html" %}
     {% block monev_bos_content %}
         {% block content %}{% endblock %}
     {% endblock %}

@@ -1,0 +1,53 @@
+{% extends "monev_bos/base_monev_bos.html" %}
+
+{% block monev_bos_content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-4">
+        <div>
+            <h1 class="h3 fw-bold mb-1">Story & Post Sekolah</h1>
+            <p class="text-body-secondary mb-0">Cari dokumentasi foto seluruh sekolah berdasarkan judul, sekolah, atau koordinat GPS.</p>
+        </div>
+        {% if current_user.role == 'sekolah' %}
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createSchoolStoryModal"><i class="bi bi-camera-fill me-1"></i>Buat Story</button>
+        {% endif %}
+    </div>
+
+    <form method="GET" class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <div class="input-group">
+                <span class="input-group-text bg-body"><i class="bi bi-search"></i></span>
+                <input type="search" name="q" value="{{ search_query }}" class="form-control" placeholder="Cari judul foto, nama sekolah, atau lokasi GPS...">
+                <button type="submit" class="btn btn-primary">Cari</button>
+                {% if search_query %}<a href="{{ url_for('monev_bos.school_posts_explore') }}" class="btn btn-outline-secondary">Reset</a>{% endif %}
+            </div>
+        </div>
+    </form>
+
+    {% include "monev_bos/social/_post_grid.html" %}
+
+    {% if current_user.role == 'admin' %}
+    <div class="card border-0 shadow-sm mt-4">
+        <div class="card-header bg-body d-flex justify-content-between align-items-center">
+            <h2 class="h6 fw-bold mb-0"><i class="bi bi-clock-history me-2"></i>Audit Story & Post</h2>
+            <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#storyAuditTable">Tampilkan</button>
+        </div>
+        <div class="collapse" id="storyAuditTable">
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <thead><tr><th>Waktu</th><th>Aktor</th><th>Aksi</th><th>Sekolah</th><th>Post</th><th>Detail</th></tr></thead>
+                    <tbody>
+                        {% for log in audit_logs %}
+                        <tr>
+                            <td class="text-nowrap">{{ log.created_at|jakarta('%d/%m/%Y %H:%M') }}</td>
+                            <td>{{ log.actor_name }}</td><td>{{ log.action }}</td><td>{{ log.school_name }}</td>
+                            <td>{{ log.post_title or ('#' ~ log.post_id) }}</td><td><code class="text-wrap">{{ log.details|tojson }}</code></td>
+                        </tr>
+                        {% else %}<tr><td colspan="6" class="text-center text-muted py-3">Belum ada audit log.</td></tr>{% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

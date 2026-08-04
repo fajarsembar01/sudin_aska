@@ -223,13 +223,13 @@
                                     </a>
                                     {% endif %}
 
-                                    {% if act.docs.get('field_photo') %}
-                                    <a href="/{{ act.docs['field_photo'].file_path }}" class="badge bg-info-subtle text-info-emphasis border text-decoration-none activity-doc-preview-link" data-doc-title="Foto Kegiatan / Barang - {{ act.activity_name }}" title="Lihat Foto Kegiatan / Barang">
-                                        <i class="bi bi-camera me-1"></i>Foto
+                                    {% if act.field_photos %}
+                                    <a href="/{{ act.field_photos[0].file_path }}" class="badge bg-info-subtle text-info-emphasis border text-decoration-none activity-doc-preview-link" data-doc-title="Foto Kegiatan / Barang - {{ act.activity_name }}" title="Lihat Foto Kegiatan / Barang">
+                                        <i class="bi bi-camera me-1"></i>Foto ({{ act.field_photos|length }})
                                     </a>
                                     {% endif %}
 
-                                    {% if not act.docs.get('invoice') and not act.docs.get('transfer') and not act.docs.get('field_photo') %}
+                                    {% if not act.docs.get('invoice') and not act.docs.get('transfer') and not act.field_photos %}
                                     <span class="badge bg-body-tertiary text-body-secondary border" style="font-size: 0.68rem;">Belum Ada Doc</span>
                                     {% endif %}
                                 </div>
@@ -386,12 +386,12 @@
                                 <i class="bi bi-bank me-1"></i>Transfer
                             </a>
                             {% endif %}
-                            {% if act.docs.get('field_photo') %}
-                            <a href="/{{ act.docs['field_photo'].file_path }}" class="badge bg-info-subtle text-info-emphasis border text-decoration-none text-xs activity-doc-preview-link" data-doc-title="Foto Kegiatan / Barang - {{ act.activity_name }}">
-                                <i class="bi bi-camera me-1"></i>Foto
+                            {% if act.field_photos %}
+                            <a href="/{{ act.field_photos[0].file_path }}" class="badge bg-info-subtle text-info-emphasis border text-decoration-none text-xs activity-doc-preview-link" data-doc-title="Foto Kegiatan / Barang - {{ act.activity_name }}">
+                                <i class="bi bi-camera me-1"></i>Foto ({{ act.field_photos|length }})
                             </a>
                             {% endif %}
-                            {% if not act.docs.get('invoice') and not act.docs.get('transfer') and not act.docs.get('field_photo') %}
+                            {% if not act.docs.get('invoice') and not act.docs.get('transfer') and not act.field_photos %}
                             <span class="badge bg-body-tertiary text-body-secondary border text-xs">Belum Ada Doc</span>
                             {% endif %}
                         </div>
@@ -552,12 +552,16 @@
                     </div>
                 </div>
                 
-                {% if act.docs.get('field_photo') %}
+                {% if act.field_photos %}
                 <div class="mb-3">
-                    <p class="mb-1 text-body-secondary text-xs">Foto Kegiatan / Barang (Sekolah)</p>
-                    <a href="/{{ act.docs['field_photo'].file_path }}" class="activity-doc-preview-link" data-doc-title="Foto Kegiatan / Barang - {{ act.activity_name }}">
-                        <img src="/{{ act.docs['field_photo'].file_path }}" alt="Foto Kegiatan" class="img-thumbnail" style="max-height: 140px; object-fit: cover;">
-                    </a>
+                    <p class="mb-1 text-body-secondary text-xs">Foto Kegiatan / Barang (Sekolah): {{ act.field_photos|length }}</p>
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for field_photo in act.field_photos %}
+                        <a href="/{{ field_photo.file_path }}" class="activity-doc-preview-link" data-doc-title="Foto Kegiatan / Barang {{ loop.index }} - {{ act.activity_name }}">
+                            <img src="/{{ field_photo.file_path }}" alt="Foto Kegiatan {{ loop.index }}" class="img-thumbnail" style="width: 110px; height: 110px; object-fit: cover;">
+                        </a>
+                        {% endfor %}
+                    </div>
                 </div>
                 {% endif %}
             </div>
@@ -762,13 +766,21 @@
                                 <button type="button" class="btn btn-sm btn-outline-primary w-100 camera-photo-btn text-nowrap" data-preview="editPhotoPreview{{ act.id }}">
                                     <i class="bi bi-camera-fill me-1"></i> Ambil Foto Kamera
                                 </button>
-                                {% set field_photo = act.docs.get('field_photo') if act.docs else none %}
-                                {% if field_photo %}
-                                {% set field_photo_filename = field_photo.file_path|replace('static/', '', 1) %}
-                                <a href="{{ url_for('static', filename=field_photo_filename) }}" target="_blank" class="d-block">
-                                    <img id="editPhotoPreview{{ act.id }}" class="img-thumbnail mt-1 camera-photo-preview w-100" src="{{ url_for('static', filename=field_photo_filename) }}" alt="Foto Kegiatan / Barang saat ini" style="max-height: 160px; object-fit: contain;">
-                                </a>
-                                <div class="form-text text-xs text-success field-photo-status"><i class="bi bi-check-circle me-1"></i>Foto kegiatan/barang saat ini.</div>
+                                <select name="story_post_ids" class="form-select form-select-sm searchable-story-post-select" data-placeholder="Pilih satu atau beberapa postingan sekolah..." multiple>
+                                    {% for post in school_story_posts %}
+                                    <option value="{{ post.id }}" data-photo-url="/{{ post.photo_path }}" {% if post.id in act.linked_story_post_ids %}selected{% endif %}>{{ post.title }} · {{ post.created_at|jakarta('%d/%m/%Y') }}</option>
+                                    {% endfor %}
+                                </select>
+                                {% if act.field_photos %}
+                                <div class="d-flex flex-wrap gap-1">
+                                    {% for field_photo in act.field_photos %}
+                                    <a href="/{{ field_photo.file_path }}" class="activity-doc-preview-link" data-doc-title="Foto Kegiatan / Barang {{ loop.index }} - {{ act.activity_name }}">
+                                        <img class="img-thumbnail" src="/{{ field_photo.file_path }}" alt="Foto Kegiatan / Barang {{ loop.index }}" style="width: 64px; height: 64px; object-fit: cover;">
+                                    </a>
+                                    {% endfor %}
+                                </div>
+                                <img id="editPhotoPreview{{ act.id }}" class="img-thumbnail mt-1 camera-photo-preview w-100 d-none" alt="Preview foto baru" style="max-height: 160px; object-fit: contain;">
+                                <div class="form-text text-xs text-success field-photo-status"><i class="bi bi-check-circle me-1"></i>{{ act.field_photos|length }} foto tersimpan. Foto baru akan ditambahkan.</div>
                                 {% else %}
                                 <img id="editPhotoPreview{{ act.id }}" class="img-thumbnail mt-1 camera-photo-preview w-100 d-none" alt="Preview Foto Kegiatan" style="max-height: 160px; object-fit: contain;">
                                 <div class="form-text text-xs text-muted field-photo-status">Belum ada foto kegiatan/barang. Foto bersifat opsional.</div>
@@ -959,6 +971,11 @@
                                 <button type="button" class="btn btn-sm btn-outline-primary w-100 camera-photo-btn text-nowrap" data-preview="addPhotoPreview">
                                     <i class="bi bi-camera-fill me-1"></i> Ambil Foto Kamera
                                 </button>
+                                <select name="story_post_ids" class="form-select form-select-sm searchable-story-post-select" data-placeholder="Pilih satu atau beberapa postingan sekolah..." multiple>
+                                    {% for post in school_story_posts %}
+                                    <option value="{{ post.id }}" data-photo-url="/{{ post.photo_path }}">{{ post.title }} · {{ post.created_at|jakarta('%d/%m/%Y') }}</option>
+                                    {% endfor %}
+                                </select>
                                 <img id="addPhotoPreview" class="img-thumbnail mt-1 camera-photo-preview w-100 d-none" alt="Preview Foto Kegiatan" style="max-height: 90px; object-fit: cover;">
                                 <div class="form-text text-xs text-muted field-photo-status">Foto kegiatan/barang bersifat opsional.</div>
                             </div>
@@ -1096,7 +1113,7 @@ function initActivitySearchableSelects(container) {
     if (!window.TomSelect) return;
 
     const selects = (container || document).querySelectorAll(
-        'select.searchable-activity-select, select.searchable-account-select'
+        'select.searchable-activity-select, select.searchable-account-select, select.searchable-story-post-select'
     );
     selects.forEach(function (select) {
         if (select.tomselect) return;
@@ -1245,14 +1262,16 @@ function useSchoolPhoto() {
             activeDocFileNameEl.innerHTML = '<span class="text-success fw-semibold text-xs"><i class="bi bi-check-circle me-1"></i>Foto kamera terpasang</span>';
         }
     } else if (activeCameraInput) {
-        activeCameraInput.value = capturedSchoolPhoto;
         const form = activeCameraInput.closest('form');
-        const fieldPhotoFileInput = form ? form.querySelector('.field-photo-file-input') : null;
-        if (fieldPhotoFileInput) {
-            const fieldPhotoFile = dataURLtoFile(capturedSchoolPhoto, 'foto_kegiatan_kamera.jpg');
-            const fieldPhotoTransfer = new DataTransfer();
-            fieldPhotoTransfer.items.add(fieldPhotoFile);
-            fieldPhotoFileInput.files = fieldPhotoTransfer.files;
+        if (activeCameraInput.value) {
+            const extraPhotoInput = document.createElement('input');
+            extraPhotoInput.type = 'hidden';
+            extraPhotoInput.name = 'field_photo_data';
+            extraPhotoInput.className = 'camera-photo-data camera-photo-data-extra';
+            extraPhotoInput.value = capturedSchoolPhoto;
+            activeCameraInput.insertAdjacentElement('afterend', extraPhotoInput);
+        } else {
+            activeCameraInput.value = capturedSchoolPhoto;
         }
         if (activeCameraPreview) {
             activeCameraPreview.src = capturedSchoolPhoto;
@@ -1260,8 +1279,9 @@ function useSchoolPhoto() {
         }
         const photoStatus = form ? form.querySelector('.field-photo-status') : null;
         if (photoStatus) {
+            const queuedCount = form.querySelectorAll('[name="field_photo_data"]').length;
             photoStatus.className = 'form-text text-xs text-success field-photo-status';
-            photoStatus.innerHTML = '<i class="bi bi-check-circle me-1"></i>Foto baru siap disimpan.';
+            photoStatus.innerHTML = '<i class="bi bi-check-circle me-1"></i>' + queuedCount + ' foto kamera baru siap disimpan. Klik kamera lagi untuk menambah.';
         }
     }
     const modal = bootstrap.Modal.getInstance(document.getElementById('schoolCameraModal'));
@@ -1308,6 +1328,26 @@ document.getElementById('activityDocumentPreviewModal').addEventListener('hidden
 
 document.addEventListener('change', function (event) {
     const input = event.target;
+    if (input.matches('[name="story_post_ids"], [name="story_post_id"]')) {
+        const form = input.closest('form');
+        const selectedOptions = Array.from(input.selectedOptions || []);
+        const selectedOption = selectedOptions.length ? selectedOptions[selectedOptions.length - 1] : null;
+        const photoUrl = selectedOption ? selectedOption.getAttribute('data-photo-url') : '';
+        const previewImg = form ? form.querySelector('.camera-photo-preview') : null;
+        const photoStatus = form ? form.querySelector('.field-photo-status') : null;
+        const photoData = form ? form.querySelector('[name="field_photo_data"]') : null;
+        const photoFile = form ? form.querySelector('.field-photo-file-input') : null;
+        if (photoUrl && previewImg) {
+            previewImg.src = photoUrl;
+            previewImg.classList.remove('d-none');
+            if (photoStatus) {
+                photoStatus.className = 'form-text text-xs text-success field-photo-status';
+                photoStatus.innerHTML = '<i class="bi bi-link-45deg me-1"></i>' + selectedOptions.length + ' foto postingan akan ditautkan.';
+            }
+        }
+        return;
+    }
+
     if (!input.classList.contains('image-doc-input') && !input.classList.contains('image-doc-camera-input')) {
         return;
     }

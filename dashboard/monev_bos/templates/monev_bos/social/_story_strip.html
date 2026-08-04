@@ -1,0 +1,292 @@
+{% if current_user and current_user.role in ['admin', 'staff', 'coordinator', 'sekolah'] %}
+<section class="monev-story-shell no-print" aria-label="Story sekolah">
+    <div class="d-flex align-items-center gap-3 overflow-auto py-2 px-1 monev-story-strip">
+        {% if current_user.role == 'sekolah' %}
+        <button type="button" class="monev-story-item border-0 bg-transparent p-0" data-bs-toggle="modal" data-bs-target="#createSchoolStoryModal">
+            <span class="monev-story-ring monev-story-add-ring">
+                <span class="monev-story-avatar bg-body-tertiary text-primary"><i class="bi bi-plus-lg fs-4"></i></span>
+            </span>
+            <span class="monev-story-name">Story Baru</span>
+        </button>
+        {% endif %}
+
+        {% for group in active_story_groups %}
+        {% set latest_story = group.posts[-1] %}
+        <button type="button" class="monev-story-item border-0 bg-transparent p-0 js-open-school-story" data-school-user-id="{{ group.school_user_id }}">
+            <span class="monev-story-ring">
+                <img class="monev-story-avatar" src="/{{ latest_story.photo_path }}" alt="Story {{ group.school_name }}">
+            </span>
+            <span class="monev-story-name" title="{{ group.school_name }}">{{ group.school_name }}</span>
+        </button>
+        {% endfor %}
+
+        <a href="{{ url_for('monev_bos.school_posts_explore') }}" class="monev-story-item text-decoration-none p-0">
+            <span class="monev-story-ring monev-story-search-ring">
+                <span class="monev-story-avatar bg-body-tertiary text-body"><i class="bi bi-search fs-5"></i></span>
+            </span>
+            <span class="monev-story-name">Cari Post</span>
+        </a>
+    </div>
+</section>
+
+<div class="modal fade" id="schoolStoryViewerModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered monev-story-viewer-dialog">
+        <div class="modal-content bg-dark text-white border-0 overflow-hidden">
+            <div class="monev-story-progress" id="schoolStoryProgress"></div>
+            <div class="modal-header border-0 position-absolute top-0 start-0 end-0 z-3 pt-4">
+                <div class="d-flex align-items-center gap-2 min-w-0">
+                    <i class="bi bi-building"></i>
+                    <a href="#" id="schoolStoryProfileLink" class="text-white text-decoration-none fw-semibold text-truncate">Sekolah</a>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Tutup"></button>
+            </div>
+            <div class="position-relative bg-black d-flex align-items-center justify-content-center" style="min-height:70vh;">
+                <img id="schoolStoryViewerImage" src="" alt="Story sekolah" class="w-100" style="max-height:82vh; object-fit:contain;">
+                <button type="button" class="btn btn-dark bg-opacity-50 border-0 position-absolute start-0 top-50 translate-middle-y ms-2" id="schoolStoryPrev" aria-label="Story sebelumnya"><i class="bi bi-chevron-left"></i></button>
+                <button type="button" class="btn btn-dark bg-opacity-50 border-0 position-absolute end-0 top-50 translate-middle-y me-2" id="schoolStoryNext" aria-label="Story berikutnya"><i class="bi bi-chevron-right"></i></button>
+            </div>
+            <div class="position-absolute bottom-0 start-0 end-0 p-3 monev-story-caption">
+                <div class="fw-bold" id="schoolStoryViewerTitle"></div>
+                <div class="small text-white-50"><i class="bi bi-geo-alt-fill me-1"></i><span id="schoolStoryViewerLocation"></span></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if current_user.role == 'sekolah' %}
+<div class="modal fade" id="createSchoolStoryModal" tabindex="-1" data-bs-backdrop="static" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <form method="POST" action="{{ url_for('monev_bos.create_school_story') }}" class="modal-content" id="createSchoolStoryForm">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="photo_data" id="schoolStoryPhotoData">
+            <input type="hidden" name="latitude" id="schoolStoryLatitude">
+            <input type="hidden" name="longitude" id="schoolStoryLongitude">
+            <input type="hidden" name="location_accuracy" id="schoolStoryAccuracy">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold"><i class="bi bi-camera-fill text-primary me-2"></i>Buat Story Sekolah</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-md-7">
+                        <div class="rounded overflow-hidden bg-dark d-flex align-items-center justify-content-center" style="min-height:360px;">
+                            <video id="schoolStoryCameraVideo" autoplay playsinline class="w-100" style="max-height:60vh; object-fit:cover;"></video>
+                            <canvas id="schoolStoryCameraCanvas" class="d-none"></canvas>
+                            <img id="schoolStoryCameraPreview" class="d-none w-100" alt="Preview story" style="max-height:60vh; object-fit:contain;">
+                        </div>
+                        <div class="d-flex justify-content-center gap-2 mt-3">
+                            <button type="button" class="btn btn-primary" id="schoolStoryCaptureButton" disabled><i class="bi bi-camera-fill me-1"></i>Ambil Foto</button>
+                            <button type="button" class="btn btn-outline-secondary d-none" id="schoolStoryRetakeButton"><i class="bi bi-arrow-counterclockwise me-1"></i>Ambil Ulang</button>
+                        </div>
+                    </div>
+                    <div class="col-md-5">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Judul Foto <span class="text-danger">*</span></label>
+                            <input type="text" name="title" class="form-control" maxlength="200" required placeholder="Contoh: Pemeriksaan perangkat komputer">
+                            <div class="form-text">Judul digunakan oleh semua role untuk pencarian post.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Lokasi GPS</label>
+                            <div class="form-control bg-body-tertiary text-body-secondary" id="schoolStoryLocationText">Mengambil lokasi perangkat…</div>
+                            <div class="form-text">Lokasi diambil otomatis dari perangkat dan tidak dapat diubah.</div>
+                        </div>
+                        <div class="alert alert-info small">
+                            Story tampil selama 7 hari dan langsung menjadi post permanen pada profil sekolah. Foto dikompres maksimal 200 KB.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="submit" class="btn btn-success fw-bold" id="schoolStorySubmitButton" disabled><i class="bi bi-send me-1"></i>Posting Story</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<script type="application/json" id="monevSchoolStoriesData">{{ active_story_groups|tojson }}</script>
+<script>
+(function () {
+    const storyGroups = JSON.parse(document.getElementById('monevSchoolStoriesData').textContent || '[]');
+    const groupMap = new Map(storyGroups.map(function (group) { return [String(group.school_user_id), group]; }));
+    const viewerModalElement = document.getElementById('schoolStoryViewerModal');
+    let viewerGroup = null;
+    let viewerIndex = 0;
+    let storyTimer = null;
+
+    function photoUrl(path) {
+        if (!path) return '';
+        return path.charAt(0) === '/' ? path : '/' + path;
+    }
+
+    function profileUrl(schoolUserId) {
+        return {{ url_for('monev_bos.school_posts_profile', school_user_id=0)|tojson }}.replace('/0/posts', '/' + schoolUserId + '/posts');
+    }
+
+    function renderStory() {
+        if (!viewerGroup || !viewerGroup.posts.length) return;
+        const post = viewerGroup.posts[viewerIndex];
+        document.getElementById('schoolStoryViewerImage').src = photoUrl(post.photo_path);
+        document.getElementById('schoolStoryViewerTitle').textContent = post.title;
+        document.getElementById('schoolStoryViewerLocation').textContent = post.location_text;
+        const profileLink = document.getElementById('schoolStoryProfileLink');
+        profileLink.textContent = viewerGroup.school_name;
+        profileLink.href = profileUrl(viewerGroup.school_user_id);
+
+        const progress = document.getElementById('schoolStoryProgress');
+        progress.replaceChildren();
+        viewerGroup.posts.forEach(function (_item, index) {
+            const bar = document.createElement('span');
+            bar.className = 'monev-story-progress-bar' + (index <= viewerIndex ? ' active' : '');
+            progress.appendChild(bar);
+        });
+
+        window.clearTimeout(storyTimer);
+        storyTimer = window.setTimeout(nextStory, 5000);
+    }
+
+    function nextStory() {
+        if (!viewerGroup) return;
+        if (viewerIndex < viewerGroup.posts.length - 1) {
+            viewerIndex += 1;
+            renderStory();
+        } else {
+            bootstrap.Modal.getInstance(viewerModalElement).hide();
+        }
+    }
+
+    document.addEventListener('click', function (event) {
+        const trigger = event.target.closest('.js-open-school-story');
+        if (!trigger) return;
+        viewerGroup = groupMap.get(trigger.getAttribute('data-school-user-id'));
+        viewerIndex = 0;
+        renderStory();
+        bootstrap.Modal.getOrCreateInstance(viewerModalElement).show();
+    });
+    document.getElementById('schoolStoryNext').addEventListener('click', nextStory);
+    document.getElementById('schoolStoryPrev').addEventListener('click', function () {
+        if (!viewerGroup) return;
+        viewerIndex = Math.max(0, viewerIndex - 1);
+        renderStory();
+    });
+    viewerModalElement.addEventListener('hidden.bs.modal', function () {
+        window.clearTimeout(storyTimer);
+        document.getElementById('schoolStoryViewerImage').src = '';
+    });
+
+    {% if current_user.role == 'sekolah' %}
+    const createModal = document.getElementById('createSchoolStoryModal');
+    const video = document.getElementById('schoolStoryCameraVideo');
+    const canvas = document.getElementById('schoolStoryCameraCanvas');
+    const preview = document.getElementById('schoolStoryCameraPreview');
+    const captureButton = document.getElementById('schoolStoryCaptureButton');
+    const retakeButton = document.getElementById('schoolStoryRetakeButton');
+    const submitButton = document.getElementById('schoolStorySubmitButton');
+    let cameraStream = null;
+    let gpsReady = false;
+    let photoReady = false;
+
+    function updateSubmitState() {
+        submitButton.disabled = !(gpsReady && photoReady);
+    }
+
+    function stopCamera() {
+        if (cameraStream) cameraStream.getTracks().forEach(function (track) { track.stop(); });
+        cameraStream = null;
+    }
+
+    function startCamera() {
+        preview.classList.add('d-none');
+        video.classList.remove('d-none');
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false })
+            .then(function (stream) {
+                cameraStream = stream;
+                video.srcObject = stream;
+                captureButton.disabled = false;
+            })
+            .catch(function () {
+                captureButton.disabled = true;
+                alert('Kamera tidak dapat diakses. Pastikan izin kamera diberikan.');
+            });
+    }
+
+    function requestGps() {
+        gpsReady = false;
+        document.getElementById('schoolStoryLocationText').textContent = 'Mengambil lokasi perangkat…';
+        navigator.geolocation.getCurrentPosition(function (position) {
+            const latitude = position.coords.latitude.toFixed(7);
+            const longitude = position.coords.longitude.toFixed(7);
+            document.getElementById('schoolStoryLatitude').value = latitude;
+            document.getElementById('schoolStoryLongitude').value = longitude;
+            document.getElementById('schoolStoryAccuracy').value = position.coords.accuracy || '';
+            document.getElementById('schoolStoryLocationText').textContent = latitude + ', ' + longitude;
+            gpsReady = true;
+            updateSubmitState();
+        }, function () {
+            document.getElementById('schoolStoryLocationText').textContent = 'Lokasi gagal diperoleh. Izinkan akses GPS lalu coba lagi.';
+            gpsReady = false;
+            updateSubmitState();
+        }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
+    }
+
+    createModal.addEventListener('shown.bs.modal', function () {
+        photoReady = false;
+        document.getElementById('schoolStoryPhotoData').value = '';
+        captureButton.classList.remove('d-none');
+        retakeButton.classList.add('d-none');
+        updateSubmitState();
+        startCamera();
+        requestGps();
+    });
+    createModal.addEventListener('hidden.bs.modal', stopCamera);
+    captureButton.addEventListener('click', function () {
+        const maxWidth = 1400;
+        let width = video.videoWidth || 960;
+        let height = video.videoHeight || 1280;
+        if (width > maxWidth) {
+            height = Math.round(height * maxWidth / width);
+            width = maxWidth;
+        }
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext('2d').drawImage(video, 0, 0, width, height);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+        document.getElementById('schoolStoryPhotoData').value = dataUrl;
+        preview.src = dataUrl;
+        preview.classList.remove('d-none');
+        video.classList.add('d-none');
+        captureButton.classList.add('d-none');
+        retakeButton.classList.remove('d-none');
+        photoReady = true;
+        stopCamera();
+        updateSubmitState();
+    });
+    retakeButton.addEventListener('click', function () {
+        photoReady = false;
+        document.getElementById('schoolStoryPhotoData').value = '';
+        retakeButton.classList.add('d-none');
+        captureButton.classList.remove('d-none');
+        captureButton.disabled = true;
+        updateSubmitState();
+        startCamera();
+    });
+    {% endif %}
+})();
+</script>
+
+<style>
+.monev-story-shell { border-bottom: 1px solid var(--bs-border-color); background: var(--bs-body-bg); }
+.monev-story-strip { scrollbar-width: thin; }
+.monev-story-item { width: 74px; min-width: 74px; display: flex; flex-direction: column; align-items: center; color: var(--bs-body-color); }
+.monev-story-ring { width: 62px; height: 62px; padding: 3px; border-radius: 50%; display: grid; place-items: center; background: linear-gradient(135deg, #f59e0b, #ef4444, #8b5cf6); }
+.monev-story-add-ring, .monev-story-search-ring { background: var(--bs-primary); }
+.monev-story-avatar { width: 56px; height: 56px; border-radius: 50%; border: 2px solid var(--bs-body-bg); object-fit: cover; display: grid; place-items: center; }
+.monev-story-name { width: 72px; margin-top: 4px; font-size: .7rem; text-align: center; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.monev-story-viewer-dialog { max-width: 520px; }
+.monev-story-progress { position: absolute; z-index: 4; top: 8px; left: 10px; right: 10px; display: flex; gap: 4px; }
+.monev-story-progress-bar { height: 3px; flex: 1; border-radius: 99px; background: rgba(255,255,255,.35); }
+.monev-story-progress-bar.active { background: #fff; }
+.monev-story-caption { background: linear-gradient(transparent, rgba(0,0,0,.85)); }
+</style>
+{% endif %}
