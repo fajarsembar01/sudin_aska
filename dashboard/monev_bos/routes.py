@@ -6,6 +6,22 @@ import base64
 import shutil
 import uuid
 
+MAX_ACTIVITY_FIELD_PHOTOS = 3
+
+
+def _requested_activity_photos():
+    files = [
+        file
+        for file in request.files.getlist("doc_field_photo") + request.files.getlist("field_photo")
+        if file and file.filename
+    ]
+    camera_photos = [value for value in request.form.getlist("field_photo_data") if value]
+    raw_story_ids = request.form.getlist("story_post_ids") or request.form.getlist("story_post_id")
+    story_ids = list(dict.fromkeys(
+        int(value) for value in raw_story_ids if value and value.isdigit()
+    ))
+    return files, camera_photos, story_ids
+
 
 def _record_monev_admin_action(
     action: str,
@@ -104,9 +120,11 @@ def inject_monev_bos_context() -> dict:
             pass
 
     active_story_groups = []
-    if user and user.get("role") in ["admin", "staff", "coordinator", "sekolah"]:
+    if user and user.get("role") in ["admin", "sekolah"]:
         try:
-            active_story_groups = queries.list_active_story_groups()
+            active_story_groups = queries.list_active_story_groups(
+                school_user_id=int(user["id"]) if user.get("role") == "sekolah" else None,
+            )
         except Exception:
             current_app.logger.exception("Failed to load active Monev school stories")
 
@@ -792,12 +810,12 @@ def _save_camera_photo(data_url, base_dir, sub_path):
 def _save_story_camera_photo(data_url: str, school_user_id: int) -> tuple:
     """Save a camera-only story photo as JPEG capped at 200 KB."""
     if not data_url or "," not in data_url:
-        return None, 0, "Foto story wajib diambil melalui kamera."
+        return None, 0, "Foto Live wajib diambil melalui kamera."
 
     try:
         header, encoded = data_url.split(",", 1)
         if not header.startswith("data:image/"):
-            return None, 0, "Format foto story tidak valid."
+            return None, 0, "Format Foto Live tidak valid."
         image_bytes = base64.b64decode(encoded, validate=True)
         image = ImageOps.exif_transpose(Image.open(io.BytesIO(image_bytes)))
         if image.mode != "RGB":
@@ -834,7 +852,7 @@ def _save_story_camera_photo(data_url: str, school_user_id: int) -> tuple:
         return f"static/uploads/{relative_dir}/{filename}", output.tell(), None
     except Exception:
         current_app.logger.exception("Failed to process Monev school story photo")
-        return None, 0, "Foto story gagal diproses. Silakan ambil ulang."
+        return None, 0, "Foto Live gagal diproses. Silakan ambil ulang."
 
 
 def _absolute_dashboard_file_path(relative_path: str) -> str:
@@ -842,7 +860,7 @@ def _absolute_dashboard_file_path(relative_path: str) -> str:
 
 
 @monev_bos_bp.route("/posts")
-@role_required("admin", "staff", "coordinator", "sekolah")
+@role_required("admin")
 def school_posts_explore():
     search_query = request.args.get("q", "").strip()
     posts = queries.list_school_posts(search_query=search_query, limit=300)
@@ -856,11 +874,17 @@ def school_posts_explore():
 
 
 @monev_bos_bp.route("/schools/<int:school_user_id>/posts")
-@role_required("admin", "staff", "coordinator", "sekolah")
+@role_required("admin", "sekolah")
 def school_posts_profile(school_user_id: int):
+    user = current_user()
+    if user.get("role") == "sekolah" and int(school_user_id) != int(user["id"]):
+        flash("Sekolah hanya dapat melihat Foto Live dan post miliknya sendiri.", "warning")
+        return redirect(url_for("monev_bos.school_posts_profile", school_user_id=user["id"]))
     profile = queries.get_school_post_profile(school_user_id)
     if not profile:
         flash("Profil sekolah tidak ditemukan.", "warning")
+        if user.get("role") == "sekolah":
+            return redirect(url_for("monev_bos.sekolah_dashboard"))
         return redirect(url_for("monev_bos.school_posts_explore"))
     search_query = request.args.get("q", "").strip()
     posts = queries.list_school_posts(
@@ -880,6 +904,7 @@ def school_posts_profile(school_user_id: int):
 @role_required("sekolah")
 def create_school_story():
     user = current_user()
+    own_profile_url = url_for("monev_bos.school_posts_profile", school_user_id=user["id"])
     title = (request.form.get("title") or "").strip()
     photo_data = request.form.get("photo_data") or ""
     try:
@@ -888,23 +913,23 @@ def create_school_story():
         accuracy_raw = request.form.get("location_accuracy")
         location_accuracy = float(accuracy_raw) if accuracy_raw else None
     except (TypeError, ValueError):
-        flash("Lokasi GPS wajib tersedia sebelum story diposting.", "danger")
-        return redirect(request.referrer or url_for("monev_bos.school_posts_explore"))
+        flash("Lokasi GPS wajib tersedia sebelum Foto Live diposting.", "danger")
+        return redirect(request.referrer or own_profile_url)
 
     if not title:
         flash("Judul foto wajib diisi.", "danger")
-        return redirect(request.referrer or url_for("monev_bos.school_posts_explore"))
+        return redirect(request.referrer or own_profile_url)
     if len(title) > 200:
         flash("Judul foto maksimal 200 karakter.", "danger")
-        return redirect(request.referrer or url_for("monev_bos.school_posts_explore"))
+        return redirect(request.referrer or own_profile_url)
     if not (-90 <= latitude <= 90 and -180 <= longitude <= 180):
         flash("Koordinat GPS tidak valid.", "danger")
-        return redirect(request.referrer or url_for("monev_bos.school_posts_explore"))
+        return redirect(request.referrer or own_profile_url)
 
     photo_path, photo_size, error = _save_story_camera_photo(photo_data, int(user["id"]))
     if error:
         flash(error, "danger")
-        return redirect(request.referrer or url_for("monev_bos.school_posts_explore"))
+        return redirect(request.referrer or own_profile_url)
 
     location_text = f"{latitude:.6f}, {longitude:.6f}"
     try:
@@ -926,7 +951,7 @@ def create_school_story():
             pass
         raise
 
-    flash("Story berhasil diposting dan tersimpan permanen di profil sekolah.", "success")
+    flash("Foto Live berhasil diposting dan tersimpan permanen di profil sekolah.", "success")
     return redirect(url_for("monev_bos.school_posts_profile", school_user_id=user["id"], _anchor=f"post-{post_id}"))
 
 
@@ -934,13 +959,18 @@ def create_school_story():
 @role_required("admin", "sekolah")
 def delete_school_post(post_id: int):
     user = current_user()
+    fallback_url = (
+        url_for("monev_bos.school_posts_profile", school_user_id=user["id"])
+        if user.get("role") == "sekolah"
+        else url_for("monev_bos.school_posts_explore")
+    )
     post = queries.get_school_post(post_id)
     if not post:
         flash("Postingan tidak ditemukan.", "warning")
-        return redirect(url_for("monev_bos.school_posts_explore"))
+        return redirect(fallback_url)
     if user.get("role") == "sekolah" and int(post["school_user_id"]) != int(user["id"]):
         flash("Anda tidak berhak menghapus postingan sekolah lain.", "danger")
-        return redirect(url_for("monev_bos.school_posts_explore"))
+        return redirect(fallback_url)
 
     source_path = _absolute_dashboard_file_path(post["photo_path"])
     links = queries.list_post_activity_links(post_id)
@@ -1075,6 +1105,12 @@ def sekolah_activities():
                 "item_specs": request.form.get("item_specs"),
                 "item_quantity": int(request.form.get("item_quantity", 0) or 0)
             }
+            field_photo_files, field_photo_data_items, story_post_ids = _requested_activity_photos()
+            requested_photo_count = len(field_photo_files) + len(field_photo_data_items) + len(story_post_ids)
+            if requested_photo_count > MAX_ACTIVITY_FIELD_PHOTOS:
+                flash("Maksimal 3 Foto Kegiatan/Barang per kegiatan, termasuk tautan Foto Live.", "warning")
+                return redirect(url_for("monev_bos.sekolah_activities", period_id=period_id, fund_source=fund_source))
+
             activity_id = queries.create_activity(report["id"], target_fund_source, data)
             
             # Handle mandatory document uploads (Faktur/Kwitansi & Bukti Transfer)
@@ -1093,10 +1129,7 @@ def sekolah_activities():
                 return redirect(url_for("monev_bos.sekolah_activities", period_id=period_id, fund_source=fund_source))
 
             # Handle optional camera photo or file upload (Foto Kegiatan / Barang)
-            story_post_ids_raw = request.form.getlist("story_post_ids") or request.form.getlist("story_post_id")
-            story_post_ids = [int(value) for value in story_post_ids_raw if value and value.isdigit()]
-            field_photo_files = request.files.getlist("doc_field_photo") + request.files.getlist("field_photo")
-            for field_photo_file in [file for file in field_photo_files if file and file.filename]:
+            for field_photo_file in field_photo_files:
                 sub_path = f"monev_bos/{report['id']}/{activity_id}/field_photo"
                 saved_path, err_msg = _save_uploaded_file(field_photo_file, base_dir, sub_path, max_size_bytes=100 * 1024)
                 if err_msg:
@@ -1105,9 +1138,7 @@ def sekolah_activities():
                     return redirect(url_for("monev_bos.sekolah_activities", period_id=period_id, fund_source=fund_source))
                 if saved_path:
                     queries.add_activity_doc(activity_id, "field_photo", saved_path, field_photo_file.content_length or 0, user["id"])
-            for field_photo_data in request.form.getlist("field_photo_data"):
-                if not field_photo_data:
-                    continue
+            for field_photo_data in field_photo_data_items:
                 saved_path, err_msg = _save_camera_photo(field_photo_data, base_dir, f"monev_bos/{report['id']}/{activity_id}/field_photo")
                 if err_msg:
                     queries.delete_activity(activity_id)
@@ -1185,6 +1216,21 @@ def sekolah_activities():
             activity_id = int(request.form.get("activity_id"))
             act = queries.get_activity_by_id(activity_id)
 
+            field_photo_files, field_photo_data_items, story_post_ids = _requested_activity_photos()
+            existing_post_ids = {
+                int(link["post_id"]) for link in queries.get_activity_post_links(activity_id)
+            }
+            new_story_post_ids = [post_id for post_id in story_post_ids if post_id not in existing_post_ids]
+            valid_photo_count = queries.count_valid_field_photos(activity_id)
+            requested_photo_count = len(field_photo_files) + len(field_photo_data_items) + len(new_story_post_ids)
+            if valid_photo_count + requested_photo_count > MAX_ACTIVITY_FIELD_PHOTOS:
+                remaining = max(0, MAX_ACTIVITY_FIELD_PHOTOS - valid_photo_count)
+                flash(
+                    f"Maksimal 3 Foto Kegiatan/Barang yang sah per kegiatan. Kuota tambahan saat ini {remaining} foto.",
+                    "warning",
+                )
+                return redirect(url_for("monev_bos.sekolah_activities", period_id=period_id, fund_source=fund_source))
+
             # Jika sudah sesuai (valid), harus minta persetujuan admin
             if act and act.get("status") == "valid":
                 flash("Kegiatan ini sudah divalidasi sebagai Sesuai. Edit harus melalui pengajuan perubahan ke admin.", "warning")
@@ -1249,19 +1295,14 @@ def sekolah_activities():
             base_dir = os.path.join(monev_bos_bp.root_path, "..", "static", "uploads")
 
             # Handle optional field photo (file upload or camera)
-            story_post_ids_raw = request.form.getlist("story_post_ids") or request.form.getlist("story_post_id")
-            story_post_ids = [int(value) for value in story_post_ids_raw if value and value.isdigit()]
-            field_photo_files = request.files.getlist("doc_field_photo") + request.files.getlist("field_photo")
-            for field_photo_file in [file for file in field_photo_files if file and file.filename]:
+            for field_photo_file in field_photo_files:
                 sub_path = f"monev_bos/{report['id']}/{activity_id}/field_photo"
                 saved_path, err_msg = _save_uploaded_file(field_photo_file, base_dir, sub_path, max_size_bytes=100 * 1024)
                 if err_msg:
                     flash(err_msg, "danger")
                 elif saved_path:
                     queries.add_activity_doc(activity_id, "field_photo", saved_path, field_photo_file.content_length or 0, user["id"])
-            for field_photo_data in request.form.getlist("field_photo_data"):
-                if not field_photo_data:
-                    continue
+            for field_photo_data in field_photo_data_items:
                 saved_path, err_msg = _save_camera_photo(field_photo_data, base_dir, f"monev_bos/{report['id']}/{activity_id}/field_photo")
                 if err_msg:
                     flash(err_msg, "danger")
@@ -1312,6 +1353,12 @@ def sekolah_activities():
         docs = queries.get_activity_docs(act["id"])
         act["docs"] = {doc["doc_type"]: doc for doc in docs}
         act["field_photos"] = [doc for doc in docs if doc["doc_type"] == "field_photo"]
+        act["valid_field_photos"] = [
+            doc for doc in act["field_photos"] if doc.get("is_audit_valid", True)
+        ]
+        act["invalid_field_photos"] = [
+            doc for doc in act["field_photos"] if not doc.get("is_audit_valid", True)
+        ]
         post_links = queries.get_activity_post_links(act["id"])
         act["linked_story_post_ids"] = [link["post_id"] for link in post_links]
         act["history"] = queries.get_activity_history(act["id"])
@@ -1856,13 +1903,16 @@ def staff_audit_activity(activity_id):
             if not is_valid and not reason:
                 return jsonify({"success": False, "message": "Alasan anulir wajib diisi."}), 400
 
-            updated_photo = queries.set_field_photo_audit_validity(
-                activity_id,
-                doc_id,
-                is_valid,
-                int(user["id"]),
-                reason if not is_valid else "Disahkan kembali oleh auditor",
-            )
+            try:
+                updated_photo = queries.set_field_photo_audit_validity(
+                    activity_id,
+                    doc_id,
+                    is_valid,
+                    int(user["id"]),
+                    reason if not is_valid else "Disahkan kembali oleh auditor",
+                )
+            except ValueError as exc:
+                return jsonify({"success": False, "message": str(exc)}), 400
             if not updated_photo:
                 return jsonify({"success": False, "message": "Foto sekolah tidak ditemukan."}), 404
 

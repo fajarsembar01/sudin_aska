@@ -814,11 +814,39 @@ def get_activity_docs(activity_id: int) -> List[Dict[str, Any]]:
         )
         return [dict(row) for row in cur.fetchall()]
 
+
+def count_valid_field_photos(activity_id: int) -> int:
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT COUNT(*)
+            FROM monev_bos_activity_docs
+            WHERE activity_id = %s
+              AND doc_type = 'field_photo'
+              AND is_audit_valid = TRUE
+            """,
+            (activity_id,),
+        )
+        return int(cur.fetchone()[0])
+
 def add_activity_doc(activity_id: int, doc_type: str, file_path: str, file_size: int, user_id: int) -> int:
     with get_cursor(commit=True) as cur:
         # Dokumen utama hanya satu. Foto sekolah/staff dan bukti fisik boleh lebih dari satu.
         if doc_type in ['transfer', 'invoice']:
             cur.execute("DELETE FROM monev_bos_activity_docs WHERE activity_id = %s AND doc_type = %s", (activity_id, doc_type))
+        elif doc_type == 'field_photo':
+            cur.execute(
+                """
+                SELECT COUNT(*)
+                FROM monev_bos_activity_docs
+                WHERE activity_id = %s
+                  AND doc_type = 'field_photo'
+                  AND is_audit_valid = TRUE
+                """,
+                (activity_id,),
+            )
+            if int(cur.fetchone()[0]) >= 3:
+                raise ValueError("Maksimal 3 Foto Kegiatan/Barang yang sah per kegiatan.")
             
         cur.execute(
             """
@@ -840,6 +868,21 @@ def set_field_photo_audit_validity(
 ) -> Optional[Dict[str, Any]]:
     """Anulir atau sahkan kembali satu foto sekolah tanpa menghapus bukti aslinya."""
     with get_cursor(commit=True) as cur:
+        if is_valid:
+            cur.execute(
+                """
+                SELECT COUNT(*)
+                FROM monev_bos_activity_docs
+                WHERE activity_id = %s
+                  AND doc_type = 'field_photo'
+                  AND is_audit_valid = TRUE
+                  AND id <> %s
+                """,
+                (activity_id, doc_id),
+            )
+            if int(cur.fetchone()[0]) >= 3:
+                raise ValueError("Foto tidak dapat disahkan kembali karena sudah ada 3 foto sah.")
+
         cur.execute(
             """
             UPDATE monev_bos_activity_docs
@@ -1690,8 +1733,11 @@ def list_school_posts(
         return [dict(row) for row in cur.fetchall()]
 
 
-def list_active_story_groups(limit: int = 200) -> List[Dict[str, Any]]:
-    posts = list_school_posts(limit=limit)
+def list_active_story_groups(
+    limit: int = 200,
+    school_user_id: Optional[int] = None,
+) -> List[Dict[str, Any]]:
+    posts = list_school_posts(school_user_id=school_user_id, limit=limit)
     active_posts = [post for post in posts if post.get("is_active_story")]
     groups: Dict[int, Dict[str, Any]] = {}
     for post in reversed(active_posts):
@@ -1770,6 +1816,19 @@ def link_post_to_activity(activity_id: int, post_id: int, school_user_id: int, a
         existing_link = cur.fetchone()
         if existing_link:
             return int(existing_link["id"])
+
+        cur.execute(
+            """
+            SELECT COUNT(*)
+            FROM monev_bos_activity_docs
+            WHERE activity_id = %s
+              AND doc_type = 'field_photo'
+              AND is_audit_valid = TRUE
+            """,
+            (activity_id,),
+        )
+        if int(cur.fetchone()[0]) >= 3:
+            raise ValueError("Maksimal 3 Foto Kegiatan/Barang yang sah per kegiatan.")
 
         cur.execute(
             """

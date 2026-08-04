@@ -1,24 +1,25 @@
 {% extends "monev_bos/base_monev_bos.html" %}
 
 {% block monev_bos_content %}
-<div class="container-fluid py-4">
-    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-4">
+<div class="container-fluid py-3 py-md-4 monev-social-page">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3 mb-md-4 monev-social-header">
         <div>
-            <h1 class="h3 fw-bold mb-1">Story & Post Sekolah</h1>
+            <h1 class="h3 fw-bold mb-1">Foto Live & Post Sekolah</h1>
             <p class="text-body-secondary mb-0">Cari dokumentasi foto seluruh sekolah berdasarkan judul, sekolah, atau koordinat GPS.</p>
         </div>
-        {% if current_user.role == 'sekolah' %}
-        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createSchoolStoryModal"><i class="bi bi-camera-fill me-1"></i>Buat Story</button>
-        {% endif %}
     </div>
 
     <form method="GET" class="card border-0 shadow-sm mb-4">
-        <div class="card-body">
-            <div class="input-group">
+        <div class="card-body p-2 p-sm-3">
+            <div class="d-flex flex-column flex-sm-row gap-2 monev-social-search">
+                <div class="input-group flex-grow-1">
                 <span class="input-group-text bg-body"><i class="bi bi-search"></i></span>
                 <input type="search" name="q" value="{{ search_query }}" class="form-control" placeholder="Cari judul foto, nama sekolah, atau lokasi GPS...">
-                <button type="submit" class="btn btn-primary">Cari</button>
-                {% if search_query %}<a href="{{ url_for('monev_bos.school_posts_explore') }}" class="btn btn-outline-secondary">Reset</a>{% endif %}
+                </div>
+                <div class="d-grid d-sm-flex gap-2 monev-social-search-actions">
+                    <button type="submit" class="btn btn-primary">Cari</button>
+                    {% if search_query %}<a href="{{ url_for('monev_bos.school_posts_explore') }}" class="btn btn-outline-secondary">Reset</a>{% endif %}
+                </div>
             </div>
         </div>
     </form>
@@ -28,7 +29,7 @@
     {% if current_user.role == 'admin' %}
     <div class="card border-0 shadow-sm mt-4">
         <div class="card-header bg-body d-flex justify-content-between align-items-center">
-            <h2 class="h6 fw-bold mb-0"><i class="bi bi-clock-history me-2"></i>Audit Story & Post</h2>
+            <h2 class="h6 fw-bold mb-0"><i class="bi bi-clock-history me-2"></i>Audit Foto Live & Post</h2>
             <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#storyAuditTable">Tampilkan</button>
         </div>
         <div class="collapse" id="storyAuditTable">
@@ -50,4 +51,15 @@
     </div>
     {% endif %}
 </div>
+<style>
+@media (max-width: 575.98px) {
+    .monev-social-page { padding-inline: .75rem; }
+    .monev-social-header h1 { font-size: 1.35rem; }
+    .monev-social-header p { font-size: .82rem; line-height: 1.35; }
+    .monev-social-primary-action { width: 100%; min-height: 44px; }
+    .monev-social-search .form-control { min-width: 0; font-size: .88rem; }
+    .monev-social-search-actions { grid-template-columns: 1fr 1fr; }
+    .monev-social-search-actions .btn { min-height: 42px; }
+}
+</style>
 {% endblock %}

@@ -110,10 +110,10 @@
                 </li>
                 {% endif %}
 
-                {% if current_user and current_user.role in ['admin', 'staff', 'coordinator', 'sekolah'] %}
+                {% if current_user and current_user.role in ['admin', 'sekolah'] %}
                 <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint in ['monev_bos.school_posts_explore', 'monev_bos.school_posts_profile'] %}active{% endif %}" href="{{ url_for('monev_bos.school_posts_explore') }}">
-                        <i class="bi bi-images nav-icon"></i>Story & Post
+                    <a class="nav-link {% if request.endpoint in ['monev_bos.school_posts_explore', 'monev_bos.school_posts_profile'] %}active{% endif %}" href="{% if current_user.role == 'admin' %}{{ url_for('monev_bos.school_posts_explore') }}{% else %}{{ url_for('monev_bos.school_posts_profile', school_user_id=current_user.id) }}{% endif %}">
+                        <i class="bi bi-images nav-icon"></i>Foto Live & Post
                     </a>
                 </li>
                 {% endif %}
