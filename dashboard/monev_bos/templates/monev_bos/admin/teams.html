@@ -1,0 +1,293 @@
+{% extends "monev_bos/base_monev_bos.html" %}
+
+{% block monev_bos_content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="h3 mb-0 text-gray-800">Tim & Penugasan</h1>
+            <p class="text-muted mb-0">Kelola tim monev dan penugasan ke sekolah.</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createTeamModal">
+                <i class="bi bi-plus-lg me-1"></i> Buat Tim Baru
+            </button>
+        </div>
+    </div>
+
+    <!-- Peringatan jika belum ada periode aktif -->
+    {% if not active_period %}
+    <div class="alert alert-warning d-flex align-items-center" role="alert">
+        <i class="bi bi-exclamation-triangle-fill flex-shrink-0 me-2"></i>
+        <div>
+            Belum ada periode MONEV BOS/BOP yang aktif. Penugasan sekolah hanya bisa dilakukan pada periode aktif. <a href="{{ url_for('monev_bos.admin_periods') }}" class="alert-link">Atur Jadwal & Periode</a>.
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-info d-flex align-items-center" role="alert">
+        <i class="bi bi-info-circle-fill flex-shrink-0 me-2"></i>
+        <div>
+            Periode Penugasan Aktif: <strong>Tahun {{ active_period.year }} TW {{ active_period.tw }}</strong> 
+            ({{ active_period.start_date }} s/d {{ active_period.end_date }})
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row">
+        <!-- Kolom Tim -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Daftar Tim Monev</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for team in teams %}
+                        <div class="list-group-item p-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="mb-0 fw-bold">{{ team.name }}</h6>
+                                <div>
+                                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editTeamModal{{ team.id }}">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <form action="{{ url_for('monev_bos.admin_teams') }}" method="POST" class="d-inline" onsubmit="return confirm('Hapus tim ini?');">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <input type="hidden" name="action" value="delete">
+                                        <input type="hidden" name="team_id" value="{{ team.id }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                            <div class="text-sm">
+                                <strong>Ketua:</strong> 
+                                {% if team.leader_id %}
+                                {{ team.leader_name }} <span class="text-muted">({{ team.leader_email }})</span>
+                                {% else %}
+                                <span class="text-danger">Belum Ditunjuk</span>
+                                {% endif %}
+                            </div>
+                            <div class="text-sm mt-1">
+                                <strong>Admin Input:</strong> {{ team.input_admin_name or 'Tidak ada' }}
+                            </div>
+                        </div>
+
+                        <!-- Modal Edit Tim -->
+                        <div class="modal fade" id="editTeamModal{{ team.id }}" tabindex="-1">
+                            <div class="modal-dialog">
+                                <form action="{{ url_for('monev_bos.admin_teams') }}" method="POST" class="modal-content">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <input type="hidden" name="action" value="update_leader">
+                                    <input type="hidden" name="team_id" value="{{ team.id }}">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Edit Ketua Tim: {{ team.name }}</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="mb-3">
+                                            <label class="form-label">Pilih Ketua Tim (Staff)</label>
+                                            <select class="form-select ts-select" name="leader_id" data-placeholder="Ketik untuk cari staff...">
+                                                <option value="">-- Kosongkan --</option>
+                                                {% for staff in staff_users %}
+                                                <option value="{{ staff.id }}" {% if staff.id == team.leader_id %}selected{% endif %}>
+                                                    {{ staff.full_name }} ({{ staff.email }})
+                                                </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                                        <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="p-4 text-center text-muted">Belum ada tim yang dibuat.</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Kolom Penugasan Sekolah -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Penugasan Sekolah (Periode Aktif)</h6>
+                    {% if active_period and teams and sekolah_users %}
+                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#assignSchoolModal">
+                        <i class="bi bi-link"></i> Assign Sekolah
+                    </button>
+                    {% endif %}
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped mb-0 text-sm">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-3">Sekolah</th>
+                                    <th>Tim Ditugaskan</th>
+                                    <th>Admin Input</th>
+                                    <th class="text-end pe-3">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for assign in assignments %}
+                                <tr>
+                                    <td class="ps-3 fw-bold">{{ assign.school_name }}</td>
+                                    <td><span class="badge bg-info">{{ assign.team_name }}</span></td>
+                                    <td>{{ assign.input_admin_name or 'Tidak ada' }}</td>
+                                    <td class="text-end pe-3">
+                                        <form action="{{ url_for('monev_bos.admin_teams') }}" method="POST" class="d-inline" onsubmit="return confirm('Lepas tugas sekolah ini dari tim?');">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <input type="hidden" name="action" value="unassign">
+                                            <input type="hidden" name="assignment_id" value="{{ assign.id }}">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger border-0">
+                                                <i class="bi bi-x-circle"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-center py-4 text-muted">
+                                        {% if not active_period %}
+                                        Aktifkan periode terlebih dahulu.
+                                        {% else %}
+                                        Belum ada sekolah yang ditugaskan ke tim manapun.
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% include "monev_bos/admin/_master_activity_history.html" %}
+</div>
+
+<!-- Modal Create Team -->
+<div class="modal fade" id="createTeamModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form action="{{ url_for('monev_bos.admin_teams') }}" method="POST" class="modal-content">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="action" value="create">
+            <div class="modal-header">
+                <h5 class="modal-title">Buat Tim Baru</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Nama Tim</label>
+                    <input type="text" class="form-control" name="name" required placeholder="Contoh: Tim Monev 1">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Ketua Tim (Staff) <small class="text-muted">(Bisa diisi nanti)</small></label>
+                    <select class="form-select ts-select" name="leader_id" data-placeholder="Ketik nama atau email staff...">
+                        <option value="">-- Pilih Ketua Tim --</option>
+                        {% for staff in staff_users %}
+                        <option value="{{ staff.id }}">{{ staff.full_name }} ({{ staff.email }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="submit" class="btn btn-primary">Simpan</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Assign School -->
+{% if active_period %}
+<div class="modal fade" id="assignSchoolModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form action="{{ url_for('monev_bos.admin_teams') }}" method="POST" class="modal-content">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="action" value="assign">
+            <input type="hidden" name="period_id" value="{{ active_period.id }}">
+            <div class="modal-header">
+                <h5 class="modal-title">Assign Sekolah ke Tim</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Pilih Sekolah</label>
+                    <select class="form-select ts-select" name="school_id" required data-placeholder="Ketik nama sekolah...">
+                        <option value="">-- Pilih Sekolah --</option>
+                        {% for sekolah in sekolah_users %}
+                        <option value="{{ sekolah.id }}">{{ sekolah.full_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Pilih Tim Monev</label>
+                    <select class="form-select ts-select" name="team_id" required data-placeholder="Ketik nama tim...">
+                        <option value="">-- Pilih Tim --</option>
+                        {% for team in teams %}
+                        <option value="{{ team.id }}">{{ team.name }} {% if team.leader_name %}(Ketua: {{ team.leader_name }}){% endif %}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="submit" class="btn btn-primary">Tugaskan</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<!-- Tom Select for searchable dropdowns -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css">
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+<script>
+(function () {
+    function initTomSelects(container) {
+        if (!window.TomSelect) return;
+        var selects = (container || document).querySelectorAll('select.ts-select');
+        selects.forEach(function (select) {
+            if (select.tomselect) return;
+            var tom = new TomSelect(select, {
+                create: false,
+                allowEmptyOption: true,
+                placeholder: select.getAttribute('data-placeholder') || 'Ketik untuk mencari...',
+                searchField: ['text'],
+                plugins: select.required ? [] : ['clear_button'],
+                render: {
+                    no_results: function () {
+                        return '<div class="no-results">Tidak ada hasil</div>';
+                    }
+                }
+            });
+            // Don't show empty option label as selected item
+            if (tom.getValue() === '') {
+                tom.clear(true);
+                tom.inputState();
+            }
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        // Init Tom Select for all ts-select elements that are visible
+        initTomSelects(document);
+
+        // Re-init when modals are shown (Bootstrap modals are initially hidden)
+        document.querySelectorAll('.modal').forEach(function (modal) {
+            modal.addEventListener('shown.bs.modal', function () {
+                initTomSelects(modal);
+            });
+        });
+    });
+})();
+</script>
+
+{% endblock %}

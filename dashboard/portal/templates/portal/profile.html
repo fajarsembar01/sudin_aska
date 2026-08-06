@@ -107,9 +107,10 @@
                                 placeholder="Opsional">
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">No. WhatsApp</label>
-                            <input type="tel" name="whatsapp_number" class="form-control"
-                                value="{{ profile.whatsapp_number or '' }}" placeholder="08123456789">
+                            <label class="form-label fw-bold">No. WhatsApp <span class="text-danger">* (Wajib Diisi)</span></label>
+                            <input type="tel" name="whatsapp_number" class="form-control border-primary" required
+                                value="{{ profile.whatsapp_number or profile.phone or '' }}" placeholder="08123456789">
+                            <small class="text-muted d-block mt-1">Masukkan nomor WhatsApp aktif Anda untuk koordinasi sistem.</small>
                         </div>
                         {% if current_user and current_user.role == 'staff' %}
                         <div class="mb-3 border rounded-3 p-3">

@@ -45,6 +45,36 @@ jobs:
           rsync -avz --progress \
             web_aska/handlers.py \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_PROJECT_PATH }}/web_aska/handlers.py
+          rsync -avz --progress \
+            dashboard/monev_bos/routes.py \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_PROJECT_PATH }}/dashboard/monev_bos/routes.py
+          rsync -avz --progress \
+            dashboard/monev_bos/queries.py \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_PROJECT_PATH }}/dashboard/monev_bos/queries.py
+          rsync -avz --progress \
+            dashboard/laporan/routes.py \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_PROJECT_PATH }}/dashboard/laporan/routes.py
+          rsync -avz --progress \
+            dashboard/queries.py \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_PROJECT_PATH }}/dashboard/queries.py
+          rsync -avz --progress \
+            dashboard/templates/admin_performance.html \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_PROJECT_PATH }}/dashboard/templates/admin_performance.html
+          rsync -avz --progress \
+            dashboard/monev_bos/templates/monev_bos/sekolah/activities.html \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_PROJECT_PATH }}/dashboard/monev_bos/templates/monev_bos/sekolah/activities.html
+          rsync -avz --progress \
+            dashboard/monev_bos/templates/monev_bos/base_monev_bos.html \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_PROJECT_PATH }}/dashboard/monev_bos/templates/monev_bos/base_monev_bos.html
+          rsync -avz --progress \
+            dashboard/monev_bos/templates/monev_bos/social/ \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_PROJECT_PATH }}/dashboard/monev_bos/templates/monev_bos/social/
+          rsync -avz --progress \
+            dashboard/monev_bos/templates/monev_bos/admin/ \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_PROJECT_PATH }}/dashboard/monev_bos/templates/monev_bos/admin/
+          rsync -avz --progress \
+            dashboard/schema.py \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_PROJECT_PATH }}/dashboard/schema.py
 
       - name: 🔄 Reload ASKA di server
         run: |
@@ -52,3 +82,10 @@ jobs:
             "cd ${{ secrets.SERVER_PROJECT_PATH }} && \
              echo '✅ Kode runtime diperbarui!' && \
              (sudo systemctl restart aska 2>/dev/null || pm2 restart aska 2>/dev/null || echo '⚠️ Restart manual diperlukan')"
+
+      - name: 🔄 Restart dashboard
+        run: |
+          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
+            "cd ${{ secrets.SERVER_PROJECT_PATH }} && \
+             sudo systemctl restart aska-dashboard.service && \
+             sudo systemctl is-active aska-dashboard.service"

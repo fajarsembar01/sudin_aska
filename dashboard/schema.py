@@ -1489,11 +1489,45 @@ CREATE INDEX IF NOT EXISTS idx_cc_message_drafts_admin ON cc_message_drafts (adm
 CREATE INDEX IF NOT EXISTS idx_cc_message_drafts_admin_category ON cc_message_drafts (admin_user_id, category);
 """
 
+_SYSTEM_SETTINGS_SQL = """
+CREATE TABLE IF NOT EXISTS system_settings (
+    setting_key VARCHAR(100) PRIMARY KEY,
+    setting_value TEXT,
+    category VARCHAR(50) NOT NULL DEFAULT 'general',
+    description TEXT,
+    is_secret BOOLEAN NOT NULL DEFAULT FALSE,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL
+);
+"""
+
+_PUBLIC_API_KEYS_SQL = """
+CREATE TABLE IF NOT EXISTS public_api_keys (
+    id SERIAL PRIMARY KEY,
+    client_name VARCHAR(150) NOT NULL,
+    contact_email VARCHAR(150),
+    api_key VARCHAR(100) UNIQUE NOT NULL,
+    scopes JSONB NOT NULL DEFAULT '["schools:read"]'::jsonb,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    notes TEXT,
+    last_used_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL
+);
+"""
+
+_PUBLIC_API_KEYS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_public_api_keys_key ON public_api_keys (api_key);
+CREATE INDEX IF NOT EXISTS idx_public_api_keys_active ON public_api_keys (is_active);
+"""
 
 def ensure_dashboard_schema() -> None:
     """Create core dashboard tables when they do not yet exist."""
     statements: Iterable[str] = (
         _DASHBOARD_USERS_SQL,
+        _SYSTEM_SETTINGS_SQL,
+        _PUBLIC_API_KEYS_SQL,
+        _PUBLIC_API_KEYS_INDEX_SQL,
         _SCHOOL_CLASSES_SQL,
         _STUDENTS_SQL,
         _STUDENTS_CLASS_INDEX_SQL,
@@ -2130,9 +2164,399 @@ def ensure_cms_artikel_schema() -> None:
             print(f"Statement: {statement[:100]}...")
             raise
 
+# ===== MONEV BOS/BOP Schema =====
 
-__all__ = [
-    "ensure_dashboard_schema",
-    "ensure_cms_artikel_schema",
-    "ensure_laporan_schema",
-]
+_MONEV_BOS_PERIODS_SQL = """
+CREATE TABLE IF NOT EXISTS monev_bos_periods (
+    id SERIAL PRIMARY KEY,
+    year INTEGER NOT NULL,
+    tw INTEGER NOT NULL CHECK (tw IN (1, 2, 3, 4)),
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (year, tw)
+);
+"""
+
+_MONEV_BOS_PERIODS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_monev_bos_periods_active ON monev_bos_periods (is_active) WHERE is_active = TRUE;
+"""
+
+_MONEV_BOS_CHECKLISTS_SQL = """
+CREATE TABLE IF NOT EXISTS monev_bos_checklists (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_MONEV_BOS_TEAMS_SQL = """
+CREATE TABLE IF NOT EXISTS monev_bos_teams (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    leader_id INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_MONEV_BOS_TEAM_MEMBERS_SQL = """
+CREATE TABLE IF NOT EXISTS monev_bos_team_members (
+    id SERIAL PRIMARY KEY,
+    team_id INTEGER NOT NULL REFERENCES monev_bos_teams(id) ON DELETE CASCADE,
+    staff_id INTEGER NOT NULL REFERENCES dashboard_users(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (team_id, staff_id)
+);
+"""
+
+_MONEV_BOS_ASSIGNMENTS_SQL = """
+CREATE TABLE IF NOT EXISTS monev_bos_assignments (
+    id SERIAL PRIMARY KEY,
+    team_id INTEGER NOT NULL REFERENCES monev_bos_teams(id) ON DELETE CASCADE,
+    school_id INTEGER NOT NULL REFERENCES dashboard_users(id) ON DELETE CASCADE,
+    period_id INTEGER NOT NULL REFERENCES monev_bos_periods(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (school_id, period_id)
+);
+"""
+
+_MONEV_BOS_REPORTS_SQL = """
+CREATE TABLE IF NOT EXISTS monev_bos_reports (
+    id SERIAL PRIMARY KEY,
+    school_id INTEGER NOT NULL REFERENCES dashboard_users(id) ON DELETE CASCADE,
+    period_id INTEGER NOT NULL REFERENCES monev_bos_periods(id) ON DELETE RESTRICT,
+    bosp_receipt_amount NUMERIC(15,2) NOT NULL DEFAULT 0,
+    bop_receipt_amount NUMERIC(15,2) NOT NULL DEFAULT 0,
+    status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'submitted', 'in_review', 'completed', 'needs_revision', 'completed_with_notes')),
+    assigned_team_id INTEGER REFERENCES monev_bos_teams(id) ON DELETE SET NULL,
+    submitted_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (school_id, period_id)
+);
+"""
+
+_MONEV_BOS_REPORTS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_monev_bos_reports_school ON monev_bos_reports (school_id);
+CREATE INDEX IF NOT EXISTS idx_monev_bos_reports_period ON monev_bos_reports (period_id);
+CREATE INDEX IF NOT EXISTS idx_monev_bos_reports_status ON monev_bos_reports (status);
+"""
+
+_MONEV_BOS_ACTIVITIES_SQL = """
+CREATE TABLE IF NOT EXISTS monev_bos_activities (
+    id SERIAL PRIMARY KEY,
+    report_id INTEGER NOT NULL REFERENCES monev_bos_reports(id) ON DELETE CASCADE,
+    fund_source TEXT NOT NULL CHECK (fund_source IN ('BOS', 'BOP')),
+    activity_code TEXT NOT NULL,
+    activity_name TEXT NOT NULL,
+    account_code TEXT,
+    realized_amount NUMERIC(15,2) NOT NULL DEFAULT 0,
+    vendor_name TEXT,
+    bku_number TEXT,
+    item_name TEXT,
+    item_specs TEXT,
+    item_quantity INTEGER,
+    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'in_review', 'valid', 'invalid')),
+    audit_notes TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_MONEV_BOS_ACTIVITIES_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_monev_bos_activities_report ON monev_bos_activities (report_id);
+"""
+
+_MONEV_BOS_ACTIVITY_DOCS_SQL = """
+CREATE TABLE IF NOT EXISTS monev_bos_activity_docs (
+    id SERIAL PRIMARY KEY,
+    activity_id INTEGER NOT NULL REFERENCES monev_bos_activities(id) ON DELETE CASCADE,
+    doc_type TEXT NOT NULL CHECK (doc_type IN ('transfer', 'invoice', 'live_photo', 'physical_proof', 'field_photo')),
+    file_path TEXT NOT NULL,
+    file_size INTEGER,
+    uploaded_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    lat NUMERIC(9,6),
+    lng NUMERIC(9,6),
+    is_audit_valid BOOLEAN NOT NULL DEFAULT TRUE,
+    photo_audit_notes TEXT,
+    photo_audited_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    photo_audited_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_MONEV_BOS_ACTIVITY_DOCS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_monev_bos_activity_docs_activity ON monev_bos_activity_docs (activity_id);
+"""
+
+_MONEV_BOS_CHECKLIST_RESULTS_SQL = """
+CREATE TABLE IF NOT EXISTS monev_bos_checklist_results (
+    id SERIAL PRIMARY KEY,
+    activity_id INTEGER NOT NULL REFERENCES monev_bos_activities(id) ON DELETE CASCADE,
+    checklist_id INTEGER NOT NULL REFERENCES monev_bos_checklists(id) ON DELETE CASCADE,
+    status TEXT NOT NULL CHECK (status IN ('yes', 'no', 'na')),
+    notes TEXT,
+    created_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (activity_id, checklist_id)
+);
+"""
+
+_MONEV_BOS_AUDIT_LOGS_SQL = """
+CREATE TABLE IF NOT EXISTS monev_bos_audit_logs (
+    id SERIAL PRIMARY KEY,
+    report_id INTEGER NOT NULL REFERENCES monev_bos_reports(id) ON DELETE CASCADE,
+    activity_id INTEGER REFERENCES monev_bos_activities(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES dashboard_users(id) ON DELETE CASCADE,
+    action TEXT NOT NULL,
+    details TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_MONEV_BOS_AUDIT_LOGS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_monev_bos_audit_logs_report ON monev_bos_audit_logs (report_id);
+"""
+
+_MONEV_BOS_EDIT_REQUESTS_SQL = """
+CREATE TABLE IF NOT EXISTS monev_bos_edit_requests (
+    id SERIAL PRIMARY KEY,
+    activity_id INTEGER NOT NULL REFERENCES monev_bos_activities(id) ON DELETE CASCADE,
+    requested_by INTEGER NOT NULL REFERENCES dashboard_users(id) ON DELETE CASCADE,
+    reason TEXT NOT NULL,
+    requested_data JSONB,
+    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+    reviewed_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    review_notes TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_MONEV_BOS_EDIT_REQUESTS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_monev_bos_edit_requests_activity ON monev_bos_edit_requests (activity_id);
+CREATE INDEX IF NOT EXISTS idx_monev_bos_edit_requests_status ON monev_bos_edit_requests (status);
+"""
+
+_MONEV_BOS_ACTIVITY_HISTORY_SQL = """
+CREATE TABLE IF NOT EXISTS monev_bos_activity_history (
+    id SERIAL PRIMARY KEY,
+    activity_id INTEGER NOT NULL REFERENCES monev_bos_activities(id) ON DELETE CASCADE,
+    changed_by INTEGER NOT NULL REFERENCES dashboard_users(id) ON DELETE CASCADE,
+    previous_data JSONB,
+    change_reason TEXT,
+    activity_status_at_change TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_MONEV_BOS_ACTIVITY_HISTORY_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_monev_bos_activity_history_activity ON monev_bos_activity_history (activity_id);
+"""
+
+
+_MONEV_BOS_MASTER_ACTIVITIES_SQL = """
+CREATE TABLE IF NOT EXISTS monev_bos_master_activities (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE,
+    code_prefix TEXT,
+    fund_source TEXT DEFAULT 'ALL' CHECK (fund_source IN ('ALL', 'BOS', 'BOP')),
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_MONEV_BOS_VENDORS_SQL = """
+CREATE TABLE IF NOT EXISTS monev_bos_vendors (
+    id SERIAL PRIMARY KEY,
+    school_id INTEGER REFERENCES dashboard_users(id) ON DELETE CASCADE,
+    name VARCHAR(200) NOT NULL,
+    npwp VARCHAR(50),
+    phone VARCHAR(50),
+    address TEXT,
+    owner_name VARCHAR(150),
+    bank_name VARCHAR(100),
+    bank_account VARCHAR(100),
+    status VARCHAR(30) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'verified', 'rejected')),
+    rejection_reason TEXT,
+    verified_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    verified_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_MONEV_BOS_VENDORS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_monev_bos_vendors_school ON monev_bos_vendors (school_id);
+CREATE INDEX IF NOT EXISTS idx_monev_bos_vendors_status ON monev_bos_vendors (status);
+"""
+
+_MONEV_BOS_CHECKLIST_MASTER_ACTIVITIES_SQL = """
+CREATE TABLE IF NOT EXISTS monev_bos_checklist_master_activities (
+    checklist_id INTEGER NOT NULL REFERENCES monev_bos_checklists(id) ON DELETE CASCADE,
+    master_activity_id INTEGER NOT NULL REFERENCES monev_bos_master_activities(id) ON DELETE CASCADE,
+    PRIMARY KEY (checklist_id, master_activity_id)
+);
+"""
+
+_MONEV_BOS_EXPENSE_TYPES_SQL = """
+CREATE TABLE IF NOT EXISTS monev_bos_expense_types (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE,
+    code TEXT,
+    description TEXT,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_MONEV_BOS_ACCOUNT_CODES_SQL = """
+CREATE TABLE IF NOT EXISTS monev_bos_account_codes (
+    id SERIAL PRIMARY KEY,
+    code VARCHAR(100) UNIQUE NOT NULL,
+    name VARCHAR(255),
+    description TEXT,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+"""
+
+_MONEV_BOS_CHECKLIST_EXPENSE_TYPES_SQL = """
+CREATE TABLE IF NOT EXISTS monev_bos_checklist_expense_types (
+    checklist_id INTEGER NOT NULL REFERENCES monev_bos_checklists(id) ON DELETE CASCADE,
+    expense_type_id INTEGER NOT NULL REFERENCES monev_bos_expense_types(id) ON DELETE CASCADE,
+    PRIMARY KEY (checklist_id, expense_type_id)
+);
+"""
+
+_MONEV_BOS_SCHOOL_POSTS_SQL = """
+CREATE TABLE IF NOT EXISTS monev_bos_school_posts (
+    id SERIAL PRIMARY KEY,
+    school_user_id INTEGER NOT NULL REFERENCES dashboard_users(id) ON DELETE CASCADE,
+    title VARCHAR(200) NOT NULL,
+    photo_path TEXT NOT NULL,
+    photo_size INTEGER NOT NULL CHECK (photo_size > 0 AND photo_size <= 204800),
+    latitude NUMERIC(10,7) NOT NULL CHECK (latitude BETWEEN -90 AND 90),
+    longitude NUMERIC(10,7) NOT NULL CHECK (longitude BETWEEN -180 AND 180),
+    location_accuracy NUMERIC(10,2),
+    location_text VARCHAR(100) NOT NULL,
+    created_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    story_expires_at TIMESTAMPTZ NOT NULL DEFAULT (NOW() + INTERVAL '7 days'),
+    deleted_at TIMESTAMPTZ,
+    deleted_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL
+);
+CREATE INDEX IF NOT EXISTS idx_monev_bos_school_posts_school_created
+    ON monev_bos_school_posts (school_user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_monev_bos_school_posts_story
+    ON monev_bos_school_posts (story_expires_at DESC)
+    WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_monev_bos_school_posts_search
+    ON monev_bos_school_posts USING GIN (to_tsvector('simple', title || ' ' || location_text));
+"""
+
+_MONEV_BOS_ACTIVITY_POST_LINKS_SQL = """
+CREATE TABLE IF NOT EXISTS monev_bos_activity_post_links (
+    id SERIAL PRIMARY KEY,
+    activity_id INTEGER NOT NULL REFERENCES monev_bos_activities(id) ON DELETE CASCADE,
+    post_id INTEGER NOT NULL REFERENCES monev_bos_school_posts(id) ON DELETE RESTRICT,
+    activity_doc_id INTEGER REFERENCES monev_bos_activity_docs(id) ON DELETE SET NULL,
+    linked_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    linked_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    copied_on_post_delete_at TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS idx_monev_bos_activity_post_links_post
+    ON monev_bos_activity_post_links (post_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_monev_bos_activity_post_links_activity_post
+    ON monev_bos_activity_post_links (activity_id, post_id);
+"""
+
+_MONEV_BOS_STORY_AUDIT_LOGS_SQL = """
+CREATE TABLE IF NOT EXISTS monev_bos_story_audit_logs (
+    id BIGSERIAL PRIMARY KEY,
+    post_id INTEGER REFERENCES monev_bos_school_posts(id) ON DELETE SET NULL,
+    school_user_id INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    activity_id INTEGER REFERENCES monev_bos_activities(id) ON DELETE SET NULL,
+    actor_id INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    action VARCHAR(30) NOT NULL,
+    details JSONB NOT NULL DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_monev_bos_story_audit_logs_post
+    ON monev_bos_story_audit_logs (post_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_monev_bos_story_audit_logs_actor
+    ON monev_bos_story_audit_logs (actor_id, created_at DESC);
+"""
+
+
+def ensure_monev_bos_schema() -> None:
+    statements = (
+        _MONEV_BOS_VENDORS_SQL,
+        _MONEV_BOS_VENDORS_INDEX_SQL,
+        "ALTER TABLE monev_bos_vendors DROP CONSTRAINT IF EXISTS monev_bos_vendors_school_id_fkey;",
+        "ALTER TABLE monev_bos_vendors ADD CONSTRAINT monev_bos_vendors_school_id_fkey FOREIGN KEY (school_id) REFERENCES dashboard_users(id) ON DELETE CASCADE;",
+        _MONEV_BOS_PERIODS_SQL,
+        _MONEV_BOS_PERIODS_INDEX_SQL,
+        _MONEV_BOS_CHECKLISTS_SQL,
+        _MONEV_BOS_TEAMS_SQL,
+        _MONEV_BOS_TEAM_MEMBERS_SQL,
+        _MONEV_BOS_ASSIGNMENTS_SQL,
+        _MONEV_BOS_REPORTS_SQL,
+        _MONEV_BOS_REPORTS_INDEX_SQL,
+        _MONEV_BOS_MASTER_ACTIVITIES_SQL,
+        _MONEV_BOS_EXPENSE_TYPES_SQL,
+        _MONEV_BOS_ACCOUNT_CODES_SQL,
+        _MONEV_BOS_ACTIVITIES_SQL,
+        _MONEV_BOS_ACTIVITIES_INDEX_SQL,
+        "ALTER TABLE monev_bos_activities ADD COLUMN IF NOT EXISTS vendor_id INTEGER REFERENCES monev_bos_vendors(id) ON DELETE SET NULL;",
+        "ALTER TABLE monev_bos_activities ADD COLUMN IF NOT EXISTS activity_type_id INTEGER REFERENCES monev_bos_master_activities(id) ON DELETE SET NULL;",
+        "ALTER TABLE monev_bos_activities ADD COLUMN IF NOT EXISTS expense_type_id INTEGER REFERENCES monev_bos_expense_types(id) ON DELETE SET NULL;",
+        "ALTER TABLE monev_bos_activities ADD COLUMN IF NOT EXISTS account_code TEXT;",
+        "ALTER TABLE monev_bos_activities DROP CONSTRAINT IF EXISTS monev_bos_activities_status_check;",
+        "ALTER TABLE monev_bos_activities ADD CONSTRAINT monev_bos_activities_status_check CHECK (status IN ('pending', 'in_review', 'valid', 'invalid'));",
+        _MONEV_BOS_ACTIVITY_DOCS_SQL,
+        _MONEV_BOS_ACTIVITY_DOCS_INDEX_SQL,
+        "ALTER TABLE monev_bos_activity_docs ADD COLUMN IF NOT EXISTS is_audit_valid BOOLEAN NOT NULL DEFAULT TRUE;",
+        "ALTER TABLE monev_bos_activity_docs ADD COLUMN IF NOT EXISTS photo_audit_notes TEXT;",
+        "ALTER TABLE monev_bos_activity_docs ADD COLUMN IF NOT EXISTS photo_audited_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL;",
+        "ALTER TABLE monev_bos_activity_docs ADD COLUMN IF NOT EXISTS photo_audited_at TIMESTAMPTZ;",
+        "ALTER TABLE monev_bos_activity_docs DROP CONSTRAINT IF EXISTS monev_bos_activity_docs_doc_type_check;",
+        "ALTER TABLE monev_bos_activity_docs ADD CONSTRAINT monev_bos_activity_docs_doc_type_check CHECK (doc_type IN ('transfer', 'invoice', 'live_photo', 'physical_proof', 'field_photo'));",
+        _MONEV_BOS_CHECKLISTS_SQL,
+        _MONEV_BOS_CHECKLIST_MASTER_ACTIVITIES_SQL,
+        _MONEV_BOS_CHECKLIST_EXPENSE_TYPES_SQL,
+        _MONEV_BOS_CHECKLIST_RESULTS_SQL,
+        _MONEV_BOS_AUDIT_LOGS_SQL,
+        _MONEV_BOS_AUDIT_LOGS_INDEX_SQL,
+        _MONEV_BOS_EDIT_REQUESTS_SQL,
+        _MONEV_BOS_EDIT_REQUESTS_INDEX_SQL,
+        _MONEV_BOS_ACTIVITY_HISTORY_SQL,
+        _MONEV_BOS_ACTIVITY_HISTORY_INDEX_SQL,
+        _MONEV_BOS_SCHOOL_POSTS_SQL,
+        _MONEV_BOS_ACTIVITY_POST_LINKS_SQL,
+        "ALTER TABLE monev_bos_activity_post_links DROP CONSTRAINT IF EXISTS monev_bos_activity_post_links_activity_id_key;",
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_monev_bos_activity_post_links_activity_post ON monev_bos_activity_post_links (activity_id, post_id);",
+        _MONEV_BOS_STORY_AUDIT_LOGS_SQL,
+    )
+    for i, statement in enumerate(statements):
+        try:
+            with get_cursor(commit=True) as cur:
+                cur.execute(statement)
+        except Exception as e:
+            print(f"Error executing MONEV BOS schema statement #{i + 1}: {e}")
+            print(f"Statement: {statement[:100]}...")
+
+
+__all__ = ["ensure_dashboard_schema", "ensure_cms_artikel_schema", "ensure_laporan_schema", "ensure_monev_bos_schema"]

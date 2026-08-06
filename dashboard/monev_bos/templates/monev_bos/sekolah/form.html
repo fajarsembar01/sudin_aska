@@ -1,0 +1,109 @@
+{% extends "monev_bos/base_monev_bos.html" %}
+
+{% block monev_bos_content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-0 text-gray-800">Penerimaan Dana BOSP & BOP</h1>
+                    <p class="text-muted mb-0">Laporan TW {{ active_period.tw }} Tahun {{ active_period.year }}</p>
+                </div>
+                <a href="{{ url_for('monev_bos.sekolah_dashboard') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i> Kembali
+                </a>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Form Input Penerimaan Dana</h6>
+                </div>
+                <div class="card-body p-4">
+                    {% if report and report.status not in ['draft', 'needs_revision'] %}
+                    <div class="alert alert-info">
+                        Laporan sudah dikirim. Anda tidak dapat mengubah nominal penerimaan.
+                    </div>
+                    {% endif %}
+                    
+                    <form action="{{ url_for('monev_bos.sekolah_report_form', period_id=active_period.id) }}" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-success">Penerimaan Dana BOSP <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text fw-bold">Rp</span>
+                                <input type="text" inputmode="numeric" class="form-control form-control-lg fw-bold rupiah-input" 
+                                    name="bosp_amount" id="bospAmount"
+                                    value="{{ "{:,.0f}".format(report.bosp_receipt_amount).replace(',', '.') if report and report.bosp_receipt_amount else '0' }}" 
+                                    required {% if report and report.status not in ['draft', 'needs_revision'] %}readonly{% endif %}
+                                    placeholder="0">
+                            </div>
+                            <div class="form-text mt-2 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <span>Masukkan total nominal penerimaan dana BOSP untuk triwulan ini.</span>
+                                <span class="badge bg-success-subtle text-success border border-success fw-bold px-2 py-1 fs-6" id="bospAmountPreview">Rp 0</span>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-info">Penerimaan Dana BOP <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text fw-bold">Rp</span>
+                                <input type="text" inputmode="numeric" class="form-control form-control-lg fw-bold rupiah-input" 
+                                    name="bop_amount" id="bopAmount"
+                                    value="{{ "{:,.0f}".format(report.bop_receipt_amount).replace(',', '.') if report and report.bop_receipt_amount else '0' }}" 
+                                    required {% if report and report.status not in ['draft', 'needs_revision'] %}readonly{% endif %}
+                                    placeholder="0">
+                            </div>
+                            <div class="form-text mt-2 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <span>Masukkan total nominal penerimaan dana BOP untuk triwulan ini. Jika tidak ada, isi 0.</span>
+                                <span class="badge bg-info-subtle text-info border border-info fw-bold px-2 py-1 fs-6" id="bopAmountPreview">Rp 0</span>
+                            </div>
+                        </div>
+
+                        {% if not report or report.status in ['draft', 'needs_revision'] %}
+                        <div class="text-end mt-4 pt-3 border-top">
+                            <button type="submit" class="btn btn-primary btn-lg px-5">
+                                Simpan & Lanjutkan ke Kegiatan <i class="bi bi-arrow-right ms-2"></i>
+                            </button>
+                        </div>
+                        {% else %}
+                        <div class="text-end mt-4 pt-3 border-top">
+                            <a href="{{ url_for('monev_bos.sekolah_activities', period_id=active_period.id) }}" class="btn btn-primary px-5">
+                                Lanjut ke Daftar Kegiatan <i class="bi bi-arrow-right ms-2"></i>
+                            </a>
+                        </div>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    function formatRupiah(value) {
+        let clean = value.toString().replace(/\D/g, '');
+        if (!clean) return '0';
+        return new Intl.NumberFormat('id-ID').format(clean);
+    }
+
+    document.querySelectorAll('.rupiah-input').forEach(function(input) {
+        let previewId = input.id + 'Preview';
+        let previewElem = document.getElementById(previewId);
+
+        function updateFormat() {
+            let formatted = formatRupiah(input.value);
+            input.value = formatted;
+            if (previewElem) {
+                previewElem.textContent = 'Rp ' + formatted;
+            }
+        }
+
+        input.addEventListener('input', updateFormat);
+        // Run once at load
+        updateFormat();
+    });
+});
+</script>
+{% endblock %}

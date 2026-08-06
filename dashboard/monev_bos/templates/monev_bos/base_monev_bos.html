@@ -1,0 +1,217 @@
+{% extends "portal/base_portal.html" %}
+
+{% block title %}{{ page_title|default("MONEV BOS/BOP") }} - MONEV BOS/BOP{% endblock %}
+
+{% block portal_nav %}
+<nav class="navbar navbar-expand-lg sticky-top">
+    <div class="container-fluid px-lg-4">
+        <a class="navbar-brand" href="{{ url_for('monev_bos.index') }}">
+            <span class="icon-badge brand-icon text-success">
+                <i class="bi bi-cash-coin"></i>
+            </span>
+            <span class="fw-bold">MONEV BOS/BOP</span>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#monevBosNavbar">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="monevBosNavbar">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                {% if current_user and current_user.role == 'admin' %}
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'monev_bos.admin_dashboard' %}active{% endif %}" href="{{ url_for('monev_bos.admin_dashboard') }}">
+                        <i class="bi bi-speedometer2 nav-icon"></i>Dashboard
+                    </a>
+                </li>
+                {% set pending_monev_edit = admin_pending.pending_monev_edit_requests if admin_pending else 0 %}
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'monev_bos.admin_edit_requests' %}active{% endif %}" href="{{ url_for('monev_bos.admin_edit_requests') }}">
+                        <i class="bi bi-pencil-square nav-icon"></i>Pengajuan Edit
+                        {% if pending_monev_edit %}
+                        <span class="badge rounded-pill text-bg-danger ms-1">{{ pending_monev_edit }}</span>
+                        {% endif %}
+                    </a>
+                </li>
+                {% set is_settings_active = request.endpoint in ['monev_bos.admin_periods', 'monev_bos.admin_master_activities', 'monev_bos.admin_expense_types', 'monev_bos.admin_account_codes', 'monev_bos.admin_checklists', 'monev_bos.admin_teams'] %}
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle {% if is_settings_active %}active{% endif %}" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-gear nav-icon"></i>Pengaturan <i class="bi bi-chevron-down ms-1" style="font-size:0.7rem;"></i>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <a class="dropdown-item {% if request.endpoint == 'monev_bos.admin_periods' %}active{% endif %}" href="{{ url_for('monev_bos.admin_periods') }}">
+                                <i class="bi bi-calendar-event me-2"></i>Jadwal & Periode
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item {% if request.endpoint == 'monev_bos.admin_master_activities' %}active{% endif %}" href="{{ url_for('monev_bos.admin_master_activities') }}">
+                                <i class="bi bi-collection me-2"></i>Master Nama Kegiatan
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item {% if request.endpoint == 'monev_bos.admin_expense_types' %}active{% endif %}" href="{{ url_for('monev_bos.admin_expense_types') }}">
+                                <i class="bi bi-wallet2 me-2"></i>Master Jenis Belanja
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item {% if request.endpoint == 'monev_bos.admin_account_codes' %}active{% endif %}" href="{{ url_for('monev_bos.admin_account_codes') }}">
+                                <i class="bi bi-hash me-2"></i>Master Kode Rekening
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item {% if request.endpoint == 'monev_bos.admin_checklists' %}active{% endif %}" href="{{ url_for('monev_bos.admin_checklists') }}">
+                                <i class="bi bi-list-check me-2"></i>Checklist Kelengkapan
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item {% if request.endpoint == 'monev_bos.admin_teams' %}active{% endif %}" href="{{ url_for('monev_bos.admin_teams') }}">
+                                <i class="bi bi-people me-2"></i>Tim & Penugasan
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item {% if request.endpoint == 'monev_bos.admin_vendors' %}active{% endif %}" href="{{ url_for('monev_bos.admin_vendors') }}">
+                                <i class="bi bi-shop me-2"></i>Verifikasi Vendor
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                {% endif %}
+
+                {% if current_user and current_user.role == 'sekolah' %}
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'monev_bos.sekolah_dashboard' %}active{% endif %}" href="{{ url_for('monev_bos.sekolah_dashboard') }}">
+                        <i class="bi bi-journal-text nav-icon"></i>Laporan Saya
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'monev_bos.sekolah_vendors' %}active{% endif %}" href="{{ url_for('monev_bos.sekolah_vendors') }}">
+                        <i class="bi bi-shop nav-icon"></i>Vendor
+                    </a>
+                </li>
+                {% endif %}
+
+                {% if current_user and current_user.role == 'staff' %}
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'monev_bos.staff_dashboard' %}active{% endif %}" href="{{ url_for('monev_bos.staff_dashboard') }}">
+                        <i class="bi bi-check2-square nav-icon"></i>Audit Sekolah
+                        {% if submitted_reports_count and submitted_reports_count > 0 %}
+                        <span class="badge bg-warning text-dark rounded-pill ms-1">{{ submitted_reports_count }}</span>
+                        {% endif %}
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'monev_bos.admin_vendors' %}active{% endif %}" href="{{ url_for('monev_bos.admin_vendors') }}">
+                        <i class="bi bi-shop nav-icon"></i>Verifikasi Vendor
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'monev_bos.staff_my_team' %}active{% endif %}" href="{{ url_for('monev_bos.staff_my_team') }}">
+                        <i class="bi bi-people nav-icon"></i>Tim Saya
+                    </a>
+                </li>
+                {% endif %}
+
+                {% if current_user and current_user.role in ['admin', 'sekolah'] %}
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint in ['monev_bos.school_posts_explore', 'monev_bos.school_posts_profile'] %}active{% endif %}" href="{% if current_user.role == 'admin' %}{{ url_for('monev_bos.school_posts_explore') }}{% else %}{{ url_for('monev_bos.school_posts_profile', school_user_id=current_user.id) }}{% endif %}">
+                        <i class="bi bi-images nav-icon"></i>Foto Live & Post
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+
+            <div class="d-flex align-items-center gap-3 user-nav-actions">
+                {% if current_user and current_user.role == 'admin' %}
+                {% set pending_total = admin_pending.total if admin_pending else 0 %}
+                {% set total_count = pending_total %}
+                {% set notification_items = admin_notification_items %}
+                {% set notification_extra_include = 'portal/components/_notification_admin_quick.html' %}
+                {% include "portal/components/_notification_dropdown.html" with context %}
+                {% endif %}
+
+                {% if current_user and current_user.role in ['staff', 'coordinator', 'sekolah'] %}
+                {% set user_notif_unread = user_app_notifications.unread_count if user_app_notifications else 0 %}
+                <div class="dropdown notification-menu" id="userGuestbookNotifRoot"
+                    data-list-url="{{ url_for('portal.user_app_notifications') }}"
+                    data-read-url="{{ url_for('portal.user_app_notifications_mark_read') }}"
+                    data-history-url="{% if current_user.role == 'sekolah' %}{{ url_for('daftar_tamu.sekolah_riwayat') }}{% elif current_user.role in ['staff', 'coordinator'] %}{{ url_for('monev_bos.staff_dashboard') }}{% else %}{{ url_for('portal.home') }}{% endif %}">
+                    <button class="notification-toggle" type="button" data-bs-toggle="dropdown"
+                        id="userGuestbookNotifToggle" aria-expanded="false" aria-label="Notifikasi pengguna">
+                        <i class="bi bi-bell"></i>
+                        <span class="notification-badge{% if user_notif_unread == 0 %} d-none{% endif %}"
+                            id="userGuestbookNotifBadge" data-count="{{ user_notif_unread }}">{{ user_notif_unread }}</span>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-end notification-dropdown">
+                        <div class="notification-header">
+                            <span class="fw-semibold">Notifikasi Saya</span>
+                            <div class="notification-controls">
+                                <button type="button" class="btn btn-outline-secondary btn-sm notification-refresh"
+                                    id="userGuestbookNotifRefresh" title="Perbarui">
+                                    <i class="bi bi-arrow-clockwise"></i>
+                                </button>
+                                <button type="button" class="btn btn-link btn-sm text-decoration-none px-0"
+                                    id="userGuestbookNotifMarkAll" {% if user_notif_unread==0 %} disabled{% endif %}>
+                                    Tandai semua
+                                </button>
+                                <span class="badge bg-info-subtle text-info-emphasis{% if user_notif_unread == 0 %} d-none{% endif %}"
+                                    id="userGuestbookNotifUnreadLabel" data-count="{{ user_notif_unread }}">{{ user_notif_unread }}</span>
+                            </div>
+                        </div>
+                        <div id="userGuestbookNotifEmpty"
+                            class="notification-empty text-muted small{% if user_notif_unread > 0 %} d-none{% endif %}">
+                            Belum ada notifikasi terbaru.
+                        </div>
+                        <div class="notification-quick" id="userGuestbookNotifList"></div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <a href="{{ url_for('main.admin_select_role') if current_user.role == 'admin' else url_for('portal.home') }}"
+                    class="btn btn-outline-secondary btn-sm text-nowrap oss-home-btn">
+                    <i class="bi bi-house me-1"></i><span class="oss-home-label">Home</span>
+                </a>
+                
+                <div class="form-check form-switch mb-0">
+                    <input class="form-check-input" type="checkbox" id="themeToggle" role="switch">
+                    <label class="theme-toggle-label" for="themeToggle">
+                        <i class="bi bi-sun-fill theme-icon theme-icon-sun"></i>
+                        <i class="bi bi-moon-fill theme-icon theme-icon-moon"></i>
+                    </label>
+                </div>
+
+                {% include "portal/components/_user_menu.html" %}
+            </div>
+        </div>
+    </div>
+</nav>
+{% endblock %}
+
+{% block portal_content %}
+<div class="monev-bos-content">
+    {% include "monev_bos/social/_story_strip.html" %}
+    {% block monev_bos_content %}
+        {% block content %}{% endblock %}
+    {% endblock %}
+</div>
+
+<script>
+document.addEventListener('input', function (e) {
+    if (e.target && e.target.classList.contains('rupiah-input')) {
+        let cursorPosition = e.target.selectionStart || 0;
+        let originalLength = e.target.value.length;
+        let rawVal = e.target.value.replace(/\D/g, '');
+        if (rawVal) {
+            let formatted = parseInt(rawVal, 10).toLocaleString('id-ID');
+            e.target.value = formatted;
+            let newLength = formatted.length;
+            let diff = newLength - originalLength;
+            let newPos = Math.max(0, cursorPosition + diff);
+            try {
+                e.target.setSelectionRange(newPos, newPos);
+            } catch (err) {}
+        } else {
+            e.target.value = '';
+        }
+    }
+});
+</script>
+{% endblock %}

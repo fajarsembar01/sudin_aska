@@ -38,6 +38,8 @@ from ..db_access import get_cursor
 from ..portal.routes import _fetch_user_school
 from ..portal.routes import inject_permissions as portal_inject_permissions
 from ..schema import ensure_laporan_schema
+from ..db_access import get_cursor
+from ..queries import record_admin_action
 from .queries import (
     can_school_access_form,
     can_staff_access_form,
@@ -82,6 +84,37 @@ laporan_bp = Blueprint(
     url_prefix="/laporan",
     template_folder="templates",
 )
+
+
+def _record_laporan_admin_action(
+    action: str,
+    target_type: str,
+    *,
+    target_id: int = None,
+    target_name: str = None,
+    metadata: dict = None,
+) -> None:
+    """Record a successful Laporan mutation without making logging a user-facing failure."""
+    user = current_user() or {}
+    if user.get("role") != "admin":
+        return
+    try:
+        record_admin_action(
+            user_id=user.get("id"),
+            feature_key="laporan",
+            action=action,
+            target_type=target_type,
+            target_id=target_id,
+            target_name=target_name,
+            metadata=metadata,
+        )
+    except Exception:
+        current_app.logger.exception(
+            "Failed to record Laporan admin action %s on %s #%s",
+            action,
+            target_type,
+            target_id,
+        )
 
 
 @laporan_bp.context_processor
@@ -2846,10 +2879,13 @@ def admin_laporan_create() -> Response:
             repeat_deadline_time=None,
             repeat_deadline_day=None,
         )
-        flash(
-            "Draft form baru dibuat. Lanjutkan pengisian lalu simpan draft atau terbitkan.",
-            "info",
+        _record_laporan_admin_action(
+            "CREATE_DRAFT",
+            "LAPORAN_FORM",
+            target_id=draft["id"],
+            target_name=draft.get("title") or "Draft Form Laporan",
         )
+        flash("Draft form baru dibuat. Lanjutkan pengisian lalu simpan draft atau terbitkan.", "info")
         return redirect(url_for("laporan.admin_laporan_edit", form_id=draft["id"]))
 
     if request.method == "POST":
@@ -2963,6 +2999,19 @@ def admin_laporan_create() -> Response:
 
         if fields:
             replace_form_fields(form_id, fields)
+
+        _record_laporan_admin_action(
+            "SAVE_DRAFT" if status == "draft" else "PUBLISH",
+            "LAPORAN_FORM",
+            target_id=form_id,
+            target_name=title,
+            metadata={
+                "status": status,
+                "target_scope": target_scope,
+                "field_count": len(fields),
+                "target_school_count": len(specific_school_ids) if target_scope == "specific" else 0,
+            },
+        )
 
         if status == "draft":
             flash("Draft form berhasil disimpan.", "success")
@@ -3105,6 +3154,26 @@ def admin_laporan_edit(form_id: int) -> Response:
         replace_form_fields(form_id, fields)
 
         if status == "draft":
+            log_action = "SAVE_DRAFT"
+        elif form.get("status") == "draft":
+            log_action = "PUBLISH"
+        else:
+            log_action = "UPDATE"
+        _record_laporan_admin_action(
+            log_action,
+            "LAPORAN_FORM",
+            target_id=form_id,
+            target_name=title,
+            metadata={
+                "previous_status": form.get("status"),
+                "status": status,
+                "target_scope": target_scope,
+                "field_count": len(fields),
+                "target_school_count": len(specific_school_ids) if target_scope == "specific" else 0,
+            },
+        )
+
+        if status == "draft":
             flash("Draft form berhasil disimpan.", "success")
             return redirect(url_for("laporan.admin_laporan_edit", form_id=form_id))
 
@@ -3194,11 +3263,20 @@ def admin_laporan_autosave(form_id: int) -> Response:
         repeat_deadline_day=repeat_deadline_day,
     )
 
-    effective_scope = target_scope if target_audience == "sekolah" else "all"
-    set_form_targets(
-        form_id, specific_school_ids if effective_scope == "specific" else []
+    set_form_targets(form_id, specific_school_ids if target_scope == "specific" else [])
+    fields = _parse_fields_from_form()
+    replace_form_fields(form_id, fields)
+    _record_laporan_admin_action(
+        "AUTOSAVE",
+        "LAPORAN_FORM",
+        target_id=form_id,
+        target_name=title,
+        metadata={
+            "target_scope": target_scope,
+            "field_count": len(fields),
+            "target_school_count": len(specific_school_ids) if target_scope == "specific" else 0,
+        },
     )
-    replace_form_fields(form_id, _parse_fields_from_form())
 
     return jsonify(
         {
@@ -3345,10 +3423,14 @@ def admin_laporan_delete_empty_submissions(form_id: int) -> Response:
     period_key = filter_period if filter_period and filter_period != "all" else None
     deleted_count = delete_empty_submitted_submissions(form_id, period_key)
     if deleted_count:
-        flash(
-            f"{deleted_count} riwayat terkirim kosong berhasil dihapus. Sekolah terkait dapat mengisi ulang jika form masih dibuka.",
-            "success",
+        _record_laporan_admin_action(
+            "DELETE_EMPTY_SUBMISSIONS",
+            "LAPORAN_FORM",
+            target_id=form_id,
+            target_name=form.get("title"),
+            metadata={"deleted_count": deleted_count, "period": filter_period},
         )
+        flash(f"{deleted_count} riwayat terkirim kosong berhasil dihapus. Sekolah terkait dapat mengisi ulang jika form masih dibuka.", "success")
     else:
         flash("Tidak ada riwayat terkirim kosong untuk dihapus.", "info")
     return redirect(
@@ -3452,6 +3534,13 @@ def admin_laporan_delete_submission(form_id: int, submission_id: int) -> Respons
     school_name = deleted.get("school_name") or "sekolah"
     period_label = deleted.get("repeat_period_label")
     period_text = f" untuk {period_label}" if period_label else ""
+    _record_laporan_admin_action(
+        "DELETE",
+        "LAPORAN_SUBMISSION",
+        target_id=submission_id,
+        target_name=school_name,
+        metadata={"form_id": form_id, "form_title": form.get("title"), "period": period_label},
+    )
     flash(
         f"Riwayat isian {school_name}{period_text} berhasil dihapus. Sekolah dapat mengisi lagi jika form masih dibuka.",
         "success",
@@ -3516,6 +3605,12 @@ def admin_laporan_pause(form_id: int) -> Response:
     user = current_user()
     should_pause = not bool(form.get("is_paused"))
     set_form_paused(form_id, should_pause, user["id"])
+    _record_laporan_admin_action(
+        "PAUSE" if should_pause else "UNPAUSE",
+        "LAPORAN_FORM",
+        target_id=form_id,
+        target_name=form.get("title"),
+    )
 
     if should_pause:
         flash(
@@ -3540,6 +3635,13 @@ def admin_laporan_delete(form_id: int) -> Response:
         return redirect(url_for("laporan.admin_laporan_list"))
 
     delete_form(form_id)
+    _record_laporan_admin_action(
+        "DELETE",
+        "LAPORAN_FORM",
+        target_id=form_id,
+        target_name=form.get("title"),
+        metadata={"status": form.get("status")},
+    )
     label = "Draft" if form.get("status") == "draft" else "Form"
     flash(f"{label} '{form['title']}' berhasil dihapus.", "success")
     return redirect(url_for("laporan.admin_laporan_list"))

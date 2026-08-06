@@ -1,0 +1,145 @@
+{% extends "monev_bos/base_monev_bos.html" %}
+
+{% block monev_bos_content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="fw-bold mb-1"><i class="bi bi-wallet2 text-primary me-2"></i>Master Jenis Belanja</h4>
+            <p class="text-muted mb-0 small">Kelola klasifikasi Jenis Belanja keuangan BOS/BOP yang dapat dipilih sekolah dan digunakan untuk pemetaan checklist kelengkapan audit.</p>
+        </div>
+        <button type="button" class="btn btn-primary fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#createExpenseTypeModal">
+            <i class="bi bi-plus-lg me-1"></i> Tambah Jenis Belanja
+        </button>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light text-muted small uppercase">
+                        <tr>
+                            <th class="ps-4" style="width: 80px;">No. Urut</th>
+                            <th>Nama Jenis Belanja</th>
+                            <th>Status</th>
+                            <th>Admin Input</th>
+                            <th class="text-end pe-4">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if expense_types %}
+                            {% for item in expense_types %}
+                            <tr>
+                                <td class="ps-4 fw-bold text-muted">{{ loop.index }}</td>
+                                <td class="fw-bold text-dark">{{ item.name }}</td>
+                                <td>
+                                    {% if item.is_active %}
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">Aktif</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1">Nonaktif</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ item.input_admin_name or 'Tidak ada' }}</td>
+                                <td class="text-end pe-4">
+                                    <button type="button" class="btn btn-sm btn-outline-primary me-1" 
+                                        data-bs-toggle="modal" data-bs-target="#editExpenseTypeModal{{ item.id }}" title="Edit">
+                                        <i class="bi bi-pencil"></i> Edit
+                                    </button>
+                                    <form action="{{ url_for('monev_bos.admin_expense_types') }}" method="POST" class="d-inline" onsubmit="return confirm('Hapus jenis belanja ini?');">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <input type="hidden" name="action" value="delete">
+                                        <input type="hidden" name="expense_type_id" value="{{ item.id }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Hapus">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center py-5 text-muted">
+                                    <i class="bi bi-wallet2 fs-1 d-block mb-2 opacity-50"></i>
+                                    Belum ada data Jenis Belanja.
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {% include "monev_bos/admin/_master_activity_history.html" %}
+</div>
+
+<!-- Modal Edit (Rendered Outside Table) -->
+{% if expense_types %}
+    {% for item in expense_types %}
+    <div class="modal fade" id="editExpenseTypeModal{{ item.id }}" tabindex="-1" aria-labelledby="editETLabel{{ item.id }}" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <form action="{{ url_for('monev_bos.admin_expense_types') }}" method="POST" class="modal-content">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="action" value="update">
+                <input type="hidden" name="expense_type_id" value="{{ item.id }}">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="editETLabel{{ item.id }}"><i class="bi bi-pencil-square text-primary me-2"></i>Edit Jenis Belanja</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-start">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Nama Jenis Belanja <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="name" value="{{ item.name }}" required placeholder="Contoh: Belanja Barang dan Jasa">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Nomor Urut Tampil</label>
+                            <input type="number" class="form-control" name="sort_order" value="{{ item.sort_order }}" required>
+                        </div>
+                        <div class="col-md-6 d-flex align-items-end">
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" name="is_active" id="activeET{{ item.id }}" {% if item.is_active %}checked{% endif %}>
+                                <label class="form-check-label fw-semibold" for="activeET{{ item.id }}">Status Aktif</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary fw-bold px-4">Simpan Perubahan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endfor %}
+{% endif %}
+
+<!-- Modal Create -->
+<div class="modal fade" id="createExpenseTypeModal" tabindex="-1" aria-labelledby="createETLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form action="{{ url_for('monev_bos.admin_expense_types') }}" method="POST" class="modal-content">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="action" value="create">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="createETLabel"><i class="bi bi-plus-circle text-primary me-2"></i>Tambah Jenis Belanja</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Nama Jenis Belanja <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="name" required placeholder="Contoh: Belanja Barang dan Jasa">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Nomor Urut Tampil</label>
+                        <input type="number" class="form-control" name="sort_order" value="0" required>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="submit" class="btn btn-primary fw-bold px-4">Simpan Jenis Belanja</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

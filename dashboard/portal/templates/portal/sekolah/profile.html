@@ -195,6 +195,16 @@
                             <input type="email" name="cs_email" class="form-control" required
                                 value="{{ meta.cs_email or '' }}" placeholder="cs@sekolah.sch.id">
                         </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Nama Kepala Sekolah <span class="text-danger" style="font-weight: 100;">*</span></label>
+                            <input type="text" name="headmaster_name" class="form-control" required
+                                value="{{ meta.headmaster_name or '' }}" placeholder="Nama Lengkap & Gelar">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">NIP Kepala Sekolah <span class="text-danger" style="font-weight: 100;">*</span></label>
+                            <input type="text" name="headmaster_nip" class="form-control" required
+                                value="{{ meta.headmaster_nip or '' }}" placeholder="NIP 18 digit atau '-' jika Non-NIP">
+                        </div>
 
                         <div class="col-12">
                             <div class="alert alert-light border">
@@ -254,8 +264,14 @@
                             <div class="fw-bold">{{ school.name }}</div>
                             <small class="text-muted">{{ school.npsn }} • {{ school.jenjang }}</small><br>
                             <small class="text-muted">{{ school.alamat or '-' }}</small><br>
-                            <small class="text-muted">{{ school.kecamatan_name or '-' }} • {{ school.kelurahan_name or
-                                '-' }}</small>
+                            <small class="text-muted">{{ school.kecamatan_name or '-' }} • {{ school.kelurahan_name or '-' }}</small>
+                            {% if meta.headmaster_name %}
+                            <div class="mt-2 pt-2 border-top small">
+                                <span class="fw-semibold text-body"><i class="bi bi-person-badge me-1 text-primary"></i>Kepala Sekolah:</span><br>
+                                <span class="fw-bold text-body">{{ meta.headmaster_name }}</span><br>
+                                <span class="text-muted">NIP. {{ meta.headmaster_nip or '-' }}</span>
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
                     {% if missing_fields %}

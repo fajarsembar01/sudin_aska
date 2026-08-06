@@ -678,15 +678,16 @@ def list_reopen_requests(status: Optional[str] = None) -> List[Dict[str, Any]]:
         return [dict(row) for row in cur.fetchall()]
 
 
-def fetch_admin_pending_summary() -> Dict[str, int]:
-    """Return counts of pending admin confirmations for Portal (termasuk Call Center unread)."""
+def fetch_admin_pending_summary(include_call_center: bool = False) -> Dict[str, int]:
+    """Return counts of pending admin confirmations for Portal (termasuk Monev BOS edit requests, call center hanya jika include_call_center=True)."""
     query = """
         SELECT
             (SELECT COUNT(*) FROM dashboard_users WHERE account_status = 'pending') AS pending_users,
             (SELECT COUNT(*) FROM staff_assignment_requests WHERE status = 'pending') AS pending_assignment_requests,
             (SELECT COUNT(*) FROM monev_team_member_requests WHERE status = 'pending') AS pending_team_member_requests,
             (SELECT COUNT(*) FROM portal_assessment_reopen_requests WHERE status = 'pending') AS pending_reopen_requests,
-            (SELECT COUNT(*) FROM daftar_tamu_transactions WHERE status = 'pending') AS pending_guestbook
+            (SELECT COUNT(*) FROM daftar_tamu_transactions WHERE status = 'pending') AS pending_guestbook,
+            (SELECT COUNT(*) FROM monev_bos_edit_requests WHERE status = 'pending') AS pending_monev_edit_requests
     """
     with get_cursor() as cur:
         cur.execute(query)
@@ -699,6 +700,7 @@ def fetch_admin_pending_summary() -> Dict[str, int]:
             "pending_team_member_requests": 0,
             "pending_reopen_requests": 0,
             "pending_guestbook": 0,
+            "pending_monev_edit_requests": 0,
             "pending_call_center": 0,
         }
     else:
@@ -710,14 +712,15 @@ def fetch_admin_pending_summary() -> Dict[str, int]:
             ),
             "pending_reopen_requests": int(row["pending_reopen_requests"] or 0),
             "pending_guestbook": int(row["pending_guestbook"] or 0),
+            "pending_monev_edit_requests": int(row["pending_monev_edit_requests"] or 0),
             "pending_call_center": 0,
         }
-        try:
-            from dashboard.call_center.queries import fetch_cc_unread_total
-
-            summary["pending_call_center"] = fetch_cc_unread_total()
-        except Exception:
-            summary["pending_call_center"] = 0
+        if include_call_center:
+            try:
+                from dashboard.call_center.queries import fetch_cc_unread_total
+                summary["pending_call_center"] = fetch_cc_unread_total()
+            except Exception:
+                summary["pending_call_center"] = 0
 
     summary["total"] = (
         summary["pending_users"]
@@ -725,15 +728,16 @@ def fetch_admin_pending_summary() -> Dict[str, int]:
         + summary["pending_team_member_requests"]
         + summary["pending_reopen_requests"]
         + summary["pending_guestbook"]
-        + summary["pending_call_center"]
+        + summary["pending_monev_edit_requests"]
+        + (summary["pending_call_center"] if include_call_center else 0)
     )
     return summary
 
 
-def fetch_admin_pending_preview(limit_per_type: int = 3) -> Dict[str, Any]:
+def fetch_admin_pending_preview(limit_per_type: int = 3, include_call_center: bool = False) -> Dict[str, Any]:
     """Return pending summaries and preview items for admin quick actions."""
     limit = max(1, int(limit_per_type))
-    summary = fetch_admin_pending_summary()
+    summary = fetch_admin_pending_summary(include_call_center=include_call_center)
     preview: Dict[str, Any] = {
         "summary": summary,
         "users": [],
@@ -741,6 +745,7 @@ def fetch_admin_pending_preview(limit_per_type: int = 3) -> Dict[str, Any]:
         "team_member_requests": [],
         "reopen_requests": [],
         "guestbook_transactions": [],
+        "monev_edit_requests": [],
     }
 
     with get_cursor() as cur:
@@ -877,11 +882,35 @@ def fetch_admin_pending_preview(limit_per_type: int = 3) -> Dict[str, Any]:
             LEFT JOIN portal_kecamatan k ON l.kecamatan_id = k.id
             WHERE t.status = 'pending'
             ORDER BY t.visit_at DESC, t.id DESC
-            LIMIT %s
             """,
             (limit,),
         )
         preview["guestbook_transactions"] = [dict(row) for row in cur.fetchall()]
+
+        cur.execute(
+            """
+            SELECT
+                er.id,
+                er.activity_id,
+                er.reason,
+                er.created_at,
+                a.activity_code,
+                a.activity_name,
+                a.fund_source,
+                s.full_name AS school_name,
+                u.full_name AS requester_name
+            FROM monev_bos_edit_requests er
+            JOIN monev_bos_activities a ON er.activity_id = a.id
+            JOIN monev_bos_reports r ON a.report_id = r.id
+            JOIN dashboard_users s ON r.school_id = s.id
+            LEFT JOIN dashboard_users u ON er.requested_by = u.id
+            WHERE er.status = 'pending'
+            ORDER BY er.created_at DESC
+            LIMIT %s
+            """,
+            (limit,),
+        )
+        preview["monev_edit_requests"] = [dict(row) for row in cur.fetchall()]
 
     return preview
 
@@ -5583,6 +5612,8 @@ def update_dashboard_user_profile(
         updates.append("email = %s")
         params.append(email)
     updates.append("whatsapp_number = %s")
+    params.append(whatsapp_number)
+    updates.append("phone = %s")
     params.append(whatsapp_number)
     updates.append("nip = %s")
     params.append(nip)

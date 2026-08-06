@@ -1,0 +1,144 @@
+{% extends "monev_bos/base_monev_bos.html" %}
+
+{% block monev_bos_content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <h1 class="h3 mb-0 text-body fw-bold">Master Kode Rekening</h1>
+            <p class="text-body-secondary mb-0">Kelola opsi Kode Rekening yang dapat dipilih oleh sekolah saat menginput laporan pengeluaran BOSP/BOP</p>
+        </div>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createCodeModal">
+            <i class="bi bi-plus-lg me-1"></i> Tambah Kode Rekening
+        </button>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4" width="5%">No.</th>
+                            <th width="25%">Kode Rekening</th>
+                            <th width="40%">Uraian / Nama Rekening</th>
+                            <th width="15%">Keterangan</th>
+                            <th width="10%">Status</th>
+                            <th>Admin Input</th>
+                            <th class="text-end pe-4" width="10%">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in account_codes %}
+                        <tr>
+                            <td class="ps-4 text-body-secondary">{{ loop.index }}</td>
+                            <td>
+                                <span class="badge bg-body-tertiary border text-body font-monospace px-2 py-1 text-sm">{{ item.code }}</span>
+                            </td>
+                            <td class="fw-bold text-body">{{ item.name or '-' }}</td>
+                            <td class="text-body-secondary small">{{ item.description or '-' }}</td>
+                            <td>
+                                {% if item.is_active %}
+                                <span class="badge bg-success">Aktif</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Nonaktif</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ item.input_admin_name or 'Tidak ada' }}</td>
+                            <td class="text-end pe-4">
+                                <button type="button" class="btn btn-sm btn-outline-primary me-1" 
+                                    data-bs-toggle="modal" data-bs-target="#editCodeModal{{ item.id }}">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <form action="{{ url_for('monev_bos.admin_account_codes') }}" method="POST" class="d-inline" onsubmit="return confirm('Hapus kode rekening ini?');">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <input type="hidden" name="action" value="delete">
+                                    <input type="hidden" name="account_code_id" value="{{ item.id }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+
+                                <!-- Edit Modal -->
+                                <div class="modal fade text-start" id="editCodeModal{{ item.id }}" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <form action="{{ url_for('monev_bos.admin_account_codes') }}" method="POST" class="modal-content">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <input type="hidden" name="action" value="update">
+                                            <input type="hidden" name="account_code_id" value="{{ item.id }}">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title fw-bold">Edit Kode Rekening</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <div class="mb-3">
+                                                    <label class="form-label fw-bold">Kode Rekening <span class="text-danger">*</span></label>
+                                                    <input type="text" class="form-control font-monospace" name="code" required value="{{ item.code }}">
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label fw-bold">Uraian / Nama Rekening</label>
+                                                    <input type="text" class="form-control" name="name" value="{{ item.name or '' }}">
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label fw-bold">Keterangan Tambahan</label>
+                                                    <input type="text" class="form-control" name="description" value="{{ item.description or '' }}">
+                                                </div>
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input" type="checkbox" name="is_active" id="isActiveSwitch{{ item.id }}" {% if item.is_active %}checked{% endif %}>
+                                                    <label class="form-check-label fw-bold" for="isActiveSwitch{{ item.id }}">Aktifkan Pilihan</label>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                                                <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-body-secondary">Belum ada data Master Kode Rekening.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {% include "monev_bos/admin/_master_activity_history.html" %}
+</div>
+
+<!-- Modal Tambah Master Kode Rekening -->
+<div class="modal fade" id="createCodeModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <form action="{{ url_for('monev_bos.admin_account_codes') }}" method="POST" class="modal-content">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="action" value="create">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">Tambah Kode Rekening Baru</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Kode Rekening <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control font-monospace" name="code" required placeholder="Contoh: 5.1.02.01.01.0024">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Uraian / Nama Rekening</label>
+                    <input type="text" class="form-control" name="name" placeholder="Contoh: Belanja Alat Tulis Kantor">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Keterangan Tambahan</label>
+                    <input type="text" class="form-control" name="description" placeholder="Deskripsi singkat opsi rekening">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="submit" class="btn btn-primary">Simpan</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

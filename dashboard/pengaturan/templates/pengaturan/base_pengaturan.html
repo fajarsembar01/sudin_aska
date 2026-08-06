@@ -1,0 +1,87 @@
+{% extends "portal/base_portal.html" %}
+
+{% block title %}{{ page_title|default("Pengaturan") }} - Pengaturan{% endblock %}
+
+{% block portal_nav %}
+<nav class="navbar navbar-expand-lg sticky-top">
+  <div class="container-fluid px-lg-4">
+    <a class="navbar-brand" href="{{ url_for('pengaturan.admin_settings') }}">
+      <span class="icon-badge brand-icon text-primary"><i class="bi bi-gear-fill"></i></span>
+      <span class="fw-bold">Pengaturan</span>
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#pengaturanNavbar">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="pengaturanNavbar">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item">
+          <a class="nav-link {% if request.args.get('tab', 'general') == 'general' %}active{% endif %}" href="{{ url_for('pengaturan.admin_settings', tab='general') }}">
+            <i class="bi bi-sliders nav-icon"></i>Umum
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.args.get('tab') == 'notification' %}active{% endif %}" href="{{ url_for('pengaturan.admin_settings', tab='notification') }}">
+            <i class="bi bi-bell nav-icon"></i>Notifikasi
+          </a>
+        </li>
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle {% if request.args.get('tab') == 'api' or request.endpoint == 'pengaturan.public_api_settings' %}active{% endif %}"
+             href="#" id="apiDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-key nav-icon"></i>API
+          </a>
+          <ul class="dropdown-menu shadow-sm border-0" aria-labelledby="apiDropdown">
+            <li>
+              <a class="dropdown-item py-2 {% if request.args.get('tab') == 'api' %}active{% endif %}" 
+                 href="{{ url_for('pengaturan.admin_settings', tab='api') }}">
+                <i class="bi bi-diagram-3 me-2 text-primary"></i>Integrasi API
+              </a>
+            </li>
+            <li><hr class="dropdown-divider my-1"></li>
+            <li>
+              <a class="dropdown-item py-2 {% if request.endpoint == 'pengaturan.public_api_settings' %}active{% endif %}" 
+                 href="{{ url_for('pengaturan.public_api_settings') }}">
+                <i class="bi bi-globe2 me-2 text-success"></i>API Publik (Instansi Extra)
+              </a>
+            </li>
+          </ul>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.args.get('tab') == 'system' %}active{% endif %}" href="{{ url_for('pengaturan.admin_settings', tab='system') }}">
+            <i class="bi bi-cpu nav-icon"></i>Status Sistem
+          </a>
+        </li>
+      </ul>
+      <div class="d-flex align-items-center gap-3 user-nav-actions">
+        {% if current_user and current_user.role == 'admin' %}
+        {% set pending_total = admin_pending.total if admin_pending else 0 %}
+        {% set total_count = pending_total %}
+        {% set notification_items = admin_notification_items %}
+        {% set notification_extra_include = 'portal/components/_notification_admin_quick.html' %}
+        {% include "portal/components/_notification_dropdown.html" with context %}
+        {% endif %}
+
+        <a href="{{ url_for('main.admin_select_role') if current_user and current_user.role == 'admin' else url_for('portal.home') }}"
+           class="btn btn-outline-secondary btn-sm text-nowrap oss-home-btn">
+          <i class="bi bi-house me-1"></i><span class="oss-home-label">Home</span>
+        </a>
+        <div class="form-check form-switch mb-0">
+          <input class="form-check-input" type="checkbox" id="themeToggle" role="switch">
+          <label class="theme-toggle-label" for="themeToggle">
+            <i class="bi bi-sun-fill theme-icon theme-icon-sun"></i>
+            <i class="bi bi-moon-fill theme-icon theme-icon-moon"></i>
+          </label>
+        </div>
+        {% include "portal/components/_user_menu.html" %}
+      </div>
+    </div>
+  </div>
+</nav>
+{% endblock %}
+
+{% block portal_content %}
+    {% block content %}{% endblock %}
+{% endblock %}
+
+{% block portal_scripts %}
+    {% block scripts %}{% endblock %}
+{% endblock %}

@@ -1,0 +1,1286 @@
+{% extends "monev_bos/base_monev_bos.html" %}
+
+{% block monev_bos_content %}
+<style>
+    .cursor-pointer { cursor: pointer; transition: background-color 0.15s ease-in-out; }
+    .cursor-pointer:hover { background-color: rgba(0, 0, 0, 0.03) !important; }
+    .transition-icon { transition: transform 0.2s ease; }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+    .spin-icon { display: inline-block; animation: spin 4s linear infinite; }
+    .activity-summary-mobile-item { border-bottom: 1px solid var(--bs-border-color); }
+    .activity-summary-mobile-item:last-child { border-bottom: 0; }
+    .audit-progress-sticky {
+        position: sticky;
+        top: var(--monev-navbar-height, 64px);
+        z-index: 1015;
+        margin: 0 auto 0.75rem;
+        max-width: 760px;
+    }
+    .audit-progress-compact {
+        position: relative;
+        height: 24px;
+        border-radius: 999px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    .audit-progress-label {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 12px;
+        color: #fff;
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+        pointer-events: none;
+    }
+    .audit-autosave-status { min-height: 1rem; }
+    .audit-checklist-item { min-width: 0; }
+    
+    @media (max-width: 576px) {
+        .audit-container { padding-left: 8px !important; padding-right: 8px !important; }
+        .activity-item { padding: 0 !important; }
+        .stat-card-title { font-size: 0.65rem !important; }
+        .stat-card-value { font-size: 0.9rem !important; }
+        .audit-form-box { padding: 12px !important; }
+        .doc-btn { padding: 3px 8px !important; font-size: 0.72rem !important; }
+        .filter-btn-group .btn { padding: 4px 8px !important; font-size: 0.72rem !important; }
+        .activity-summary-card .card-header { padding: 10px 12px !important; }
+        .activity-summary-mobile-item { padding: 10px 12px !important; }
+        .activity-summary-mobile-title { font-size: 0.78rem !important; line-height: 1.25; }
+        .activity-summary-chip { min-width: 36px; padding: 4px 6px !important; font-size: 0.68rem !important; }
+        .audit-container { padding-top: 48px !important; }
+        .audit-progress-sticky {
+            position: fixed;
+            top: calc(var(--monev-navbar-height, 64px) + 6px);
+            left: 12px;
+            right: 12px;
+            margin: 0;
+        }
+        .audit-page-header > div,
+        .audit-page-header .audit-header-actions,
+        .audit-page-header .audit-status-control { width: 100%; }
+        .audit-page-header .audit-status-control { justify-content: space-between; }
+        .audit-page-header .audit-status-control form { flex: 1; }
+        .audit-page-header .audit-status-control select { width: 100%; }
+        .audit-checklist-item > .d-flex { align-items: stretch !important; }
+        .audit-checklist-label,
+        .audit-checklist-actions { width: 100%; }
+        .audit-checklist-actions .btn-group { flex: 1; }
+        .audit-checklist-actions .btn-group label { flex: 1; }
+        .audit-validation-actions { flex-direction: column; }
+        .audit-validation-actions .btn { width: 100%; }
+        .activity-header .badge { white-space: normal; }
+    }
+</style>
+
+<div class="container-fluid py-3 py-md-4 audit-container">
+    <div class="audit-progress-sticky">
+        <div class="progress audit-progress-compact bg-secondary" aria-label="Kelengkapan dokumen {{ fund_source }}">
+            <div class="progress-bar bg-success" id="checklistSummaryBar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ audit_metrics.checklist_percent|round(1) }}" style="width: {{ audit_metrics.checklist_percent|round(1) }}%;"></div>
+            <span class="audit-progress-label">
+                Kelengkapan {{ fund_source }}&nbsp;
+                <span id="checklistSummaryCounts">{{ audit_metrics.checklist_yes }}/{{ audit_metrics.checklist_total }}</span>&nbsp;•&nbsp;
+                <span id="checklistSummaryPercent">{{ audit_metrics.checklist_percent|round(1) }}%</span>
+            </span>
+        </div>
+    </div>
+
+    <!-- Header Responsive Bar -->
+    <div class="d-flex justify-content-between align-items-sm-center mb-3 flex-column flex-sm-row gap-2 audit-page-header">
+        <div>
+            <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                <h1 class="h5 h4-md mb-0 text-body fw-bold">{{ report.school_name }}</h1>
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill text-xs">
+                    <i class="bi bi-calendar3 me-1"></i> Tahun {{ report.year or '2026' }} &bull; TW {{ report.tw or 'I' }}
+                </span>
+            </div>
+            <p class="text-body-secondary small mb-0 d-none d-sm-block">Monitoring dan validasi kegiatan laporan pertanggungjawaban sekolah</p>
+        </div>
+        <div class="d-flex align-items-center gap-2 flex-wrap audit-header-actions">
+            <div class="d-flex align-items-center gap-1.5 bg-body border rounded-pill px-3 py-1 shadow-2xs audit-status-control">
+                <span class="text-body-secondary fw-bold text-xs text-nowrap"><i class="bi bi-clipboard-check me-1"></i>Status Audit:</span>
+                <form action="{{ url_for('monev_bos.staff_audit_report', report_id=report.id) }}" method="POST" class="m-0">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="action" value="update_report_status">
+                    <select name="status" class="form-select form-select-sm fw-bold text-xs border-0 bg-transparent py-0 pe-4 shadow-none" onchange="this.form.submit()">
+                        <option value="submitted" {% if report.status == 'submitted' %}selected{% endif %}>Menunggu Audit</option>
+                        <option value="in_review" {% if report.status == 'in_review' %}selected{% endif %}>Sedang Diaudit</option>
+                        <option value="needs_revision" {% if report.status == 'needs_revision' %}selected{% endif %}>Butuh Revisi</option>
+                        <option value="completed_with_notes" {% if report.status == 'completed_with_notes' %}selected{% endif %}>Selesai dengan Catatan</option>
+                        <option value="completed" {% if report.status == 'completed' %}selected{% endif %}>Audit Selesai</option>
+                    </select>
+                </form>
+            </div>
+            <a href="{{ url_for('monev_bos.staff_dashboard') }}" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+                <i class="bi bi-arrow-left me-1.5"></i> Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Segmented Control Tab Switcher (BOS / BOP) -->
+    <div class="mb-3">
+        <div class="p-1 bg-body-tertiary rounded-pill border d-flex align-items-center gap-1 shadow-2xs w-100 w-sm-auto d-inline-flex">
+            <a href="{{ url_for('monev_bos.staff_audit_report', report_id=report.id, fund_source='BOS') }}" 
+               class="flex-fill text-center px-3 py-1.5 rounded-pill fw-bold text-xs d-inline-flex align-items-center justify-content-center text-decoration-none transition-all {% if fund_source == 'BOS' %}bg-success text-white shadow-xs{% else %}text-body-secondary{% endif %}">
+                <i class="bi bi-cash-stack me-1.5"></i> Dana BOSP
+            </a>
+            <a href="{{ url_for('monev_bos.staff_audit_report', report_id=report.id, fund_source='BOP') }}" 
+               class="flex-fill text-center px-3 py-1.5 rounded-pill fw-bold text-xs d-inline-flex align-items-center justify-content-center text-decoration-none transition-all {% if fund_source == 'BOP' %}bg-info text-dark shadow-xs{% else %}text-body-secondary{% endif %}">
+                <i class="bi bi-wallet2 me-1.5"></i> Dana BOP
+            </a>
+        </div>
+    </div>
+
+    <!-- Ringkasan Anggaran (3 Modern Metric Cards - Identik dengan Role Sekolah) -->
+    <div class="row mb-3 g-2 g-sm-3">
+        <div class="col-12 col-sm-4">
+            <div class="card bg-body border shadow-xs h-100 p-3 rounded-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-3 p-2 bg-success-subtle text-success d-flex align-items-center justify-content-center flex-shrink-0" style="width: 40px; height: 40px;">
+                        <i class="bi bi-wallet2 fs-5"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between align-items-center mb-0.5">
+                            <span class="text-uppercase text-body-secondary fw-bold text-xs">TOTAL PENERIMAAN {{ fund_source }}</span>
+                        </div>
+                        <h5 class="fw-bold text-success mb-0">Rp {{ "{:,.0f}".format(total_receipt).replace(',', '.') }}</h5>
+                    </div>
+                </div>
+                <div class="mt-2.5 pt-2 border-top d-flex justify-content-between align-items-center text-xs text-body-secondary">
+                    <span><i class="bi bi-check2-circle text-success me-1"></i>Penerimaan TW {{ report.tw or 'I' }}</span>
+                    <span class="badge bg-success-subtle text-success border border-success-subtle">Aktif</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-4">
+            <div class="card bg-body border shadow-xs h-100 p-3 rounded-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-3 p-2 bg-warning-subtle text-warning-emphasis d-flex align-items-center justify-content-center flex-shrink-0" style="width: 40px; height: 40px;">
+                        <i class="bi bi-cart-check fs-5"></i>
+                    </div>
+                    <div>
+                        <span class="text-uppercase text-body-secondary fw-bold text-xs d-block mb-0.5">TOTAL PENGELUARAN REALISASI</span>
+                        <h5 class="fw-bold text-warning-emphasis mb-0">Rp {{ "{:,.0f}".format(total_realized).replace(',', '.') }}</h5>
+                    </div>
+                </div>
+                <div class="mt-2.5 pt-2 border-top">
+                    <div class="d-flex justify-content-between align-items-center text-xs mb-1">
+                        <span class="text-body-secondary">Terserap:</span>
+                        <strong class="text-warning-emphasis">{{ percent_spent|round(1) }}%</strong>
+                    </div>
+                    <div class="progress bg-body-tertiary" style="height: 5px;">
+                        <div class="progress-bar bg-warning" role="progressbar" style="width: {{ percent_spent|round(1) }}%;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-4">
+            <div class="card bg-body border shadow-xs h-100 p-3 rounded-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-3 p-2 {% if remaining_balance < 0 %}bg-danger-subtle text-danger{% else %}bg-primary-subtle text-primary{% endif %} d-flex align-items-center justify-content-center flex-shrink-0" style="width: 40px; height: 40px;">
+                        <i class="bi bi-piggy-bank fs-5"></i>
+                    </div>
+                    <div>
+                        <span class="text-uppercase text-body-secondary fw-bold text-xs d-block mb-0.5">SISA SALDO ANGGARAN</span>
+                        <h5 class="fw-bold {% if remaining_balance < 0 %}text-danger{% else %}text-primary{% endif %} mb-0">
+                            Rp {{ "{:,.0f}".format(remaining_balance).replace(',', '.') }}
+                        </h5>
+                    </div>
+                </div>
+                <div class="mt-2.5 pt-2 border-top d-flex justify-content-between align-items-center text-xs">
+                    {% if remaining_balance >= 0 %}
+                    <span class="text-success"><i class="bi bi-shield-check me-1"></i>Saldo Anggaran Tersedia</span>
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle">Aman</span>
+                    {% else %}
+                    <span class="text-danger"><i class="bi bi-exclamation-octagon me-1"></i>Pengeluaran Defisit</span>
+                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Defisit</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ringkasan penggunaan foto untuk sumber dana aktif -->
+    <div class="row mb-3 g-2 g-sm-3">
+        <div class="col-12">
+            <div class="card bg-body border shadow-xs h-100 p-3 rounded-3">
+                <div class="d-flex justify-content-between align-items-start gap-3">
+                    <div>
+                        <span class="text-uppercase text-body-secondary fw-bold text-xs d-block">Penggunaan Foto Live Sekolah</span>
+                        <div class="d-flex align-items-baseline gap-2 mt-1">
+                            <h4 class="fw-bold text-info mb-0">{{ audit_metrics.school_photo_percent|round(1) }}%</h4>
+                            <span class="text-body-secondary text-xs">{{ audit_metrics.activities_with_school_photo }} dari {{ audit_metrics.activities_total }} kegiatan</span>
+                        </div>
+                    </div>
+                    <div class="rounded-3 p-2 bg-info-subtle text-info"><i class="bi bi-camera-fill fs-5"></i></div>
+                </div>
+                <div class="progress bg-body-tertiary mt-3" style="height: 7px;">
+                    <div class="progress-bar bg-info" role="progressbar" style="width: {{ audit_metrics.school_photo_percent|round(1) }}%;"></div>
+                </div>
+                <small class="text-body-secondary mt-2">Hanya foto kamera sekolah atau tautan Foto Live yang sah; foto staff dan foto yang dianulir tidak dihitung.</small>
+            </div>
+        </div>
+    </div>
+
+    {% if activity_groups %}
+    <div class="card shadow-sm mb-3 border-0 activity-summary-card">
+        <div class="card-header bg-body-tertiary py-2.5 px-3 d-flex justify-content-between align-items-center gap-2">
+            <div>
+                <h6 class="m-0 font-weight-bold text-primary text-sm">Ringkasan per Nama Kegiatan</h6>
+                <p class="text-body-secondary mb-0 d-none d-md-block" style="font-size: 0.75rem;">Klik pada baris untuk melihat detail transaksi.</p>
+            </div>
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle text-xs">{{ activity_groups|length }} kegiatan</span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive d-none d-md-block">
+                <table class="table table-sm align-middle mb-0">
+                    <thead class="table-light">
+                        <tr class="text-xs">
+                            <th class="text-center" style="width: 52px;">No</th>
+                            <th>Nama Kegiatan</th>
+                            <th class="text-center">Total Transaksi</th>
+                            <th class="text-center">Belum Assign</th>
+                            <th class="text-center">Sedang Diperiksa</th>
+                            <th class="text-center">Selesai Dicek</th>
+                            <th class="text-center">Siap Review</th>
+                            <th class="text-center">Siap Submit</th>
+                            <th class="text-center" style="width: 70px;">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for group in activity_groups %}
+                        <tr class="text-xs align-middle">
+                            <td class="text-center fw-bold">{{ loop.index }}</td>
+                            <td class="fw-semibold text-body">{{ group.name }}</td>
+                            <td class="text-center fw-bold">{{ group.total }}</td>
+                            <td class="text-center text-primary fw-bold">{{ group.pending }}</td>
+                            <td class="text-center text-warning fw-bold">{{ group.in_review }}</td>
+                            <td class="text-center text-success fw-bold">{{ group.valid }}</td>
+                            <td class="text-center text-info fw-bold">{{ group.ready_review }}</td>
+                            <td class="text-center text-primary fw-bold">{{ group.ready_submit }}</td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-sm btn-outline-primary activity-summary-open" data-activity-name="{{ group.name }}" title="Lihat transaksi" aria-pressed="false">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="d-md-none">
+                {% for group in activity_groups %}
+                <div class="activity-summary-mobile-item">
+                    <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                        <div class="fw-bold text-body activity-summary-mobile-title">{{ group.name }}</div>
+                        <div class="d-flex align-items-center gap-1 flex-shrink-0">
+                            <span class="badge bg-body-tertiary text-body border">{{ group.total }} trx</span>
+                            <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 activity-summary-open" data-activity-name="{{ group.name }}" title="Lihat transaksi" aria-pressed="false">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="d-flex flex-wrap gap-1">
+                        <span class="badge bg-primary-subtle text-primary border activity-summary-chip">Belum {{ group.pending }}</span>
+                        <span class="badge bg-warning-subtle text-warning-emphasis border activity-summary-chip">Cek {{ group.in_review }}</span>
+                        <span class="badge bg-success-subtle text-success border activity-summary-chip">Selesai {{ group.valid }}</span>
+                        {% if group.invalid %}
+                        <span class="badge bg-danger-subtle text-danger border activity-summary-chip">Revisi {{ group.invalid }}</span>
+                        {% endif %}
+                        {% if group.ready_review %}
+                        <span class="badge bg-info-subtle text-info-emphasis border activity-summary-chip">Review {{ group.ready_review }}</span>
+                        {% endif %}
+                        {% if group.ready_submit %}
+                        <span class="badge bg-secondary-subtle text-secondary-emphasis border activity-summary-chip">Submit {{ group.ready_submit }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row g-3">
+        <!-- Kolom Utama: Daftar Kegiatan -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-3 border-0">
+                <div class="card-header bg-body-tertiary py-2.5 px-3">
+                    <!-- Baris 1: Judul -->
+                    <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                        <h6 class="m-0 font-weight-bold text-primary text-sm">
+                            Daftar Kegiatan Audit <span class="badge bg-primary-subtle text-primary border ms-1">{{ activities|length }}</span>
+                        </h6>
+                    </div>
+                    
+                    <!-- Baris 2: Search Bar Full Width -->
+                    <div class="input-group input-group-sm w-100">
+                        <span class="input-group-text bg-body border-end-0 text-body-secondary"><i class="bi bi-search"></i></span>
+                        <input type="text" id="activitySearchInput" class="form-control border-start-0 bg-body" placeholder="Cari kode kegiatan, uraian, vendor, BKU...">
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for act in activities %}
+                        <div class="list-group-item p-0 activity-item border-bottom" data-fund="{{ act.fund_source }}" id="activityItem{{ act.id }}" data-status="{{ act.status }}" data-activity-id="{{ act.id }}">
+                            <!-- Header Item (Click to Expand / Collapse) -->
+                            <div class="p-2.5 p-sm-3 activity-header cursor-pointer bg-body" onclick="toggleActivity('{{ act.id }}')">
+                                <div class="d-flex justify-content-between align-items-center mb-1.5 gap-2">
+                                    <div class="d-flex align-items-center gap-1.5 flex-wrap">
+                                        <span class="badge {% if act.fund_source == 'BOS' %}bg-success{% else %}bg-info{% endif %}" style="font-size: 0.68rem; padding: 3px 6px;">{{ act.fund_source }}</span>
+                                        <strong class="text-body font-monospace" style="font-size: 0.85rem;">{{ act.activity_code }}</strong>
+                                        <span class="text-success fw-bold text-xs">Rp {{ "{:,.0f}".format(act.realized_amount).replace(',', '.') }}</span>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-1 flex-shrink-0 ms-auto">
+                                        <div id="statusBadgeContainer{{ act.id }}">
+                                            {% if act.status == 'valid' %}
+                                            <span class="badge bg-success" style="font-size: 0.7rem;"><i class="bi bi-check-circle me-1"></i>Sesuai</span>
+                                            {% elif act.status == 'invalid' %}
+                                            <span class="badge bg-danger" style="font-size: 0.7rem;"><i class="bi bi-x-circle me-1"></i>Revisi</span>
+                                            {% elif act.status == 'in_review' %}
+                                            <span class="badge bg-info text-dark" style="font-size: 0.7rem;"><i class="bi bi-gear-wide-connected me-1 spin-icon"></i>Proses Audit</span>
+                                            {% else %}
+                                            <span class="badge bg-warning text-dark" style="font-size: 0.7rem;"><i class="bi bi-hourglass-split me-1"></i>Pending</span>
+                                            {% endif %}
+                                        </div>
+                                        <i class="bi bi-chevron-down text-body-secondary transition-icon ms-1" id="toggleIcon{{ act.id }}" style="font-size: 0.85rem;"></i>
+                                    </div>
+                                </div>
+
+                                <!-- Uraian Kegiatan & Auditor Name -->
+                                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                    <div class="text-body fw-semibold flex-grow-1" style="font-size: 0.84rem; line-height: 1.3;">{{ act.activity_name }}</div>
+                                    <div class="d-flex align-items-center gap-1 flex-wrap">
+                                        <span class="badge {% if act.checklist_percent == 100 %}bg-success-subtle text-success{% else %}bg-warning-subtle text-warning-emphasis{% endif %} border text-xs" id="activityChecklistBadge{{ act.id }}">
+                                            <i class="bi bi-card-checklist me-1"></i>Kelengkapan {{ act.checklist_yes }}/{{ act.checklist_total }} ({{ act.checklist_percent|round(1) }}%)
+                                        </span>
+                                        {% if act.has_school_live_photo %}
+                                        <span class="badge bg-info-subtle text-info border text-xs"><i class="bi bi-camera-fill me-1"></i>Foto sah: {{ act.valid_school_photos|length }}</span>
+                                        {% else %}
+                                        <span class="badge bg-danger-subtle text-danger border text-xs"><i class="bi bi-camera me-1"></i>Tanpa foto sekolah</span>
+                                        {% endif %}
+                                        {% if act.invalid_school_photos %}
+                                        <span class="badge bg-danger-subtle text-danger border text-xs"><i class="bi bi-slash-circle me-1"></i>Dianulir: {{ act.invalid_school_photos|length }}</span>
+                                        {% endif %}
+                                    </div>
+                                    {% if act.auditor_name %}
+                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill text-xs fw-normal flex-shrink-0" id="auditorBadge{{ act.id }}">
+                                        <i class="bi bi-person-check me-1"></i> Auditor: <strong>{{ act.auditor_name }}</strong>
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill text-xs fw-normal flex-shrink-0" id="auditorBadge{{ act.id }}" style="display: none;">
+                                        <i class="bi bi-person-check me-1"></i> Auditor: <strong>-</strong>
+                                    </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Detail Content (Collapsed by default) -->
+                            <div class="activity-body p-2.5 p-sm-4 bg-body-tertiary border-top" id="activityBody{{ act.id }}" style="display: none;">
+                                <!-- Realisasi & Info Compact Row -->
+                                <div class="row g-2 mb-3 text-sm bg-body p-2 rounded border">
+                                    <div class="col-6 col-sm-6">
+                                        <small class="text-body-secondary d-block" style="font-size: 0.72rem;">Realisasi Pengeluaran:</small>
+                                        <strong class="text-success" style="font-size: 0.9rem;">Rp {{ "{:,.0f}".format(act.realized_amount).replace(',', '.') }}</strong>
+                                    </div>
+                                    <div class="col-6 col-sm-3">
+                                         <small class="text-body-secondary d-block" style="font-size: 0.72rem;">No. BKU:</small>
+                                         <span class="fw-semibold text-body font-monospace">{{ act.bku_number or '-' }}</span>
+                                     </div>
+                                     <div class="col-6 col-sm-3">
+                                         <small class="text-body-secondary d-block" style="font-size: 0.72rem;">Kode Rekening:</small>
+                                         <span class="fw-semibold text-body font-monospace">{{ act.account_code or '-' }}</span>
+                                     </div>
+                                     <div class="col-6 col-sm-3">
+                                         <small class="text-body-secondary d-block" style="font-size: 0.72rem;">Vendor / Toko:</small>
+                                         <span class="text-body">{{ act.vendor_name or '-' }}</span>
+                                     </div>
+                                     <div class="col-6 col-sm-3">
+                                         <small class="text-body-secondary d-block" style="font-size: 0.72rem;">Detail Kegiatan:</small>
+                                         <span class="text-body">{{ act.item_name or '-' }}</span>
+                                     </div>
+                                </div>
+
+                                <!-- Dokumen Pendukung (Modal Preview - No New Tab!) -->
+                                <div class="mb-3 d-flex align-items-center flex-wrap gap-2 text-sm">
+                                    <span class="text-body-secondary fw-semibold" style="font-size: 0.78rem;">Dokumen:</span>
+                                    {% if act.docs.get('invoice') %}
+                                    <button type="button" onclick="previewDoc('/{{ act.docs['invoice'].file_path }}', 'Faktur & Kwitansi - {{ act.activity_code }}')" class="btn btn-sm btn-outline-secondary doc-btn py-1 px-2 rounded-pill">
+                                        <i class="bi bi-receipt me-1"></i> Faktur & Kwitansi
+                                    </button>
+                                    {% else %}
+                                    <span class="badge bg-body-tertiary text-body-secondary border text-xs">Tanpa Faktur & Kwitansi</span>
+                                    {% endif %}
+                                    
+                                    {% if act.docs.get('transfer') %}
+                                    <button type="button" onclick="previewDoc('/{{ act.docs['transfer'].file_path }}', 'Bukti Transfer - {{ act.activity_code }}')" class="btn btn-sm btn-outline-secondary doc-btn py-1 px-2 rounded-pill">
+                                        <i class="bi bi-bank me-1"></i> Transfer
+                                    </button>
+                                    {% else %}
+                                    <span class="badge bg-body-tertiary text-body-secondary border text-xs">No Transfer</span>
+                                    {% endif %}
+                                </div>
+
+                                 <!-- Foto Lapangan / Bukti Kelengkapan Section -->
+                                <div class="mb-3 p-2 bg-body rounded border">
+                                    <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-1">
+                                        <h6 class="mb-0 text-sm fw-bold">Foto Lapangan & Bukti Kelengkapan</h6>
+                                        {% if act.has_school_live_photo %}
+                                        <span class="badge bg-success-subtle text-success border border-success px-2 py-1" style="font-size: 0.7rem;">
+                                            <i class="bi bi-check-circle me-1"></i> {{ act.valid_school_photos|length }} Foto Sekolah Sah (Dihitung)
+                                        </span>
+                                        {% else %}
+                                        <span class="badge bg-danger-subtle text-danger border border-danger px-2 py-1" style="font-size: 0.7rem;">
+                                            <i class="bi bi-exclamation-triangle me-1"></i> Tidak Ada Foto Sekolah Sah
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="d-flex gap-2 flex-wrap mb-1 align-items-center">
+                                        {% for photo in act.live_photos %}
+                                        <div class="position-relative d-inline-block {% if photo.doc_type == 'field_photo' and not photo.is_audit_valid %}opacity-50{% endif %}" style="vertical-align: top; {% if photo.doc_type == 'field_photo' and not photo.is_audit_valid %}width: 120px;{% endif %}">
+                                            <a href="javascript:void(0)" onclick='previewDoc("/{{ photo.file_path }}", "Foto Lapangan ({% if photo.doc_type == "field_photo" %}Sekolah{% else %}Staff{% endif %}) - {{ act.activity_code }}")'>
+                                                <img src="/{{ photo.file_path }}" alt="Foto Lapangan" class="img-thumbnail shadow-sm" style="height: 75px; width: 75px; object-fit: cover;">
+                                            </a>
+                                            {% if photo.doc_type == 'field_photo' %}
+                                                {% if photo.is_audit_valid %}
+                                                <span class="badge bg-info position-absolute bottom-0 start-0 m-1" style="font-size: 0.6rem;">Sekolah · Sah</span>
+                                                <button type="button" class="btn btn-danger position-absolute top-0 end-0 m-1 p-0 rounded-circle" style="width: 22px; height: 22px; line-height: 18px;" title="Anulir foto" onclick="event.stopPropagation(); auditSchoolPhoto({{ act.id }}, {{ photo.id }}, false)">
+                                                    <i class="bi bi-x" style="font-size: 0.75rem;"></i>
+                                                </button>
+                                                {% else %}
+                                                <span class="badge bg-danger position-absolute bottom-0 start-0 m-1" style="font-size: 0.6rem;">Tidak Sah</span>
+                                                <button type="button" class="btn btn-success position-absolute top-0 end-0 m-1 p-0 rounded-circle" style="width: 22px; height: 22px; line-height: 18px;" title="Sahkan kembali" onclick="event.stopPropagation(); auditSchoolPhoto({{ act.id }}, {{ photo.id }}, true)">
+                                                    <i class="bi bi-arrow-counterclockwise" style="font-size: 0.65rem;"></i>
+                                                </button>
+                                                {% if photo.photo_audit_notes %}
+                                                <small class="d-block text-danger text-xs text-truncate mt-1" title="{{ photo.photo_audit_notes }}">Alasan: {{ photo.photo_audit_notes }}</small>
+                                                {% endif %}
+                                                {% endif %}
+                                            {% else %}
+                                            <span class="badge bg-success position-absolute bottom-0 start-0 m-1" style="font-size: 0.6rem;">Staff</span>
+                                            {% endif %}
+                                        </div>
+                                        {% else %}
+                                        <p class="text-body-secondary text-xs fst-italic mb-0">Sekolah belum mengunggah foto. Verifikasi dokumen atau ambil foto live jika survey lokasi.</p>
+                                        {% endfor %}
+                                    </div>
+
+                                    {% if act.has_school_live_photo %}
+                                    <div class="d-flex align-items-center gap-2 mt-2 pt-1 border-top flex-wrap">
+                                        <small class="text-success text-xs"><i class="bi bi-shield-check me-1"></i>Foto sekolah masuk perhitungan laporan.</small>
+                                        <button type="button" class="btn btn-xs btn-outline-secondary ms-auto text-nowrap py-1 px-2" onclick="openCameraModal({{ act.id }})">
+                                            <i class="bi bi-camera me-1"></i> Foto Live Tambahan
+                                        </button>
+                                    </div>
+                                    {% else %}
+                                    <div class="mt-2">
+                                        {% if act.staff_photos %}
+                                        <small class="text-danger text-xs d-block mb-2"><i class="bi bi-info-circle me-1"></i>Foto staff tersedia, tetapi tidak masuk perhitungan foto sekolah.</small>
+                                        {% endif %}
+                                        <button type="button" class="btn btn-sm btn-primary py-1 px-2 text-xs" onclick="openCameraModal({{ act.id }})">
+                                            <i class="bi bi-camera me-1"></i> Ambil Foto Live (Staff)
+                                        </button>
+                                    </div>
+                                    {% endif %}
+                                </div>
+
+                                 <!-- Form Validasi -->
+                                <div class="bg-body p-2.5 p-sm-3 border rounded shadow-sm audit-form-box">
+                                    <form action="{{ url_for('monev_bos.staff_audit_activity', activity_id=act.id) }}" method="POST" class="validate-activity-form" data-activity-id="{{ act.id }}">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <input type="hidden" name="action" value="validate">
+                                        <input type="hidden" name="report_id" value="{{ report.id }}">
+                                        <input type="hidden" name="status" class="activity-status-input" value="">
+                                        
+                                        <!-- Checklist Kelengkapan Dokumen (2 Pilihan Jelas: Ada / Tidak Ada) -->
+                                        {% set act_checklists = act.checklists if act.checklists else checklists %}
+                                        {% if act_checklists %}
+                                        <div class="card border-0 bg-body-tertiary shadow-2xs mb-3">
+                                            <div class="card-header bg-body py-2 px-3 d-flex justify-content-between align-items-center border-bottom gap-2 flex-wrap">
+                                                <div>
+                                                    <h6 class="mb-0 text-xs fw-bold text-body">
+                                                        <i class="bi bi-card-checklist text-primary me-1"></i> Checklist Kelengkapan Dokumen
+                                                        {% if act.expense_type_name %}
+                                                        <span class="badge bg-info-subtle text-info border border-info-subtle text-xs ms-1"><i class="bi bi-wallet2 me-1"></i>{{ act.expense_type_name }}</span>
+                                                        {% endif %}
+                                                    </h6>
+                                                    <small class="audit-autosave-status text-body-secondary d-block mt-1" data-save-status>Perubahan tersimpan otomatis</small>
+                                                </div>
+                                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle text-xs">{{ act_checklists|length }} Item Cek</span>
+                                            </div>
+                                             <div class="card-body p-2 p-sm-3">
+                                                 <div class="row g-2">
+                                                     {% for cl in act_checklists %}
+                                                     {% set res = act.checklist_results.get(cl.id) if act.checklist_results else None %}
+                                                     {% set current_status = res.status if (res and res.status in ['yes', 'no']) else 'no' %}
+                                                     {% set has_notes = res and res.notes %}
+                                                     <div class="col-12">
+                                                         <div class="p-2 px-3 bg-body rounded border text-xs shadow-2xs audit-checklist-item">
+                                                             <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                                                 <div class="d-flex align-items-center gap-2 audit-checklist-label">
+                                                                     <span class="badge bg-body-tertiary text-body border me-1">{{ loop.index }}</span>
+                                                                     <span class="fw-bold text-body text-sm mb-0">{{ cl.name }}</span>
+                                                                     {% if cl.description %}
+                                                                     <span class="text-body-secondary text-xs d-none d-md-inline" style="font-size: 0.75rem;">({{ cl.description }})</span>
+                                                                     {% endif %}
+                                                                 </div>
+                                                                 
+                                                                 <div class="d-flex align-items-center gap-2 audit-checklist-actions">
+                                                                     <div class="btn-group" role="group" aria-label="Status Kelengkapan">
+                                                                         <input type="radio" class="btn-check" name="checklist_{{ cl.id }}" id="cl_{{ act.id }}_{{ cl.id }}_yes" value="yes" autocomplete="off" {% if current_status == 'yes' %}checked{% endif %}>
+                                                                         <label class="btn btn-outline-success btn-sm text-xs py-1 px-2.5 fw-bold" for="cl_{{ act.id }}_{{ cl.id }}_yes">
+                                                                             <i class="bi bi-check-circle-fill me-1"></i> Ada
+                                                                         </label>
+
+                                                                         <input type="radio" class="btn-check" name="checklist_{{ cl.id }}" id="cl_{{ act.id }}_{{ cl.id }}_no" value="no" autocomplete="off" {% if current_status == 'no' %}checked{% endif %}>
+                                                                         <label class="btn btn-outline-danger btn-sm text-xs py-1 px-2.5 fw-bold" for="cl_{{ act.id }}_{{ cl.id }}_no">
+                                                                             <i class="bi bi-x-circle-fill me-1"></i> Tidak Ada
+                                                                         </label>
+                                                                     </div>
+
+                                                                     <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 {% if has_notes %}active btn-secondary text-white{% endif %}" 
+                                                                             onclick="toggleChecklistNote('cl_note_{{ act.id }}_{{ cl.id }}')" 
+                                                                             title="Catatan Temuan (Opsional)">
+                                                                         <i class="bi bi-pencil-fill text-xs"></i>
+                                                                     </button>
+                                                                 </div>
+                                                             </div>
+
+                                                             <div id="cl_note_{{ act.id }}_{{ cl.id }}" class="mt-2 {% if not has_notes %}d-none{% endif %}">
+                                                                 <input type="text" name="checklist_notes_{{ cl.id }}" class="form-control form-control-sm text-xs bg-body-tertiary" placeholder="Catatan temuan (opsional)..." value="{{ res.notes if res else '' }}">
+                                                             </div>
+                                                         </div>
+                                                     </div>
+                                                     {% endfor %}
+                                                 </div>
+                                             </div>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        <!-- Catatan Audit -->
+                                        <div class="mb-3">
+                                            <label class="form-label text-xs fw-bold mb-1">Catatan Audit / Temuan</label>
+                                            <textarea name="audit_notes" class="form-control form-control-sm bg-body-tertiary" rows="2" placeholder="Tuliskan catatan audit temuan atau instruksi revisi untuk sekolah (opsional)...">{{ act.audit_notes or '' }}</textarea>
+                                        </div>
+
+                                        <!-- 2 Tombol Utama Validasi (1 Baris: Kiri Perlu Revisi, Kanan Sesuai) -->
+                                        <div class="d-flex gap-2 pt-2 border-top audit-validation-actions">
+                                            <button type="submit" name="status" value="invalid" onclick="this.form.querySelector('.activity-status-input').value='invalid';" class="btn btn-sm btn-danger py-2 px-2.5 fw-bold flex-fill shadow-2xs">
+                                                <i class="bi bi-x-circle-fill me-1"></i> Perlu Revisi
+                                            </button>
+                                            <button type="submit" name="status" value="valid" onclick="this.form.querySelector('.activity-status-input').value='valid';" class="btn btn-sm btn-success py-2 px-2.5 fw-bold flex-fill shadow-2xs">
+                                                <i class="bi bi-check-circle-fill me-1"></i> Sesuai (Valid)
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="p-4 text-center text-body-secondary" id="emptyActivities">
+                            Sekolah belum mengisi kegiatan pengeluaran.
+                        </div>
+                        {% endfor %}
+                        <div class="p-4 text-center text-body-secondary" id="noFilterResults" style="display:none;">
+                            <i class="bi bi-funnel me-1"></i> Tidak ada kegiatan untuk sumber dana ini.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Kolom Kanan: Log Audit Trail -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm mb-3 border-0">
+                <div class="card-header bg-body-tertiary py-2 px-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary text-sm"><i class="bi bi-clock-history me-1"></i> Log Audit Tim</h6>
+                    <span class="badge bg-body-tertiary text-body-secondary border text-xs">{{ audit_logs|length }} log</span>
+                </div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush text-sm" style="max-height: 350px; overflow-y: auto;">
+                        {% for log in audit_logs %}
+                        <li class="list-group-item p-2 p-sm-3 text-xs">
+                            <div class="d-flex w-100 justify-content-between mb-1">
+                                <strong>{{ log.user_name }}</strong>
+                                <small class="text-body-secondary">{{ log.created_at|jakarta('%d %b %H:%M') }}</small>
+                            </div>
+                            <p class="mb-0 text-body-secondary">{{ log.details }}</p>
+                            {% if log.activity_name %}
+                            <small class="text-primary d-block mt-1">Kegiatan: {{ log.activity_name }}</small>
+                            {% endif %}
+                        </li>
+                        {% else %}
+                        <li class="list-group-item text-body-secondary text-center py-3 text-xs">Belum ada riwayat audit.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Document Preview (Tanpa Buka New Tab di Mobile) -->
+<div class="modal fade" id="docPreviewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header py-2 px-3 bg-body-tertiary">
+                <h6 class="modal-title fw-bold text-body text-sm" id="docPreviewTitle">Pratinjau Dokumen</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-2 text-center" id="docPreviewBody" style="min-height: 250px;">
+                <!-- Dynamically injected via JS -->
+            </div>
+            <div class="modal-footer py-2 px-3 justify-content-between">
+                <a id="docDownloadBtn" href="#" target="_blank" class="btn btn-sm btn-outline-primary py-1 px-2 text-xs">
+                    <i class="bi bi-download me-1"></i> Buka File Asli
+                </a>
+                <button type="button" class="btn btn-sm btn-secondary py-1 px-3" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Camera HTML5 -->
+<div class="modal fade" id="cameraModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white py-2 px-3">
+                <h6 class="modal-title"><i class="bi bi-camera me-1"></i> Ambil Foto Live</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" onclick="stopCamera()"></button>
+            </div>
+            <div class="modal-body p-0 bg-dark text-center position-relative">
+                <video id="videoElement" autoplay playsinline style="width: 100%; max-height: 65vh; object-fit: cover;"></video>
+                <canvas id="canvasElement" style="display:none;"></canvas>
+                <img id="previewImage" style="display:none; width: 100%; max-height: 65vh; object-fit: contain;" />
+                
+                <div id="cameraControls" class="p-3 bg-dark">
+                    <button type="button" class="btn btn-lg btn-light rounded-circle" id="captureBtn" style="width: 55px; height: 55px;" onclick="capturePhoto()">
+                        <i class="bi bi-camera-fill fs-4"></i>
+                    </button>
+                </div>
+                
+                <div id="previewControls" class="p-3 bg-dark" style="display:none;">
+                    <form id="uploadPhotoForm" action="" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="action" value="upload_photo">
+                        <input type="hidden" name="report_id" value="{{ report.id }}">
+                        <input type="hidden" name="live_photo_data" id="livePhotoData" value="">
+                        
+                        <div class="d-flex justify-content-between">
+                            <button type="button" class="btn btn-sm btn-outline-light" onclick="retakePhoto()">Ulangi</button>
+                            <button type="submit" class="btn btn-sm btn-primary" id="uploadBtn">Simpan Foto</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let videoStream;
+    const video = document.getElementById('videoElement');
+    const canvas = document.getElementById('canvasElement');
+    const preview = document.getElementById('previewImage');
+    const cameraControls = document.getElementById('cameraControls');
+    const previewControls = document.getElementById('previewControls');
+    const uploadForm = document.getElementById('uploadPhotoForm');
+    const livePhotoDataInput = document.getElementById('livePhotoData');
+    
+    function closeActivity(otherId) {
+        const body = document.getElementById('activityBody' + otherId);
+        const icon = document.getElementById('toggleIcon' + otherId);
+        const item = document.getElementById('activityItem' + otherId);
+        if (!body || !item) return;
+
+        if (body.style.display !== 'none') {
+            body.style.display = 'none';
+            if (icon) {
+                icon.classList.remove('bi-chevron-up');
+                icon.classList.add('bi-chevron-down');
+            }
+
+            const currentStatus = item.getAttribute('data-status');
+            const origStatus = item.getAttribute('data-original-status');
+            if (currentStatus === 'in_review' && origStatus) {
+                item.setAttribute('data-status', origStatus);
+                item.removeAttribute('data-original-status');
+                
+                const badgeContainer = document.getElementById('statusBadgeContainer' + otherId);
+                if (badgeContainer) {
+                    if (origStatus === 'invalid') {
+                        badgeContainer.innerHTML = '<span class="badge bg-danger" style="font-size: 0.7rem;"><i class="bi bi-x-circle me-1"></i>Revisi</span>';
+                    } else if (origStatus === 'valid') {
+                        badgeContainer.innerHTML = '<span class="badge bg-success" style="font-size: 0.7rem;"><i class="bi bi-check-circle me-1"></i>Sesuai</span>';
+                    } else {
+                        badgeContainer.innerHTML = '<span class="badge bg-warning text-dark" style="font-size: 0.7rem;"><i class="bi bi-hourglass-split me-1"></i>Pending</span>';
+                    }
+                }
+
+                const formData = new FormData();
+                formData.append('csrf_token', '{{ csrf_token() }}');
+                formData.append('action', 'cancel_audit');
+                formData.append('original_status', origStatus);
+                formData.append('report_id', '{{ report.id }}');
+
+                fetch('{{ url_for("monev_bos.staff_audit_activity", activity_id=0) }}'.replace('0', otherId), {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': '{{ csrf_token() }}'
+                    },
+                    body: formData
+                }).catch(err => console.error('Error cancelling audit:', err));
+            }
+        }
+    }
+
+    function toggleActivity(id) {
+        const body = document.getElementById('activityBody' + id);
+        const icon = document.getElementById('toggleIcon' + id);
+        const item = document.getElementById('activityItem' + id);
+        if (!body || !item) return;
+
+        const isCurrentlyHidden = (body.style.display === 'none' || body.style.display === '');
+
+        // Accordion: Close all other open activity items
+        document.querySelectorAll('.activity-item').forEach(otherItem => {
+            const otherId = otherItem.getAttribute('data-activity-id');
+            if (otherId && String(otherId) !== String(id)) {
+                closeActivity(otherId);
+            }
+        });
+
+        if (isCurrentlyHidden) {
+            body.style.display = 'block';
+            if (icon) {
+                icon.classList.remove('bi-chevron-down');
+                icon.classList.add('bi-chevron-up');
+            }
+
+            const currentStatus = item.getAttribute('data-status');
+            if (currentStatus === 'pending' || currentStatus === 'invalid') {
+                item.setAttribute('data-original-status', currentStatus);
+                item.setAttribute('data-status', 'in_review');
+                
+                const badgeContainer = document.getElementById('statusBadgeContainer' + id);
+                if (badgeContainer) {
+                    badgeContainer.innerHTML = '<span class="badge bg-info text-dark" style="font-size: 0.7rem;"><i class="bi bi-gear-wide-connected me-1 spin-icon"></i>Proses Audit</span>';
+                }
+
+                const formData = new FormData();
+                formData.append('csrf_token', '{{ csrf_token() }}');
+                formData.append('action', 'start_audit');
+                formData.append('report_id', '{{ report.id }}');
+
+                fetch('{{ url_for("monev_bos.staff_audit_activity", activity_id=0) }}'.replace('0', id), {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': '{{ csrf_token() }}'
+                    },
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(data => {
+                    console.log('Activity audit started:', data);
+                })
+                .catch(err => console.error('Error starting activity audit:', err));
+            }
+        } else {
+            closeActivity(id);
+        }
+    }
+
+    function previewDoc(url, title) {
+        document.getElementById('docPreviewTitle').textContent = title || 'Pratinjau Dokumen';
+        document.getElementById('docDownloadBtn').href = url;
+        const body = document.getElementById('docPreviewBody');
+        const ext = url.split('.').pop().toLowerCase().split('?')[0];
+        
+        if (['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp'].includes(ext)) {
+            body.innerHTML = '<img src="' + url + '" class="img-fluid rounded shadow-sm" style="max-height: 70vh; object-fit: contain;" />';
+        } else {
+            body.innerHTML = '<iframe src="' + url + '" style="width: 100%; height: 65vh; border: none;" class="rounded"></iframe>';
+        }
+        
+        const modal = new bootstrap.Modal(document.getElementById('docPreviewModal'));
+        modal.show();
+    }
+
+    function auditSchoolPhoto(activityId, docId, restore) {
+        let reason = '';
+        if (!restore) {
+            reason = window.prompt('Alasan foto kegiatan/barang ini tidak sah:') || '';
+            if (!reason.trim()) return;
+        } else if (!window.confirm('Sahkan kembali foto kegiatan/barang ini?')) {
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('csrf_token', '{{ csrf_token() }}');
+        formData.append('action', restore ? 'restore_school_photo' : 'annul_school_photo');
+        formData.append('report_id', '{{ report.id }}');
+        formData.append('doc_id', String(docId));
+        formData.append('reason', reason.trim());
+
+        fetch('{{ url_for("monev_bos.staff_audit_activity", activity_id=0) }}'.replace('0', activityId), {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            },
+            body: formData
+        })
+        .then(async function (response) {
+            const data = await response.json();
+            if (!response.ok || !data.success) throw new Error(data.message || 'Gagal memperbarui status foto.');
+            window.location.reload();
+        })
+        .catch(function (error) {
+            alert(error.message || 'Gagal memperbarui status foto.');
+        });
+    }
+
+    function openCameraModal(activityId) {
+        uploadForm.action = "{{ url_for('monev_bos.staff_audit_activity', activity_id=0) }}".replace('0', activityId);
+        const myModal = new bootstrap.Modal(document.getElementById('cameraModal'));
+        myModal.show();
+        startCamera();
+    }
+    
+    function startCamera() {
+        retakePhoto();
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: 'environment' } 
+            })
+            .then(function(stream) {
+                videoStream = stream;
+                video.srcObject = stream;
+                video.play();
+            })
+            .catch(function(error) {
+                console.error("Camera error:", error);
+                alert("Gagal mengakses kamera. Pastikan browser memiliki izin akses kamera.");
+            });
+        } else {
+            alert("Browser Anda tidak mendukung fitur kamera HTML5.");
+        }
+    }
+    
+    function stopCamera() {
+        if (videoStream) {
+            videoStream.getTracks().forEach(track => track.stop());
+            videoStream = null;
+        }
+    }
+    
+    function capturePhoto() {
+        const MAX_WIDTH = 800;
+        let width = video.videoWidth;
+        let height = video.videoHeight;
+        
+        if (width > MAX_WIDTH) {
+            height = height * (MAX_WIDTH / width);
+            width = MAX_WIDTH;
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, width, height);
+        
+        ctx.font = '14px Arial';
+        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        ctx.fillRect(5, height - 25, 250, 20);
+        ctx.fillStyle = 'white';
+        ctx.fillText(new Date().toLocaleString('id-ID'), 10, height - 10);
+        
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        preview.src = dataUrl;
+        livePhotoDataInput.value = dataUrl;
+        
+        video.style.display = 'none';
+        cameraControls.style.display = 'none';
+        preview.style.display = 'block';
+        previewControls.style.display = 'block';
+    }
+    
+    function retakePhoto() {
+        video.style.display = 'block';
+        cameraControls.style.display = 'block';
+        preview.style.display = 'none';
+        previewControls.style.display = 'none';
+        livePhotoDataInput.value = '';
+    }
+    
+    document.getElementById('cameraModal').addEventListener('hidden.bs.modal', function () {
+        stopCamera();
+    });
+
+    // --- Search Bar Filter ---
+    (function () {
+        var searchInput = document.getElementById('activitySearchInput');
+        var items = document.querySelectorAll('.activity-item');
+        var noResults = document.getElementById('noFilterResults');
+
+        function syncSummaryButtons() {
+            var activeName = searchInput ? searchInput.value.trim() : '';
+            document.querySelectorAll('.activity-summary-open').forEach(function (btn) {
+                var isActive = activeName && btn.getAttribute('data-activity-name') === activeName;
+                btn.classList.toggle('active', !!isActive);
+                btn.classList.toggle('btn-primary', !!isActive);
+                btn.classList.toggle('btn-outline-primary', !isActive);
+                btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+            });
+        }
+
+        function applyFilters() {
+            var searchQuery = searchInput ? searchInput.value.toLowerCase().trim() : '';
+            var visibleCount = 0;
+
+            items.forEach(function (item) {
+                var textContent = (item.textContent || item.innerText).toLowerCase();
+                var show = (!searchQuery || textContent.indexOf(searchQuery) !== -1);
+                item.style.display = show ? '' : 'none';
+                if (show) visibleCount++;
+            });
+
+            if (noResults) {
+                noResults.style.display = (items.length > 0 && visibleCount === 0) ? '' : 'none';
+            }
+            syncSummaryButtons();
+        }
+
+        document.querySelectorAll('.activity-summary-open').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var name = btn.getAttribute('data-activity-name') || '';
+                var currentSearch = searchInput ? searchInput.value.trim() : '';
+                var shouldClear = currentSearch === name;
+                if (searchInput) {
+                    searchInput.value = shouldClear ? '' : name;
+                    applyFilters();
+                }
+
+                if (shouldClear) {
+                    return;
+                }
+
+                var firstMatch = Array.from(items).find(function (item) {
+                    var textContent = (item.textContent || item.innerText).toLowerCase();
+                    return textContent.indexOf(name.toLowerCase()) !== -1;
+                });
+
+                if (firstMatch) {
+                    firstMatch.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            });
+        });
+
+        if (searchInput) {
+            searchInput.addEventListener('input', applyFilters);
+        }
+    })();
+
+    function refreshChecklistMetricsFromForms() {
+        let total = 0;
+        let yes = 0;
+
+        document.querySelectorAll('.validate-activity-form').forEach(function (form) {
+            const checked = Array.from(form.querySelectorAll('input[type="radio"][name^="checklist_"]:checked'));
+            const activityYes = checked.filter(function (radio) { return radio.value === 'yes'; }).length;
+            const activityTotal = checked.length;
+            total += activityTotal;
+            yes += activityYes;
+
+            const activityId = form.getAttribute('data-activity-id');
+            const badge = document.getElementById('activityChecklistBadge' + activityId);
+            if (badge) {
+                const percent = activityTotal ? (activityYes / activityTotal * 100) : 0;
+                badge.className = 'badge border text-xs ' + (percent === 100 ? 'bg-success-subtle text-success' : 'bg-warning-subtle text-warning-emphasis');
+                badge.innerHTML = '<i class="bi bi-card-checklist me-1"></i>Kelengkapan ' + activityYes + '/' + activityTotal + ' (' + percent.toFixed(1) + '%)';
+            }
+        });
+
+        const percent = total ? (yes / total * 100) : 0;
+        const percentEl = document.getElementById('checklistSummaryPercent');
+        const countsEl = document.getElementById('checklistSummaryCounts');
+        const barEl = document.getElementById('checklistSummaryBar');
+        if (percentEl) percentEl.textContent = percent.toFixed(1) + '%';
+        if (countsEl) countsEl.textContent = yes + '/' + total;
+        if (barEl) {
+            barEl.style.width = percent.toFixed(1) + '%';
+            barEl.setAttribute('aria-valuenow', percent.toFixed(1));
+        }
+    }
+
+    // Draft checklist dan catatan disimpan tanpa mengubah status validasi kegiatan.
+    const auditAutosaveStates = new WeakMap();
+    const dirtyAuditForms = new Set();
+
+    function setAuditSaveStatus(form, state, message) {
+        const statusEl = form.querySelector('[data-save-status]');
+        const globalStatus = document.getElementById('globalAuditSaveStatus');
+        const classes = {
+            saving: 'text-primary',
+            saved: 'text-success',
+            error: 'text-danger'
+        };
+        const icon = state === 'saving'
+            ? '<span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>'
+            : (state === 'saved' ? '<i class="bi bi-cloud-check me-1"></i>' : '<i class="bi bi-cloud-slash me-1"></i>');
+
+        [statusEl, globalStatus].forEach(function (el) {
+            if (!el) return;
+            el.classList.remove('text-primary', 'text-success', 'text-danger', 'text-body-secondary');
+            el.classList.add(classes[state] || 'text-body-secondary');
+            el.innerHTML = icon + message;
+        });
+    }
+
+    function getAuditAutosaveState(form) {
+        if (!auditAutosaveStates.has(form)) {
+            auditAutosaveStates.set(form, { timer: null, inFlight: false, pending: false });
+        }
+        return auditAutosaveStates.get(form);
+    }
+
+    function buildAuditDraftData(form) {
+        const data = new FormData(form);
+        data.set('action', 'autosave_details');
+        data.delete('status');
+        return data;
+    }
+
+    function saveAuditDraft(form) {
+        const state = getAuditAutosaveState(form);
+        if (state.inFlight) {
+            state.pending = true;
+            return;
+        }
+
+        state.inFlight = true;
+        state.pending = false;
+        setAuditSaveStatus(form, 'saving', 'Menyimpan…');
+        const data = buildAuditDraftData(form);
+        const csrfToken = data.get('csrf_token') || '{{ csrf_token() }}';
+
+        fetch(form.getAttribute('action'), {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': csrfToken,
+                'Accept': 'application/json'
+            },
+            body: data,
+            keepalive: true
+        })
+        .then(async function (response) {
+            const result = await response.json().catch(function () { return {}; });
+            if (!response.ok || !result.success) {
+                throw new Error(result.message || 'Gagal menyimpan otomatis.');
+            }
+            return result;
+        })
+        .then(function () {
+            if (!state.pending) {
+                dirtyAuditForms.delete(form);
+                setAuditSaveStatus(form, 'saved', 'Tersimpan otomatis');
+            }
+        })
+        .catch(function (error) {
+            console.error('Audit autosave error:', error);
+            setAuditSaveStatus(form, 'error', 'Belum tersimpan');
+        })
+        .finally(function () {
+            state.inFlight = false;
+            if (state.pending) {
+                state.pending = false;
+                saveAuditDraft(form);
+            }
+        });
+    }
+
+    function scheduleAuditAutosave(form, immediate) {
+        const state = getAuditAutosaveState(form);
+        dirtyAuditForms.add(form);
+        window.clearTimeout(state.timer);
+        setAuditSaveStatus(form, 'saving', 'Menunggu disimpan…');
+        if (immediate) {
+            saveAuditDraft(form);
+        } else {
+            state.timer = window.setTimeout(function () { saveAuditDraft(form); }, 650);
+        }
+    }
+
+    function updateNavbarOffset() {
+        const navbar = document.querySelector('nav.navbar, .navbar.sticky-top');
+        const height = navbar ? Math.ceil(navbar.getBoundingClientRect().height) : 64;
+        document.documentElement.style.setProperty('--monev-navbar-height', height + 'px');
+    }
+
+    updateNavbarOffset();
+    window.addEventListener('resize', updateNavbarOffset);
+
+    document.querySelectorAll('.validate-activity-form').forEach(function (form) {
+        form.querySelectorAll('input[type="radio"][name^="checklist_"]').forEach(function (radio) {
+            radio.addEventListener('change', function () {
+                refreshChecklistMetricsFromForms();
+                scheduleAuditAutosave(form, true);
+            });
+        });
+
+        form.querySelectorAll('input[name^="checklist_notes_"], textarea[name="audit_notes"]').forEach(function (field) {
+            field.addEventListener('input', function () {
+                scheduleAuditAutosave(form, false);
+            });
+            field.addEventListener('change', function () {
+                scheduleAuditAutosave(form, true);
+            });
+        });
+    });
+
+    refreshChecklistMetricsFromForms();
+
+    window.addEventListener('pagehide', function () {
+        dirtyAuditForms.forEach(function (form) {
+            const state = getAuditAutosaveState(form);
+            window.clearTimeout(state.timer);
+            navigator.sendBeacon(form.getAttribute('action'), buildAuditDraftData(form));
+        });
+    });
+
+    // --- AJAX Validation Form Handler ---
+    document.querySelectorAll('.validate-activity-form').forEach(form => {
+        form.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const autosaveState = getAuditAutosaveState(this);
+            window.clearTimeout(autosaveState.timer);
+            autosaveState.pending = false;
+            dirtyAuditForms.delete(this);
+            const submitBtn = e.submitter || this.querySelector('button[type="submit"]');
+            const originalBtnHtml = submitBtn ? submitBtn.innerHTML : 'Simpan';
+
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Menyimpan...';
+            }
+
+            // Biarkan request draft yang sudah berjalan selesai lebih dulu agar
+            // respons lama tidak menimpa detail terbaru dari validasi akhir.
+            while (autosaveState.inFlight) {
+                await new Promise(function (resolve) { window.setTimeout(resolve, 50); });
+            }
+
+            const formData = new FormData(this);
+            if (e.submitter && e.submitter.name && e.submitter.value) {
+                formData.set(e.submitter.name, e.submitter.value);
+            }
+            if (!formData.get('status')) {
+                const hiddenStatus = this.querySelector('.activity-status-input');
+                if (hiddenStatus && hiddenStatus.value) {
+                    formData.set('status', hiddenStatus.value);
+                } else if (submitBtn && submitBtn.value) {
+                    formData.set('status', submitBtn.value);
+                }
+            }
+            const csrfToken = formData.get('csrf_token') || '{{ csrf_token() }}';
+
+            fetch(this.getAttribute('action'), {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': csrfToken,
+                    'Accept': 'application/json'
+                },
+                body: formData
+            })
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error('HTTP error ' + res.status);
+                }
+                return res.json();
+            })
+            .then(data => {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="bi bi-check2-circle me-1"></i> Tersimpan!';
+                    setTimeout(() => { submitBtn.innerHTML = originalBtnHtml; }, 2000);
+                }
+
+                if (data.success) {
+                    const actId = data.activity_id;
+                    const status = data.status;
+                    const item = document.getElementById('activityItem' + actId);
+                    if (item) {
+                        item.setAttribute('data-status', status);
+                        item.removeAttribute('data-original-status');
+                    }
+
+                    const badgeContainer = document.getElementById('statusBadgeContainer' + actId);
+                    if (badgeContainer) {
+                        if (status === 'valid') {
+                            badgeContainer.innerHTML = '<span class="badge bg-success" style="font-size: 0.7rem;"><i class="bi bi-check-circle me-1"></i>Sesuai</span>';
+                        } else if (status === 'invalid') {
+                            badgeContainer.innerHTML = '<span class="badge bg-danger" style="font-size: 0.7rem;"><i class="bi bi-x-circle me-1"></i>Revisi</span>';
+                        } else if (status === 'in_review') {
+                            badgeContainer.innerHTML = '<span class="badge bg-info text-dark" style="font-size: 0.7rem;"><i class="bi bi-gear-wide-connected me-1 spin-icon"></i>Proses Audit</span>';
+                        } else {
+                            badgeContainer.innerHTML = '<span class="badge bg-warning text-dark" style="font-size: 0.7rem;"><i class="bi bi-hourglass-split me-1"></i>Pending</span>';
+                        }
+                    }
+
+                    if (data.auditor_name) {
+                        const auditorBadge = document.getElementById('auditorBadge' + actId);
+                        if (auditorBadge) {
+                            auditorBadge.innerHTML = '<i class="bi bi-person-check me-1"></i> Auditor: <strong>' + data.auditor_name + '</strong>';
+                            auditorBadge.style.display = 'inline-block';
+                        }
+                    }
+
+                    refreshChecklistMetricsFromForms();
+
+                    let toast = document.getElementById('validationToast');
+                    if (!toast) {
+                        toast = document.createElement('div');
+                        toast.id = 'validationToast';
+                        toast.className = 'alert alert-success position-fixed top-0 end-0 m-3 shadow-lg border-2 z-3';
+                        toast.style.zIndex = '9999';
+                        document.body.appendChild(toast);
+                    }
+                    toast.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i> ' + (data.message || 'Hasil validasi berhasil disimpan.');
+                    toast.style.display = 'block';
+                    setTimeout(() => { toast.style.display = 'none'; }, 3500);
+                }
+            })
+            .catch(err => {
+                console.error('Validation save error:', err);
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalBtnHtml;
+                }
+                form.submit();
+            });
+        });
+    });
+
+    function toggleChecklistNote(id) {
+        const el = document.getElementById(id);
+        if (el) {
+            el.classList.toggle('d-none');
+            if (!el.classList.contains('d-none')) {
+                const input = el.querySelector('input');
+                if (input) input.focus();
+            }
+        }
+    }
+</script>
+{% endblock %}

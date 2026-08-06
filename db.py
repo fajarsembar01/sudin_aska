@@ -73,6 +73,17 @@ if DB_SSLMODE:
 # Koneksi ke PostgreSQL
 conn = psycopg2.connect(**conn_args)
 
+_JAKARTA_TZ = timezone(timedelta(hours=7), name="WIB")
+_GUESTBOOK_PARENT_UPDATE_RULE_START = datetime(2026, 7, 1, tzinfo=_JAKARTA_TZ)
+
+
+def _to_jakarta_datetime(value: Any) -> Optional[datetime]:
+    if not isinstance(value, datetime):
+        return None
+    if value.tzinfo is None:
+        return value.replace(tzinfo=_JAKARTA_TZ)
+    return value.astimezone(_JAKARTA_TZ)
+
 _CHAT_TOPIC_AVAILABLE: Optional[bool] = None
 _CHAT_CHANNEL_AVAILABLE: Optional[bool] = None
 MAX_TWITTER_LOG_ROWS = max(0, int(os.getenv("TWITTER_LOG_MAX_ROWS", "100") or 100))
@@ -1809,7 +1820,9 @@ def find_general_guest_by_phone(phone: str) -> Optional[Dict[str, Any]]:
                 is_parent,
                 student_class,
                 student_name,
-                is_verified
+                is_verified,
+                created_at,
+                updated_at
             FROM daftar_tamu_general_guests
             WHERE is_deleted = FALSE
               AND regexp_replace(COALESCE(phone, ''), '\\D', '', 'g') = %s
@@ -1819,7 +1832,39 @@ def find_general_guest_by_phone(phone: str) -> Optional[Dict[str, Any]]:
             (normalized,),
         )
         row = cur.fetchone()
-    return dict(row) if row else None
+    if not row:
+        return None
+
+    guest = dict(row)
+    created_at = guest.get("created_at")
+    updated_at = guest.get("updated_at")
+    if guest.get("is_parent"):
+        last_profile_update_at = (
+            _to_jakarta_datetime(updated_at)
+            or _to_jakarta_datetime(created_at)
+            or _GUESTBOOK_PARENT_UPDATE_RULE_START
+        )
+
+        boundary_this_year = datetime(last_profile_update_at.year, 7, 1, tzinfo=_JAKARTA_TZ)
+        if last_profile_update_at < boundary_this_year:
+            update_due_at = boundary_this_year
+        else:
+            update_due_at = datetime(last_profile_update_at.year + 1, 7, 1, tzinfo=_JAKARTA_TZ)
+
+        now_jakarta = datetime.now(_JAKARTA_TZ)
+        guest["last_profile_update_at"] = last_profile_update_at.isoformat(timespec="seconds")
+        guest["update_due_at"] = update_due_at.isoformat(timespec="seconds")
+        guest["update_required"] = now_jakarta >= update_due_at
+    else:
+        guest["last_profile_update_at"] = None
+        guest["update_due_at"] = None
+        guest["update_required"] = False
+
+    created_at_dt = _to_jakarta_datetime(created_at)
+    updated_at_dt = _to_jakarta_datetime(updated_at)
+    guest["created_at"] = created_at_dt.isoformat(timespec="seconds") if created_at_dt else created_at
+    guest["updated_at"] = updated_at_dt.isoformat(timespec="seconds") if updated_at_dt else updated_at
+    return guest
 
 
 def create_public_guestbook_transaction(

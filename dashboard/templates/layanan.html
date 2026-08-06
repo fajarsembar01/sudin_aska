@@ -1,0 +1,220 @@
+{% extends "portal/base_portal.html" %}
+{% set page_title = "Layanan Publik" %}
+
+{% block head_extra %}
+<style>
+    .layanan-card {
+        border: 1px solid var(--border-soft);
+        background: var(--bg-surface);
+        border-radius: 16px;
+        padding: 24px;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+    }
+
+    .layanan-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+        border-color: var(--text-primary);
+    }
+
+    .layanan-icon-wrapper {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        margin-bottom: 16px;
+        background: rgba(13, 110, 253, 0.1);
+        color: #0d6efd;
+    }
+
+    html[data-theme="dark"] .layanan-icon-wrapper {
+        background: rgba(79, 139, 255, 0.15);
+        color: #4f8bff;
+    }
+
+    .layanan-title {
+        font-size: 1.15rem;
+        font-weight: 700;
+        margin-bottom: 8px;
+        color: var(--text-main);
+    }
+
+    .layanan-desc {
+        font-size: 0.9rem;
+        color: var(--text-muted);
+        line-height: 1.5;
+        margin-bottom: 20px;
+        flex-grow: 1;
+    }
+
+    .file-attachment-card {
+        display: flex;
+        align-items: center;
+        padding: 10px 14px;
+        border-radius: 10px;
+        border: 1px solid var(--border-soft);
+        background: var(--bg-subtle);
+        text-decoration: none;
+        color: var(--text-main);
+        font-size: 0.85rem;
+        transition: background-color 0.15s, border-color 0.15s;
+        margin-bottom: 8px;
+    }
+
+    .file-attachment-card:hover {
+        background: rgba(13, 110, 253, 0.05);
+        border-color: #0d6efd;
+        color: #0d6efd;
+    }
+
+    .file-attachment-icon {
+        font-size: 1.2rem;
+        margin-right: 10px;
+        color: #0d6efd;
+    }
+
+    .search-container {
+        position: relative;
+        max-width: 400px;
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+    }
+
+    .search-input {
+        padding-left: 40px !important;
+        border-radius: 999px !important;
+        border: 1px solid var(--border-soft) !important;
+        background: var(--bg-surface) !important;
+        color: var(--text-main) !important;
+    }
+
+    .search-input:focus {
+        border-color: #0d6efd !important;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15) !important;
+    }
+</style>
+{% endblock %}
+
+{% block portal_content %}
+<div class="container-fluid px-0">
+    <!-- Back Button -->
+    <a href="{{ back_href }}" class="btn btn-outline-secondary rounded-pill px-3 mb-4 d-inline-flex align-items-center gap-2">
+        <i class="bi bi-arrow-left"></i> Kembali
+    </a>
+
+    <!-- Page Header -->
+    <section class="mb-4">
+        <div class="card portal-hero border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex align-items-start gap-3 flex-wrap">
+                    <span class="icon-badge feature-icon text-primary">
+                        <i class="bi bi-ui-checks-grid"></i>
+                    </span>
+                    <div>
+                        <h1 class="h3 fw-bold page-title mb-1">Layanan Publik</h1>
+                        {% if school %}
+                        <p class="page-subtitle mb-0">{{ school.name }} • NPSN {{ school.npsn }}</p>
+                        {% else %}
+                        <p class="page-subtitle mb-0">Daftar layanan publik dan dokumen panduan yang tersedia</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Search Bar -->
+    <div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div class="search-container w-100">
+            <i class="bi bi-search search-icon"></i>
+            <input type="text" id="layananSearch" class="form-control search-input" placeholder="Cari layanan atau dokumen panduan...">
+        </div>
+    </div>
+
+    <!-- Layanan Cards -->
+    <div class="row g-4 row-cols-1 row-cols-md-2 row-cols-lg-3" id="layananContainer">
+        {% if layanan %}
+            {% for item in layanan %}
+            <div class="col layanan-item" data-title="{{ item.cms_nama_layanan | lower }}" data-desc="{{ (item.cms_deskripsi or '') | lower }}">
+                <div class="layanan-card shadow-sm">
+                    <div class="layanan-icon-wrapper">
+                        <i class="bi {{ item.cms_icon or 'bi-star' }}"></i>
+                    </div>
+                    <h3 class="layanan-title">{{ item.cms_nama_layanan }}</h3>
+                    <p class="layanan-desc">{{ item.cms_deskripsi or 'Tidak ada deskripsi layanan.' }}</p>
+                    
+                    {% if item.cms_files %}
+                    <div class="layanan-files">
+                        <h6 class="fw-bold small text-uppercase text-muted mb-2">Dokumen Terkait</h6>
+                        {% for file in item.cms_files %}
+                        <a href="{{ url_for('portal.uploaded_file', filename=file.path.replace('uploads/portal/', '')) }}" class="file-attachment-card" target="_blank">
+                            <i class="bi bi-file-earmark-arrow-down file-attachment-icon"></i>
+                            <span class="text-truncate">{{ file.name }}</span>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12 w-100 text-center py-5 text-muted" id="noResults">
+                <i class="bi bi-inbox fs-2 d-block mb-3 text-secondary opacity-50"></i>
+                Belum ada data layanan publik yang tersedia.
+            </div>
+        {% endif %}
+        
+        <!-- Live search no results message -->
+        <div class="col-12 w-100 text-center py-5 text-muted d-none" id="searchNoResults">
+            <i class="bi bi-search fs-2 d-block mb-3 text-secondary opacity-50"></i>
+            Tidak ada layanan publik yang cocok dengan pencarian Anda.
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block portal_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('layananSearch');
+        const items = document.querySelectorAll('.layanan-item');
+        const searchNoResults = document.getElementById('searchNoResults');
+
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                const query = this.value.toLowerCase().trim();
+                let visibleCount = 0;
+
+                items.forEach(item => {
+                    const title = item.getAttribute('data-title') || '';
+                    const desc = item.getAttribute('data-desc') || '';
+                    if (title.includes(query) || desc.includes(query)) {
+                        item.classList.remove('d-none');
+                        visibleCount++;
+                    } else {
+                        item.classList.add('d-none');
+                    }
+                });
+
+                if (visibleCount === 0 && items.length > 0) {
+                    searchNoResults.classList.remove('d-none');
+                } else {
+                    searchNoResults.classList.add('d-none');
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

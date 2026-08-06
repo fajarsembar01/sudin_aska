@@ -1,0 +1,160 @@
+{% extends "monev_bos/base_monev_bos.html" %}
+
+{% block monev_bos_content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">Pilih Sumber Dana</h1>
+            <p class="text-muted mb-0">Laporan TW {{ active_period.tw }} Tahun {{ active_period.year }}</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('monev_bos.sekolah_report_form', period_id=active_period.id) }}" class="btn btn-outline-primary">
+                <i class="bi bi-pencil me-1"></i> Edit Penerimaan Dana
+            </a>
+            <a href="{{ url_for('monev_bos.sekolah_dashboard') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i> Kembali ke Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Status Banner -->
+    {% set status_colors = {
+        'draft': 'secondary',
+        'submitted': 'info',
+        'in_review': 'warning',
+        'completed_with_notes': 'warning text-dark',
+        'completed': 'success',
+        'needs_revision': 'danger'
+    } %}
+    {% set status_labels = {
+        'draft': 'Draft / Sedang Diisi',
+        'submitted': 'Sudah Dikirim',
+        'in_review': 'Sedang Diaudit',
+        'completed_with_notes': 'Selesai dengan Catatan',
+        'completed': 'Audit Selesai',
+        'needs_revision': 'Butuh Revisi'
+    } %}
+    <div class="alert alert-{{ status_colors[report.status] }} d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <strong>Status Laporan TW {{ active_period.tw }}:</strong> 
+            <span class="badge bg-{{ status_colors[report.status] }} ms-1 fs-6">{{ status_labels[report.status] }}</span>
+        </div>
+        <div class="text-sm">
+            Deadline: <strong>{{ active_period.end_date }}</strong>
+        </div>
+    </div>
+
+    <!-- Cards Pilihan Sumber Dana -->
+    <div class="row g-4 mb-4">
+        <!-- Card Dana BOS -->
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100 border-top border-4 border-success">
+                <div class="card-body p-4 d-flex flex-column">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-success p-2 fs-5"><i class="bi bi-cash-stack"></i></span>
+                            <div>
+                                <h4 class="mb-0 fw-bold text-success">Dana BOSP</h4>
+                                <small class="text-muted">Bantuan Operasional Satuan Pendidikan</small>
+                            </div>
+                        </div>
+                        <span class="badge bg-success-subtle text-success border border-success fw-bold px-3 py-2 fs-6">
+                            {{ bos_count }} Kegiatan
+                        </span>
+                    </div>
+
+                    <div class="bg-light p-3 rounded mb-4 mt-2">
+                        <div class="row text-center g-2">
+                            <div class="col-4">
+                                <small class="text-muted d-block">Penerimaan</small>
+                                <strong class="text-dark">Rp {{ "{:,.0f}".format(report.bosp_receipt_amount).replace(',', '.') }}</strong>
+                            </div>
+                            <div class="col-4">
+                                <small class="text-muted d-block">Pengeluaran</small>
+                                <strong class="text-success">Rp {{ "{:,.0f}".format(bos_realized).replace(',', '.') }}</strong>
+                            </div>
+                            <div class="col-4">
+                                <small class="text-muted d-block">Sisa Saldo</small>
+                                <strong class="{% if report.bosp_receipt_amount - bos_realized < 0 %}text-danger{% else %}text-secondary{% endif %}">
+                                    Rp {{ "{:,.0f}".format(report.bosp_receipt_amount - bos_realized).replace(',', '.') }}
+                                </strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-auto">
+                        <a href="{{ url_for('monev_bos.sekolah_activities', period_id=active_period.id, fund_source='BOS') }}" 
+                           class="btn btn-success btn-lg w-100 fw-bold">
+                            Kelola Kegiatan BOS <i class="bi bi-arrow-right ms-2"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card Dana BOP -->
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100 border-top border-4 border-info">
+                <div class="card-body p-4 d-flex flex-column">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-info p-2 fs-5"><i class="bi bi-wallet2"></i></span>
+                            <div>
+                                <h4 class="mb-0 fw-bold text-info">Dana BOP</h4>
+                                <small class="text-muted">Bantuan Operasional Penyelenggaraan</small>
+                            </div>
+                        </div>
+                        <span class="badge bg-info-subtle text-info border border-info fw-bold px-3 py-2 fs-6">
+                            {{ bop_count }} Kegiatan
+                        </span>
+                    </div>
+
+                    <div class="bg-light p-3 rounded mb-4 mt-2">
+                        <div class="row text-center g-2">
+                            <div class="col-4">
+                                <small class="text-muted d-block">Penerimaan</small>
+                                <strong class="text-dark">Rp {{ "{:,.0f}".format(report.bop_receipt_amount).replace(',', '.') }}</strong>
+                            </div>
+                            <div class="col-4">
+                                <small class="text-muted d-block">Pengeluaran</small>
+                                <strong class="text-info">Rp {{ "{:,.0f}".format(bop_realized).replace(',', '.') }}</strong>
+                            </div>
+                            <div class="col-4">
+                                <small class="text-muted d-block">Sisa Saldo</small>
+                                <strong class="{% if report.bop_receipt_amount - bop_realized < 0 %}text-danger{% else %}text-secondary{% endif %}">
+                                    Rp {{ "{:,.0f}".format(report.bop_receipt_amount - bop_realized).replace(',', '.') }}
+                                </strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-auto">
+                        <a href="{{ url_for('monev_bos.sekolah_activities', period_id=active_period.id, fund_source='BOP') }}" 
+                           class="btn btn-info btn-lg w-100 fw-bold text-white">
+                            Kelola Kegiatan BOP <i class="bi bi-arrow-right ms-2"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Submit Section -->
+    {% if report.status in ['draft', 'needs_revision'] and (bos_count > 0 or bop_count > 0) %}
+    <div class="card shadow-sm border-0 bg-light">
+        <div class="card-body p-4 text-center">
+            <h5 class="mb-2 fw-bold text-dark">Submit Laporan Seluruh Kegiatan</h5>
+            <p class="text-muted mb-3">Jika seluruh kegiatan BOS & BOP telah selesai dimasukkan, silakan submit laporan ini ke Tim Monev untuk diaudit.</p>
+            <form action="{{ url_for('monev_bos.sekolah_activities', period_id=active_period.id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin mensubmit laporan ini? Data yang disubmit tidak dapat diubah lagi sampai audit selesai.');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="action" value="submit_report">
+                <button type="submit" class="btn btn-success btn-lg px-5">
+                    <i class="bi bi-send-check me-2"></i> Submit Laporan ke Tim Monev
+                </button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

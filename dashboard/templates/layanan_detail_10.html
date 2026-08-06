@@ -1,0 +1,159 @@
+{% extends "portal/base_portal.html" %}
+{% set page_title = "Layanan 10 - Penerbitan Surat Mutasi Siswa" %}
+
+{% block head_extra %}
+<style>
+    .info-card {
+        border: 1px solid var(--border-soft);
+        background: var(--bg-surface);
+        border-radius: 16px;
+        padding: 32px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+    }
+    .info-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-main);
+        margin-bottom: 8px;
+    }
+    .info-subtitle {
+        font-size: 1.05rem;
+        color: var(--text-muted);
+        margin-bottom: 24px;
+    }
+    .section-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: var(--text-main);
+        margin-top: 28px;
+        margin-bottom: 16px;
+        border-bottom: 2px solid var(--border-soft);
+        padding-bottom: 8px;
+    }
+    .list-item {
+        margin-bottom: 12px;
+        line-height: 1.6;
+        color: var(--text-main);
+    }
+    html[data-theme="dark"] .alert-info-custom {
+        background-color: rgba(79, 139, 255, 0.15) !important;
+        color: #4f8bff !important;
+    }
+    .alert-info-custom {
+        background-color: rgba(13, 110, 253, 0.08);
+        color: #0d6efd;
+    }
+</style>
+{% endblock %}
+
+{% block portal_content %}
+<div class="container-fluid px-0">
+    <!-- Back Button -->
+    <a href="{{ back_href }}" class="btn btn-outline-secondary rounded-pill px-3 mb-4 d-inline-flex align-items-center gap-2">
+        <i class="bi bi-arrow-left"></i> Kembali ke Layanan
+    </a>
+
+    <!-- Info Detail Card -->
+    <div class="card info-card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <h1 class="info-title">Penerbitan Surat Mutasi Siswa</h1>
+            <p class="info-subtitle">Pengurusan proses pindah sekolah dalam lingkup wilayah DKI Jakarta.</p>
+            
+            <div class="alert alert-info-custom border-0 rounded-3 d-flex gap-3 align-items-start p-3" role="alert">
+                <i class="bi bi-info-circle-fill fs-5 mt-1"></i>
+                <div class="lh-base">
+                    Syarat penerbitan Surat Mutasi Siswa di lingkungan Dinas Pendidikan DKI Jakarta terbagi menjadi syarat mutasi keluar dan mutasi masuk, yang umumnya diproses langsung di sekolah dan divalidasi oleh Sudin Pendidikan wilayah.
+                </div>
+            </div>
+
+            <h2 class="section-title"><i class="bi bi-box-arrow-right me-2 text-danger"></i>Syarat Mutasi Keluar</h2>
+            <form action="{{ url_for('main.public_layanan_10_upload') }}" method="POST" enctype="multipart/form-data" class="mb-5">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="mutasi_type" value="keluar">
+                <div class="alert alert-light border rounded-3 p-3 mb-3" style="font-size: 0.9rem; color: var(--text-secondary);">
+                    <i class="bi bi-info-circle me-1"></i> Silakan unggah dokumen pendukung dalam format PDF atau Gambar jika ingin diajukan secara online.
+                </div>
+                <ol class="ps-3 mb-4">
+                    <li class="list-item">
+                        <div class="fw-semibold">Surat permohonan pindah dari orang tua/wali (bermeterai Rp10.000).</div>
+                        <div class="mt-2 col-md-8 col-lg-6">
+                            <input type="file" name="surat_permohonan" class="form-control form-control-sm">
+                        </div>
+                    </li>
+                    <li class="list-item">
+                        <div class="fw-semibold">Surat keterangan diterima di sekolah tujuan yang dituju.</div>
+                        <div class="mt-2 col-md-8 col-lg-6">
+                            <input type="file" name="surat_diterima" class="form-control form-control-sm">
+                        </div>
+                    </li>
+                    <li class="list-item">
+                        <div class="fw-semibold">Buku Rapor asli dan fotokopi.</div>
+                        <div class="mt-2 col-md-8 col-lg-6">
+                            <input type="file" name="buku_rapor" class="form-control form-control-sm">
+                        </div>
+                    </li>
+                </ol>
+                <button type="submit" class="btn btn-danger rounded-pill px-4 btn-sm">
+                    <i class="bi bi-cloud-arrow-up me-2"></i>Unggah Dokumen Mutasi Keluar
+                </button>
+            </form>
+
+            <h2 class="section-title"><i class="bi bi-box-arrow-in-left me-2 text-success"></i>Syarat Mutasi Masuk</h2>
+            <form action="{{ url_for('main.public_layanan_10_upload') }}" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="mutasi_type" value="masuk">
+                <div class="alert alert-light border rounded-3 p-3 mb-3" style="font-size: 0.9rem; color: var(--text-secondary);">
+                    <i class="bi bi-info-circle me-1"></i> Silakan unggah dokumen pendukung dalam format PDF atau Gambar jika ingin diajukan secara online.
+                </div>
+                <ol class="ps-3 mb-4">
+                    <li class="list-item">
+                        <div class="fw-semibold">Surat keterangan pindah dari sekolah asal.</div>
+                        <div class="mt-2 col-md-8 col-lg-6">
+                            <input type="file" name="surat_pindah" class="form-control form-control-sm">
+                        </div>
+                    </li>
+                    <li class="list-item">
+                        <div class="fw-semibold">Surat keterangan diterima dari kepala sekolah tujuan dan diketahui oleh pengawas.</div>
+                        <div class="mt-2 col-md-8 col-lg-6">
+                            <input type="file" name="surat_diterima_masuk" class="form-control form-control-sm">
+                        </div>
+                    </li>
+                    <li class="list-item">
+                        <div class="fw-semibold">Fotokopi ijazah jenjang sebelumnya yang dilegalisir.</div>
+                        <div class="mt-2 col-md-8 col-lg-6">
+                            <input type="file" name="ijazah" class="form-control form-control-sm">
+                        </div>
+                    </li>
+                    <li class="list-item">
+                        <div class="fw-semibold">Fotokopi Buku Rapor dan menunjukkan aslinya.</div>
+                        <div class="mt-2 col-md-8 col-lg-6">
+                            <input type="file" name="rapor_masuk" class="form-control form-control-sm">
+                        </div>
+                    </li>
+                    <li class="list-item">
+                        <div class="fw-semibold">Fotokopi sertifikat akreditasi sekolah asal dan izin operasional sekolah (bagi sekolah swasta).</div>
+                        <div class="mt-2 col-md-8 col-lg-6">
+                            <input type="file" name="akreditasi" class="form-control form-control-sm">
+                        </div>
+                    </li>
+                    <li class="list-item">
+                        <div class="fw-semibold">Cetak (print out) NISN dan fotokopi daftar 8355.</div>
+                        <div class="mt-2 col-md-8 col-lg-6">
+                            <input type="file" name="nisn" class="form-control form-control-sm">
+                        </div>
+                    </li>
+                    <li class="list-item">
+                        <div class="fw-semibold">Surat keterangan berkelakuan baik dari sekolah asal.</div>
+                        <div class="mt-2 col-md-8 col-lg-6">
+                            <input type="file" name="berkelakuan_baik" class="form-control form-control-sm">
+                        </div>
+                    </li>
+                </ol>
+                <button type="submit" class="btn btn-success rounded-pill px-4 btn-sm">
+                    <i class="bi bi-cloud-arrow-up me-2"></i>Unggah Dokumen Mutasi Masuk
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

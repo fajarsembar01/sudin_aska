@@ -1,0 +1,125 @@
+{% extends "monev_bos/base_monev_bos.html" %}
+
+{% block monev_bos_content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">Jadwal & Periode MONEV</h1>
+            <p class="text-muted mb-0">Atur deadline dan aktifkan triwulan yang sedang berjalan.</p>
+        </div>
+    </div>
+
+    <!-- Pilih Tahun & Generate -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="row align-items-end g-3">
+                <div class="col-auto">
+                    <label class="form-label fw-bold">Pilih Tahun</label>
+                    <div class="d-flex gap-2">
+                        {% for y in available_years %}
+                        <a href="{{ url_for('monev_bos.admin_periods', year=y) }}" 
+                           class="btn {% if y == selected_year %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+                            {{ y }}
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-auto ms-auto">
+                    <form action="{{ url_for('monev_bos.admin_periods') }}" method="POST" class="d-flex gap-2 align-items-end">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="action" value="generate_year">
+                        <div>
+                            <label class="form-label text-sm">Tambah Tahun Baru</label>
+                            <input type="number" class="form-control form-control-sm" name="year" min="2020" max="2050" value="{{ current_year + 1 }}" style="width: 100px;">
+                        </div>
+                        <button type="submit" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-plus-lg me-1"></i> Generate
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabel TW 1-4 -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-white py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Triwulan Tahun {{ selected_year }}</h6>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Triwulan</th>
+                            <th>Rentang Waktu</th>
+                            <th>Deadline Pelaporan</th>
+                            <th>Status</th>
+                            <th>Admin Input</th>
+                            <th class="text-end pe-4">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% set tw_labels = {1: 'TW I (Jan - Mar)', 2: 'TW II (Apr - Jun)', 3: 'TW III (Jul - Sep)', 4: 'TW IV (Okt - Des)'} %}
+                        {% for period in periods %}
+                        <tr class="{% if period.is_active %}table-success{% endif %}">
+                            <td class="ps-4 fw-bold fs-5">{{ tw_labels[period.tw] }}</td>
+                            <td>{{ period.start_date }} s/d {{ period.end_date }}</td>
+                            <td>
+                                <form action="{{ url_for('monev_bos.admin_periods') }}" method="POST" class="d-inline-flex align-items-center gap-2">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <input type="hidden" name="action" value="set_deadline">
+                                    <input type="hidden" name="period_id" value="{{ period.id }}">
+                                    <input type="date" class="form-control form-control-sm" name="deadline" 
+                                           value="{{ period.end_date }}" style="width: 160px;">
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary" title="Simpan Deadline">
+                                        <i class="bi bi-check-lg"></i>
+                                    </button>
+                                </form>
+                            </td>
+                            <td>
+                                {% if period.is_active %}
+                                <span class="badge bg-success fs-6"><i class="bi bi-broadcast"></i> AKTIF</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Nonaktif</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ period.input_admin_name or 'Tidak ada' }}</td>
+                            <td class="text-end pe-4">
+                                {% if period.is_active %}
+                                <form action="{{ url_for('monev_bos.admin_periods') }}" method="POST" class="d-inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <input type="hidden" name="action" value="deactivate">
+                                    <input type="hidden" name="period_id" value="{{ period.id }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-warning" title="Nonaktifkan">
+                                        <i class="bi bi-pause-circle me-1"></i> Nonaktifkan
+                                    </button>
+                                </form>
+                                {% else %}
+                                <form action="{{ url_for('monev_bos.admin_periods') }}" method="POST" class="d-inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <input type="hidden" name="action" value="set_active">
+                                    <input type="hidden" name="period_id" value="{{ period.id }}">
+                                    <button type="submit" class="btn btn-sm btn-success" title="Aktifkan periode ini">
+                                        <i class="bi bi-play-circle me-1"></i> Aktifkan
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-muted">
+                                Belum ada data periode untuk tahun ini. Klik <strong>Generate</strong> di atas untuk menyiapkan TW 1-4.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {% include "monev_bos/admin/_master_activity_history.html" %}
+</div>
+{% endblock %}
