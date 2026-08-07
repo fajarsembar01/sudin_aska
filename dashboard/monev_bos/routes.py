@@ -1969,6 +1969,14 @@ def staff_audit_activity(activity_id):
                 flash("Pilih status validasi yang valid (Sesuai atau Perlu Revisi).", "warning")
                 return redirect(url_for("monev_bos.staff_audit_report", report_id=report_id))
 
+            if status == "valid" and act.get("vendor_status") == "pending":
+                vendor_name_disp = act.get("vendor_name") or "terkait"
+                msg = f"Kegiatan tidak dapat divalidasi (Sesuai) karena vendor '{vendor_name_disp}' belum divalidasi. Silakan verifikasi vendor terlebih dahulu."
+                if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.headers.get("Accept") == "application/json":
+                    return jsonify({"success": False, "message": msg}), 400
+                flash(msg, "warning")
+                return redirect(url_for("monev_bos.staff_audit_report", report_id=report_id))
+
             notes = request.form.get("audit_notes") or ""
             queries.update_activity_audit(activity_id, status, notes)
             
@@ -2087,6 +2095,9 @@ def sekolah_vendors():
             owner_name = (request.form.get("owner_name") or "").strip()
             bank_name = (request.form.get("bank_name") or "").strip()
             bank_account = (request.form.get("bank_account") or "").strip()
+            vendor_type = request.form.get("vendor_type", "vendor")
+            if vendor_type not in ("vendor", "narsum"):
+                vendor_type = "vendor"
 
             if not name:
                 flash("Nama toko / vendor wajib diisi.", "warning")
@@ -2099,12 +2110,14 @@ def sekolah_vendors():
                     "owner_name": owner_name,
                     "bank_name": bank_name,
                     "bank_account": bank_account,
+                    "vendor_type": vendor_type,
                 }
                 new_id = queries.create_vendor(school_id, data)
+                type_label = "Narasumber/Instruktur" if vendor_type == "narsum" else "Vendor"
                 if new_id:
-                    flash(f"Vendor '{name}' berhasil didaftarkan dan menunggu verifikasi admin/staff.", "success")
+                    flash(f"{type_label} '{name}' berhasil didaftarkan dan menunggu verifikasi admin/staff.", "success")
                 else:
-                    flash("Gagal mendaftarkan vendor.", "danger")
+                    flash(f"Gagal mendaftarkan {type_label.lower()}.", "danger")
             return redirect(url_for("monev_bos.sekolah_vendors"))
 
         elif action == "delete_vendor":

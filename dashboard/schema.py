@@ -2488,6 +2488,7 @@ def ensure_monev_bos_schema() -> None:
         _MONEV_BOS_VENDORS_INDEX_SQL,
         "ALTER TABLE monev_bos_vendors DROP CONSTRAINT IF EXISTS monev_bos_vendors_school_id_fkey;",
         "ALTER TABLE monev_bos_vendors ADD CONSTRAINT monev_bos_vendors_school_id_fkey FOREIGN KEY (school_id) REFERENCES dashboard_users(id) ON DELETE CASCADE;",
+        "ALTER TABLE monev_bos_vendors ADD COLUMN IF NOT EXISTS vendor_type VARCHAR(20) NOT NULL DEFAULT 'vendor' CHECK (vendor_type IN ('vendor', 'narsum'));",
         _MONEV_BOS_PERIODS_SQL,
         _MONEV_BOS_PERIODS_INDEX_SQL,
         _MONEV_BOS_CHECKLISTS_SQL,

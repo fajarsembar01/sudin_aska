@@ -96,10 +96,10 @@
                         <tr>
                             <th class="ps-4">No</th>
                             <th>Sekolah Pemohon</th>
-                            <th>Nama Toko / Vendor</th>
-                            <th>NPWP & Kontak</th>
-                            <th>Penanggung Jawab</th>
-                            <th>Bank & Rekening</th>
+                            <th>Tipe</th>
+                            <th>Nama Toko / Vendor / Narsum</th>
+                            <th>NPWP / No. KTP &amp; Kontak</th>
+                            <th>PJ / Narsum &amp; Bank</th>
                             <th>Status</th>
                             <th class="pe-4 text-end">Aksi Verifikasi</th>
                         </tr>
@@ -114,9 +114,16 @@
                                     <div class="small text-muted">NPSN: {{ v.npsn or '-' }}</div>
                                 </td>
                                 <td>
+                                    {% if v.vendor_type == 'narsum' %}
+                                    <span class="badge bg-info-subtle text-info border border-info-subtle"><i class="bi bi-person-video3 me-1"></i>Narsum</span>
+                                    {% else %}
+                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle"><i class="bi bi-shop me-1"></i>Vendor</span>
+                                    {% endif %}
+                                </td>
+                                <td>
                                     <div class="fw-bold text-primary">{{ v.name }}</div>
                                     {% if v.address %}
-                                    <div class="small text-muted text-truncate" style="max-width: 220px;" title="{{ v.address }}">
+                                    <div class="small text-muted text-truncate" style="max-width: 200px;" title="{{ v.address }}">
                                         <i class="bi bi-geo-alt me-1"></i>{{ v.address }}
                                     </div>
                                     {% endif %}
@@ -128,7 +135,11 @@
                                     {% endif %}
                                 </td>
                                 <td>
+                                    {% if v.vendor_type == 'narsum' %}
+                                    <span class="small d-block text-info fw-semibold">{{ v.owner_name or '-' }}</span>
+                                    {% else %}
                                     <span class="small d-block">{{ v.owner_name or '-' }}</span>
+                                    {% endif %}
                                     {% if v.bank_name or v.bank_account %}
                                     <span class="small text-muted">{{ v.bank_name }} ({{ v.bank_account }})</span>
                                     {% endif %}

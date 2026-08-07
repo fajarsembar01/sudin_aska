@@ -685,18 +685,33 @@
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <div class="d-flex justify-content-between align-items-center mb-1">
-                            <label class="form-label fw-bold mb-0">Nama Toko/Vendor</label>
+                            <label class="form-label fw-bold mb-0">Vendor / Narasumber</label>
                             <a href="{{ url_for('monev_bos.sekolah_vendors') }}" target="_blank" class="text-decoration-none small text-primary fw-semibold">
-                                <i class="bi bi-plus-circle me-1"></i>Daftarkan Vendor Baru
+                                <i class="bi bi-plus-circle me-1"></i>Daftarkan Baru
                             </a>
                         </div>
                         <select class="form-select" name="vendor_id">
-                            <option value="">-- Pilih Vendor Terverifikasi --</option>
-                            {% for v in verified_vendors %}
+                            <option value="">-- Pilih Vendor / Narsum --</option>
+                            {% set has_vendor = verified_vendors|selectattr('vendor_type', 'equalto', 'vendor')|list|length > 0 %}
+                            {% set has_narsum = verified_vendors|selectattr('vendor_type', 'equalto', 'narsum')|list|length > 0 %}
+                            {% if has_vendor %}
+                            <optgroup label="🏪 Vendor / Toko">
+                            {% for v in verified_vendors if v.vendor_type != 'narsum' %}
                                 <option value="{{ v.id }}" {% if act.vendor_id == v.id or (not act.vendor_id and act.vendor_name == v.name) %}selected{% endif %}>
-                                    {{ v.name }}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}
+                                    {{ v.name }}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'pending' %} ⚠ Belum Divalidasi{% endif %}
                                 </option>
                             {% endfor %}
+                            </optgroup>
+                            {% endif %}
+                            {% if has_narsum %}
+                            <optgroup label="🎤 Narasumber / Instruktur">
+                            {% for v in verified_vendors if v.vendor_type == 'narsum' %}
+                                <option value="{{ v.id }}" {% if act.vendor_id == v.id or (not act.vendor_id and act.vendor_name == v.name) %}selected{% endif %}>
+                                    {{ v.name }}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'pending' %} ⚠ Belum Divalidasi{% endif %}
+                                </option>
+                            {% endfor %}
+                            </optgroup>
+                            {% endif %}
                             {% if act.vendor_name and not act.vendor_id %}
                                 <option value="" selected>{{ act.vendor_name }}</option>
                             {% endif %}
@@ -901,16 +916,29 @@
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <div class="d-flex justify-content-between align-items-center mb-1">
-                            <label class="form-label fw-bold mb-0">Nama Toko/Vendor</label>
+                            <label class="form-label fw-bold mb-0">Vendor / Narasumber</label>
                             <a href="{{ url_for('monev_bos.sekolah_vendors') }}" target="_blank" class="text-decoration-none small text-primary fw-semibold">
-                                <i class="bi bi-plus-circle me-1"></i>Daftarkan Vendor Baru
+                                <i class="bi bi-plus-circle me-1"></i>Daftarkan Baru
                             </a>
                         </div>
                         <select class="form-select" name="vendor_id">
-                            <option value="">-- Pilih Vendor Terverifikasi --</option>
-                            {% for v in verified_vendors %}
-                                <option value="{{ v.id }}">{{ v.name }}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}</option>
+                            <option value="">-- Pilih Vendor / Narsum --</option>
+                            {% set has_vendor_add = verified_vendors|selectattr('vendor_type', 'equalto', 'vendor')|list|length > 0 %}
+                            {% set has_narsum_add = verified_vendors|selectattr('vendor_type', 'equalto', 'narsum')|list|length > 0 %}
+                            {% if has_vendor_add %}
+                            <optgroup label="🏪 Vendor / Toko">
+                            {% for v in verified_vendors if v.vendor_type != 'narsum' %}
+                                <option value="{{ v.id }}">{{ v.name }}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'pending' %} ⚠ Belum Divalidasi{% endif %}</option>
                             {% endfor %}
+                            </optgroup>
+                            {% endif %}
+                            {% if has_narsum_add %}
+                            <optgroup label="🎤 Narasumber / Instruktur">
+                            {% for v in verified_vendors if v.vendor_type == 'narsum' %}
+                                <option value="{{ v.id }}">{{ v.name }}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'pending' %} ⚠ Belum Divalidasi{% endif %}</option>
+                            {% endfor %}
+                            </optgroup>
+                            {% endif %}
                         </select>
                     </div>
                     <div class="col-md-6 mb-3">

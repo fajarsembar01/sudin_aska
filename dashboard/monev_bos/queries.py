@@ -429,10 +429,20 @@ def list_activities(report_id: int) -> List[Dict[str, Any]]:
             SELECT a.*, 
                    ma.name AS activity_type_name,
                    et.name AS expense_type_name,
+                   v.status AS vendor_status,
                    u.full_name AS auditor_name
             FROM monev_bos_activities a
             LEFT JOIN monev_bos_master_activities ma ON a.activity_type_id = ma.id
             LEFT JOIN monev_bos_expense_types et ON a.expense_type_id = et.id
+            LEFT JOIN monev_bos_reports r ON a.report_id = r.id
+            LEFT JOIN LATERAL (
+                SELECT v.id, v.status
+                FROM monev_bos_vendors v
+                WHERE (a.vendor_id IS NOT NULL AND v.id = a.vendor_id)
+                   OR (a.vendor_id IS NULL AND a.vendor_name IS NOT NULL AND a.vendor_name != '' AND v.school_id = r.school_id AND LOWER(v.name) = LOWER(a.vendor_name))
+                ORDER BY v.id DESC
+                LIMIT 1
+            ) v ON TRUE
             LEFT JOIN LATERAL (
                 SELECT l.user_id, du.full_name
                 FROM monev_bos_audit_logs l
@@ -485,7 +495,24 @@ def update_activity(activity_id: int, data: Dict[str, Any]) -> None:
 
 def get_activity_by_id(activity_id: int) -> Optional[Dict[str, Any]]:
     with get_cursor() as cur:
-        cur.execute("SELECT * FROM monev_bos_activities WHERE id = %s", (activity_id,))
+        cur.execute(
+            """
+            SELECT a.*, 
+                   v.status AS vendor_status
+            FROM monev_bos_activities a
+            LEFT JOIN monev_bos_reports r ON a.report_id = r.id
+            LEFT JOIN LATERAL (
+                SELECT v.id, v.status
+                FROM monev_bos_vendors v
+                WHERE (a.vendor_id IS NOT NULL AND v.id = a.vendor_id)
+                   OR (a.vendor_id IS NULL AND a.vendor_name IS NOT NULL AND a.vendor_name != '' AND v.school_id = r.school_id AND LOWER(v.name) = LOWER(a.vendor_name))
+                ORDER BY v.id DESC
+                LIMIT 1
+            ) v ON TRUE
+            WHERE a.id = %s
+            """,
+            (activity_id,)
+        )
         row = cur.fetchone()
         return dict(row) if row else None
 
@@ -1318,7 +1345,7 @@ def list_school_vendors(school_id: int, status_filter: str = None, search_query:
         query += " AND (v.name ILIKE %s OR v.npwp ILIKE %s OR v.phone ILIKE %s OR v.owner_name ILIKE %s OR v.bank_name ILIKE %s OR v.address ILIKE %s)"
         pattern = f"%{search_query.strip()}%"
         params.extend([pattern] * 6)
-    query += " ORDER BY v.created_at DESC"
+    query += " ORDER BY v.vendor_type, v.created_at DESC"
 
     with get_cursor() as cur:
         cur.execute(query, tuple(params))
@@ -1354,14 +1381,14 @@ def list_all_vendors_for_admin(status_filter: str = None, search_query: str = No
 
 
 def get_verified_vendors_for_school(school_id: int) -> List[Dict[str, Any]]:
-    """Get all verified vendors for a school dropdown."""
+    """Get all verified and pending vendors for a school dropdown."""
     with get_cursor() as cur:
         cur.execute(
             """
-            SELECT id, name, npwp, phone, address, owner_name, bank_name, bank_account
+            SELECT id, name, npwp, phone, address, owner_name, bank_name, bank_account, status, vendor_type
             FROM monev_bos_vendors
-            WHERE school_id = %s AND status = 'verified'
-            ORDER BY name ASC
+            WHERE school_id = %s AND status IN ('verified', 'pending')
+            ORDER BY vendor_type, name ASC
             """,
             (school_id,)
         )
@@ -1393,8 +1420,8 @@ def create_vendor(school_id: int, data: Dict[str, Any]) -> int:
         cur.execute(
             """
             INSERT INTO monev_bos_vendors 
-            (school_id, name, npwp, phone, address, owner_name, bank_name, bank_account, status)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'pending')
+            (school_id, name, npwp, phone, address, owner_name, bank_name, bank_account, vendor_type, status)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'pending')
             RETURNING id
             """,
             (
@@ -1406,6 +1433,7 @@ def create_vendor(school_id: int, data: Dict[str, Any]) -> int:
                 data.get("owner_name", "").strip() or None,
                 data.get("bank_name", "").strip() or None,
                 data.get("bank_account", "").strip() or None,
+                data.get("vendor_type", "vendor") if data.get("vendor_type") in ("vendor", "narsum") else "vendor",
             )
         )
         return cur.fetchone()[0]
