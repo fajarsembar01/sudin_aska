@@ -690,7 +690,7 @@
                                 <i class="bi bi-plus-circle me-1"></i>Daftarkan Baru
                             </a>
                         </div>
-                        <select class="form-select" name="vendor_id">
+                        <select class="form-select vendor-ts-select" name="vendor_id" id="vendorSelectEdit_{{ act.id }}">
                             <option value="">-- Pilih Vendor / Narsum --</option>
                             {% set has_vendor = verified_vendors|selectattr('vendor_type', 'equalto', 'vendor')|list|length > 0 %}
                             {% set has_narsum = verified_vendors|selectattr('vendor_type', 'equalto', 'narsum')|list|length > 0 %}
@@ -921,7 +921,7 @@
                                 <i class="bi bi-plus-circle me-1"></i>Daftarkan Baru
                             </a>
                         </div>
-                        <select class="form-select" name="vendor_id">
+                        <select class="form-select vendor-ts-select" name="vendor_id" id="vendorSelectAdd">
                             <option value="">-- Pilih Vendor / Narsum --</option>
                             {% set has_vendor_add = verified_vendors|selectattr('vendor_type', 'equalto', 'vendor')|list|length > 0 %}
                             {% set has_narsum_add = verified_vendors|selectattr('vendor_type', 'equalto', 'narsum')|list|length > 0 %}
@@ -1691,4 +1691,125 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 }
 </style>
+
+<!-- Tom Select: Searchable vendor dropdown -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css">
+<style>
+/* Tom Select overrides agar cocok dengan tema */
+.ts-wrapper.form-select {
+    padding: 0;
+    height: auto;
+}
+.ts-control {
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0.375rem 0.75rem !important;
+    min-height: 38px;
+    font-size: 0.875rem;
+}
+.ts-wrapper.single.input-active .ts-control,
+.ts-wrapper.single .ts-control {
+    background: transparent !important;
+}
+.ts-dropdown {
+    z-index: 9999 !important;
+    font-size: 0.875rem;
+}
+.ts-dropdown .option[data-selectable] {
+    padding: 6px 12px;
+}
+.ts-dropdown .optgroup-header {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 8px 12px 4px;
+    background: #f8f9fa;
+}
+.ts-dropdown .option:hover,
+.ts-dropdown .option.active {
+    background-color: #0d6efd1a !important;
+    color: inherit;
+}
+.ts-dropdown .option.selected {
+    background-color: #0d6efd !important;
+    color: #fff !important;
+}
+/* Warning badge dalam opsi */
+.ts-dropdown .option .badge-pending {
+    font-size: 0.7em;
+    color: #fd7e14;
+    font-weight: 600;
+}
+@media print {
+    .ts-wrapper { display: none !important; }
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+<script>
+(function () {
+    'use strict';
+
+    // Simpan semua instance TomSelect agar bisa di-destroy/re-create
+    const tsInstances = {};
+
+    function initTomSelect(el) {
+        if (!el) return;
+        const key = el.id || el.name + '_' + Math.random();
+        // Destroy dulu kalau sudah ada instance
+        if (tsInstances[key]) {
+            try { tsInstances[key].destroy(); } catch(e) {}
+        }
+        tsInstances[key] = new TomSelect(el, {
+            allowEmptyOption: true,
+            placeholder: '-- Cari / Pilih Vendor / Narsum --',
+            searchField: ['text'],
+            maxOptions: 200,
+            render: {
+                option: function(data, escape) {
+                    const isPending = data.text && data.text.includes('⚠');
+                    return `<div class="option">${escape(data.text)}${isPending ? '' : ''}</div>`;
+                },
+                item: function(data, escape) {
+                    return `<div>${escape(data.text)}</div>`;
+                },
+                no_results: function(data, escape) {
+                    return `<div class="no-results text-muted small px-3 py-2">Tidak ada vendor/narsum ditemukan untuk "<em>${escape(data.input)}</em>"</div>`;
+                }
+            }
+        });
+        el._tsKey = key;
+    }
+
+    function initAllVendorSelects() {
+        document.querySelectorAll('select.vendor-ts-select').forEach(function(el) {
+            // Cek apakah sudah di-init (tom-select menyembunyikan elemen asli)
+            if (!el.tomselect) {
+                initTomSelect(el);
+            }
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        initAllVendorSelects();
+
+        // Re-init saat modal edit kegiatan dibuka (karena bisa banyak modal)
+        document.querySelectorAll('.modal').forEach(function(modal) {
+            modal.addEventListener('shown.bs.modal', function() {
+                const selects = modal.querySelectorAll('select.vendor-ts-select');
+                selects.forEach(function(el) {
+                    if (!el.tomselect) {
+                        initTomSelect(el);
+                    } else {
+                        // Sync ulang value jika perlu
+                        el.tomselect.sync();
+                    }
+                });
+            });
+        });
+    });
+})();
+</script>
 {% endblock %}
