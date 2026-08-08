@@ -9,6 +9,32 @@ import uuid
 MAX_ACTIVITY_FIELD_PHOTOS = 3
 
 
+def _resolve_school_report_vendor(vendor_id_raw):
+    """Resolve a globally selectable vendor while its verification is pending."""
+    if not vendor_id_raw:
+        return None, None, None
+    if not str(vendor_id_raw).isdigit():
+        return None, None, "Vendor / narasumber yang dipilih tidak valid."
+
+    vendor_id = int(vendor_id_raw)
+    vendor = queries.get_vendor_by_id(vendor_id)
+    if not vendor:
+        return None, None, "Vendor / narasumber tidak ditemukan."
+    if vendor.get("status") not in {"pending", "verified"}:
+        return None, None, "Vendor / narasumber yang ditolak tidak dapat dimasukkan ke laporan."
+
+    return vendor_id, vendor.get("name"), None
+
+
+def _activity_vendor_is_unverified(activity):
+    """Return True when an attached vendor exists but is not verified yet."""
+    has_vendor = bool(
+        activity.get("vendor_id")
+        or (activity.get("vendor_name") or "").strip()
+    )
+    return has_vendor and activity.get("vendor_status") != "verified"
+
+
 def _requested_activity_photos():
     files = [
         file
@@ -1081,13 +1107,12 @@ def sekolah_activities():
 
         if action == "add_activity":
             target_fund_source = request.form.get("fund_source", fund_source)
-            vendor_id_raw = request.form.get("vendor_id")
-            vendor_id = int(vendor_id_raw) if vendor_id_raw and vendor_id_raw.isdigit() else None
-            vendor_name = request.form.get("vendor_name")
-            if vendor_id and not vendor_name:
-                v_obj = queries.get_vendor_by_id(vendor_id)
-                if v_obj:
-                    vendor_name = v_obj["name"]
+            vendor_id, vendor_name, vendor_error = _resolve_school_report_vendor(
+                request.form.get("vendor_id")
+            )
+            if vendor_error:
+                flash(vendor_error, "warning")
+                return redirect(url_for("monev_bos.sekolah_activities", period_id=period_id, fund_source=fund_source))
 
             expense_type_id_raw = request.form.get("expense_type_id")
             expense_type_id = int(expense_type_id_raw) if expense_type_id_raw and expense_type_id_raw.isdigit() else None
@@ -1241,13 +1266,12 @@ def sekolah_activities():
             if was_invalid:
                 queries.save_activity_history(activity_id, user["id"], reason="Perbaikan data oleh sekolah saat status Revisi")
 
-            vendor_id_raw = request.form.get("vendor_id")
-            vendor_id = int(vendor_id_raw) if vendor_id_raw and vendor_id_raw.isdigit() else None
-            vendor_name = request.form.get("vendor_name")
-            if vendor_id and not vendor_name:
-                v_obj = queries.get_vendor_by_id(vendor_id)
-                if v_obj:
-                    vendor_name = v_obj["name"]
+            vendor_id, vendor_name, vendor_error = _resolve_school_report_vendor(
+                request.form.get("vendor_id")
+            )
+            if vendor_error:
+                flash(vendor_error, "warning")
+                return redirect(url_for("monev_bos.sekolah_activities", period_id=period_id, fund_source=fund_source))
 
             expense_type_id_raw = request.form.get("expense_type_id")
             expense_type_id = int(expense_type_id_raw) if expense_type_id_raw and expense_type_id_raw.isdigit() else None
@@ -1413,7 +1437,7 @@ def sekolah_activities():
     except Exception:
         current_app.logger.exception("Failed to load Monev BOS account codes")
         account_codes = []
-    verified_vendors = queries.get_verified_vendors_for_school(report["school_id"])
+    verified_vendors = queries.get_report_selectable_vendors()
 
     try:
         auditor_team = queries.get_assigned_auditors_for_school(report["school_id"], active_period["id"])
@@ -1969,9 +1993,9 @@ def staff_audit_activity(activity_id):
                 flash("Pilih status validasi yang valid (Sesuai atau Perlu Revisi).", "warning")
                 return redirect(url_for("monev_bos.staff_audit_report", report_id=report_id))
 
-            if status == "valid" and act.get("vendor_status") == "pending":
+            if status == "valid" and _activity_vendor_is_unverified(act):
                 vendor_name_disp = act.get("vendor_name") or "terkait"
-                msg = f"Kegiatan tidak dapat divalidasi (Sesuai) karena vendor '{vendor_name_disp}' belum divalidasi. Silakan verifikasi vendor terlebih dahulu."
+                msg = f"Kegiatan tidak dapat divalidasi (Sesuai) karena vendor / narasumber '{vendor_name_disp}' belum terverifikasi. Silakan verifikasi terlebih dahulu."
                 if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.headers.get("Accept") == "application/json":
                     return jsonify({"success": False, "message": msg}), 400
                 flash(msg, "warning")

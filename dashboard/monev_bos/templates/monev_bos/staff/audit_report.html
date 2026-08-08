@@ -363,7 +363,7 @@
                                         {% else %}
                                         <span class="badge bg-danger-subtle text-danger border text-xs"><i class="bi bi-camera me-1"></i>Tanpa foto sekolah</span>
                                         {% endif %}
-                                        {% if act.vendor_status == 'pending' %}
+                                        {% if (act.vendor_id or act.vendor_name) and act.vendor_status != 'verified' %}
                                         <span class="badge bg-warning-subtle text-warning-emphasis border border-warning text-xs" title="Vendor belum divalidasi"><i class="bi bi-shop me-1"></i>Vendor Belum Divalidasi</span>
                                         {% endif %}
                                         {% if act.invalid_school_photos %}
@@ -401,7 +401,7 @@
                                      <div class="col-6 col-sm-3">
                                          <small class="text-body-secondary d-block" style="font-size: 0.72rem;">Vendor / Toko:</small>
                                          <span class="text-body">{{ act.vendor_name or '-' }}</span>
-                                         {% if act.vendor_status == 'pending' %}
+                                         {% if (act.vendor_id or act.vendor_name) and act.vendor_status != 'verified' %}
                                              <span class="badge bg-warning text-dark text-xs ms-1">Belum Divalidasi</span>
                                          {% endif %}
                                      </div>
@@ -568,13 +568,13 @@
                                         </div>
                                         {% endif %}
                                         
-                                        {% if act.vendor_status == 'pending' %}
+                                        {% if (act.vendor_id or act.vendor_name) and act.vendor_status != 'verified' %}
                                         <div class="alert alert-warning border-warning d-flex align-items-center justify-content-between p-2.5 mb-3 rounded-3 text-xs shadow-2xs">
                                             <div class="d-flex align-items-center gap-2">
                                                 <i class="bi bi-exclamation-triangle-fill fs-6 text-warning flex-shrink-0"></i>
                                                 <div>
-                                                    <strong class="d-block text-dark">Vendor Belum Divalidasi</strong>
-                                                    <span class="text-secondary">Vendor <strong>{{ act.vendor_name or 'terkait' }}</strong> belum divalidasi oleh Staff/Admin. Kegiatan ini tidak dapat disetujui (Sesuai) sebelum vendor diverifikasi.</span>
+                                                    <strong class="d-block text-dark">Vendor / Narasumber Belum Terverifikasi</strong>
+                                                    <span class="text-secondary"><strong>{{ act.vendor_name or 'Entri terkait' }}</strong> belum diverifikasi oleh Staff/Admin. Kegiatan ini tidak dapat disetujui (Sesuai) sebelum verifikasi selesai.</span>
                                                 </div>
                                             </div>
                                             <a href="{{ url_for('monev_bos.admin_vendors', q=act.vendor_name or '', status='pending') }}" target="_blank" class="btn btn-sm btn-warning text-dark fw-bold text-nowrap ms-2 shadow-2xs">
@@ -594,7 +594,7 @@
                                             <button type="submit" name="status" value="invalid" onclick="this.form.querySelector('.activity-status-input').value='invalid';" class="btn btn-sm btn-danger py-2 px-2.5 fw-bold flex-fill shadow-2xs">
                                                 <i class="bi bi-x-circle-fill me-1"></i> Perlu Revisi
                                             </button>
-                                            {% if act.vendor_status == 'pending' %}
+                                            {% if (act.vendor_id or act.vendor_name) and act.vendor_status != 'verified' %}
                                             <button type="button" class="btn btn-sm btn-secondary py-2 px-2.5 fw-bold flex-fill shadow-2xs opacity-75" disabled data-bs-toggle="tooltip" title="Vendor belum divalidasi. Verifikasi vendor terlebih dahulu.">
                                                 <i class="bi bi-lock-fill me-1"></i> Sesuai (Valid)
                                             </button>

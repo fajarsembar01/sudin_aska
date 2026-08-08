@@ -1380,17 +1380,20 @@ def list_all_vendors_for_admin(status_filter: str = None, search_query: str = No
         return [dict(row) for row in cur.fetchall()]
 
 
-def get_verified_vendors_for_school(school_id: int) -> List[Dict[str, Any]]:
-    """Get all verified and pending vendors for a school dropdown."""
+def get_report_selectable_vendors() -> List[Dict[str, Any]]:
+    """Get pending and verified vendors that every school may use in reports."""
     with get_cursor() as cur:
         cur.execute(
             """
-            SELECT id, name, npwp, phone, address, owner_name, bank_name, bank_account, status, vendor_type
-            FROM monev_bos_vendors
-            WHERE school_id = %s AND status IN ('verified', 'pending')
-            ORDER BY vendor_type, name ASC
+            SELECT v.id, v.school_id, v.name, v.npwp, v.phone, v.address,
+                   v.owner_name, v.bank_name, v.bank_account, v.status, v.vendor_type,
+                   COALESCE(ps.name, u_school.full_name) AS registered_school_name
+            FROM monev_bos_vendors v
+            JOIN dashboard_users u_school ON u_school.id = v.school_id
+            LEFT JOIN portal_schools ps ON ps.id = u_school.school_id
+            WHERE v.status IN ('verified', 'pending')
+            ORDER BY v.vendor_type, v.name ASC, v.id DESC
             """,
-            (school_id,)
         )
         return [dict(row) for row in cur.fetchall()]
 

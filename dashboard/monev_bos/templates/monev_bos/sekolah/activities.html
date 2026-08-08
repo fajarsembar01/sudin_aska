@@ -698,7 +698,7 @@
                             <optgroup label="🏪 Vendor / Toko">
                             {% for v in verified_vendors if v.vendor_type != 'narsum' %}
                                 <option value="{{ v.id }}" {% if act.vendor_id == v.id or (not act.vendor_id and act.vendor_name == v.name) %}selected{% endif %}>
-                                    {{ v.name }}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'pending' %} ⚠ Belum Divalidasi{% endif %}
+                                    {{ v.name }}{% if v.registered_school_name %} — {{ v.registered_school_name }}{% endif %}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'pending' %} ⚠ Belum Divalidasi{% endif %}
                                 </option>
                             {% endfor %}
                             </optgroup>
@@ -707,7 +707,7 @@
                             <optgroup label="🎤 Narasumber / Instruktur">
                             {% for v in verified_vendors if v.vendor_type == 'narsum' %}
                                 <option value="{{ v.id }}" {% if act.vendor_id == v.id or (not act.vendor_id and act.vendor_name == v.name) %}selected{% endif %}>
-                                    {{ v.name }}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'pending' %} ⚠ Belum Divalidasi{% endif %}
+                                    {{ v.name }}{% if v.registered_school_name %} — {{ v.registered_school_name }}{% endif %}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'pending' %} ⚠ Belum Divalidasi{% endif %}
                                 </option>
                             {% endfor %}
                             </optgroup>
@@ -928,14 +928,14 @@
                             {% if has_vendor_add %}
                             <optgroup label="🏪 Vendor / Toko">
                             {% for v in verified_vendors if v.vendor_type != 'narsum' %}
-                                <option value="{{ v.id }}">{{ v.name }}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'pending' %} ⚠ Belum Divalidasi{% endif %}</option>
+                                <option value="{{ v.id }}">{{ v.name }}{% if v.registered_school_name %} — {{ v.registered_school_name }}{% endif %}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'pending' %} ⚠ Belum Divalidasi{% endif %}</option>
                             {% endfor %}
                             </optgroup>
                             {% endif %}
                             {% if has_narsum_add %}
                             <optgroup label="🎤 Narasumber / Instruktur">
                             {% for v in verified_vendors if v.vendor_type == 'narsum' %}
-                                <option value="{{ v.id }}">{{ v.name }}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'pending' %} ⚠ Belum Divalidasi{% endif %}</option>
+                                <option value="{{ v.id }}">{{ v.name }}{% if v.registered_school_name %} — {{ v.registered_school_name }}{% endif %}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'pending' %} ⚠ Belum Divalidasi{% endif %}</option>
                             {% endfor %}
                             </optgroup>
                             {% endif %}
