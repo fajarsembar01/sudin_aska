@@ -272,6 +272,70 @@
             .card-footer {
                 padding: 0.75rem !important;
             }
+
+            .login-container.mobile-compact .login-header {
+                padding: 10px 12px;
+            }
+
+            .login-container.mobile-compact .login-header h1 {
+                font-size: 1rem;
+                margin-bottom: 2px;
+            }
+
+            .login-container.mobile-compact .login-header p {
+                font-size: 0.75rem;
+            }
+
+            .login-container.mobile-compact .login-body {
+                padding: 10px;
+            }
+
+            .login-container.mobile-compact .role-selection-row {
+                --bs-gutter-x: 0.5rem;
+                --bs-gutter-y: 0.5rem;
+            }
+
+            .login-container.mobile-compact .role-selection-row > * {
+                flex: 0 0 auto;
+                width: 50%;
+            }
+
+            .login-container.mobile-compact .role-selection-row > *:last-child:nth-child(odd) {
+                margin-left: 25%;
+            }
+
+            .login-container.mobile-compact .selection-card {
+                min-height: 82px;
+                padding: 8px 6px;
+                border-width: 1px;
+                flex-direction: column;
+                justify-content: center;
+                text-align: center;
+                gap: 5px;
+            }
+
+            .login-container.mobile-compact .selection-card .icon-wrapper {
+                width: 34px;
+                height: 34px;
+                flex: 0 0 34px;
+                font-size: 17px;
+            }
+
+            .login-container.mobile-compact .selection-card h3 {
+                margin: 0;
+                font-size: 0.78rem;
+                line-height: 1.15;
+                white-space: normal;
+                text-overflow: clip;
+            }
+
+            .login-container.mobile-compact .selection-card p {
+                display: none;
+            }
+
+            .login-container.mobile-compact .card-footer {
+                padding: 0.4rem !important;
+            }
         }
 
         @media (max-width: 380px) {
@@ -302,7 +366,7 @@
 </head>
 
 <body>
-    <div class="login-container {{ container_class or '' }}">
+    <div class="login-container {{ container_class or '' }}{% if mobile_compact %} mobile-compact{% endif %}">
         <div class="card login-card shadow-sm border-0">
             <div class="login-header">
                 {% if back_href %}

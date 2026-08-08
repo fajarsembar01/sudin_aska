@@ -430,13 +430,15 @@ def list_activities(report_id: int) -> List[Dict[str, Any]]:
                    ma.name AS activity_type_name,
                    et.name AS expense_type_name,
                    v.status AS vendor_status,
+                   v.vendor_type AS linked_vendor_type,
+                   COALESCE(v.name, a.vendor_name) AS vendor_display_name,
                    u.full_name AS auditor_name
             FROM monev_bos_activities a
             LEFT JOIN monev_bos_master_activities ma ON a.activity_type_id = ma.id
             LEFT JOIN monev_bos_expense_types et ON a.expense_type_id = et.id
             LEFT JOIN monev_bos_reports r ON a.report_id = r.id
             LEFT JOIN LATERAL (
-                SELECT v.id, v.status
+                SELECT v.id, v.name, v.status, v.vendor_type
                 FROM monev_bos_vendors v
                 WHERE (a.vendor_id IS NOT NULL AND v.id = a.vendor_id)
                    OR (a.vendor_id IS NULL AND a.vendor_name IS NOT NULL AND a.vendor_name != '' AND v.school_id = r.school_id AND LOWER(v.name) = LOWER(a.vendor_name))
@@ -498,11 +500,12 @@ def get_activity_by_id(activity_id: int) -> Optional[Dict[str, Any]]:
         cur.execute(
             """
             SELECT a.*, 
-                   v.status AS vendor_status
+                   v.status AS vendor_status,
+                   COALESCE(v.name, a.vendor_name) AS vendor_display_name
             FROM monev_bos_activities a
             LEFT JOIN monev_bos_reports r ON a.report_id = r.id
             LEFT JOIN LATERAL (
-                SELECT v.id, v.status
+                SELECT v.id, v.name, v.status
                 FROM monev_bos_vendors v
                 WHERE (a.vendor_id IS NOT NULL AND v.id = a.vendor_id)
                    OR (a.vendor_id IS NULL AND a.vendor_name IS NOT NULL AND a.vendor_name != '' AND v.school_id = r.school_id AND LOWER(v.name) = LOWER(a.vendor_name))

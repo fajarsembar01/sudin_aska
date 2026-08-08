@@ -1854,6 +1854,7 @@ def home() -> Response:
             cards=cards,
             default_col_class="col-lg-4 col-md-6 col-12",
             enable_odd_center=False,
+            mobile_compact=True,
             show_logout=True,
         )
     if role == "coordinator":

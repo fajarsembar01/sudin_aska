@@ -1994,7 +1994,7 @@ def staff_audit_activity(activity_id):
                 return redirect(url_for("monev_bos.staff_audit_report", report_id=report_id))
 
             if status == "valid" and _activity_vendor_is_unverified(act):
-                vendor_name_disp = act.get("vendor_name") or "terkait"
+                vendor_name_disp = act.get("vendor_display_name") or act.get("vendor_name") or "terkait"
                 msg = f"Kegiatan tidak dapat divalidasi (Sesuai) karena vendor / narasumber '{vendor_name_disp}' belum terverifikasi. Silakan verifikasi terlebih dahulu."
                 if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.headers.get("Accept") == "application/json":
                     return jsonify({"success": False, "message": msg}), 400
