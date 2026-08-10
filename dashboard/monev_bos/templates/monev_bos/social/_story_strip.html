@@ -6,7 +6,7 @@
         {% set latest_story = group.posts[-1] %}
         <button type="button" class="monev-story-item border-0 bg-transparent p-0 js-open-school-story" data-school-user-id="{{ group.school_user_id }}">
             <span class="monev-story-ring">
-                <img class="monev-story-avatar" src="/{{ latest_story.photo_path }}" alt="Foto Live {{ group.school_name }}">
+                <img class="monev-story-avatar" src="{{ url_for('monev_bos.school_post_photo', post_id=latest_story.id) }}" alt="Foto Live {{ group.school_name }}">
             </span>
             <span class="monev-story-name" title="{{ group.school_name }}">{{ group.school_name }}</span>
         </button>
@@ -92,7 +92,7 @@
                             <div class="form-text">Lokasi diambil otomatis dari perangkat dan tidak dapat diubah.</div>
                         </div>
                         <div class="alert alert-info small">
-                            Foto Live tampil selama 7 hari dan langsung menjadi post permanen pada profil sekolah. Foto dikompres maksimal 200 KB.
+                            Foto Live tampil selama 7 hari dan menjadi post permanen dengan status awal <strong>private</strong>. Foto baru menjadi publik jika dipilih untuk laporan PDF. Ukuran dikompres maksimal 200 KB.
                         </div>
                     </div>
                 </div>
@@ -116,9 +116,8 @@
     let viewerIndex = 0;
     let storyTimer = null;
 
-    function photoUrl(path) {
-        if (!path) return '';
-        return path.charAt(0) === '/' ? path : '/' + path;
+    function photoUrl(postId) {
+        return {{ url_for('monev_bos.school_post_photo', post_id=0)|tojson }}.replace('/0/photo', '/' + postId + '/photo');
     }
 
     function profileUrl(schoolUserId) {
@@ -128,7 +127,7 @@
     function renderStory() {
         if (!viewerGroup || !viewerGroup.posts.length) return;
         const post = viewerGroup.posts[viewerIndex];
-        document.getElementById('schoolStoryViewerImage').src = photoUrl(post.photo_path);
+        document.getElementById('schoolStoryViewerImage').src = photoUrl(post.id);
         document.getElementById('schoolStoryViewerTitle').textContent = post.title;
         document.getElementById('schoolStoryViewerLocation').textContent = post.location_text;
         const profileLink = document.getElementById('schoolStoryProfileLink');

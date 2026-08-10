@@ -1,4 +1,4 @@
-from flask import Blueprint, current_app, render_template, request, jsonify, flash, redirect, url_for, session
+from flask import Blueprint, current_app, render_template, request, jsonify, flash, redirect, url_for, session, abort, send_file
 from dashboard.auth import role_required, current_user
 from dashboard.queries import record_admin_action
 from . import monev_bos_bp, queries
@@ -885,6 +885,202 @@ def _absolute_dashboard_file_path(relative_path: str) -> str:
     return os.path.normpath(os.path.join(monev_bos_bp.root_path, "..", (relative_path or "").lstrip("/")))
 
 
+@monev_bos_bp.before_app_request
+def protect_private_school_story_files():
+    """Prevent direct /static access to private Foto Live assets."""
+    relative_path = request.path.lstrip("/")
+    if not relative_path.startswith("static/uploads/monev_bos/stories/"):
+        return None
+    post = queries.get_school_post_by_photo_path(relative_path)
+    if not post or post.get("is_public"):
+        return None
+    user = current_user() or {}
+    if user.get("role") in {"admin", "staff"}:
+        return None
+    if user.get("role") == "sekolah" and int(user.get("id") or 0) == int(post["school_user_id"]):
+        return None
+    abort(404)
+
+
+def _can_view_school_post_photo(post: dict) -> bool:
+    if post.get("is_public"):
+        return True
+    user = current_user() or {}
+    if user.get("role") in {"admin", "staff"}:
+        return True
+    return user.get("role") == "sekolah" and int(user.get("id") or 0) == int(post["school_user_id"])
+
+
+def _load_report_font(size: int, bold: bool = False):
+    from PIL import ImageFont
+
+    candidates = (
+        ["/System/Library/Fonts/Supplemental/Arial Bold.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"]
+        if bold
+        else ["/System/Library/Fonts/Supplemental/Arial.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"]
+    )
+    for path in candidates:
+        if os.path.isfile(path):
+            return ImageFont.truetype(path, size=size)
+    return ImageFont.load_default()
+
+
+def _draw_wrapped_text(draw, text: str, xy: tuple, font, fill, max_width: int, line_gap: int = 8) -> int:
+    words = (text or "-").split()
+    lines = []
+    current = ""
+    for word in words:
+        candidate = f"{current} {word}".strip()
+        if current and draw.textbbox((0, 0), candidate, font=font)[2] > max_width:
+            lines.append(current)
+            current = word
+        else:
+            current = candidate
+    if current:
+        lines.append(current)
+    x, y = xy
+    line_height = draw.textbbox((0, 0), "Ag", font=font)[3] + line_gap
+    for line in lines:
+        draw.text((x, y), line, font=font, fill=fill)
+        y += line_height
+    return y
+
+
+def _build_school_photo_report_pdf(posts: list, profile: dict) -> io.BytesIO:
+    """Build one adaptive A4 page containing one to six authenticated photos."""
+    import qrcode
+    from PIL import ImageDraw
+
+    page_width, page_height = 1240, 1754
+    margin = 50
+    page = Image.new("RGB", (page_width, page_height), "white")
+    draw = ImageDraw.Draw(page)
+    title_font = _load_report_font(31, bold=True)
+    school_font = _load_report_font(22, bold=True)
+    header_meta_font = _load_report_font(16)
+
+    draw.text((margin, 42), "LAPORAN FOTO LIVE SEKOLAH", font=title_font, fill="#153e75")
+    draw.text((margin, 88), profile.get("school_name") or "Sekolah", font=school_font, fill="#111827")
+    draw.text((page_width - margin, 55), f"{len(posts)} foto / 1 lembar", font=header_meta_font, fill="#4b5563", anchor="ra")
+    draw.text((page_width - margin, 88), "Scan QR pada tiap foto untuk verifikasi", font=header_meta_font, fill="#4b5563", anchor="ra")
+    draw.line((margin, 130, page_width - margin, 130), fill="#cbd5e1", width=3)
+
+    if len(posts) == 1:
+        columns, rows = 1, 1
+    elif len(posts) == 2:
+        columns, rows = 1, 2
+    elif len(posts) <= 4:
+        columns, rows = 2, 2
+    else:
+        columns, rows = 2, 3
+
+    gap = 18
+    content_top = 154
+    content_bottom = page_height - 72
+    content_width = page_width - (margin * 2)
+    content_height = content_bottom - content_top
+    card_width = (content_width - (gap * (columns - 1))) // columns
+    card_height = (content_height - (gap * (rows - 1))) // rows
+    info_height = 190 if rows == 1 else (132 if rows == 2 else 126)
+    qr_size = 158 if rows == 1 else (104 if rows == 2 else 100)
+    card_title_font = _load_report_font(24 if rows == 1 else (18 if rows == 2 else 15), bold=True)
+    card_meta_font = _load_report_font(17 if rows == 1 else (14 if rows == 2 else 12))
+    stamp_font = _load_report_font(17 if rows == 1 else (14 if rows == 2 else 12), bold=True)
+
+    def one_line(text: str, font, max_width: int) -> str:
+        clean = " ".join((text or "-").split())
+        if draw.textbbox((0, 0), clean, font=font)[2] <= max_width:
+            return clean
+        suffix = "..."
+        while clean and draw.textbbox((0, 0), clean + suffix, font=font)[2] > max_width:
+            clean = clean[:-1]
+        return clean.rstrip() + suffix
+
+    for index, post in enumerate(posts):
+        row, column = divmod(index, columns)
+        card_x = margin + column * (card_width + gap)
+        card_y = content_top + row * (card_height + gap)
+        card_right = card_x + card_width
+        card_bottom = card_y + card_height
+        padding = 12
+        draw.rounded_rectangle(
+            (card_x, card_y, card_right, card_bottom),
+            radius=14,
+            fill="#ffffff",
+            outline="#cbd5e1",
+            width=3,
+        )
+
+        photo_x = card_x + padding
+        photo_y = card_y + padding
+        photo_width = card_width - (padding * 2)
+        photo_height = card_height - info_height - (padding * 2)
+        draw.rounded_rectangle(
+            (photo_x, photo_y, photo_x + photo_width, photo_y + photo_height),
+            radius=8,
+            fill="#111827",
+        )
+        source_path = _absolute_dashboard_file_path(post["photo_path"])
+        with Image.open(source_path) as source:
+            source = ImageOps.exif_transpose(source).convert("RGB")
+            photo = ImageOps.contain(source, (photo_width, photo_height), Image.Resampling.LANCZOS)
+        paste_x = photo_x + (photo_width - photo.width) // 2
+        paste_y = photo_y + (photo_height - photo.height) // 2
+        page.paste(photo, (paste_x, paste_y))
+
+        timestamp = post["created_at"].strftime("%d/%m/%Y %H:%M WIB")
+        stamp_text = f"{timestamp}"
+        stamp_box = draw.textbbox((0, 0), stamp_text, font=stamp_font)
+        stamp_width = stamp_box[2] - stamp_box[0] + 20
+        stamp_height = stamp_box[3] - stamp_box[1] + 16
+        stamp_x = photo_x + 9
+        stamp_y = photo_y + photo_height - stamp_height - 9
+        draw.rounded_rectangle((stamp_x, stamp_y, stamp_x + stamp_width, stamp_y + stamp_height), radius=6, fill="#111827")
+        draw.text((stamp_x + 10, stamp_y + 6), stamp_text, font=stamp_font, fill="white")
+
+        verification_url = url_for(
+            "monev_bos.public_school_post_verification",
+            public_token=post["public_token"],
+            _external=True,
+        )
+        qr = qrcode.QRCode(version=None, box_size=6, border=2, error_correction=qrcode.constants.ERROR_CORRECT_M)
+        qr.add_data(verification_url)
+        qr.make(fit=True)
+        qr_image = qr.make_image(fill_color="#111827", back_color="white").convert("RGB")
+        qr_image = qr_image.resize((qr_size, qr_size), Image.Resampling.NEAREST)
+        qr_x = card_right - padding - qr_size
+        info_y = photo_y + photo_height + 9
+        page.paste(qr_image, (qr_x, info_y))
+
+        text_x = card_x + padding
+        text_width = qr_x - text_x - 10
+        title = one_line(post.get("title") or "Foto Live", card_title_font, text_width)
+        draw.text((text_x, info_y + 2), title, font=card_title_font, fill="#111827")
+        authenticity_code = (post.get("photo_sha256") or post.get("public_token") or "")[:12].upper()
+        if rows <= 2:
+            location = one_line(f"Lokasi: {post.get('location_text') or '-'}", card_meta_font, text_width)
+            draw.text((text_x, info_y + (38 if rows == 1 else 29)), location, font=card_meta_font, fill="#374151")
+            code_y = info_y + (70 if rows == 1 else 53)
+        else:
+            code_y = info_y + 25
+        draw.text((text_x, code_y), f"Kode: {authenticity_code}", font=card_meta_font, fill="#4b5563")
+        draw.text((qr_x + qr_size // 2, min(info_y + qr_size + 2, card_bottom - 18)), "VERIFIKASI", font=card_meta_font, fill="#153e75", anchor="ma")
+
+    footer_font = _load_report_font(13)
+    draw.text(
+        (page_width // 2, page_height - 40),
+        "Foto dipublikasikan atas persetujuan pemilik. Sidik jari SHA-256 tercatat pada halaman verifikasi.",
+        font=footer_font,
+        fill="#4b5563",
+        anchor="ma",
+    )
+
+    output = io.BytesIO()
+    page.save(output, format="PDF", resolution=150.0)
+    output.seek(0)
+    return output
+
+
 @monev_bos_bp.route("/posts")
 @role_required("admin")
 def school_posts_explore():
@@ -924,6 +1120,103 @@ def school_posts_profile(school_user_id: int):
         posts=posts,
         search_query=search_query,
     )
+
+
+@monev_bos_bp.route("/posts/<int:post_id>/photo")
+def school_post_photo(post_id: int):
+    post = queries.get_school_post(post_id)
+    if not post or not _can_view_school_post_photo(post):
+        abort(404)
+    path = _absolute_dashboard_file_path(post["photo_path"])
+    if not os.path.isfile(path):
+        abort(404)
+    response = send_file(path, conditional=True, max_age=0)
+    response.headers["Cache-Control"] = "public, max-age=3600" if post.get("is_public") else "private, no-store"
+    return response
+
+
+@monev_bos_bp.route("/public/photos/<public_token>")
+def public_school_post_verification(public_token: str):
+    import hashlib
+    import hmac
+
+    post = queries.get_public_school_post(public_token)
+    if not post:
+        abort(404)
+    path = _absolute_dashboard_file_path(post["photo_path"])
+    if not os.path.isfile(path):
+        abort(404)
+    digest = hashlib.sha256()
+    with open(path, "rb") as photo_file:
+        for chunk in iter(lambda: photo_file.read(1024 * 1024), b""):
+            digest.update(chunk)
+    fingerprint_matches = bool(post.get("photo_sha256")) and hmac.compare_digest(
+        digest.hexdigest(),
+        post["photo_sha256"],
+    )
+    return render_template(
+        "monev_bos/social/photo_verification.html",
+        post=post,
+        fingerprint_matches=fingerprint_matches,
+    )
+
+
+@monev_bos_bp.route("/public/photos/<public_token>/image")
+def public_school_post_image(public_token: str):
+    post = queries.get_public_school_post(public_token)
+    if not post:
+        abort(404)
+    path = _absolute_dashboard_file_path(post["photo_path"])
+    if not os.path.isfile(path):
+        abort(404)
+    response = send_file(path, conditional=True, max_age=3600)
+    response.headers["Cache-Control"] = "public, max-age=3600"
+    return response
+
+
+@monev_bos_bp.route("/schools/<int:school_user_id>/posts/report.pdf", methods=["POST"])
+@role_required("admin", "sekolah")
+def school_posts_photo_report(school_user_id: int):
+    import hashlib
+
+    user = current_user()
+    if user.get("role") == "sekolah" and int(user["id"]) != int(school_user_id):
+        abort(403)
+
+    raw_ids = request.form.getlist("post_ids")
+    post_ids = list(dict.fromkeys(int(value) for value in raw_ids if value.isdigit()))
+    if not 1 <= len(post_ids) <= 6:
+        abort(400, description="Pilih minimal 1 dan maksimal 6 foto.")
+
+    profile = queries.get_school_post_profile(school_user_id)
+    posts = queries.get_school_posts_by_ids(post_ids, school_user_id)
+    post_map = {int(post["id"]): post for post in posts}
+    if not profile or len(post_map) != len(post_ids):
+        abort(404, description="Satu atau beberapa foto tidak ditemukan.")
+
+    photo_hashes = {}
+    for post in posts:
+        path = _absolute_dashboard_file_path(post["photo_path"])
+        if not os.path.isfile(path):
+            abort(404, description=f"File foto #{post['id']} tidak ditemukan.")
+        digest = hashlib.sha256()
+        with open(path, "rb") as photo_file:
+            for chunk in iter(lambda: photo_file.read(1024 * 1024), b""):
+                digest.update(chunk)
+        photo_hashes[int(post["id"])] = digest.hexdigest()
+
+    published_posts = queries.publish_school_posts(
+        post_ids,
+        school_user_id,
+        int(user["id"]),
+        photo_hashes=photo_hashes,
+    )
+    published_map = {int(post["id"]): post for post in published_posts}
+    ordered_posts = [published_map[post_id] for post_id in post_ids]
+    pdf = _build_school_photo_report_pdf(ordered_posts, profile)
+    safe_school_name = secure_filename(profile.get("school_name") or f"sekolah-{school_user_id}")
+    filename = f"laporan-foto-{safe_school_name or school_user_id}.pdf"
+    return send_file(pdf, mimetype="application/pdf", as_attachment=True, download_name=filename)
 
 
 @monev_bos_bp.route("/stories/create", methods=["POST"])

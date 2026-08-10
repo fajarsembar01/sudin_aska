@@ -2,6 +2,7 @@ from dashboard.db_access import get_cursor
 from typing import List, Dict, Any, Optional
 from datetime import date
 import json
+import secrets
 
 
 def attach_admin_input_names(
@@ -1713,6 +1714,118 @@ def get_school_post(post_id: int, *, include_deleted: bool = False) -> Optional[
         if not include_deleted:
             query += " AND p.deleted_at IS NULL"
         cur.execute(query, (post_id,))
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
+def get_school_posts_by_ids(post_ids: List[int], school_user_id: int) -> List[Dict[str, Any]]:
+    """Return undeleted posts owned by one school; callers may restore their chosen order."""
+    clean_ids = list(dict.fromkeys(int(post_id) for post_id in post_ids))
+    if not clean_ids:
+        return []
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT p.*,
+                   COALESCE(s.name, owner.full_name, owner.email, 'Sekolah') AS school_name,
+                   s.npsn, s.alamat, s.logo_url AS school_logo_url
+            FROM monev_bos_school_posts p
+            JOIN dashboard_users owner ON owner.id = p.school_user_id
+            LEFT JOIN portal_schools s ON s.id = owner.school_id
+            WHERE p.id = ANY(%s)
+              AND p.school_user_id = %s
+              AND p.deleted_at IS NULL
+            """,
+            (clean_ids, school_user_id),
+        )
+        return [dict(row) for row in cur.fetchall()]
+
+
+def publish_school_posts(
+    post_ids: List[int],
+    school_user_id: int,
+    actor_id: int,
+    photo_hashes: Optional[Dict[int, str]] = None,
+) -> List[Dict[str, Any]]:
+    """Publish selected private photos and allocate stable, unguessable verification tokens."""
+    clean_ids = list(dict.fromkeys(int(post_id) for post_id in post_ids))
+    if not clean_ids:
+        return []
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            SELECT id, title, is_public, public_token
+            FROM monev_bos_school_posts
+            WHERE id = ANY(%s)
+              AND school_user_id = %s
+              AND deleted_at IS NULL
+            FOR UPDATE
+            """,
+            (clean_ids, school_user_id),
+        )
+        rows = cur.fetchall()
+        for row in rows:
+            token = row["public_token"] or secrets.token_urlsafe(32)
+            cur.execute(
+                """
+                UPDATE monev_bos_school_posts
+                SET is_public = TRUE,
+                    public_token = %s,
+                    published_at = COALESCE(published_at, NOW()),
+                    photo_sha256 = COALESCE(photo_sha256, %s)
+                WHERE id = %s
+                """,
+                (token, (photo_hashes or {}).get(int(row["id"])), row["id"]),
+            )
+            if not row["is_public"]:
+                cur.execute(
+                    """
+                    INSERT INTO monev_bos_story_audit_logs
+                        (post_id, school_user_id, actor_id, action, details)
+                    VALUES (%s, %s, %s, 'PUBLISH', %s::jsonb)
+                    """,
+                    (
+                        row["id"],
+                        school_user_id,
+                        actor_id,
+                        json.dumps({"title": row["title"], "reason": "photo_report_pdf"}),
+                    ),
+                )
+    return get_school_posts_by_ids(clean_ids, school_user_id)
+
+
+def get_public_school_post(public_token: str) -> Optional[Dict[str, Any]]:
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT p.*,
+                   COALESCE(s.name, owner.full_name, owner.email, 'Sekolah') AS school_name,
+                   s.npsn, s.alamat, s.logo_url AS school_logo_url
+            FROM monev_bos_school_posts p
+            JOIN dashboard_users owner ON owner.id = p.school_user_id
+            LEFT JOIN portal_schools s ON s.id = owner.school_id
+            WHERE p.public_token = %s
+              AND p.is_public = TRUE
+              AND p.deleted_at IS NULL
+            """,
+            ((public_token or "").strip(),),
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
+def get_school_post_by_photo_path(photo_path: str) -> Optional[Dict[str, Any]]:
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT id, school_user_id, is_public, public_token, deleted_at
+            FROM monev_bos_school_posts
+            WHERE photo_path = %s
+            ORDER BY id DESC
+            LIMIT 1
+            """,
+            ((photo_path or "").lstrip("/"),),
+        )
         row = cur.fetchone()
         return dict(row) if row else None
 

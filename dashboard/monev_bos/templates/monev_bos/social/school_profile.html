@@ -30,10 +30,64 @@
         </div>
     </form>
 
+    {% if posts %}
+    <div class="card border-primary-subtle bg-primary-subtle mb-3 no-print sticky-top photo-report-toolbar" style="top: 76px; z-index: 1010;">
+        <div class="card-body py-2 px-3 d-flex align-items-center justify-content-between gap-2 flex-wrap">
+            <div>
+                <span class="fw-bold"><i class="bi bi-file-earmark-pdf-fill text-danger me-1"></i>Laporan Foto</span>
+                <span class="text-body-secondary small ms-1"><span id="photoReportSelectedCount">0</span>/6 foto dipilih</span>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="photoReportClearButton" disabled>Bersihkan</button>
+                <button type="button" class="btn btn-sm btn-danger fw-semibold" id="photoReportOpenButton" data-bs-toggle="modal" data-bs-target="#photoReportPublishModal" disabled>
+                    <i class="bi bi-download me-1"></i>Print / Download PDF
+                </button>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     {% include "monev_bos/social/_post_grid.html" %}
 </div>
+
+{% if posts %}
+<div class="modal fade" id="photoReportPublishModal" tabindex="-1" aria-labelledby="photoReportPublishModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form method="POST" action="{{ url_for('monev_bos.school_posts_photo_report', school_user_id=profile.school_user_id) }}" target="_blank" class="modal-content" id="photoReportForm">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div id="photoReportPostInputs"></div>
+            <div class="modal-header border-0 pb-0">
+                <h2 class="modal-title h5 fw-bold" id="photoReportPublishModalLabel"><i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>Publikasikan Foto?</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning border-warning">
+                    <strong>Perhatian:</strong> pembuatan PDF akan membuat foto private yang dipilih menjadi <strong>dapat diakses publik</strong> melalui QR verifikasi pada laporan.
+                </div>
+                <p class="mb-2">Satu lembar PDF akan berisi <strong id="photoReportModalCount">0 foto</strong> dalam layout yang menyesuaikan otomatis, masing-masing dilengkapi:</p>
+                <ul class="small text-body-secondary">
+                    <li>Timestamp pengambilan Foto Live</li>
+                    <li>Lokasi dan koordinat GPS</li>
+                    <li>QR/barcode pemeriksaan keaslian</li>
+                </ul>
+                <p class="small mb-3"><span id="photoReportPrivateCount">0</span> foto private akan dipublikasikan. Foto yang sudah publik tidak berubah.</p>
+                <div class="form-check p-3 border rounded bg-body-tertiary">
+                    <input class="form-check-input" type="checkbox" id="photoReportConsent" required>
+                    <label class="form-check-label fw-semibold" for="photoReportConsent">Saya memahami dan menyetujui foto terpilih dapat diakses publik.</label>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="submit" class="btn btn-danger fw-bold" id="photoReportSubmitButton" disabled><i class="bi bi-file-earmark-pdf me-1"></i>Publikasikan & Download PDF</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
 <style>
 .monev-school-profile-logo { width: 88px; height: 88px; object-fit: cover; flex: 0 0 auto; }
+.monev-post-grid-item:has(.photo-report-checkbox:checked) .card { box-shadow: 0 0 0 3px rgba(13, 110, 253, .45) !important; }
+.photo-report-selector { cursor: pointer; user-select: none; }
 @media (max-width: 575.98px) {
     .monev-social-page { padding-inline: .75rem; }
     .monev-school-profile-header { align-items: flex-start !important; padding: .75rem; }
@@ -45,6 +99,69 @@
     .monev-social-search .form-control { min-width: 0; font-size: .88rem; }
     .monev-social-search-actions { grid-template-columns: 1fr 1fr; }
     .monev-social-search-actions .btn { min-height: 42px; }
+    .photo-report-toolbar { top: 64px !important; }
 }
 </style>
+{% if posts %}
+<script>
+(function () {
+    const checkboxes = Array.from(document.querySelectorAll('.photo-report-checkbox'));
+    const count = document.getElementById('photoReportSelectedCount');
+    const clearButton = document.getElementById('photoReportClearButton');
+    const openButton = document.getElementById('photoReportOpenButton');
+    const consent = document.getElementById('photoReportConsent');
+    const submitButton = document.getElementById('photoReportSubmitButton');
+    const inputs = document.getElementById('photoReportPostInputs');
+
+    function selectedPhotos() {
+        return checkboxes.filter(function (checkbox) { return checkbox.checked; });
+    }
+
+    function refreshSelection(changedCheckbox) {
+        let selected = selectedPhotos();
+        if (selected.length > 6) {
+            changedCheckbox.checked = false;
+            selected = selectedPhotos();
+            alert('Maksimal 6 foto dalam satu laporan PDF.');
+        }
+        count.textContent = selected.length;
+        clearButton.disabled = selected.length === 0;
+        openButton.disabled = selected.length === 0;
+    }
+
+    checkboxes.forEach(function (checkbox) {
+        checkbox.addEventListener('change', function () { refreshSelection(checkbox); });
+    });
+    clearButton.addEventListener('click', function () {
+        checkboxes.forEach(function (checkbox) { checkbox.checked = false; });
+        refreshSelection(checkboxes[0]);
+    });
+
+    document.getElementById('photoReportPublishModal').addEventListener('show.bs.modal', function () {
+        const selected = selectedPhotos();
+        const privateCount = selected.filter(function (checkbox) { return checkbox.dataset.isPublic !== 'true'; }).length;
+        document.getElementById('photoReportModalCount').textContent = selected.length + ' foto';
+        document.getElementById('photoReportPrivateCount').textContent = privateCount;
+        inputs.replaceChildren();
+        selected.forEach(function (checkbox) {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'post_ids';
+            input.value = checkbox.value;
+            inputs.appendChild(input);
+        });
+        consent.checked = false;
+        submitButton.disabled = true;
+    });
+    consent.addEventListener('change', function () {
+        submitButton.disabled = !consent.checked;
+    });
+    document.getElementById('photoReportForm').addEventListener('submit', function () {
+        window.setTimeout(function () {
+            bootstrap.Modal.getInstance(document.getElementById('photoReportPublishModal')).hide();
+        }, 250);
+    });
+})();
+</script>
+{% endif %}
 {% endblock %}

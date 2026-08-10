@@ -2436,6 +2436,10 @@ CREATE TABLE IF NOT EXISTS monev_bos_school_posts (
     created_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     story_expires_at TIMESTAMPTZ NOT NULL DEFAULT (NOW() + INTERVAL '7 days'),
+    is_public BOOLEAN NOT NULL DEFAULT FALSE,
+    public_token VARCHAR(64),
+    published_at TIMESTAMPTZ,
+    photo_sha256 CHAR(64),
     deleted_at TIMESTAMPTZ,
     deleted_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL
 );
@@ -2446,6 +2450,9 @@ CREATE INDEX IF NOT EXISTS idx_monev_bos_school_posts_story
     WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_monev_bos_school_posts_search
     ON monev_bos_school_posts USING GIN (to_tsvector('simple', title || ' ' || location_text));
+CREATE UNIQUE INDEX IF NOT EXISTS idx_monev_bos_school_posts_public_token
+    ON monev_bos_school_posts (public_token)
+    WHERE public_token IS NOT NULL;
 """
 
 _MONEV_BOS_ACTIVITY_POST_LINKS_SQL = """
@@ -2527,6 +2534,11 @@ def ensure_monev_bos_schema() -> None:
         _MONEV_BOS_ACTIVITY_HISTORY_SQL,
         _MONEV_BOS_ACTIVITY_HISTORY_INDEX_SQL,
         _MONEV_BOS_SCHOOL_POSTS_SQL,
+        "ALTER TABLE monev_bos_school_posts ADD COLUMN IF NOT EXISTS is_public BOOLEAN NOT NULL DEFAULT FALSE;",
+        "ALTER TABLE monev_bos_school_posts ADD COLUMN IF NOT EXISTS public_token VARCHAR(64);",
+        "ALTER TABLE monev_bos_school_posts ADD COLUMN IF NOT EXISTS published_at TIMESTAMPTZ;",
+        "ALTER TABLE monev_bos_school_posts ADD COLUMN IF NOT EXISTS photo_sha256 CHAR(64);",
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_monev_bos_school_posts_public_token ON monev_bos_school_posts (public_token) WHERE public_token IS NOT NULL;",
         _MONEV_BOS_ACTIVITY_POST_LINKS_SQL,
         "ALTER TABLE monev_bos_activity_post_links DROP CONSTRAINT IF EXISTS monev_bos_activity_post_links_activity_id_key;",
         "CREATE UNIQUE INDEX IF NOT EXISTS idx_monev_bos_activity_post_links_activity_post ON monev_bos_activity_post_links (activity_id, post_id);",
