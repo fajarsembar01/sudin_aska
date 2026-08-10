@@ -794,10 +794,28 @@
                                     </a>
                                     {% endfor %}
                                 </div>
-                                <img id="editPhotoPreview{{ act.id }}" class="img-thumbnail mt-1 camera-photo-preview w-100 d-none" alt="Preview foto baru" style="max-height: 160px; object-fit: contain;">
+                                <div class="field-photo-preview-wrap position-relative d-none mt-1">
+                                    <img id="editPhotoPreview{{ act.id }}" class="img-thumbnail camera-photo-preview w-100" alt="Preview foto baru" style="height: 160px; object-fit: contain;">
+                                    <button type="button" class="btn btn-danger btn-sm rounded-circle position-absolute top-0 end-0 m-2 field-photo-cancel-btn" title="Batalkan foto ini" aria-label="Batalkan foto ini" style="width: 32px; height: 32px; padding: 0;">
+                                        <i class="bi bi-x-lg"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-dark btn-sm rounded-circle position-absolute top-50 start-0 translate-middle-y ms-2 field-photo-prev-btn" title="Foto sebelumnya" aria-label="Foto sebelumnya" style="width: 34px; height: 34px; padding: 0;">
+                                        <i class="bi bi-chevron-left"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-dark btn-sm rounded-circle position-absolute top-50 end-0 translate-middle-y me-2 field-photo-next-btn" title="Foto berikutnya" aria-label="Foto berikutnya" style="width: 34px; height: 34px; padding: 0;">
+                                        <i class="bi bi-chevron-right"></i>
+                                    </button>
+                                    <span class="badge bg-dark position-absolute bottom-0 start-50 translate-middle-x mb-2 field-photo-preview-counter">1 / 1</span>
+                                </div>
                                 <div class="form-text text-xs text-success field-photo-status"><i class="bi bi-check-circle me-1"></i>{{ act.valid_field_photos|length }}/3 foto sah tersimpan{% if act.invalid_field_photos %}; {{ act.invalid_field_photos|length }} dianulir auditor{% endif %}.</div>
                                 {% else %}
-                                <img id="editPhotoPreview{{ act.id }}" class="img-thumbnail mt-1 camera-photo-preview w-100 d-none" alt="Preview Foto Kegiatan" style="max-height: 160px; object-fit: contain;">
+                                <div class="field-photo-preview-wrap position-relative d-none mt-1">
+                                    <img id="editPhotoPreview{{ act.id }}" class="img-thumbnail camera-photo-preview w-100" alt="Preview Foto Kegiatan" style="height: 160px; object-fit: contain;">
+                                    <button type="button" class="btn btn-danger btn-sm rounded-circle position-absolute top-0 end-0 m-2 field-photo-cancel-btn" title="Batalkan foto ini" aria-label="Batalkan foto ini" style="width: 32px; height: 32px; padding: 0;"><i class="bi bi-x-lg"></i></button>
+                                    <button type="button" class="btn btn-dark btn-sm rounded-circle position-absolute top-50 start-0 translate-middle-y ms-2 field-photo-prev-btn" title="Foto sebelumnya" aria-label="Foto sebelumnya" style="width: 34px; height: 34px; padding: 0;"><i class="bi bi-chevron-left"></i></button>
+                                    <button type="button" class="btn btn-dark btn-sm rounded-circle position-absolute top-50 end-0 translate-middle-y me-2 field-photo-next-btn" title="Foto berikutnya" aria-label="Foto berikutnya" style="width: 34px; height: 34px; padding: 0;"><i class="bi bi-chevron-right"></i></button>
+                                    <span class="badge bg-dark position-absolute bottom-0 start-50 translate-middle-x mb-2 field-photo-preview-counter">1 / 1</span>
+                                </div>
                                 <div class="form-text text-xs text-muted field-photo-status">Belum ada foto kegiatan/barang. Maksimal 3 foto.</div>
                                 {% endif %}
                             </div>
@@ -1004,7 +1022,13 @@
                                     <option value="{{ post.id }}" data-photo-url="/{{ post.photo_path }}">{{ post.title }} · {{ post.created_at|jakarta('%d/%m/%Y') }}</option>
                                     {% endfor %}
                                 </select>
-                                <img id="addPhotoPreview" class="img-thumbnail mt-1 camera-photo-preview w-100 d-none" alt="Preview Foto Kegiatan" style="max-height: 90px; object-fit: cover;">
+                                <div class="field-photo-preview-wrap position-relative d-none mt-1">
+                                    <img id="addPhotoPreview" class="img-thumbnail camera-photo-preview w-100" alt="Preview Foto Kegiatan" style="height: 140px; object-fit: contain;">
+                                    <button type="button" class="btn btn-danger btn-sm rounded-circle position-absolute top-0 end-0 m-2 field-photo-cancel-btn" title="Batalkan foto ini" aria-label="Batalkan foto ini" style="width: 32px; height: 32px; padding: 0;"><i class="bi bi-x-lg"></i></button>
+                                    <button type="button" class="btn btn-dark btn-sm rounded-circle position-absolute top-50 start-0 translate-middle-y ms-2 field-photo-prev-btn" title="Foto sebelumnya" aria-label="Foto sebelumnya" style="width: 34px; height: 34px; padding: 0;"><i class="bi bi-chevron-left"></i></button>
+                                    <button type="button" class="btn btn-dark btn-sm rounded-circle position-absolute top-50 end-0 translate-middle-y me-2 field-photo-next-btn" title="Foto berikutnya" aria-label="Foto berikutnya" style="width: 34px; height: 34px; padding: 0;"><i class="bi bi-chevron-right"></i></button>
+                                    <span class="badge bg-dark position-absolute bottom-0 start-50 translate-middle-x mb-2 field-photo-preview-counter">1 / 1</span>
+                                </div>
                                 <div class="form-text text-xs text-muted field-photo-status">Foto kegiatan/barang bersifat opsional, maksimal 3 foto.</div>
                             </div>
                         </div>
@@ -1057,7 +1081,12 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
             </div>
             <div class="modal-body p-2 p-md-3 text-center bg-body-tertiary">
-                <img id="activityDocumentPreviewImage" src="" alt="Preview dokumen kegiatan" class="img-fluid rounded border bg-white" style="max-height: 78vh; object-fit: contain;">
+                <div class="position-relative d-inline-block w-100">
+                    <img id="activityDocumentPreviewImage" src="" alt="Preview dokumen kegiatan" class="img-fluid rounded border bg-white" style="max-height: 78vh; object-fit: contain;">
+                    <button type="button" id="activityDocumentPreviewPrev" class="btn btn-dark rounded-circle position-absolute top-50 start-0 translate-middle-y ms-2" aria-label="Foto sebelumnya" title="Foto sebelumnya" style="width: 42px; height: 42px; padding: 0;"><i class="bi bi-chevron-left"></i></button>
+                    <button type="button" id="activityDocumentPreviewNext" class="btn btn-dark rounded-circle position-absolute top-50 end-0 translate-middle-y me-2" aria-label="Foto berikutnya" title="Foto berikutnya" style="width: 42px; height: 42px; padding: 0;"><i class="bi bi-chevron-right"></i></button>
+                    <span id="activityDocumentPreviewCounter" class="badge bg-dark position-absolute bottom-0 start-50 translate-middle-x mb-2">1 / 1</span>
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
@@ -1196,6 +1225,99 @@ function dataURLtoFile(dataurl, filename) {
     return new File([u8arr], filename, { type: mime });
 }
 
+function getQueuedFieldPhotos(form) {
+    if (!form) return [];
+
+    const items = Array.from(form.querySelectorAll('[name="field_photo_data"]'))
+        .filter(input => Boolean(input.value))
+        .map(input => ({ type: 'camera', source: input.value, input: input }));
+    const linkedStoryIds = new Set(
+        (form.getAttribute('data-linked-story-ids') || '').split(',').filter(Boolean)
+    );
+    const storySelect = form.querySelector('[name="story_post_ids"], [name="story_post_id"]');
+    if (storySelect) {
+        Array.from(storySelect.selectedOptions || []).forEach(function (option) {
+            const source = option.getAttribute('data-photo-url');
+            if (option.value && source && !linkedStoryIds.has(option.value)) {
+                items.push({ type: 'story', source: source, option: option, select: storySelect });
+            }
+        });
+    }
+    return items;
+}
+
+function updateFieldPhotoStatus(form, queuedCount) {
+    const status = form ? form.querySelector('.field-photo-status') : null;
+    if (!status) return;
+
+    const savedCount = parseInt(form.getAttribute('data-valid-photo-count') || '0', 10) || 0;
+    if (queuedCount > 0) {
+        status.className = 'form-text text-xs text-success field-photo-status';
+        status.innerHTML = '<i class="bi bi-check-circle me-1"></i>' + queuedCount + ' foto baru siap disimpan. Gunakan &lt; &gt; untuk melihat dan × untuk membatalkan.';
+    } else if (savedCount > 0) {
+        status.className = 'form-text text-xs text-success field-photo-status';
+        status.innerHTML = '<i class="bi bi-check-circle me-1"></i>' + savedCount + '/3 foto sah tersimpan.';
+    } else {
+        status.className = 'form-text text-xs text-muted field-photo-status';
+        status.textContent = 'Foto kegiatan/barang bersifat opsional, maksimal 3 foto.';
+    }
+}
+
+function renderFieldPhotoPreview(form, requestedIndex) {
+    if (!form) return;
+    const wrapper = form.querySelector('.field-photo-preview-wrap');
+    const preview = wrapper ? wrapper.querySelector('.camera-photo-preview') : null;
+    if (!wrapper || !preview) return;
+
+    const items = getQueuedFieldPhotos(form);
+    if (!items.length) {
+        wrapper.classList.add('d-none');
+        preview.removeAttribute('src');
+        form.dataset.fieldPhotoPreviewIndex = '0';
+        updateFieldPhotoStatus(form, 0);
+        return;
+    }
+
+    let index = Number.isInteger(requestedIndex)
+        ? requestedIndex
+        : parseInt(form.dataset.fieldPhotoPreviewIndex || '0', 10);
+    index = ((index % items.length) + items.length) % items.length;
+    form.dataset.fieldPhotoPreviewIndex = String(index);
+    preview.src = items[index].source;
+    wrapper.classList.remove('d-none');
+
+    const counter = wrapper.querySelector('.field-photo-preview-counter');
+    const prev = wrapper.querySelector('.field-photo-prev-btn');
+    const next = wrapper.querySelector('.field-photo-next-btn');
+    if (counter) counter.textContent = (index + 1) + ' / ' + items.length;
+    if (prev) prev.disabled = items.length < 2;
+    if (next) next.disabled = items.length < 2;
+    updateFieldPhotoStatus(form, items.length);
+}
+
+function removeCurrentFieldPhoto(form) {
+    const items = getQueuedFieldPhotos(form);
+    if (!items.length) return;
+    const index = Math.min(parseInt(form.dataset.fieldPhotoPreviewIndex || '0', 10), items.length - 1);
+    const item = items[index];
+
+    if (item.type === 'camera') {
+        if (item.input.classList.contains('camera-photo-data-extra')) {
+            item.input.remove();
+        } else {
+            item.input.value = '';
+        }
+    } else if (item.type === 'story') {
+        if (item.select.tomselect) {
+            item.select.tomselect.removeItem(item.option.value);
+        } else {
+            item.option.selected = false;
+            item.select.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+    }
+    renderFieldPhotoPreview(form, Math.min(index, items.length - 2));
+}
+
 function getActivityPhotoQuota(form) {
     if (!form) return { total: 0, remaining: 3 };
     const savedValid = parseInt(form.getAttribute('data-valid-photo-count') || '0', 10) || 0;
@@ -1324,6 +1446,7 @@ function useSchoolPhoto() {
             alert('Maksimal 3 Foto Kegiatan/Barang yang sah per kegiatan.');
             return;
         }
+        let addedPhotoInput = activeCameraInput;
         if (activeCameraInput.value) {
             const extraPhotoInput = document.createElement('input');
             extraPhotoInput.type = 'hidden';
@@ -1331,22 +1454,31 @@ function useSchoolPhoto() {
             extraPhotoInput.className = 'camera-photo-data camera-photo-data-extra';
             extraPhotoInput.value = capturedSchoolPhoto;
             activeCameraInput.insertAdjacentElement('afterend', extraPhotoInput);
+            addedPhotoInput = extraPhotoInput;
         } else {
             activeCameraInput.value = capturedSchoolPhoto;
         }
         if (activeCameraPreview) {
-            activeCameraPreview.src = capturedSchoolPhoto;
-            activeCameraPreview.classList.remove('d-none');
-        }
-        const photoStatus = form ? form.querySelector('.field-photo-status') : null;
-        if (photoStatus) {
-            const queuedCount = form.querySelectorAll('[name="field_photo_data"]').length;
-            photoStatus.className = 'form-text text-xs text-success field-photo-status';
-            photoStatus.innerHTML = '<i class="bi bi-check-circle me-1"></i>' + queuedCount + ' foto kamera baru siap disimpan. Klik kamera lagi untuk menambah.';
+            const addedPhotoIndex = getQueuedFieldPhotos(form).findIndex(item => item.input === addedPhotoInput);
+            renderFieldPhotoPreview(form, addedPhotoIndex);
         }
     }
     const modal = bootstrap.Modal.getInstance(document.getElementById('schoolCameraModal'));
     if (modal) modal.hide();
+}
+
+let activeDocumentPreviewLinks = [];
+let activeDocumentPreviewIndex = 0;
+
+function showDocumentPreviewAt(index) {
+    if (!activeDocumentPreviewLinks.length) return;
+    activeDocumentPreviewIndex = ((index % activeDocumentPreviewLinks.length) + activeDocumentPreviewLinks.length) % activeDocumentPreviewLinks.length;
+    const item = activeDocumentPreviewLinks[activeDocumentPreviewIndex];
+    document.getElementById('activityDocumentPreviewImage').src = item.href;
+    document.getElementById('activityDocumentPreviewTitle').textContent = item.title;
+    document.getElementById('activityDocumentPreviewCounter').textContent = (activeDocumentPreviewIndex + 1) + ' / ' + activeDocumentPreviewLinks.length;
+    document.getElementById('activityDocumentPreviewPrev').disabled = activeDocumentPreviewLinks.length < 2;
+    document.getElementById('activityDocumentPreviewNext').disabled = activeDocumentPreviewLinks.length < 2;
 }
 
 document.addEventListener('click', function (event) {
@@ -1354,11 +1486,28 @@ document.addEventListener('click', function (event) {
     if (documentPreviewLink) {
         event.preventDefault();
         const previewModal = document.getElementById('activityDocumentPreviewModal');
-        const previewImage = document.getElementById('activityDocumentPreviewImage');
-        const previewTitle = document.getElementById('activityDocumentPreviewTitle');
-        previewImage.src = documentPreviewLink.href;
-        previewTitle.textContent = documentPreviewLink.getAttribute('data-doc-title') || 'Preview Dokumen';
+        const photoGroup = documentPreviewLink.closest('.d-flex.flex-wrap.gap-1');
+        const links = photoGroup ? Array.from(photoGroup.querySelectorAll('.activity-doc-preview-link')) : [documentPreviewLink];
+        activeDocumentPreviewLinks = links.map(function (link) {
+            return {
+                href: link.href,
+                title: link.getAttribute('data-doc-title') || 'Preview Dokumen'
+            };
+        });
+        showDocumentPreviewAt(Math.max(0, links.indexOf(documentPreviewLink)));
         bootstrap.Modal.getOrCreateInstance(previewModal).show();
+        return;
+    }
+
+    const fieldPhotoControl = event.target.closest('.field-photo-prev-btn, .field-photo-next-btn, .field-photo-cancel-btn');
+    if (fieldPhotoControl) {
+        const form = fieldPhotoControl.closest('form');
+        const currentIndex = parseInt(form.dataset.fieldPhotoPreviewIndex || '0', 10);
+        if (fieldPhotoControl.classList.contains('field-photo-cancel-btn')) {
+            removeCurrentFieldPhoto(form);
+        } else {
+            renderFieldPhotoPreview(form, currentIndex + (fieldPhotoControl.classList.contains('field-photo-next-btn') ? 1 : -1));
+        }
         return;
     }
 
@@ -1383,8 +1532,17 @@ document.addEventListener('click', function (event) {
     }
 });
 
+document.getElementById('activityDocumentPreviewPrev').addEventListener('click', function () {
+    showDocumentPreviewAt(activeDocumentPreviewIndex - 1);
+});
+document.getElementById('activityDocumentPreviewNext').addEventListener('click', function () {
+    showDocumentPreviewAt(activeDocumentPreviewIndex + 1);
+});
+
 document.getElementById('activityDocumentPreviewModal').addEventListener('hidden.bs.modal', function () {
     document.getElementById('activityDocumentPreviewImage').src = '';
+    activeDocumentPreviewLinks = [];
+    activeDocumentPreviewIndex = 0;
 });
 
 document.addEventListener('change', function (event) {
@@ -1392,20 +1550,7 @@ document.addEventListener('change', function (event) {
     if (input.matches('[name="story_post_ids"], [name="story_post_id"]')) {
         const form = input.closest('form');
         const selectedOptions = Array.from(input.selectedOptions || []);
-        const selectedOption = selectedOptions.length ? selectedOptions[selectedOptions.length - 1] : null;
-        const photoUrl = selectedOption ? selectedOption.getAttribute('data-photo-url') : '';
-        const previewImg = form ? form.querySelector('.camera-photo-preview') : null;
-        const photoStatus = form ? form.querySelector('.field-photo-status') : null;
-        const photoData = form ? form.querySelector('[name="field_photo_data"]') : null;
-        const photoFile = form ? form.querySelector('.field-photo-file-input') : null;
-        if (photoUrl && previewImg) {
-            previewImg.src = photoUrl;
-            previewImg.classList.remove('d-none');
-            if (photoStatus) {
-                photoStatus.className = 'form-text text-xs text-success field-photo-status';
-                photoStatus.innerHTML = '<i class="bi bi-link-45deg me-1"></i>' + selectedOptions.length + ' foto postingan akan ditautkan.';
-            }
-        }
+        renderFieldPhotoPreview(form, getQueuedFieldPhotos(form).length - 1);
         return;
     }
 
