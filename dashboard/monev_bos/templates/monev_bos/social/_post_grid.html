@@ -26,6 +26,13 @@
                 <h2 class="h6 fw-bold mb-2">{{ post.title }}</h2>
                 <div class="text-body-secondary small mb-1"><i class="bi bi-geo-alt-fill me-1"></i>{{ post.location_text }}</div>
                 <div class="text-body-secondary text-xs">{{ post.created_at|jakarta('%d %b %Y %H:%M') }}</div>
+                {% if post.external_photographer_name %}
+                <div class="small mt-2 p-2 rounded bg-body-tertiary">
+                    <i class="bi bi-person-badge me-1 text-primary"></i>
+                    Diambil oleh <strong>{{ post.external_photographer_name }}</strong><br>
+                    <span class="text-body-secondary ms-4">NIP {{ post.external_photographer_nip }}</span>
+                </div>
+                {% endif %}
                 {% if post.is_public and post.public_token %}
                 <a href="{{ url_for('monev_bos.public_school_post_verification', public_token=post.public_token) }}" target="_blank" class="small text-success text-decoration-none d-inline-block mt-2"><i class="bi bi-patch-check-fill me-1"></i>Cek keaslian publik</a>
                 {% endif %}

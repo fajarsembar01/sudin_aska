@@ -3,6 +3,7 @@ from typing import List, Dict, Any, Optional
 from datetime import date
 import json
 import secrets
+from .external_photos import generate_access_token
 
 
 SUPPORTED_BOP_CLAIM_PERIODS = {(2025, 4), (2026, 1), (2026, 2)}
@@ -1805,6 +1806,130 @@ def get_assigned_auditors_for_school(school_id: int, period_id: int) -> Dict[str
 
 
 # --- STORY & POST SEKOLAH ---
+def save_external_photo_teacher(
+    school_user_id: int, full_name: str, nip: str, actor_id: int
+) -> Dict[str, Any]:
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            INSERT INTO monev_bos_external_photo_teachers
+                (school_user_id, full_name, nip, created_by)
+            VALUES (%s, %s, %s, %s)
+            ON CONFLICT (school_user_id, nip) DO UPDATE
+            SET full_name = EXCLUDED.full_name, is_active = TRUE, updated_at = NOW()
+            RETURNING *
+            """,
+            (school_user_id, full_name.strip(), nip.strip(), actor_id),
+        )
+        return dict(cur.fetchone())
+
+
+def list_external_photo_teachers(school_user_id: int, limit: int = 300) -> List[Dict[str, Any]]:
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT * FROM monev_bos_external_photo_teachers
+            WHERE school_user_id = %s AND is_active = TRUE
+            ORDER BY full_name ASC
+            LIMIT %s
+            """,
+            (school_user_id, limit),
+        )
+        return [dict(row) for row in cur.fetchall()]
+
+
+def get_external_photo_teacher(school_user_id: int, nip: str) -> Optional[Dict[str, Any]]:
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT * FROM monev_bos_external_photo_teachers
+            WHERE school_user_id = %s AND nip = %s AND is_active = TRUE
+            """,
+            (school_user_id, nip.strip()),
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
+def delete_external_photo_teacher(teacher_id: int, school_user_id: int) -> bool:
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            DELETE FROM monev_bos_external_photo_teachers
+            WHERE id = %s AND school_user_id = %s
+            RETURNING id
+            """,
+            (teacher_id, school_user_id),
+        )
+        return cur.fetchone() is not None
+
+
+def create_external_photo_link(school_user_id: int, actor_id: int) -> Dict[str, Any]:
+    public_id = secrets.token_urlsafe(24)
+    access_token = generate_access_token()
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            INSERT INTO monev_bos_external_photo_links
+                (school_user_id, public_id, access_token, expires_at, created_by)
+            VALUES (%s, %s, %s, NOW() + INTERVAL '24 hours', %s)
+            RETURNING *
+            """,
+            (school_user_id, public_id, access_token, actor_id),
+        )
+        return dict(cur.fetchone())
+
+
+def list_external_photo_links(school_user_id: int, limit: int = 10) -> List[Dict[str, Any]]:
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT l.*,
+                   (l.revoked_at IS NULL AND l.expires_at > NOW()) AS is_active
+            FROM monev_bos_external_photo_links l
+            WHERE l.school_user_id = %s
+            ORDER BY l.created_at DESC
+            LIMIT %s
+            """,
+            (school_user_id, limit),
+        )
+        return [dict(row) for row in cur.fetchall()]
+
+
+def get_external_photo_link(public_id: str) -> Optional[Dict[str, Any]]:
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT l.*,
+                   (l.revoked_at IS NULL AND l.expires_at > NOW()) AS is_active,
+                   COALESCE(s.name, owner.full_name, owner.email, 'Sekolah') AS school_name,
+                   s.logo_url AS school_logo_url,
+                   s.npsn
+            FROM monev_bos_external_photo_links l
+            JOIN dashboard_users owner ON owner.id = l.school_user_id
+            LEFT JOIN portal_schools s ON s.id = owner.school_id
+            WHERE l.public_id = %s
+            """,
+            (public_id,),
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
+def revoke_external_photo_link(link_id: int, school_user_id: int, actor_id: int) -> bool:
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE monev_bos_external_photo_links
+            SET revoked_at = NOW(), revoked_by = %s
+            WHERE id = %s AND school_user_id = %s AND revoked_at IS NULL
+            RETURNING id
+            """,
+            (actor_id, link_id, school_user_id),
+        )
+        return cur.fetchone() is not None
+
+
 def create_school_post(
     school_user_id: int,
     title: str,
@@ -1814,15 +1939,31 @@ def create_school_post(
     longitude: float,
     location_accuracy: Optional[float],
     location_text: str,
-    actor_id: int,
+    actor_id: Optional[int],
+    external_link_id: Optional[int] = None,
+    external_photographer_name: Optional[str] = None,
+    external_photographer_nip: Optional[str] = None,
 ) -> int:
     with get_cursor(commit=True) as cur:
+        if external_link_id is not None:
+            cur.execute(
+                """
+                SELECT id FROM monev_bos_external_photo_links
+                WHERE id = %s AND school_user_id = %s
+                  AND revoked_at IS NULL AND expires_at > NOW()
+                FOR UPDATE
+                """,
+                (external_link_id, school_user_id),
+            )
+            if not cur.fetchone():
+                raise ValueError("Tautan foto eksternal sudah tidak aktif.")
         cur.execute(
             """
             INSERT INTO monev_bos_school_posts
                 (school_user_id, title, photo_path, photo_size, latitude, longitude,
-                 location_accuracy, location_text, created_by)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                 location_accuracy, location_text, created_by, external_link_id,
+                 external_photographer_name, external_photographer_nip)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
             """,
             (
@@ -1835,9 +1976,21 @@ def create_school_post(
                 location_accuracy,
                 location_text,
                 actor_id,
+                external_link_id,
+                external_photographer_name,
+                external_photographer_nip,
             ),
         )
         post_id = int(cur.fetchone()[0])
+        if external_link_id is not None:
+            cur.execute(
+                """
+                UPDATE monev_bos_external_photo_links
+                SET last_used_at = NOW(), submission_count = submission_count + 1
+                WHERE id = %s
+                """,
+                (external_link_id,),
+            )
         cur.execute(
             """
             INSERT INTO monev_bos_story_audit_logs
@@ -1848,7 +2001,13 @@ def create_school_post(
                 post_id,
                 school_user_id,
                 actor_id,
-                json.dumps({"title": title.strip(), "location_text": location_text}),
+                json.dumps({
+                    "title": title.strip(),
+                    "location_text": location_text,
+                    "source": "external_link" if external_link_id else "school",
+                    "photographer_name": external_photographer_name,
+                    "photographer_nip": external_photographer_nip,
+                }),
             ),
         )
         return post_id

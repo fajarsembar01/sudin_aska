@@ -2423,6 +2423,43 @@ CREATE TABLE IF NOT EXISTS monev_bos_checklist_expense_types (
 );
 """
 
+_MONEV_BOS_EXTERNAL_PHOTO_LINKS_SQL = """
+CREATE TABLE IF NOT EXISTS monev_bos_external_photo_links (
+    id BIGSERIAL PRIMARY KEY,
+    school_user_id INTEGER NOT NULL REFERENCES dashboard_users(id) ON DELETE CASCADE,
+    public_id VARCHAR(64) NOT NULL UNIQUE,
+    access_token CHAR(6) NOT NULL CHECK (access_token ~ '^[0-9]{6}$'),
+    expires_at TIMESTAMPTZ NOT NULL,
+    created_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    revoked_at TIMESTAMPTZ,
+    revoked_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    last_used_at TIMESTAMPTZ,
+    submission_count INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_monev_bos_external_photo_links_school
+    ON monev_bos_external_photo_links (school_user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_monev_bos_external_photo_links_active
+    ON monev_bos_external_photo_links (expires_at)
+    WHERE revoked_at IS NULL;
+"""
+
+_MONEV_BOS_EXTERNAL_PHOTO_TEACHERS_SQL = """
+CREATE TABLE IF NOT EXISTS monev_bos_external_photo_teachers (
+    id BIGSERIAL PRIMARY KEY,
+    school_user_id INTEGER NOT NULL REFERENCES dashboard_users(id) ON DELETE CASCADE,
+    full_name VARCHAR(150) NOT NULL,
+    nip CHAR(18) NOT NULL CHECK (nip ~ '^[0-9]{18}$'),
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (school_user_id, nip)
+);
+CREATE INDEX IF NOT EXISTS idx_monev_bos_external_photo_teachers_school
+    ON monev_bos_external_photo_teachers (school_user_id, full_name);
+"""
+
 _MONEV_BOS_SCHOOL_POSTS_SQL = """
 CREATE TABLE IF NOT EXISTS monev_bos_school_posts (
     id SERIAL PRIMARY KEY,
@@ -2435,6 +2472,9 @@ CREATE TABLE IF NOT EXISTS monev_bos_school_posts (
     location_accuracy NUMERIC(10,2),
     location_text VARCHAR(100) NOT NULL,
     created_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    external_link_id BIGINT REFERENCES monev_bos_external_photo_links(id) ON DELETE SET NULL,
+    external_photographer_name VARCHAR(150),
+    external_photographer_nip VARCHAR(30),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     story_expires_at TIMESTAMPTZ NOT NULL DEFAULT (NOW() + INTERVAL '7 days'),
     is_public BOOLEAN NOT NULL DEFAULT FALSE,
@@ -2537,11 +2577,16 @@ def ensure_monev_bos_schema() -> None:
         _MONEV_BOS_EDIT_REQUESTS_INDEX_SQL,
         _MONEV_BOS_ACTIVITY_HISTORY_SQL,
         _MONEV_BOS_ACTIVITY_HISTORY_INDEX_SQL,
+        _MONEV_BOS_EXTERNAL_PHOTO_TEACHERS_SQL,
+        _MONEV_BOS_EXTERNAL_PHOTO_LINKS_SQL,
         _MONEV_BOS_SCHOOL_POSTS_SQL,
         "ALTER TABLE monev_bos_school_posts ADD COLUMN IF NOT EXISTS is_public BOOLEAN NOT NULL DEFAULT FALSE;",
         "ALTER TABLE monev_bos_school_posts ADD COLUMN IF NOT EXISTS public_token VARCHAR(64);",
         "ALTER TABLE monev_bos_school_posts ADD COLUMN IF NOT EXISTS published_at TIMESTAMPTZ;",
         "ALTER TABLE monev_bos_school_posts ADD COLUMN IF NOT EXISTS photo_sha256 CHAR(64);",
+        "ALTER TABLE monev_bos_school_posts ADD COLUMN IF NOT EXISTS external_link_id BIGINT REFERENCES monev_bos_external_photo_links(id) ON DELETE SET NULL;",
+        "ALTER TABLE monev_bos_school_posts ADD COLUMN IF NOT EXISTS external_photographer_name VARCHAR(150);",
+        "ALTER TABLE monev_bos_school_posts ADD COLUMN IF NOT EXISTS external_photographer_nip VARCHAR(30);",
         "CREATE UNIQUE INDEX IF NOT EXISTS idx_monev_bos_school_posts_public_token ON monev_bos_school_posts (public_token) WHERE public_token IS NOT NULL;",
         _MONEV_BOS_ACTIVITY_POST_LINKS_SQL,
         "ALTER TABLE monev_bos_activity_post_links DROP CONSTRAINT IF EXISTS monev_bos_activity_post_links_activity_id_key;",

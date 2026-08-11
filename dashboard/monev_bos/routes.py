@@ -3,9 +3,11 @@ from dashboard.auth import role_required, current_user
 from dashboard.queries import record_admin_action
 from . import monev_bos_bp, queries
 from .bop_claims import get_school_bop_claim, is_bop_claim_period, recommend_expense_type
+from .external_photos import access_token_matches, validate_external_identity, validate_external_nip
 import base64
 import shutil
 import uuid
+import time
 
 MAX_ACTIVITY_FIELD_PHOTOS = 3
 
@@ -1115,11 +1117,246 @@ def school_posts_profile(school_user_id: int):
         search_query=search_query,
         limit=300,
     )
+    external_photo_links = (
+        queries.list_external_photo_links(school_user_id)
+        if user.get("role") == "sekolah" and int(user["id"]) == int(school_user_id)
+        else []
+    )
+    external_photo_teachers = (
+        queries.list_external_photo_teachers(school_user_id)
+        if user.get("role") == "sekolah" and int(user["id"]) == int(school_user_id)
+        else []
+    )
     return render_template(
         "monev_bos/social/school_profile.html",
         profile=profile,
         posts=posts,
         search_query=search_query,
+        external_photo_links=external_photo_links,
+        external_photo_teachers=external_photo_teachers,
+    )
+
+
+@monev_bos_bp.route("/external-photo-teachers", methods=["POST"])
+@role_required("sekolah")
+def save_external_photo_teacher():
+    user = current_user()
+    full_name = (request.form.get("full_name") or "").strip()
+    nip = (request.form.get("nip") or "").strip()
+    errors = validate_external_identity(full_name, nip)
+    if errors:
+        for error in errors:
+            flash(error, "danger")
+    else:
+        queries.save_external_photo_teacher(int(user["id"]), full_name, nip, int(user["id"]))
+        flash("Guru berhasil didaftarkan untuk Foto Live eksternal.", "success")
+    return redirect(url_for("monev_bos.school_posts_profile", school_user_id=user["id"], _anchor="external-photo-teachers"))
+
+
+@monev_bos_bp.route("/external-photo-teachers/<int:teacher_id>/delete", methods=["POST"])
+@role_required("sekolah")
+def delete_external_photo_teacher(teacher_id: int):
+    user = current_user()
+    deleted = queries.delete_external_photo_teacher(teacher_id, int(user["id"]))
+    flash(
+        "Guru dihapus dari daftar Foto Live eksternal." if deleted else "Data guru tidak ditemukan.",
+        "success" if deleted else "warning",
+    )
+    return redirect(url_for("monev_bos.school_posts_profile", school_user_id=user["id"], _anchor="external-photo-teachers"))
+
+
+@monev_bos_bp.route("/external-photo-links/create", methods=["POST"])
+@role_required("sekolah")
+def create_external_photo_link():
+    user = current_user()
+    if not queries.list_external_photo_teachers(int(user["id"]), limit=1):
+        flash("Daftarkan minimal satu guru sebelum membuat link Foto Live eksternal.", "warning")
+        return redirect(url_for("monev_bos.school_posts_profile", school_user_id=user["id"], _anchor="external-photo-teachers"))
+    queries.create_external_photo_link(int(user["id"]), int(user["id"]))
+    flash("Link Foto Live eksternal dibuat dan aktif selama 24 jam.", "success")
+    return redirect(url_for("monev_bos.school_posts_profile", school_user_id=user["id"]))
+
+
+@monev_bos_bp.route("/external-photo-links/<int:link_id>/revoke", methods=["POST"])
+@role_required("sekolah")
+def revoke_external_photo_link(link_id: int):
+    user = current_user()
+    revoked = queries.revoke_external_photo_link(link_id, int(user["id"]), int(user["id"]))
+    flash(
+        "Link Foto Live eksternal berhasil dicabut." if revoked else "Link tidak ditemukan atau sudah dicabut.",
+        "success" if revoked else "warning",
+    )
+    return redirect(url_for("monev_bos.school_posts_profile", school_user_id=user["id"]))
+
+
+def _external_photo_token_is_rate_limited(public_id: str) -> bool:
+    key = f"external_photo_attempt:{public_id}"
+    state = session.get(key) or {}
+    now = int(time.time())
+    started_at = int(state.get("started_at") or now)
+    if now - started_at >= 15 * 60:
+        session.pop(key, None)
+        return False
+    return int(state.get("count") or 0) >= 5
+
+
+def _record_external_photo_token_failure(public_id: str) -> None:
+    key = f"external_photo_attempt:{public_id}"
+    now = int(time.time())
+    state = session.get(key) or {"count": 0, "started_at": now}
+    if now - int(state.get("started_at") or now) >= 15 * 60:
+        state = {"count": 0, "started_at": now}
+    state["count"] = int(state.get("count") or 0) + 1
+    session[key] = state
+
+
+def _external_photo_verification(public_id: str, link_id: int) -> dict:
+    state = session.get(f"external_photo_verified:{public_id}") or {}
+    if int(state.get("link_id") or 0) != int(link_id):
+        return {}
+    if not state.get("teacher_id") or not state.get("teacher_name") or not state.get("teacher_nip"):
+        return {}
+    return state
+
+
+@monev_bos_bp.route("/foto-eksternal/<public_id>", methods=["GET", "POST"])
+def external_photo_capture(public_id: str):
+    link = queries.get_external_photo_link(public_id)
+    if not link:
+        abort(404)
+
+    verification_key = f"external_photo_verified:{public_id}"
+    if request.method == "GET" and request.args.get("reset") == "1":
+        session.pop(verification_key, None)
+    verified_identity = _external_photo_verification(public_id, int(link["id"]))
+    current_step = "photo" if request.args.get("step") == "photo" and verified_identity else "identity"
+
+    if not link.get("is_active"):
+        session.pop(verification_key, None)
+        verified_identity = {}
+
+    if request.method == "POST":
+        action = request.form.get("action") or "verify_identity"
+        errors = []
+        if not link.get("is_active"):
+            errors.append("Link ini sudah kedaluwarsa atau telah dicabut oleh sekolah.")
+
+        if action == "verify_identity":
+            current_step = "identity"
+            teacher_nip = (request.form.get("teacher_nip") or "").strip()
+            access_token = (request.form.get("access_token") or "").strip()
+            identity_errors = validate_external_nip(teacher_nip)
+            errors.extend(identity_errors)
+            token_is_valid = False
+            if _external_photo_token_is_rate_limited(public_id):
+                errors.append("Terlalu banyak percobaan token. Coba kembali dalam 15 menit.")
+            elif not access_token_matches(access_token, link.get("access_token") or ""):
+                if link.get("is_active"):
+                    _record_external_photo_token_failure(public_id)
+                errors.append("Token 6 digit tidak sesuai.")
+            else:
+                token_is_valid = True
+
+            registered_teacher = None
+            if token_is_valid and link.get("is_active") and not identity_errors:
+                registered_teacher = queries.get_external_photo_teacher(
+                    int(link["school_user_id"]), teacher_nip
+                )
+                if not registered_teacher:
+                    errors.append("NIP belum didaftarkan oleh sekolah untuk Foto Live eksternal.")
+
+            if not errors:
+                session[verification_key] = {
+                    "link_id": int(link["id"]),
+                    "teacher_id": int(registered_teacher["id"]),
+                    "teacher_name": registered_teacher["full_name"],
+                    "teacher_nip": registered_teacher["nip"],
+                    "verified_at": int(time.time()),
+                }
+                session.pop(f"external_photo_attempt:{public_id}", None)
+                return redirect(url_for("monev_bos.external_photo_capture", public_id=public_id, step="photo"))
+        elif action == "submit_photo":
+            current_step = "photo"
+            verified_identity = _external_photo_verification(public_id, int(link["id"]))
+            if not verified_identity:
+                flash("Sesi verifikasi tidak ditemukan. Masukkan identitas dan token kembali.", "warning")
+                return redirect(url_for("monev_bos.external_photo_capture", public_id=public_id))
+            registered_teacher = queries.get_external_photo_teacher(
+                int(link["school_user_id"]), verified_identity["teacher_nip"]
+            )
+            if not registered_teacher or int(registered_teacher["id"]) != int(verified_identity["teacher_id"]):
+                session.pop(verification_key, None)
+                flash("NIP sudah tidak terdaftar. Hubungi sekolah untuk mendaftarkannya kembali.", "warning")
+                return redirect(url_for("monev_bos.external_photo_capture", public_id=public_id))
+
+            title = (request.form.get("title") or "").strip()
+            photo_data = request.form.get("photo_data") or ""
+            if not title:
+                errors.append("Judul foto wajib diisi.")
+            elif len(title) > 200:
+                errors.append("Judul foto maksimal 200 karakter.")
+            try:
+                latitude = float(request.form.get("latitude"))
+                longitude = float(request.form.get("longitude"))
+                accuracy_raw = request.form.get("location_accuracy")
+                location_accuracy = float(accuracy_raw) if accuracy_raw else None
+                if not (-90 <= latitude <= 90 and -180 <= longitude <= 180):
+                    raise ValueError
+            except (TypeError, ValueError):
+                errors.append("Lokasi GPS wajib tersedia dan valid sebelum foto dikirim.")
+
+        else:
+            abort(400)
+
+        if not errors and action == "submit_photo":
+            photo_path, photo_size, photo_error = _save_story_camera_photo(
+                photo_data, int(link["school_user_id"])
+            )
+            if photo_error:
+                flash(photo_error, "danger")
+            else:
+                location_text = f"{latitude:.6f}, {longitude:.6f}"
+                try:
+                    queries.create_school_post(
+                        school_user_id=int(link["school_user_id"]),
+                        title=title,
+                        photo_path=photo_path,
+                        photo_size=photo_size,
+                        latitude=latitude,
+                        longitude=longitude,
+                        location_accuracy=location_accuracy,
+                        location_text=location_text,
+                        actor_id=None,
+                        external_link_id=int(link["id"]),
+                        external_photographer_name=verified_identity["teacher_name"],
+                        external_photographer_nip=verified_identity["teacher_nip"],
+                    )
+                except ValueError as exc:
+                    try:
+                        os.remove(_absolute_dashboard_file_path(photo_path))
+                    except OSError:
+                        pass
+                    flash(str(exc), "danger")
+                except Exception:
+                    try:
+                        os.remove(_absolute_dashboard_file_path(photo_path))
+                    except OSError:
+                        pass
+                    raise
+                else:
+                    session.pop(verification_key, None)
+                    flash("Foto berhasil dikirim ke profil sekolah.", "success")
+                    return redirect(url_for("monev_bos.external_photo_capture", public_id=public_id, berhasil=1))
+
+        for error in dict.fromkeys(errors):
+            flash(error, "danger")
+
+    return render_template(
+        "monev_bos/social/external_photo_capture.html",
+        link=link,
+        submission_success=request.args.get("berhasil") == "1",
+        current_step=current_step,
+        verified_identity=verified_identity,
     )
 
 

@@ -14,8 +14,113 @@
                 <div class="text-body-secondary small">{% if profile.npsn %}NPSN {{ profile.npsn }} · {% endif %}{{ profile.alamat or 'Alamat belum tersedia' }}</div>
                 <div class="fw-semibold mt-2">{{ profile.post_count }} post permanen</div>
             </div>
+            {% if current_user.role == 'sekolah' and current_user.id == profile.school_user_id %}
+            {% if external_photo_teachers %}
+            <button type="button" class="btn btn-primary monev-social-primary-action" data-bs-toggle="modal" data-bs-target="#externalPhotoLinkModal">
+                <i class="bi bi-link-45deg me-1"></i>Buat Link Foto Eksternal
+            </button>
+            {% else %}
+            <a href="#external-photo-teachers" class="btn btn-outline-primary monev-social-primary-action"><i class="bi bi-person-plus me-1"></i>Daftarkan Guru Dulu</a>
+            {% endif %}
+            {% endif %}
         </div>
     </div>
+
+    {% if current_user.role == 'sekolah' and current_user.id == profile.school_user_id %}
+    <section class="card border-0 shadow-sm mb-4" id="external-photo-teachers">
+        <div class="card-header bg-body border-0 pt-3 px-3 px-md-4">
+            <h2 class="h5 fw-bold mb-1"><i class="bi bi-person-badge-fill text-primary me-2"></i>Guru Foto Live Eksternal</h2>
+            <p class="small text-body-secondary mb-0">Hanya nama dan NIP dalam daftar ini yang dapat melewati verifikasi link eksternal.</p>
+        </div>
+        <div class="card-body px-3 px-md-4">
+            <form method="POST" action="{{ url_for('monev_bos.save_external_photo_teacher') }}" class="row g-2 align-items-end mb-4">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="col-12 col-md-5">
+                    <label class="form-label small fw-semibold" for="registeredTeacherName">Nama Lengkap</label>
+                    <input id="registeredTeacherName" name="full_name" class="form-control" minlength="3" maxlength="150" placeholder="Nama resmi guru" required>
+                </div>
+                <div class="col-12 col-md-5">
+                    <label class="form-label small fw-semibold" for="registeredTeacherNip">NIP</label>
+                    <input id="registeredTeacherNip" name="nip" class="form-control" inputmode="numeric" pattern="[0-9]{18}" maxlength="18" placeholder="18 digit" required>
+                </div>
+                <div class="col-12 col-md-2 d-grid">
+                    <button class="btn btn-primary"><i class="bi bi-person-plus me-1"></i>Daftarkan</button>
+                </div>
+            </form>
+
+            {% if external_photo_teachers %}
+            <div class="table-responsive border rounded-3">
+                <table class="table table-sm align-middle mb-0">
+                    <thead class="table-light">
+                        <tr><th class="ps-3">Nama Guru</th><th>NIP</th><th class="text-end pe-3">Aksi</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for teacher in external_photo_teachers %}
+                        <tr>
+                            <td class="ps-3 fw-semibold">{{ teacher.full_name }}</td>
+                            <td class="font-monospace">{{ teacher.nip }}</td>
+                            <td class="text-end pe-3">
+                                <form method="POST" action="{{ url_for('monev_bos.delete_external_photo_teacher', teacher_id=teacher.id) }}" onsubmit="return confirm('Hapus guru ini dari daftar Foto Live eksternal?');">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button class="btn btn-sm btn-outline-danger" title="Hapus guru"><i class="bi bi-trash"></i><span class="visually-hidden">Hapus</span></button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-warning mb-0"><i class="bi bi-exclamation-triangle me-1"></i>Belum ada guru terdaftar. Link eksternal baru dapat dibuat setelah minimal satu guru didaftarkan.</div>
+            {% endif %}
+        </div>
+    </section>
+    {% endif %}
+
+    {% if current_user.role == 'sekolah' and current_user.id == profile.school_user_id and external_photo_links %}
+    <section class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-body border-0 pt-3 px-3 px-md-4">
+            <h2 class="h5 fw-bold mb-1"><i class="bi bi-camera-fill text-primary me-2"></i>Link Foto Live Eksternal</h2>
+            <p class="small text-body-secondary mb-0">Bagikan link beserta token kepada guru. Setiap link berlaku 24 jam.</p>
+        </div>
+        <div class="card-body px-3 px-md-4">
+            <div class="vstack gap-3">
+                {% for item in external_photo_links %}
+                {% set capture_url = url_for('monev_bos.external_photo_capture', public_id=item.public_id, _external=True) %}
+                <div class="border rounded-3 p-3 {{ 'border-success-subtle bg-success-subtle' if item.is_active else 'bg-body-tertiary' }}">
+                    <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap mb-2">
+                        <div>
+                            {% if item.is_active %}
+                            <span class="badge text-bg-success">Aktif</span>
+                            {% elif item.revoked_at %}
+                            <span class="badge text-bg-danger">Dicabut</span>
+                            {% else %}
+                            <span class="badge text-bg-secondary">Kedaluwarsa</span>
+                            {% endif %}
+                            <span class="small ms-1">Berakhir {{ item.expires_at|jakarta('%d %b %Y %H:%M') }} WIB</span>
+                        </div>
+                        <span class="small fw-semibold">{{ item.submission_count }} foto terkirim</span>
+                    </div>
+                    <label class="form-label small fw-semibold mb-1">Link untuk guru</label>
+                    <div class="input-group input-group-sm mb-2">
+                        <input type="text" class="form-control" value="{{ capture_url }}" readonly aria-label="Link Foto Live eksternal">
+                        <button type="button" class="btn btn-outline-primary external-copy-button" data-copy="{{ capture_url }}"><i class="bi bi-copy me-1"></i>Salin</button>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
+                        <div>Token: <span class="fs-5 fw-bold font-monospace letter-spacing">{{ item.access_token }}</span></div>
+                        {% if item.is_active %}
+                        <form method="POST" action="{{ url_for('monev_bos.revoke_external_photo_link', link_id=item.id) }}" onsubmit="return confirm('Cabut link ini sekarang? Guru tidak akan bisa mengirim foto lagi.');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button class="btn btn-sm btn-outline-danger"><i class="bi bi-x-circle me-1"></i>Cabut Link</button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    {% endif %}
 
     <form method="GET" class="mb-3 mb-md-4">
         <div class="d-flex flex-column flex-sm-row gap-2 monev-social-search">
@@ -49,6 +154,32 @@
 
     {% include "monev_bos/social/_post_grid.html" %}
 </div>
+
+{% if current_user.role == 'sekolah' and current_user.id == profile.school_user_id %}
+<div class="modal fade" id="externalPhotoLinkModal" tabindex="-1" aria-labelledby="externalPhotoLinkModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form method="POST" action="{{ url_for('monev_bos.create_external_photo_link') }}" class="modal-content">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="modal-header border-0 pb-0">
+                <h2 class="modal-title h5 fw-bold" id="externalPhotoLinkModalLabel">Buat Link Foto Eksternal</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+            </div>
+            <div class="modal-body">
+                <p>Sistem akan membuat link dan token 6 digit yang aktif selama <strong>24 jam</strong>.</p>
+                <ul class="small text-body-secondary mb-0">
+                    <li>Link dapat digunakan oleh beberapa guru.</li>
+                    <li>Guru cukup memasukkan NIP terdaftar dan token; nama diambil otomatis dari data sekolah.</li>
+                    <li>Foto wajib diambil langsung dari kamera dan menyertakan GPS.</li>
+                </ul>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="submit" class="btn btn-primary fw-semibold"><i class="bi bi-link-45deg me-1"></i>Buat Link 24 Jam</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
 
 {% if posts %}
 <div class="modal fade" id="photoReportPublishModal" tabindex="-1" aria-labelledby="photoReportPublishModalLabel" aria-hidden="true">
@@ -88,6 +219,7 @@
 .monev-school-profile-logo { width: 88px; height: 88px; object-fit: cover; flex: 0 0 auto; }
 .monev-post-grid-item:has(.photo-report-checkbox:checked) .card { box-shadow: 0 0 0 3px rgba(13, 110, 253, .45) !important; }
 .photo-report-selector { cursor: pointer; user-select: none; }
+.letter-spacing { letter-spacing: .18em; }
 @media (max-width: 575.98px) {
     .monev-social-page { padding-inline: .75rem; }
     .monev-school-profile-header { align-items: flex-start !important; padding: .75rem; }
@@ -102,6 +234,22 @@
     .photo-report-toolbar { top: 64px !important; }
 }
 </style>
+<script>
+document.addEventListener('click', async function (event) {
+    const button = event.target.closest('.external-copy-button');
+    if (!button) return;
+    try {
+        await navigator.clipboard.writeText(button.dataset.copy);
+        const original = button.innerHTML;
+        button.innerHTML = '<i class="bi bi-check2 me-1"></i>Tersalin';
+        window.setTimeout(function () { button.innerHTML = original; }, 1800);
+    } catch (error) {
+        const input = button.parentElement.querySelector('input');
+        input.select();
+        document.execCommand('copy');
+    }
+});
+</script>
 {% if posts %}
 <script>
 (function () {
