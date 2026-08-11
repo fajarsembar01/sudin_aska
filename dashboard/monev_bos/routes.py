@@ -4,6 +4,7 @@ from dashboard.queries import record_admin_action
 from . import monev_bos_bp, queries
 from .bop_claims import get_school_bop_claim, is_bop_claim_period, recommend_expense_type
 from .external_photos import access_token_matches, validate_external_identity, validate_external_nip
+import psycopg2
 import base64
 import shutil
 import uuid
@@ -288,6 +289,7 @@ def admin_checklists():
         activity_logs=activity_logs,
     )
 
+
 @monev_bos_bp.route("/admin/master-activities", methods=["GET", "POST"])
 @role_required("admin")
 def admin_master_activities():
@@ -298,15 +300,21 @@ def admin_master_activities():
             code_prefix = request.form.get("code_prefix")
             fund_source = request.form.get("fund_source", "ALL")
             if name:
-                master_id = queries.create_master_activity(name, code_prefix, fund_source)
-                _record_monev_admin_action(
-                    "CREATE",
-                    "MONEV_MASTER_ACTIVITY",
-                    target_id=master_id,
-                    target_name=name,
-                    metadata={"code_prefix": code_prefix, "fund_source": fund_source},
-                )
-                flash("Master Nama Kegiatan berhasil ditambahkan", "success")
+                if queries.check_master_activity_exists(name):
+                    flash(f"Gagal! Nama Kegiatan '{name}' sudah ada. Tidak boleh ada duplikasi.", "danger")
+                else:
+                    try:
+                        master_id = queries.create_master_activity(name, code_prefix, fund_source)
+                        _record_monev_admin_action(
+                            "CREATE",
+                            "MONEV_MASTER_ACTIVITY",
+                            target_id=master_id,
+                            target_name=name,
+                            metadata={"code_prefix": code_prefix, "fund_source": fund_source},
+                        )
+                        flash("Master Nama Kegiatan berhasil ditambahkan", "success")
+                    except psycopg2.errors.UniqueViolation:
+                        flash(f"Gagal! Nama Kegiatan '{name}' sudah ada. Tidak boleh ada duplikasi.", "danger")
             else:
                 flash("Nama kegiatan wajib diisi.", "warning")
         elif action == "update":
@@ -316,15 +324,21 @@ def admin_master_activities():
             fund_source = request.form.get("fund_source", "ALL")
             is_active = request.form.get("is_active") == "on"
             if name:
-                queries.update_master_activity(master_id, name, code_prefix, fund_source, is_active)
-                _record_monev_admin_action(
-                    "UPDATE",
-                    "MONEV_MASTER_ACTIVITY",
-                    target_id=master_id,
-                    target_name=name,
-                    metadata={"code_prefix": code_prefix, "fund_source": fund_source, "is_active": is_active},
-                )
-                flash("Master Nama Kegiatan berhasil diperbarui", "success")
+                if queries.check_master_activity_exists(name, exclude_id=master_id):
+                    flash(f"Gagal! Nama Kegiatan '{name}' sudah terpakai oleh data lain.", "danger")
+                else:
+                    try:
+                        queries.update_master_activity(master_id, name, code_prefix, fund_source, is_active)
+                        _record_monev_admin_action(
+                            "UPDATE",
+                            "MONEV_MASTER_ACTIVITY",
+                            target_id=master_id,
+                            target_name=name,
+                            metadata={"code_prefix": code_prefix, "fund_source": fund_source, "is_active": is_active},
+                        )
+                        flash("Master Nama Kegiatan berhasil diperbarui", "success")
+                    except psycopg2.errors.UniqueViolation:
+                        flash(f"Gagal! Nama Kegiatan '{name}' sudah terpakai oleh data lain.", "danger")
             else:
                 flash("Nama kegiatan wajib diisi.", "warning")
         elif action == "delete":
@@ -406,6 +420,7 @@ def admin_expense_types():
     )
 
 
+
 @monev_bos_bp.route("/admin/account-codes", methods=["GET", "POST"])
 @role_required("admin")
 def admin_account_codes():
@@ -416,14 +431,20 @@ def admin_account_codes():
             name = (request.form.get("name") or "").strip()
             description = (request.form.get("description") or "").strip()
             if code:
-                account_code_id = queries.create_account_code(code, name, description)
-                _record_monev_admin_action(
-                    "CREATE",
-                    "MONEV_ACCOUNT_CODE",
-                    target_id=account_code_id,
-                    target_name=f"{code} - {name}" if name else code,
-                )
-                flash("Master Kode Rekening berhasil ditambahkan.", "success")
+                if queries.check_account_code_exists(code):
+                    flash(f"Gagal! Kode Rekening '{code}' sudah ada. Tidak boleh ada duplikasi.", "danger")
+                else:
+                    try:
+                        account_code_id = queries.create_account_code(code, name, description)
+                        _record_monev_admin_action(
+                            "CREATE",
+                            "MONEV_ACCOUNT_CODE",
+                            target_id=account_code_id,
+                            target_name=f"{code} - {name}" if name else code,
+                        )
+                        flash("Master Kode Rekening berhasil ditambahkan.", "success")
+                    except psycopg2.errors.UniqueViolation:
+                        flash(f"Gagal! Kode Rekening '{code}' sudah ada. Tidak boleh ada duplikasi.", "danger")
             else:
                 flash("Kode Rekening wajib diisi.", "warning")
         elif action == "update":
@@ -433,15 +454,21 @@ def admin_account_codes():
             description = (request.form.get("description") or "").strip()
             is_active = request.form.get("is_active") == "on"
             if code and account_code_id:
-                queries.update_account_code(account_code_id, code, name, description, is_active)
-                _record_monev_admin_action(
-                    "UPDATE",
-                    "MONEV_ACCOUNT_CODE",
-                    target_id=account_code_id,
-                    target_name=f"{code} - {name}" if name else code,
-                    metadata={"is_active": is_active},
-                )
-                flash("Master Kode Rekening berhasil diperbarui.", "success")
+                if queries.check_account_code_exists(code, exclude_id=account_code_id):
+                    flash(f"Gagal! Kode Rekening '{code}' sudah terpakai oleh data lain.", "danger")
+                else:
+                    try:
+                        queries.update_account_code(account_code_id, code, name, description, is_active)
+                        _record_monev_admin_action(
+                            "UPDATE",
+                            "MONEV_ACCOUNT_CODE",
+                            target_id=account_code_id,
+                            target_name=f"{code} - {name}" if name else code,
+                            metadata={"is_active": is_active},
+                        )
+                        flash("Master Kode Rekening berhasil diperbarui.", "success")
+                    except psycopg2.errors.UniqueViolation:
+                        flash(f"Gagal! Kode Rekening '{code}' sudah terpakai oleh data lain.", "danger")
         elif action == "delete":
             account_code_id = int(request.form.get("account_code_id"))
             if account_code_id:

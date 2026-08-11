@@ -193,6 +193,18 @@
     {% endblock %}
 </div>
 
+<div id="flash-messages-data" class="d-none">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                {% if category in ['danger', 'warning'] %}
+                    <span class="flash-item" data-message="{{ message }}"></span>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+</div>
+
 <script>
 document.addEventListener('input', function (e) {
     if (e.target && e.target.classList.contains('rupiah-input')) {
@@ -212,6 +224,13 @@ document.addEventListener('input', function (e) {
             e.target.value = '';
         }
     }
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    const flashItems = document.querySelectorAll('#flash-messages-data .flash-item');
+    flashItems.forEach(item => {
+        alert(item.dataset.message);
+    });
 });
 </script>
 {% endblock %}
