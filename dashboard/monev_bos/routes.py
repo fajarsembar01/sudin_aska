@@ -2,6 +2,7 @@ from flask import Blueprint, current_app, render_template, request, jsonify, fla
 from dashboard.auth import role_required, current_user
 from dashboard.queries import record_admin_action
 from . import monev_bos_bp, queries
+from .bop_claims import get_school_bop_claim, is_bop_claim_period, recommend_expense_type
 import base64
 import shutil
 import uuid
@@ -1387,6 +1388,110 @@ def sekolah_activities():
 
     if request.method == "POST":
         action = request.form.get("action")
+        if action == "claim_bop_transactions":
+            if fund_source != "BOP":
+                flash("Klaim transaksi hanya tersedia untuk sumber dana BOP.", "warning")
+            else:
+                try:
+                    identity = queries.get_school_claim_identity(user["id"])
+                    claim = get_school_bop_claim(
+                        identity.get("npsn"), active_period["year"], active_period["tw"]
+                    )
+                    if not claim:
+                        flash("Data transaksi BOP untuk NPSN sekolah ini tidak ditemukan.", "warning")
+                    else:
+                        source_by_code = {
+                            item["activity_code"]: item for item in claim["transactions"]
+                        }
+                        submitted_codes = request.form.getlist("claim_activity_code")
+                        activity_names = request.form.getlist("claim_activity_name")
+                        expense_type_ids = request.form.getlist("claim_expense_type_id")
+                        bku_numbers = request.form.getlist("claim_bku_number")
+                        submitted_account_codes = request.form.getlist("claim_account_code")
+                        realized_amounts = request.form.getlist("claim_realized_amount")
+                        vendor_ids = request.form.getlist("claim_vendor_id")
+                        item_names = request.form.getlist("claim_item_name")
+                        field_lists = [
+                            activity_names,
+                            expense_type_ids,
+                            bku_numbers,
+                            submitted_account_codes,
+                            realized_amounts,
+                            vendor_ids,
+                            item_names,
+                        ]
+                        if not submitted_codes or any(len(values) != len(submitted_codes) for values in field_lists):
+                            raise ValueError("Data step klaim tidak lengkap. Silakan buka ulang wizard klaim.")
+                        if len(set(submitted_codes)) != len(submitted_codes):
+                            raise ValueError("Terdapat transaksi ganda pada data klaim.")
+
+                        active_account_codes = {
+                            str(item["code"]).strip()
+                            for item in queries.list_account_codes(include_inactive=False)
+                        }
+
+                        adjusted_transactions = []
+                        for index, activity_code in enumerate(submitted_codes):
+                            source_item = source_by_code.get(activity_code)
+                            if not source_item:
+                                raise ValueError("Salah satu transaksi tidak berasal dari dataset sekolah ini.")
+                            activity_name = activity_names[index].strip()
+                            bku_number = bku_numbers[index].strip()
+                            account_code = submitted_account_codes[index].strip()
+                            expense_type_raw = expense_type_ids[index]
+                            realized_amount = _parse_float(realized_amounts[index])
+                            if not activity_name or not bku_number or not account_code or not expense_type_raw.isdigit():
+                                raise ValueError(f"Data wajib pada step {index + 1} belum lengkap.")
+                            if account_code not in active_account_codes:
+                                raise ValueError(f"Kode rekening pada step {index + 1} tidak terdaftar atau tidak aktif.")
+                            if realized_amount <= 0:
+                                raise ValueError(f"Nilai realisasi pada step {index + 1} harus lebih dari 0.")
+
+                            vendor_id, vendor_name, vendor_error = _resolve_school_report_vendor(
+                                vendor_ids[index]
+                            )
+                            if vendor_error:
+                                raise ValueError(f"Step {index + 1}: {vendor_error}")
+
+                            adjusted_transactions.append(
+                                {
+                                    **source_item,
+                                    "activity_name": activity_name,
+                                    "expense_type_id": int(expense_type_raw),
+                                    "bku_number": bku_number,
+                                    "account_code": account_code,
+                                    "realized_amount": realized_amount,
+                                    "vendor_id": vendor_id,
+                                    "vendor_name": vendor_name,
+                                    "item_name": item_names[index].strip(),
+                                }
+                            )
+
+                        result = queries.claim_bop_transactions(
+                            report["id"], user["id"], adjusted_transactions
+                        )
+                        if result["inserted"] or result["updated"]:
+                            action_parts = []
+                            if result["inserted"]:
+                                action_parts.append(f"{result['inserted']} transaksi berhasil diklaim")
+                            if result["updated"]:
+                                action_parts.append(f"{result['updated']} transaksi berhasil diperbarui")
+                            flash(
+                                f"{' dan '.join(action_parts)} untuk {claim['school_name']}.",
+                                "success",
+                            )
+                        else:
+                            flash("Seluruh transaksi BOP sekolah ini sudah pernah diklaim.", "info")
+                except (OSError, ValueError) as exc:
+                    flash(str(exc), "warning")
+            return redirect(
+                url_for(
+                    "monev_bos.sekolah_activities",
+                    period_id=period_id,
+                    fund_source="BOP",
+                )
+            )
+
         if action == "update_receipts":
             if report and report["status"] not in ["draft", "needs_revision"]:
                 flash("Laporan sudah tidak bisa diubah.", "warning")
@@ -1431,20 +1536,8 @@ def sekolah_activities():
 
             activity_id = queries.create_activity(report["id"], target_fund_source, data)
             
-            # Handle mandatory document uploads (Faktur/Kwitansi & Bukti Transfer)
+            # Handle optional document uploads (Faktur/Kwitansi & Bukti Transfer)
             base_dir = os.path.join(monev_bos_bp.root_path, "..", "static", "uploads")
-            doc_inv_file = request.files.get("doc_invoice")
-            doc_tf_file = request.files.get("doc_transfer")
-
-            if not doc_inv_file or not doc_inv_file.filename:
-                queries.delete_activity(activity_id)
-                flash("Dokumen Faktur & Kwitansi wajib diunggah.", "danger")
-                return redirect(url_for("monev_bos.sekolah_activities", period_id=period_id, fund_source=fund_source))
-
-            if not doc_tf_file or not doc_tf_file.filename:
-                queries.delete_activity(activity_id)
-                flash("Dokumen Bukti Transfer wajib diunggah.", "danger")
-                return redirect(url_for("monev_bos.sekolah_activities", period_id=period_id, fund_source=fund_source))
 
             # Handle optional camera photo or file upload (Foto Kegiatan / Barang)
             for field_photo_file in field_photo_files:
@@ -1472,7 +1565,7 @@ def sekolah_activities():
                     flash(str(exc), "danger")
                     return redirect(url_for("monev_bos.sekolah_activities", period_id=period_id, fund_source=fund_source))
 
-            # Handle mandatory document file uploads
+            # Handle optional document file uploads
             has_error = False
             for doc_type in ["invoice", "transfer"]:
                 file = request.files.get(f"doc_{doc_type}")
@@ -1656,6 +1749,62 @@ def sekolah_activities():
 
     all_activities = queries.list_activities(report["id"])
     activities = [a for a in all_activities if a["fund_source"] == fund_source]
+
+    bop_claim = None
+    bop_claim_supported = fund_source == "BOP" and is_bop_claim_period(
+        active_period["year"], active_period["tw"]
+    )
+    if bop_claim_supported:
+        try:
+            identity = queries.get_school_claim_identity(user["id"])
+            claim = get_school_bop_claim(
+                identity.get("npsn"), active_period["year"], active_period["tw"]
+            )
+            if claim:
+                existing_by_code = {
+                    activity.get("activity_code"): activity for activity in activities
+                }
+                claim_transactions = []
+                for source_item in claim["transactions"]:
+                    existing = existing_by_code.get(source_item["activity_code"])
+                    claim_transactions.append(
+                        {
+                            **source_item,
+                            "source_activity_name": source_item["activity_name"],
+                            "source_realized_amount": source_item["realized_amount"],
+                            "selected_activity_name": existing.get("activity_name") if existing else "",
+                            "selected_expense_type_id": existing.get("expense_type_id") if existing else None,
+                            "selected_bku_number": existing.get("bku_number") if existing else "",
+                            "selected_account_code": existing.get("account_code") if existing else source_item["account_code"],
+                            "selected_realized_amount": existing.get("realized_amount") if existing else source_item["realized_amount"],
+                            "selected_vendor_id": existing.get("vendor_id") if existing else None,
+                            "selected_item_name": existing.get("item_name") if existing else "",
+                            "selected_status": existing.get("status") if existing else None,
+                            "is_claimed": bool(existing),
+                        }
+                    )
+                pending_transactions = [
+                    item for item in claim_transactions if not item["is_claimed"]
+                ]
+                is_reclaim = not pending_transactions
+                reclaim_transactions = [
+                    item for item in claim_transactions if item.get("selected_status") != "valid"
+                ]
+                wizard_transactions = reclaim_transactions if is_reclaim else pending_transactions
+                bop_claim = {
+                    **claim,
+                    "pending_transactions": pending_transactions,
+                    "pending_count": len(pending_transactions),
+                    "pending_amount": sum(item["realized_amount"] for item in pending_transactions),
+                    "claimed_count": len(claim["transactions"]) - len(pending_transactions),
+                    "is_reclaim": is_reclaim,
+                    "wizard_transactions": wizard_transactions,
+                    "wizard_count": len(wizard_transactions),
+                    "wizard_amount": sum(item["source_realized_amount"] for item in wizard_transactions),
+                    "reclaim_blocked_count": len(claim_transactions) - len(reclaim_transactions),
+                }
+        except (OSError, ValueError):
+            current_app.logger.exception("Failed to load repository-backed BOP claim data")
     
     total_receipt = report["bosp_receipt_amount"] if fund_source == "BOS" else report["bop_receipt_amount"]
     total_realized = sum(a["realized_amount"] for a in activities)
@@ -1711,6 +1860,15 @@ def sekolah_activities():
     master_activities = queries.list_master_activities(include_inactive=False, fund_source=fund_source)
     school_story_posts = queries.list_school_posts(school_user_id=int(user["id"]), limit=300)
     expense_types = queries.list_expense_types(include_inactive=False)
+    if bop_claim:
+        for transaction in bop_claim.get("wizard_transactions", []):
+            recommendation = recommend_expense_type(
+                transaction.get("source_activity_name"),
+                transaction.get("source_realized_amount"),
+                expense_types,
+            )
+            transaction["recommended_expense_type_id"] = recommendation.get("id") if recommendation else None
+            transaction["recommended_expense_type_name"] = recommendation.get("name") if recommendation else None
     try:
         active_checklists = queries.list_checklists(include_inactive=False)
         checklist_requirements_by_expense_type = {
@@ -1730,7 +1888,7 @@ def sekolah_activities():
     except Exception:
         current_app.logger.exception("Failed to load Monev BOS account codes")
         account_codes = []
-    verified_vendors = queries.get_report_selectable_vendors()
+    verified_vendors = queries.get_report_selectable_vendors(school_id=int(user["id"]))
 
     try:
         auditor_team = queries.get_assigned_auditors_for_school(report["school_id"], active_period["id"])
@@ -1769,7 +1927,9 @@ def sekolah_activities():
                            admin_info=admin_info,
                            staff_wa_info=staff_wa_info,
                            auditor_team=auditor_team,
-                           headmaster_info=headmaster_info)
+                           headmaster_info=headmaster_info,
+                           bop_claim=bop_claim,
+                           bop_claim_supported=bop_claim_supported)
 
 @monev_bos_bp.route("/sekolah/activities/export", methods=["GET"])
 @role_required("sekolah")

@@ -5491,6 +5491,7 @@ def sekolah_profile() -> Response:
         "portal/sekolah/profile.html",
         school=school,
         meta=meta,
+        profile_classroom_levels=get_classroom_levels(school.get("jenjang"), for_profile=True),
         missing_fields=_compute_missing_profile_fields(school),
         form_errors=form_errors,
         kecamatan_list=kecamatan_list,

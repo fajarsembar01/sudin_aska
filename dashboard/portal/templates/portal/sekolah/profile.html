@@ -15,19 +15,7 @@
         </div>
     </div>
 
-    {% set grade_map = {
-        'PAUD': [-2, -1, 0],
-        'SPS': [-1, 0],
-        'TPA': [-1, 0],
-        'KB': [-1, 0],
-        'TK': [-1, 0],
-        'SD': [1, 2, 3, 4, 5, 6],
-        'SMP': [7, 8, 9],
-        'SMA': [10, 11, 12],
-        'SMK': [10, 11, 12],
-    } %}
-    {% set school_jenjang_upper = school.jenjang.upper() if school and school.jenjang else '' %}
-    {% set grade_levels = grade_map.get(school_jenjang_upper, []) %}
+    {% set grade_levels = profile_classroom_levels or [] %}
     {% set empty_by_grade = (meta.empty_seats_by_grade or {}) if meta else {} %}
 
     <div class="row g-4">
@@ -128,23 +116,13 @@
                             <input type="hidden" name="empty_seats_by_grade" id="emptySeatsByGrade">
                             <input type="hidden" name="empty_seats" id="emptySeatsTotal">
                             <div class="row g-2">
-                                {% for g in grade_levels %}
-                                {% set grade_label = 'Kelas ' ~ g %}
-                                {% if g < 0 %}
-                                    {% if g == -2 %}
-                                        {% set grade_label = 'KB' %}
-                                    {% elif g == -1 %}
-                                        {% set grade_label = 'TK A' if school_jenjang_upper == 'TK' else 'Kelompok A' %}
-                                    {% endif %}
-                                {% elif g == 0 and school_jenjang_upper in ['TK','PAUD','SPS','TPA','KB'] %}
-                                    {% set grade_label = 'TK B' if school_jenjang_upper == 'TK' else 'Kelompok B' %}
-                                {% endif %}
+                                {% for level in grade_levels %}
                                 <div class="col-md-4">
                                     <div class="input-group input-group-sm">
-                                        <span class="input-group-text">{{ grade_label }}</span>
-                                        {% set grade_value = empty_by_grade.get(g|string) %}
+                                        <span class="input-group-text">{{ level.label }}</span>
+                                        {% set grade_value = empty_by_grade.get(level.code|string) %}
                                         <input type="number" min="0" class="form-control empty-seat-input-profile"
-                                            data-grade="{{ g }}" required
+                                            data-grade="{{ level.code }}" required
                                             value="{{ grade_value if grade_value is not none else '' }}"
                                             placeholder="0">
                                     </div>

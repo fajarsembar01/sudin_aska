@@ -5,6 +5,9 @@ import json
 import secrets
 
 
+SUPPORTED_BOP_CLAIM_PERIODS = {(2025, 4), (2026, 1), (2026, 2)}
+
+
 def attach_admin_input_names(
     items: List[Dict[str, Any]],
     target_type: str,
@@ -422,6 +425,157 @@ def submit_school_report(report_id: int) -> None:
             (report_id,)
         )
 
+
+def get_school_claim_identity(school_user_id: int) -> Dict[str, Any]:
+    """Return the canonical portal-school identity used to match claim datasets."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT u.id AS user_id,
+                   COALESCE(school.npsn, '') AS npsn,
+                   COALESCE(school.name, u.full_name) AS school_name
+            FROM dashboard_users u
+            LEFT JOIN LATERAL (
+                SELECT ps.npsn, ps.name
+                FROM portal_schools ps
+                WHERE ps.id = u.school_id OR ps.user_id = u.id
+                ORDER BY CASE WHEN ps.id = u.school_id THEN 0 ELSE 1 END, ps.id
+                LIMIT 1
+            ) school ON TRUE
+            WHERE u.id = %s
+            """,
+            (school_user_id,),
+        )
+        row = cur.fetchone()
+        return dict(row) if row else {}
+
+
+def claim_bop_transactions(
+    report_id: int,
+    school_user_id: int,
+    transactions: List[Dict[str, Any]],
+) -> Dict[str, int]:
+    """Atomically add or update repository-backed BOP claim transactions."""
+    inserted = 0
+    updated = 0
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            SELECT r.id, r.school_id, r.status, p.year, p.tw
+            FROM monev_bos_reports r
+            JOIN monev_bos_periods p ON p.id = r.period_id
+            WHERE r.id = %s
+            FOR UPDATE OF r
+            """,
+            (report_id,),
+        )
+        report = cur.fetchone()
+        if not report or int(report["school_id"]) != int(school_user_id):
+            raise ValueError("Laporan sekolah tidak valid untuk klaim transaksi.")
+        if (int(report["year"]), int(report["tw"])) not in SUPPORTED_BOP_CLAIM_PERIODS:
+            raise ValueError("Klaim transaksi tidak tersedia untuk periode laporan ini.")
+        if report["status"] not in {"draft", "needs_revision"}:
+            raise ValueError("Laporan sudah tidak dapat menerima klaim transaksi.")
+
+        for item in transactions:
+            cur.execute(
+                """
+                SELECT id, status
+                FROM monev_bos_activities
+                WHERE report_id = %s AND fund_source = 'BOP' AND activity_code = %s
+                FOR UPDATE
+                """,
+                (report_id, item["activity_code"]),
+            )
+            existing = cur.fetchone()
+            if existing:
+                if existing["status"] == "valid":
+                    raise ValueError(
+                        "Transaksi yang sudah berstatus Sesuai tidak dapat diklaim ulang tanpa persetujuan perubahan."
+                    )
+                cur.execute(
+                    """
+                    UPDATE monev_bos_activities
+                    SET activity_name = %s,
+                        account_code = %s,
+                        account_code_id = (
+                            SELECT id FROM monev_bos_account_codes
+                            WHERE code = %s AND is_active = TRUE
+                            LIMIT 1
+                        ),
+                        realized_amount = %s,
+                        vendor_name = %s,
+                        vendor_id = %s,
+                        bku_number = %s,
+                        item_name = %s,
+                        item_specs = %s,
+                        item_quantity = %s,
+                        expense_type_id = %s,
+                        status = 'pending',
+                        updated_at = NOW()
+                    WHERE id = %s
+                    """,
+                    (
+                        item["activity_name"],
+                        item["account_code"],
+                        item["account_code"],
+                        item["realized_amount"],
+                        item.get("vendor_name"),
+                        item.get("vendor_id"),
+                        item["bku_number"],
+                        item["item_name"],
+                        item["item_specs"],
+                        item["item_quantity"],
+                        item.get("expense_type_id"),
+                        existing["id"],
+                    ),
+                )
+                updated += 1
+                continue
+
+            cur.execute(
+                """
+                INSERT INTO monev_bos_activities
+                    (report_id, fund_source, activity_code, activity_name, account_code, account_code_id,
+                     realized_amount, vendor_name, vendor_id, bku_number, item_name,
+                     item_specs, item_quantity, expense_type_id)
+                SELECT %s, 'BOP', %s, %s, %s,
+                       (SELECT id FROM monev_bos_account_codes WHERE code = %s AND is_active = TRUE LIMIT 1),
+                       %s, %s, %s, %s, %s, %s, %s, %s
+                WHERE NOT EXISTS (
+                    SELECT 1
+                    FROM monev_bos_activities
+                    WHERE report_id = %s AND fund_source = 'BOP' AND activity_code = %s
+                )
+                RETURNING id
+                """,
+                (
+                    report_id,
+                    item["activity_code"],
+                    item["activity_name"],
+                    item["account_code"],
+                    item["account_code"],
+                    item["realized_amount"],
+                    item.get("vendor_name"),
+                    item.get("vendor_id"),
+                    item["bku_number"],
+                    item["item_name"],
+                    item["item_specs"],
+                    item["item_quantity"],
+                    item.get("expense_type_id"),
+                    report_id,
+                    item["activity_code"],
+                ),
+            )
+            if cur.fetchone():
+                inserted += 1
+
+    return {
+        "inserted": inserted,
+        "updated": updated,
+        "skipped": len(transactions) - inserted - updated,
+    }
+
 # --- ACTIVITIES ---
 def list_activities(report_id: int) -> List[Dict[str, Any]]:
     with get_cursor() as cur:
@@ -466,11 +620,11 @@ def create_activity(report_id: int, fund_source: str, data: Dict[str, Any]) -> i
         cur.execute(
             """
             INSERT INTO monev_bos_activities 
-            (report_id, fund_source, activity_code, activity_name, account_code, realized_amount, vendor_name, vendor_id, bku_number, item_name, item_specs, item_quantity, activity_type_id, expense_type_id)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id
+            (report_id, fund_source, activity_code, activity_name, account_code, account_code_id, realized_amount, vendor_name, vendor_id, bku_number, item_name, item_specs, item_quantity, activity_type_id, expense_type_id)
+            VALUES (%s, %s, %s, %s, %s, (SELECT id FROM monev_bos_account_codes WHERE code = %s AND is_active = TRUE LIMIT 1), %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id
             """,
             (
-                report_id, fund_source, data['activity_code'], data['activity_name'], data.get('account_code'),
+                report_id, fund_source, data['activity_code'], data['activity_name'], data.get('account_code'), data.get('account_code'),
                 data['realized_amount'], data.get('vendor_name'), data.get('vendor_id'), data.get('bku_number'),
                 data.get('item_name'), data.get('item_specs'), data.get('item_quantity'), data.get('activity_type_id'), data.get('expense_type_id')
             )
@@ -482,13 +636,15 @@ def update_activity(activity_id: int, data: Dict[str, Any]) -> None:
         cur.execute(
             """
             UPDATE monev_bos_activities 
-            SET activity_code = %s, activity_name = %s, account_code = %s, realized_amount = %s,
+            SET activity_code = %s, activity_name = %s, account_code = %s,
+                account_code_id = (SELECT id FROM monev_bos_account_codes WHERE code = %s AND is_active = TRUE LIMIT 1),
+                realized_amount = %s,
                 vendor_name = %s, vendor_id = %s, bku_number = %s, item_name = %s, item_specs = %s, item_quantity = %s,
                 activity_type_id = %s, expense_type_id = %s
             WHERE id = %s
             """,
             (
-                data['activity_code'], data['activity_name'], data.get('account_code'), data['realized_amount'],
+                data['activity_code'], data['activity_name'], data.get('account_code'), data.get('account_code'), data['realized_amount'],
                 data.get('vendor_name'), data.get('vendor_id'), data.get('bku_number'),
                 data.get('item_name'), data.get('item_specs'), data.get('item_quantity'),
                 data.get('activity_type_id'), data.get('expense_type_id'),
@@ -1384,20 +1540,22 @@ def list_all_vendors_for_admin(status_filter: str = None, search_query: str = No
         return [dict(row) for row in cur.fetchall()]
 
 
-def get_report_selectable_vendors() -> List[Dict[str, Any]]:
-    """Get pending and verified vendors that every school may use in reports."""
+def get_report_selectable_vendors(school_id: Optional[int] = None) -> List[Dict[str, Any]]:
+    """Get selectable vendors, prioritizing entries registered by the current school."""
     with get_cursor() as cur:
         cur.execute(
             """
             SELECT v.id, v.school_id, v.name, v.npwp, v.phone, v.address,
                    v.owner_name, v.bank_name, v.bank_account, v.status, v.vendor_type,
+                   (v.school_id = %s) AS is_own_school,
                    COALESCE(ps.name, u_school.full_name) AS registered_school_name
             FROM monev_bos_vendors v
             JOIN dashboard_users u_school ON u_school.id = v.school_id
             LEFT JOIN portal_schools ps ON ps.id = u_school.school_id
             WHERE v.status IN ('verified', 'pending')
-            ORDER BY v.vendor_type, v.name ASC, v.id DESC
+            ORDER BY is_own_school DESC NULLS LAST, v.vendor_type, v.name ASC, v.id DESC
             """,
+            (school_id,),
         )
         return [dict(row) for row in cur.fetchall()]
 

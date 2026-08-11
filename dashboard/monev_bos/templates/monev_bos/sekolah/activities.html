@@ -165,9 +165,32 @@
                     Daftar Kegiatan {{ fund_source }} <span class="badge bg-primary-subtle text-primary border ms-1" id="activityCountBadge">{{ activities|length }} Kegiatan</span>
                 </h6>
                 {% if report.status in ['draft', 'needs_revision'] %}
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    {% if bop_claim_supported %}
+                        {% if bop_claim and bop_claim.pending_count > 0 %}
+                        <button type="button" class="btn btn-sm btn-warning fw-bold shadow-xs" data-bs-toggle="modal" data-bs-target="#claimBopTransactionsModal" title="Sesuaikan data sumber BOP {{ bop_claim.year }} TW {{ '%02d'|format(bop_claim.tw) }} sesuai NPSN {{ bop_claim.npsn }}">
+                            <i class="bi bi-ui-checks me-1"></i> Klaim {{ bop_claim.pending_count }} Transaksi
+                        </button>
+                        {% elif bop_claim %}
+                        {% if bop_claim.wizard_count > 0 %}
+                        <button type="button" class="btn btn-sm btn-outline-warning fw-bold shadow-xs" data-bs-toggle="modal" data-bs-target="#claimBopTransactionsModal" title="Buka kembali seluruh transaksi klaim untuk disesuaikan">
+                            <i class="bi bi-arrow-repeat me-1"></i> Klaim Ulang
+                        </button>
+                        {% else %}
+                        <button type="button" class="btn btn-sm btn-outline-secondary fw-bold" disabled title="Transaksi yang sudah berstatus Sesuai memerlukan persetujuan perubahan">
+                            <i class="bi bi-lock-fill me-1"></i> Klaim Ulang
+                        </button>
+                        {% endif %}
+                        {% else %}
+                        <button type="button" class="btn btn-sm btn-outline-secondary fw-bold" disabled title="Data BOP periode ini untuk NPSN sekolah belum ditemukan">
+                            <i class="bi bi-cloud-slash me-1"></i> Data Klaim Tidak Tersedia
+                        </button>
+                        {% endif %}
+                    {% endif %}
                 <button class="btn btn-sm {% if fund_source == 'BOS' %}btn-success{% else %}btn-info text-white{% endif %} fw-bold shadow-xs" data-bs-toggle="modal" data-bs-target="#addActivityModal">
                     <i class="bi bi-plus-lg me-1"></i> Tambah Kegiatan {{ fund_source }}
                 </button>
+                </div>
                 {% endif %}
             </div>
             <!-- Search Bar Input -->
@@ -692,11 +715,21 @@
                         </div>
                         <select class="form-select vendor-ts-select" name="vendor_id" id="vendorSelectEdit_{{ act.id }}">
                             <option value="">-- Pilih Vendor / Narsum --</option>
-                            {% set has_vendor = verified_vendors|selectattr('vendor_type', 'equalto', 'vendor')|list|length > 0 %}
-                            {% set has_narsum = verified_vendors|selectattr('vendor_type', 'equalto', 'narsum')|list|length > 0 %}
+                            {% set own_vendors = verified_vendors|selectattr('is_own_school', 'equalto', true)|list %}
+                            {% set has_vendor = verified_vendors|rejectattr('is_own_school', 'equalto', true)|selectattr('vendor_type', 'equalto', 'vendor')|list|length > 0 %}
+                            {% set has_narsum = verified_vendors|rejectattr('is_own_school', 'equalto', true)|selectattr('vendor_type', 'equalto', 'narsum')|list|length > 0 %}
+                            {% if own_vendors %}
+                            <optgroup label="Diinput Sekolah Anda">
+                            {% for v in own_vendors %}
+                                <option value="{{ v.id }}" {% if act.vendor_id == v.id or (not act.vendor_id and act.vendor_name == v.name) %}selected{% endif %}>
+                                    {{ v.name }}{% if v.vendor_type == 'narsum' %} — Narasumber{% else %} — Vendor{% endif %}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'pending' %} ⚠ Belum Divalidasi{% endif %}
+                                </option>
+                            {% endfor %}
+                            </optgroup>
+                            {% endif %}
                             {% if has_vendor %}
                             <optgroup label="🏪 Vendor / Toko">
-                            {% for v in verified_vendors if v.vendor_type != 'narsum' %}
+                            {% for v in verified_vendors if not v.is_own_school and v.vendor_type != 'narsum' %}
                                 <option value="{{ v.id }}" {% if act.vendor_id == v.id or (not act.vendor_id and act.vendor_name == v.name) %}selected{% endif %}>
                                     {{ v.name }}{% if v.registered_school_name %} — {{ v.registered_school_name }}{% endif %}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'pending' %} ⚠ Belum Divalidasi{% endif %}
                                 </option>
@@ -705,7 +738,7 @@
                             {% endif %}
                             {% if has_narsum %}
                             <optgroup label="🎤 Narasumber / Instruktur">
-                            {% for v in verified_vendors if v.vendor_type == 'narsum' %}
+                            {% for v in verified_vendors if not v.is_own_school and v.vendor_type == 'narsum' %}
                                 <option value="{{ v.id }}" {% if act.vendor_id == v.id or (not act.vendor_id and act.vendor_name == v.name) %}selected{% endif %}>
                                     {{ v.name }}{% if v.registered_school_name %} — {{ v.registered_school_name }}{% endif %}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'pending' %} ⚠ Belum Divalidasi{% endif %}
                                 </option>
@@ -727,7 +760,7 @@
                     <div class="col-md-4">
                         <div class="p-3 border rounded bg-light-subtle h-100 d-flex flex-column justify-content-between">
                             <label class="form-label fw-bold text-dark mb-2 text-truncate" title="Dokumen Faktur & Kwitansi">
-                                Faktur & Kwitansi <span class="text-danger">*</span>
+                                Faktur & Kwitansi <span class="text-muted fw-normal">(Opsional)</span>
                             </label>
                             <div class="d-grid gap-2">
                                 <input type="file" class="d-none image-doc-input" name="doc_invoice" accept="image/*">
@@ -750,7 +783,7 @@
                     <div class="col-md-4">
                         <div class="p-3 border rounded bg-light-subtle h-100 d-flex flex-column justify-content-between">
                             <label class="form-label fw-bold text-dark mb-2 text-truncate" title="Bukti Transfer">
-                                Bukti Transfer <span class="text-danger">*</span>
+                                Bukti Transfer <span class="text-muted fw-normal">(Opsional)</span>
                             </label>
                             <div class="d-grid gap-2">
                                 <input type="file" class="d-none image-doc-input" name="doc_transfer" accept="image/*">
@@ -941,18 +974,26 @@
                         </div>
                         <select class="form-select vendor-ts-select" name="vendor_id" id="vendorSelectAdd">
                             <option value="">-- Pilih Vendor / Narsum --</option>
-                            {% set has_vendor_add = verified_vendors|selectattr('vendor_type', 'equalto', 'vendor')|list|length > 0 %}
-                            {% set has_narsum_add = verified_vendors|selectattr('vendor_type', 'equalto', 'narsum')|list|length > 0 %}
+                            {% set own_vendors_add = verified_vendors|selectattr('is_own_school', 'equalto', true)|list %}
+                            {% set has_vendor_add = verified_vendors|rejectattr('is_own_school', 'equalto', true)|selectattr('vendor_type', 'equalto', 'vendor')|list|length > 0 %}
+                            {% set has_narsum_add = verified_vendors|rejectattr('is_own_school', 'equalto', true)|selectattr('vendor_type', 'equalto', 'narsum')|list|length > 0 %}
+                            {% if own_vendors_add %}
+                            <optgroup label="Diinput Sekolah Anda">
+                            {% for v in own_vendors_add %}
+                                <option value="{{ v.id }}">{{ v.name }}{% if v.vendor_type == 'narsum' %} — Narasumber{% else %} — Vendor{% endif %}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'pending' %} ⚠ Belum Divalidasi{% endif %}</option>
+                            {% endfor %}
+                            </optgroup>
+                            {% endif %}
                             {% if has_vendor_add %}
                             <optgroup label="🏪 Vendor / Toko">
-                            {% for v in verified_vendors if v.vendor_type != 'narsum' %}
+                            {% for v in verified_vendors if not v.is_own_school and v.vendor_type != 'narsum' %}
                                 <option value="{{ v.id }}">{{ v.name }}{% if v.registered_school_name %} — {{ v.registered_school_name }}{% endif %}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'pending' %} ⚠ Belum Divalidasi{% endif %}</option>
                             {% endfor %}
                             </optgroup>
                             {% endif %}
                             {% if has_narsum_add %}
                             <optgroup label="🎤 Narasumber / Instruktur">
-                            {% for v in verified_vendors if v.vendor_type == 'narsum' %}
+                            {% for v in verified_vendors if not v.is_own_school and v.vendor_type == 'narsum' %}
                                 <option value="{{ v.id }}">{{ v.name }}{% if v.registered_school_name %} — {{ v.registered_school_name }}{% endif %}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'pending' %} ⚠ Belum Divalidasi{% endif %}</option>
                             {% endfor %}
                             </optgroup>
@@ -969,10 +1010,10 @@
                     <div class="col-md-4">
                         <div class="p-3 border rounded bg-light-subtle h-100 d-flex flex-column justify-content-between">
                             <label class="form-label fw-bold text-dark mb-2 text-truncate" title="Faktur & Kwitansi">
-                                Faktur & Kwitansi <span class="text-danger">*</span>
+                                Faktur & Kwitansi <span class="text-muted fw-normal">(Opsional)</span>
                             </label>
                             <div class="d-grid gap-2">
-                                <input type="file" class="d-none image-doc-input" name="doc_invoice" accept="image/*" required>
+                                <input type="file" class="d-none image-doc-input" name="doc_invoice" accept="image/*">
                                 <input type="file" class="d-none image-doc-camera-input" accept="image/*" capture="environment" data-target="doc_invoice">
                                 <div class="btn-group w-100" role="group">
                                     <button type="button" class="btn btn-sm btn-outline-secondary image-doc-upload-btn text-nowrap px-2">
@@ -989,10 +1030,10 @@
                     <div class="col-md-4">
                         <div class="p-3 border rounded bg-light-subtle h-100 d-flex flex-column justify-content-between">
                             <label class="form-label fw-bold text-dark mb-2 text-truncate" title="Bukti Transfer">
-                                Bukti Transfer <span class="text-danger">*</span>
+                                Bukti Transfer <span class="text-muted fw-normal">(Opsional)</span>
                             </label>
                             <div class="d-grid gap-2">
-                                <input type="file" class="d-none image-doc-input" name="doc_transfer" accept="image/*" required>
+                                <input type="file" class="d-none image-doc-input" name="doc_transfer" accept="image/*">
                                 <input type="file" class="d-none image-doc-camera-input" accept="image/*" capture="environment" data-target="doc_transfer">
                                 <div class="btn-group w-100" role="group">
                                     <button type="button" class="btn btn-sm btn-outline-secondary image-doc-upload-btn text-nowrap px-2">
@@ -1047,6 +1088,148 @@
         </form>
     </div>
 </div>
+
+{% if bop_claim and bop_claim.wizard_count > 0 %}
+<!-- Wizard Klaim Transaksi BOP -->
+<div class="modal fade" id="claimBopTransactionsModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <form action="{{ url_for('monev_bos.sekolah_activities', period_id=active_period.id, fund_source='BOP') }}" method="POST" class="modal-content" id="claimBopWizardForm">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="action" value="claim_bop_transactions">
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title fw-bold"><i class="bi bi-ui-checks-grid me-2 text-warning"></i>{% if bop_claim.is_reclaim %}Klaim Ulang & Sesuaikan Transaksi BOP{% else %}Klaim & Sesuaikan Transaksi BOP{% endif %}</h5>
+                    <div class="text-body-secondary text-xs mt-1">{{ bop_claim.school_name }} · NPSN {{ bop_claim.npsn }} · {{ bop_claim.year }} TW {{ '%02d'|format(bop_claim.tw) }}</div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="px-3 px-md-4 pt-3">
+                <div class="d-flex justify-content-between align-items-center mb-2 text-xs">
+                    <strong id="claimBopStepLabel">Transaksi 1 dari {{ bop_claim.wizard_count }}</strong>
+                    <span class="text-body-secondary">Total sumber: Rp {{ "{:,.0f}".format(bop_claim.wizard_amount).replace(',', '.') }}</span>
+                </div>
+                <div class="progress" style="height: 7px;">
+                    <div class="progress-bar bg-warning" id="claimBopProgress" role="progressbar" style="width: {{ (100 / bop_claim.wizard_count)|round(2) }}%;"></div>
+                </div>
+            </div>
+            <div class="modal-body px-3 px-md-4">
+                {% for tx in bop_claim.wizard_transactions %}
+                <section class="claim-bop-step {% if not loop.first %}d-none{% endif %}" data-claim-step="{{ loop.index0 }}">
+                    <input type="hidden" name="claim_activity_code" value="{{ tx.activity_code }}">
+                    <div class="alert alert-info border mb-4">
+                        <div class="row g-2 align-items-center">
+                            <div class="col-md-8">
+                                <div class="text-xs text-uppercase fw-bold text-info-emphasis mb-1">Data transaksi sumber</div>
+                                <div class="fw-bold">{{ tx.source_activity_name }}</div>
+                                <div class="font-monospace text-xs mt-1">Kode Rekening: {{ tx.account_code }}</div>
+                            </div>
+                            <div class="col-md-4 text-md-end">
+                                <div class="text-xs text-body-secondary">Nilai sumber</div>
+                                <div class="fs-5 fw-bold text-info-emphasis">Rp {{ "{:,.0f}".format(tx.source_realized_amount).replace(',', '.') }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Jenis Belanja <span class="text-danger">*</span></label>
+                            <select class="form-select" name="claim_expense_type_id" required>
+                                <option value="" {% if not tx.selected_expense_type_id %}selected{% endif %} disabled>-- Pilih Jenis Belanja --</option>
+                                {% for et in expense_types %}
+                                <option value="{{ et.id }}" {% if tx.selected_expense_type_id == et.id %}selected{% endif %}>{{ et.name }}{% if tx.recommended_expense_type_id == et.id %} — ✨ Rekomendasi AI{% endif %}</option>
+                                {% endfor %}
+                            </select>
+                            {% if tx.recommended_expense_type_name %}
+                            <div class="form-text text-xs text-success fw-semibold"><i class="bi bi-stars me-1"></i>Rekomendasi AI: {{ tx.recommended_expense_type_name }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Nama Kegiatan <span class="text-danger">*</span></label>
+                            <select class="form-select searchable-activity-select" name="claim_activity_name" required data-placeholder="Cari nama kegiatan...">
+                                <option value="" {% if not tx.selected_activity_name %}selected{% endif %} disabled>-- Pilih Nama Kegiatan --</option>
+                                {% if tx.selected_activity_name %}
+                                <option value="{{ tx.selected_activity_name }}" selected>{{ tx.selected_activity_name }}</option>
+                                {% endif %}
+                                {% for master in master_activities %}
+                                {% if master.name != tx.selected_activity_name %}
+                                <option value="{{ master.name }}">{{ master.name }}{% if master.code_prefix %} ({{ master.code_prefix }}){% endif %}</option>
+                                {% endif %}
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">No. BKU <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="claim_bku_number" required value="{{ tx.selected_bku_number }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Kode Rekening <span class="text-danger">*</span></label>
+                            <select class="form-select searchable-account-select claim-account-select" name="claim_account_code" required data-placeholder="Cari kode atau nama rekening...">
+                                <option value="" disabled>-- Pilih Kode Rekening --</option>
+                                {% for ac in account_codes %}
+                                <option value="{{ ac.code }}" {% if tx.selected_account_code == ac.code %}selected{% endif %}>{{ ac.code }}{% if ac.name %} - {{ ac.name }}{% endif %}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Nilai Realisasi (Rp) <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text fw-bold">Rp</span>
+                                <input type="text" inputmode="numeric" class="form-control rupiah-input" name="claim_realized_amount" required value="{{ '{:,.0f}'.format(tx.selected_realized_amount).replace(',', '.') }}">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Vendor / Narasumber <span class="text-muted fw-normal">(Opsional)</span></label>
+                            <select class="form-select vendor-ts-select" name="claim_vendor_id">
+                                <option value="">-- Pilih Vendor / Narsum --</option>
+                                {% set claim_own_vendors = verified_vendors|selectattr('is_own_school', 'equalto', true)|list %}
+                                {% set claim_has_vendor = verified_vendors|rejectattr('is_own_school', 'equalto', true)|selectattr('vendor_type', 'ne', 'narsum')|list|length > 0 %}
+                                {% set claim_has_narsum = verified_vendors|rejectattr('is_own_school', 'equalto', true)|selectattr('vendor_type', 'equalto', 'narsum')|list|length > 0 %}
+                                {% if claim_own_vendors %}<optgroup label="Diinput Sekolah Anda">{% endif %}
+                                {% for v in claim_own_vendors %}
+                                <option value="{{ v.id }}" {% if tx.selected_vendor_id == v.id %}selected{% endif %}>{{ v.name }}{% if v.vendor_type == 'narsum' %} — Narasumber{% else %} — Vendor{% endif %}</option>
+                                {% endfor %}
+                                {% if claim_own_vendors %}</optgroup>{% endif %}
+                                {% if claim_has_vendor %}<optgroup label="🏪 Vendor / Toko">{% endif %}
+                                {% for v in verified_vendors if not v.is_own_school and v.vendor_type != 'narsum' %}
+                                <option value="{{ v.id }}" {% if tx.selected_vendor_id == v.id %}selected{% endif %}>{{ v.name }}{% if v.registered_school_name %} — {{ v.registered_school_name }}{% endif %}</option>
+                                {% endfor %}
+                                {% if claim_has_vendor %}</optgroup>{% endif %}
+                                {% if claim_has_narsum %}<optgroup label="🎤 Narasumber / Instruktur">{% endif %}
+                                {% for v in verified_vendors if not v.is_own_school and v.vendor_type == 'narsum' %}
+                                <option value="{{ v.id }}" {% if tx.selected_vendor_id == v.id %}selected{% endif %}>{{ v.name }}{% if v.registered_school_name %} — {{ v.registered_school_name }}{% endif %}</option>
+                                {% endfor %}
+                                {% if claim_has_narsum %}</optgroup>{% endif %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Detail Kegiatan <span class="text-muted fw-normal">(Opsional)</span></label>
+                            <input type="text" class="form-control" name="claim_item_name" value="{{ tx.selected_item_name or '' }}" placeholder="Contoh: Pembelian tinta printer">
+                        </div>
+                    </div>
+                    <div class="alert alert-light border mt-4 mb-0 text-xs text-body-secondary">
+                        <i class="bi bi-info-circle me-1"></i> Faktur, bukti transfer, dan foto dapat ditambahkan melalui menu Edit setelah seluruh transaksi selesai diklaim.
+                    </div>
+                </section>
+                {% endfor %}
+            </div>
+            <div class="modal-footer d-flex justify-content-between">
+                <button type="button" class="btn btn-outline-secondary" id="claimBopPrevious" disabled>
+                    <i class="bi bi-arrow-left me-1"></i> Sebelumnya
+                </button>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-warning fw-bold" id="claimBopNext">
+                        Selanjutnya <i class="bi bi-arrow-right ms-1"></i>
+                    </button>
+                    <button type="submit" class="btn btn-success fw-bold d-none" id="claimBopSubmit" onclick="return confirm('{% if bop_claim.is_reclaim %}Perbarui seluruh transaksi klaim dengan data yang sudah disesuaikan?{% else %}Simpan seluruh transaksi yang sudah disesuaikan?{% endif %}');">
+                        <i class="bi bi-check2-all me-1"></i> {% if bop_claim.is_reclaim %}Perbarui Klaim{% else %}Simpan Semua Transaksi{% endif %}
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
 
 <div class="modal fade" id="schoolCameraModal" tabindex="-1" data-bs-backdrop="static">
     <div class="modal-dialog modal-dialog-centered">
@@ -1177,11 +1360,11 @@ function initActivitySearchableSelects(container) {
 
         const tom = new TomSelect(select, {
             create: false,
-            allowEmptyOption: true,
-            maxItems: select.classList.contains('searchable-story-post-select') ? 3 : null,
+            allowEmptyOption: !select.required,
+            maxItems: select.classList.contains('searchable-story-post-select') ? 3 : 1,
             placeholder: select.getAttribute('data-placeholder') || 'Ketik untuk mencari...',
             searchField: ['text'],
-            plugins: select.required ? [] : ['clear_button'],
+            plugins: select.required && !select.classList.contains('claim-account-select') ? [] : ['clear_button'],
             render: {
                 no_results: function () {
                     return '<div class="no-results">Data tidak ditemukan</div>';
@@ -1205,6 +1388,71 @@ document.addEventListener('DOMContentLoaded', function () {
             initAuditRequirements(modal);
         });
     });
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+    const wizardForm = document.getElementById('claimBopWizardForm');
+    if (!wizardForm) return;
+
+    const steps = Array.from(wizardForm.querySelectorAll('.claim-bop-step'));
+    const previousButton = document.getElementById('claimBopPrevious');
+    const nextButton = document.getElementById('claimBopNext');
+    const submitButton = document.getElementById('claimBopSubmit');
+    const stepLabel = document.getElementById('claimBopStepLabel');
+    const progress = document.getElementById('claimBopProgress');
+    let currentStep = 0;
+
+    function showClaimStep(index) {
+        currentStep = Math.max(0, Math.min(index, steps.length - 1));
+        steps.forEach(function (step, stepIndex) {
+            step.classList.toggle('d-none', stepIndex !== currentStep);
+        });
+        previousButton.disabled = currentStep === 0;
+        const isLast = currentStep === steps.length - 1;
+        nextButton.classList.toggle('d-none', isLast);
+        submitButton.classList.toggle('d-none', !isLast);
+        stepLabel.textContent = 'Transaksi ' + (currentStep + 1) + ' dari ' + steps.length;
+        progress.style.width = (((currentStep + 1) / steps.length) * 100) + '%';
+    }
+
+    function validateClaimStep(index) {
+        const step = steps[index];
+        const requiredFields = Array.from(step.querySelectorAll('[required]'));
+        const invalidField = requiredFields.find(function (field) {
+            return !String(field.value || '').trim();
+        });
+        requiredFields.forEach(function (field) {
+            const invalid = !String(field.value || '').trim();
+            field.classList.toggle('is-invalid', invalid);
+            if (field.tomselect) field.tomselect.wrapper.classList.toggle('is-invalid', invalid);
+        });
+        if (!invalidField) return true;
+
+        if (invalidField.tomselect) invalidField.tomselect.focus();
+        else invalidField.focus();
+        alert('Lengkapi seluruh data wajib pada transaksi ' + (index + 1) + '.');
+        return false;
+    }
+
+    previousButton.addEventListener('click', function () {
+        showClaimStep(currentStep - 1);
+    });
+    nextButton.addEventListener('click', function () {
+        if (validateClaimStep(currentStep)) showClaimStep(currentStep + 1);
+    });
+    wizardForm.addEventListener('submit', function (event) {
+        for (let index = 0; index < steps.length; index += 1) {
+            if (!validateClaimStep(index)) {
+                event.preventDefault();
+                showClaimStep(index);
+                return;
+            }
+        }
+    });
+    document.getElementById('claimBopTransactionsModal').addEventListener('shown.bs.modal', function () {
+        showClaimStep(0);
+    });
+    showClaimStep(0);
 });
 
 document.addEventListener('change', function (event) {
