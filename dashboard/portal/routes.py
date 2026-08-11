@@ -1942,6 +1942,7 @@ def home() -> Response:
             cards=cards,
             default_col_class="col-lg-4 col-md-6 col-12",
             enable_odd_center=False,
+            mobile_compact=True,
             show_logout=True,
         )
     if role == "coordinator":
@@ -6013,6 +6014,7 @@ def sekolah_profile() -> Response:
         "portal/sekolah/profile.html",
         school=school,
         meta=meta,
+        profile_classroom_levels=get_classroom_levels(school.get("jenjang"), for_profile=True),
         missing_fields=_compute_missing_profile_fields(school),
         form_errors=form_errors,
         kecamatan_list=kecamatan_list,

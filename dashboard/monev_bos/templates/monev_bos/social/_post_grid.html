@@ -1,19 +1,41 @@
 <div class="row g-3">
     {% for post in posts %}
-    {% set post_filename = post.photo_path|replace('static/', '', 1) %}
-    <div class="col-12 col-sm-6 col-lg-4 col-xl-3" id="post-{{ post.id }}">
-        <article class="card h-100 border-0 shadow-sm overflow-hidden">
-            <button type="button" class="border-0 p-0 bg-dark activity-doc-preview-link" data-doc-title="{{ post.title }} - {{ post.school_name }}" data-photo-url="{{ url_for('static', filename=post_filename) }}">
-                <img src="{{ url_for('static', filename=post_filename) }}" class="card-img-top monev-post-grid-image" alt="{{ post.title }}">
+    <div class="col-12 col-sm-6 col-lg-4 col-xl-3 monev-post-grid-item" id="post-{{ post.id }}">
+        <article class="card h-100 border-0 shadow-sm overflow-hidden position-relative">
+            {% if profile is defined %}
+            <label class="position-absolute top-0 start-0 m-2 z-3 bg-white rounded-pill shadow-sm px-2 py-1 d-flex align-items-center gap-1 photo-report-selector" title="Pilih untuk laporan PDF">
+                <input type="checkbox" class="form-check-input mt-0 photo-report-checkbox" value="{{ post.id }}" data-is-public="{{ 'true' if post.is_public else 'false' }}" aria-label="Pilih {{ post.title }}">
+                <span class="small fw-semibold">Pilih</span>
+            </label>
+            {% endif %}
+            <button type="button" class="border-0 p-0 bg-dark activity-doc-preview-link" data-doc-title="{{ post.title }} - {{ post.school_name }}" data-photo-url="{{ url_for('monev_bos.school_post_photo', post_id=post.id) }}">
+                <img src="{{ url_for('monev_bos.school_post_photo', post_id=post.id) }}" class="card-img-top monev-post-grid-image" alt="{{ post.title }}">
             </button>
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
                     <a href="{{ url_for('monev_bos.school_posts_profile', school_user_id=post.school_user_id) }}" class="fw-semibold text-decoration-none text-body small">{{ post.school_name }}</a>
-                    {% if post.is_active_story %}<span class="badge bg-danger-subtle text-danger border border-danger-subtle">Foto Live aktif</span>{% endif %}
+                    <div class="d-flex gap-1 flex-wrap justify-content-end">
+                        {% if post.is_active_story %}<span class="badge bg-danger-subtle text-danger border border-danger-subtle">Foto Live aktif</span>{% endif %}
+                        {% if post.is_public %}
+                        <span class="badge bg-success-subtle text-success border border-success-subtle"><i class="bi bi-globe2 me-1"></i>Publik</span>
+                        {% else %}
+                        <span class="badge bg-secondary-subtle text-secondary border"><i class="bi bi-lock-fill me-1"></i>Private</span>
+                        {% endif %}
+                    </div>
                 </div>
                 <h2 class="h6 fw-bold mb-2">{{ post.title }}</h2>
                 <div class="text-body-secondary small mb-1"><i class="bi bi-geo-alt-fill me-1"></i>{{ post.location_text }}</div>
                 <div class="text-body-secondary text-xs">{{ post.created_at|jakarta('%d %b %Y %H:%M') }}</div>
+                {% if post.external_photographer_name %}
+                <div class="small mt-2 p-2 rounded bg-body-tertiary">
+                    <i class="bi bi-person-badge me-1 text-primary"></i>
+                    Diambil oleh <strong>{{ post.external_photographer_name }}</strong><br>
+                    <span class="text-body-secondary ms-4">NIP {{ post.external_photographer_nip }}</span>
+                </div>
+                {% endif %}
+                {% if post.is_public and post.public_token %}
+                <a href="{{ url_for('monev_bos.public_school_post_verification', public_token=post.public_token) }}" target="_blank" class="small text-success text-decoration-none d-inline-block mt-2"><i class="bi bi-patch-check-fill me-1"></i>Cek keaslian publik</a>
+                {% endif %}
             </div>
             {% if current_user.role == 'admin' or (current_user.role == 'sekolah' and current_user.id == post.school_user_id) %}
             <div class="card-footer bg-body border-0 pt-0">

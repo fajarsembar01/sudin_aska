@@ -1,12 +1,41 @@
-from flask import Blueprint, current_app, render_template, request, jsonify, flash, redirect, url_for, session
+from flask import Blueprint, current_app, render_template, request, jsonify, flash, redirect, url_for, session, abort, send_file
 from dashboard.auth import role_required, current_user
 from dashboard.queries import record_admin_action
 from . import monev_bos_bp, queries
+from .bop_claims import get_school_bop_claim, is_bop_claim_period, recommend_expense_type
+from .external_photos import access_token_matches, validate_external_identity, validate_external_nip
 import base64
 import shutil
 import uuid
+import time
 
 MAX_ACTIVITY_FIELD_PHOTOS = 3
+
+
+def _resolve_school_report_vendor(vendor_id_raw):
+    """Resolve a globally selectable vendor while its verification is pending."""
+    if not vendor_id_raw:
+        return None, None, None
+    if not str(vendor_id_raw).isdigit():
+        return None, None, "Vendor / narasumber yang dipilih tidak valid."
+
+    vendor_id = int(vendor_id_raw)
+    vendor = queries.get_vendor_by_id(vendor_id)
+    if not vendor:
+        return None, None, "Vendor / narasumber tidak ditemukan."
+    if vendor.get("status") not in {"pending", "verified"}:
+        return None, None, "Vendor / narasumber yang ditolak tidak dapat dimasukkan ke laporan."
+
+    return vendor_id, vendor.get("name"), None
+
+
+def _activity_vendor_is_unverified(activity):
+    """Return True when an attached vendor exists but is not verified yet."""
+    has_vendor = bool(
+        activity.get("vendor_id")
+        or (activity.get("vendor_name") or "").strip()
+    )
+    return has_vendor and activity.get("vendor_status") != "verified"
 
 
 def _requested_activity_photos():
@@ -859,6 +888,202 @@ def _absolute_dashboard_file_path(relative_path: str) -> str:
     return os.path.normpath(os.path.join(monev_bos_bp.root_path, "..", (relative_path or "").lstrip("/")))
 
 
+@monev_bos_bp.before_app_request
+def protect_private_school_story_files():
+    """Prevent direct /static access to private Foto Live assets."""
+    relative_path = request.path.lstrip("/")
+    if not relative_path.startswith("static/uploads/monev_bos/stories/"):
+        return None
+    post = queries.get_school_post_by_photo_path(relative_path)
+    if not post or post.get("is_public"):
+        return None
+    user = current_user() or {}
+    if user.get("role") in {"admin", "staff"}:
+        return None
+    if user.get("role") == "sekolah" and int(user.get("id") or 0) == int(post["school_user_id"]):
+        return None
+    abort(404)
+
+
+def _can_view_school_post_photo(post: dict) -> bool:
+    if post.get("is_public"):
+        return True
+    user = current_user() or {}
+    if user.get("role") in {"admin", "staff"}:
+        return True
+    return user.get("role") == "sekolah" and int(user.get("id") or 0) == int(post["school_user_id"])
+
+
+def _load_report_font(size: int, bold: bool = False):
+    from PIL import ImageFont
+
+    candidates = (
+        ["/System/Library/Fonts/Supplemental/Arial Bold.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"]
+        if bold
+        else ["/System/Library/Fonts/Supplemental/Arial.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"]
+    )
+    for path in candidates:
+        if os.path.isfile(path):
+            return ImageFont.truetype(path, size=size)
+    return ImageFont.load_default()
+
+
+def _draw_wrapped_text(draw, text: str, xy: tuple, font, fill, max_width: int, line_gap: int = 8) -> int:
+    words = (text or "-").split()
+    lines = []
+    current = ""
+    for word in words:
+        candidate = f"{current} {word}".strip()
+        if current and draw.textbbox((0, 0), candidate, font=font)[2] > max_width:
+            lines.append(current)
+            current = word
+        else:
+            current = candidate
+    if current:
+        lines.append(current)
+    x, y = xy
+    line_height = draw.textbbox((0, 0), "Ag", font=font)[3] + line_gap
+    for line in lines:
+        draw.text((x, y), line, font=font, fill=fill)
+        y += line_height
+    return y
+
+
+def _build_school_photo_report_pdf(posts: list, profile: dict) -> io.BytesIO:
+    """Build one adaptive A4 page containing one to six authenticated photos."""
+    import qrcode
+    from PIL import ImageDraw
+
+    page_width, page_height = 1240, 1754
+    margin = 50
+    page = Image.new("RGB", (page_width, page_height), "white")
+    draw = ImageDraw.Draw(page)
+    title_font = _load_report_font(31, bold=True)
+    school_font = _load_report_font(22, bold=True)
+    header_meta_font = _load_report_font(16)
+
+    draw.text((margin, 42), "LAPORAN FOTO LIVE SEKOLAH", font=title_font, fill="#153e75")
+    draw.text((margin, 88), profile.get("school_name") or "Sekolah", font=school_font, fill="#111827")
+    draw.text((page_width - margin, 55), f"{len(posts)} foto / 1 lembar", font=header_meta_font, fill="#4b5563", anchor="ra")
+    draw.text((page_width - margin, 88), "Scan QR pada tiap foto untuk verifikasi", font=header_meta_font, fill="#4b5563", anchor="ra")
+    draw.line((margin, 130, page_width - margin, 130), fill="#cbd5e1", width=3)
+
+    if len(posts) == 1:
+        columns, rows = 1, 1
+    elif len(posts) == 2:
+        columns, rows = 1, 2
+    elif len(posts) <= 4:
+        columns, rows = 2, 2
+    else:
+        columns, rows = 2, 3
+
+    gap = 18
+    content_top = 154
+    content_bottom = page_height - 72
+    content_width = page_width - (margin * 2)
+    content_height = content_bottom - content_top
+    card_width = (content_width - (gap * (columns - 1))) // columns
+    card_height = (content_height - (gap * (rows - 1))) // rows
+    info_height = 190 if rows == 1 else (132 if rows == 2 else 126)
+    qr_size = 158 if rows == 1 else (104 if rows == 2 else 100)
+    card_title_font = _load_report_font(24 if rows == 1 else (18 if rows == 2 else 15), bold=True)
+    card_meta_font = _load_report_font(17 if rows == 1 else (14 if rows == 2 else 12))
+    stamp_font = _load_report_font(17 if rows == 1 else (14 if rows == 2 else 12), bold=True)
+
+    def one_line(text: str, font, max_width: int) -> str:
+        clean = " ".join((text or "-").split())
+        if draw.textbbox((0, 0), clean, font=font)[2] <= max_width:
+            return clean
+        suffix = "..."
+        while clean and draw.textbbox((0, 0), clean + suffix, font=font)[2] > max_width:
+            clean = clean[:-1]
+        return clean.rstrip() + suffix
+
+    for index, post in enumerate(posts):
+        row, column = divmod(index, columns)
+        card_x = margin + column * (card_width + gap)
+        card_y = content_top + row * (card_height + gap)
+        card_right = card_x + card_width
+        card_bottom = card_y + card_height
+        padding = 12
+        draw.rounded_rectangle(
+            (card_x, card_y, card_right, card_bottom),
+            radius=14,
+            fill="#ffffff",
+            outline="#cbd5e1",
+            width=3,
+        )
+
+        photo_x = card_x + padding
+        photo_y = card_y + padding
+        photo_width = card_width - (padding * 2)
+        photo_height = card_height - info_height - (padding * 2)
+        draw.rounded_rectangle(
+            (photo_x, photo_y, photo_x + photo_width, photo_y + photo_height),
+            radius=8,
+            fill="#111827",
+        )
+        source_path = _absolute_dashboard_file_path(post["photo_path"])
+        with Image.open(source_path) as source:
+            source = ImageOps.exif_transpose(source).convert("RGB")
+            photo = ImageOps.contain(source, (photo_width, photo_height), Image.Resampling.LANCZOS)
+        paste_x = photo_x + (photo_width - photo.width) // 2
+        paste_y = photo_y + (photo_height - photo.height) // 2
+        page.paste(photo, (paste_x, paste_y))
+
+        timestamp = post["created_at"].strftime("%d/%m/%Y %H:%M WIB")
+        stamp_text = f"{timestamp}"
+        stamp_box = draw.textbbox((0, 0), stamp_text, font=stamp_font)
+        stamp_width = stamp_box[2] - stamp_box[0] + 20
+        stamp_height = stamp_box[3] - stamp_box[1] + 16
+        stamp_x = photo_x + 9
+        stamp_y = photo_y + photo_height - stamp_height - 9
+        draw.rounded_rectangle((stamp_x, stamp_y, stamp_x + stamp_width, stamp_y + stamp_height), radius=6, fill="#111827")
+        draw.text((stamp_x + 10, stamp_y + 6), stamp_text, font=stamp_font, fill="white")
+
+        verification_url = url_for(
+            "monev_bos.public_school_post_verification",
+            public_token=post["public_token"],
+            _external=True,
+        )
+        qr = qrcode.QRCode(version=None, box_size=6, border=2, error_correction=qrcode.constants.ERROR_CORRECT_M)
+        qr.add_data(verification_url)
+        qr.make(fit=True)
+        qr_image = qr.make_image(fill_color="#111827", back_color="white").convert("RGB")
+        qr_image = qr_image.resize((qr_size, qr_size), Image.Resampling.NEAREST)
+        qr_x = card_right - padding - qr_size
+        info_y = photo_y + photo_height + 9
+        page.paste(qr_image, (qr_x, info_y))
+
+        text_x = card_x + padding
+        text_width = qr_x - text_x - 10
+        title = one_line(post.get("title") or "Foto Live", card_title_font, text_width)
+        draw.text((text_x, info_y + 2), title, font=card_title_font, fill="#111827")
+        authenticity_code = (post.get("photo_sha256") or post.get("public_token") or "")[:12].upper()
+        if rows <= 2:
+            location = one_line(f"Lokasi: {post.get('location_text') or '-'}", card_meta_font, text_width)
+            draw.text((text_x, info_y + (38 if rows == 1 else 29)), location, font=card_meta_font, fill="#374151")
+            code_y = info_y + (70 if rows == 1 else 53)
+        else:
+            code_y = info_y + 25
+        draw.text((text_x, code_y), f"Kode: {authenticity_code}", font=card_meta_font, fill="#4b5563")
+        draw.text((qr_x + qr_size // 2, min(info_y + qr_size + 2, card_bottom - 18)), "VERIFIKASI", font=card_meta_font, fill="#153e75", anchor="ma")
+
+    footer_font = _load_report_font(13)
+    draw.text(
+        (page_width // 2, page_height - 40),
+        "Foto dipublikasikan atas persetujuan pemilik. Sidik jari SHA-256 tercatat pada halaman verifikasi.",
+        font=footer_font,
+        fill="#4b5563",
+        anchor="ma",
+    )
+
+    output = io.BytesIO()
+    page.save(output, format="PDF", resolution=150.0)
+    output.seek(0)
+    return output
+
+
 @monev_bos_bp.route("/posts")
 @role_required("admin")
 def school_posts_explore():
@@ -892,12 +1117,344 @@ def school_posts_profile(school_user_id: int):
         search_query=search_query,
         limit=300,
     )
+    external_photo_links = (
+        queries.list_external_photo_links(school_user_id)
+        if user.get("role") == "sekolah" and int(user["id"]) == int(school_user_id)
+        else []
+    )
+    external_photo_teachers = (
+        queries.list_external_photo_teachers(school_user_id)
+        if user.get("role") == "sekolah" and int(user["id"]) == int(school_user_id)
+        else []
+    )
     return render_template(
         "monev_bos/social/school_profile.html",
         profile=profile,
         posts=posts,
         search_query=search_query,
+        external_photo_links=external_photo_links,
+        external_photo_teachers=external_photo_teachers,
     )
+
+
+@monev_bos_bp.route("/external-photo-teachers", methods=["POST"])
+@role_required("sekolah")
+def save_external_photo_teacher():
+    user = current_user()
+    full_name = (request.form.get("full_name") or "").strip()
+    nip = (request.form.get("nip") or "").strip()
+    errors = validate_external_identity(full_name, nip)
+    if errors:
+        for error in errors:
+            flash(error, "danger")
+    else:
+        queries.save_external_photo_teacher(int(user["id"]), full_name, nip, int(user["id"]))
+        flash("Guru berhasil didaftarkan untuk Foto Live eksternal.", "success")
+    return redirect(url_for("monev_bos.school_posts_profile", school_user_id=user["id"], _anchor="external-photo-teachers"))
+
+
+@monev_bos_bp.route("/external-photo-teachers/<int:teacher_id>/delete", methods=["POST"])
+@role_required("sekolah")
+def delete_external_photo_teacher(teacher_id: int):
+    user = current_user()
+    deleted = queries.delete_external_photo_teacher(teacher_id, int(user["id"]))
+    flash(
+        "Guru dihapus dari daftar Foto Live eksternal." if deleted else "Data guru tidak ditemukan.",
+        "success" if deleted else "warning",
+    )
+    return redirect(url_for("monev_bos.school_posts_profile", school_user_id=user["id"], _anchor="external-photo-teachers"))
+
+
+@monev_bos_bp.route("/external-photo-links/create", methods=["POST"])
+@role_required("sekolah")
+def create_external_photo_link():
+    user = current_user()
+    if not queries.list_external_photo_teachers(int(user["id"]), limit=1):
+        flash("Daftarkan minimal satu guru sebelum membuat link Foto Live eksternal.", "warning")
+        return redirect(url_for("monev_bos.school_posts_profile", school_user_id=user["id"], _anchor="external-photo-teachers"))
+    queries.create_external_photo_link(int(user["id"]), int(user["id"]))
+    flash("Link Foto Live eksternal dibuat dan aktif selama 24 jam.", "success")
+    return redirect(url_for("monev_bos.school_posts_profile", school_user_id=user["id"]))
+
+
+@monev_bos_bp.route("/external-photo-links/<int:link_id>/revoke", methods=["POST"])
+@role_required("sekolah")
+def revoke_external_photo_link(link_id: int):
+    user = current_user()
+    revoked = queries.revoke_external_photo_link(link_id, int(user["id"]), int(user["id"]))
+    flash(
+        "Link Foto Live eksternal berhasil dicabut." if revoked else "Link tidak ditemukan atau sudah dicabut.",
+        "success" if revoked else "warning",
+    )
+    return redirect(url_for("monev_bos.school_posts_profile", school_user_id=user["id"]))
+
+
+def _external_photo_token_is_rate_limited(public_id: str) -> bool:
+    key = f"external_photo_attempt:{public_id}"
+    state = session.get(key) or {}
+    now = int(time.time())
+    started_at = int(state.get("started_at") or now)
+    if now - started_at >= 15 * 60:
+        session.pop(key, None)
+        return False
+    return int(state.get("count") or 0) >= 5
+
+
+def _record_external_photo_token_failure(public_id: str) -> None:
+    key = f"external_photo_attempt:{public_id}"
+    now = int(time.time())
+    state = session.get(key) or {"count": 0, "started_at": now}
+    if now - int(state.get("started_at") or now) >= 15 * 60:
+        state = {"count": 0, "started_at": now}
+    state["count"] = int(state.get("count") or 0) + 1
+    session[key] = state
+
+
+def _external_photo_verification(public_id: str, link_id: int) -> dict:
+    state = session.get(f"external_photo_verified:{public_id}") or {}
+    if int(state.get("link_id") or 0) != int(link_id):
+        return {}
+    if not state.get("teacher_id") or not state.get("teacher_name") or not state.get("teacher_nip"):
+        return {}
+    return state
+
+
+@monev_bos_bp.route("/foto-eksternal/<public_id>", methods=["GET", "POST"])
+def external_photo_capture(public_id: str):
+    link = queries.get_external_photo_link(public_id)
+    if not link:
+        abort(404)
+
+    verification_key = f"external_photo_verified:{public_id}"
+    if request.method == "GET" and request.args.get("reset") == "1":
+        session.pop(verification_key, None)
+    verified_identity = _external_photo_verification(public_id, int(link["id"]))
+    current_step = "photo" if request.args.get("step") == "photo" and verified_identity else "identity"
+
+    if not link.get("is_active"):
+        session.pop(verification_key, None)
+        verified_identity = {}
+
+    if request.method == "POST":
+        action = request.form.get("action") or "verify_identity"
+        errors = []
+        if not link.get("is_active"):
+            errors.append("Link ini sudah kedaluwarsa atau telah dicabut oleh sekolah.")
+
+        if action == "verify_identity":
+            current_step = "identity"
+            teacher_nip = (request.form.get("teacher_nip") or "").strip()
+            access_token = (request.form.get("access_token") or "").strip()
+            identity_errors = validate_external_nip(teacher_nip)
+            errors.extend(identity_errors)
+            token_is_valid = False
+            if _external_photo_token_is_rate_limited(public_id):
+                errors.append("Terlalu banyak percobaan token. Coba kembali dalam 15 menit.")
+            elif not access_token_matches(access_token, link.get("access_token") or ""):
+                if link.get("is_active"):
+                    _record_external_photo_token_failure(public_id)
+                errors.append("Token 6 digit tidak sesuai.")
+            else:
+                token_is_valid = True
+
+            registered_teacher = None
+            if token_is_valid and link.get("is_active") and not identity_errors:
+                registered_teacher = queries.get_external_photo_teacher(
+                    int(link["school_user_id"]), teacher_nip
+                )
+                if not registered_teacher:
+                    errors.append("NIP belum didaftarkan oleh sekolah untuk Foto Live eksternal.")
+
+            if not errors:
+                session[verification_key] = {
+                    "link_id": int(link["id"]),
+                    "teacher_id": int(registered_teacher["id"]),
+                    "teacher_name": registered_teacher["full_name"],
+                    "teacher_nip": registered_teacher["nip"],
+                    "verified_at": int(time.time()),
+                }
+                session.pop(f"external_photo_attempt:{public_id}", None)
+                return redirect(url_for("monev_bos.external_photo_capture", public_id=public_id, step="photo"))
+        elif action == "submit_photo":
+            current_step = "photo"
+            verified_identity = _external_photo_verification(public_id, int(link["id"]))
+            if not verified_identity:
+                flash("Sesi verifikasi tidak ditemukan. Masukkan identitas dan token kembali.", "warning")
+                return redirect(url_for("monev_bos.external_photo_capture", public_id=public_id))
+            registered_teacher = queries.get_external_photo_teacher(
+                int(link["school_user_id"]), verified_identity["teacher_nip"]
+            )
+            if not registered_teacher or int(registered_teacher["id"]) != int(verified_identity["teacher_id"]):
+                session.pop(verification_key, None)
+                flash("NIP sudah tidak terdaftar. Hubungi sekolah untuk mendaftarkannya kembali.", "warning")
+                return redirect(url_for("monev_bos.external_photo_capture", public_id=public_id))
+
+            title = (request.form.get("title") or "").strip()
+            photo_data = request.form.get("photo_data") or ""
+            if not title:
+                errors.append("Judul foto wajib diisi.")
+            elif len(title) > 200:
+                errors.append("Judul foto maksimal 200 karakter.")
+            try:
+                latitude = float(request.form.get("latitude"))
+                longitude = float(request.form.get("longitude"))
+                accuracy_raw = request.form.get("location_accuracy")
+                location_accuracy = float(accuracy_raw) if accuracy_raw else None
+                if not (-90 <= latitude <= 90 and -180 <= longitude <= 180):
+                    raise ValueError
+            except (TypeError, ValueError):
+                errors.append("Lokasi GPS wajib tersedia dan valid sebelum foto dikirim.")
+
+        else:
+            abort(400)
+
+        if not errors and action == "submit_photo":
+            photo_path, photo_size, photo_error = _save_story_camera_photo(
+                photo_data, int(link["school_user_id"])
+            )
+            if photo_error:
+                flash(photo_error, "danger")
+            else:
+                location_text = f"{latitude:.6f}, {longitude:.6f}"
+                try:
+                    queries.create_school_post(
+                        school_user_id=int(link["school_user_id"]),
+                        title=title,
+                        photo_path=photo_path,
+                        photo_size=photo_size,
+                        latitude=latitude,
+                        longitude=longitude,
+                        location_accuracy=location_accuracy,
+                        location_text=location_text,
+                        actor_id=None,
+                        external_link_id=int(link["id"]),
+                        external_photographer_name=verified_identity["teacher_name"],
+                        external_photographer_nip=verified_identity["teacher_nip"],
+                    )
+                except ValueError as exc:
+                    try:
+                        os.remove(_absolute_dashboard_file_path(photo_path))
+                    except OSError:
+                        pass
+                    flash(str(exc), "danger")
+                except Exception:
+                    try:
+                        os.remove(_absolute_dashboard_file_path(photo_path))
+                    except OSError:
+                        pass
+                    raise
+                else:
+                    session.pop(verification_key, None)
+                    flash("Foto berhasil dikirim ke profil sekolah.", "success")
+                    return redirect(url_for("monev_bos.external_photo_capture", public_id=public_id, berhasil=1))
+
+        for error in dict.fromkeys(errors):
+            flash(error, "danger")
+
+    return render_template(
+        "monev_bos/social/external_photo_capture.html",
+        link=link,
+        submission_success=request.args.get("berhasil") == "1",
+        current_step=current_step,
+        verified_identity=verified_identity,
+    )
+
+
+@monev_bos_bp.route("/posts/<int:post_id>/photo")
+def school_post_photo(post_id: int):
+    post = queries.get_school_post(post_id)
+    if not post or not _can_view_school_post_photo(post):
+        abort(404)
+    path = _absolute_dashboard_file_path(post["photo_path"])
+    if not os.path.isfile(path):
+        abort(404)
+    response = send_file(path, conditional=True, max_age=0)
+    response.headers["Cache-Control"] = "public, max-age=3600" if post.get("is_public") else "private, no-store"
+    return response
+
+
+@monev_bos_bp.route("/public/photos/<public_token>")
+def public_school_post_verification(public_token: str):
+    import hashlib
+    import hmac
+
+    post = queries.get_public_school_post(public_token)
+    if not post:
+        abort(404)
+    path = _absolute_dashboard_file_path(post["photo_path"])
+    if not os.path.isfile(path):
+        abort(404)
+    digest = hashlib.sha256()
+    with open(path, "rb") as photo_file:
+        for chunk in iter(lambda: photo_file.read(1024 * 1024), b""):
+            digest.update(chunk)
+    fingerprint_matches = bool(post.get("photo_sha256")) and hmac.compare_digest(
+        digest.hexdigest(),
+        post["photo_sha256"],
+    )
+    return render_template(
+        "monev_bos/social/photo_verification.html",
+        post=post,
+        fingerprint_matches=fingerprint_matches,
+    )
+
+
+@monev_bos_bp.route("/public/photos/<public_token>/image")
+def public_school_post_image(public_token: str):
+    post = queries.get_public_school_post(public_token)
+    if not post:
+        abort(404)
+    path = _absolute_dashboard_file_path(post["photo_path"])
+    if not os.path.isfile(path):
+        abort(404)
+    response = send_file(path, conditional=True, max_age=3600)
+    response.headers["Cache-Control"] = "public, max-age=3600"
+    return response
+
+
+@monev_bos_bp.route("/schools/<int:school_user_id>/posts/report.pdf", methods=["POST"])
+@role_required("admin", "sekolah")
+def school_posts_photo_report(school_user_id: int):
+    import hashlib
+
+    user = current_user()
+    if user.get("role") == "sekolah" and int(user["id"]) != int(school_user_id):
+        abort(403)
+
+    raw_ids = request.form.getlist("post_ids")
+    post_ids = list(dict.fromkeys(int(value) for value in raw_ids if value.isdigit()))
+    if not 1 <= len(post_ids) <= 6:
+        abort(400, description="Pilih minimal 1 dan maksimal 6 foto.")
+
+    profile = queries.get_school_post_profile(school_user_id)
+    posts = queries.get_school_posts_by_ids(post_ids, school_user_id)
+    post_map = {int(post["id"]): post for post in posts}
+    if not profile or len(post_map) != len(post_ids):
+        abort(404, description="Satu atau beberapa foto tidak ditemukan.")
+
+    photo_hashes = {}
+    for post in posts:
+        path = _absolute_dashboard_file_path(post["photo_path"])
+        if not os.path.isfile(path):
+            abort(404, description=f"File foto #{post['id']} tidak ditemukan.")
+        digest = hashlib.sha256()
+        with open(path, "rb") as photo_file:
+            for chunk in iter(lambda: photo_file.read(1024 * 1024), b""):
+                digest.update(chunk)
+        photo_hashes[int(post["id"])] = digest.hexdigest()
+
+    published_posts = queries.publish_school_posts(
+        post_ids,
+        school_user_id,
+        int(user["id"]),
+        photo_hashes=photo_hashes,
+    )
+    published_map = {int(post["id"]): post for post in published_posts}
+    ordered_posts = [published_map[post_id] for post_id in post_ids]
+    pdf = _build_school_photo_report_pdf(ordered_posts, profile)
+    safe_school_name = secure_filename(profile.get("school_name") or f"sekolah-{school_user_id}")
+    filename = f"laporan-foto-{safe_school_name or school_user_id}.pdf"
+    return send_file(pdf, mimetype="application/pdf", as_attachment=True, download_name=filename)
 
 
 @monev_bos_bp.route("/stories/create", methods=["POST"])
@@ -1068,6 +1625,110 @@ def sekolah_activities():
 
     if request.method == "POST":
         action = request.form.get("action")
+        if action == "claim_bop_transactions":
+            if fund_source != "BOP":
+                flash("Klaim transaksi hanya tersedia untuk sumber dana BOP.", "warning")
+            else:
+                try:
+                    identity = queries.get_school_claim_identity(user["id"])
+                    claim = get_school_bop_claim(
+                        identity.get("npsn"), active_period["year"], active_period["tw"]
+                    )
+                    if not claim:
+                        flash("Data transaksi BOP untuk NPSN sekolah ini tidak ditemukan.", "warning")
+                    else:
+                        source_by_code = {
+                            item["activity_code"]: item for item in claim["transactions"]
+                        }
+                        submitted_codes = request.form.getlist("claim_activity_code")
+                        activity_names = request.form.getlist("claim_activity_name")
+                        expense_type_ids = request.form.getlist("claim_expense_type_id")
+                        bku_numbers = request.form.getlist("claim_bku_number")
+                        submitted_account_codes = request.form.getlist("claim_account_code")
+                        realized_amounts = request.form.getlist("claim_realized_amount")
+                        vendor_ids = request.form.getlist("claim_vendor_id")
+                        item_names = request.form.getlist("claim_item_name")
+                        field_lists = [
+                            activity_names,
+                            expense_type_ids,
+                            bku_numbers,
+                            submitted_account_codes,
+                            realized_amounts,
+                            vendor_ids,
+                            item_names,
+                        ]
+                        if not submitted_codes or any(len(values) != len(submitted_codes) for values in field_lists):
+                            raise ValueError("Data step klaim tidak lengkap. Silakan buka ulang wizard klaim.")
+                        if len(set(submitted_codes)) != len(submitted_codes):
+                            raise ValueError("Terdapat transaksi ganda pada data klaim.")
+
+                        active_account_codes = {
+                            str(item["code"]).strip()
+                            for item in queries.list_account_codes(include_inactive=False)
+                        }
+
+                        adjusted_transactions = []
+                        for index, activity_code in enumerate(submitted_codes):
+                            source_item = source_by_code.get(activity_code)
+                            if not source_item:
+                                raise ValueError("Salah satu transaksi tidak berasal dari dataset sekolah ini.")
+                            activity_name = activity_names[index].strip()
+                            bku_number = bku_numbers[index].strip()
+                            account_code = submitted_account_codes[index].strip()
+                            expense_type_raw = expense_type_ids[index]
+                            realized_amount = _parse_float(realized_amounts[index])
+                            if not activity_name or not bku_number or not account_code or not expense_type_raw.isdigit():
+                                raise ValueError(f"Data wajib pada step {index + 1} belum lengkap.")
+                            if account_code not in active_account_codes:
+                                raise ValueError(f"Kode rekening pada step {index + 1} tidak terdaftar atau tidak aktif.")
+                            if realized_amount <= 0:
+                                raise ValueError(f"Nilai realisasi pada step {index + 1} harus lebih dari 0.")
+
+                            vendor_id, vendor_name, vendor_error = _resolve_school_report_vendor(
+                                vendor_ids[index]
+                            )
+                            if vendor_error:
+                                raise ValueError(f"Step {index + 1}: {vendor_error}")
+
+                            adjusted_transactions.append(
+                                {
+                                    **source_item,
+                                    "activity_name": activity_name,
+                                    "expense_type_id": int(expense_type_raw),
+                                    "bku_number": bku_number,
+                                    "account_code": account_code,
+                                    "realized_amount": realized_amount,
+                                    "vendor_id": vendor_id,
+                                    "vendor_name": vendor_name,
+                                    "item_name": item_names[index].strip(),
+                                }
+                            )
+
+                        result = queries.claim_bop_transactions(
+                            report["id"], user["id"], adjusted_transactions
+                        )
+                        if result["inserted"] or result["updated"]:
+                            action_parts = []
+                            if result["inserted"]:
+                                action_parts.append(f"{result['inserted']} transaksi berhasil diklaim")
+                            if result["updated"]:
+                                action_parts.append(f"{result['updated']} transaksi berhasil diperbarui")
+                            flash(
+                                f"{' dan '.join(action_parts)} untuk {claim['school_name']}.",
+                                "success",
+                            )
+                        else:
+                            flash("Seluruh transaksi BOP sekolah ini sudah pernah diklaim.", "info")
+                except (OSError, ValueError) as exc:
+                    flash(str(exc), "warning")
+            return redirect(
+                url_for(
+                    "monev_bos.sekolah_activities",
+                    period_id=period_id,
+                    fund_source="BOP",
+                )
+            )
+
         if action == "update_receipts":
             if report and report["status"] not in ["draft", "needs_revision"]:
                 flash("Laporan sudah tidak bisa diubah.", "warning")
@@ -1081,13 +1742,12 @@ def sekolah_activities():
 
         if action == "add_activity":
             target_fund_source = request.form.get("fund_source", fund_source)
-            vendor_id_raw = request.form.get("vendor_id")
-            vendor_id = int(vendor_id_raw) if vendor_id_raw and vendor_id_raw.isdigit() else None
-            vendor_name = request.form.get("vendor_name")
-            if vendor_id and not vendor_name:
-                v_obj = queries.get_vendor_by_id(vendor_id)
-                if v_obj:
-                    vendor_name = v_obj["name"]
+            vendor_id, vendor_name, vendor_error = _resolve_school_report_vendor(
+                request.form.get("vendor_id")
+            )
+            if vendor_error:
+                flash(vendor_error, "warning")
+                return redirect(url_for("monev_bos.sekolah_activities", period_id=period_id, fund_source=fund_source))
 
             expense_type_id_raw = request.form.get("expense_type_id")
             expense_type_id = int(expense_type_id_raw) if expense_type_id_raw and expense_type_id_raw.isdigit() else None
@@ -1113,20 +1773,8 @@ def sekolah_activities():
 
             activity_id = queries.create_activity(report["id"], target_fund_source, data)
             
-            # Handle mandatory document uploads (Faktur/Kwitansi & Bukti Transfer)
+            # Handle optional document uploads (Faktur/Kwitansi & Bukti Transfer)
             base_dir = os.path.join(monev_bos_bp.root_path, "..", "static", "uploads")
-            doc_inv_file = request.files.get("doc_invoice")
-            doc_tf_file = request.files.get("doc_transfer")
-
-            if not doc_inv_file or not doc_inv_file.filename:
-                queries.delete_activity(activity_id)
-                flash("Dokumen Faktur & Kwitansi wajib diunggah.", "danger")
-                return redirect(url_for("monev_bos.sekolah_activities", period_id=period_id, fund_source=fund_source))
-
-            if not doc_tf_file or not doc_tf_file.filename:
-                queries.delete_activity(activity_id)
-                flash("Dokumen Bukti Transfer wajib diunggah.", "danger")
-                return redirect(url_for("monev_bos.sekolah_activities", period_id=period_id, fund_source=fund_source))
 
             # Handle optional camera photo or file upload (Foto Kegiatan / Barang)
             for field_photo_file in field_photo_files:
@@ -1154,7 +1802,7 @@ def sekolah_activities():
                     flash(str(exc), "danger")
                     return redirect(url_for("monev_bos.sekolah_activities", period_id=period_id, fund_source=fund_source))
 
-            # Handle mandatory document file uploads
+            # Handle optional document file uploads
             has_error = False
             for doc_type in ["invoice", "transfer"]:
                 file = request.files.get(f"doc_{doc_type}")
@@ -1241,13 +1889,12 @@ def sekolah_activities():
             if was_invalid:
                 queries.save_activity_history(activity_id, user["id"], reason="Perbaikan data oleh sekolah saat status Revisi")
 
-            vendor_id_raw = request.form.get("vendor_id")
-            vendor_id = int(vendor_id_raw) if vendor_id_raw and vendor_id_raw.isdigit() else None
-            vendor_name = request.form.get("vendor_name")
-            if vendor_id and not vendor_name:
-                v_obj = queries.get_vendor_by_id(vendor_id)
-                if v_obj:
-                    vendor_name = v_obj["name"]
+            vendor_id, vendor_name, vendor_error = _resolve_school_report_vendor(
+                request.form.get("vendor_id")
+            )
+            if vendor_error:
+                flash(vendor_error, "warning")
+                return redirect(url_for("monev_bos.sekolah_activities", period_id=period_id, fund_source=fund_source))
 
             expense_type_id_raw = request.form.get("expense_type_id")
             expense_type_id = int(expense_type_id_raw) if expense_type_id_raw and expense_type_id_raw.isdigit() else None
@@ -1339,6 +1986,62 @@ def sekolah_activities():
 
     all_activities = queries.list_activities(report["id"])
     activities = [a for a in all_activities if a["fund_source"] == fund_source]
+
+    bop_claim = None
+    bop_claim_supported = fund_source == "BOP" and is_bop_claim_period(
+        active_period["year"], active_period["tw"]
+    )
+    if bop_claim_supported:
+        try:
+            identity = queries.get_school_claim_identity(user["id"])
+            claim = get_school_bop_claim(
+                identity.get("npsn"), active_period["year"], active_period["tw"]
+            )
+            if claim:
+                existing_by_code = {
+                    activity.get("activity_code"): activity for activity in activities
+                }
+                claim_transactions = []
+                for source_item in claim["transactions"]:
+                    existing = existing_by_code.get(source_item["activity_code"])
+                    claim_transactions.append(
+                        {
+                            **source_item,
+                            "source_activity_name": source_item["activity_name"],
+                            "source_realized_amount": source_item["realized_amount"],
+                            "selected_activity_name": existing.get("activity_name") if existing else "",
+                            "selected_expense_type_id": existing.get("expense_type_id") if existing else None,
+                            "selected_bku_number": existing.get("bku_number") if existing else "",
+                            "selected_account_code": existing.get("account_code") if existing else source_item["account_code"],
+                            "selected_realized_amount": existing.get("realized_amount") if existing else source_item["realized_amount"],
+                            "selected_vendor_id": existing.get("vendor_id") if existing else None,
+                            "selected_item_name": existing.get("item_name") if existing else "",
+                            "selected_status": existing.get("status") if existing else None,
+                            "is_claimed": bool(existing),
+                        }
+                    )
+                pending_transactions = [
+                    item for item in claim_transactions if not item["is_claimed"]
+                ]
+                is_reclaim = not pending_transactions
+                reclaim_transactions = [
+                    item for item in claim_transactions if item.get("selected_status") != "valid"
+                ]
+                wizard_transactions = reclaim_transactions if is_reclaim else pending_transactions
+                bop_claim = {
+                    **claim,
+                    "pending_transactions": pending_transactions,
+                    "pending_count": len(pending_transactions),
+                    "pending_amount": sum(item["realized_amount"] for item in pending_transactions),
+                    "claimed_count": len(claim["transactions"]) - len(pending_transactions),
+                    "is_reclaim": is_reclaim,
+                    "wizard_transactions": wizard_transactions,
+                    "wizard_count": len(wizard_transactions),
+                    "wizard_amount": sum(item["source_realized_amount"] for item in wizard_transactions),
+                    "reclaim_blocked_count": len(claim_transactions) - len(reclaim_transactions),
+                }
+        except (OSError, ValueError):
+            current_app.logger.exception("Failed to load repository-backed BOP claim data")
     
     total_receipt = report["bosp_receipt_amount"] if fund_source == "BOS" else report["bop_receipt_amount"]
     total_realized = sum(a["realized_amount"] for a in activities)
@@ -1394,6 +2097,15 @@ def sekolah_activities():
     master_activities = queries.list_master_activities(include_inactive=False, fund_source=fund_source)
     school_story_posts = queries.list_school_posts(school_user_id=int(user["id"]), limit=300)
     expense_types = queries.list_expense_types(include_inactive=False)
+    if bop_claim:
+        for transaction in bop_claim.get("wizard_transactions", []):
+            recommendation = recommend_expense_type(
+                transaction.get("source_activity_name"),
+                transaction.get("source_realized_amount"),
+                expense_types,
+            )
+            transaction["recommended_expense_type_id"] = recommendation.get("id") if recommendation else None
+            transaction["recommended_expense_type_name"] = recommendation.get("name") if recommendation else None
     try:
         active_checklists = queries.list_checklists(include_inactive=False)
         checklist_requirements_by_expense_type = {
@@ -1413,7 +2125,7 @@ def sekolah_activities():
     except Exception:
         current_app.logger.exception("Failed to load Monev BOS account codes")
         account_codes = []
-    verified_vendors = queries.get_verified_vendors_for_school(report["school_id"])
+    verified_vendors = queries.get_report_selectable_vendors(school_id=int(user["id"]))
 
     try:
         auditor_team = queries.get_assigned_auditors_for_school(report["school_id"], active_period["id"])
@@ -1452,7 +2164,9 @@ def sekolah_activities():
                            admin_info=admin_info,
                            staff_wa_info=staff_wa_info,
                            auditor_team=auditor_team,
-                           headmaster_info=headmaster_info)
+                           headmaster_info=headmaster_info,
+                           bop_claim=bop_claim,
+                           bop_claim_supported=bop_claim_supported)
 
 @monev_bos_bp.route("/sekolah/activities/export", methods=["GET"])
 @role_required("sekolah")
@@ -1969,6 +2683,14 @@ def staff_audit_activity(activity_id):
                 flash("Pilih status validasi yang valid (Sesuai atau Perlu Revisi).", "warning")
                 return redirect(url_for("monev_bos.staff_audit_report", report_id=report_id))
 
+            if status == "valid" and _activity_vendor_is_unverified(act):
+                vendor_name_disp = act.get("vendor_display_name") or act.get("vendor_name") or "terkait"
+                msg = f"Kegiatan tidak dapat divalidasi (Sesuai) karena vendor / narasumber '{vendor_name_disp}' belum terverifikasi. Silakan verifikasi terlebih dahulu."
+                if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.headers.get("Accept") == "application/json":
+                    return jsonify({"success": False, "message": msg}), 400
+                flash(msg, "warning")
+                return redirect(url_for("monev_bos.staff_audit_report", report_id=report_id))
+
             notes = request.form.get("audit_notes") or ""
             queries.update_activity_audit(activity_id, status, notes)
             
@@ -2087,6 +2809,9 @@ def sekolah_vendors():
             owner_name = (request.form.get("owner_name") or "").strip()
             bank_name = (request.form.get("bank_name") or "").strip()
             bank_account = (request.form.get("bank_account") or "").strip()
+            vendor_type = request.form.get("vendor_type", "vendor")
+            if vendor_type not in ("vendor", "narsum"):
+                vendor_type = "vendor"
 
             if not name:
                 flash("Nama toko / vendor wajib diisi.", "warning")
@@ -2099,12 +2824,14 @@ def sekolah_vendors():
                     "owner_name": owner_name,
                     "bank_name": bank_name,
                     "bank_account": bank_account,
+                    "vendor_type": vendor_type,
                 }
                 new_id = queries.create_vendor(school_id, data)
+                type_label = "Narasumber/Instruktur" if vendor_type == "narsum" else "Vendor"
                 if new_id:
-                    flash(f"Vendor '{name}' berhasil didaftarkan dan menunggu verifikasi admin/staff.", "success")
+                    flash(f"{type_label} '{name}' berhasil didaftarkan dan menunggu verifikasi admin/staff.", "success")
                 else:
-                    flash("Gagal mendaftarkan vendor.", "danger")
+                    flash(f"Gagal mendaftarkan {type_label.lower()}.", "danger")
             return redirect(url_for("monev_bos.sekolah_vendors"))
 
         elif action == "delete_vendor":

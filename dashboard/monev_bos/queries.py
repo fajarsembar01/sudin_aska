@@ -2,6 +2,11 @@ from dashboard.db_access import get_cursor
 from typing import List, Dict, Any, Optional
 from datetime import date
 import json
+import secrets
+from .external_photos import generate_access_token
+
+
+SUPPORTED_BOP_CLAIM_PERIODS = {(2025, 4), (2026, 1), (2026, 2)}
 
 
 def attach_admin_input_names(
@@ -421,6 +426,157 @@ def submit_school_report(report_id: int) -> None:
             (report_id,)
         )
 
+
+def get_school_claim_identity(school_user_id: int) -> Dict[str, Any]:
+    """Return the canonical portal-school identity used to match claim datasets."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT u.id AS user_id,
+                   COALESCE(school.npsn, '') AS npsn,
+                   COALESCE(school.name, u.full_name) AS school_name
+            FROM dashboard_users u
+            LEFT JOIN LATERAL (
+                SELECT ps.npsn, ps.name
+                FROM portal_schools ps
+                WHERE ps.id = u.school_id OR ps.user_id = u.id
+                ORDER BY CASE WHEN ps.id = u.school_id THEN 0 ELSE 1 END, ps.id
+                LIMIT 1
+            ) school ON TRUE
+            WHERE u.id = %s
+            """,
+            (school_user_id,),
+        )
+        row = cur.fetchone()
+        return dict(row) if row else {}
+
+
+def claim_bop_transactions(
+    report_id: int,
+    school_user_id: int,
+    transactions: List[Dict[str, Any]],
+) -> Dict[str, int]:
+    """Atomically add or update repository-backed BOP claim transactions."""
+    inserted = 0
+    updated = 0
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            SELECT r.id, r.school_id, r.status, p.year, p.tw
+            FROM monev_bos_reports r
+            JOIN monev_bos_periods p ON p.id = r.period_id
+            WHERE r.id = %s
+            FOR UPDATE OF r
+            """,
+            (report_id,),
+        )
+        report = cur.fetchone()
+        if not report or int(report["school_id"]) != int(school_user_id):
+            raise ValueError("Laporan sekolah tidak valid untuk klaim transaksi.")
+        if (int(report["year"]), int(report["tw"])) not in SUPPORTED_BOP_CLAIM_PERIODS:
+            raise ValueError("Klaim transaksi tidak tersedia untuk periode laporan ini.")
+        if report["status"] not in {"draft", "needs_revision"}:
+            raise ValueError("Laporan sudah tidak dapat menerima klaim transaksi.")
+
+        for item in transactions:
+            cur.execute(
+                """
+                SELECT id, status
+                FROM monev_bos_activities
+                WHERE report_id = %s AND fund_source = 'BOP' AND activity_code = %s
+                FOR UPDATE
+                """,
+                (report_id, item["activity_code"]),
+            )
+            existing = cur.fetchone()
+            if existing:
+                if existing["status"] == "valid":
+                    raise ValueError(
+                        "Transaksi yang sudah berstatus Sesuai tidak dapat diklaim ulang tanpa persetujuan perubahan."
+                    )
+                cur.execute(
+                    """
+                    UPDATE monev_bos_activities
+                    SET activity_name = %s,
+                        account_code = %s,
+                        account_code_id = (
+                            SELECT id FROM monev_bos_account_codes
+                            WHERE code = %s AND is_active = TRUE
+                            LIMIT 1
+                        ),
+                        realized_amount = %s,
+                        vendor_name = %s,
+                        vendor_id = %s,
+                        bku_number = %s,
+                        item_name = %s,
+                        item_specs = %s,
+                        item_quantity = %s,
+                        expense_type_id = %s,
+                        status = 'pending',
+                        updated_at = NOW()
+                    WHERE id = %s
+                    """,
+                    (
+                        item["activity_name"],
+                        item["account_code"],
+                        item["account_code"],
+                        item["realized_amount"],
+                        item.get("vendor_name"),
+                        item.get("vendor_id"),
+                        item["bku_number"],
+                        item["item_name"],
+                        item["item_specs"],
+                        item["item_quantity"],
+                        item.get("expense_type_id"),
+                        existing["id"],
+                    ),
+                )
+                updated += 1
+                continue
+
+            cur.execute(
+                """
+                INSERT INTO monev_bos_activities
+                    (report_id, fund_source, activity_code, activity_name, account_code, account_code_id,
+                     realized_amount, vendor_name, vendor_id, bku_number, item_name,
+                     item_specs, item_quantity, expense_type_id)
+                SELECT %s, 'BOP', %s, %s, %s,
+                       (SELECT id FROM monev_bos_account_codes WHERE code = %s AND is_active = TRUE LIMIT 1),
+                       %s, %s, %s, %s, %s, %s, %s, %s
+                WHERE NOT EXISTS (
+                    SELECT 1
+                    FROM monev_bos_activities
+                    WHERE report_id = %s AND fund_source = 'BOP' AND activity_code = %s
+                )
+                RETURNING id
+                """,
+                (
+                    report_id,
+                    item["activity_code"],
+                    item["activity_name"],
+                    item["account_code"],
+                    item["account_code"],
+                    item["realized_amount"],
+                    item.get("vendor_name"),
+                    item.get("vendor_id"),
+                    item["bku_number"],
+                    item["item_name"],
+                    item["item_specs"],
+                    item["item_quantity"],
+                    item.get("expense_type_id"),
+                    report_id,
+                    item["activity_code"],
+                ),
+            )
+            if cur.fetchone():
+                inserted += 1
+
+    return {
+        "inserted": inserted,
+        "updated": updated,
+        "skipped": len(transactions) - inserted - updated,
+    }
+
 # --- ACTIVITIES ---
 def list_activities(report_id: int) -> List[Dict[str, Any]]:
     with get_cursor() as cur:
@@ -429,10 +585,22 @@ def list_activities(report_id: int) -> List[Dict[str, Any]]:
             SELECT a.*, 
                    ma.name AS activity_type_name,
                    et.name AS expense_type_name,
+                   v.status AS vendor_status,
+                   v.vendor_type AS linked_vendor_type,
+                   COALESCE(v.name, a.vendor_name) AS vendor_display_name,
                    u.full_name AS auditor_name
             FROM monev_bos_activities a
             LEFT JOIN monev_bos_master_activities ma ON a.activity_type_id = ma.id
             LEFT JOIN monev_bos_expense_types et ON a.expense_type_id = et.id
+            LEFT JOIN monev_bos_reports r ON a.report_id = r.id
+            LEFT JOIN LATERAL (
+                SELECT v.id, v.name, v.status, v.vendor_type
+                FROM monev_bos_vendors v
+                WHERE (a.vendor_id IS NOT NULL AND v.id = a.vendor_id)
+                   OR (a.vendor_id IS NULL AND a.vendor_name IS NOT NULL AND a.vendor_name != '' AND v.school_id = r.school_id AND LOWER(v.name) = LOWER(a.vendor_name))
+                ORDER BY v.id DESC
+                LIMIT 1
+            ) v ON TRUE
             LEFT JOIN LATERAL (
                 SELECT l.user_id, du.full_name
                 FROM monev_bos_audit_logs l
@@ -453,11 +621,11 @@ def create_activity(report_id: int, fund_source: str, data: Dict[str, Any]) -> i
         cur.execute(
             """
             INSERT INTO monev_bos_activities 
-            (report_id, fund_source, activity_code, activity_name, account_code, realized_amount, vendor_name, vendor_id, bku_number, item_name, item_specs, item_quantity, activity_type_id, expense_type_id)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id
+            (report_id, fund_source, activity_code, activity_name, account_code, account_code_id, realized_amount, vendor_name, vendor_id, bku_number, item_name, item_specs, item_quantity, activity_type_id, expense_type_id)
+            VALUES (%s, %s, %s, %s, %s, (SELECT id FROM monev_bos_account_codes WHERE code = %s AND is_active = TRUE LIMIT 1), %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id
             """,
             (
-                report_id, fund_source, data['activity_code'], data['activity_name'], data.get('account_code'),
+                report_id, fund_source, data['activity_code'], data['activity_name'], data.get('account_code'), data.get('account_code'),
                 data['realized_amount'], data.get('vendor_name'), data.get('vendor_id'), data.get('bku_number'),
                 data.get('item_name'), data.get('item_specs'), data.get('item_quantity'), data.get('activity_type_id'), data.get('expense_type_id')
             )
@@ -469,13 +637,15 @@ def update_activity(activity_id: int, data: Dict[str, Any]) -> None:
         cur.execute(
             """
             UPDATE monev_bos_activities 
-            SET activity_code = %s, activity_name = %s, account_code = %s, realized_amount = %s,
+            SET activity_code = %s, activity_name = %s, account_code = %s,
+                account_code_id = (SELECT id FROM monev_bos_account_codes WHERE code = %s AND is_active = TRUE LIMIT 1),
+                realized_amount = %s,
                 vendor_name = %s, vendor_id = %s, bku_number = %s, item_name = %s, item_specs = %s, item_quantity = %s,
                 activity_type_id = %s, expense_type_id = %s
             WHERE id = %s
             """,
             (
-                data['activity_code'], data['activity_name'], data.get('account_code'), data['realized_amount'],
+                data['activity_code'], data['activity_name'], data.get('account_code'), data.get('account_code'), data['realized_amount'],
                 data.get('vendor_name'), data.get('vendor_id'), data.get('bku_number'),
                 data.get('item_name'), data.get('item_specs'), data.get('item_quantity'),
                 data.get('activity_type_id'), data.get('expense_type_id'),
@@ -485,7 +655,25 @@ def update_activity(activity_id: int, data: Dict[str, Any]) -> None:
 
 def get_activity_by_id(activity_id: int) -> Optional[Dict[str, Any]]:
     with get_cursor() as cur:
-        cur.execute("SELECT * FROM monev_bos_activities WHERE id = %s", (activity_id,))
+        cur.execute(
+            """
+            SELECT a.*, 
+                   v.status AS vendor_status,
+                   COALESCE(v.name, a.vendor_name) AS vendor_display_name
+            FROM monev_bos_activities a
+            LEFT JOIN monev_bos_reports r ON a.report_id = r.id
+            LEFT JOIN LATERAL (
+                SELECT v.id, v.name, v.status
+                FROM monev_bos_vendors v
+                WHERE (a.vendor_id IS NOT NULL AND v.id = a.vendor_id)
+                   OR (a.vendor_id IS NULL AND a.vendor_name IS NOT NULL AND a.vendor_name != '' AND v.school_id = r.school_id AND LOWER(v.name) = LOWER(a.vendor_name))
+                ORDER BY v.id DESC
+                LIMIT 1
+            ) v ON TRUE
+            WHERE a.id = %s
+            """,
+            (activity_id,)
+        )
         row = cur.fetchone()
         return dict(row) if row else None
 
@@ -1318,7 +1506,7 @@ def list_school_vendors(school_id: int, status_filter: str = None, search_query:
         query += " AND (v.name ILIKE %s OR v.npwp ILIKE %s OR v.phone ILIKE %s OR v.owner_name ILIKE %s OR v.bank_name ILIKE %s OR v.address ILIKE %s)"
         pattern = f"%{search_query.strip()}%"
         params.extend([pattern] * 6)
-    query += " ORDER BY v.created_at DESC"
+    query += " ORDER BY v.vendor_type, v.created_at DESC"
 
     with get_cursor() as cur:
         cur.execute(query, tuple(params))
@@ -1353,17 +1541,22 @@ def list_all_vendors_for_admin(status_filter: str = None, search_query: str = No
         return [dict(row) for row in cur.fetchall()]
 
 
-def get_verified_vendors_for_school(school_id: int) -> List[Dict[str, Any]]:
-    """Get all verified vendors for a school dropdown."""
+def get_report_selectable_vendors(school_id: Optional[int] = None) -> List[Dict[str, Any]]:
+    """Get selectable vendors, prioritizing entries registered by the current school."""
     with get_cursor() as cur:
         cur.execute(
             """
-            SELECT id, name, npwp, phone, address, owner_name, bank_name, bank_account
-            FROM monev_bos_vendors
-            WHERE school_id = %s AND status = 'verified'
-            ORDER BY name ASC
+            SELECT v.id, v.school_id, v.name, v.npwp, v.phone, v.address,
+                   v.owner_name, v.bank_name, v.bank_account, v.status, v.vendor_type,
+                   (v.school_id = %s) AS is_own_school,
+                   COALESCE(ps.name, u_school.full_name) AS registered_school_name
+            FROM monev_bos_vendors v
+            JOIN dashboard_users u_school ON u_school.id = v.school_id
+            LEFT JOIN portal_schools ps ON ps.id = u_school.school_id
+            WHERE v.status IN ('verified', 'pending')
+            ORDER BY is_own_school DESC NULLS LAST, v.vendor_type, v.name ASC, v.id DESC
             """,
-            (school_id,)
+            (school_id,),
         )
         return [dict(row) for row in cur.fetchall()]
 
@@ -1393,8 +1586,8 @@ def create_vendor(school_id: int, data: Dict[str, Any]) -> int:
         cur.execute(
             """
             INSERT INTO monev_bos_vendors 
-            (school_id, name, npwp, phone, address, owner_name, bank_name, bank_account, status)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'pending')
+            (school_id, name, npwp, phone, address, owner_name, bank_name, bank_account, vendor_type, status)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'pending')
             RETURNING id
             """,
             (
@@ -1406,6 +1599,7 @@ def create_vendor(school_id: int, data: Dict[str, Any]) -> int:
                 data.get("owner_name", "").strip() or None,
                 data.get("bank_name", "").strip() or None,
                 data.get("bank_account", "").strip() or None,
+                data.get("vendor_type", "vendor") if data.get("vendor_type") in ("vendor", "narsum") else "vendor",
             )
         )
         return cur.fetchone()[0]
@@ -1612,6 +1806,130 @@ def get_assigned_auditors_for_school(school_id: int, period_id: int) -> Dict[str
 
 
 # --- STORY & POST SEKOLAH ---
+def save_external_photo_teacher(
+    school_user_id: int, full_name: str, nip: str, actor_id: int
+) -> Dict[str, Any]:
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            INSERT INTO monev_bos_external_photo_teachers
+                (school_user_id, full_name, nip, created_by)
+            VALUES (%s, %s, %s, %s)
+            ON CONFLICT (school_user_id, nip) DO UPDATE
+            SET full_name = EXCLUDED.full_name, is_active = TRUE, updated_at = NOW()
+            RETURNING *
+            """,
+            (school_user_id, full_name.strip(), nip.strip(), actor_id),
+        )
+        return dict(cur.fetchone())
+
+
+def list_external_photo_teachers(school_user_id: int, limit: int = 300) -> List[Dict[str, Any]]:
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT * FROM monev_bos_external_photo_teachers
+            WHERE school_user_id = %s AND is_active = TRUE
+            ORDER BY full_name ASC
+            LIMIT %s
+            """,
+            (school_user_id, limit),
+        )
+        return [dict(row) for row in cur.fetchall()]
+
+
+def get_external_photo_teacher(school_user_id: int, nip: str) -> Optional[Dict[str, Any]]:
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT * FROM monev_bos_external_photo_teachers
+            WHERE school_user_id = %s AND nip = %s AND is_active = TRUE
+            """,
+            (school_user_id, nip.strip()),
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
+def delete_external_photo_teacher(teacher_id: int, school_user_id: int) -> bool:
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            DELETE FROM monev_bos_external_photo_teachers
+            WHERE id = %s AND school_user_id = %s
+            RETURNING id
+            """,
+            (teacher_id, school_user_id),
+        )
+        return cur.fetchone() is not None
+
+
+def create_external_photo_link(school_user_id: int, actor_id: int) -> Dict[str, Any]:
+    public_id = secrets.token_urlsafe(24)
+    access_token = generate_access_token()
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            INSERT INTO monev_bos_external_photo_links
+                (school_user_id, public_id, access_token, expires_at, created_by)
+            VALUES (%s, %s, %s, NOW() + INTERVAL '24 hours', %s)
+            RETURNING *
+            """,
+            (school_user_id, public_id, access_token, actor_id),
+        )
+        return dict(cur.fetchone())
+
+
+def list_external_photo_links(school_user_id: int, limit: int = 10) -> List[Dict[str, Any]]:
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT l.*,
+                   (l.revoked_at IS NULL AND l.expires_at > NOW()) AS is_active
+            FROM monev_bos_external_photo_links l
+            WHERE l.school_user_id = %s
+            ORDER BY l.created_at DESC
+            LIMIT %s
+            """,
+            (school_user_id, limit),
+        )
+        return [dict(row) for row in cur.fetchall()]
+
+
+def get_external_photo_link(public_id: str) -> Optional[Dict[str, Any]]:
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT l.*,
+                   (l.revoked_at IS NULL AND l.expires_at > NOW()) AS is_active,
+                   COALESCE(s.name, owner.full_name, owner.email, 'Sekolah') AS school_name,
+                   s.logo_url AS school_logo_url,
+                   s.npsn
+            FROM monev_bos_external_photo_links l
+            JOIN dashboard_users owner ON owner.id = l.school_user_id
+            LEFT JOIN portal_schools s ON s.id = owner.school_id
+            WHERE l.public_id = %s
+            """,
+            (public_id,),
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
+def revoke_external_photo_link(link_id: int, school_user_id: int, actor_id: int) -> bool:
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE monev_bos_external_photo_links
+            SET revoked_at = NOW(), revoked_by = %s
+            WHERE id = %s AND school_user_id = %s AND revoked_at IS NULL
+            RETURNING id
+            """,
+            (actor_id, link_id, school_user_id),
+        )
+        return cur.fetchone() is not None
+
+
 def create_school_post(
     school_user_id: int,
     title: str,
@@ -1621,15 +1939,31 @@ def create_school_post(
     longitude: float,
     location_accuracy: Optional[float],
     location_text: str,
-    actor_id: int,
+    actor_id: Optional[int],
+    external_link_id: Optional[int] = None,
+    external_photographer_name: Optional[str] = None,
+    external_photographer_nip: Optional[str] = None,
 ) -> int:
     with get_cursor(commit=True) as cur:
+        if external_link_id is not None:
+            cur.execute(
+                """
+                SELECT id FROM monev_bos_external_photo_links
+                WHERE id = %s AND school_user_id = %s
+                  AND revoked_at IS NULL AND expires_at > NOW()
+                FOR UPDATE
+                """,
+                (external_link_id, school_user_id),
+            )
+            if not cur.fetchone():
+                raise ValueError("Tautan foto eksternal sudah tidak aktif.")
         cur.execute(
             """
             INSERT INTO monev_bos_school_posts
                 (school_user_id, title, photo_path, photo_size, latitude, longitude,
-                 location_accuracy, location_text, created_by)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                 location_accuracy, location_text, created_by, external_link_id,
+                 external_photographer_name, external_photographer_nip)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
             """,
             (
@@ -1642,9 +1976,21 @@ def create_school_post(
                 location_accuracy,
                 location_text,
                 actor_id,
+                external_link_id,
+                external_photographer_name,
+                external_photographer_nip,
             ),
         )
         post_id = int(cur.fetchone()[0])
+        if external_link_id is not None:
+            cur.execute(
+                """
+                UPDATE monev_bos_external_photo_links
+                SET last_used_at = NOW(), submission_count = submission_count + 1
+                WHERE id = %s
+                """,
+                (external_link_id,),
+            )
         cur.execute(
             """
             INSERT INTO monev_bos_story_audit_logs
@@ -1655,7 +2001,13 @@ def create_school_post(
                 post_id,
                 school_user_id,
                 actor_id,
-                json.dumps({"title": title.strip(), "location_text": location_text}),
+                json.dumps({
+                    "title": title.strip(),
+                    "location_text": location_text,
+                    "source": "external_link" if external_link_id else "school",
+                    "photographer_name": external_photographer_name,
+                    "photographer_nip": external_photographer_nip,
+                }),
             ),
         )
         return post_id
@@ -1679,6 +2031,118 @@ def get_school_post(post_id: int, *, include_deleted: bool = False) -> Optional[
         if not include_deleted:
             query += " AND p.deleted_at IS NULL"
         cur.execute(query, (post_id,))
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
+def get_school_posts_by_ids(post_ids: List[int], school_user_id: int) -> List[Dict[str, Any]]:
+    """Return undeleted posts owned by one school; callers may restore their chosen order."""
+    clean_ids = list(dict.fromkeys(int(post_id) for post_id in post_ids))
+    if not clean_ids:
+        return []
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT p.*,
+                   COALESCE(s.name, owner.full_name, owner.email, 'Sekolah') AS school_name,
+                   s.npsn, s.alamat, s.logo_url AS school_logo_url
+            FROM monev_bos_school_posts p
+            JOIN dashboard_users owner ON owner.id = p.school_user_id
+            LEFT JOIN portal_schools s ON s.id = owner.school_id
+            WHERE p.id = ANY(%s)
+              AND p.school_user_id = %s
+              AND p.deleted_at IS NULL
+            """,
+            (clean_ids, school_user_id),
+        )
+        return [dict(row) for row in cur.fetchall()]
+
+
+def publish_school_posts(
+    post_ids: List[int],
+    school_user_id: int,
+    actor_id: int,
+    photo_hashes: Optional[Dict[int, str]] = None,
+) -> List[Dict[str, Any]]:
+    """Publish selected private photos and allocate stable, unguessable verification tokens."""
+    clean_ids = list(dict.fromkeys(int(post_id) for post_id in post_ids))
+    if not clean_ids:
+        return []
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            SELECT id, title, is_public, public_token
+            FROM monev_bos_school_posts
+            WHERE id = ANY(%s)
+              AND school_user_id = %s
+              AND deleted_at IS NULL
+            FOR UPDATE
+            """,
+            (clean_ids, school_user_id),
+        )
+        rows = cur.fetchall()
+        for row in rows:
+            token = row["public_token"] or secrets.token_urlsafe(32)
+            cur.execute(
+                """
+                UPDATE monev_bos_school_posts
+                SET is_public = TRUE,
+                    public_token = %s,
+                    published_at = COALESCE(published_at, NOW()),
+                    photo_sha256 = COALESCE(photo_sha256, %s)
+                WHERE id = %s
+                """,
+                (token, (photo_hashes or {}).get(int(row["id"])), row["id"]),
+            )
+            if not row["is_public"]:
+                cur.execute(
+                    """
+                    INSERT INTO monev_bos_story_audit_logs
+                        (post_id, school_user_id, actor_id, action, details)
+                    VALUES (%s, %s, %s, 'PUBLISH', %s::jsonb)
+                    """,
+                    (
+                        row["id"],
+                        school_user_id,
+                        actor_id,
+                        json.dumps({"title": row["title"], "reason": "photo_report_pdf"}),
+                    ),
+                )
+    return get_school_posts_by_ids(clean_ids, school_user_id)
+
+
+def get_public_school_post(public_token: str) -> Optional[Dict[str, Any]]:
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT p.*,
+                   COALESCE(s.name, owner.full_name, owner.email, 'Sekolah') AS school_name,
+                   s.npsn, s.alamat, s.logo_url AS school_logo_url
+            FROM monev_bos_school_posts p
+            JOIN dashboard_users owner ON owner.id = p.school_user_id
+            LEFT JOIN portal_schools s ON s.id = owner.school_id
+            WHERE p.public_token = %s
+              AND p.is_public = TRUE
+              AND p.deleted_at IS NULL
+            """,
+            ((public_token or "").strip(),),
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
+def get_school_post_by_photo_path(photo_path: str) -> Optional[Dict[str, Any]]:
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT id, school_user_id, is_public, public_token, deleted_at
+            FROM monev_bos_school_posts
+            WHERE photo_path = %s
+            ORDER BY id DESC
+            LIMIT 1
+            """,
+            ((photo_path or "").lstrip("/"),),
+        )
         row = cur.fetchone()
         return dict(row) if row else None
 
