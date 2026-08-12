@@ -1,22 +1,22 @@
 from __future__ import annotations
 
+import json
 import os
 import re
-import json
-import signal
 import secrets
 import shutil
+import signal
 import subprocess
-from pathlib import Path
-from pathlib import PurePosixPath
 from functools import wraps
+from pathlib import Path, PurePosixPath
 from typing import Callable, Optional
-from dotenv import dotenv_values
 
 from authlib.integrations.flask_client import OAuth
+from dotenv import dotenv_values
 from flask import (
     Blueprint,
     Response,
+    current_app,
     flash,
     jsonify,
     make_response,
@@ -25,36 +25,36 @@ from flask import (
     request,
     session,
     url_for,
-    current_app,
 )
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from .queries import (
-    create_dashboard_user,
-    get_user_by_email,
-    list_dashboard_users,
-    update_last_login,
-    fetch_aska_users,
-    summarize_aska_users,
-    update_web_user_status,
-    update_telegram_user_status,
-    update_whatsapp_user_status,
-    list_admin_users,
-    fetch_telegram_notification_settings,
-    fetch_whatsapp_link_settings,
-    upsert_telegram_notification_settings,
-    upsert_whatsapp_link_settings,
-    list_telegram_admin_accounts,
-    upsert_telegram_admin_accounts,
-    delete_telegram_admin_account,
-    list_telegram_notification_groups,
-    delete_telegram_notification_group,
-)
-from dashboard.telegram_notifications import send_test_notification
 from account_status import (
+    ACCOUNT_STATUS_BADGES,
     ACCOUNT_STATUS_CHOICES,
     ACCOUNT_STATUS_LABELS,
-    ACCOUNT_STATUS_BADGES,
+)
+from dashboard.telegram_notifications import send_test_notification
+
+from .queries import (
+    create_dashboard_user,
+    delete_telegram_admin_account,
+    delete_telegram_notification_group,
+    fetch_aska_users,
+    fetch_telegram_notification_settings,
+    fetch_whatsapp_link_settings,
+    get_user_by_email,
+    list_admin_users,
+    list_dashboard_users,
+    list_telegram_admin_accounts,
+    list_telegram_notification_groups,
+    summarize_aska_users,
+    update_last_login,
+    update_telegram_user_status,
+    update_web_user_status,
+    update_whatsapp_user_status,
+    upsert_telegram_admin_accounts,
+    upsert_telegram_notification_settings,
+    upsert_whatsapp_link_settings,
 )
 
 auth_bp = Blueprint("auth", __name__)
@@ -131,7 +131,9 @@ def _resolve_whatsapp_runtime_paths() -> dict:
     session_path = Path(os.getenv("ASKA_WHATSAPP_SESSION_PATH", ".wa_session"))
     if not session_path.is_absolute():
         session_path = (root_dir / session_path).resolve()
-    status_path = Path(os.getenv("ASKA_WHATSAPP_STATUS_PATH", "runtime/whatsapp_bridge_status.json"))
+    status_path = Path(
+        os.getenv("ASKA_WHATSAPP_STATUS_PATH", "runtime/whatsapp_bridge_status.json")
+    )
     if not status_path.is_absolute():
         status_path = (root_dir / status_path).resolve()
     log_path = (root_dir / "runtime" / "whatsapp_bridge.log").resolve()
@@ -203,7 +205,12 @@ def _restart_whatsapp_bridge(reset_session: bool = True) -> dict:
     # Remove stale Chromium lock files before boot.
     try:
         session_client_dir = session_path / "session-aska-main"
-        for lock_name in ("SingletonLock", "SingletonCookie", "SingletonSocket", "lockfile"):
+        for lock_name in (
+            "SingletonLock",
+            "SingletonCookie",
+            "SingletonSocket",
+            "lockfile",
+        ):
             for lock_path in session_client_dir.rglob(lock_name):
                 try:
                     lock_path.unlink()
@@ -225,7 +232,9 @@ def _restart_whatsapp_bridge(reset_session: bool = True) -> dict:
                 env[key] = str(value)
 
     if not (env.get("ASKA_WHATSAPP_INTERNAL_TOKEN") or "").strip():
-        raise RuntimeError("ASKA_WHATSAPP_INTERNAL_TOKEN belum diset di environment/.env")
+        raise RuntimeError(
+            "ASKA_WHATSAPP_INTERNAL_TOKEN belum diset di environment/.env"
+        )
 
     if "ASKA_WHATSAPP_STATUS_PATH" not in env:
         env["ASKA_WHATSAPP_STATUS_PATH"] = str(paths["status"])
@@ -287,6 +296,7 @@ def login_required(view: Callable) -> Callable:
 
 def role_required(*roles: str) -> Callable:
     """Check if user has required role. Simplified version without admin_level/access_scope."""
+
     def decorator(view: Callable) -> Callable:
         @wraps(view)
         def wrapper(*args, **kwargs):
@@ -294,7 +304,7 @@ def role_required(*roles: str) -> Callable:
             if not user:
                 # flash("Silakan login terlebih dahulu.", "warning")
                 return redirect(url_for("auth.login", next=request.path))
-            
+
             role = user.get("role")
             if role not in roles:
                 flash("Anda tidak memiliki akses ke fitur ini.", "danger")
@@ -309,13 +319,17 @@ def role_required(*roles: str) -> Callable:
                     return redirect(url_for("portal.sekolah_home"))
                 else:
                     return redirect(url_for("auth.logout"))
-            
+
             return view(*args, **kwargs)
+
         return wrapper
+
     return decorator
 
 
-def _establish_session(user: dict, *, remember: bool = False, email_override: Optional[str] = None) -> None:
+def _establish_session(
+    user: dict, *, remember: bool = False, email_override: Optional[str] = None
+) -> None:
     """Populate the Flask session with the logged-in dashboard user."""
     raw_assigned_class = user.get("assigned_class_id")
     assigned_class_id = None
@@ -348,14 +362,13 @@ def _redirect_after_login(user: dict, fallback: Optional[str] = None) -> str:
     """Determine the appropriate redirect destination after login. Simplified."""
     if fallback and fallback != "/":
         return fallback
-    
+
     role = user.get("role", "")
 
     # For admin, root is an acceptable redirection (it redirects to select-role)
     if fallback == "/" and role == "admin":
         return fallback
-    
-    
+
     # Simple role-based redirect
     if role == "admin":
         return url_for("main.admin_select_role")
@@ -403,13 +416,12 @@ def _render_login_page(**context) -> Response:
     return response
 
 
-
 @auth_bp.route("/register", methods=["GET", "POST"])
 def register() -> Response:
     """Handle new staff account registration."""
     if current_user():
         return redirect(url_for("portal.home"))
-        
+
     if request.method == "POST":
         try:
             full_name = request.form.get("full_name")
@@ -421,7 +433,7 @@ def register() -> Response:
             nip = request.form.get("nip")
             nrk = (request.form.get("nrk") or "").strip() or None
             jabatan = request.form.get("jabatan")
-            
+
             # Basic validation
             if not all([full_name, email, password, whatsapp, nip]):
                 flash("Mohon lengkapi semua data wajib.", "warning")
@@ -429,57 +441,76 @@ def register() -> Response:
                 kecamatan_list = []
                 try:
                     from dashboard.db_access import get_cursor
+
                     with get_cursor() as cur:
-                        cur.execute("SELECT id, name FROM portal_kecamatan ORDER BY name")
+                        cur.execute(
+                            "SELECT id, name FROM portal_kecamatan ORDER BY name"
+                        )
                         kecamatan_list = [dict(row) for row in cur.fetchall()]
                 except Exception:
                     pass
                 coordinator_contacts = _build_login_contact_list()
-                return render_template("register.html", kecamatan_list=kecamatan_list, coordinator_contacts=coordinator_contacts)
-                
+                return render_template(
+                    "register.html",
+                    kecamatan_list=kecamatan_list,
+                    coordinator_contacts=coordinator_contacts,
+                )
+
             if password != confirm_password:
                 flash("Password tidak cocok.", "warning")
                 kecamatan_list = []
                 try:
                     from dashboard.db_access import get_cursor
+
                     with get_cursor() as cur:
-                        cur.execute("SELECT id, name FROM portal_kecamatan ORDER BY name")
+                        cur.execute(
+                            "SELECT id, name FROM portal_kecamatan ORDER BY name"
+                        )
                         kecamatan_list = [dict(row) for row in cur.fetchall()]
                 except Exception:
                     pass
                 coordinator_contacts = _build_login_contact_list()
-                return render_template("register.html", kecamatan_list=kecamatan_list, coordinator_contacts=coordinator_contacts)
-                
+                return render_template(
+                    "register.html",
+                    kecamatan_list=kecamatan_list,
+                    coordinator_contacts=coordinator_contacts,
+                )
+
             # Check existing user
             from dashboard.queries import get_user_by_email
+
             if get_user_by_email(email):
                 flash("Email sudah terdaftar. Silakan login.", "warning")
                 return redirect(url_for("auth.login"))
-                
+
             # Create user
             from werkzeug.security import generate_password_hash
+
             from dashboard.auth_queries import create_pending_user
-            
+
             user_id = create_pending_user(
                 email=email,
                 full_name=full_name,
-                password_hash=generate_password_hash(password, method='pbkdf2:sha256'),
+                password_hash=generate_password_hash(password, method="pbkdf2:sha256"),
                 role="staff",
                 whatsapp=whatsapp,
                 nip=nip,
                 nrk=nrk,
                 jabatan=jabatan,
-                kecamatan_id=int(kecamatan_id) if kecamatan_id else None
+                kecamatan_id=int(kecamatan_id) if kecamatan_id else None,
             )
 
             try:
-                from dashboard.telegram_notifications import notify_pending_user
                 from dashboard.db_access import get_cursor
+                from dashboard.telegram_notifications import notify_pending_user
 
                 kecamatan_name = None
                 if kecamatan_id:
                     with get_cursor() as cur:
-                        cur.execute("SELECT name FROM portal_kecamatan WHERE id = %s", (int(kecamatan_id),))
+                        cur.execute(
+                            "SELECT name FROM portal_kecamatan WHERE id = %s",
+                            (int(kecamatan_id),),
+                        )
                         row = cur.fetchone()
                         if row:
                             kecamatan_name = row.get("name")
@@ -493,17 +524,23 @@ def register() -> Response:
                     whatsapp_number=whatsapp,
                 )
             except Exception:
-                current_app.logger.exception("Gagal mengirim notifikasi Telegram untuk verifikasi akun.")
-            
-            flash("Pendaftaran berhasil! Akun Anda sedang diverifikasi oleh admin.", "success")
+                current_app.logger.exception(
+                    "Gagal mengirim notifikasi Telegram untuk verifikasi akun."
+                )
+
+            flash(
+                "Pendaftaran berhasil! Akun Anda sedang diverifikasi oleh admin.",
+                "success",
+            )
             return redirect(url_for("auth.registration_status", user_id=user_id))
-            
+
         except Exception as e:
             print(f"Registration error: {e}")
             flash("Terjadi kesalahan saat mendaftar. Silakan coba lagi.", "danger")
-            
+
     # GET request
     from dashboard.db_access import get_cursor
+
     kecamatan_list = []
     try:
         with get_cursor() as cur:
@@ -511,17 +548,21 @@ def register() -> Response:
             kecamatan_list = [dict(row) for row in cur.fetchall()]
     except Exception:
         pass
-    
+
     coordinator_contacts = _build_login_contact_list()
-        
-    return render_template("register.html", kecamatan_list=kecamatan_list, coordinator_contacts=coordinator_contacts)
+
+    return render_template(
+        "register.html",
+        kecamatan_list=kecamatan_list,
+        coordinator_contacts=coordinator_contacts,
+    )
 
 
 @auth_bp.route("/registration-status/<int:user_id>")
 def registration_status(user_id: int) -> Response:
     """Show registration status for a new user."""
     from dashboard.db_access import get_cursor
-    
+
     with get_cursor() as cur:
         # Fetch user details + kecamatan name
         query = """
@@ -532,13 +573,17 @@ def registration_status(user_id: int) -> Response:
         """
         cur.execute(query, (user_id,))
         user = cur.fetchone()
-        
+
     if not user:
         flash("Data pendaftaran tidak ditemukan.", "danger")
         return redirect(url_for("auth.register"))
 
     user_dict = dict(user)
-    if user_dict.get("full_name") and user_dict.get("email") and user_dict.get("kecamatan_name"):
+    if (
+        user_dict.get("full_name")
+        and user_dict.get("email")
+        and user_dict.get("kecamatan_name")
+    ):
         message_template = (
             "Halo {contact_name}, saya "
             f"{user_dict.get('full_name')} baru mendaftar akun Portal ASKA "
@@ -552,7 +597,9 @@ def registration_status(user_id: int) -> Response:
             f"{user_dict.get('full_name')} ingin menanyakan status pendaftaran Portal ASKA."
         )
     else:
-        message_template = "Halo {contact_name}, saya ingin bertanya tentang pendaftaran Portal ASKA."
+        message_template = (
+            "Halo {contact_name}, saya ingin bertanya tentang pendaftaran Portal ASKA."
+        )
     coordinator_contacts = _build_login_contact_list(
         message_template=message_template,
         area_name=user_dict.get("kecamatan_name"),
@@ -572,6 +619,7 @@ def _build_login_contact_list(
     message_template: str | None = None,
 ) -> list[dict]:
     from urllib.parse import quote_plus
+
     from dashboard.portal.queries import list_portal_kontak
 
     contacts = []
@@ -640,17 +688,23 @@ def login() -> Response:
         user = get_user_by_email(email)
         if not user:
             flash("Email belum terdaftar. Hubungi admin untuk membuat akun.", "danger")
-            return _render_login_page(email=email, coordinator_contacts=coordinator_contacts)
+            return _render_login_page(
+                email=email, coordinator_contacts=coordinator_contacts
+            )
 
         login_block = _get_login_block_feedback(user)
         if login_block:
             message, category = login_block
             flash(message, category)
-            return _render_login_page(email=email, coordinator_contacts=coordinator_contacts)
+            return _render_login_page(
+                email=email, coordinator_contacts=coordinator_contacts
+            )
 
         if not check_password_hash(user["password_hash"], password):
             flash("Salah password, hubungi admin untuk reset akses.", "danger")
-            return _render_login_page(email=email, coordinator_contacts=coordinator_contacts)
+            return _render_login_page(
+                email=email, coordinator_contacts=coordinator_contacts
+            )
 
         _establish_session(user, remember=remember, email_override=email)
         flash("Selamat datang kembali!", "success")
@@ -693,7 +747,9 @@ def google_login(provider: str) -> Response:
     nonce = secrets.token_urlsafe(24)
     session["dashboard_oauth_nonce"] = nonce
     redirect_uri = url_for("auth.google_callback", _external=True)
-    return oauth_client.authorize_redirect(redirect_uri, prompt="select_account", nonce=nonce)
+    return oauth_client.authorize_redirect(
+        redirect_uri, prompt="select_account", nonce=nonce
+    )
 
 
 @auth_bp.route("/login/google/callback")
@@ -736,7 +792,10 @@ def google_callback() -> Response:
 
     user = get_user_by_email(email)
     if not user:
-        flash("Email tersebut belum terdaftar pada dashboard. Hubungi admin untuk mendapatkan akses.", "danger")
+        flash(
+            "Email tersebut belum terdaftar pada dashboard. Hubungi admin untuk mendapatkan akses.",
+            "danger",
+        )
         return redirect(url_for("auth.login"))
 
     login_block = _get_login_block_feedback(user)
@@ -756,35 +815,37 @@ def google_callback() -> Response:
 def manage_users() -> Response:
     from dashboard.user_management import handle_manage_users
 
-    return handle_manage_users(actor=current_user(), base_template="base.html", read_only=True)
+    return handle_manage_users(
+        actor=current_user(), base_template="base.html", read_only=True
+    )
 
 
 @auth_bp.route("/settings/monev-teams", methods=["GET", "POST"])
 @role_required("admin")
 def manage_monev_teams() -> Response:
     """Manage monev teams configuration."""
+    from dashboard.portal.queries import list_kecamatan
     from dashboard.queries import (
-        get_monev_teams,
-        get_team_members,
-        update_team_coordinator,
         add_team_member,
-        remove_team_member,
-        get_available_staff,
         create_monev_team,
         delete_monev_team,
+        get_available_staff,
+        get_monev_teams,
+        get_team_members,
+        remove_team_member,
+        update_team_coordinator,
     )
-    from dashboard.portal.queries import list_kecamatan
-    
+
     if request.method == "POST":
         action = request.form.get("action")
-        
+
         try:
             if action == "create_team":
                 name = request.form.get("team_name", "").strip()
                 team_type = request.form.get("team_type", "custom")
                 kecamatan_id = request.form.get("kecamatan_id")
                 kecamatan_id = int(kecamatan_id) if kecamatan_id else None
-                
+
                 if not name:
                     flash("Nama tim tidak boleh kosong.", "warning")
                 else:
@@ -793,70 +854,74 @@ def manage_monev_teams() -> Response:
                         flash(f"Tim '{name}' berhasil dibuat.", "success")
                     else:
                         flash("Gagal membuat tim.", "danger")
-                        
+
             elif action == "delete_team":
                 team_id = int(request.form.get("team_id"))
                 team_name = request.form.get("team_name", "")
-                
+
                 if delete_monev_team(team_id):
                     flash(f"Tim '{team_name}' berhasil dihapus.", "success")
                 else:
                     flash("Gagal menghapus tim.", "danger")
-                    
+
             elif action == "update_coordinator":
                 team_id = int(request.form.get("team_id"))
                 coordinator_id = request.form.get("coordinator_id")
                 coordinator_id = int(coordinator_id) if coordinator_id else None
-                
+
                 if update_team_coordinator(team_id, coordinator_id):
                     flash("Koordinator berhasil diperbarui.", "success")
                 else:
                     flash("Gagal memperbarui koordinator.", "danger")
-                    
+
             elif action == "add_member":
                 team_id = int(request.form.get("team_id"))
                 staff_id = int(request.form.get("staff_id"))
                 admin_id = current_user().get("id") if current_user() else None
-                
+
                 if add_team_member(team_id, staff_id, admin_id):
                     flash("Anggota berhasil ditambahkan.", "success")
                 else:
-                    flash("Anggota sudah ada dalam tim atau gagal ditambahkan.", "warning")
-                    
+                    flash(
+                        "Anggota sudah ada dalam tim atau gagal ditambahkan.", "warning"
+                    )
+
             elif action == "remove_member":
                 member_id = int(request.form.get("member_id"))
-                
+
                 if remove_team_member(member_id):
                     flash("Anggota berhasil dihapus dari tim.", "success")
                 else:
                     flash("Gagal menghapus anggota.", "danger")
-                    
+
         except Exception as exc:
             current_app.logger.error(f"Error managing monev team: {exc}")
             flash(f"Terjadi kesalahan: {exc}", "danger")
-    
+
     # GET: Fetch teams by type and enrich with members
-    kasi_teams = get_monev_teams(team_type='kasi')
+    kasi_teams = get_monev_teams(team_type="kasi")
     for team in kasi_teams:
-        team['members'] = get_team_members(team['id'])
-    
-    kecamatan_teams = get_monev_teams(team_type='kecamatan')
+        team["members"] = get_team_members(team["id"])
+
+    kecamatan_teams = get_monev_teams(team_type="kecamatan")
     for team in kecamatan_teams:
-        team['members'] = get_team_members(team['id'])
-    
-    custom_teams = get_monev_teams(team_type='custom')
+        team["members"] = get_team_members(team["id"])
+
+    custom_teams = get_monev_teams(team_type="custom")
     for team in custom_teams:
-        team['members'] = get_team_members(team['id'])
-    
+        team["members"] = get_team_members(team["id"])
+
     available_staff = get_available_staff()
     kecamatan_list = list_kecamatan()
-    
-    return render_template("monev_teams.html", 
-                           kasi_teams=kasi_teams, 
-                           kecamatan_teams=kecamatan_teams, 
-                           custom_teams=custom_teams,
-                           available_staff=available_staff,
-                           kecamatan_list=kecamatan_list)
+
+    return render_template(
+        "monev_teams.html",
+        kasi_teams=kasi_teams,
+        kecamatan_teams=kecamatan_teams,
+        custom_teams=custom_teams,
+        available_staff=available_staff,
+        kecamatan_list=kecamatan_list,
+    )
 
 
 @auth_bp.route("/settings/telegram-notifications", methods=["GET", "POST"])
@@ -879,7 +944,9 @@ def whatsapp_link_settings() -> Response:
         flash("Link WhatsApp berhasil disimpan.", "success")
 
     settings = fetch_whatsapp_link_settings()
-    current_link = _normalize_whatsapp_link(settings.get("wa_link") or os.getenv("ASKA_WHATSAPP_URL", "082143646463"))
+    current_link = _normalize_whatsapp_link(
+        settings.get("wa_link") or os.getenv("ASKA_WHATSAPP_URL", "082143646463")
+    )
 
     return render_template(
         "whatsapp_link_settings.html",
@@ -910,13 +977,19 @@ def whatsapp_bridge_generate_qr() -> Response:
     try:
         runtime = _restart_whatsapp_bridge(reset_session=True)
         message = "Worker WhatsApp direstart. Tunggu 5-15 detik sampai QR muncul."
-        if request.is_json or request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        if (
+            request.is_json
+            or request.headers.get("X-Requested-With") == "XMLHttpRequest"
+        ):
             return jsonify({"success": True, "message": message, "runtime": runtime})
         flash(message, "success")
         return redirect(url_for("auth.whatsapp_bridge_settings"))
     except Exception as exc:
         message = f"Gagal generate QR: {exc}"
-        if request.is_json or request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        if (
+            request.is_json
+            or request.headers.get("X-Requested-With") == "XMLHttpRequest"
+        ):
             return jsonify({"success": False, "message": message}), 500
         flash(message, "danger")
         return redirect(url_for("auth.whatsapp_bridge_settings"))
@@ -927,38 +1000,36 @@ def whatsapp_bridge_generate_qr() -> Response:
 def view_my_team() -> Response:
     """View monev team for coordinator or staff member."""
     from dashboard.queries import get_monev_teams, get_team_members
-    
+
     user = current_user()
     user_id = user.get("id")
     user_role = user.get("role")
-    
+
     # Get all teams
     all_teams = get_monev_teams()
-    
+
     # Find team where user is coordinator or member
     my_team = None
     my_team_role = None  # 'coordinator' or 'member'
-    
+
     for team in all_teams:
         # Check if coordinator
-        if team.get('coordinator_id') == user_id:
+        if team.get("coordinator_id") == user_id:
             my_team = team
-            my_team_role = 'coordinator'
+            my_team_role = "coordinator"
             break
-        
+
         # Check if member
-        members = get_team_members(team['id'])
-        if any(m.get('staff_id') == user_id for m in members):
+        members = get_team_members(team["id"])
+        if any(m.get("staff_id") == user_id for m in members):
             my_team = team
-            my_team_role = 'member'
+            my_team_role = "member"
             break
-    
+
     if my_team:
-        my_team['members'] = get_team_members(my_team['id'])
-    
+        my_team["members"] = get_team_members(my_team["id"])
+
     return render_template("my_team.html", team=my_team, team_role=my_team_role)
-
-
 
 
 @auth_bp.route("/settings/aska-users")
@@ -968,7 +1039,9 @@ def manage_aska_users() -> Response:
     if source not in {"web", "telegram", "whatsapp", "all"}:
         source = "all"
     status_filter = (request.args.get("status") or "all").strip().lower()
-    normalized_status = status_filter if status_filter in ACCOUNT_STATUS_CHOICES else None
+    normalized_status = (
+        status_filter if status_filter in ACCOUNT_STATUS_CHOICES else None
+    )
     search = (request.args.get("q") or "").strip()
 
     users = fetch_aska_users(source, normalized_status, search or None)
@@ -1009,11 +1082,17 @@ def update_aska_user_status() -> Response:
     actor = admin.get("email") or admin.get("full_name") or "dashboard"
     try:
         if channel == "web":
-            updated = update_web_user_status(user_id_int, normalized_status, reason, changed_by=actor)
+            updated = update_web_user_status(
+                user_id_int, normalized_status, reason, changed_by=actor
+            )
         elif channel == "telegram":
-            updated = update_telegram_user_status(user_id_int, normalized_status, reason, changed_by=actor)
+            updated = update_telegram_user_status(
+                user_id_int, normalized_status, reason, changed_by=actor
+            )
         elif channel == "whatsapp":
-            updated = update_whatsapp_user_status(user_id_int, normalized_status, reason, changed_by=actor)
+            updated = update_whatsapp_user_status(
+                user_id_int, normalized_status, reason, changed_by=actor
+            )
         else:
             return jsonify({"success": False, "message": "Channel tidak dikenal."}), 400
     except ValueError as exc:

@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import asyncio
-import concurrent.futures
-import os
 import base64
+import concurrent.futures
 import json
 import mimetypes
+import os
 import shutil
 import signal
 import subprocess
@@ -33,63 +33,15 @@ from flask import (
     url_for,
 )
 
-from ..auth import current_user, role_required
 from dashboard.queries import (
-    list_telegram_admin_accounts,
-    upsert_telegram_admin_accounts,
     delete_telegram_admin_account,
     list_admin_users,
+    list_telegram_admin_accounts,
     record_admin_action,
+    upsert_telegram_admin_accounts,
 )
-from .queries import (
-    upsert_cc_conversation,
-    fetch_cc_conversations,
-    fetch_cc_conversation,
-    fetch_cc_messages,
-    fetch_cc_message,
-    save_cc_message,
-    update_cc_message_text,
-    mark_conversation_read,
-    close_conversation,
-    reopen_conversation,
-    fetch_cc_unread_total,
-    upsert_cc_telegram_settings,
-    fetch_cc_telegram_settings,
-    add_cc_telegram_group,
-    list_cc_telegram_groups,
-    delete_cc_telegram_group,
-    send_cc_telegram_notification,
-    list_cc_message_drafts,
-    list_cc_message_draft_categories,
-    get_cc_message_draft,
-    create_cc_message_draft,
-    update_cc_message_draft,
-    delete_cc_message_draft,
-    toggle_cc_message_draft_pin,
-    fetch_cc_media_db_refs,
-    clear_cc_media_db_refs,
-    ensure_cc_wa_routing_contact,
-    get_cc_wa_routing,
-    list_cc_wa_routing,
-    summarize_cc_wa_routing,
-    save_cc_wa_routing,
-    delete_cc_wa_routing,
-    normalize_cc_route_mode,
-    normalize_cc_bridge_key,
-    compose_cc_conversation_user_key,
-    split_cc_conversation_user_key,
-    ensure_default_cc_wa_bridge_account,
-    list_cc_wa_bridge_accounts,
-    get_cc_wa_bridge_account,
-    save_cc_wa_bridge_account,
-    delete_cc_wa_bridge_account,
-    get_default_cc_wa_bridge_account,
-    fetch_cc_public_whatsapp_cta_settings,
-    upsert_cc_public_whatsapp_cta_settings,
-    delete_cc_public_whatsapp_cta_settings,
-    CC_PUBLIC_WHATSAPP_DEFAULT_MESSAGE,
-    fetch_cc_statistics,
-)
+
+from ..auth import current_user, role_required
 from . import call_center_api_bp, call_center_bp
 from .media import (
     CC_MEDIA_ROOT,
@@ -97,6 +49,55 @@ from .media import (
     resolve_call_center_media_path,
     save_call_center_media,
     save_call_center_media_with_error,
+)
+from .queries import (
+    CC_PUBLIC_WHATSAPP_DEFAULT_MESSAGE,
+    add_cc_telegram_group,
+    clear_cc_media_db_refs,
+    close_conversation,
+    compose_cc_conversation_user_key,
+    create_cc_message_draft,
+    delete_cc_message_draft,
+    delete_cc_public_whatsapp_cta_settings,
+    delete_cc_telegram_group,
+    delete_cc_wa_bridge_account,
+    delete_cc_wa_routing,
+    ensure_cc_wa_routing_contact,
+    ensure_default_cc_wa_bridge_account,
+    fetch_cc_conversation,
+    fetch_cc_conversations,
+    fetch_cc_media_db_refs,
+    fetch_cc_message,
+    fetch_cc_messages,
+    fetch_cc_public_whatsapp_cta_settings,
+    fetch_cc_statistics,
+    fetch_cc_telegram_settings,
+    fetch_cc_unread_total,
+    get_cc_message_draft,
+    get_cc_wa_bridge_account,
+    get_cc_wa_routing,
+    get_default_cc_wa_bridge_account,
+    list_cc_message_draft_categories,
+    list_cc_message_drafts,
+    list_cc_telegram_groups,
+    list_cc_wa_bridge_accounts,
+    list_cc_wa_routing,
+    mark_conversation_read,
+    normalize_cc_bridge_key,
+    normalize_cc_route_mode,
+    reopen_conversation,
+    save_cc_message,
+    save_cc_wa_bridge_account,
+    save_cc_wa_routing,
+    send_cc_telegram_notification,
+    split_cc_conversation_user_key,
+    summarize_cc_wa_routing,
+    toggle_cc_message_draft_pin,
+    update_cc_message_draft,
+    update_cc_message_text,
+    upsert_cc_conversation,
+    upsert_cc_public_whatsapp_cta_settings,
+    upsert_cc_telegram_settings,
 )
 
 PAGE_SIZE = 50
@@ -114,14 +115,17 @@ def _project_env_value(name: str, default: str = "") -> str:
 
 
 def _cc_bridge_auth_error() -> Optional[tuple[Response, int]]:
-    token_expected = (_project_env_value("ASKA_CC_WHATSAPP_INTERNAL_TOKEN") or "").strip()
+    token_expected = (
+        _project_env_value("ASKA_CC_WHATSAPP_INTERNAL_TOKEN") or ""
+    ).strip()
     if not token_expected:
-        return jsonify({"error": "ASKA_CC_WHATSAPP_INTERNAL_TOKEN belum dikonfigurasi"}), 501
+        return (
+            jsonify({"error": "ASKA_CC_WHATSAPP_INTERNAL_TOKEN belum dikonfigurasi"}),
+            501,
+        )
 
     provided_token = (
-        request.headers.get("X-ASKA-CC-TOKEN")
-        or request.args.get("token")
-        or ""
+        request.headers.get("X-ASKA-CC-TOKEN") or request.args.get("token") or ""
     ).strip()
     if provided_token != token_expected:
         return jsonify({"error": "Unauthorized"}), 403
@@ -147,6 +151,7 @@ def _run_async(coro):
 # Helpers — bridge management
 # ---------------------------------------------------------------------------
 
+
 def _bridge_accounts() -> list[dict]:
     ensure_default_cc_wa_bridge_account()
     rows = list_cc_wa_bridge_accounts(include_inactive=True)
@@ -168,13 +173,31 @@ def _cc_runtime_paths(account: Optional[dict] = None) -> dict:
     account = account or _resolve_bridge_account(None)
     root = PROJECT_ROOT
     bridge_key = normalize_cc_bridge_key(account.get("bridge_key"))
-    default_session = ".wa_cc_session" if bridge_key == "main" else f".wa_cc_session_{bridge_key}"
-    default_status = "runtime/whatsapp_cc_status.json" if bridge_key == "main" else f"runtime/whatsapp_cc_status_{bridge_key}.json"
-    default_pid = "runtime/whatsapp_cc.pid" if bridge_key == "main" else f"runtime/whatsapp_cc_{bridge_key}.pid"
-    default_log = "runtime/whatsapp_cc.log" if bridge_key == "main" else f"runtime/whatsapp_cc_{bridge_key}.log"
+    default_session = (
+        ".wa_cc_session" if bridge_key == "main" else f".wa_cc_session_{bridge_key}"
+    )
+    default_status = (
+        "runtime/whatsapp_cc_status.json"
+        if bridge_key == "main"
+        else f"runtime/whatsapp_cc_status_{bridge_key}.json"
+    )
+    default_pid = (
+        "runtime/whatsapp_cc.pid"
+        if bridge_key == "main"
+        else f"runtime/whatsapp_cc_{bridge_key}.pid"
+    )
+    default_log = (
+        "runtime/whatsapp_cc.log"
+        if bridge_key == "main"
+        else f"runtime/whatsapp_cc_{bridge_key}.log"
+    )
 
-    session = root / (str(account.get("session_path") or default_session).strip() or default_session)
-    status = root / (str(account.get("status_path") or default_status).strip() or default_status)
+    session = root / (
+        str(account.get("session_path") or default_session).strip() or default_session
+    )
+    status = root / (
+        str(account.get("status_path") or default_status).strip() or default_status
+    )
     pid = root / (str(account.get("pid_path") or default_pid).strip() or default_pid)
     log = root / (str(account.get("log_path") or default_log).strip() or default_log)
     return {"root": root, "session": session, "status": status, "pid": pid, "log": log}
@@ -202,7 +225,8 @@ def _systemd_service_exists(service: str) -> bool:
     try:
         result = subprocess.run(
             ["systemctl", "list-unit-files", "--quiet", service],
-            capture_output=True, timeout=5,
+            capture_output=True,
+            timeout=5,
         )
         return service in (result.stdout.decode(errors="replace") or "")
     except Exception:
@@ -259,17 +283,26 @@ def _load_cc_bridge_status(bridge_key: Optional[str] = None) -> dict:
         status["whatsappNumberManual"] = manual_number
         status["whatsappNumber"] = detected_number or manual_number
         status["whatsappNumberSource"] = (
-            "detected"
-            if detected_number
-            else ("manual" if manual_number else "")
+            "detected" if detected_number else ("manual" if manual_number else "")
         )
 
         if not running:
             current_state = (status.get("state") or "").strip().lower()
-            if current_state in {"starting", "authenticated", "ready", "qr", "disconnected"}:
+            if current_state in {
+                "starting",
+                "authenticated",
+                "ready",
+                "qr",
+                "disconnected",
+            }:
                 status["state"] = "stopped"
-                if not (status.get("message") or "").strip() or current_state == "starting":
-                    status["message"] = "Bridge tidak berjalan. Jalankan Generate QR untuk memulai lagi."
+                if (
+                    not (status.get("message") or "").strip()
+                    or current_state == "starting"
+                ):
+                    status["message"] = (
+                        "Bridge tidak berjalan. Jalankan Generate QR untuk memulai lagi."
+                    )
         return status
 
     if bridge_key:
@@ -289,7 +322,10 @@ def _load_cc_bridge_status(bridge_key: Optional[str] = None) -> dict:
 
     active_statuses = [s for s in statuses if bool(s.get("isActive", True))]
     baseline_statuses = active_statuses or statuses
-    any_ready = any((s.get("state") or "").lower() == "ready" and bool(s.get("isRunning")) for s in baseline_statuses)
+    any_ready = any(
+        (s.get("state") or "").lower() == "ready" and bool(s.get("isRunning"))
+        for s in baseline_statuses
+    )
     any_running = any(bool(s.get("isRunning")) for s in baseline_statuses)
     summary = dict(statuses[0])
     summary["accounts"] = statuses
@@ -391,7 +427,9 @@ def _send_via_bridge(
     port = _cc_bridge_http_port(bridge_key=bridge_key)
     token = (_project_env_value("ASKA_CC_WHATSAPP_INTERNAL_TOKEN") or "").strip()
     try:
-        timeout = float(_project_env_value("ASKA_CC_BRIDGE_SEND_TIMEOUT_SECONDS", "20") or 20)
+        timeout = float(
+            _project_env_value("ASKA_CC_BRIDGE_SEND_TIMEOUT_SECONDS", "20") or 20
+        )
     except (TypeError, ValueError):
         timeout = 20.0
     payload = {"to": to, "message": message or ""}
@@ -449,7 +487,11 @@ def _dispatch_to_ai_whatsapp(
             channel="whatsapp",
         )
         save_chat(user_id, username, message, role="user", topic="whatsapp")
-        ai_reply = notice.message if notice else "Akses WhatsApp kamu sedang dibatasi oleh sekolah."
+        ai_reply = (
+            notice.message
+            if notice
+            else "Akses WhatsApp kamu sedang dibatasi oleh sekolah."
+        )
         save_chat(user_id, "ASKA", ai_reply, role="aska", topic="whatsapp")
     else:
         ai_reply, chat_log_id = _run_async(
@@ -466,7 +508,9 @@ def _dispatch_to_ai_whatsapp(
         ai_reply = "ASKA lagi gangguan teknis sebentar. Coba kirim ulang beberapa saat lagi ya."
 
     bridge_key = normalize_cc_bridge_key(bridge_key)
-    send_result = _send_via_bridge(to=raw_user_id, message=ai_reply, bridge_key=bridge_key)
+    send_result = _send_via_bridge(
+        to=raw_user_id, message=ai_reply, bridge_key=bridge_key
+    )
     send_error = (send_result or {}).get("error")
     wa_message_id = (send_result or {}).get("messageId")
 
@@ -485,7 +529,9 @@ def _dispatch_to_ai_whatsapp(
     }
 
 
-def _edit_via_bridge(wa_message_id: str, message: str, *, bridge_key: Optional[str] = None) -> dict:
+def _edit_via_bridge(
+    wa_message_id: str, message: str, *, bridge_key: Optional[str] = None
+) -> dict:
     """Edit an outbound WA message through the CC bridge HTTP API."""
     port = _cc_bridge_http_port(bridge_key=bridge_key)
     token = (_project_env_value("ASKA_CC_WHATSAPP_INTERNAL_TOKEN") or "").strip()
@@ -554,7 +600,9 @@ def _bridge_media_from_saved(media_meta: dict) -> Optional[dict]:
 
 def _inbound_media_max_bytes() -> int:
     try:
-        return max(1, int(_project_env_value("ASKA_CC_INBOUND_MEDIA_MAX_BYTES", "307200")))
+        return max(
+            1, int(_project_env_value("ASKA_CC_INBOUND_MEDIA_MAX_BYTES", "307200"))
+        )
     except ValueError:
         return 300 * 1024
 
@@ -577,7 +625,9 @@ def _save_inbound_media(media_payload, *, message_id: Optional[str] = None) -> d
 
 def _draft_media_max_bytes() -> int:
     try:
-        return max(1, int(_project_env_value("ASKA_CC_DRAFT_MEDIA_MAX_BYTES", "1048576")))
+        return max(
+            1, int(_project_env_value("ASKA_CC_DRAFT_MEDIA_MAX_BYTES", "1048576"))
+        )
     except ValueError:
         return 1024 * 1024
 
@@ -585,7 +635,10 @@ def _draft_media_max_bytes() -> int:
 def _outbound_media_max_bytes() -> int:
     default_limit = _project_env_value("ASKA_CC_DRAFT_MEDIA_MAX_BYTES", "1048576")
     try:
-        return max(1, int(_project_env_value("ASKA_CC_OUTBOUND_MEDIA_MAX_BYTES", default_limit)))
+        return max(
+            1,
+            int(_project_env_value("ASKA_CC_OUTBOUND_MEDIA_MAX_BYTES", default_limit)),
+        )
     except ValueError:
         return 1024 * 1024
 
@@ -618,7 +671,9 @@ def _save_draft_media(media_payload) -> tuple[dict, Optional[str]]:
     )
 
 
-def _sync_history_via_bridge(chat_limit: int, limit_per_chat: int, *, bridge_key: Optional[str] = None) -> dict:
+def _sync_history_via_bridge(
+    chat_limit: int, limit_per_chat: int, *, bridge_key: Optional[str] = None
+) -> dict:
     """Ask the local CC bridge to import recent WhatsApp chat history."""
     port = _cc_bridge_http_port(bridge_key=bridge_key)
     token = (_project_env_value("ASKA_CC_WHATSAPP_INTERNAL_TOKEN") or "").strip()
@@ -645,7 +700,7 @@ def _restart_cc_bridge(account: dict, reset_session: bool = True) -> dict:
     paths = _cc_runtime_paths(account=account)
     _stop_existing_bridge(account)
     bridge_key = normalize_cc_bridge_key(account.get("bridge_key"))
-    client_id = (str(account.get("client_id") or "").strip() or f"cc-{bridge_key}")
+    client_id = str(account.get("client_id") or "").strip() or f"cc-{bridge_key}"
     http_port = int(account.get("http_port") or 3100)
     internal_url = (
         str(account.get("internal_url") or "").strip()
@@ -656,7 +711,12 @@ def _restart_cc_bridge(account: dict, reset_session: bool = True) -> dict:
     # Bersihkan lock file Chromium yang mungkin tersisa
     try:
         client_dir = paths["session"] / f"session-{client_id}"
-        for lock_name in ("SingletonLock", "SingletonCookie", "SingletonSocket", "lockfile"):
+        for lock_name in (
+            "SingletonLock",
+            "SingletonCookie",
+            "SingletonSocket",
+            "lockfile",
+        ):
             for lp in client_dir.rglob(lock_name):
                 try:
                     lp.unlink()
@@ -714,6 +774,7 @@ def _restart_cc_bridge(account: dict, reset_session: bool = True) -> dict:
 # Routes
 # ---------------------------------------------------------------------------
 
+
 @call_center_api_bp.route("/inbound", methods=["POST"])
 def api_callcenter_inbound() -> Response:
     """Receive inbound messages directly in the dashboard app."""
@@ -744,7 +805,11 @@ def api_callcenter_inbound() -> Response:
     if not message and (media_payload or media_meta):
         message = call_center_media_label(
             media_meta.get("media_mime_type")
-            or (media_payload.get("mimetype") if isinstance(media_payload, dict) else None)
+            or (
+                media_payload.get("mimetype")
+                if isinstance(media_payload, dict)
+                else None
+            )
         )
     if not message:
         return jsonify({"error": "message required"}), 400
@@ -756,13 +821,18 @@ def api_callcenter_inbound() -> Response:
         route_rule = get_cc_wa_routing(raw_user_id, bridge_key=bridge_key)
         if not route_rule:
             # First contact follows bridge default mode (manual/ai).
-            route_rule = ensure_cc_wa_routing_contact(
-                raw_user_id,
-                display_name=username,
-                route_mode=default_route_mode,
-                bridge_key=bridge_key,
-            ) or {}
-        route_mode = normalize_cc_route_mode(route_rule.get("route_mode") or default_route_mode)
+            route_rule = (
+                ensure_cc_wa_routing_contact(
+                    raw_user_id,
+                    display_name=username,
+                    route_mode=default_route_mode,
+                    bridge_key=bridge_key,
+                )
+                or {}
+            )
+        route_mode = normalize_cc_route_mode(
+            route_rule.get("route_mode") or default_route_mode
+        )
         is_active = bool(route_rule.get("is_active", True))
 
         if not is_active:
@@ -779,7 +849,9 @@ def api_callcenter_inbound() -> Response:
 
         if route_mode == "ai":
             # Keep AI traffic visible in Call Center inbox as well.
-            conv = upsert_cc_conversation(wa_user_id=conversation_user_key, display_name=username)
+            conv = upsert_cc_conversation(
+                wa_user_id=conversation_user_key, display_name=username
+            )
             inbound_msg = save_cc_message(
                 conversation_id=conv["id"],
                 direction="inbound",
@@ -826,7 +898,9 @@ def api_callcenter_inbound() -> Response:
             http_code = 200 if ai_result.get("ok") else 502
             return jsonify(ai_result), http_code
 
-        conv = upsert_cc_conversation(wa_user_id=conversation_user_key, display_name=username)
+        conv = upsert_cc_conversation(
+            wa_user_id=conversation_user_key, display_name=username
+        )
         msg = save_cc_message(
             conversation_id=conv["id"],
             direction="inbound",
@@ -884,7 +958,9 @@ def api_callcenter_import_history() -> Response:
                 continue
 
             raw_user_id = _normalize_wa_user_id(str(item.get("user_id") or ""))
-            bridge_key = normalize_cc_bridge_key(item.get("bridge_key") or request_bridge_key)
+            bridge_key = normalize_cc_bridge_key(
+                item.get("bridge_key") or request_bridge_key
+            )
             try:
                 bridge_account = _resolve_bridge_account(bridge_key)
             except Exception:
@@ -896,23 +972,33 @@ def api_callcenter_import_history() -> Response:
                 skipped += 1
                 continue
 
-            conversation_user_key = compose_cc_conversation_user_key(raw_user_id, bridge_key)
+            conversation_user_key = compose_cc_conversation_user_key(
+                raw_user_id, bridge_key
+            )
             if not conversation_user_key:
                 skipped += 1
                 continue
 
             media_payload = item.get("media") or {}
-            media_meta = _save_inbound_media(media_payload, message_id=item.get("message_id") or None)
+            media_meta = _save_inbound_media(
+                media_payload, message_id=item.get("message_id") or None
+            )
             if not message and (media_payload or media_meta):
                 message = call_center_media_label(
                     media_meta.get("media_mime_type")
-                    or (media_payload.get("mimetype") if isinstance(media_payload, dict) else None)
+                    or (
+                        media_payload.get("mimetype")
+                        if isinstance(media_payload, dict)
+                        else None
+                    )
                 )
             if not message:
                 skipped += 1
                 continue
 
-            username = str(item.get("username") or raw_user_id).strip()[:120] or raw_user_id
+            username = (
+                str(item.get("username") or raw_user_id).strip()[:120] or raw_user_id
+            )
             message_id = item.get("message_id") or None
             created_at = item.get("created_at") or item.get("timestamp") or None
 
@@ -937,7 +1023,9 @@ def api_callcenter_import_history() -> Response:
                 conversation_id=conv["id"],
                 direction=direction,
                 message_text=message,
-                admin_display_name="WhatsApp Import" if direction == "outbound" else None,
+                admin_display_name=(
+                    "WhatsApp Import" if direction == "outbound" else None
+                ),
                 wa_message_id=message_id,
                 created_at=created_at,
                 increment_unread=False,
@@ -1034,7 +1122,11 @@ def stats() -> Response:
         selected_date = ""
         selected_year = None
     elif period == "yearly":
-        if not selected_year or selected_year < 2000 or selected_year > (now_jkt.year + 1):
+        if (
+            not selected_year
+            or selected_year < 2000
+            or selected_year > (now_jkt.year + 1)
+        ):
             selected_year = now_jkt.year
         selected_date = ""
         selected_month = ""
@@ -1086,18 +1178,20 @@ def stats() -> Response:
 
     year_options = list(range(now_jkt.year, 2019, -1))
 
-    response = current_app.make_response(render_template(
-        "cc_stats.html",
-        stats_data=stats_data,
-        period=period,
-        period_label=period_label,
-        selected_date=selected_date,
-        selected_month=selected_month,
-        selected_year=selected_year,
-        bridge_filter=bridge_filter,
-        bridge_accounts=bridge_accounts,
-        year_options=year_options,
-    ))
+    response = current_app.make_response(
+        render_template(
+            "cc_stats.html",
+            stats_data=stats_data,
+            period=period,
+            period_label=period_label,
+            selected_date=selected_date,
+            selected_month=selected_month,
+            selected_year=selected_year,
+            bridge_filter=bridge_filter,
+            bridge_accounts=bridge_accounts,
+            year_options=year_options,
+        )
+    )
     response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
     response.headers["Pragma"] = "no-cache"
     response.headers["Expires"] = "0"
@@ -1145,18 +1239,20 @@ def thread(conv_id: int) -> Response:
     total_pages = max(1, ceil(total / PAGE_SIZE))
     bridge_accounts = _bridge_accounts()
 
-    response = current_app.make_response(render_template(
-        "cc_thread.html",
-        conversation=conv,
-        messages=messages,
-        conversations=conversations,
-        sidebar_page=page,
-        sidebar_total_pages=total_pages,
-        status_filter=status_filter or "all",
-        search=search or "",
-        bridge_filter=bridge_filter,
-        bridge_accounts=bridge_accounts,
-    ))
+    response = current_app.make_response(
+        render_template(
+            "cc_thread.html",
+            conversation=conv,
+            messages=messages,
+            conversations=conversations,
+            sidebar_page=page,
+            sidebar_total_pages=total_pages,
+            status_filter=status_filter or "all",
+            search=search or "",
+            bridge_filter=bridge_filter,
+            bridge_accounts=bridge_accounts,
+        )
+    )
     response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
     response.headers["Pragma"] = "no-cache"
     response.headers["Expires"] = "0"
@@ -1175,6 +1271,7 @@ def media_file(filename: str) -> Response:
 
 
 # ── API endpoints ─────────────────────────────────────────────────────────────
+
 
 @call_center_bp.route("/api/send", methods=["POST"])
 @role_required("admin")
@@ -1215,9 +1312,12 @@ def api_send() -> Response:
     if media_payload:
         media_meta, media_error = _save_outbound_media(media_payload)
         if not media_meta:
-            return jsonify({
-                "error": media_error or "File tidak didukung atau terlalu besar."
-            }), 400
+            return (
+                jsonify(
+                    {"error": media_error or "File tidak didukung atau terlalu besar."}
+                ),
+                400,
+            )
 
         bridge_media = _bridge_media_from_saved(media_meta)
         if not bridge_media:
@@ -1237,7 +1337,10 @@ def api_send() -> Response:
             }
             bridge_media = _bridge_media_from_saved(media_meta)
             if not bridge_media:
-                return jsonify({"error": "Gagal menyiapkan file draft untuk dikirim."}), 500
+                return (
+                    jsonify({"error": "Gagal menyiapkan file draft untuk dikirim."}),
+                    500,
+                )
 
     if not outbound_text and not bridge_media:
         return jsonify({"error": "Pesan atau lampiran wajib diisi."}), 400
@@ -1261,7 +1364,9 @@ def api_send() -> Response:
 
     # Save message to DB
     admin_name = user.get("full_name") or user.get("email") or "Admin"
-    db_message_text = outbound_text or call_center_media_label(media_meta.get("media_mime_type"))
+    db_message_text = outbound_text or call_center_media_label(
+        media_meta.get("media_mime_type")
+    )
     msg = save_cc_message(
         conversation_id=int(conv_id),
         direction="outbound",
@@ -1303,7 +1408,9 @@ def api_conversations() -> Response:
         bridge_key=bridge_key,
         limit=50,
     )
-    return jsonify({"conversations": conversations, "total": total, "bridge_filter": bridge_filter})
+    return jsonify(
+        {"conversations": conversations, "total": total, "bridge_filter": bridge_filter}
+    )
 
 
 @call_center_bp.route("/api/messages/<int:conv_id>")
@@ -1378,7 +1485,11 @@ def _handle_message_edit(message_id: int, data=None) -> Response:
     wa_edit_applied = False
     wa_edit_warning = None
     wa_message_id = (message.get("wa_message_id") or "").strip()
-    conv = fetch_cc_conversation(int(message.get("conversation_id") or 0)) if message.get("conversation_id") else None
+    conv = (
+        fetch_cc_conversation(int(message.get("conversation_id") or 0))
+        if message.get("conversation_id")
+        else None
+    )
     bridge_key = (conv or {}).get("bridge_key")
     if wa_message_id:
         result = _edit_via_bridge(wa_message_id, message_text, bridge_key=bridge_key)
@@ -1476,15 +1587,23 @@ def api_drafts() -> Response:
     try:
         if request.method == "GET":
             raw_category = (request.args.get("category") or "").strip()
-            category = raw_category if raw_category and raw_category.lower() != "all" else None
-            drafts = list_cc_message_drafts(admin_user_id=admin_user_id, category=category)
+            category = (
+                raw_category if raw_category and raw_category.lower() != "all" else None
+            )
+            drafts = list_cc_message_drafts(
+                admin_user_id=admin_user_id, category=category
+            )
             categories = list_cc_message_draft_categories(admin_user_id=admin_user_id)
             return jsonify({"drafts": drafts, "categories": categories})
 
         media_payload = None
-        if request.content_type and request.content_type.startswith("multipart/form-data"):
+        if request.content_type and request.content_type.startswith(
+            "multipart/form-data"
+        ):
             data = request.form
-            media_payload, upload_error = _media_payload_from_upload(request.files.get("media"))
+            media_payload, upload_error = _media_payload_from_upload(
+                request.files.get("media")
+            )
             if upload_error:
                 return jsonify({"error": upload_error}), 400
         else:
@@ -1498,9 +1617,15 @@ def api_drafts() -> Response:
         if media_payload:
             media_meta, media_error = _save_draft_media(media_payload)
             if not media_meta:
-                return jsonify({
-                    "error": media_error or "Lampiran draft tidak didukung atau terlalu besar."
-                }), 400
+                return (
+                    jsonify(
+                        {
+                            "error": media_error
+                            or "Lampiran draft tidak didukung atau terlalu besar."
+                        }
+                    ),
+                    400,
+                )
 
         if not title:
             return jsonify({"error": "Judul draft wajib diisi."}), 400
@@ -1541,7 +1666,9 @@ def api_draft_detail(draft_id: int) -> Response:
 
     try:
         if request.method == "DELETE":
-            deleted = delete_cc_message_draft(draft_id=draft_id, admin_user_id=admin_user_id)
+            deleted = delete_cc_message_draft(
+                draft_id=draft_id, admin_user_id=admin_user_id
+            )
             if not deleted:
                 return jsonify({"error": "Draft tidak ditemukan."}), 404
             try:
@@ -1562,9 +1689,13 @@ def api_draft_detail(draft_id: int) -> Response:
             return jsonify({"error": "Draft tidak ditemukan."}), 404
 
         media_payload = None
-        if request.content_type and request.content_type.startswith("multipart/form-data"):
+        if request.content_type and request.content_type.startswith(
+            "multipart/form-data"
+        ):
             data = request.form
-            media_payload, upload_error = _media_payload_from_upload(request.files.get("media"))
+            media_payload, upload_error = _media_payload_from_upload(
+                request.files.get("media")
+            )
             if upload_error:
                 return jsonify({"error": upload_error}), 400
         else:
@@ -1574,15 +1705,26 @@ def api_draft_detail(draft_id: int) -> Response:
         title = (data.get("title") or "").strip()
         category = (data.get("category") or "").strip() or "Umum"
         message_text = (data.get("message_text") or "").strip()
-        remove_media = str(data.get("remove_media") or "").strip().lower() in {"1", "true", "yes", "on"}
+        remove_media = str(data.get("remove_media") or "").strip().lower() in {
+            "1",
+            "true",
+            "yes",
+            "on",
+        }
         media_meta: dict = {}
         update_media = False
         if media_payload:
             media_meta, media_error = _save_draft_media(media_payload)
             if not media_meta:
-                return jsonify({
-                    "error": media_error or "Lampiran draft tidak didukung atau terlalu besar."
-                }), 400
+                return (
+                    jsonify(
+                        {
+                            "error": media_error
+                            or "Lampiran draft tidak didukung atau terlalu besar."
+                        }
+                    ),
+                    400,
+                )
             update_media = True
         elif remove_media:
             media_meta = {
@@ -1637,7 +1779,9 @@ def api_draft_pin(draft_id: int) -> Response:
         return jsonify({"error": "Unauthorized"}), 401
 
     try:
-        updated = toggle_cc_message_draft_pin(draft_id=draft_id, admin_user_id=admin_user_id)
+        updated = toggle_cc_message_draft_pin(
+            draft_id=draft_id, admin_user_id=admin_user_id
+        )
         if not updated:
             return jsonify({"error": "Draft tidak ditemukan."}), 404
 
@@ -1660,6 +1804,7 @@ def api_draft_pin(draft_id: int) -> Response:
 
 
 # ── Media Manager ─────────────────────────────────────────────────────────────
+
 
 @call_center_bp.route("/media-manager")
 @role_required("admin")
@@ -1694,16 +1839,19 @@ def _build_media_list(sort_by: str = "newest", type_filter: str = "all") -> dict
             if not mime_type:
                 mime_type = "application/octet-stream"
 
-            items.append({
-                "path": relative_path,
-                "filename": file_path.name,
-                "size": stat.st_size,
-                "mime_type": mime_type,
-                "uploaded_at": datetime.fromtimestamp(stat.st_mtime).isoformat(),
-            })
+            items.append(
+                {
+                    "path": relative_path,
+                    "filename": file_path.name,
+                    "size": stat.st_size,
+                    "mime_type": mime_type,
+                    "uploaded_at": datetime.fromtimestamp(stat.st_mtime).isoformat(),
+                }
+            )
 
     # Apply type filter
     if type_filter != "all":
+
         def _matches_type(item: dict) -> bool:
             mt = item["mime_type"]
             if type_filter == "image":
@@ -1713,8 +1861,13 @@ def _build_media_list(sort_by: str = "newest", type_filter: str = "all") -> dict
             if type_filter == "audio":
                 return mt.startswith("audio/")
             if type_filter == "document":
-                return not (mt.startswith("image/") or mt.startswith("video/") or mt.startswith("audio/"))
+                return not (
+                    mt.startswith("image/")
+                    or mt.startswith("video/")
+                    or mt.startswith("audio/")
+                )
             return True
+
         items = [i for i in items if _matches_type(i)]
 
     # Sort
@@ -1801,6 +1954,7 @@ def api_media_delete() -> Response:
 
 # ── Settings ──────────────────────────────────────────────────────────────────
 
+
 @call_center_bp.route("/settings")
 @role_required("admin")
 def settings() -> Response:
@@ -1815,7 +1969,9 @@ def settings_wa() -> Response:
     actor = current_user() or {}
     if request.method == "POST":
         action = (request.form.get("action") or "").strip()
-        selected_bridge_key = normalize_cc_bridge_key(request.form.get("selected_bridge_key") or "main")
+        selected_bridge_key = normalize_cc_bridge_key(
+            request.form.get("selected_bridge_key") or "main"
+        )
 
         if action == "save_wa_route":
             wa_user_id = _normalize_wa_user_id(request.form.get("wa_user_id") or "")
@@ -1879,7 +2035,9 @@ def settings_wa() -> Response:
                     )
                 except Exception:
                     pass
-                flash(f"Routing WA +{wa_user_id} [{route_bridge_key}] dihapus.", "success")
+                flash(
+                    f"Routing WA +{wa_user_id} [{route_bridge_key}] dihapus.", "success"
+                )
             else:
                 flash("Routing WA tidak ditemukan.", "warning")
 
@@ -1890,7 +2048,9 @@ def settings_wa() -> Response:
                 return _settings_wa_redirect(selected_bridge_key)
             bridge_key = normalize_cc_bridge_key(raw_bridge_key)
             display_name = (request.form.get("display_name") or "").strip() or None
-            wa_number_hint = _normalize_wa_user_id(request.form.get("wa_number_hint") or "") or None
+            wa_number_hint = (
+                _normalize_wa_user_id(request.form.get("wa_number_hint") or "") or None
+            )
             default_route_mode = normalize_cc_route_mode(
                 request.form.get("default_route_mode") or "manual"
             )
@@ -1931,7 +2091,10 @@ def settings_wa() -> Response:
             if delete_cc_wa_bridge_account(bridge_key):
                 flash(f"Akun bridge '{bridge_key}' dihapus.", "success")
             else:
-                flash("Akun bridge tidak bisa dihapus (main/protected atau tidak ditemukan).", "warning")
+                flash(
+                    "Akun bridge tidak bisa dihapus (main/protected atau tidak ditemukan).",
+                    "warning",
+                )
 
         elif action in {"start_bridge_account", "stop_bridge_account"}:
             bridge_key = normalize_cc_bridge_key(request.form.get("bridge_key"))
@@ -1948,7 +2111,9 @@ def settings_wa() -> Response:
                 flash(f"Aksi bridge '{bridge_key}' gagal: {exc}", "danger")
 
         elif action == "save_public_whatsapp_cta":
-            wa_number = _normalize_wa_user_id(request.form.get("public_wa_number") or "")
+            wa_number = _normalize_wa_user_id(
+                request.form.get("public_wa_number") or ""
+            )
             opening_message = (request.form.get("public_opening_message") or "").strip()
             if not wa_number:
                 flash("Nomor WhatsApp tombol login wajib diisi.", "warning")
@@ -1972,7 +2137,10 @@ def settings_wa() -> Response:
 
         elif action == "reset_public_whatsapp_cta":
             if delete_cc_public_whatsapp_cta_settings():
-                flash("Setting tombol WhatsApp login direset ke fallback bridge/env.", "success")
+                flash(
+                    "Setting tombol WhatsApp login direset ke fallback bridge/env.",
+                    "success",
+                )
             else:
                 flash("Setting tombol WhatsApp login belum pernah disimpan.", "info")
 
@@ -1980,17 +2148,26 @@ def settings_wa() -> Response:
 
     ensure_default_cc_wa_bridge_account(updated_by=actor.get("id"))
     bridge_accounts = list_cc_wa_bridge_accounts(include_inactive=True)
-    selected_bridge_key = normalize_cc_bridge_key(request.args.get("bridge_key") or "main")
-    selected_bridge = get_cc_wa_bridge_account(selected_bridge_key) or get_default_cc_wa_bridge_account()
+    selected_bridge_key = normalize_cc_bridge_key(
+        request.args.get("bridge_key") or "main"
+    )
+    selected_bridge = (
+        get_cc_wa_bridge_account(selected_bridge_key)
+        or get_default_cc_wa_bridge_account()
+    )
     selected_bridge_key = normalize_cc_bridge_key(selected_bridge.get("bridge_key"))
     bridge_status = _load_cc_bridge_status(bridge_key=selected_bridge_key)
-    bridge_statuses = [_load_cc_bridge_status(bridge_key=acc.get("bridge_key")) for acc in bridge_accounts]
+    bridge_statuses = [
+        _load_cc_bridge_status(bridge_key=acc.get("bridge_key"))
+        for acc in bridge_accounts
+    ]
     bridge_status_map = {
-        normalize_cc_bridge_key(item.get("bridgeKey")): item
-        for item in bridge_statuses
+        normalize_cc_bridge_key(item.get("bridgeKey")): item for item in bridge_statuses
     }
     route_search = (request.args.get("q") or "").strip()
-    route_bridge_filter, route_bridge_key = _normalize_bridge_filter(request.args.get("route_bridge"))
+    route_bridge_filter, route_bridge_key = _normalize_bridge_filter(
+        request.args.get("route_bridge")
+    )
     route_page = request.args.get("route_page", type=int) or 1
     route_page = max(1, route_page)
     route_page_size = 10
@@ -2002,7 +2179,9 @@ def settings_wa() -> Response:
         offset=route_offset,
         bridge_key=route_bridge_key,
     )
-    route_total_pages = max(1, ceil(route_total / route_page_size)) if route_total else 1
+    route_total_pages = (
+        max(1, ceil(route_total / route_page_size)) if route_total else 1
+    )
 
     if route_page > route_total_pages:
         route_page = route_total_pages
@@ -2021,10 +2200,11 @@ def settings_wa() -> Response:
         or selected_bridge.get("wa_number_hint")
         or _project_env_value("ASKA_WHATSAPP_URL", "082143646463")
     )
-    public_whatsapp_number = public_whatsapp_cta.get("wa_number") or _normalize_wa_user_id(fallback_public_number)
+    public_whatsapp_number = public_whatsapp_cta.get(
+        "wa_number"
+    ) or _normalize_wa_user_id(fallback_public_number)
     public_whatsapp_message = (
-        public_whatsapp_cta.get("opening_message")
-        or CC_PUBLIC_WHATSAPP_DEFAULT_MESSAGE
+        public_whatsapp_cta.get("opening_message") or CC_PUBLIC_WHATSAPP_DEFAULT_MESSAGE
     )
     public_whatsapp_preview_url = _format_public_whatsapp_url(
         public_whatsapp_number,
@@ -2096,11 +2276,16 @@ def settings_telegram() -> Response:
                 flash("Gagal menghapus grup.", "danger")
 
         elif action == "test_notification":
-            result = send_cc_telegram_notification("Test User", "Ini pesan tes dari Call Center.")
+            result = send_cc_telegram_notification(
+                "Test User", "Ini pesan tes dari Call Center."
+            )
             if result.get("skipped") == "token_missing":
                 flash("Token bot belum diisi.", "warning")
             elif result.get("sent", 0) == 0:
-                flash("Notifikasi belum terkirim. Pastikan bot sudah ditambahkan ke grup.", "warning")
+                flash(
+                    "Notifikasi belum terkirim. Pastikan bot sudah ditambahkan ke grup.",
+                    "warning",
+                )
             else:
                 flash(f"Tes notifikasi terkirim ke {result['sent']} grup.", "success")
 
@@ -2108,10 +2293,14 @@ def settings_telegram() -> Response:
             raw_usernames = request.form.getlist("telegram_username[]")
             raw_admin_ids = request.form.getlist("dashboard_user_id[]")
             admin_users_list = list_admin_users()
-            admin_ids = {str(u.get("id")) for u in admin_users_list if u.get("id") is not None}
+            admin_ids = {
+                str(u.get("id")) for u in admin_users_list if u.get("id") is not None
+            }
             entries_map = {}
             errors = []
-            for idx, (raw_username, raw_admin_id) in enumerate(zip(raw_usernames, raw_admin_ids), start=1):
+            for idx, (raw_username, raw_admin_id) in enumerate(
+                zip(raw_usernames, raw_admin_ids), start=1
+            ):
                 username = (raw_username or "").strip().lstrip("@").lower()
                 admin_id = (raw_admin_id or "").strip()
                 if not username and not admin_id:
@@ -2128,7 +2317,9 @@ def settings_telegram() -> Response:
                     {"telegram_username": u, "dashboard_user_id": uid}
                     for u, uid in entries_map.items()
                 ]
-                saved = upsert_telegram_admin_accounts(payload, created_by=actor.get("id"), scope="call_center")
+                saved = upsert_telegram_admin_accounts(
+                    payload, created_by=actor.get("id"), scope="call_center"
+                )
                 try:
                     record_admin_action(
                         user_id=actor.get("id"),
@@ -2160,7 +2351,10 @@ def settings_telegram() -> Response:
                         )
                     except Exception:
                         pass
-                    flash("Admin Telegram dihapus dari daftar penerima notifikasi Call Center.", "success")
+                    flash(
+                        "Admin Telegram dihapus dari daftar penerima notifikasi Call Center.",
+                        "success",
+                    )
                 else:
                     flash("Mapping tidak ditemukan.", "warning")
             else:
@@ -2225,7 +2419,9 @@ def sync_history() -> Response:
     except Exception:
         chat_limit = 25
     try:
-        limit_per_chat = int(payload.get("limit_per_chat") or payload.get("limitPerChat") or 50)
+        limit_per_chat = int(
+            payload.get("limit_per_chat") or payload.get("limitPerChat") or 50
+        )
     except Exception:
         limit_per_chat = 50
 

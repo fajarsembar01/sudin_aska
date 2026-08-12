@@ -1,6 +1,9 @@
 # get_me_once.py
-import os, tweepy
+import os
+
+import tweepy
 from dotenv import load_dotenv
+
 load_dotenv()
 
 client = tweepy.Client(

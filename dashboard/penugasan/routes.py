@@ -3,7 +3,16 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Optional
 
-from flask import Blueprint, Response, current_app, flash, redirect, render_template, request, url_for
+from flask import (
+    Blueprint,
+    Response,
+    current_app,
+    flash,
+    redirect,
+    render_template,
+    request,
+    url_for,
+)
 
 from dashboard.auth import current_user, role_required
 from dashboard.queries import (
@@ -52,7 +61,9 @@ def index() -> Response:
 @role_required("admin", "coordinator", "staff")
 def spmb_table_claim() -> Response:
     user = current_user() or {}
-    selected_date = _parse_date_only(request.form.get("assignment_date") or request.args.get("date"))
+    selected_date = _parse_date_only(
+        request.form.get("assignment_date") or request.args.get("date")
+    )
 
     if request.method == "POST":
         action = (request.form.get("action") or "claim").strip()
@@ -73,7 +84,9 @@ def spmb_table_claim() -> Response:
                     table_number=table_number,
                     user_id=int(user.get("id")),
                 )
-                flash(result["message"], "success" if result.get("success") else "warning")
+                flash(
+                    result["message"], "success" if result.get("success") else "warning"
+                )
 
             record_admin_action(
                 user_id=user.get("id"),
@@ -91,14 +104,17 @@ def spmb_table_claim() -> Response:
         except Exception as exc:
             current_app.logger.exception("Failed to process SPMB table claim")
             flash(f"Gagal memproses klaim meja: {exc}", "danger")
-        return redirect(url_for("penugasan.spmb_table_claim", date=selected_date.isoformat()))
+        return redirect(
+            url_for("penugasan.spmb_table_claim", date=selected_date.isoformat())
+        )
 
     assignments = list_spmb_table_assignments(selected_date)
     my_assignment = next(
         (
             item
             for item in assignments
-            if item.get("officer_user_id") and int(item["officer_user_id"]) == int(user.get("id"))
+            if item.get("officer_user_id")
+            and int(item["officer_user_id"]) == int(user.get("id"))
         ),
         None,
     )
@@ -114,7 +130,9 @@ def spmb_table_claim() -> Response:
 @role_required("admin", "coordinator", "staff")
 def spmb_queue_picker() -> Response:
     user = current_user() or {}
-    selected_date = _parse_date_only(request.form.get("service_date") or request.args.get("date"))
+    selected_date = _parse_date_only(
+        request.form.get("service_date") or request.args.get("date")
+    )
     my_assignment = get_spmb_table_claim_for_user(
         assignment_date=selected_date,
         user_id=int(user.get("id")),
@@ -122,8 +140,13 @@ def spmb_queue_picker() -> Response:
 
     if request.method == "POST":
         if not my_assignment:
-            flash("Klaim meja operator terlebih dahulu sebelum memilih antrian.", "warning")
-            return redirect(url_for("penugasan.spmb_table_claim", date=selected_date.isoformat()))
+            flash(
+                "Klaim meja operator terlebih dahulu sebelum memilih antrian.",
+                "warning",
+            )
+            return redirect(
+                url_for("penugasan.spmb_table_claim", date=selected_date.isoformat())
+            )
 
         try:
             action = (request.form.get("action") or "call").strip().lower()
@@ -150,10 +173,17 @@ def spmb_queue_picker() -> Response:
                             "action": "cancel",
                         },
                     )
-                    flash(f"Nomor antrian {call['queue_number']} dikembalikan tidak aktif.", "success")
+                    flash(
+                        f"Nomor antrian {call['queue_number']} dikembalikan tidak aktif.",
+                        "success",
+                    )
                 else:
                     flash("Panggilan aktif tidak ditemukan.", "warning")
-                return redirect(url_for("penugasan.spmb_queue_picker", date=selected_date.isoformat()))
+                return redirect(
+                    url_for(
+                        "penugasan.spmb_queue_picker", date=selected_date.isoformat()
+                    )
+                )
 
             call = call_spmb_queue_number(
                 service_date=selected_date,
@@ -179,7 +209,10 @@ def spmb_queue_picker() -> Response:
                     "status": call.get("status"),
                 },
             )
-            flash(f"Nomor antrian {call['queue_number']} dipanggil ke meja {call['table_number']}.", "success")
+            flash(
+                f"Nomor antrian {call['queue_number']} dipanggil ke meja {call['table_number']}.",
+                "success",
+            )
             return redirect(
                 url_for(
                     "penugasan.spmb_queue_picker",
@@ -192,7 +225,9 @@ def spmb_queue_picker() -> Response:
         except Exception as exc:
             current_app.logger.exception("Failed to call SPMB queue")
             flash(f"Gagal memilih antrian: {exc}", "danger")
-        return redirect(url_for("penugasan.spmb_queue_picker", date=selected_date.isoformat()))
+        return redirect(
+            url_for("penugasan.spmb_queue_picker", date=selected_date.isoformat())
+        )
 
     queue_counter = get_spmb_queue_counter(selected_date)
     queue_items = list_spmb_queue_numbers(service_date=selected_date)

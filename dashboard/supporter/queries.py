@@ -2,14 +2,13 @@ from __future__ import annotations
 
 import json
 from datetime import datetime, timezone
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Any, Dict, List, Optional
 
 from psycopg2.extras import Json
 
 from dashboard.db_access import get_cursor
 from utils import current_jakarta_time, to_jakarta
-
 
 SUPPORTER_TELEGRAM_SCOPE = "supporter"
 
@@ -68,7 +67,9 @@ SUPPORTER_SOCIAL_FIELDS = (
     ("twitter", "X / Twitter", False),
     ("threads", "Threads", False),
 )
-SUPPORTER_REQUIRED_SOCIALS = tuple(key for key, _, required in SUPPORTER_SOCIAL_FIELDS if required)
+SUPPORTER_REQUIRED_SOCIALS = tuple(
+    key for key, _, required in SUPPORTER_SOCIAL_FIELDS if required
+)
 
 
 def normalize_action_types(raw_value: Any, fallback: Optional[str] = None) -> List[str]:
@@ -118,7 +119,9 @@ def action_summary_for(raw_value: Any, fallback: Optional[str] = None) -> str:
 def _normalize_action_payload(row: Dict[str, Any]) -> Dict[str, Any]:
     if "action_types" not in row and "action_type" not in row:
         return row
-    actions = normalize_action_types(row.get("action_types"), fallback=row.get("action_type"))
+    actions = normalize_action_types(
+        row.get("action_types"), fallback=row.get("action_type")
+    )
     action_count = len(actions)
     points_per_action = int(row.get("base_points") or 0)
     row["action_types"] = actions
@@ -133,8 +136,7 @@ def _normalize_action_payload(row: Dict[str, Any]) -> Dict[str, Any]:
 
 def ensure_supporter_schema() -> None:
     with get_cursor(commit=True) as cur:
-        cur.execute(
-            """
+        cur.execute("""
             CREATE TABLE IF NOT EXISTS supporter_tasks (
                 id SERIAL PRIMARY KEY,
                 title TEXT NOT NULL,
@@ -161,72 +163,50 @@ def ensure_supporter_schema() -> None:
                 created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
             )
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             ALTER TABLE supporter_tasks
             ADD COLUMN IF NOT EXISTS action_types JSONB NOT NULL DEFAULT '[]'::jsonb
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             ALTER TABLE supporter_tasks
             ADD COLUMN IF NOT EXISTS end_at TIMESTAMPTZ
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             ALTER TABLE supporter_tasks
             ALTER COLUMN late_penalty_percent SET DEFAULT 50
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             ALTER TABLE supporter_tasks
             ALTER COLUMN requires_proof_text SET DEFAULT TRUE
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             ALTER TABLE supporter_tasks
             ALTER COLUMN requires_screenshot SET DEFAULT TRUE
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             UPDATE supporter_tasks
             SET action_types = jsonb_build_array(action_type)
             WHERE action_types = '[]'::jsonb
               AND COALESCE(action_type, '') <> ''
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE INDEX IF NOT EXISTS idx_supporter_tasks_status_deadline
             ON supporter_tasks (status, deadline_at)
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE INDEX IF NOT EXISTS idx_supporter_tasks_status_end
             ON supporter_tasks (status, end_at)
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE INDEX IF NOT EXISTS idx_supporter_tasks_platform_action
             ON supporter_tasks (platform, action_type)
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE INDEX IF NOT EXISTS idx_supporter_tasks_action_types
             ON supporter_tasks USING GIN (action_types)
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE TABLE IF NOT EXISTS supporter_submissions (
                 id SERIAL PRIMARY KEY,
                 task_id INTEGER NOT NULL REFERENCES supporter_tasks(id) ON DELETE CASCADE,
@@ -249,22 +229,16 @@ def ensure_supporter_schema() -> None:
                 updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 UNIQUE (task_id, staff_id)
             )
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE INDEX IF NOT EXISTS idx_supporter_submissions_staff_status
             ON supporter_submissions (staff_id, status, submitted_at DESC)
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE INDEX IF NOT EXISTS idx_supporter_submissions_task_status
             ON supporter_submissions (task_id, status, submitted_at DESC)
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE TABLE IF NOT EXISTS supporter_point_events (
                 id SERIAL PRIMARY KEY,
                 submission_id INTEGER REFERENCES supporter_submissions(id) ON DELETE SET NULL,
@@ -276,16 +250,12 @@ def ensure_supporter_schema() -> None:
                 created_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
                 created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
             )
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE INDEX IF NOT EXISTS idx_supporter_point_events_staff_created
             ON supporter_point_events (staff_id, created_at DESC)
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE TABLE IF NOT EXISTS supporter_activity_logs (
                 id SERIAL PRIMARY KEY,
                 actor_user_id INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
@@ -296,16 +266,12 @@ def ensure_supporter_schema() -> None:
                 details JSONB NOT NULL DEFAULT '{}'::jsonb,
                 created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
             )
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE INDEX IF NOT EXISTS idx_supporter_activity_logs_created
             ON supporter_activity_logs (created_at DESC)
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE TABLE IF NOT EXISTS supporter_telegram_groups (
                 id SERIAL PRIMARY KEY,
                 chat_id BIGINT UNIQUE NOT NULL,
@@ -314,10 +280,8 @@ def ensure_supporter_schema() -> None:
                 updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 created_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL
             )
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE TABLE IF NOT EXISTS supporter_telegram_delivery_messages (
                 submission_id INTEGER NOT NULL REFERENCES supporter_submissions(id) ON DELETE CASCADE,
                 chat_id BIGINT NOT NULL,
@@ -326,28 +290,23 @@ def ensure_supporter_schema() -> None:
                 updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 PRIMARY KEY (submission_id, chat_id)
             )
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE TABLE IF NOT EXISTS supporter_settings (
                 key TEXT PRIMARY KEY,
                 value TEXT,
                 updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 updated_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL
             )
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE TABLE IF NOT EXISTS supporter_staff_profiles (
                 staff_id INTEGER PRIMARY KEY REFERENCES dashboard_users(id) ON DELETE CASCADE,
                 socials JSONB NOT NULL DEFAULT '{}'::jsonb,
                 created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
             )
-            """
-        )
+            """)
 
 
 def _dict(row: Any) -> Optional[Dict[str, Any]]:
@@ -366,9 +325,15 @@ def _aware(value: Optional[datetime]) -> Optional[datetime]:
     return value
 
 
-def calculate_points(task: Dict[str, Any], submitted_at: Optional[datetime] = None) -> Dict[str, Any]:
+def calculate_points(
+    task: Dict[str, Any], submitted_at: Optional[datetime] = None
+) -> Dict[str, Any]:
     points_per_action = int(task.get("base_points") or 0)
-    action_count = len(normalize_action_types(task.get("action_types"), fallback=task.get("action_type")))
+    action_count = len(
+        normalize_action_types(
+            task.get("action_types"), fallback=task.get("action_type")
+        )
+    )
     action_count = max(1, action_count)
     base_points = points_per_action * action_count
     deadline = _aware(task.get("deadline_at"))
@@ -388,10 +353,16 @@ def calculate_points(task: Dict[str, Any], submitted_at: Optional[datetime] = No
             "is_ended": is_ended,
             "is_expired": True,
         }
-    penalty = Decimal(str(task.get("late_penalty_percent") or 0)) if is_late else Decimal("0")
+    penalty = (
+        Decimal(str(task.get("late_penalty_percent") or 0)) if is_late else Decimal("0")
+    )
     penalty = max(Decimal("0"), min(Decimal("100"), penalty))
     multiplier = (Decimal("100") - penalty) / Decimal("100")
-    potential = int((Decimal(base_points) * multiplier).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
+    potential = int(
+        (Decimal(base_points) * multiplier).quantize(
+            Decimal("1"), rounding=ROUND_HALF_UP
+        )
+    )
     return {
         "base_points": base_points,
         "points_per_action": points_per_action,
@@ -422,7 +393,14 @@ def log_activity(
             )
             VALUES (%s, %s, %s, %s, %s, %s)
             """,
-            (actor_user_id, action, target_type, target_id, summary, Json(details or {})),
+            (
+                actor_user_id,
+                action,
+                target_type,
+                target_id,
+                summary,
+                Json(details or {}),
+            ),
         )
 
 
@@ -472,7 +450,9 @@ def create_task(data: Dict[str, Any], *, created_by: Optional[int]) -> int:
     return task_id
 
 
-def update_task(task_id: int, data: Dict[str, Any], *, actor_user_id: Optional[int]) -> bool:
+def update_task(
+    task_id: int, data: Dict[str, Any], *, actor_user_id: Optional[int]
+) -> bool:
     ensure_supporter_schema()
     with get_cursor(commit=True) as cur:
         cur.execute(
@@ -525,7 +505,9 @@ def update_task(task_id: int, data: Dict[str, Any], *, actor_user_id: Optional[i
     return updated
 
 
-def update_task_status(task_id: int, status: str, *, actor_user_id: Optional[int]) -> bool:
+def update_task_status(
+    task_id: int, status: str, *, actor_user_id: Optional[int]
+) -> bool:
     if status not in TASK_STATUSES:
         return False
     ensure_supporter_schema()
@@ -570,7 +552,9 @@ def get_task(task_id: int) -> Optional[Dict[str, Any]]:
         return row
 
 
-def list_tasks(*, status: Optional[str] = None, q: Optional[str] = None, limit: int = 200) -> List[Dict[str, Any]]:
+def list_tasks(
+    *, status: Optional[str] = None, q: Optional[str] = None, limit: int = 200
+) -> List[Dict[str, Any]]:
     ensure_supporter_schema()
     clauses: list[str] = []
     params: list[Any] = []
@@ -579,7 +563,9 @@ def list_tasks(*, status: Optional[str] = None, q: Optional[str] = None, limit: 
         params.append(status)
     if q:
         like = f"%{q.strip()}%"
-        clauses.append("(t.title ILIKE %s OR t.campaign_name ILIKE %s OR t.target_account ILIKE %s)")
+        clauses.append(
+            "(t.title ILIKE %s OR t.campaign_name ILIKE %s OR t.target_account ILIKE %s)"
+        )
         params.extend([like, like, like])
     where_sql = f"WHERE {' AND '.join(clauses)}" if clauses else ""
     params.append(max(1, min(int(limit or 200), 1000)))
@@ -606,7 +592,9 @@ def list_tasks(*, status: Optional[str] = None, q: Optional[str] = None, limit: 
         return _rows(cur.fetchall())
 
 
-def get_staff_submission_for_task(*, task_id: int, staff_id: int) -> Optional[Dict[str, Any]]:
+def get_staff_submission_for_task(
+    *, task_id: int, staff_id: int
+) -> Optional[Dict[str, Any]]:
     ensure_supporter_schema()
     with get_cursor() as cur:
         cur.execute(
@@ -883,7 +871,10 @@ def review_submission(
     ensure_supporter_schema()
     already_verified = False
     with get_cursor(commit=True) as cur:
-        cur.execute("SELECT * FROM supporter_submissions WHERE id = %s FOR UPDATE", (submission_id,))
+        cur.execute(
+            "SELECT * FROM supporter_submissions WHERE id = %s FOR UPDATE",
+            (submission_id,),
+        )
         current = _dict(cur.fetchone())
         if not current:
             return None
@@ -893,7 +884,9 @@ def review_submission(
             awarded_points = int(current.get("awarded_points") or 0)
             updated = current
         else:
-            awarded_points = int(current.get("potential_points") or 0) if status == "verified" else 0
+            awarded_points = (
+                int(current.get("potential_points") or 0) if status == "verified" else 0
+            )
             cur.execute(
                 """
                 UPDATE supporter_submissions
@@ -933,7 +926,11 @@ def review_submission(
             target_type="SUBMISSION",
             target_id=submission_id,
             summary=f"Review submission supporter menjadi {status}",
-            details={"status": status, "old_status": old_status, "points": awarded_points},
+            details={
+                "status": status,
+                "old_status": old_status,
+                "points": awarded_points,
+            },
         )
     return get_submission_detail(submission_id) if updated else None
 
@@ -970,7 +967,10 @@ def review_submission_action(
         return None
 
     with get_cursor(commit=True) as cur:
-        cur.execute("SELECT * FROM supporter_submissions WHERE id = %s FOR UPDATE", (submission_id,))
+        cur.execute(
+            "SELECT * FROM supporter_submissions WHERE id = %s FOR UPDATE",
+            (submission_id,),
+        )
         row = cur.fetchone()
         if not row:
             return None
@@ -1011,9 +1011,17 @@ def review_submission_action(
         }
         metadata["action_reviews"] = reviews
 
-        verified_keys = [k for k in action_keys if (reviews.get(k) or {}).get("status") == "verified"]
-        revision_keys = [k for k in action_keys if (reviews.get(k) or {}).get("status") == "needs_revision"]
-        rejected_keys = [k for k in action_keys if (reviews.get(k) or {}).get("status") == "rejected"]
+        verified_keys = [
+            k for k in action_keys if (reviews.get(k) or {}).get("status") == "verified"
+        ]
+        revision_keys = [
+            k
+            for k in action_keys
+            if (reviews.get(k) or {}).get("status") == "needs_revision"
+        ]
+        rejected_keys = [
+            k for k in action_keys if (reviews.get(k) or {}).get("status") == "rejected"
+        ]
         decided = set(verified_keys) | set(revision_keys) | set(rejected_keys)
         pending_keys = [k for k in action_keys if k not in decided]
 
@@ -1110,8 +1118,7 @@ def cancel_submission(*, submission_id: int, staff_id: int) -> bool:
 def fetch_admin_stats() -> Dict[str, Any]:
     ensure_supporter_schema()
     with get_cursor() as cur:
-        cur.execute(
-            """
+        cur.execute("""
             SELECT
                 COUNT(*) AS total_tasks,
                 COUNT(*) FILTER (WHERE status = 'active') AS active_tasks,
@@ -1125,8 +1132,7 @@ def fetch_admin_stats() -> Dict[str, Any]:
                     WHERE t.status <> 'archived'
                 ) AS total_points
             FROM supporter_tasks
-            """
-        )
+            """)
         return _dict(cur.fetchone()) or {}
 
 
@@ -1239,14 +1245,12 @@ def list_activity_logs(*, limit: int = 100) -> List[Dict[str, Any]]:
 def list_supporter_telegram_groups() -> List[Dict[str, Any]]:
     ensure_supporter_schema()
     with get_cursor() as cur:
-        cur.execute(
-            """
+        cur.execute("""
             SELECT g.*, u.full_name AS created_by_name, u.email AS created_by_email
             FROM supporter_telegram_groups g
             LEFT JOIN dashboard_users u ON u.id = g.created_by
             ORDER BY g.updated_at DESC
-            """
-        )
+            """)
         return _rows(cur.fetchall())
 
 
@@ -1275,7 +1279,9 @@ def upsert_supporter_telegram_group(
 def delete_supporter_telegram_group_by_chat_id(chat_id: int) -> bool:
     ensure_supporter_schema()
     with get_cursor(commit=True) as cur:
-        cur.execute("DELETE FROM supporter_telegram_groups WHERE chat_id = %s", (chat_id,))
+        cur.execute(
+            "DELETE FROM supporter_telegram_groups WHERE chat_id = %s", (chat_id,)
+        )
         return cur.rowcount > 0
 
 
@@ -1289,8 +1295,7 @@ def delete_supporter_telegram_group(group_id: int) -> bool:
 def list_supporter_verifier_candidates() -> List[Dict[str, Any]]:
     """Dashboard users that can be assigned as supporter verifiers (admin or staff)."""
     with get_cursor() as cur:
-        cur.execute(
-            """
+        cur.execute("""
             SELECT
                 id,
                 full_name,
@@ -1304,8 +1309,7 @@ def list_supporter_verifier_candidates() -> List[Dict[str, Any]]:
                 CASE WHEN role = 'admin' THEN 0 ELSE 1 END,
                 LOWER(full_name) ASC,
                 LOWER(email) ASC
-            """
-        )
+            """)
         return [dict(row) for row in cur.fetchall()]
 
 
@@ -1479,7 +1483,9 @@ def upsert_supporter_staff_profile(staff_id: int, socials: Dict[str, Any]) -> bo
     return all(clean.get(key) for key in SUPPORTER_REQUIRED_SOCIALS)
 
 
-def set_supporter_setting(key: str, value: Optional[str], *, updated_by: Optional[int] = None) -> None:
+def set_supporter_setting(
+    key: str, value: Optional[str], *, updated_by: Optional[int] = None
+) -> None:
     ensure_supporter_schema()
     clean_value = (value or "").strip() or None
     with get_cursor(commit=True) as cur:
@@ -1496,7 +1502,9 @@ def set_supporter_setting(key: str, value: Optional[str], *, updated_by: Optiona
         )
 
 
-def upsert_supporter_delivery_message(*, submission_id: int, chat_id: int, message_id: int) -> None:
+def upsert_supporter_delivery_message(
+    *, submission_id: int, chat_id: int, message_id: int
+) -> None:
     ensure_supporter_schema()
     with get_cursor(commit=True) as cur:
         cur.execute(
@@ -1514,8 +1522,7 @@ def upsert_supporter_delivery_message(*, submission_id: int, chat_id: int, messa
 def export_submissions() -> List[Dict[str, Any]]:
     ensure_supporter_schema()
     with get_cursor() as cur:
-        cur.execute(
-            """
+        cur.execute("""
             SELECT
                 s.*,
                 t.title AS task_title,
@@ -1534,6 +1541,5 @@ def export_submissions() -> List[Dict[str, Any]]:
             JOIN dashboard_users u ON u.id = s.staff_id
             LEFT JOIN dashboard_users reviewer ON reviewer.id = s.reviewed_by
             ORDER BY s.submitted_at DESC
-            """
-        )
+            """)
         return _rows(cur.fetchall())

@@ -1,25 +1,33 @@
 from __future__ import annotations
 
 import re
+import secrets
 from typing import Optional
 from uuid import uuid4
-import secrets
 
-from flask import Response, current_app, flash, jsonify, redirect, render_template, request
+from flask import (
+    Response,
+    current_app,
+    flash,
+    jsonify,
+    redirect,
+    render_template,
+    request,
+)
 from werkzeug.security import generate_password_hash
 
-from dashboard.queries import (
-    create_dashboard_user,
-    list_dashboard_users,
-    merge_dashboard_users,
-    update_dashboard_user,
-)
 from dashboard.portal.queries import (
     fetch_activity_logs,
     get_dashboard_user_profile,
     get_school_by_id,
     list_kecamatan,
     log_activity,
+)
+from dashboard.queries import (
+    create_dashboard_user,
+    list_dashboard_users,
+    merge_dashboard_users,
+    update_dashboard_user,
 )
 from dashboard.telegram_notifications import notify_verification_status_update
 
@@ -37,7 +45,9 @@ def _build_unregistered_email(full_name: str) -> str:
     return f"unregistered+{_slugify(full_name)}-{token}@aska.local"
 
 
-def handle_manage_users(*, actor: Optional[dict], base_template: str, read_only: bool = False) -> Response:
+def handle_manage_users(
+    *, actor: Optional[dict], base_template: str, read_only: bool = False
+) -> Response:
     """Shared handler for dashboard user management across apps."""
     actor_id = actor.get("id") if actor else None
 
@@ -61,7 +71,12 @@ def handle_manage_users(*, actor: Optional[dict], base_template: str, read_only:
         reviewer_note = (request.form.get("reviewer_note") or "").strip() or None
         jabatan = (request.form.get("jabatan") or "").strip() or None
 
-        is_unregistered = request.form.get("is_unregistered") in {"1", "true", "on", "yes"}
+        is_unregistered = request.form.get("is_unregistered") in {
+            "1",
+            "true",
+            "on",
+            "yes",
+        }
         if is_unregistered:
             account_status = "not_registered"
 
@@ -70,8 +85,12 @@ def handle_manage_users(*, actor: Optional[dict], base_template: str, read_only:
         if role != "sekolah":
             school_id = None
 
-        requested_kecamatan_raw = (request.form.get("requested_kecamatan") or "").strip()
-        requested_kecamatan = int(requested_kecamatan_raw) if requested_kecamatan_raw.isdigit() else None
+        requested_kecamatan_raw = (
+            request.form.get("requested_kecamatan") or ""
+        ).strip()
+        requested_kecamatan = (
+            int(requested_kecamatan_raw) if requested_kecamatan_raw.isdigit() else None
+        )
 
         try:
             if action == "reset_password":
@@ -100,7 +119,9 @@ def handle_manage_users(*, actor: Optional[dict], base_template: str, read_only:
                                 "UPDATE",
                                 "USER",
                                 int(user_id),
-                                profile.get("full_name") or profile.get("email") or f"User #{user_id}",
+                                profile.get("full_name")
+                                or profile.get("email")
+                                or f"User #{user_id}",
                                 {
                                     "email": profile.get("email"),
                                     "role": profile.get("role"),
@@ -117,11 +138,16 @@ def handle_manage_users(*, actor: Optional[dict], base_template: str, read_only:
             if action == "create":
                 if is_unregistered:
                     if not full_name or not jabatan or requested_kecamatan is None:
-                        flash("Nama, jabatan, dan kecamatan wajib diisi untuk akun belum register.", "warning")
+                        flash(
+                            "Nama, jabatan, dan kecamatan wajib diisi untuk akun belum register.",
+                            "warning",
+                        )
                     else:
                         placeholder_email = _build_unregistered_email(full_name)
                         secret = secrets.token_urlsafe(18)
-                        password_hash = generate_password_hash(secret, method="pbkdf2:sha256", salt_length=12)
+                        password_hash = generate_password_hash(
+                            secret, method="pbkdf2:sha256", salt_length=12
+                        )
                         new_user_id = create_dashboard_user(
                             email=placeholder_email,
                             full_name=full_name,
@@ -147,13 +173,25 @@ def handle_manage_users(*, actor: Optional[dict], base_template: str, read_only:
                             if school:
                                 details["school_name"] = school.get("name")
                                 details["npsn"] = school.get("npsn")
-                        log_activity(actor_id, "CREATE", "USER", new_user_id, full_name or placeholder_email, details)
-                        flash(f"User {full_name} berhasil dibuat (belum register).", "success")
+                        log_activity(
+                            actor_id,
+                            "CREATE",
+                            "USER",
+                            new_user_id,
+                            full_name or placeholder_email,
+                            details,
+                        )
+                        flash(
+                            f"User {full_name} berhasil dibuat (belum register).",
+                            "success",
+                        )
                 else:
                     if not all([email, full_name, password]):
                         flash("Semua field wajib diisi.", "warning")
                     else:
-                        password_hash = generate_password_hash(password, method="pbkdf2:sha256", salt_length=12)
+                        password_hash = generate_password_hash(
+                            password, method="pbkdf2:sha256", salt_length=12
+                        )
                         new_user_id = create_dashboard_user(
                             email=email,
                             full_name=full_name,
@@ -180,14 +218,27 @@ def handle_manage_users(*, actor: Optional[dict], base_template: str, read_only:
                             if school:
                                 details["school_name"] = school.get("name")
                                 details["npsn"] = school.get("npsn")
-                        log_activity(actor_id, "CREATE", "USER", new_user_id, full_name or email, details)
+                        log_activity(
+                            actor_id,
+                            "CREATE",
+                            "USER",
+                            new_user_id,
+                            full_name or email,
+                            details,
+                        )
                         flash(f"User {full_name} berhasil dibuat.", "success")
 
             elif action == "update":
                 if not user_id:
                     flash("ID User tidak valid.", "danger")
                 else:
-                    pw_hash = generate_password_hash(password, method="pbkdf2:sha256", salt_length=12) if password else None
+                    pw_hash = (
+                        generate_password_hash(
+                            password, method="pbkdf2:sha256", salt_length=12
+                        )
+                        if password
+                        else None
+                    )
                     updated = update_dashboard_user(
                         user_id=int(user_id),
                         full_name=full_name,
@@ -216,7 +267,14 @@ def handle_manage_users(*, actor: Optional[dict], base_template: str, read_only:
                             if school:
                                 details["school_name"] = school.get("name")
                                 details["npsn"] = school.get("npsn")
-                        log_activity(actor_id, "UPDATE", "USER", int(user_id), full_name or email, details)
+                        log_activity(
+                            actor_id,
+                            "UPDATE",
+                            "USER",
+                            int(user_id),
+                            full_name or email,
+                            details,
+                        )
                     flash(f"Data user {full_name} berhasil diperbarui.", "success")
 
             elif action == "verify":
@@ -236,11 +294,24 @@ def handle_manage_users(*, actor: Optional[dict], base_template: str, read_only:
                         details = {"account_status": account_status, "info": "verify"}
                         if reviewer_note:
                             details["reviewer_note"] = reviewer_note
-                        log_activity(actor_id, "UPDATE", "USER", int(user_id), full_name or email, details)
+                        log_activity(
+                            actor_id,
+                            "UPDATE",
+                            "USER",
+                            int(user_id),
+                            full_name or email,
+                            details,
+                        )
                         normalized_status = (account_status or "").strip().lower()
                         if normalized_status in {"approved", "rejected"}:
-                            status_label = "✅ Disetujui" if normalized_status == "approved" else "❌ Ditolak"
-                            actor_name = (actor or {}).get("full_name") or (actor or {}).get("email")
+                            status_label = (
+                                "✅ Disetujui"
+                                if normalized_status == "approved"
+                                else "❌ Ditolak"
+                            )
+                            actor_name = (actor or {}).get("full_name") or (
+                                actor or {}
+                            ).get("email")
                             try:
                                 notify_verification_status_update(
                                     user_id=int(user_id),
@@ -255,10 +326,20 @@ def handle_manage_users(*, actor: Optional[dict], base_template: str, read_only:
                                 )
                     if wants_json:
                         status_code = 200 if updated else 400
-                        return jsonify(
-                            {"success": bool(updated), "user_id": int(user_id), "account_status": account_status}
-                        ), status_code
-                    flash(f"Status user berhasil diubah menjadi {account_status}.", "success")
+                        return (
+                            jsonify(
+                                {
+                                    "success": bool(updated),
+                                    "user_id": int(user_id),
+                                    "account_status": account_status,
+                                }
+                            ),
+                            status_code,
+                        )
+                    flash(
+                        f"Status user berhasil diubah menjadi {account_status}.",
+                        "success",
+                    )
 
             elif action == "merge":
                 old_user_id = request.form.get("old_user_id")
@@ -266,14 +347,23 @@ def handle_manage_users(*, actor: Optional[dict], base_template: str, read_only:
                 if not old_user_id or not new_user_id:
                     flash("Pilih akun lama dan akun baru untuk merge.", "warning")
                 else:
-                    result = merge_dashboard_users(int(old_user_id), int(new_user_id), merged_by=actor_id)
+                    result = merge_dashboard_users(
+                        int(old_user_id), int(new_user_id), merged_by=actor_id
+                    )
                     details = {
                         "old_user_id": int(old_user_id),
                         "new_user_id": int(new_user_id),
                         "old_email": (result.get("old_user") or {}).get("email"),
                         "new_email": (result.get("new_user") or {}).get("email"),
                     }
-                    log_activity(actor_id, "MERGE", "USER", int(new_user_id), full_name or "Merge User", details)
+                    log_activity(
+                        actor_id,
+                        "MERGE",
+                        "USER",
+                        int(new_user_id),
+                        full_name or "Merge User",
+                        details,
+                    )
                     flash("Akun berhasil di-merge. Akun lama dinonaktifkan.", "success")
 
         except Exception as exc:
@@ -295,7 +385,9 @@ def handle_manage_users(*, actor: Optional[dict], base_template: str, read_only:
         merge_new_users=merge_new_users,
         kecamatan_list=kecamatan_list,
         activity_logs=activity_logs,
-        admin_contact_name=((actor or {}).get("full_name") or (actor or {}).get("email") or "Admin"),
+        admin_contact_name=(
+            (actor or {}).get("full_name") or (actor or {}).get("email") or "Admin"
+        ),
         base_template=base_template,
         read_only=read_only,
     )

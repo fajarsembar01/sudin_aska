@@ -71,7 +71,6 @@ from .queries import (
     upsert_supporter_staff_profile,
 )
 
-
 supporter_bp = Blueprint(
     "supporter",
     __name__,
@@ -225,14 +224,16 @@ def _task_form_data() -> Dict[str, Any]:
         "instructions": _clean_text("instructions") or None,
         "base_points": base_points,
         "late_penalty_percent": penalty,
-        "start_at": _parse_datetime_local(request.form.get("start_at")) or current_jakarta_time(),
+        "start_at": _parse_datetime_local(request.form.get("start_at"))
+        or current_jakarta_time(),
         "deadline_at": _parse_datetime_local(request.form.get("deadline_at")),
         "end_at": _parse_datetime_local(request.form.get("end_at")),
         "allow_late_submission": request.form.get("allow_late_submission") == "on",
         "requires_proof_url": request.form.get("requires_proof_url") == "on",
         "requires_proof_text": request.form.get("requires_proof_text") == "on",
         "requires_screenshot": request.form.get("requires_screenshot") == "on",
-        "verification_mode": _clean_text("verification_mode", default="manual_telegram") or "manual_telegram",
+        "verification_mode": _clean_text("verification_mode", default="manual_telegram")
+        or "manual_telegram",
         "status": status,
     }
 
@@ -265,7 +266,9 @@ def _task_form_context(task: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     }
 
 
-def _compress_proof_image_to_jpeg(file, target_path: Path, max_bytes: int = MAX_PROOF_IMAGE_BYTES) -> bool:
+def _compress_proof_image_to_jpeg(
+    file, target_path: Path, max_bytes: int = MAX_PROOF_IMAGE_BYTES
+) -> bool:
     """Re-encode an uploaded image as JPEG capped at ~max_bytes. Returns True on success."""
     try:
         import io
@@ -290,9 +293,15 @@ def _compress_proof_image_to_jpeg(file, target_path: Path, max_bytes: int = MAX_
 
         # Still too large: progressively downscale until it fits (or give up).
         attempts = 0
-        while buf.tell() > max_bytes and attempts < 6 and min(image.width, image.height) > 320:
+        while (
+            buf.tell() > max_bytes
+            and attempts < 6
+            and min(image.width, image.height) > 320
+        ):
             attempts += 1
-            image.thumbnail((int(image.width * 0.8), int(image.height * 0.8)), Image.LANCZOS)
+            image.thumbnail(
+                (int(image.width * 0.8), int(image.height * 0.8)), Image.LANCZOS
+            )
             buf = io.BytesIO()
             image.save(buf, format="JPEG", quality=35, optimize=True)
 
@@ -363,7 +372,9 @@ def _proof_path_is_safe(filename: str) -> Optional[Path]:
     return candidate if candidate.exists() and candidate.is_file() else None
 
 
-def _can_submit_task(task: Dict[str, Any], submission: Optional[Dict[str, Any]]) -> tuple[bool, str]:
+def _can_submit_task(
+    task: Dict[str, Any], submission: Optional[Dict[str, Any]]
+) -> tuple[bool, str]:
     if (task.get("status") or "") != "active":
         return False, "Task belum aktif."
     now = current_jakarta_time()
@@ -514,7 +525,7 @@ def submit_task_route(task_id: int) -> Response:
                 except ValueError as exc:
                     flash(str(exc), "warning")
                     return redirect(url_for("supporter.task_detail", task_id=task_id))
-            
+
             # Check if all action screenshots are provided
             for action_key in action_types:
                 if action_key not in screenshots:
@@ -534,7 +545,10 @@ def submit_task_route(task_id: int) -> Response:
     if social_username and social_username != user.get("social_username"):
         try:
             from dashboard.portal.queries import update_dashboard_user_profile
-            update_dashboard_user_profile(user_id=staff_id, social_username=social_username)
+
+            update_dashboard_user_profile(
+                user_id=staff_id, social_username=social_username
+            )
             user["social_username"] = social_username
             session["user"] = user
         except Exception:
@@ -564,8 +578,13 @@ def submit_task_route(task_id: int) -> Response:
 @role_required("staff")
 def cancel_submission_route(submission_id: int) -> Response:
     user = current_user() or {}
-    ok = cancel_submission(submission_id=submission_id, staff_id=int(user.get("id") or 0))
-    flash("Submission dibatalkan." if ok else "Submission tidak dapat dibatalkan.", "info" if ok else "warning")
+    ok = cancel_submission(
+        submission_id=submission_id, staff_id=int(user.get("id") or 0)
+    )
+    flash(
+        "Submission dibatalkan." if ok else "Submission tidak dapat dibatalkan.",
+        "info" if ok else "warning",
+    )
     return redirect(url_for("supporter.staff_dashboard"))
 
 
@@ -676,7 +695,10 @@ def admin_task_status(task_id: int) -> Response:
     user = current_user() or {}
     status = (request.form.get("status") or "").strip()
     ok = update_task_status(task_id, status, actor_user_id=int(user.get("id") or 0))
-    flash("Status task diperbarui." if ok else "Status task tidak valid.", "success" if ok else "warning")
+    flash(
+        "Status task diperbarui." if ok else "Status task tidak valid.",
+        "success" if ok else "warning",
+    )
     return redirect(request.referrer or url_for("supporter.admin_tasks"))
 
 
@@ -695,7 +717,9 @@ def admin_submissions() -> Response:
     )
 
 
-@supporter_bp.route("/admin/submissions/<int:submission_id>/review-action", methods=["POST"])
+@supporter_bp.route(
+    "/admin/submissions/<int:submission_id>/review-action", methods=["POST"]
+)
 @role_required("admin")
 def admin_review_action(submission_id: int) -> Response:
     user = current_user() or {}
@@ -844,7 +868,10 @@ def admin_test_bot() -> Response:
             "success",
         )
     else:
-        flash("Koneksi bot gagal: {0}".format(result.get("error") or "Tidak diketahui."), "danger")
+        flash(
+            "Koneksi bot gagal: {0}".format(result.get("error") or "Tidak diketahui."),
+            "danger",
+        )
     return redirect(url_for("supporter.admin_settings"))
 
 
@@ -855,7 +882,12 @@ def admin_test_notification() -> Response:
 
     result = send_supporter_test_broadcast()
     if not result.get("ok"):
-        flash("Tes notifikasi gagal: {0}".format(result.get("error") or "Tidak diketahui."), "danger")
+        flash(
+            "Tes notifikasi gagal: {0}".format(
+                result.get("error") or "Tidak diketahui."
+            ),
+            "danger",
+        )
         return redirect(url_for("supporter.admin_settings"))
 
     sent = int(result.get("sent") or 0)
@@ -867,26 +899,40 @@ def admin_test_notification() -> Response:
             msg += " Belum chat bot: " + ", ".join("@" + name for name in missing) + "."
         flash(msg, "warning")
     else:
-        msg = "Tes notifikasi terkirim ke {0} admin dan {1} grup.".format(sent, group_sent)
+        msg = "Tes notifikasi terkirim ke {0} admin dan {1} grup.".format(
+            sent, group_sent
+        )
         if missing:
-            msg += " Belum terjangkau: " + ", ".join("@" + name for name in missing) + "."
+            msg += (
+                " Belum terjangkau: " + ", ".join("@" + name for name in missing) + "."
+            )
         flash(msg, "success")
     return redirect(url_for("supporter.admin_settings"))
 
 
-@supporter_bp.route("/admin/settings/telegram-admin/<int:mapping_id>/delete", methods=["POST"])
+@supporter_bp.route(
+    "/admin/settings/telegram-admin/<int:mapping_id>/delete", methods=["POST"]
+)
 @role_required("admin")
 def admin_delete_telegram_admin(mapping_id: int) -> Response:
     ok = delete_telegram_admin_account(mapping_id)
-    flash("Mapping admin Telegram dihapus." if ok else "Mapping tidak ditemukan.", "info" if ok else "warning")
+    flash(
+        "Mapping admin Telegram dihapus." if ok else "Mapping tidak ditemukan.",
+        "info" if ok else "warning",
+    )
     return redirect(url_for("supporter.admin_settings"))
 
 
-@supporter_bp.route("/admin/settings/telegram-group/<int:group_id>/delete", methods=["POST"])
+@supporter_bp.route(
+    "/admin/settings/telegram-group/<int:group_id>/delete", methods=["POST"]
+)
 @role_required("admin")
 def admin_delete_telegram_group(group_id: int) -> Response:
     ok = delete_supporter_telegram_group(group_id)
-    flash("Group Telegram dihapus." if ok else "Group tidak ditemukan.", "info" if ok else "warning")
+    flash(
+        "Group Telegram dihapus." if ok else "Group tidak ditemukan.",
+        "info" if ok else "warning",
+    )
     return redirect(url_for("supporter.admin_settings"))
 
 
@@ -932,8 +978,16 @@ def admin_export() -> Response:
                 row.get("penalty_percent"),
                 row.get("potential_points"),
                 row.get("awarded_points"),
-                to_jakarta(row.get("submitted_at")).isoformat() if row.get("submitted_at") else "",
-                to_jakarta(row.get("reviewed_at")).isoformat() if row.get("reviewed_at") else "",
+                (
+                    to_jakarta(row.get("submitted_at")).isoformat()
+                    if row.get("submitted_at")
+                    else ""
+                ),
+                (
+                    to_jakarta(row.get("reviewed_at")).isoformat()
+                    if row.get("reviewed_at")
+                    else ""
+                ),
                 row.get("reviewer_name"),
                 row.get("proof_url"),
                 row.get("proof_file_path"),

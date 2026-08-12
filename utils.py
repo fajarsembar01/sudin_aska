@@ -2,10 +2,10 @@
 import asyncio
 import re
 from datetime import datetime, timedelta, timezone
-from typing import Optional, List, Dict, Any
+from typing import Any, Dict, List, Optional
 
+from langchain_core.messages import AIMessage, HumanMessage
 from telegram import Message, Update
-from langchain_core.messages import HumanMessage, AIMessage
 
 from thinking_messages import get_random_thinking_message
 
@@ -39,7 +39,7 @@ else:
 
 
 # Regex untuk mendeteksi markdown gambar ![](url)
-IMG_MD = re.compile(r'!\\\\[^\\]*?\\]\((https?://[^\s)]+)\)')
+IMG_MD = re.compile(r"!\\\\[^\\]*?\\]\((https?://[^\s)]+)\)")
 
 KNOWN_BOT_HANDLES = {"@ss01ju_bot", "@tanyaaska_bot"}
 
@@ -112,7 +112,9 @@ def strip_markdown(text):
 
 
 _SIGNATURE_RE = re.compile(r"(?:\s*\n)?[-–—]\s*ASKA\s*$", re.IGNORECASE)
-_EMOJI_RE = re.compile(r"[\U00010000-\U0010FFFF\u2600-\u27BF\u2B00-\u2BFF\uFE00-\uFE0F]")
+_EMOJI_RE = re.compile(
+    r"[\U00010000-\U0010FFFF\u2600-\u27BF\u2B00-\u2BFF\uFE00-\uFE0F]"
+)
 _NO_DATA_RE = re.compile(r"^\s*ASKA belum punya data resmi", re.IGNORECASE)
 _TECHNICAL_RE = re.compile(r"^\s*(?:⚠️|😵|🤖|Maaf).*gangguan teknis", re.IGNORECASE)
 
@@ -224,13 +226,14 @@ def format_history_for_chain(history: List[Dict[str, Any]]) -> list:
     messages = []
     # The new DB function returns newest first, but the chain needs oldest first.
     for row in reversed(history):
-        role = row.get('role')
-        text = row.get('text')
+        role = row.get("role")
+        text = row.get("text")
         if role == "user":
             messages.append(HumanMessage(content=text))
         elif role:
             messages.append(AIMessage(content=text))
     return messages
+
 
 def coerce_to_text(result_obj):
     if result_obj is None:
@@ -264,9 +267,11 @@ def to_jakarta(dt: Optional[datetime]) -> Optional[datetime]:
     except Exception:
         return dt
 
+
 def format_indonesian_date(dt: datetime) -> str:
     month_name = INDONESIAN_MONTH_NAMES.get(dt.month, dt.strftime("%B"))
     return f"{dt.day} {month_name} {dt.year}"
+
 
 def detect_class_code(text: str) -> Optional[str]:
     if not text:
@@ -274,6 +279,7 @@ def detect_class_code(text: str) -> Optional[str]:
     if re.search(r"(?:kelas\\s*)?(?:5|v)[\\s-]*a", text):
         return "5a"
     return None
+
 
 def rewrite_schedule_query(text: str) -> str:
     if not text:
@@ -298,10 +304,13 @@ def rewrite_schedule_query(text: str) -> str:
     updated = text
     for key, value in replacements.items():
         updated = re.sub(rf"\\b{key}\\b", value, updated)
-    note = f"(menanyakan jadwal kelas {class_code.upper()} hari {day_name} {date_label})"
+    note = (
+        f"(menanyakan jadwal kelas {class_code.upper()} hari {day_name} {date_label})"
+    )
     if note not in updated:
         updated = f"{updated} {note}".strip()
     return updated
+
 
 def iter_message_texts_and_entities(message: Optional[Message]):
     if message is None:
@@ -311,7 +320,10 @@ def iter_message_texts_and_entities(message: Optional[Message]):
     if message.caption:
         yield message.caption, message.caption_entities or []
 
-def replace_bot_mentions(text: Optional[str], bot_username: Optional[str] = None) -> Optional[str]:
+
+def replace_bot_mentions(
+    text: Optional[str], bot_username: Optional[str] = None
+) -> Optional[str]:
     if not text:
         return text
     handles = {alias.lower() for alias in KNOWN_BOT_HANDLES}
@@ -328,6 +340,7 @@ def replace_bot_mentions(text: Optional[str], bot_username: Optional[str] = None
 
     return pattern.sub(repl, text)
 
+
 def is_substantive_text(text: Optional[str]) -> bool:
     if not text:
         return False
@@ -341,20 +354,43 @@ def is_substantive_text(text: Optional[str]) -> bool:
     tokens = re.findall(r"\\w+", lowered)
     if not tokens:
         return False
-    question_words = {"apa", "siapa", "mengapa", "kenapa", "bagaimana", "dimana", "kapan", "kok"}
-    if '?' in cleaned or question_words.intersection(tokens):
+    question_words = {
+        "apa",
+        "siapa",
+        "mengapa",
+        "kenapa",
+        "bagaimana",
+        "dimana",
+        "kapan",
+        "kok",
+    }
+    if "?" in cleaned or question_words.intersection(tokens):
         return True
-    filler_tokens = {"aska", "dong", "ya", "yah", "pls", "please", "tolong", "jawab", "deh", "donglah"}
+    filler_tokens = {
+        "aska",
+        "dong",
+        "ya",
+        "yah",
+        "pls",
+        "please",
+        "tolong",
+        "jawab",
+        "deh",
+        "donglah",
+    }
     meaningful_tokens = [tok for tok in tokens if tok not in filler_tokens]
     return len(meaningful_tokens) >= 2
+
 
 def is_group_chat(update: Update) -> bool:
     chat = update.effective_chat
     return chat is not None and chat.type in ("group", "supergroup")
 
+
 def is_reply_to_bot(message: Message, bot_id):
     reply = getattr(message, "reply_to_message", None)
     return bool(reply and reply.from_user and reply.from_user.id == bot_id)
+
 
 def has_bot_mention(message: Optional[Message], bot_username: Optional[str], bot_id):
     if not message:
@@ -366,15 +402,20 @@ def has_bot_mention(message: Optional[Message], bot_username: Optional[str], bot
     for text, entities in texts_and_entities:
         lower_text = text.lower()
         for entity in entities:
-            if entity.type == "text_mention" and entity.user and entity.user.id == bot_id:
+            if (
+                entity.type == "text_mention"
+                and entity.user
+                and entity.user.id == bot_id
+            ):
                 return True
             if entity.type == "mention" and mention_token:
-                entity_text = text[entity.offset: entity.offset + entity.length]
+                entity_text = text[entity.offset : entity.offset + entity.length]
                 if entity_text.lower() == mention_token:
                     return True
         if mention_token and mention_token in lower_text:
             return True
     return False
+
 
 def extract_message_text(message: Optional[Message]) -> Optional[str]:
     if message is None:
@@ -385,6 +426,7 @@ def extract_message_text(message: Optional[Message]) -> Optional[str]:
         return message.caption
     return None
 
+
 def should_respond(update: Update, bot) -> bool:
     if not is_group_chat(update):
         return True
@@ -393,7 +435,10 @@ def should_respond(update: Update, bot) -> bool:
         return False
     bot_id = getattr(bot, "id", None)
     bot_username = getattr(bot, "username", None)
-    return is_reply_to_bot(message, bot_id) or has_bot_mention(message, bot_username, bot_id)
+    return is_reply_to_bot(message, bot_id) or has_bot_mention(
+        message, bot_username, bot_id
+    )
+
 
 def resolve_target_message(update: Update, bot):
     message = update.effective_message
@@ -413,6 +458,7 @@ def resolve_target_message(update: Update, bot):
             target_message = reply
     return message, target_message
 
+
 def prepare_group_query(
     trigger_message: Optional[Message],
     target_message: Optional[Message],
@@ -422,10 +468,18 @@ def prepare_group_query(
     if trigger_message is None and primary is None:
         return None, None, None, None
 
-    trigger_text_raw = extract_message_text(trigger_message) if trigger_message else None
+    trigger_text_raw = (
+        extract_message_text(trigger_message) if trigger_message else None
+    )
     target_text_raw = extract_message_text(target_message) if target_message else None
-    trigger_text = replace_bot_mentions(trigger_text_raw, bot_username) if trigger_text_raw else None
-    target_text = replace_bot_mentions(target_text_raw, bot_username) if target_text_raw else None
+    trigger_text = (
+        replace_bot_mentions(trigger_text_raw, bot_username)
+        if trigger_text_raw
+        else None
+    )
+    target_text = (
+        replace_bot_mentions(target_text_raw, bot_username) if target_text_raw else None
+    )
 
     use_trigger = (
         trigger_message is not None
@@ -444,7 +498,12 @@ def prepare_group_query(
         reply_target = trigger_message
         target_user = getattr(trigger_message, "from_user", None)
         responded_key = getattr(trigger_message, "message_id", None)
-        return combined or trigger_text or target_text, reply_target, target_user, responded_key
+        return (
+            combined or trigger_text or target_text,
+            reply_target,
+            target_user,
+            responded_key,
+        )
 
     reply_target = primary
     target_user = getattr(primary, "from_user", None) if primary else None
@@ -477,14 +536,18 @@ async def send_thinking_bubble(target_message: Optional[Message]):
     return message
 
 
-async def send_and_update_thinking_bubble(target_message: Optional[Message], stop_event: asyncio.Event):
+async def send_and_update_thinking_bubble(
+    target_message: Optional[Message], stop_event: asyncio.Event
+):
     if target_message is None:
         return None
-    
+
     message = None
     loop_count = 0
     try:
-        while not stop_event.is_set() and loop_count < 3: # Limit to 3 updates (15 seconds)
+        while (
+            not stop_event.is_set() and loop_count < 3
+        ):  # Limit to 3 updates (15 seconds)
             thinking_message = get_random_thinking_message()
             if message is None:
                 message = await target_message.reply_text(thinking_message)
@@ -492,28 +555,30 @@ async def send_and_update_thinking_bubble(target_message: Optional[Message], sto
             else:
                 await message.edit_text(thinking_message)
                 print(f"[{now_str()}] {thinking_message}")
-            
+
             loop_count += 1
-            
+
             try:
                 # Wait for 5 seconds or until the stop event is set
                 await asyncio.wait_for(stop_event.wait(), timeout=5.0)
             except asyncio.TimeoutError:
-                pass # Continue the loop
+                pass  # Continue the loop
     except Exception as e:
         print(f"[{now_str()}] Error in thinking bubble: {e}")
-    
+
     return message
 
 
-async def reply_with_markdown(target_message: Optional[Message], text: Optional[str]) -> None:
+async def reply_with_markdown(
+    target_message: Optional[Message], text: Optional[str]
+) -> None:
     if target_message is None:
         return
     if text is None:
-        text = ''
+        text = ""
     try:
-        await target_message.reply_text(text, parse_mode='Markdown')
+        await target_message.reply_text(text, parse_mode="Markdown")
     except Exception as exc:
         print(f"[{now_str()}] Failed to send Markdown message: {exc}")
-        fallback = strip_markdown(text) if text else ''
+        fallback = strip_markdown(text) if text else ""
         await target_message.reply_text(fallback)

@@ -203,8 +203,7 @@ def _has_dashboard_user_profile_photo_path() -> bool:
     exists = False
     try:
         with get_cursor() as cur:
-            cur.execute(
-                """
+            cur.execute("""
                 SELECT EXISTS (
                     SELECT 1
                     FROM information_schema.columns
@@ -212,8 +211,7 @@ def _has_dashboard_user_profile_photo_path() -> bool:
                       AND table_name = 'dashboard_users'
                       AND column_name = 'profile_photo_path'
                 ) AS exists
-                """
-            )
+                """)
             row = cur.fetchone() or {}
             exists = bool(row.get("exists"))
     except Exception:
@@ -221,6 +219,7 @@ def _has_dashboard_user_profile_photo_path() -> bool:
 
     _HAS_DASHBOARD_USER_PROFILE_PHOTO_PATH = exists
     return exists
+
 
 _ROLLUP_CTE = (
     """
@@ -329,13 +328,32 @@ def _apply_guest_display(row: Dict[str, Any]) -> None:
 
 def _normalize_staff_note_level(level: Optional[str]) -> str:
     value = (level or "").strip().lower()
-    if value in {"mendesak", "urgent", "critical", "sangat_mendesak", "sangat mendesak"}:
+    if value in {
+        "mendesak",
+        "urgent",
+        "critical",
+        "sangat_mendesak",
+        "sangat mendesak",
+    }:
         return "mendesak"
-    if value in {"tindak_lanjut", "tindak lanjut", "normal", "follow_up", "perlu_tindakan"}:
+    if value in {
+        "tindak_lanjut",
+        "tindak lanjut",
+        "normal",
+        "follow_up",
+        "perlu_tindakan",
+    }:
         return "tindak_lanjut"
     if value in {"pantau", "monitor", "other", "lainnya", "lainnya/pantau"}:
         return "pantau"
-    if value in {"tidak_perlu", "tidak perlu", "info", "informasi", "arsip", "no_action"}:
+    if value in {
+        "tidak_perlu",
+        "tidak perlu",
+        "info",
+        "informasi",
+        "arsip",
+        "no_action",
+    }:
         return "tidak_perlu"
     if value in STAFF_NOTE_LEVELS:
         return value
@@ -379,7 +397,9 @@ def _summarize_staff_notes(metadata_value: Any) -> Dict[str, Any]:
 
         if isinstance(raw_entry, dict):
             note_text = (raw_entry.get("note") or "").strip()
-            note_level = _normalize_staff_note_level(raw_entry.get("level")) or "tindak_lanjut"
+            note_level = (
+                _normalize_staff_note_level(raw_entry.get("level")) or "tindak_lanjut"
+            )
             note_updated_at = (raw_entry.get("updated_at") or "").strip()
         elif isinstance(raw_entry, str):
             note_text = raw_entry.strip()
@@ -397,11 +417,17 @@ def _summarize_staff_notes(metadata_value: Any) -> Dict[str, Any]:
             best_updated_at = note_updated_at
         elif rank == best_rank and note_updated_at:
             try:
-                current_dt = datetime.fromisoformat(best_updated_at.replace("Z", "+00:00")) if best_updated_at else None
+                current_dt = (
+                    datetime.fromisoformat(best_updated_at.replace("Z", "+00:00"))
+                    if best_updated_at
+                    else None
+                )
             except ValueError:
                 current_dt = None
             try:
-                incoming_dt = datetime.fromisoformat(note_updated_at.replace("Z", "+00:00"))
+                incoming_dt = datetime.fromisoformat(
+                    note_updated_at.replace("Z", "+00:00")
+                )
             except ValueError:
                 incoming_dt = None
             if incoming_dt and (not current_dt or incoming_dt > current_dt):
@@ -423,24 +449,18 @@ def _ensure_guestbook_notification_schema() -> None:
         return
 
     with get_cursor(commit=True) as cur:
-        cur.execute(
-            """
+        cur.execute("""
             ALTER TABLE notifications
             ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES dashboard_users(id) ON DELETE CASCADE
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE INDEX IF NOT EXISTS idx_notifications_user_status_created_at
             ON notifications (user_id, status, created_at DESC)
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE INDEX IF NOT EXISTS idx_notifications_user_category_created_at
             ON notifications (user_id, category, created_at DESC)
-            """
-        )
+            """)
 
     _NOTIFICATION_SCHEMA_READY = True
 
@@ -674,12 +694,16 @@ def fetch_school_rankings(
         area_filter,
         area_filter,
     ]
-    search_params: List[Any] = [query_text, like_query, like_query, like_query, like_query]
+    search_params: List[Any] = [
+        query_text,
+        like_query,
+        like_query,
+        like_query,
+        like_query,
+    ]
     status_params: List[Any] = [status_filter, status_filter]
 
-    count_query = (
-        _ROLLUP_CTE
-        + """
+    count_query = _ROLLUP_CTE + """
     SELECT COUNT(*) AS total
     FROM school_rollup
     WHERE (
@@ -692,11 +716,8 @@ def fetch_school_rankings(
       AND (%s = '' OR status = %s)
       AND jenjang NOT IN ('MI', 'MTS', 'MA')
     """
-    )
 
-    data_query = (
-        _ROLLUP_CTE
-        + f"""
+    data_query = _ROLLUP_CTE + f"""
     SELECT
         school_id,
         npsn,
@@ -727,14 +748,16 @@ def fetch_school_rankings(
     ORDER BY {order_sql}
     LIMIT %s OFFSET %s
     """
-    )
 
     with get_cursor() as cur:
         cur.execute(count_query, base_params + search_params + status_params)
         count_row = cur.fetchone()
         total_rows = int(dict(count_row).get("total") or 0) if count_row else 0
 
-        cur.execute(data_query, base_params + search_params + status_params + [safe_per_page, offset])
+        cur.execute(
+            data_query,
+            base_params + search_params + status_params + [safe_per_page, offset],
+        )
         rows = [dict(row) for row in cur.fetchall()]
 
     today = _today_jakarta()
@@ -748,7 +771,9 @@ def fetch_school_rankings(
         if row.get("longitude") is not None:
             row["longitude"] = float(row["longitude"])
         last_visit = row.get("last_visit_date")
-        row["days_since_visit"] = (today - last_visit.date()).days if last_visit else None
+        row["days_since_visit"] = (
+            (today - last_visit.date()).days if last_visit else None
+        )
         row["guest_names"] = row.get("last_guest_names")
         row["guest_count"] = row.get("last_guest_count")
         _apply_guest_display(row)
@@ -772,9 +797,7 @@ def fetch_school_visit_histogram(
     status_filter = _normalize_school_status(school_status)
     area_filter = _normalize_kecamatan_ids(kecamatan_ids)
     owner_filter = _normalize_owner_user_id(owner_user_id)
-    query = (
-        _ROLLUP_CTE
-        + """
+    query = _ROLLUP_CTE + """
     SELECT
         visit_count::int AS visit_count,
         COUNT(*)::int AS school_count
@@ -784,7 +807,6 @@ def fetch_school_visit_histogram(
     GROUP BY visit_count
     ORDER BY visit_count ASC
     """
-    )
     params: List[Any] = [
         date_from,
         date_from,
@@ -864,20 +886,15 @@ def fetch_school_visit_bucket_rows(
         bucket_clause += " AND visit_count <= %s"
         bucket_params.append(safe_max_visits)
 
-    count_query = (
-        _ROLLUP_CTE
-        + f"""
+    count_query = _ROLLUP_CTE + f"""
     SELECT COUNT(*) AS total
     FROM school_rollup
     WHERE (%s = '' OR status = %s)
       AND jenjang NOT IN ('MI', 'MTS', 'MA')
       AND {bucket_clause}
     """
-    )
 
-    data_query = (
-        _ROLLUP_CTE
-        + f"""
+    data_query = _ROLLUP_CTE + f"""
     SELECT
         school_id,
         npsn,
@@ -897,7 +914,6 @@ def fetch_school_visit_bucket_rows(
     ORDER BY {order_sql}
     LIMIT %s OFFSET %s
     """
-    )
 
     base_params: List[Any] = [
         date_from,
@@ -929,7 +945,9 @@ def fetch_school_visit_bucket_rows(
         row["rank"] = index
         row["visit_count"] = int(row.get("visit_count") or 0)
         last_visit = row.get("last_visit_date")
-        row["days_since_visit"] = (today - last_visit.date()).days if last_visit else None
+        row["days_since_visit"] = (
+            (today - last_visit.date()).days if last_visit else None
+        )
         row["guest_names"] = row.get("last_guest_names")
         row["guest_count"] = row.get("last_guest_count")
         _apply_guest_display(row)
@@ -1019,9 +1037,7 @@ def fetch_user_rankings(
     )
     """
 
-    count_query = (
-        base_cte
-        + """
+    count_query = base_cte + """
     SELECT COUNT(*) AS total
     FROM user_rollup r
     LEFT JOIN LATERAL (
@@ -1038,9 +1054,7 @@ def fetch_user_rankings(
         ORDER BY ft.visit_at DESC, ft.id DESC
         LIMIT 1
     ) latest ON TRUE
-    """
-        + search_clause
-    )
+    """ + search_clause
 
     data_query = (
         base_cte
@@ -1138,7 +1152,9 @@ def fetch_user_rankings(
         row["rank"] = idx
         row["visit_count"] = int(row.get("visit_count") or 0)
         last_visit = row.get("last_visit_date")
-        row["days_since_visit"] = (today - last_visit.date()).days if last_visit else None
+        row["days_since_visit"] = (
+            (today - last_visit.date()).days if last_visit else None
+        )
 
     return rows, total_rows
 
@@ -1160,8 +1176,7 @@ def list_user_transactions(
     safe_per_page = max(5, min(per_page, 100))
     offset = (safe_page - 1) * safe_per_page
 
-    count_query = (
-        """
+    count_query = """
         SELECT COUNT(*) AS total
         FROM daftar_tamu_transactions t
         JOIN portal_schools s ON s.id = t.school_id
@@ -1178,9 +1193,7 @@ def list_user_transactions(
                     AND g.user_id = %s
               )
           )
-        """
-        + _GUEST_SCOPE_WHERE.format(tx_ref="t.id")
-    )
+        """ + _GUEST_SCOPE_WHERE.format(tx_ref="t.id")
 
     data_query = (
         """
@@ -1294,7 +1307,9 @@ def fetch_user_visit_history(
     safe_per_page = max(5, min(per_page, 100))
     offset = (safe_page - 1) * safe_per_page
 
-    safe_sort = sort_key if sort_key in USER_VISIT_SORT_OPTIONS else DEFAULT_USER_VISIT_SORT
+    safe_sort = (
+        sort_key if sort_key in USER_VISIT_SORT_OPTIONS else DEFAULT_USER_VISIT_SORT
+    )
     order_sql = USER_VISIT_SORT_OPTIONS[safe_sort]
     query_text, like_query = _build_search(search_query)
 
@@ -1335,17 +1350,13 @@ def fetch_user_visit_history(
     )
     """
 
-    count_query = (
-        base_cte
-        + """
+    count_query = base_cte + """
     SELECT COUNT(*) AS total
     FROM user_transactions ut
     JOIN filtered_transactions ft ON ft.id = ut.transaction_id
     JOIN portal_schools s ON s.id = ft.school_id
     WHERE ut.user_id = %s
-    """
-        + search_clause
-    )
+    """ + search_clause
 
     data_query = (
         base_cte
@@ -1423,7 +1434,9 @@ def fetch_user_guestbook_history(
     safe_per_page = max(1, min(per_page, 100))
     offset = (safe_page - 1) * safe_per_page
 
-    safe_sort = sort_key if sort_key in USER_VISIT_SORT_OPTIONS else DEFAULT_USER_VISIT_SORT
+    safe_sort = (
+        sort_key if sort_key in USER_VISIT_SORT_OPTIONS else DEFAULT_USER_VISIT_SORT
+    )
     order_sql = USER_VISIT_SORT_OPTIONS[safe_sort]
     query_text, like_query = _build_search(search_query)
 
@@ -1468,17 +1481,13 @@ def fetch_user_guestbook_history(
     )
     """
 
-    count_query = (
-        base_cte
-        + """
+    count_query = base_cte + """
     SELECT COUNT(*) AS total
     FROM user_transactions ut
     JOIN filtered_transactions ft ON ft.id = ut.transaction_id
     JOIN portal_schools s ON s.id = ft.school_id
     WHERE ut.user_id = %s
-    """
-        + search_clause
-    )
+    """ + search_clause
 
     data_query = (
         base_cte
@@ -1582,7 +1591,9 @@ def fetch_school_visit_history(
     safe_per_page = max(5, min(per_page, 100))
     offset = (safe_page - 1) * safe_per_page
 
-    safe_sort = sort_key if sort_key in SCHOOL_VISIT_SORT_OPTIONS else DEFAULT_SCHOOL_VISIT_SORT
+    safe_sort = (
+        sort_key if sort_key in SCHOOL_VISIT_SORT_OPTIONS else DEFAULT_SCHOOL_VISIT_SORT
+    )
     order_sql = SCHOOL_VISIT_SORT_OPTIONS[safe_sort]
     query_text, like_query = _build_search(search_query)
 
@@ -1798,15 +1809,12 @@ def fetch_school_visit_days(
     ]
 
     count_query = base_cte + "SELECT COUNT(*) AS total FROM visit_days"
-    data_query = (
-        base_cte
-        + """
+    data_query = base_cte + """
     SELECT visit_date, visit_count, people_count, last_guest_name
     FROM visit_days
     ORDER BY visit_date DESC
     LIMIT %s OFFSET %s
     """
-    )
 
     with get_cursor() as cur:
         cur.execute(count_query, params)
@@ -1943,17 +1951,14 @@ def list_user_visited_school_ids(
 ) -> List[int]:
     """Return distinct school IDs visited by the user in the selected period."""
     scope = _normalize_guest_scope(guest_scope)
-    query = (
-        """
+    query = """
         SELECT DISTINCT t.school_id
         FROM daftar_tamu_transactions t
         WHERE t.created_by = %s
           AND t.status = 'approved'
           AND (%s::date IS NULL OR t.visit_at::date >= %s::date)
           AND (%s::date IS NULL OR t.visit_at::date <= %s::date)
-        """
-        + _GUEST_SCOPE_WHERE.format(tx_ref="t.id")
-    )
+        """ + _GUEST_SCOPE_WHERE.format(tx_ref="t.id")
     params = [
         user_id,
         date_from,
@@ -1966,7 +1971,12 @@ def list_user_visited_school_ids(
     ]
     with get_cursor() as cur:
         cur.execute(query, params)
-        return [int(row["school_id"]) for row in cur.fetchall() if row.get("school_id") is not None]
+        return [
+            int(row["school_id"])
+            for row in cur.fetchall()
+            if row.get("school_id") is not None
+        ]
+
 
 def fetch_map_data(
     *,
@@ -1982,9 +1992,7 @@ def fetch_map_data(
     owner_filter = _normalize_owner_user_id(owner_user_id)
     status_filter = _normalize_school_status(school_status)
     area_filter = _normalize_kecamatan_ids(kecamatan_ids)
-    query = (
-        _ROLLUP_CTE
-        + f"""
+    query = _ROLLUP_CTE + f"""
     SELECT
         school_id,
         npsn,
@@ -2002,7 +2010,6 @@ def fetch_map_data(
     WHERE (%s = '' OR status = %s)
     ORDER BY {SORT_OPTIONS[DEFAULT_SORT]}
     """
-    )
 
     with get_cursor() as cur:
         cur.execute(
@@ -2079,9 +2086,7 @@ def fetch_unvisited_schools(
     area_filter = _normalize_kecamatan_ids(kecamatan_ids)
     owner_filter = _normalize_owner_user_id(owner_user_id)
     safe_limit = max(1, min(limit, 100))
-    query = (
-        _ROLLUP_CTE
-        + """
+    query = _ROLLUP_CTE + """
     SELECT
         school_id,
         npsn,
@@ -2095,7 +2100,6 @@ def fetch_unvisited_schools(
     ORDER BY school_name ASC
     LIMIT %s
     """
-    )
     with get_cursor() as cur:
         cur.execute(
             query,
@@ -2289,7 +2293,9 @@ def fetch_guestbook_gallery_photos(
     return rows
 
 
-def list_guest_candidates(search_query: Optional[str], limit: int = 20) -> List[Dict[str, Any]]:
+def list_guest_candidates(
+    search_query: Optional[str], limit: int = 20
+) -> List[Dict[str, Any]]:
     query_text, like_query = _build_search(search_query)
     safe_limit = max(1, min(limit, 50))
     profile_photo_select = (
@@ -2330,7 +2336,9 @@ def list_guest_candidates(search_query: Optional[str], limit: int = 20) -> List[
         return [dict(row) for row in cur.fetchall()]
 
 
-def list_general_guest_candidates(search_query: Optional[str], limit: int = 20) -> List[Dict[str, Any]]:
+def list_general_guest_candidates(
+    search_query: Optional[str], limit: int = 20
+) -> List[Dict[str, Any]]:
     query_text, like_query = _build_search(search_query)
     safe_limit = max(1, min(limit, 50))
     query = """
@@ -2361,7 +2369,15 @@ def list_general_guest_candidates(search_query: Optional[str], limit: int = 20) 
     with get_cursor() as cur:
         cur.execute(
             query,
-            [query_text, like_query, like_query, like_query, like_query, like_query, safe_limit],
+            [
+                query_text,
+                like_query,
+                like_query,
+                like_query,
+                like_query,
+                like_query,
+                safe_limit,
+            ],
         )
         rows = [dict(row) for row in cur.fetchall()]
     for row in rows:
@@ -2588,7 +2604,9 @@ def list_school_transactions(
         row["guest_count"] = int(row.get("guest_count") or (1 if guest_name else 0))
         row["guest_type"] = (row.get("guest_type") or "").strip().lower() or "sudin"
         row["guest_type_label"] = (
-            "Sudindik JU 2" if row["guest_type"] == "sudin" else "Instansi Pemerintah Lainnya"
+            "Sudindik JU 2"
+            if row["guest_type"] == "sudin"
+            else "Instansi Pemerintah Lainnya"
         )
 
     return rows, total_rows
@@ -2732,7 +2750,11 @@ def list_admin_transactions(
     offset = (safe_page - 1) * safe_per_page
 
     status_value = (status or "").strip().lower()
-    if status_value and status_value not in TRANSACTION_STATUSES and status_value != "history":
+    if (
+        status_value
+        and status_value not in TRANSACTION_STATUSES
+        and status_value != "history"
+    ):
         status_value = ""
     staff_note_level_value = _normalize_staff_note_level(staff_note_level)
 
@@ -3180,9 +3202,7 @@ def list_admin_public_school_summary(
         guest_count=_PUBLIC_GUEST_COUNT_SUBQUERY.format(tx_ref="t2.id"),
     )
 
-    count_query = (
-        rollup_cte
-        + """
+    count_query = rollup_cte + """
         SELECT COUNT(*) AS total
         FROM school_rollup
         WHERE (
@@ -3193,11 +3213,8 @@ def list_admin_public_school_summary(
             OR COALESCE(kelurahan, '') ILIKE %s
         )
         """
-    )
 
-    data_query = (
-        rollup_cte
-        + """
+    data_query = rollup_cte + """
         SELECT
             school_id,
             npsn,
@@ -3223,7 +3240,6 @@ def list_admin_public_school_summary(
         ORDER BY total_visits DESC, last_visit_at DESC NULLS LAST, school_name ASC
         LIMIT %s OFFSET %s
         """
-    )
 
     params_common = [
         date_from,
@@ -3375,7 +3391,9 @@ def get_transaction_detail(transaction_id: int) -> Optional[Dict[str, Any]]:
     return detail
 
 
-def list_transaction_previous_single_guest_photos(transaction_id: int) -> List[Dict[str, Any]]:
+def list_transaction_previous_single_guest_photos(
+    transaction_id: int,
+) -> List[Dict[str, Any]]:
     """List previous photo path per current guest, only from single-guest transactions."""
     profile_photo_select = (
         "u.profile_photo_path AS profile_photo_path"
@@ -3471,7 +3489,9 @@ def _build_guestbook_status_notification_text(status: str) -> tuple[str, str]:
     return "Status buku tamu diperbarui", "Menunggu Verifikasi"
 
 
-def _normalize_notification_categories(categories: Optional[List[str]] = None) -> tuple[str, ...]:
+def _normalize_notification_categories(
+    categories: Optional[List[str]] = None,
+) -> tuple[str, ...]:
     source = categories if categories else list(USER_APP_NOTIFICATION_CATEGORIES)
     seen: set[str] = set()
     normalized: list[str] = []
@@ -3834,7 +3854,9 @@ def create_guestbook_status_notifications(
         "actor_role": actor_role_label,
         "school_id": tx_data.get("school_id"),
         "school_name": school_name,
-        "visit_at": tx_data.get("visit_at").isoformat() if tx_data.get("visit_at") else None,
+        "visit_at": (
+            tx_data.get("visit_at").isoformat() if tx_data.get("visit_at") else None
+        ),
         "guest_summary": guest_summary,
     }
     if note_text:
@@ -3870,7 +3892,9 @@ def fetch_user_guestbook_notification_summary(
     *,
     user_id: int,
 ) -> Dict[str, int]:
-    return fetch_user_notification_summary(user_id=user_id, categories=[GUESTBOOK_NOTIFICATION_CATEGORY])
+    return fetch_user_notification_summary(
+        user_id=user_id, categories=[GUESTBOOK_NOTIFICATION_CATEGORY]
+    )
 
 
 def list_user_guestbook_notifications(
@@ -4094,7 +4118,9 @@ def list_popular_purposes(*, limit: int = 50, min_count: int = 1) -> List[str]:
     return purposes
 
 
-def list_purpose_keywords_by_usage(*, active_only: bool = True, limit: int = 50) -> List[str]:
+def list_purpose_keywords_by_usage(
+    *, active_only: bool = True, limit: int = 50
+) -> List[str]:
     safe_limit = max(1, min(int(limit or 50), 500))
 
     with get_cursor() as cur:
@@ -4162,7 +4188,9 @@ def list_purpose_keyword_rows(*, limit: int = 200) -> List[Dict[str, Any]]:
         return [dict(row) for row in cur.fetchall()]
 
 
-def upsert_purpose_keyword(*, keyword: str, created_by: Optional[int] = None) -> Dict[str, Any]:
+def upsert_purpose_keyword(
+    *, keyword: str, created_by: Optional[int] = None
+) -> Dict[str, Any]:
     clean = " ".join((keyword or "").split()).strip()
     if not clean:
         raise ValueError("Keyword kosong.")
@@ -4286,30 +4314,22 @@ def _ensure_guest_chat_bubble_tables(*, force_refresh: bool = False) -> None:
         cur.execute(_GUEST_CHAT_QUICK_TABLE_SQL)
         cur.execute(_GUEST_CHAT_QUICK_BUBBLE_IDX_SQL)
         cur.execute(_GUEST_CHAT_SETTINGS_TABLE_SQL)
-        cur.execute(
-            """
+        cur.execute("""
             ALTER TABLE daftar_tamu_guest_chat_bubbles
             ADD COLUMN IF NOT EXISTS direct_links JSONB NOT NULL DEFAULT '[]'::jsonb
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             ALTER TABLE daftar_tamu_guest_chat_bubbles
             ADD COLUMN IF NOT EXISTS media_autoplay BOOLEAN NOT NULL DEFAULT FALSE
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             ALTER TABLE daftar_tamu_guest_chat_settings
             ADD COLUMN IF NOT EXISTS limit_reached_links JSONB NOT NULL DEFAULT '[]'::jsonb
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             ALTER TABLE daftar_tamu_guest_chat_settings
             ADD COLUMN IF NOT EXISTS limit_reached_media_autoplay BOOLEAN NOT NULL DEFAULT FALSE
-            """
-        )
+            """)
     _seed_guest_chat_bubble_defaults()
     _seed_guest_chat_settings_defaults()
     _GUEST_CHAT_SCHEMA_READY = True
@@ -4397,8 +4417,7 @@ def _seed_guest_chat_bubble_defaults() -> None:
 
 def _seed_guest_chat_settings_defaults() -> None:
     with get_cursor(commit=True) as cur:
-        cur.execute(
-            """
+        cur.execute("""
             INSERT INTO daftar_tamu_guest_chat_settings (
                 id,
                 chat_limit,
@@ -4426,8 +4445,7 @@ def _seed_guest_chat_settings_defaults() -> None:
                 NULL
             )
             ON CONFLICT (id) DO NOTHING
-            """
-        )
+            """)
 
 
 def _sanitize_guest_chat_links(raw_links: Any) -> List[Dict[str, Any]]:
@@ -4456,15 +4474,16 @@ def _sanitize_guest_chat_links(raw_links: Any) -> List[Dict[str, Any]]:
         )
         if len(cleaned) >= 12:
             break
-    cleaned.sort(key=lambda x: (int(x.get("sort_order") or 0), str(x.get("label") or "").lower()))
+    cleaned.sort(
+        key=lambda x: (int(x.get("sort_order") or 0), str(x.get("label") or "").lower())
+    )
     return cleaned
 
 
 def get_guest_chat_settings() -> Dict[str, Any]:
     _ensure_guest_chat_bubble_tables()
     with get_cursor() as cur:
-        cur.execute(
-            """
+        cur.execute("""
             SELECT
                 id,
                 chat_limit,
@@ -4481,8 +4500,7 @@ def get_guest_chat_settings() -> Dict[str, Any]:
             FROM daftar_tamu_guest_chat_settings
             WHERE id = 1
             LIMIT 1
-            """
-        )
+            """)
         row = dict(cur.fetchone() or {})
 
     if not row:
@@ -4502,11 +4520,15 @@ def get_guest_chat_settings() -> Dict[str, Any]:
         }
     row["chat_limit"] = max(1, min(int(row.get("chat_limit") or 2), 50))
     row["limit_reached_message"] = (row.get("limit_reached_message") or "").strip()
-    row["limit_reached_media_type"] = _normalize_guest_chat_media_type(row.get("limit_reached_media_type"))
+    row["limit_reached_media_type"] = _normalize_guest_chat_media_type(
+        row.get("limit_reached_media_type")
+    )
     row["limit_reached_media_loop"] = bool(row.get("limit_reached_media_loop"))
     row["limit_reached_media_autoplay"] = bool(row.get("limit_reached_media_autoplay"))
     row["limit_reached_video_muted"] = bool(row.get("limit_reached_video_muted"))
-    row["limit_reached_links"] = _sanitize_guest_chat_links(row.get("limit_reached_links"))
+    row["limit_reached_links"] = _sanitize_guest_chat_links(
+        row.get("limit_reached_links")
+    )
     if row["limit_reached_media_type"] != "video":
         row["limit_reached_video_muted"] = False
     return row
@@ -4644,8 +4666,12 @@ def list_guest_chat_bubbles(
             return []
 
         for bubble in bubbles:
-            bubble["media_type"] = _normalize_guest_chat_media_type(bubble.get("media_type"))
-            bubble["direct_links"] = _sanitize_guest_chat_links(bubble.get("direct_links"))
+            bubble["media_type"] = _normalize_guest_chat_media_type(
+                bubble.get("media_type")
+            )
+            bubble["direct_links"] = _sanitize_guest_chat_links(
+                bubble.get("direct_links")
+            )
             bubble["media_loop"] = bool(bubble.get("media_loop"))
             bubble["media_autoplay"] = bool(bubble.get("media_autoplay"))
             bubble["video_muted"] = bool(bubble.get("video_muted"))
@@ -4693,7 +4719,9 @@ def list_guest_chat_bubbles(
     return bubbles
 
 
-def get_guest_chat_bubble(*, bubble_id: int, with_questions: bool = True) -> Optional[Dict[str, Any]]:
+def get_guest_chat_bubble(
+    *, bubble_id: int, with_questions: bool = True
+) -> Optional[Dict[str, Any]]:
     rows = list_guest_chat_bubbles(active_only=None, with_questions=with_questions)
     for row in rows:
         if int(row.get("id") or 0) == int(bubble_id):
@@ -4736,7 +4764,9 @@ def create_guest_chat_bubble(
     elif safe_media_type != "video":
         safe_video_muted = False
     if not text and safe_media_type == "none" and not safe_direct_links:
-        raise ValueError("Isi minimal salah satu: teks bubble, media, atau direct link.")
+        raise ValueError(
+            "Isi minimal salah satu: teks bubble, media, atau direct link."
+        )
 
     with get_cursor(commit=True) as cur:
         cur.execute(
@@ -4812,7 +4842,9 @@ def update_guest_chat_bubble(
     elif safe_media_type != "video":
         safe_video_muted = False
     if not text and safe_media_type == "none" and not safe_direct_links:
-        raise ValueError("Isi minimal salah satu: teks bubble, media, atau direct link.")
+        raise ValueError(
+            "Isi minimal salah satu: teks bubble, media, atau direct link."
+        )
 
     with get_cursor(commit=True) as cur:
         cur.execute(
@@ -4860,7 +4892,9 @@ def delete_guest_chat_bubble(*, bubble_id: int) -> bool:
         return cur.rowcount > 0
 
 
-def count_guest_chat_quick_questions_by_bubble(*, bubble_ids: List[int]) -> Dict[int, int]:
+def count_guest_chat_quick_questions_by_bubble(
+    *, bubble_ids: List[int]
+) -> Dict[int, int]:
     _ensure_guest_chat_bubble_tables()
     safe_ids: List[int] = []
     for raw_id in bubble_ids or []:
@@ -5222,7 +5256,12 @@ def upsert_guestbook_ux_metrics(
                 updated_at = NOW()
             RETURNING id, user_id, session_key, page_path, payload, created_at, updated_at
             """,
-            [int(user_id), safe_session, (page_path or "").strip() or None, json.dumps(payload or {})],
+            [
+                int(user_id),
+                safe_session,
+                (page_path or "").strip() or None,
+                json.dumps(payload or {}),
+            ],
         )
         row = cur.fetchone()
     return dict(row) if row else {}

@@ -1,0 +1,177 @@
+{% extends "laporan/base_laporan.html" %}
+{% from "shared/_countdown.html" import countdown_css, countdown_js %}
+{% set page_title = "Laporan Staff" %}
+
+{% block head_extra %}
+<style>
+    .laporan-card {
+        border: 1.5px solid var(--border-soft);
+        border-radius: 16px;
+        background: var(--bg-surface);
+        padding: 1.25rem 1.5rem;
+        transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+        text-decoration: none;
+        color: inherit;
+        display: block;
+    }
+    .laporan-card:hover:not(.is-disabled) {
+        border-color: var(--accent);
+        box-shadow: 0 4px 20px rgba(13,110,253,0.08);
+        transform: translateY(-2px);
+        color: inherit;
+    }
+    .laporan-card.is-disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+    .form-status-badge {
+        font-size: 0.72rem;
+        font-weight: 600;
+        padding: 4px 12px;
+        border-radius: 50px;
+    }
+    .laporan-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: rgba(25,135,84,0.1);
+        color: #198754;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        flex-shrink: 0;
+    }
+    .laporan-icon.submitted { background: rgba(25,135,84,0.1); color: #198754; }
+    .laporan-icon.expired { background: rgba(108,117,125,0.1); color: #6c757d; }
+    .laporan-icon.paused { background: rgba(245,158,11,0.12); color: #b45309; }
+</style>
+{{ countdown_css() }}
+{% endblock %}
+
+{% block portal_content %}
+<section class="mb-4">
+    <div class="card portal-hero border-0 shadow-sm">
+        <div class="card-body">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+                <div>
+                    <h1 class="h3 fw-bold page-title mb-1">
+                        <i class="bi bi-person-badge me-2"></i>Laporan Staff
+                    </h1>
+                    <p class="page-subtitle mb-0">Form laporan yang ditujukan untuk Anda</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% if not forms %}
+<div class="text-center py-5">
+    <div class="mb-3" style="font-size:3rem; opacity:0.3;"><i class="bi bi-inbox"></i></div>
+    <p class="text-muted">Belum ada form laporan yang tersedia untuk Anda saat ini.</p>
+</div>
+{% else %}
+<section class="row g-3">
+    {% for f in forms %}
+    {% set already_submitted = f.already_submitted %}
+    {% set can_fill = f.can_fill %}
+    <div class="col-12 col-md-6">
+        {% if can_fill %}
+        <a href="{{ url_for('laporan.staff_laporan_fill', form_id=f.id) }}"
+            class="laporan-card">
+        {% else %}
+        <div class="laporan-card is-disabled">
+        {% endif %}
+            <div class="d-flex align-items-start gap-3">
+                <div class="laporan-icon {% if f.is_paused %}paused{% elif already_submitted %}submitted{% elif f.is_expired %}expired{% endif %}">
+                    <i class="bi bi-file-earmark-text"></i>
+                </div>
+                <div class="flex-grow-1 min-width-0">
+                    <div class="d-flex align-items-start justify-content-between gap-2 mb-1">
+                        <h2 class="h6 fw-bold mb-0">{{ f.title }}</h2>
+                        {% if f.is_paused %}
+                        <span class="form-status-badge bg-warning-subtle text-warning">
+                            <i class="bi bi-pause-circle me-1"></i>Dipause
+                        </span>
+                        {% elif f.repeat_closed %}
+                        <span class="form-status-badge bg-secondary-subtle text-secondary">
+                            <i class="bi bi-calendar-x me-1"></i>Periode Berakhir
+                        </span>
+                        {% elif already_submitted and f.repeat_policy in ('daily', 'weekly', 'monthly') %}
+                        <span class="form-status-badge bg-success-subtle text-success">
+                            <i class="bi bi-check-circle-fill me-1"></i>Periode Ini Dikirim
+                        </span>
+                        {% elif already_submitted and f.repeat_policy == 'once' %}
+                        <span class="form-status-badge bg-success-subtle text-success">
+                            <i class="bi bi-check-circle-fill me-1"></i>Sudah Dikirim
+                        </span>
+                        {% elif f.is_expired and not f.allow_late %}
+                        <span class="form-status-badge bg-secondary-subtle text-secondary">
+                            <i class="bi bi-clock me-1"></i>Berakhir
+                        </span>
+                        {% elif f.is_expired and f.allow_late %}
+                        <span class="form-status-badge bg-warning-subtle text-warning">
+                            <i class="bi bi-exclamation-triangle me-1"></i>Terlambat (Dapat Diisi)
+                        </span>
+                        {% else %}
+                        <span class="form-status-badge bg-primary-subtle text-primary">
+                            <i class="bi bi-pencil me-1"></i>Belum Diisi
+                        </span>
+                        {% endif %}
+                    </div>
+                    {% if f.description %}
+                    <p class="text-muted small mb-2" style="line-height:1.4;">{{ f.description | truncate(120) }}</p>
+                    {% endif %}
+                    <div class="d-flex flex-wrap gap-2 align-items-center">
+                        {% if f.deadline_str %}
+                        <span class="text-muted small">
+                            <i class="bi bi-calendar-event me-1"></i>Deadline: {{ f.deadline_str }}
+                        </span>
+                        {% endif %}
+                        {% if f.deadline_iso %}
+                        <span class="deadline-countdown small is-hidden" data-deadline="{{ f.deadline_iso }}">
+                            <i class="bi bi-hourglass-split me-1"></i><span class="deadline-countdown-text"></span>
+                        </span>
+                        {% endif %}
+                        <span class="text-muted small">
+                            <i class="bi bi-arrow-repeat me-1"></i>{{ f.repeat_policy_label }}
+                        </span>
+                        {% if f.current_period_label %}
+                        <span class="text-muted small">
+                            <i class="bi bi-calendar-week me-1"></i>Periode: {{ f.current_period_label }}
+                        </span>
+                        {% endif %}
+                        <span class="text-muted small">
+                            {% if f.is_mandatory %}
+                            <span class="badge bg-danger-subtle text-danger"><i class="bi bi-exclamation-circle me-1"></i>Wajib</span>
+                            {% else %}
+                            <span class="badge bg-secondary-subtle text-secondary"><i class="bi bi-info-circle me-1"></i>Opsional</span>
+                            {% endif %}
+                        </span>
+                        {% if f.repeat_until_str %}
+                        <span class="text-muted small">
+                            <i class="bi bi-calendar-check me-1"></i>Berlaku sampai {{ f.repeat_until_str }}
+                        </span>
+                        {% endif %}
+                        {% if f.submission_count > 0 %}
+                        <span class="text-muted small">
+                            <i class="bi bi-send-check me-1"></i>{{ f.submission_count }}x dikirim
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% if can_fill %}
+        </a>
+        {% else %}
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+</section>
+{% endif %}
+{% endblock %}
+
+{% block portal_scripts %}
+{{ countdown_js() }}
+{% endblock %}

@@ -2,6 +2,7 @@ import time
 from typing import List, Optional
 
 from db import save_chat
+from reporting_flags import teacher_mode_enabled
 from responses import (
     extract_grade_hint,
     extract_subject_hint,
@@ -14,7 +15,6 @@ from responses import (
     is_teacher_stop,
     pick_question,
 )
-from reporting_flags import teacher_mode_enabled
 from utils import send_typing_once
 
 
@@ -87,9 +87,7 @@ async def handle_teacher(
         return True
 
     if not teacher_session and is_teacher_next(normalized_input):
-        reminder = (
-            "Belum ada sesi guru yang aktif. Ketik 'kasih soal' atau 'mode guru' dulu ya."
-        )
+        reminder = "Belum ada sesi guru yang aktif. Ketik 'kasih soal' atau 'mode guru' dulu ya."
         await send_typing_once(context.bot, update.effective_chat.id, delay=0.2)
         await reply_message.reply_text(reminder)
         save_chat(user_id, "ASKA", reminder, role="aska", topic=topic)
@@ -100,7 +98,9 @@ async def handle_teacher(
         grade_hint_override = extract_grade_hint(raw_input)
         if grade_hint_override:
             teacher_session["grade_hint"] = grade_hint_override
-        subject_hint_override = extract_subject_hint(raw_input) or teacher_session.get("subject_hint")
+        subject_hint_override = extract_subject_hint(raw_input) or teacher_session.get(
+            "subject_hint"
+        )
         question = pick_question(
             teacher_session.get("grade_hint"),
             subject_hint_override,
@@ -121,7 +121,9 @@ async def handle_teacher(
 
     if teacher_session and teacher_session.get("question"):
         question = teacher_session["question"]
-        conversation: List[dict[str, str]] = teacher_session.setdefault("conversation", [])
+        conversation: List[dict[str, str]] = teacher_session.setdefault(
+            "conversation", []
+        )
 
         if is_teacher_discussion_request(raw_input):
             response_text = generate_discussion_reply(question, conversation, raw_input)
@@ -143,7 +145,11 @@ async def handle_teacher(
         conversation.append({"role": "assistant", "content": feedback})
 
         if correct:
-            next_question = pick_question(teacher_session.get("grade_hint"), teacher_session.get("subject_hint"), raw_input)
+            next_question = pick_question(
+                teacher_session.get("grade_hint"),
+                teacher_session.get("subject_hint"),
+                raw_input,
+            )
             teacher_session["question"] = next_question
             teacher_session["attempt"] = 1
             subject_hint = teacher_session.get("subject_hint")

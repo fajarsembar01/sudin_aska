@@ -381,12 +381,47 @@
 
         {# Upload Gambar (khusus: JPG, PNG, WEBP, GIF + auto-kompres) #}
         {% elif field.field_type == 'upload_gambar' %}
-        <div class="file-drop-zone" onclick="document.getElementById('file_{{ field.id }}').click()"
+        {% set img_src = field.options_json.source if field.options_json else 'any' %}
+        
+        {% if img_src == 'camera' %}
+        <div class="file-drop-zone" onclick="openCameraFor('file_cam_{{ field.id }}')"
+            id="dropzone_{{ field.id }}" style="border-color: #198754; background: rgba(25,135,84,0.03); cursor: pointer;">
+            <i class="bi bi-camera" style="color:#198754;"></i>
+            <p class="mb-1 fw-semibold">Ambil gambar langsung dari Kamera</p>
+            <p class="text-muted small mb-0">JPG, PNG, WEBP, GIF (maks. 10 MB) &bull; Gambar akan dikompres otomatis</p>
+        </div>
+        <input type="file" name="field_{{ field.id }}[]" id="file_cam_{{ field.id }}" class="d-none" multiple accept=".jpg,.jpeg,.png,.webp,.gif" capture="environment" onchange="showFilePreviews(this, '{{ field.id }}', 'image'); {% if field.required and not (existing and existing.files) %}syncReq_{{ field.id }}();{% endif %}" {% if field.required and not (existing and existing.files) %}required{% endif %}>
+        
+        {% elif img_src == 'gallery' %}
+        <div class="file-drop-zone" onclick="document.getElementById('file_gal_{{ field.id }}').click()"
             id="dropzone_{{ field.id }}" style="border-color: #198754; background: rgba(25,135,84,0.03);">
             <i class="bi bi-image" style="color:#198754;"></i>
             <p class="mb-1 fw-semibold">Klik atau seret gambar ke sini</p>
             <p class="text-muted small mb-0">JPG, PNG, WEBP, GIF (maks. 10 MB) &bull; Gambar akan dikompres otomatis</p>
         </div>
+        <input type="file" name="field_{{ field.id }}[]" id="file_gal_{{ field.id }}" class="d-none" multiple accept=".jpg,.jpeg,.png,.webp,.gif" onchange="showFilePreviews(this, '{{ field.id }}', 'image'); {% if field.required and not (existing and existing.files) %}syncReq_{{ field.id }}();{% endif %}" {% if field.required and not (existing and existing.files) %}required{% endif %}>
+        
+        {% else %}
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-outline-success flex-fill p-3 d-flex flex-column align-items-center gap-2"
+                onclick="openCameraFor('file_cam_{{ field.id }}')"
+                style="border-radius: 12px; border-width: 2px; border-style: dashed; background: rgba(25,135,84,0.03);">
+                <i class="bi bi-camera fs-3"></i>
+                <span class="fw-semibold">Ambil Kamera</span>
+            </button>
+            <button type="button" class="btn btn-outline-primary flex-fill p-3 d-flex flex-column align-items-center gap-2"
+                onclick="document.getElementById('file_gal_{{ field.id }}').click()"
+                style="border-radius: 12px; border-width: 2px; border-style: dashed; background: rgba(13,110,253,0.03);">
+                <i class="bi bi-image fs-3"></i>
+                <span class="fw-semibold">Pilih Galeri</span>
+            </button>
+        </div>
+        <p class="text-muted small mb-0 mt-2 text-center">JPG, PNG, WEBP, GIF (maks. 10 MB) &bull; Gambar akan dikompres otomatis</p>
+        
+        <input type="file" name="field_{{ field.id }}[]" id="file_cam_{{ field.id }}" class="d-none" multiple accept=".jpg,.jpeg,.png,.webp,.gif" capture="environment" onchange="document.getElementById('file_gal_{{ field.id }}').value=''; showFilePreviews(this, '{{ field.id }}', 'image'); {% if field.required and not (existing and existing.files) %}syncReq_{{ field.id }}();{% endif %}" {% if field.required and not (existing and existing.files) %}required{% endif %}>
+        <input type="file" name="field_{{ field.id }}[]" id="file_gal_{{ field.id }}" class="d-none" multiple accept=".jpg,.jpeg,.png,.webp,.gif" onchange="document.getElementById('file_cam_{{ field.id }}').value=''; showFilePreviews(this, '{{ field.id }}', 'image'); {% if field.required and not (existing and existing.files) %}syncReq_{{ field.id }}();{% endif %}" {% if field.required and not (existing and existing.files) %}required{% endif %}>
+        {% endif %}
+
         {% if existing and existing.files %}
         <div class="d-flex flex-wrap gap-2 mt-2" id="existing_imgs_{{ field.id }}">
             {% for f in existing.files %}
@@ -400,12 +435,19 @@
         </div>
         <p class="text-muted small mt-2 mb-0">Upload gambar baru hanya jika ingin mengganti gambar lama.</p>
         {% endif %}
-        <input type="file" name="field_{{ field.id }}[]" id="file_{{ field.id }}"
-            class="d-none" multiple
-            accept=".jpg,.jpeg,.png,.webp,.gif"
-            {% if field.required and not (existing and existing.files) %}required{% endif %}
-            onchange="showFilePreviews(this, '{{ field.id }}', 'image')">
         <div class="file-preview-list" id="preview_{{ field.id }}"></div>
+        
+        {% if field.required and not (existing and existing.files) %}
+        <script>
+            function syncReq_{{ field.id }}() {
+                var c = document.getElementById('file_cam_{{ field.id }}');
+                var g = document.getElementById('file_gal_{{ field.id }}');
+                var hasFile = (c && c.files.length > 0) || (g && g.files.length > 0);
+                if(c) c.required = !hasFile;
+                if(g) g.required = !hasFile;
+            }
+        </script>
+        {% endif %}
 
         {# Date #}
         {% elif field.field_type == 'date' %}
@@ -476,6 +518,31 @@
     </div>
     {% endif %}
 </form>
+
+<!-- Modal WebRTC Camera -->
+<div class="modal fade" id="cameraModal" tabindex="-1" aria-labelledby="cameraModalLabel" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cameraModalLabel"><i class="bi bi-camera"></i> Ambil Foto Langsung</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" id="closeCameraBtn"></button>
+            </div>
+            <div class="modal-body bg-dark p-0 d-flex justify-content-center align-items-center" style="min-height: 300px; position: relative; overflow: hidden;">
+                <video id="cameraVideo" autoplay playsinline style="width: 100%; max-height: 60vh; object-fit: cover;"></video>
+                <canvas id="cameraCanvas" style="display: none;"></canvas>
+                <div id="cameraLoading" class="text-white" style="position: absolute;">Memuat kamera...</div>
+            </div>
+            <div class="modal-footer d-flex justify-content-between">
+                <button type="button" class="btn btn-outline-secondary" id="switchCameraBtn">
+                    <i class="bi bi-arrow-repeat"></i> Balik Kamera
+                </button>
+                <button type="button" class="btn btn-success px-4" id="captureCameraBtn">
+                    <i class="bi bi-camera-fill"></i> Jepret
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block portal_scripts %}
@@ -596,9 +663,13 @@ document.querySelectorAll('.file-drop-zone').forEach(function(zone) {
         e.preventDefault();
         zone.classList.remove('drag-over');
         const fieldId = zone.id.replace('dropzone_', '');
-        const input = document.getElementById('file_' + fieldId);
-        input.files = e.dataTransfer.files;
-        showFilePreviews(input, fieldId);
+        let input = document.getElementById('file_' + fieldId);
+        if (!input) input = document.getElementById('file_gal_' + fieldId) || document.getElementById('file_cam_' + fieldId);
+        if (input) {
+            input.files = e.dataTransfer.files;
+            showFilePreviews(input, fieldId);
+            if (typeof window['syncReq_' + fieldId] === 'function') window['syncReq_' + fieldId]();
+        }
     });
 });
 
@@ -773,6 +844,101 @@ function _showPrevAnswerToast(periodLabel, filled, skipped) {
     setTimeout(function() {
         if (toast.parentNode) toast.remove();
     }, 7000);
+}
+</script>
+
+<script>
+// ── Fitur WebRTC Camera ──
+let currentCameraStream = null;
+let currentCameraFacingMode = 'environment';
+let currentCameraTargetInputId = null;
+
+const cameraModalEl = document.getElementById('cameraModal');
+const cameraVideo = document.getElementById('cameraVideo');
+const cameraCanvas = document.getElementById('cameraCanvas');
+const captureBtn = document.getElementById('captureCameraBtn');
+const switchBtn = document.getElementById('switchCameraBtn');
+const cameraLoading = document.getElementById('cameraLoading');
+let bsCameraModal = null;
+
+function stopCamera() {
+    if (currentCameraStream) {
+        currentCameraStream.getTracks().forEach(t => t.stop());
+        currentCameraStream = null;
+    }
+}
+
+async function startCamera(facingMode) {
+    stopCamera();
+    cameraLoading.style.display = 'block';
+    cameraLoading.innerHTML = 'Memuat kamera...';
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: facingMode }
+        });
+        currentCameraStream = stream;
+        cameraVideo.srcObject = stream;
+        cameraVideo.onloadedmetadata = () => {
+            cameraLoading.style.display = 'none';
+        };
+    } catch (err) {
+        console.error("Camera access error:", err);
+        cameraLoading.innerHTML = '<span class="text-danger small">Kamera tidak dapat diakses. Pastikan izin kamera diberikan.</span>';
+    }
+}
+
+function openCameraFor(inputId) {
+    currentCameraTargetInputId = inputId;
+    if (!bsCameraModal) {
+        bsCameraModal = new bootstrap.Modal(cameraModalEl);
+    }
+    bsCameraModal.show();
+    startCamera(currentCameraFacingMode);
+}
+
+if (cameraModalEl) {
+    cameraModalEl.addEventListener('hidden.bs.modal', function () {
+        stopCamera();
+    });
+}
+
+if (switchBtn) {
+    switchBtn.addEventListener('click', function() {
+        currentCameraFacingMode = currentCameraFacingMode === 'environment' ? 'user' : 'environment';
+        startCamera(currentCameraFacingMode);
+    });
+}
+
+if (captureBtn) {
+    captureBtn.addEventListener('click', function() {
+        if (!currentCameraStream) return;
+        
+        cameraCanvas.width = cameraVideo.videoWidth;
+        cameraCanvas.height = cameraVideo.videoHeight;
+        const ctx = cameraCanvas.getContext('2d');
+        ctx.drawImage(cameraVideo, 0, 0, cameraCanvas.width, cameraCanvas.height);
+        
+        cameraCanvas.toBlob(function(blob) {
+            if (!blob) return;
+            const file = new File([blob], "camera_" + Date.now() + ".jpg", { type: "image/jpeg" });
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(file);
+            
+            const input = document.getElementById(currentCameraTargetInputId);
+            if (input) {
+                input.files = dataTransfer.files;
+                const fieldId = currentCameraTargetInputId.replace('file_cam_', '');
+                const galInput = document.getElementById('file_gal_' + fieldId);
+                if (galInput) galInput.value = '';
+                
+                showFilePreviews(input, fieldId, 'image');
+                if (typeof window['syncReq_' + fieldId] === 'function') {
+                    window['syncReq_' + fieldId]();
+                }
+            }
+            if (bsCameraModal) bsCameraModal.hide();
+        }, 'image/jpeg', 0.85);
+    });
 }
 </script>
 {% endblock %}

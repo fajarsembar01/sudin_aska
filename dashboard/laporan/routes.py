@@ -1,4 +1,5 @@
 """Routes for the Laporan (Form Reports) system."""
+
 from __future__ import annotations
 
 import io
@@ -13,6 +14,7 @@ from zoneinfo import ZoneInfo
 
 try:
     from PIL import Image as _PilImage
+
     _PIL_AVAILABLE = True
 except ImportError:
     _PIL_AVAILABLE = False
@@ -32,41 +34,46 @@ from flask import (
 from psycopg2.errors import UniqueViolation
 
 from ..auth import current_user, role_required
+from ..db_access import get_cursor
 from ..portal.routes import _fetch_user_school
 from ..portal.routes import inject_permissions as portal_inject_permissions
 from ..schema import ensure_laporan_schema
 from ..db_access import get_cursor
 from ..queries import record_admin_action
 from .queries import (
-    list_all_forms,
+    can_school_access_form,
+    can_staff_access_form,
+    create_form,
+    create_submission,
+    delete_empty_submitted_submissions,
+    delete_form,
+    delete_submitted_submission,
+    export_form_xlsx,
+    export_no_submissions_xlsx,
+    fetch_laporan_kpi_schools,
     get_form,
     get_form_fields,
     get_form_target_school_ids,
+    get_form_target_schools,
+    get_last_submission_answers,
+    get_submission_with_answers,
+    list_all_forms,
+    list_all_schools_simple,
+    list_form_submissions,
     list_forms_for_school,
-    create_form,
-    update_form,
-    delete_form,
-    set_form_targets,
+    list_forms_for_staff,
+    list_school_submissions,
+    list_staff_submissions,
+    replace_answer_files,
     replace_form_fields,
+    save_answer,
+    save_file,
     school_has_submitted,
     school_has_submitted_for_period,
-    create_submission,
-    update_submission_status,
-    save_answer,
-    replace_answer_files,
-    save_file,
-    get_submission_with_answers,
-    delete_submitted_submission,
-    delete_empty_submitted_submissions,
-    list_school_submissions,
-    get_last_submission_answers,
-    list_form_submissions,
-    export_form_xlsx,
-    export_no_submissions_xlsx,
-    list_all_schools_simple,
-    fetch_laporan_kpi_schools,
-    can_school_access_form,
     set_form_paused,
+    set_form_targets,
+    update_form,
+    update_submission_status,
 )
 
 _LAPORAN_SCHEMA_READY = False
@@ -118,8 +125,12 @@ def inject_laporan_context():
     context["laporan_very_late_hours_value"] = _very_late_after_hours_value
     context["laporan_no_submission_hours_value"] = _no_submission_hours_value
     context["laporan_no_submission_minutes_value"] = _no_submission_minutes_value
-    context["laporan_selected_no_submission_jenjangs"] = _selected_no_submission_jenjangs
-    context["laporan_selected_no_submission_statuses"] = _selected_no_submission_statuses
+    context["laporan_selected_no_submission_jenjangs"] = (
+        _selected_no_submission_jenjangs
+    )
+    context["laporan_selected_no_submission_statuses"] = (
+        _selected_no_submission_statuses
+    )
     user = current_user() or {}
     if user.get("role") == "sekolah":
         try:
@@ -142,13 +153,14 @@ def ensure_laporan_schema_before_request() -> None:
         current_app.logger.exception("Failed to ensure laporan schema")
     return None
 
+
 JAKARTA_TZ = ZoneInfo("Asia/Jakarta")
 UPLOAD_FOLDER = Path(__file__).parent.parent.parent / "uploads" / "laporan"
 ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "webp", "pdf", "doc", "docx", "xls", "xlsx"}
 ALLOWED_DOC_EXTENSIONS = {"pdf", "doc", "docx", "xls", "xlsx"}
 ALLOWED_IMAGE_EXTENSIONS = {"jpg", "jpeg", "png", "webp", "gif"}
-IMAGE_COMPRESS_QUALITY = 75   # JPEG quality for compressed images (0-95)
-IMAGE_MAX_DIMENSION = 1920    # Max width or height in pixels
+IMAGE_COMPRESS_QUALITY = 75  # JPEG quality for compressed images (0-95)
+IMAGE_MAX_DIMENSION = 1920  # Max width or height in pixels
 CHOICE_FIELD_TYPES = {"radio", "checkbox", "dropdown"}
 FORMULA_OPERATORS = {"add", "subtract", "multiply", "divide"}
 FORMULA_SOURCE_TYPES = {"number", "rating", "formula"}
@@ -199,17 +211,23 @@ def _allowed_file(filename: str) -> bool:
 
 def _allowed_doc(filename: str) -> bool:
     """Hanya izinkan file dokumen (PDF, DOC, DOCX, XLS, XLSX)."""
-    return "." in filename and filename.rsplit(".", 1)[-1].lower() in ALLOWED_DOC_EXTENSIONS
+    return (
+        "." in filename
+        and filename.rsplit(".", 1)[-1].lower() in ALLOWED_DOC_EXTENSIONS
+    )
 
 
 def _allowed_image(filename: str) -> bool:
     """Hanya izinkan file gambar (JPG, PNG, WEBP, GIF)."""
-    return "." in filename and filename.rsplit(".", 1)[-1].lower() in ALLOWED_IMAGE_EXTENSIONS
+    return (
+        "." in filename
+        and filename.rsplit(".", 1)[-1].lower() in ALLOWED_IMAGE_EXTENSIONS
+    )
 
 
 def _compress_and_save_image(file_storage, save_path: Path) -> int:
     """Kompres gambar dan simpan ke disk. Mengembalikan ukuran file hasil kompresi.
-    
+
     Menggunakan Pillow untuk:
     - Mengubah ukuran gambar jika melebihi IMAGE_MAX_DIMENSION
     - Mengompresi ke JPEG dengan kualitas IMAGE_COMPRESS_QUALITY
@@ -243,9 +261,16 @@ def _compress_and_save_image(file_storage, save_path: Path) -> int:
         if ext in {"jpg", "jpeg"}:
             if img.mode != "RGB":
                 img = img.convert("RGB")
-            img.save(str(save_path), format="JPEG", quality=IMAGE_COMPRESS_QUALITY, optimize=True)
+            img.save(
+                str(save_path),
+                format="JPEG",
+                quality=IMAGE_COMPRESS_QUALITY,
+                optimize=True,
+            )
         elif ext == "webp":
-            img.save(str(save_path), format="WEBP", quality=IMAGE_COMPRESS_QUALITY, method=6)
+            img.save(
+                str(save_path), format="WEBP", quality=IMAGE_COMPRESS_QUALITY, method=6
+            )
         elif ext == "png":
             if has_alpha and img.mode != "RGBA":
                 img = img.convert("RGBA")
@@ -259,11 +284,18 @@ def _compress_and_save_image(file_storage, save_path: Path) -> int:
             # Fallback ke JPEG
             if img.mode != "RGB":
                 img = img.convert("RGB")
-            img.save(str(save_path), format="JPEG", quality=IMAGE_COMPRESS_QUALITY, optimize=True)
+            img.save(
+                str(save_path),
+                format="JPEG",
+                quality=IMAGE_COMPRESS_QUALITY,
+                optimize=True,
+            )
 
         return save_path.stat().st_size
     except Exception:
-        current_app.logger.exception("Gagal mengompresi gambar, menyimpan tanpa kompresi")
+        current_app.logger.exception(
+            "Gagal mengompresi gambar, menyimpan tanpa kompresi"
+        )
         file_storage.seek(0)
         file_storage.save(str(save_path))
         return save_path.stat().st_size
@@ -276,13 +308,17 @@ def _cleanup_submission_files(file_paths: list[str]) -> None:
             target_path = (UPLOAD_FOLDER / rel_path).resolve()
             target_path.relative_to(upload_root)
         except (OSError, ValueError):
-            current_app.logger.warning("Skipping unsafe laporan file cleanup path: %s", rel_path)
+            current_app.logger.warning(
+                "Skipping unsafe laporan file cleanup path: %s", rel_path
+            )
             continue
         try:
             if target_path.is_file():
                 target_path.unlink()
         except OSError:
-            current_app.logger.exception("Failed to delete laporan upload file: %s", target_path)
+            current_app.logger.exception(
+                "Failed to delete laporan upload file: %s", target_path
+            )
 
 
 def _parse_deadline(raw: str) -> Optional[datetime]:
@@ -376,9 +412,11 @@ def _late_minutes_from_submission(submission: dict) -> int:
             if policy in PERIODIC_REPEAT_POLICIES:
                 form_mock = {
                     "repeat_deadline_time": submission.get("form_repeat_deadline_time"),
-                    "repeat_deadline_day": submission.get("form_repeat_deadline_day")
+                    "repeat_deadline_day": submission.get("form_repeat_deadline_day"),
                 }
-                deadline = _period_deadline_at(policy, submitted_at_jkt.date(), form_mock)
+                deadline = _period_deadline_at(
+                    policy, submitted_at_jkt.date(), form_mock
+                )
             else:
                 deadline = _as_jakarta_datetime(submission.get("form_deadline_at"))
 
@@ -393,7 +431,9 @@ def _annotate_late_submission(submission: dict) -> None:
     late_minutes = _late_minutes_from_submission(submission)
     threshold = _very_late_after_minutes(submission)
     submission["late_minutes"] = late_minutes
-    submission["late_duration_label"] = _format_late_duration(late_minutes, cap_minutes=threshold)
+    submission["late_duration_label"] = _format_late_duration(
+        late_minutes, cap_minutes=threshold
+    )
     submission["is_very_late"] = bool(
         submission.get("is_late") and late_minutes > threshold
     )
@@ -466,7 +506,9 @@ def _parse_no_submission_after_minutes() -> Optional[int]:
     except ValueError:
         hours = 0
     try:
-        minutes = int((request.form.get("no_submission_after_minutes") or "0").strip() or 0)
+        minutes = int(
+            (request.form.get("no_submission_after_minutes") or "0").strip() or 0
+        )
     except ValueError:
         minutes = 0
     total = max(hours, 0) * 60 + min(max(minutes, 0), 59)
@@ -495,11 +537,19 @@ def _parse_no_submission_statuses() -> Optional[str]:
 
 
 def _available_jenjangs(schools: list[dict]) -> list[str]:
-    values = sorted({(school.get("jenjang") or "").strip() for school in schools if (school.get("jenjang") or "").strip()})
+    values = sorted(
+        {
+            (school.get("jenjang") or "").strip()
+            for school in schools
+            if (school.get("jenjang") or "").strip()
+        }
+    )
     return values or ["SD", "SMP"]
 
 
 def _school_subject_to_no_submission(form: dict, school: Optional[dict]) -> bool:
+    if not school:
+        return False
     selected_jenjangs = set(_selected_no_submission_jenjangs(form))
     if selected_jenjangs:
         if not (school and (school.get("jenjang") or "").strip() in selected_jenjangs):
@@ -512,8 +562,9 @@ def _school_subject_to_no_submission(form: dict, school: Optional[dict]) -> bool
     return True
 
 
-
 def _form_no_submission_cutoff(form: dict, now: datetime) -> Optional[datetime]:
+    if not form.get("is_mandatory", True):
+        return None
     after_minutes = _no_submission_after_minutes(form)
     if after_minutes is None:
         return None
@@ -523,7 +574,11 @@ def _form_no_submission_cutoff(form: dict, now: datetime) -> Optional[datetime]:
     return deadline + timedelta(minutes=after_minutes)
 
 
-def _form_no_submission_cutoff_for_submission(form: dict, submission: dict, now: datetime) -> Optional[datetime]:
+def _form_no_submission_cutoff_for_submission(
+    form: dict, submission: dict, now: datetime
+) -> Optional[datetime]:
+    if not form.get("is_mandatory", True):
+        return None
     after_minutes = _no_submission_after_minutes(form)
     if after_minutes is None:
         return None
@@ -538,7 +593,15 @@ def sync_no_submissions(form_id: int, now: Optional[datetime] = None) -> None:
         now = datetime.now(JAKARTA_TZ)
 
     form = get_form(form_id)
-    if not form or not form.get("is_active") or form.get("is_paused") or form.get("status") != "published":
+    if (
+        not form
+        or not form.get("is_active")
+        or form.get("is_paused")
+        or form.get("status") != "published"
+    ):
+        return
+
+    if not form.get("is_mandatory", True):
         return
 
     after_minutes = _no_submission_after_minutes(form)
@@ -562,11 +625,15 @@ def sync_no_submissions(form_id: int, now: Optional[datetime] = None) -> None:
         repeat_until_at = _as_jakarta_datetime(form.get("repeat_until_at"))
         curr_date = created_at.astimezone(JAKARTA_TZ).date()
         end_date = now.date()
-        
+
         limit_start_date = max(curr_date, (now - timedelta(days=90)).date())
-        
+
         while limit_start_date <= end_date:
-            ctx = _current_period_context(policy, datetime.combine(limit_start_date, time(12, 0), tzinfo=JAKARTA_TZ), form)
+            ctx = _current_period_context(
+                policy,
+                datetime.combine(limit_start_date, time(12, 0), tzinfo=JAKARTA_TZ),
+                form,
+            )
             if ctx.get("key") and ctx.get("deadline_at"):
                 if repeat_until_at and ctx["deadline_at"] > repeat_until_at:
                     pass
@@ -578,31 +645,11 @@ def sync_no_submissions(form_id: int, now: Optional[datetime] = None) -> None:
 
     if not closed_periods:
         return
+    schools = get_form_target_schools(form)
 
-    target_scope = form.get("target_scope") or "all"
-    target_jenjang = form.get("target_jenjang")
-    
-    schools = []
-    with get_cursor() as cur:
-        if target_scope == "all":
-            cur.execute("SELECT id, name, npsn, jenjang, status, metadata FROM portal_schools WHERE active=TRUE")
-            schools = [dict(r) for r in cur.fetchall()]
-        elif target_scope == "jenjang":
-            cur.execute("SELECT id, name, npsn, jenjang, status, metadata FROM portal_schools WHERE active=TRUE AND jenjang = %s", (target_jenjang,))
-            schools = [dict(r) for r in cur.fetchall()]
-        elif target_scope == "specific":
-            cur.execute(
-                """
-                SELECT sc.id, sc.name, sc.npsn, sc.jenjang, sc.status, sc.metadata 
-                FROM portal_schools sc
-                JOIN laporan_form_targets ft ON ft.school_id = sc.id
-                WHERE sc.active=TRUE AND ft.form_id = %s
-                """,
-                (form_id,),
-            )
-            schools = [dict(r) for r in cur.fetchall()]
-
-    eligible_school_ids = {s["id"] for s in schools if _school_subject_to_no_submission(form, s)}
+    eligible_school_ids = {
+        s["id"] for s in schools if _school_subject_to_no_submission(form, s)
+    }
     with get_cursor(commit=True) as cur:
         if eligible_school_ids:
             cur.execute(
@@ -610,7 +657,7 @@ def sync_no_submissions(form_id: int, now: Optional[datetime] = None) -> None:
                 DELETE FROM laporan_submissions 
                 WHERE form_id = %s AND status = 'no_submission' AND school_id NOT IN %s
                 """,
-                (form_id, tuple(eligible_school_ids))
+                (form_id, tuple(eligible_school_ids)),
             )
         else:
             cur.execute(
@@ -618,7 +665,7 @@ def sync_no_submissions(form_id: int, now: Optional[datetime] = None) -> None:
                 DELETE FROM laporan_submissions 
                 WHERE form_id = %s AND status = 'no_submission'
                 """,
-                (form_id,)
+                (form_id,),
             )
 
     existing_subs = {}  # (school_id, period_key) -> (sub_id, status)
@@ -628,14 +675,17 @@ def sync_no_submissions(form_id: int, now: Optional[datetime] = None) -> None:
             (form_id,),
         )
         for r in cur.fetchall():
-            existing_subs[(r["school_id"], r["repeat_period_key"])] = (r["id"], r["status"])
+            existing_subs[(r["school_id"], r["repeat_period_key"])] = (
+                r["id"],
+                r["status"],
+            )
 
     inserts = []
     updates = []
     for school in schools:
         if not _school_subject_to_no_submission(form, school):
             continue
-        
+
         for period_key, period_label in closed_periods.items():
             lookup_key = (school["id"], period_key)
             if lookup_key in existing_subs:
@@ -643,14 +693,16 @@ def sync_no_submissions(form_id: int, now: Optional[datetime] = None) -> None:
                 if status == "draft":
                     updates.append(sub_id)
             else:
-                inserts.append((form_id, school["id"], "no_submission", period_key, period_label))
+                inserts.append(
+                    (form_id, school["id"], "no_submission", period_key, period_label)
+                )
 
     if inserts or updates:
         with get_cursor(commit=True) as cur:
             if updates:
                 cur.execute(
                     "UPDATE laporan_submissions SET status = 'no_submission', updated_at = NOW() WHERE id = ANY(%s)",
-                    (updates,)
+                    (updates,),
                 )
             if inserts:
                 cur.executemany(
@@ -659,7 +711,7 @@ def sync_no_submissions(form_id: int, now: Optional[datetime] = None) -> None:
                         form_id, school_id, status, repeat_period_key, repeat_period_label, created_at, updated_at
                     ) VALUES (%s, %s, %s, %s, %s, NOW(), NOW())
                     """,
-                    inserts
+                    inserts,
                 )
 
 
@@ -696,7 +748,9 @@ def _share_repeat_label(form: dict) -> str:
 def _build_form_share_caption(form: dict, now: datetime) -> str:
     deadline = _form_deadline_for_request(form, now)
     no_submission_cutoff = _form_no_submission_cutoff(form, now)
-    fill_url = url_for("laporan.sekolah_laporan_fill", form_id=form["id"], _external=True)
+    fill_url = url_for(
+        "laporan.sekolah_laporan_fill", form_id=form["id"], _external=True
+    )
     lines = [
         "Yth. Bapak/Ibu Operator Sekolah,",
         "",
@@ -716,7 +770,9 @@ def _build_form_share_caption(form: dict, now: datetime) -> str:
     if deadline:
         lines.append(f"Deadline: {_format_datetime_id(deadline)} WIB")
     if no_submission_cutoff:
-        lines.append(f"Batas tidak mengumpulkan: {_format_datetime_id(no_submission_cutoff)} WIB")
+        lines.append(
+            f"Batas tidak mengumpulkan: {_format_datetime_id(no_submission_cutoff)} WIB"
+        )
     lines.extend(
         [
             "",
@@ -751,7 +807,9 @@ def _format_time_value(value) -> Optional[str]:
     return value.strftime("%H:%M")
 
 
-def _parse_repeat_policy(raw: Optional[str], allow_multiple_raw: Optional[str] = None) -> str:
+def _parse_repeat_policy(
+    raw: Optional[str], allow_multiple_raw: Optional[str] = None
+) -> str:
     policy = (raw or "").strip()
     if policy in REPEAT_POLICIES:
         return policy
@@ -776,7 +834,9 @@ def _repeat_policy_label(policy: str) -> str:
     return labels.get(policy, labels["once"])
 
 
-def _period_deadline_at(policy: str, current: date, form: Optional[dict]) -> Optional[datetime]:
+def _period_deadline_at(
+    policy: str, current: date, form: Optional[dict]
+) -> Optional[datetime]:
     if not form or policy not in PERIODIC_REPEAT_POLICIES:
         return None
 
@@ -807,7 +867,9 @@ def _period_deadline_at(policy: str, current: date, form: Optional[dict]) -> Opt
     return datetime.combine(deadline_date, deadline_time, tzinfo=JAKARTA_TZ)
 
 
-def _current_period_context(policy: str, now: datetime, form: Optional[dict] = None) -> dict:
+def _current_period_context(
+    policy: str, now: datetime, form: Optional[dict] = None
+) -> dict:
     current = now.date()
     if policy == "daily":
         return {
@@ -837,7 +899,11 @@ def _annotate_repeat_form(form: dict, now: datetime) -> dict:
     policy = _form_repeat_policy(form)
     repeat_until_at = _as_jakarta_datetime(form.get("repeat_until_at"))
     period = _current_period_context(policy, now, form)
-    repeat_closed = policy in PERIODIC_REPEAT_POLICIES and repeat_until_at is not None and repeat_until_at < now
+    repeat_closed = (
+        policy in PERIODIC_REPEAT_POLICIES
+        and repeat_until_at is not None
+        and repeat_until_at < now
+    )
     period_deadline_at = _as_jakarta_datetime(period.get("deadline_at"))
 
     form["repeat_policy"] = policy
@@ -847,8 +913,12 @@ def _annotate_repeat_form(form: dict, now: datetime) -> dict:
     form["current_period_label"] = period.get("label")
     form["period_deadline_at"] = period_deadline_at
     form["period_deadline_str"] = _format_datetime_id(period_deadline_at)
-    form["period_is_expired"] = period_deadline_at is not None and period_deadline_at < now
-    form["repeat_deadline_time_str"] = _format_time_value(form.get("repeat_deadline_time"))
+    form["period_is_expired"] = (
+        period_deadline_at is not None and period_deadline_at < now
+    )
+    form["repeat_deadline_time_str"] = _format_time_value(
+        form.get("repeat_deadline_time")
+    )
     form["repeat_until_str"] = _format_date_id_from_datetime(repeat_until_at)
     form["repeat_closed"] = repeat_closed
     return period
@@ -862,7 +932,9 @@ def _build_repeat_state(form: dict, school_id: int, now: datetime) -> dict:
         already_submitted = school_has_submitted(form["id"], school_id)
         blocked_by_submission = False
     elif policy in PERIODIC_REPEAT_POLICIES:
-        already_submitted = school_has_submitted_for_period(form["id"], school_id, period.get("key") or "")
+        already_submitted = school_has_submitted_for_period(
+            form["id"], school_id, period.get("key") or ""
+        )
         blocked_by_submission = already_submitted
     else:
         already_submitted = school_has_submitted(form["id"], school_id)
@@ -877,7 +949,9 @@ def _build_repeat_state(form: dict, school_id: int, now: datetime) -> dict:
     }
 
 
-def _parse_repeat_settings_from_request() -> tuple[str, bool, Optional[datetime], Optional[time], Optional[int]]:
+def _parse_repeat_settings_from_request() -> (
+    tuple[str, bool, Optional[datetime], Optional[time], Optional[int]]
+):
     repeat_policy = _parse_repeat_policy(
         request.form.get("repeat_policy"),
         request.form.get("allow_multiple"),
@@ -888,14 +962,27 @@ def _parse_repeat_settings_from_request() -> tuple[str, bool, Optional[datetime]
     repeat_deadline_day = None
     if repeat_policy in PERIODIC_REPEAT_POLICIES:
         repeat_until_at = _parse_repeat_until_date(
-            request.form.get("repeat_until_date") or request.form.get("repeat_until_at", "")
+            request.form.get("repeat_until_date")
+            or request.form.get("repeat_until_at", "")
         )
-        repeat_deadline_time = _parse_time_value(request.form.get("repeat_deadline_time"))
+        repeat_deadline_time = _parse_time_value(
+            request.form.get("repeat_deadline_time")
+        )
         if repeat_policy == "weekly":
-            repeat_deadline_day = _parse_int_value(request.form.get("repeat_deadline_weekday"), 0, 6)
+            repeat_deadline_day = _parse_int_value(
+                request.form.get("repeat_deadline_weekday"), 0, 6
+            )
         elif repeat_policy == "monthly":
-            repeat_deadline_day = _parse_int_value(request.form.get("repeat_deadline_month_day"), 1, 31)
-    return repeat_policy, allow_multiple, repeat_until_at, repeat_deadline_time, repeat_deadline_day
+            repeat_deadline_day = _parse_int_value(
+                request.form.get("repeat_deadline_month_day"), 1, 31
+            )
+    return (
+        repeat_policy,
+        allow_multiple,
+        repeat_until_at,
+        repeat_deadline_time,
+        repeat_deadline_day,
+    )
 
 
 def _form_deadline_for_request(form: dict, now: datetime) -> Optional[datetime]:
@@ -907,7 +994,9 @@ def _form_deadline_for_request(form: dict, now: datetime) -> Optional[datetime]:
     return _as_jakarta_datetime(form.get("deadline_at"))
 
 
-def _form_deadline_for_submission(form: dict, submission: dict, now: datetime) -> Optional[datetime]:
+def _form_deadline_for_submission(
+    form: dict, submission: dict, now: datetime
+) -> Optional[datetime]:
     policy = _form_repeat_policy(form)
     if policy not in PERIODIC_REPEAT_POLICIES:
         return _as_jakarta_datetime(form.get("deadline_at"))
@@ -941,7 +1030,9 @@ def _answers_by_field_id(submission: dict) -> dict[int, dict]:
     }
 
 
-def _submission_edit_state(form: Optional[dict], submission: dict, school: Optional[dict], now: datetime) -> dict:
+def _submission_edit_state(
+    form: Optional[dict], submission: dict, school: Optional[dict], now: datetime
+) -> dict:
     state = {
         "can_edit": False,
         "edit_after_deadline": False,
@@ -961,7 +1052,9 @@ def _submission_edit_state(form: Optional[dict], submission: dict, school: Optio
     if form.get("is_paused"):
         state["edit_disabled_reason"] = "Form sedang dipause oleh admin."
         return state
-    if school and not can_school_access_form(form["id"], school["id"], school.get("jenjang")):
+    if school and not can_school_access_form(
+        form["id"], school["id"], school.get("jenjang")
+    ):
         state["edit_disabled_reason"] = "Sekolah tidak memiliki akses ke form ini."
         return state
 
@@ -1006,23 +1099,37 @@ def _repeat_deadline_errors(
 
 def _field_publish_errors(fields: list[dict]) -> list[str]:
     errors = []
-    if not any(field.get("field_type") not in DISPLAY_ONLY_FIELD_TYPES for field in fields):
-        errors.append("Form wajib memiliki minimal satu pertanyaan yang bisa dijawab sekolah.")
+    if not any(
+        field.get("field_type") not in DISPLAY_ONLY_FIELD_TYPES for field in fields
+    ):
+        errors.append(
+            "Form wajib memiliki minimal satu pertanyaan yang bisa dijawab sekolah."
+        )
     for field in fields:
         if field.get("field_type") == "link" and field.get("required"):
-            options = field.get("options_json") if isinstance(field.get("options_json"), dict) else {}
+            options = (
+                field.get("options_json")
+                if isinstance(field.get("options_json"), dict)
+                else {}
+            )
             if not options.get("url"):
-                errors.append(f"Link wajib '{field.get('label')}' harus memiliki URL yang valid.")
+                errors.append(
+                    f"Link wajib '{field.get('label')}' harus memiliki URL yang valid."
+                )
     return errors
 
 
 def _normalize_field_key(raw: str) -> str:
-    clean = "".join(ch for ch in (raw or "").strip() if ch.isalnum() or ch in {"_", "-"})
+    clean = "".join(
+        ch for ch in (raw or "").strip() if ch.isalnum() or ch in {"_", "-"}
+    )
     return clean[:80] if clean else f"f_{uuid.uuid4().hex[:12]}"
 
 
 def _normalize_field_ref(raw: str) -> str:
-    clean = "".join(ch for ch in (raw or "").strip() if ch.isalnum() or ch in {"_", "-"})
+    clean = "".join(
+        ch for ch in (raw or "").strip() if ch.isalnum() or ch in {"_", "-"}
+    )
     return clean[:80]
 
 
@@ -1043,7 +1150,7 @@ def _parse_fields_from_form() -> list[dict]:
     fields = []
     field_ids = request.form.getlist("field_id[]")
     used_keys: set[str] = set()
-    
+
     for i, fid in enumerate(field_ids):
         field_key = _normalize_field_key(fid)
         if field_key in used_keys:
@@ -1057,11 +1164,11 @@ def _parse_fields_from_form() -> list[dict]:
         if ftype not in ALLOWED_FIELD_TYPES:
             ftype = "text"
         # Alias: 'file' lama tetap didukung, tipe baru diproses normal
-        
+
         # Checkbox for required: since it's a checkbox, if it exists in form it's 'on', else absent.
         # But for robustness we can check if it exists in a getlist or simple get.
         required = request.form.get(f"field_required_{fid}") == "on"
-        
+
         options = None
         if ftype in CHOICE_FIELD_TYPES:
             options_raw = request.form.getlist(f"field_options_{fid}[]")
@@ -1072,18 +1179,27 @@ def _parse_fields_from_form() -> list[dict]:
             if operator not in FORMULA_OPERATORS:
                 operator = "subtract"
             options = {
-                "left_key": _normalize_field_ref(request.form.get(f"field_formula_left_{fid}", "")),
+                "left_key": _normalize_field_ref(
+                    request.form.get(f"field_formula_left_{fid}", "")
+                ),
                 "operator": operator,
-                "right_key": _normalize_field_ref(request.form.get(f"field_formula_right_{fid}", "")),
+                "right_key": _normalize_field_ref(
+                    request.form.get(f"field_formula_right_{fid}", "")
+                ),
             }
         elif ftype == "link":
             options = {
-                "url": _normalize_link_url(request.form.get(f"field_link_url_{fid}", "")),
-                "button_text": request.form.get(f"field_link_text_{fid}", "").strip() or "Buka Link",
+                "url": _normalize_link_url(
+                    request.form.get(f"field_link_url_{fid}", "")
+                ),
+                "button_text": request.form.get(f"field_link_text_{fid}", "").strip()
+                or "Buka Link",
             }
+        elif ftype == "upload_gambar":
+            options = {"source": request.form.get(f"field_image_source_{fid}", "any")}
         elif ftype in DISPLAY_ONLY_FIELD_TYPES:
             required = False
-        
+
         fields.append(
             {
                 "field_key": field_key,
@@ -1116,7 +1232,9 @@ def _format_formula_number(value: float) -> str:
 
 
 def _calculate_formula_value(field: dict, values_by_key: dict[str, str]) -> str:
-    config = field.get("options_json") if isinstance(field.get("options_json"), dict) else {}
+    config = (
+        field.get("options_json") if isinstance(field.get("options_json"), dict) else {}
+    )
     left = _parse_number(values_by_key.get(config.get("left_key", "")))
     right = _parse_number(values_by_key.get(config.get("right_key", "")))
     operator = config.get("operator") or "subtract"
@@ -1143,7 +1261,11 @@ def _answer_values_for_analytics(field: dict, answer: Optional[dict]) -> list[st
         text = answer.get("answer_text") or ""
         return [v.strip() for v in text.split(",") if v.strip()]
     if ftype == "file":
-        return [f.get("original_name") or "" for f in answer.get("files") or [] if f.get("original_name")]
+        return [
+            f.get("original_name") or ""
+            for f in answer.get("files") or []
+            if f.get("original_name")
+        ]
     text = str(answer.get("answer_text") or "").strip()
     return [text] if text else []
 
@@ -1163,12 +1285,18 @@ def _build_laporan_analytics(fields: list[dict], submissions: list[dict]) -> lis
         samples = []
         file_count = 0
 
-        choices = field.get("options_json") if isinstance(field.get("options_json"), list) else []
+        choices = (
+            field.get("options_json")
+            if isinstance(field.get("options_json"), list)
+            else []
+        )
         for choice in choices:
             option_counts[str(choice)] = 0
 
         for submission in submissions:
-            answers_map = {a.get("field_id"): a for a in submission.get("answers") or []}
+            answers_map = {
+                a.get("field_id"): a for a in submission.get("answers") or []
+            }
             answer = answers_map.get(field.get("id"))
             values = _answer_values_for_analytics(field, answer)
             if values:
@@ -1191,21 +1319,45 @@ def _build_laporan_analytics(fields: list[dict], submissions: list[dict]) -> lis
                 "field": field,
                 "response_count": filled_count,
                 "empty_count": max(total_submissions - filled_count, 0),
-                "response_rate": round((filled_count / total_submissions) * 100) if total_submissions else 0,
+                "response_rate": (
+                    round((filled_count / total_submissions) * 100)
+                    if total_submissions
+                    else 0
+                ),
                 "option_counts": [
                     {
                         "label": label,
                         "count": count,
-                        "percent": round((count / choice_total) * 100) if choice_total else 0,
+                        "percent": (
+                            round((count / choice_total) * 100) if choice_total else 0
+                        ),
                     }
                     for label, count in option_counts.items()
                 ],
                 "numeric": {
                     "count": len(numeric_values),
-                    "avg": _format_formula_number(sum(numeric_values) / len(numeric_values)) if numeric_values else None,
-                    "min": _format_formula_number(min(numeric_values)) if numeric_values else None,
-                    "max": _format_formula_number(max(numeric_values)) if numeric_values else None,
-                    "sum": _format_formula_number(sum(numeric_values)) if numeric_values else None,
+                    "avg": (
+                        _format_formula_number(
+                            sum(numeric_values) / len(numeric_values)
+                        )
+                        if numeric_values
+                        else None
+                    ),
+                    "min": (
+                        _format_formula_number(min(numeric_values))
+                        if numeric_values
+                        else None
+                    ),
+                    "max": (
+                        _format_formula_number(max(numeric_values))
+                        if numeric_values
+                        else None
+                    ),
+                    "sum": (
+                        _format_formula_number(sum(numeric_values))
+                        if numeric_values
+                        else None
+                    ),
                 },
                 "file_count": file_count,
                 "samples": samples,
@@ -1219,10 +1371,769 @@ def _build_laporan_analytics(fields: list[dict], submissions: list[dict]) -> lis
 # ═══════════════════════════════════════════════════════
 
 
+@laporan_bp.route("/staff")
+@role_required("staff", "pengawas", "kasi", "operator", "coordinator", "admin")
+def staff_laporan_list() -> Response:
+    """Daftar form laporan yang ditujukan untuk staff."""
+    user = current_user()
+    if not user:
+        return redirect(url_for("portal.login"))
+    # Hanya izinkan role bukan sekolah & bukan admin (admin pakai halaman /admin)
+    if user.get("role") in ("sekolah",):
+        flash("Akses tidak diizinkan.", "danger")
+        return redirect(url_for("portal.index"))
+
+    forms = list_forms_for_staff(user["id"])
+    now = datetime.now(JAKARTA_TZ)
+
+    for f in forms:
+        _annotate_repeat_form(f, now)
+        dl = _form_deadline_for_request(f, now)
+        f["is_expired"] = bool(dl and dl < now)
+        f["deadline_str"] = _format_datetime_id(dl)
+        f["deadline_iso"] = dl.isoformat() if dl else None
+        # Cek apakah sudah submit (berdasarkan user, bukan school)
+        already_submitted = False
+        if f.get("repeat_policy") in PERIODIC_REPEAT_POLICIES:
+            period_ctx = _current_period_context(f["repeat_policy"], now, f)
+            period_key = period_ctx.get("key")
+            with get_cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT 1 FROM laporan_submissions s
+                    WHERE s.form_id = %s AND s.submitted_by = %s
+                      AND s.status = 'submitted'
+                      AND s.repeat_period_key = %s
+                    LIMIT 1
+                    """,
+                    (f["id"], user["id"], period_key),
+                )
+                already_submitted = cur.fetchone() is not None
+        else:
+            already_submitted = int(f.get("submission_count") or 0) > 0 and not f.get(
+                "allow_multiple"
+            )
+        f["already_submitted"] = already_submitted
+        f["can_fill"] = (
+            not f.get("is_paused")
+            and (not f["is_expired"] or f.get("allow_late"))
+            and not f.get("repeat_closed")
+            and not (already_submitted and f.get("repeat_policy") == "once")
+        )
+
+    return render_template(
+        "laporan/staff/list.html",
+        forms=forms,
+        now=now,
+    )
+
+
+@laporan_bp.route("/staff/<int:form_id>")
+@role_required("staff", "pengawas", "kasi", "operator", "coordinator", "admin")
+def staff_laporan_fill(form_id: int) -> Response:
+    """Halaman isi form laporan untuk staff."""
+    user = current_user()
+    if not user or user.get("role") in ("sekolah",):
+        flash("Akses tidak diizinkan.", "danger")
+        return redirect(url_for("portal.index"))
+
+    form = get_form(form_id)
+    if not form or not form.get("is_active"):
+        flash("Form tidak ditemukan atau sudah tidak aktif.", "danger")
+        return redirect(url_for("laporan.staff_laporan_list"))
+
+    if not can_staff_access_form(form_id):
+        flash("Form ini tidak ditujukan untuk staff.", "danger")
+        return redirect(url_for("laporan.staff_laporan_list"))
+
+    now = datetime.now(JAKARTA_TZ)
+    _annotate_repeat_form(form, now)
+    dl = _form_deadline_for_request(form, now)
+    form["deadline_str"] = _format_datetime_id(dl)
+    form["deadline_iso"] = dl.isoformat() if dl else None
+
+    if form.get("is_paused"):
+        flash("Form ini sedang dijeda sementara.", "warning")
+        return redirect(url_for("laporan.staff_laporan_list"))
+
+    fields = get_form_fields(form_id)
+    last_answers = get_last_submission_answers(form_id, submitted_by=user["id"])
+
+    already_submitted = False
+    period_ctx = {}
+    if form.get("repeat_policy") in PERIODIC_REPEAT_POLICIES:
+        period_ctx = _current_period_context(form["repeat_policy"], now, form)
+        period_key = period_ctx.get("key")
+        with get_cursor() as cur:
+            cur.execute(
+                """
+                SELECT 1 FROM laporan_submissions s
+                WHERE s.form_id = %s AND s.submitted_by = %s
+                  AND s.status = 'submitted'
+                  AND s.repeat_period_key = %s
+                LIMIT 1
+                """,
+                (form["id"], user["id"], period_key),
+            )
+            already_submitted = cur.fetchone() is not None
+    else:
+        already_submitted = int(form.get("submission_count") or 0) > 0 and not form.get(
+            "allow_multiple"
+        )
+
+    repeat_state = {
+        "already_submitted": already_submitted,
+        "repeat_closed": bool(form.get("repeat_closed")),
+        "blocked_by_submission": already_submitted
+        and form.get("repeat_policy") == "once",
+        "policy": form.get("repeat_policy"),
+        "period": period_ctx,
+    }
+
+    existing_answers = {}
+    if last_answers and last_answers.get("answers"):
+        existing_answers = last_answers["answers"]
+
+    staff_profile = {
+        "id": user["id"],
+        "name": user.get("full_name") or user.get("username") or "Staff",
+    }
+
+    return render_template(
+        "laporan/staff/fill.html",
+        form=form,
+        fields=fields,
+        school=None,
+        staff=staff_profile,
+        already_submitted=already_submitted,
+        repeat_state=repeat_state,
+        existing_answers=existing_answers,
+        now=now,
+    )
+
+
+@laporan_bp.route("/staff/<int:form_id>/previous-answers")
+@role_required("staff", "pengawas", "kasi", "operator", "coordinator", "admin")
+def staff_laporan_previous_answers(form_id: int) -> Response:
+    """API: Ambil jawaban submission terakhir staff di form ini (untuk prefill periode baru)."""
+    user = current_user()
+    if not user:
+        return jsonify({"ok": False, "message": "Autentikasi diperlukan."}), 401
+
+    form = get_form(form_id)
+    if not form or not form.get("is_active"):
+        return jsonify({"ok": False, "message": "Form tidak ditemukan."}), 404
+
+    if not can_staff_access_form(form_id):
+        return jsonify({"ok": False, "message": "Akses ditolak."}), 403
+
+    if form.get("is_paused"):
+        return (
+            jsonify(
+                {
+                    "ok": False,
+                    "message": "Pengisian form ini sedang dipause oleh admin.",
+                }
+            ),
+            423,
+        )
+
+    if form.get("repeat_policy") not in ("daily", "weekly", "monthly"):
+        return (
+            jsonify(
+                {
+                    "ok": False,
+                    "message": "Fitur ini hanya tersedia untuk form periodik.",
+                }
+            ),
+            400,
+        )
+
+    result = get_last_submission_answers(form_id, None, submitted_by=user["id"])
+    if not result:
+        return (
+            jsonify(
+                {"ok": False, "message": "Belum ada data dari periode sebelumnya."}
+            ),
+            404,
+        )
+
+    return jsonify(
+        {
+            "ok": True,
+            "period_label": result["period_label"],
+            "answers": result["answers"],
+        }
+    )
+
+
+@laporan_bp.route("/staff/<int:form_id>/submit", methods=["POST"])
+@role_required("staff", "pengawas", "kasi", "operator", "coordinator", "admin")
+def staff_laporan_submit(form_id: int) -> Response:
+    """Submit form laporan untuk staff (POST)."""
+    user = current_user()
+    if not user or user.get("role") in ("sekolah",):
+        flash("Akses tidak diizinkan.", "danger")
+        return redirect(url_for("portal.index"))
+
+    form = get_form(form_id)
+    if not form or not form.get("is_active"):
+        flash("Form tidak ditemukan.", "danger")
+        return redirect(url_for("laporan.staff_laporan_list"))
+
+    if not can_staff_access_form(form_id):
+        flash("Form ini tidak ditujukan untuk staff.", "danger")
+        return redirect(url_for("laporan.staff_laporan_list"))
+
+    if form.get("is_paused"):
+        flash("Pengisian form ini sedang dipause oleh admin.", "warning")
+        return redirect(url_for("laporan.staff_laporan_list"))
+
+    now = datetime.now(JAKARTA_TZ)
+    _annotate_repeat_form(form, now)
+    dl = _form_deadline_for_request(form, now)
+    form["deadline_str"] = _format_datetime_id(dl)
+    is_expired = bool(dl and dl < now)
+    is_late = False
+    late_days = 0
+    late_minutes = 0
+
+    if dl and dl < now:
+        if not form.get("allow_late"):
+            flash("Deadline telah lewat. Form tidak dapat diisi.", "danger")
+            return redirect(url_for("laporan.staff_laporan_list"))
+        is_late = True
+        late_delta = now - dl
+        late_days = late_delta.days
+        late_minutes = max(int((late_delta.total_seconds() + 59) // 60), 1)
+
+    fields = get_form_fields(form_id)
+    if not any(f["field_type"] not in DISPLAY_ONLY_FIELD_TYPES for f in fields):
+        flash(
+            "Form ini belum memiliki pertanyaan yang bisa diisi. Hubungi admin.",
+            "warning",
+        )
+        return redirect(url_for("laporan.staff_laporan_list"))
+
+    submitted_values_by_key = {}
+    for f in fields:
+        key = f.get("field_key")
+        if not key or f["field_type"] not in {"number", "rating"}:
+            continue
+        fid = f["id"]
+        fkey = f.get("field_key") or f"db_{fid}"
+        submitted_values_by_key[key] = (
+            request.form.get(f"field_{fid}", "").strip()
+            or request.form.get(f"answer_{fkey}", "").strip()
+        )
+
+    # Validasi required fields
+    errors = []
+    for f in fields:
+        if not f.get("required"):
+            continue
+        ftype = f["field_type"]
+        fid = f["id"]
+        fkey = f.get("field_key") or f"db_{fid}"
+        if ftype in FILE_UPLOAD_FIELD_TYPES:
+            uploaded = request.files.getlist(f"field_{fid}[]")
+            if not any(uf.filename for uf in uploaded):
+                errors.append(f"Field '{f['label']}' wajib diisi.")
+        elif ftype == "checkbox":
+            vals = request.form.getlist(f"field_{fid}[]") or request.form.getlist(
+                f"answer_{fkey}"
+            )
+            if not vals:
+                errors.append(f"Field '{f['label']}' wajib dipilih.")
+        elif ftype == "link":
+            val = (
+                request.form.get(f"field_{fid}", "").strip()
+                or request.form.get(f"answer_{fkey}", "").strip()
+            )
+            if val != "clicked":
+                errors.append(f"Link '{f['label']}' wajib dibuka terlebih dahulu.")
+        elif ftype == "formula" or ftype in DISPLAY_ONLY_FIELD_TYPES:
+            pass
+        else:
+            val = (
+                request.form.get(f"field_{fid}", "").strip()
+                or request.form.get(f"answer_{fkey}", "").strip()
+            )
+            if not val:
+                errors.append(f"Field '{f['label']}' wajib diisi.")
+
+    if errors:
+        for err in errors:
+            flash(err, "warning")
+        return redirect(url_for("laporan.staff_laporan_fill", form_id=form_id))
+
+    period_key = None
+    period_label = None
+    if form.get("repeat_policy") in PERIODIC_REPEAT_POLICIES:
+        period_ctx = _current_period_context(form["repeat_policy"], now, form)
+        period_key = period_ctx.get("key")
+        period_label = period_ctx.get("label")
+
+    try:
+        sub = create_submission(
+            form_id,
+            None,
+            user["id"],
+            is_late=is_late,
+            late_days=late_days,
+            late_minutes=late_minutes,
+            repeat_period_key=period_key,
+            repeat_period_label=period_label,
+        )
+    except UniqueViolation:
+        flash("Anda sudah mengisi form ini.", "info")
+        return redirect(url_for("laporan.staff_laporan_list"))
+
+    submission_id = sub["id"]
+
+    # Simpan jawaban per field
+    UPLOAD_FOLDER.mkdir(parents=True, exist_ok=True)
+    staff_upload_dir = UPLOAD_FOLDER / "staff" / str(user["id"]) / str(form_id)
+    staff_upload_dir.mkdir(parents=True, exist_ok=True)
+    saved_rel_paths = []
+    try:
+        for f in fields:
+            ftype = f["field_type"]
+            fid = f["id"]
+            fkey = f.get("field_key") or f"db_{fid}"
+
+            if ftype in FILE_UPLOAD_FIELD_TYPES:
+                uploaded_files = request.files.getlist(f"field_{fid}[]")
+                if ftype == "upload_dokumen":
+                    valid_files = [
+                        uf
+                        for uf in uploaded_files
+                        if uf.filename and _allowed_doc(uf.filename)
+                    ]
+                elif ftype == "upload_gambar":
+                    valid_files = [
+                        uf
+                        for uf in uploaded_files
+                        if uf.filename and _allowed_image(uf.filename)
+                    ]
+                else:
+                    valid_files = [
+                        uf
+                        for uf in uploaded_files
+                        if uf.filename and _allowed_file(uf.filename)
+                    ]
+                if not valid_files:
+                    continue
+                file_names = [uf.filename for uf in valid_files]
+                answer_id = save_answer(
+                    submission_id, fid, None, answer_json=file_names
+                )
+                for uf in valid_files:
+                    ext = uf.filename.rsplit(".", 1)[-1].lower()
+                    saved_name = f"{uuid.uuid4().hex}.{ext}"
+                    save_path = staff_upload_dir / saved_name
+                    if _allowed_image(uf.filename):
+                        file_size = _compress_and_save_image(uf, save_path)
+                    else:
+                        uf.save(str(save_path))
+                        file_size = save_path.stat().st_size
+                    rel_path = f"staff/{user['id']}/{form_id}/{saved_name}"
+                    saved_rel_paths.append(rel_path)
+                    save_file(
+                        answer_id,
+                        rel_path,
+                        uf.filename,
+                        uf.content_type or "",
+                        file_size,
+                    )
+
+            elif ftype == "checkbox":
+                vals = request.form.getlist(f"field_{fid}[]") or request.form.getlist(
+                    f"answer_{fkey}"
+                )
+                save_answer(submission_id, fid, ", ".join(vals), answer_json=vals)
+
+            elif ftype == "rating":
+                val = (
+                    request.form.get(f"field_{fid}", "").strip()
+                    or request.form.get(f"answer_{fkey}", "").strip()
+                )
+                save_answer(submission_id, fid, val)
+
+            elif ftype == "formula":
+                val = _calculate_formula_value(f, submitted_values_by_key)
+                save_answer(submission_id, fid, val)
+                if f.get("field_key"):
+                    submitted_values_by_key[f["field_key"]] = val
+
+            elif ftype == "link":
+                val = (
+                    request.form.get(f"field_{fid}", "").strip()
+                    or request.form.get(f"answer_{fkey}", "").strip()
+                )
+                if val == "clicked":
+                    save_answer(submission_id, fid, "Dibuka")
+
+            else:
+                val = (
+                    request.form.get(f"field_{fid}", "").strip()
+                    or request.form.get(f"answer_{fkey}", "").strip()
+                )
+                save_answer(submission_id, fid, val)
+    except Exception:
+        current_app.logger.exception(
+            "Failed to save laporan answers for staff submission %s", submission_id
+        )
+        deleted = delete_submitted_submission(form_id, submission_id)
+        db_file_paths = (deleted or {}).get("file_paths") or []
+        _cleanup_submission_files(list(db_file_paths) + saved_rel_paths)
+        flash("Jawaban gagal disimpan. Silakan coba kirim ulang.", "danger")
+        return redirect(url_for("laporan.staff_laporan_fill", form_id=form_id))
+
+    flash("Laporan berhasil dikirim!", "success")
+    return redirect(url_for("laporan.staff_laporan_list"))
+
+
+@laporan_bp.route("/staff/riwayat")
+@role_required("staff", "pengawas", "kasi", "operator", "coordinator", "admin")
+def staff_laporan_history() -> Response:
+    """Riwayat pengiriman laporan milik staff/role ini."""
+    user = current_user()
+    if not user or user.get("role") in ("sekolah",):
+        flash("Akses tidak diizinkan.", "danger")
+        return redirect(url_for("portal.index"))
+
+    submissions = list_staff_submissions(user["id"])
+    now = datetime.now(JAKARTA_TZ)
+    for submission in submissions:
+        _annotate_late_submission(submission)
+        if submission.get("status") == "submitted":
+            form = get_form(submission["form_id"])
+            edit_state = _submission_edit_state(form, submission, None, now)
+            submission.update(edit_state)
+
+    staff_profile = {
+        "id": user["id"],
+        "name": user.get("full_name") or user.get("username") or "Staff",
+    }
+    return render_template(
+        "laporan/staff/history.html",
+        staff=staff_profile,
+        submissions=submissions,
+    )
+
+
+@laporan_bp.route("/staff/riwayat/<int:submission_id>")
+@role_required("staff", "pengawas", "kasi", "operator", "coordinator", "admin")
+def staff_laporan_detail(submission_id: int) -> Response:
+    """Detail jawaban yang pernah dikirim staff ini."""
+    user = current_user()
+    if not user or user.get("role") in ("sekolah",):
+        flash("Akses tidak diizinkan.", "danger")
+        return redirect(url_for("portal.index"))
+
+    sub = get_submission_with_answers(submission_id)
+    if not sub or sub.get("submitted_by") != user["id"]:
+        flash("Laporan tidak ditemukan atau bukan milik Anda.", "danger")
+        return redirect(url_for("laporan.staff_laporan_history"))
+
+    _annotate_late_submission(sub)
+    form = get_form(sub["form_id"])
+    sub.update(_submission_edit_state(form, sub, None, datetime.now(JAKARTA_TZ)))
+
+    staff_profile = {
+        "id": user["id"],
+        "name": user.get("full_name") or user.get("username") or "Staff",
+    }
+    return render_template(
+        "laporan/staff/detail.html",
+        submission=sub,
+        staff=staff_profile,
+    )
+
+
+@laporan_bp.route("/staff/riwayat/<int:submission_id>/edit", methods=["GET", "POST"])
+@role_required("staff", "pengawas", "kasi", "operator", "coordinator", "admin")
+def staff_laporan_edit_submission(submission_id: int) -> Response:
+    """Edit an existing submitted staff laporan history row."""
+    user = current_user()
+    if not user or user.get("role") in ("sekolah",):
+        flash("Akses tidak diizinkan.", "danger")
+        return redirect(url_for("portal.index"))
+
+    sub = get_submission_with_answers(submission_id)
+    if not sub or sub.get("submitted_by") != user["id"]:
+        flash("Laporan tidak ditemukan atau bukan milik Anda.", "danger")
+        return redirect(url_for("laporan.staff_laporan_history"))
+    if sub.get("status") != "submitted":
+        flash("Riwayat ini tidak bisa diedit.", "warning")
+        return redirect(
+            url_for("laporan.staff_laporan_detail", submission_id=submission_id)
+        )
+
+    form = get_form(sub["form_id"])
+    if not form or not form.get("is_active"):
+        flash("Form tidak ditemukan atau sudah tidak aktif.", "danger")
+        return redirect(url_for("laporan.staff_laporan_history"))
+    if form.get("is_paused"):
+        flash("Pengisian form ini sedang dipause oleh admin.", "warning")
+        return redirect(
+            url_for("laporan.staff_laporan_detail", submission_id=submission_id)
+        )
+    if not can_staff_access_form(form["id"]):
+        flash("Anda tidak memiliki akses ke form ini.", "danger")
+        return redirect(url_for("laporan.staff_laporan_history"))
+
+    now = datetime.now(JAKARTA_TZ)
+    edit_state = _submission_edit_state(form, sub, None, now)
+    if not edit_state["can_edit"]:
+        flash(
+            edit_state["edit_disabled_reason"] or "Riwayat ini tidak bisa diedit.",
+            "warning",
+        )
+        return redirect(
+            url_for("laporan.staff_laporan_detail", submission_id=submission_id)
+        )
+
+    dl = _form_deadline_for_submission(form, sub, now)
+    form["deadline_str"] = _format_datetime_id(dl)
+    form["deadline_iso"] = dl.isoformat() if dl else None
+    form["current_period_label"] = sub.get("repeat_period_label") or form.get(
+        "current_period_label"
+    )
+    edit_after_deadline = edit_state["edit_after_deadline"]
+    fields = get_form_fields(form["id"])
+    existing_answers = _answers_by_field_id(sub)
+
+    staff_profile = {
+        "id": user["id"],
+        "name": user.get("full_name") or user.get("username") or "Staff",
+    }
+
+    if request.method == "GET":
+        return render_template(
+            "laporan/staff/fill.html",
+            form=form,
+            fields=fields,
+            school=None,
+            staff=staff_profile,
+            already_submitted=True,
+            repeat_state={"policy": _form_repeat_policy(form), "period": {}},
+            edit_mode=True,
+            submission=sub,
+            existing_answers=existing_answers,
+            edit_after_deadline=edit_after_deadline,
+            edit_deadline_str=edit_state.get("edit_deadline_str"),
+            edit_cutoff_str=edit_state.get("edit_cutoff_str"),
+        )
+
+    if not any(f["field_type"] not in DISPLAY_ONLY_FIELD_TYPES for f in fields):
+        flash(
+            "Form ini belum memiliki pertanyaan yang bisa diisi. Hubungi admin.",
+            "warning",
+        )
+        return redirect(
+            url_for("laporan.staff_laporan_detail", submission_id=submission_id)
+        )
+
+    submitted_values_by_key = {}
+    for f in fields:
+        key = f.get("field_key")
+        if not key or f["field_type"] not in {"number", "rating"}:
+            continue
+        fid = f["id"]
+        fkey = f.get("field_key") or f"db_{fid}"
+        submitted_values_by_key[key] = (
+            request.form.get(f"field_{fid}", "").strip()
+            or request.form.get(f"answer_{fkey}", "").strip()
+        )
+
+    # Validasi required fields
+    errors = []
+    for f in fields:
+        if not f.get("required"):
+            continue
+        ftype = f["field_type"]
+        fid = f["id"]
+        fkey = f.get("field_key") or f"db_{fid}"
+        if ftype in FILE_UPLOAD_FIELD_TYPES:
+            uploaded = request.files.getlist(f"field_{fid}[]")
+            existing_file_answer = existing_answers.get(fid)
+            has_existing_files = bool(
+                existing_file_answer and existing_file_answer.get("files")
+            )
+            if not has_existing_files and not any(uf.filename for uf in uploaded):
+                errors.append(f"Field '{f['label']}' wajib diisi.")
+        elif ftype == "checkbox":
+            vals = request.form.getlist(f"field_{fid}[]") or request.form.getlist(
+                f"answer_{fkey}"
+            )
+            if not vals:
+                errors.append(f"Field '{f['label']}' wajib dipilih.")
+        elif ftype == "link":
+            val = (
+                request.form.get(f"field_{fid}", "").strip()
+                or request.form.get(f"answer_{fkey}", "").strip()
+            )
+            if val != "clicked":
+                errors.append(f"Link '{f['label']}' wajib dibuka terlebih dahulu.")
+        elif ftype == "formula" or ftype in DISPLAY_ONLY_FIELD_TYPES:
+            pass
+        else:
+            val = (
+                request.form.get(f"field_{fid}", "").strip()
+                or request.form.get(f"answer_{fkey}", "").strip()
+            )
+            if not val:
+                errors.append(f"Field '{f['label']}' wajib diisi.")
+
+    if errors:
+        for err in errors:
+            flash(err, "warning")
+        return redirect(
+            url_for(
+                "laporan.staff_laporan_edit_submission", submission_id=submission_id
+            )
+        )
+
+    is_late = bool(sub.get("is_late"))
+    late_days = int(sub.get("late_days") or 0)
+    late_minutes = int(sub.get("late_minutes") or 0)
+    if dl and dl < now:
+        is_late = True
+        late_delta = now - dl
+        late_days = max(late_days, late_delta.days)
+        late_minutes = max(
+            late_minutes, max(int((late_delta.total_seconds() + 59) // 60), 1)
+        )
+
+    UPLOAD_FOLDER.mkdir(parents=True, exist_ok=True)
+    staff_upload_dir = UPLOAD_FOLDER / "staff" / str(user["id"]) / str(form["id"])
+    staff_upload_dir.mkdir(parents=True, exist_ok=True)
+    saved_rel_paths = []
+
+    try:
+        for f in fields:
+            ftype = f["field_type"]
+            fid = f["id"]
+            fkey = f.get("field_key") or f"db_{fid}"
+
+            if ftype in FILE_UPLOAD_FIELD_TYPES:
+                uploaded_files = request.files.getlist(f"field_{fid}[]")
+                if ftype == "upload_dokumen":
+                    valid_files = [
+                        uf
+                        for uf in uploaded_files
+                        if uf.filename and _allowed_doc(uf.filename)
+                    ]
+                elif ftype == "upload_gambar":
+                    valid_files = [
+                        uf
+                        for uf in uploaded_files
+                        if uf.filename and _allowed_image(uf.filename)
+                    ]
+                else:
+                    valid_files = [
+                        uf
+                        for uf in uploaded_files
+                        if uf.filename and _allowed_file(uf.filename)
+                    ]
+                if not valid_files:
+                    continue
+                existing_file_answer = existing_answers.get(fid)
+                old_paths = [
+                    fi.get("file_path")
+                    for fi in (
+                        existing_file_answer.get("files")
+                        if existing_file_answer
+                        else []
+                    )
+                    if fi.get("file_path")
+                ]
+                file_names = [uf.filename for uf in valid_files]
+                answer_id = save_answer(
+                    submission_id, fid, None, answer_json=file_names
+                )
+                replace_answer_files(answer_id, old_paths)
+                _cleanup_submission_files(old_paths)
+                for uf in valid_files:
+                    ext = uf.filename.rsplit(".", 1)[-1].lower()
+                    saved_name = f"{uuid.uuid4().hex}.{ext}"
+                    save_path = staff_upload_dir / saved_name
+                    if _allowed_image(uf.filename):
+                        file_size = _compress_and_save_image(uf, save_path)
+                    else:
+                        uf.save(str(save_path))
+                        file_size = save_path.stat().st_size
+                    rel_path = f"staff/{user['id']}/{form['id']}/{saved_name}"
+                    saved_rel_paths.append(rel_path)
+                    save_file(
+                        answer_id,
+                        rel_path,
+                        uf.filename,
+                        uf.content_type or "",
+                        file_size,
+                    )
+            elif ftype == "checkbox":
+                vals = request.form.getlist(f"field_{fid}[]") or request.form.getlist(
+                    f"answer_{fkey}"
+                )
+                save_answer(submission_id, fid, ", ".join(vals), answer_json=vals)
+            elif ftype == "rating":
+                val = (
+                    request.form.get(f"field_{fid}", "").strip()
+                    or request.form.get(f"answer_{fkey}", "").strip()
+                )
+                save_answer(submission_id, fid, val)
+            elif ftype == "formula":
+                val = _calculate_formula_value(f, submitted_values_by_key)
+                save_answer(submission_id, fid, val)
+                if f.get("field_key"):
+                    submitted_values_by_key[f["field_key"]] = val
+            elif ftype == "link":
+                val = (
+                    request.form.get(f"field_{fid}", "").strip()
+                    or request.form.get(f"answer_{fkey}", "").strip()
+                )
+                if val == "clicked":
+                    save_answer(submission_id, fid, "Dibuka")
+            else:
+                val = (
+                    request.form.get(f"field_{fid}", "").strip()
+                    or request.form.get(f"answer_{fkey}", "").strip()
+                )
+                save_answer(submission_id, fid, val)
+
+        update_submission_status(
+            submission_id,
+            user["id"],
+            is_late=is_late,
+            late_days=late_days,
+            late_minutes=late_minutes,
+        )
+    except Exception:
+        current_app.logger.exception(
+            "Failed to update staff laporan submission %s", submission_id
+        )
+        _cleanup_submission_files(saved_rel_paths)
+        flash("Perubahan jawaban gagal disimpan. Silakan coba lagi.", "danger")
+        return redirect(
+            url_for(
+                "laporan.staff_laporan_edit_submission", submission_id=submission_id
+            )
+        )
+
+    flash("Perubahan laporan berhasil disimpan.", "success")
+    return redirect(
+        url_for("laporan.staff_laporan_detail", submission_id=submission_id)
+    )
+
+
 @laporan_bp.route("/sekolah")
 @role_required("sekolah")
 def sekolah_laporan_list() -> Response:
     """Daftar form laporan yang tersedia untuk sekolah ini."""
+
     user = current_user()
     school = _fetch_user_school(user.get("id"))
     if not school:
@@ -1279,7 +2190,7 @@ def sekolah_laporan_fill(form_id: int) -> Response:
     if not form or not form.get("is_active"):
         flash("Form tidak ditemukan atau sudah tidak aktif.", "danger")
         return redirect(url_for("laporan.sekolah_laporan_list"))
-        
+
     if not can_school_access_form(form_id, school["id"], school.get("jenjang")):
         flash("Sekolah Anda tidak memiliki akses ke form ini.", "danger")
         return redirect(url_for("laporan.sekolah_laporan_list"))
@@ -1301,7 +2212,10 @@ def sekolah_laporan_fill(form_id: int) -> Response:
         and not repeat_state["already_submitted"]
         and _school_subject_to_no_submission(form, school)
     ):
-        flash("Waktu pengisian form ini sudah melewati batas tidak mengumpulkan.", "warning")
+        flash(
+            "Waktu pengisian form ini sudah melewati batas tidak mengumpulkan.",
+            "warning",
+        )
         return redirect(url_for("laporan.sekolah_laporan_list"))
     if dl:
         if dl < now and not form.get("allow_late"):
@@ -1312,8 +2226,13 @@ def sekolah_laporan_fill(form_id: int) -> Response:
         flash("Masa pengisian ulang form ini sudah berakhir.", "warning")
         return redirect(url_for("laporan.sekolah_laporan_list"))
     if repeat_state["blocked_by_submission"]:
-        if repeat_state["policy"] in PERIODIC_REPEAT_POLICIES and form.get("current_period_label"):
-            flash(f"Anda sudah mengisi form ini untuk {form['current_period_label']}.", "info")
+        if repeat_state["policy"] in PERIODIC_REPEAT_POLICIES and form.get(
+            "current_period_label"
+        ):
+            flash(
+                f"Anda sudah mengisi form ini untuk {form['current_period_label']}.",
+                "info",
+            )
         else:
             flash("Anda sudah mengisi form ini.", "info")
         return redirect(url_for("laporan.sekolah_laporan_list"))
@@ -1336,7 +2255,10 @@ def sekolah_laporan_previous_answers(form_id: int) -> Response:
     user = current_user()
     school = _fetch_user_school(user.get("id"))
     if not school:
-        return jsonify({"ok": False, "message": "Akun belum terhubung dengan sekolah."}), 403
+        return (
+            jsonify({"ok": False, "message": "Akun belum terhubung dengan sekolah."}),
+            403,
+        )
 
     form = get_form(form_id)
     if not form or not form.get("is_active"):
@@ -1346,21 +2268,44 @@ def sekolah_laporan_previous_answers(form_id: int) -> Response:
         return jsonify({"ok": False, "message": "Akses ditolak."}), 403
 
     if form.get("is_paused"):
-        return jsonify({"ok": False, "message": "Pengisian form ini sedang dipause oleh admin."}), 423
+        return (
+            jsonify(
+                {
+                    "ok": False,
+                    "message": "Pengisian form ini sedang dipause oleh admin.",
+                }
+            ),
+            423,
+        )
 
     # Hanya untuk form periodik
     if form.get("repeat_policy") not in ("daily", "weekly", "monthly"):
-        return jsonify({"ok": False, "message": "Fitur ini hanya tersedia untuk form periodik."}), 400
+        return (
+            jsonify(
+                {
+                    "ok": False,
+                    "message": "Fitur ini hanya tersedia untuk form periodik.",
+                }
+            ),
+            400,
+        )
 
     result = get_last_submission_answers(form_id, school["id"])
     if not result:
-        return jsonify({"ok": False, "message": "Belum ada data dari periode sebelumnya."}), 404
+        return (
+            jsonify(
+                {"ok": False, "message": "Belum ada data dari periode sebelumnya."}
+            ),
+            404,
+        )
 
-    return jsonify({
-        "ok": True,
-        "period_label": result["period_label"],
-        "answers": result["answers"],
-    })
+    return jsonify(
+        {
+            "ok": True,
+            "period_label": result["period_label"],
+            "answers": result["answers"],
+        }
+    )
 
 
 @laporan_bp.route("/sekolah/<int:form_id>/submit", methods=["POST"])
@@ -1398,7 +2343,10 @@ def sekolah_laporan_submit(form_id: int) -> Response:
         and not repeat_state["already_submitted"]
         and _school_subject_to_no_submission(form, school)
     ):
-        flash("Waktu pengisian form ini sudah melewati batas tidak mengumpulkan.", "warning")
+        flash(
+            "Waktu pengisian form ini sudah melewati batas tidak mengumpulkan.",
+            "warning",
+        )
         return redirect(url_for("laporan.sekolah_laporan_list"))
     is_late = False
     late_days = 0
@@ -1417,15 +2365,23 @@ def sekolah_laporan_submit(form_id: int) -> Response:
         flash("Masa pengisian ulang form ini sudah berakhir.", "warning")
         return redirect(url_for("laporan.sekolah_laporan_list"))
     if repeat_state["blocked_by_submission"]:
-        if repeat_state["policy"] in PERIODIC_REPEAT_POLICIES and form.get("current_period_label"):
-            flash(f"Anda sudah mengisi form ini untuk {form['current_period_label']}.", "info")
+        if repeat_state["policy"] in PERIODIC_REPEAT_POLICIES and form.get(
+            "current_period_label"
+        ):
+            flash(
+                f"Anda sudah mengisi form ini untuk {form['current_period_label']}.",
+                "info",
+            )
         else:
             flash("Anda sudah mengisi form ini.", "info")
         return redirect(url_for("laporan.sekolah_laporan_list"))
 
     fields = get_form_fields(form_id)
     if not any(f["field_type"] not in DISPLAY_ONLY_FIELD_TYPES for f in fields):
-        flash("Form ini belum memiliki pertanyaan yang bisa diisi. Hubungi admin.", "warning")
+        flash(
+            "Form ini belum memiliki pertanyaan yang bisa diisi. Hubungi admin.",
+            "warning",
+        )
         return redirect(url_for("laporan.sekolah_laporan_list"))
 
     submitted_values_by_key = {}
@@ -1480,8 +2436,13 @@ def sekolah_laporan_submit(form_id: int) -> Response:
             repeat_period_label=repeat_state["period"].get("label"),
         )
     except UniqueViolation:
-        if repeat_state["policy"] in PERIODIC_REPEAT_POLICIES and form.get("current_period_label"):
-            flash(f"Anda sudah mengisi form ini untuk {form['current_period_label']}.", "info")
+        if repeat_state["policy"] in PERIODIC_REPEAT_POLICIES and form.get(
+            "current_period_label"
+        ):
+            flash(
+                f"Anda sudah mengisi form ini untuk {form['current_period_label']}.",
+                "info",
+            )
         else:
             flash("Anda sudah mengisi form ini.", "info")
         return redirect(url_for("laporan.sekolah_laporan_list"))
@@ -1501,20 +2462,34 @@ def sekolah_laporan_submit(form_id: int) -> Response:
                 uploaded_files = request.files.getlist(f"field_{fid}[]")
                 # Filter sesuai tipe field
                 if ftype == "upload_dokumen":
-                    valid_files = [uf for uf in uploaded_files if uf.filename and _allowed_doc(uf.filename)]
+                    valid_files = [
+                        uf
+                        for uf in uploaded_files
+                        if uf.filename and _allowed_doc(uf.filename)
+                    ]
                 elif ftype == "upload_gambar":
-                    valid_files = [uf for uf in uploaded_files if uf.filename and _allowed_image(uf.filename)]
+                    valid_files = [
+                        uf
+                        for uf in uploaded_files
+                        if uf.filename and _allowed_image(uf.filename)
+                    ]
                 else:
-                    valid_files = [uf for uf in uploaded_files if uf.filename and _allowed_file(uf.filename)]
+                    valid_files = [
+                        uf
+                        for uf in uploaded_files
+                        if uf.filename and _allowed_file(uf.filename)
+                    ]
                 if not valid_files:
                     continue
                 file_names = [uf.filename for uf in valid_files]
-                answer_id = save_answer(submission_id, fid, None, answer_json=file_names)
+                answer_id = save_answer(
+                    submission_id, fid, None, answer_json=file_names
+                )
                 for uf in valid_files:
                     ext = uf.filename.rsplit(".", 1)[-1].lower()
                     saved_name = f"{uuid.uuid4().hex}.{ext}"
                     save_path = school_upload_dir / saved_name
-                    if ftype == "upload_gambar":
+                    if _allowed_image(uf.filename):
                         file_size = _compress_and_save_image(uf, save_path)
                     else:
                         uf.save(str(save_path))
@@ -1552,7 +2527,9 @@ def sekolah_laporan_submit(form_id: int) -> Response:
                 val = request.form.get(f"field_{fid}", "").strip()
                 save_answer(submission_id, fid, val)
     except Exception:
-        current_app.logger.exception("Failed to save laporan answers for submission %s", submission_id)
+        current_app.logger.exception(
+            "Failed to save laporan answers for submission %s", submission_id
+        )
         deleted = delete_submitted_submission(form_id, submission_id)
         db_file_paths = (deleted or {}).get("file_paths") or []
         _cleanup_submission_files(list(db_file_paths) + saved_rel_paths)
@@ -1633,7 +2610,9 @@ def sekolah_laporan_edit_submission(submission_id: int) -> Response:
         return redirect(url_for("laporan.sekolah_laporan_history"))
     if sub.get("status") != "submitted":
         flash("Riwayat ini tidak bisa diedit.", "warning")
-        return redirect(url_for("laporan.sekolah_laporan_detail", submission_id=submission_id))
+        return redirect(
+            url_for("laporan.sekolah_laporan_detail", submission_id=submission_id)
+        )
 
     form = get_form(sub["form_id"])
     if not form or not form.get("is_active"):
@@ -1641,7 +2620,9 @@ def sekolah_laporan_edit_submission(submission_id: int) -> Response:
         return redirect(url_for("laporan.sekolah_laporan_history"))
     if form.get("is_paused"):
         flash("Pengisian form ini sedang dipause oleh admin.", "warning")
-        return redirect(url_for("laporan.sekolah_laporan_detail", submission_id=submission_id))
+        return redirect(
+            url_for("laporan.sekolah_laporan_detail", submission_id=submission_id)
+        )
     if not can_school_access_form(form["id"], school["id"], school.get("jenjang")):
         flash("Sekolah Anda tidak memiliki akses ke form ini.", "danger")
         return redirect(url_for("laporan.sekolah_laporan_history"))
@@ -1649,13 +2630,20 @@ def sekolah_laporan_edit_submission(submission_id: int) -> Response:
     now = datetime.now(JAKARTA_TZ)
     edit_state = _submission_edit_state(form, sub, school, now)
     if not edit_state["can_edit"]:
-        flash(edit_state["edit_disabled_reason"] or "Riwayat ini tidak bisa diedit.", "warning")
-        return redirect(url_for("laporan.sekolah_laporan_detail", submission_id=submission_id))
+        flash(
+            edit_state["edit_disabled_reason"] or "Riwayat ini tidak bisa diedit.",
+            "warning",
+        )
+        return redirect(
+            url_for("laporan.sekolah_laporan_detail", submission_id=submission_id)
+        )
 
     dl = _form_deadline_for_submission(form, sub, now)
     form["deadline_str"] = _format_datetime_id(dl)
     form["deadline_iso"] = dl.isoformat() if dl else None
-    form["current_period_label"] = sub.get("repeat_period_label") or form.get("current_period_label")
+    form["current_period_label"] = sub.get("repeat_period_label") or form.get(
+        "current_period_label"
+    )
     edit_after_deadline = edit_state["edit_after_deadline"]
     fields = get_form_fields(form["id"])
     existing_answers = _answers_by_field_id(sub)
@@ -1677,8 +2665,13 @@ def sekolah_laporan_edit_submission(submission_id: int) -> Response:
         )
 
     if not any(f["field_type"] not in DISPLAY_ONLY_FIELD_TYPES for f in fields):
-        flash("Form ini belum memiliki pertanyaan yang bisa diisi. Hubungi admin.", "warning")
-        return redirect(url_for("laporan.sekolah_laporan_detail", submission_id=submission_id))
+        flash(
+            "Form ini belum memiliki pertanyaan yang bisa diisi. Hubungi admin.",
+            "warning",
+        )
+        return redirect(
+            url_for("laporan.sekolah_laporan_detail", submission_id=submission_id)
+        )
 
     submitted_values_by_key = {}
     for f in fields:
@@ -1717,7 +2710,11 @@ def sekolah_laporan_edit_submission(submission_id: int) -> Response:
     if errors:
         for err in errors:
             flash(err, "warning")
-        return redirect(url_for("laporan.sekolah_laporan_edit_submission", submission_id=submission_id))
+        return redirect(
+            url_for(
+                "laporan.sekolah_laporan_edit_submission", submission_id=submission_id
+            )
+        )
 
     is_late = False
     late_days = 0
@@ -1741,24 +2738,42 @@ def sekolah_laporan_edit_submission(submission_id: int) -> Response:
                 uploaded_files = request.files.getlist(f"field_{fid}[]")
                 # Filter sesuai tipe field
                 if ftype == "upload_dokumen":
-                    valid_files = [uf for uf in uploaded_files if uf.filename and _allowed_doc(uf.filename)]
+                    valid_files = [
+                        uf
+                        for uf in uploaded_files
+                        if uf.filename and _allowed_doc(uf.filename)
+                    ]
                 elif ftype == "upload_gambar":
-                    valid_files = [uf for uf in uploaded_files if uf.filename and _allowed_image(uf.filename)]
+                    valid_files = [
+                        uf
+                        for uf in uploaded_files
+                        if uf.filename and _allowed_image(uf.filename)
+                    ]
                 else:
-                    valid_files = [uf for uf in uploaded_files if uf.filename and _allowed_file(uf.filename)]
+                    valid_files = [
+                        uf
+                        for uf in uploaded_files
+                        if uf.filename and _allowed_file(uf.filename)
+                    ]
                 if not valid_files:
                     continue
                 existing = existing_answers.get(fid)
-                old_paths = [file_info.get("file_path") for file_info in (existing.get("files") if existing else []) if file_info.get("file_path")]
+                old_paths = [
+                    file_info.get("file_path")
+                    for file_info in (existing.get("files") if existing else [])
+                    if file_info.get("file_path")
+                ]
                 file_names = [uf.filename for uf in valid_files]
-                answer_id = save_answer(submission_id, fid, None, answer_json=file_names)
+                answer_id = save_answer(
+                    submission_id, fid, None, answer_json=file_names
+                )
                 replace_answer_files(answer_id, old_paths)
                 _cleanup_submission_files(old_paths)
                 for uf in valid_files:
                     ext = uf.filename.rsplit(".", 1)[-1].lower()
                     saved_name = f"{uuid.uuid4().hex}.{ext}"
                     save_path = school_upload_dir / saved_name
-                    if ftype == "upload_gambar":
+                    if _allowed_image(uf.filename):
                         file_size = _compress_and_save_image(uf, save_path)
                     else:
                         uf.save(str(save_path))
@@ -1800,13 +2815,21 @@ def sekolah_laporan_edit_submission(submission_id: int) -> Response:
             late_minutes=late_minutes,
         )
     except Exception:
-        current_app.logger.exception("Failed to update laporan submission %s", submission_id)
+        current_app.logger.exception(
+            "Failed to update laporan submission %s", submission_id
+        )
         _cleanup_submission_files(saved_rel_paths)
         flash("Perubahan jawaban gagal disimpan. Silakan coba lagi.", "danger")
-        return redirect(url_for("laporan.sekolah_laporan_edit_submission", submission_id=submission_id))
+        return redirect(
+            url_for(
+                "laporan.sekolah_laporan_edit_submission", submission_id=submission_id
+            )
+        )
 
     flash("Perubahan laporan berhasil disimpan.", "success")
-    return redirect(url_for("laporan.sekolah_laporan_detail", submission_id=submission_id))
+    return redirect(
+        url_for("laporan.sekolah_laporan_detail", submission_id=submission_id)
+    )
 
 
 # ═══════════════════════════════════════════════════════
@@ -1840,6 +2863,7 @@ def admin_laporan_create() -> Response:
             description="",
             target_scope="all",
             target_jenjang=None,
+            target_audience="sekolah",
             allow_multiple=False,
             allow_late=False,
             very_late_after_minutes=DEFAULT_VERY_LATE_AFTER_MINUTES,
@@ -1869,6 +2893,9 @@ def admin_laporan_create() -> Response:
         description = request.form.get("description", "").strip()
         target_scope = request.form.get("target_scope", "all")
         target_jenjang = request.form.get("target_jenjang", "").strip() or None
+        target_audience = request.form.get("target_audience", "sekolah")
+        if target_audience not in ("sekolah", "staff"):
+            target_audience = "sekolah"
         (
             repeat_policy,
             allow_multiple,
@@ -1882,9 +2909,12 @@ def admin_laporan_create() -> Response:
         no_submission_jenjangs = _parse_no_submission_jenjangs()
         no_submission_statuses = _parse_no_submission_statuses()
         is_active = request.form.get("is_active") == "1"
+        is_mandatory = request.form.get("is_mandatory", "1") == "1"
         deadline_raw = request.form.get("deadline_at", "").strip()
         deadline_at = _parse_deadline(deadline_raw)
-        specific_school_ids = [int(x) for x in request.form.getlist("target_schools[]") if x.isdigit()]
+        specific_school_ids = [
+            int(x) for x in request.form.getlist("target_schools[]") if x.isdigit()
+        ]
         form_action = request.form.get("form_action", "publish")
         status = "draft" if form_action == "save_draft" else "published"
         if status == "draft":
@@ -1902,7 +2932,9 @@ def admin_laporan_create() -> Response:
                 fields=[],
             )
         if status == "published":
-            repeat_errors = _repeat_deadline_errors(repeat_policy, repeat_deadline_time, repeat_deadline_day)
+            repeat_errors = _repeat_deadline_errors(
+                repeat_policy, repeat_deadline_time, repeat_deadline_day
+            )
             if repeat_errors:
                 for err in repeat_errors:
                     flash(err, "warning")
@@ -1933,8 +2965,14 @@ def admin_laporan_create() -> Response:
         created = create_form(
             title=title,
             description=description,
-            target_scope=target_scope,
-            target_jenjang=target_jenjang if target_scope == "jenjang" else None,
+            target_scope=target_scope if target_audience == "sekolah" else "all",
+            target_jenjang=(
+                target_jenjang
+                if target_scope == "jenjang" and target_audience == "sekolah"
+                else None
+            ),
+            target_audience=target_audience,
+            is_mandatory=is_mandatory,
             allow_multiple=allow_multiple,
             allow_late=allow_late,
             very_late_after_minutes=very_late_after_minutes,
@@ -1952,7 +2990,11 @@ def admin_laporan_create() -> Response:
         )
         form_id = created["id"]
 
-        if target_scope == "specific" and specific_school_ids:
+        if (
+            target_audience == "sekolah"
+            and target_scope == "specific"
+            and specific_school_ids
+        ):
             set_form_targets(form_id, specific_school_ids)
 
         if fields:
@@ -2006,6 +3048,11 @@ def admin_laporan_edit(form_id: int) -> Response:
         description = request.form.get("description", "").strip()
         target_scope = request.form.get("target_scope", "all")
         target_jenjang = request.form.get("target_jenjang", "").strip() or None
+        target_audience = request.form.get(
+            "target_audience", form.get("target_audience", "sekolah")
+        )
+        if target_audience not in ("sekolah", "staff"):
+            target_audience = "sekolah"
         (
             repeat_policy,
             allow_multiple,
@@ -2019,9 +3066,12 @@ def admin_laporan_edit(form_id: int) -> Response:
         no_submission_jenjangs = _parse_no_submission_jenjangs()
         no_submission_statuses = _parse_no_submission_statuses()
         is_active = request.form.get("is_active") == "1"
+        is_mandatory = request.form.get("is_mandatory", "1") == "1"
         deadline_raw = request.form.get("deadline_at", "").strip()
         deadline_at = _parse_deadline(deadline_raw)
-        specific_school_ids = [int(x) for x in request.form.getlist("target_schools[]") if x.isdigit()]
+        specific_school_ids = [
+            int(x) for x in request.form.getlist("target_schools[]") if x.isdigit()
+        ]
         form_action = request.form.get("form_action", "publish")
         status = "draft" if form_action == "save_draft" else "published"
         if status == "draft":
@@ -2039,7 +3089,9 @@ def admin_laporan_edit(form_id: int) -> Response:
                 fields=existing_fields,
             )
         if status == "published":
-            repeat_errors = _repeat_deadline_errors(repeat_policy, repeat_deadline_time, repeat_deadline_day)
+            repeat_errors = _repeat_deadline_errors(
+                repeat_policy, repeat_deadline_time, repeat_deadline_day
+            )
             if repeat_errors:
                 for err in repeat_errors:
                     flash(err, "warning")
@@ -2071,8 +3123,14 @@ def admin_laporan_edit(form_id: int) -> Response:
             form_id=form_id,
             title=title,
             description=description,
-            target_scope=target_scope,
-            target_jenjang=target_jenjang if target_scope == "jenjang" else None,
+            target_scope=target_scope if target_audience == "sekolah" else "all",
+            target_jenjang=(
+                target_jenjang
+                if target_scope == "jenjang" and target_audience == "sekolah"
+                else None
+            ),
+            target_audience=target_audience,
+            is_mandatory=is_mandatory,
             allow_multiple=allow_multiple,
             allow_late=allow_late,
             very_late_after_minutes=very_late_after_minutes,
@@ -2089,7 +3147,10 @@ def admin_laporan_edit(form_id: int) -> Response:
             repeat_deadline_day=repeat_deadline_day,
         )
 
-        set_form_targets(form_id, specific_school_ids if target_scope == "specific" else [])
+        effective_scope = target_scope if target_audience == "sekolah" else "all"
+        set_form_targets(
+            form_id, specific_school_ids if effective_scope == "specific" else []
+        )
         replace_form_fields(form_id, fields)
 
         if status == "draft":
@@ -2116,7 +3177,14 @@ def admin_laporan_edit(form_id: int) -> Response:
             flash("Draft form berhasil disimpan.", "success")
             return redirect(url_for("laporan.admin_laporan_edit", form_id=form_id))
 
-        flash("Form berhasil diterbitkan." if form.get("status") == "draft" else "Form berhasil diperbarui.", "success")
+        flash(
+            (
+                "Form berhasil diterbitkan."
+                if form.get("status") == "draft"
+                else "Form berhasil diperbarui."
+            ),
+            "success",
+        )
         return redirect(url_for("laporan.admin_laporan_list"))
 
     return render_template(
@@ -2143,6 +3211,11 @@ def admin_laporan_autosave(form_id: int) -> Response:
     description = request.form.get("description", "").strip()
     target_scope = request.form.get("target_scope", "all")
     target_jenjang = request.form.get("target_jenjang", "").strip() or None
+    target_audience = request.form.get(
+        "target_audience", form.get("target_audience", "sekolah")
+    )
+    if target_audience not in ("sekolah", "staff"):
+        target_audience = "sekolah"
     (
         repeat_policy,
         allow_multiple,
@@ -2151,20 +3224,29 @@ def admin_laporan_autosave(form_id: int) -> Response:
         repeat_deadline_day,
     ) = _parse_repeat_settings_from_request()
     allow_late = request.form.get("allow_late") == "1"
+    is_mandatory = request.form.get("is_mandatory", "1") == "1"
     very_late_after_minutes = _parse_very_late_after_minutes()
     no_submission_after_minutes = _parse_no_submission_after_minutes()
     no_submission_jenjangs = _parse_no_submission_jenjangs()
     no_submission_statuses = _parse_no_submission_statuses()
     deadline_at = _parse_deadline(request.form.get("deadline_at", "").strip())
-    specific_school_ids = [int(x) for x in request.form.getlist("target_schools[]") if x.isdigit()]
+    specific_school_ids = [
+        int(x) for x in request.form.getlist("target_schools[]") if x.isdigit()
+    ]
     user = current_user()
 
     update_form(
         form_id=form_id,
         title=title,
         description=description,
-        target_scope=target_scope,
-        target_jenjang=target_jenjang if target_scope == "jenjang" else None,
+        target_scope=target_scope if target_audience == "sekolah" else "all",
+        target_jenjang=(
+            target_jenjang
+            if target_scope == "jenjang" and target_audience == "sekolah"
+            else None
+        ),
+        target_audience=target_audience,
+        is_mandatory=is_mandatory,
         allow_multiple=allow_multiple,
         allow_late=allow_late,
         very_late_after_minutes=very_late_after_minutes,
@@ -2280,7 +3362,9 @@ def admin_laporan_answers(form_id: int) -> Response:
 
     # Filter submissions by period key if periodic and not "all"
     if is_periodic and filter_period != "all":
-        submissions = [s for s in submissions if s.get("repeat_period_key") == filter_period]
+        submissions = [
+            s for s in submissions if s.get("repeat_period_key") == filter_period
+        ]
 
     # Enrich submissions with their answers
     detailed = []
@@ -2296,6 +3380,19 @@ def admin_laporan_answers(form_id: int) -> Response:
     )
     analytics = _build_laporan_analytics(fields, detailed)
 
+    # Calculate accurate target vs missing counts
+    target_schools = get_form_target_schools(form)
+    total_target = len(target_schools)
+    # Submitted for this period
+    total_submitted = len([s for s in submissions if s.get("status") == "submitted"])
+    # Not submitted for this period (target - submitted)
+    total_missing = total_target - total_submitted
+
+    # Calculate unique schools submitted
+    unique_schools_submitted = len(
+        {s.get("school_name") for s in submissions if s.get("status") == "submitted"}
+    )
+
     return render_template(
         "laporan/admin/answers.html",
         form=form,
@@ -2306,6 +3403,10 @@ def admin_laporan_answers(form_id: int) -> Response:
         periods=sorted_periods,
         is_periodic=is_periodic,
         empty_submitted_count=empty_submitted_count,
+        total_target=total_target,
+        total_submitted=total_submitted,
+        total_missing=total_missing,
+        total_unique_schools_submitted=unique_schools_submitted,
     )
 
 
@@ -2332,10 +3433,85 @@ def admin_laporan_delete_empty_submissions(form_id: int) -> Response:
         flash(f"{deleted_count} riwayat terkirim kosong berhasil dihapus. Sekolah terkait dapat mengisi ulang jika form masih dibuka.", "success")
     else:
         flash("Tidak ada riwayat terkirim kosong untuk dihapus.", "info")
-    return redirect(url_for("laporan.admin_laporan_answers", form_id=form_id, period=filter_period))
+    return redirect(
+        url_for("laporan.admin_laporan_answers", form_id=form_id, period=filter_period)
+    )
 
 
-@laporan_bp.route("/admin/<int:form_id>/jawaban/<int:submission_id>/delete", methods=["POST"])
+@laporan_bp.route("/admin/<int:form_id>/jawaban/delete-media-all", methods=["POST"])
+@role_required("admin")
+def admin_laporan_delete_media_all(form_id: int) -> Response:
+    """Admin: delete all media files for all submissions in the selected period."""
+    from .queries import (
+        get_media_files_for_submission,
+        list_form_submissions,
+        mark_media_deleted_for_submission,
+    )
+
+    form = get_form(form_id)
+    if not form:
+        flash("Form tidak ditemukan.", "danger")
+        return redirect(url_for("laporan.admin_laporan_list"))
+
+    filter_period = request.args.get("period") or request.form.get("period") or "all"
+    submissions = list_form_submissions(form_id)
+    is_periodic = form.get("repeat_policy") in PERIODIC_REPEAT_POLICIES
+    if is_periodic and filter_period != "all":
+        submissions = [
+            s for s in submissions if s.get("repeat_period_key") == filter_period
+        ]
+
+    deleted_count = 0
+    for sub in submissions:
+        files = get_media_files_for_submission(sub["id"])
+        if files:
+            _cleanup_submission_files(files)
+            mark_media_deleted_for_submission(sub["id"])
+            deleted_count += len(files)
+
+    if deleted_count > 0:
+        flash(f"{deleted_count} file media berhasil dihapus secara massal.", "success")
+    else:
+        flash("Tidak ada file media yang bisa dihapus pada periode ini.", "info")
+    return redirect(
+        url_for("laporan.admin_laporan_answers", form_id=form_id, period=filter_period)
+    )
+
+
+@laporan_bp.route(
+    "/admin/<int:form_id>/jawaban/<int:submission_id>/delete-media", methods=["POST"]
+)
+@role_required("admin")
+def admin_laporan_delete_media_submission(form_id: int, submission_id: int) -> Response:
+    """Admin: delete media files for one specific submission."""
+    from .queries import (
+        get_media_files_for_submission,
+        mark_media_deleted_for_submission,
+    )
+
+    form = get_form(form_id)
+    if not form:
+        flash("Form tidak ditemukan.", "danger")
+        return redirect(url_for("laporan.admin_laporan_list"))
+
+    filter_period = request.args.get("period") or request.form.get("period") or "all"
+
+    files = get_media_files_for_submission(submission_id)
+    if files:
+        _cleanup_submission_files(files)
+        mark_media_deleted_for_submission(submission_id)
+        flash(f"{len(files)} file media untuk laporan ini berhasil dihapus.", "success")
+    else:
+        flash("Tidak ada media pada laporan ini.", "info")
+
+    return redirect(
+        url_for("laporan.admin_laporan_answers", form_id=form_id, period=filter_period)
+    )
+
+
+@laporan_bp.route(
+    "/admin/<int:form_id>/jawaban/<int:submission_id>/delete", methods=["POST"]
+)
 @role_required("admin")
 def admin_laporan_delete_submission(form_id: int, submission_id: int) -> Response:
     """Admin: delete one submitted history row so the school can submit again."""
@@ -2348,7 +3524,11 @@ def admin_laporan_delete_submission(form_id: int, submission_id: int) -> Respons
     deleted = delete_submitted_submission(form_id, submission_id)
     if not deleted:
         flash("Riwayat isian tidak ditemukan atau bukan jawaban terkirim.", "warning")
-        return redirect(url_for("laporan.admin_laporan_answers", form_id=form_id, period=filter_period))
+        return redirect(
+            url_for(
+                "laporan.admin_laporan_answers", form_id=form_id, period=filter_period
+            )
+        )
 
     _cleanup_submission_files(deleted.get("file_paths") or [])
     school_name = deleted.get("school_name") or "sekolah"
@@ -2365,7 +3545,9 @@ def admin_laporan_delete_submission(form_id: int, submission_id: int) -> Respons
         f"Riwayat isian {school_name}{period_text} berhasil dihapus. Sekolah dapat mengisi lagi jika form masih dibuka.",
         "success",
     )
-    return redirect(url_for("laporan.admin_laporan_answers", form_id=form_id, period=filter_period))
+    return redirect(
+        url_for("laporan.admin_laporan_answers", form_id=form_id, period=filter_period)
+    )
 
 
 @laporan_bp.route("/admin/<int:form_id>/export")
@@ -2431,9 +3613,15 @@ def admin_laporan_pause(form_id: int) -> Response:
     )
 
     if should_pause:
-        flash(f"Form '{form['title']}' dipause. Sekolah tidak bisa mengisi sampai admin unpause.", "success")
+        flash(
+            f"Form '{form['title']}' dipause. Sekolah tidak bisa mengisi sampai admin unpause.",
+            "success",
+        )
     else:
-        flash(f"Form '{form['title']}' di-unpause. Sekolah dapat mengisi lagi sesuai status dan deadline form.", "success")
+        flash(
+            f"Form '{form['title']}' di-unpause. Sekolah dapat mengisi lagi sesuai status dan deadline form.",
+            "success",
+        )
     return redirect(url_for("laporan.admin_laporan_list"))
 
 
@@ -2464,7 +3652,8 @@ def admin_laporan_delete(form_id: int) -> Response:
 def laporan_serve_file(filepath: str) -> Response:
     """Serve uploaded laporan files securely."""
     from pathlib import PurePosixPath
-    from flask import send_from_directory, abort
+
+    from flask import abort, send_from_directory
 
     file_path = PurePosixPath(filepath)
     if ".." in file_path.parts:
@@ -2484,3 +3673,130 @@ def admin_laporan_kpi() -> Response:
         "laporan/admin/kpi.html",
         kpi_data=kpi_data,
     )
+
+
+def _get_category_schools_data(form_id: int, period: str, category: str) -> list[dict]:
+    form = get_form(form_id)
+    if not form:
+        return []
+
+    from .queries import list_form_submissions
+
+    submissions = list_form_submissions(form_id)
+    is_periodic = form.get("repeat_policy") in PERIODIC_REPEAT_POLICIES
+    if is_periodic and period and period != "all":
+        submissions = [s for s in submissions if s.get("repeat_period_key") == period]
+
+    target_schools = get_form_target_schools(form)
+
+    if category == "target":
+        result = target_schools
+    elif category == "submitted":
+        submitted_school_ids = {
+            s.get("school_id") for s in submissions if s.get("status") == "submitted"
+        }
+        result = [s for s in target_schools if s.get("id") in submitted_school_ids]
+    elif category == "missing":
+        submitted_school_ids = {
+            s.get("school_id") for s in submissions if s.get("status") == "submitted"
+        }
+        result = [s for s in target_schools if s.get("id") not in submitted_school_ids]
+    elif category == "unique":
+        submitted_school_names = {
+            s.get("school_name") for s in submissions if s.get("status") == "submitted"
+        }
+        # Map names back to school info safely
+        name_to_info = {}
+        for s in target_schools:
+            nm = s.get("name") or s.get("school_name")
+            if nm and nm not in name_to_info:
+                name_to_info[nm] = s
+        result = []
+        for name in submitted_school_names:
+            if name in name_to_info:
+                result.append(name_to_info[name])
+            else:
+                result.append({"name": name, "npsn": "-", "jenjang": "-"})
+    else:
+        result = []
+
+    return [
+        {
+            "no": i + 1,
+            "npsn": r.get("npsn", "-"),
+            "name": r.get("name") or r.get("school_name", "-"),
+            "jenjang": r.get("jenjang", "-"),
+        }
+        for i, r in enumerate(result)
+    ]
+
+
+@laporan_bp.route("/admin/<int:form_id>/category_schools_api")
+@role_required("admin")
+def admin_laporan_category_schools_api(form_id: int) -> Response:
+    """Admin: get list of schools for a specific category (target/submitted/missing/unique)."""
+    try:
+        period = request.args.get("period", "all")
+        category = request.args.get("category", "target")
+        data = _get_category_schools_data(form_id, period, category)
+        return jsonify({"status": "success", "data": data})
+    except Exception as e:
+        current_app.logger.exception("Error in category_schools_api")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@laporan_bp.route("/admin/<int:form_id>/category_schools_export")
+@role_required("admin")
+def admin_laporan_category_schools_export(form_id: int) -> Response:
+    """Admin: export list of schools for a specific category to Excel."""
+    try:
+        import openpyxl
+
+        period = request.args.get("period", "all")
+        category = request.args.get("category", "target")
+
+        data = _get_category_schools_data(form_id, period, category)
+
+        titles = {
+            "target": "Target Sasaran",
+            "submitted": "Terkirim",
+            "missing": "Tidak Mengumpulkan",
+            "unique": "Sekolah Berbeda",
+        }
+        title = titles.get(category, "Daftar Sekolah")
+
+        wb = openpyxl.Workbook(write_only=True)
+        ws = wb.create_sheet(title=title)
+
+        # Headers
+        headers = ["No", "NPSN", "Nama Sekolah", "Jenjang"]
+        ws.append(headers)
+
+        for item in data:
+            ws.append([item["no"], item["npsn"], item["name"], item["jenjang"]])
+
+        # Untuk performa data dalam jumlah load yang sangat besar, kita lewati
+        # iterasi penyesuaian lebar kolom (auto-width) agar tidak memakan RAM dan CPU.
+
+        out = io.BytesIO()
+        wb.save(out)
+        out.seek(0)
+
+        filename = f"Data_{title}_{form_id}_{period}.xlsx".replace(" ", "_")
+
+        return send_file(
+            out,
+            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            as_attachment=True,
+            download_name=filename,
+        )
+    except Exception as e:
+        current_app.logger.exception("Error exporting category schools")
+        flash("Terjadi kesalahan saat mengunduh Excel: " + str(e), "danger")
+        return redirect(
+            url_for(
+                "laporan.admin_laporan_answers",
+                form_id=form_id,
+                period=request.args.get("period", "all"),
+            )
+        )

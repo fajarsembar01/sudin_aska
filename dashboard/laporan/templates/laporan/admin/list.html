@@ -40,17 +40,28 @@
                         <p class="text-muted small mb-0">{{ f.description | truncate(80) }}</p>
                         {% endif %}
                     </div>
-                    {% if f.status == 'draft' %}
-                    <span class="badge bg-warning-subtle text-warning flex-shrink-0">Draft</span>
-                    {% elif f.is_paused %}
-                    <span class="badge bg-warning-subtle text-warning flex-shrink-0">
-                        <i class="bi bi-pause-circle me-1"></i>Dipause
-                    </span>
-                    {% elif f.is_active %}
-                    <span class="badge bg-success-subtle text-success flex-shrink-0">Aktif</span>
-                    {% else %}
-                    <span class="badge bg-secondary-subtle text-secondary flex-shrink-0">Nonaktif</span>
-                    {% endif %}
+                    <div class="d-flex flex-column align-items-end gap-1 flex-shrink-0">
+                        {% if f.target_audience == 'staff' %}
+                        <span class="badge bg-success-subtle text-success" title="Form ini ditujukan untuk staff">
+                            <i class="bi bi-person-badge me-1"></i>Staff
+                        </span>
+                        {% else %}
+                        <span class="badge bg-primary-subtle text-primary" title="Form ini ditujukan untuk sekolah">
+                            <i class="bi bi-building me-1"></i>Sekolah
+                        </span>
+                        {% endif %}
+                        {% if f.status == 'draft' %}
+                        <span class="badge bg-warning-subtle text-warning">Draft</span>
+                        {% elif f.is_paused %}
+                        <span class="badge bg-warning-subtle text-warning">
+                            <i class="bi bi-pause-circle me-1"></i>Dipause
+                        </span>
+                        {% elif f.is_active %}
+                        <span class="badge bg-success-subtle text-success">Aktif</span>
+                        {% else %}
+                        <span class="badge bg-secondary-subtle text-secondary">Nonaktif</span>
+                        {% endif %}
+                    </div>
                 </div>
 
                 <div class="d-flex flex-wrap gap-3 text-muted small mb-3">

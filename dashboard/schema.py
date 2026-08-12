@@ -1832,7 +1832,7 @@ def ensure_dashboard_schema() -> None:
         _LAPORAN_SUBMISSION_FILES_SQL,
         _LAPORAN_SUBMISSION_FILES_INDEX_SQL,
     )
-    
+
     # Execute statements one by one to ensure partial success and better error reporting
     for i, statement in enumerate(statements):
         try:
@@ -1853,6 +1853,7 @@ CREATE TABLE IF NOT EXISTS laporan_forms (
     title TEXT NOT NULL,
     description TEXT,
     target_scope TEXT NOT NULL DEFAULT 'all' CHECK (target_scope IN ('all', 'jenjang', 'specific')),
+    target_audience TEXT NOT NULL DEFAULT 'sekolah' CHECK (target_audience IN ('sekolah', 'staff')),
     target_jenjang TEXT,
     allow_multiple BOOLEAN NOT NULL DEFAULT FALSE,
     allow_late BOOLEAN NOT NULL DEFAULT FALSE,
@@ -1989,10 +1990,26 @@ _LAPORAN_FORMS_STATUS_FILTER_MIGRATION_SQL = """
 ALTER TABLE laporan_forms ADD COLUMN IF NOT EXISTS no_submission_statuses TEXT;
 """
 
+_LAPORAN_FORMS_AUDIENCE_MIGRATION_SQL = """
+ALTER TABLE laporan_forms ADD COLUMN IF NOT EXISTS target_audience TEXT NOT NULL DEFAULT 'sekolah';
+DO $$
+BEGIN
+    ALTER TABLE laporan_forms
+    ADD CONSTRAINT laporan_forms_target_audience_check
+    CHECK (target_audience IN ('sekolah', 'staff'));
+EXCEPTION
+    WHEN duplicate_object THEN NULL;
+END $$;
+"""
+
 _LAPORAN_SUBMISSIONS_LATE_MIGRATION_SQL = """
 ALTER TABLE laporan_submissions ADD COLUMN IF NOT EXISTS is_late BOOLEAN NOT NULL DEFAULT FALSE;
 ALTER TABLE laporan_submissions ADD COLUMN IF NOT EXISTS late_days INTEGER DEFAULT 0;
 ALTER TABLE laporan_submissions ADD COLUMN IF NOT EXISTS late_minutes INTEGER DEFAULT 0;
+"""
+
+_LAPORAN_SUBMISSIONS_NULLABLE_SCHOOL_MIGRATION_SQL = """
+ALTER TABLE laporan_submissions ALTER COLUMN school_id DROP NOT NULL;
 """
 
 _LAPORAN_FIELDS_CONSTRAINT_MIGRATION_SQL = """
@@ -2098,6 +2115,7 @@ def ensure_laporan_schema() -> None:
         _LAPORAN_REPEAT_POLICY_MIGRATION_SQL,
         _LAPORAN_FORMS_LATE_MIGRATION_SQL,
         _LAPORAN_FORMS_STATUS_FILTER_MIGRATION_SQL,
+        _LAPORAN_FORMS_AUDIENCE_MIGRATION_SQL,
         _LAPORAN_FORMS_INDEX_SQL,
         _LAPORAN_FORM_TARGETS_SQL,
         _LAPORAN_FORM_TARGETS_INDEX_SQL,
@@ -2108,6 +2126,7 @@ def ensure_laporan_schema() -> None:
         _LAPORAN_SUBMISSIONS_STATUS_CHECK_MIGRATION_SQL,
         _LAPORAN_SUBMISSIONS_REPEAT_PERIOD_MIGRATION_SQL,
         _LAPORAN_SUBMISSIONS_LATE_MIGRATION_SQL,
+        _LAPORAN_SUBMISSIONS_NULLABLE_SCHOOL_MIGRATION_SQL,
         _LAPORAN_SUBMISSIONS_INDEX_SQL,
         _LAPORAN_SUBMISSION_ANSWERS_SQL,
         _LAPORAN_SUBMISSION_ANSWERS_UNIQUE_MIGRATION_SQL,

@@ -1,9 +1,9 @@
-
-import os
 import datetime
+import os
+
 import psycopg2
-from psycopg2 import sql
 from dotenv import load_dotenv
+from psycopg2 import sql
 
 load_dotenv()
 
@@ -14,14 +14,12 @@ DB_PASS = os.getenv("DB_PASS")
 DB_HOST = os.getenv("DB_HOST")
 DB_PORT = os.getenv("DB_PORT")
 
+
 def get_connection():
     return psycopg2.connect(
-        dbname=DB_NAME,
-        user=DB_USER,
-        password=DB_PASS,
-        host=DB_HOST,
-        port=DB_PORT
+        dbname=DB_NAME, user=DB_USER, password=DB_PASS, host=DB_HOST, port=DB_PORT
     )
+
 
 def format_value(value):
     if value is None:
@@ -29,6 +27,7 @@ def format_value(value):
     # Handle dict and list types directly (for JSONB columns)
     if isinstance(value, (dict, list)):
         import json as _json
+
         # Convert Python dict/list to proper JSON format
         serialized = _json.dumps(value, ensure_ascii=False)
         # Escape single quotes for SQL string
@@ -38,7 +37,9 @@ def format_value(value):
     if isinstance(value, str):
         trimmed = value.strip()
         if trimmed.startswith("{") or trimmed.startswith("["):
-            import ast, json as _json
+            import ast
+            import json as _json
+
             # Try to parse as Python literal and convert to proper JSON
             try:
                 parsed = ast.literal_eval(trimmed)
@@ -64,6 +65,7 @@ def format_value(value):
     # Basic escaping for strings: replace single quotes with two single quotes
     escaped = str(value).replace("'", "''")
     return f"'{escaped}'"
+
 
 def export_data(output_file="data_export.sql"):
     conn = get_connection()
@@ -127,13 +129,13 @@ def export_data(output_file="data_export.sql"):
 
     # Sort tables: Priority list first, then others alphabetically
     tables = []
-    
+
     # Add priority tables that exist in the database
     for p_table in PRIORITY_TABLES:
         if p_table in all_tables:
             tables.append(p_table)
             all_tables.remove(p_table)
-            
+
     # Add remaining tables (sorted alphabetically)
     tables.extend(sorted(all_tables))
 
@@ -144,27 +146,32 @@ def export_data(output_file="data_export.sql"):
         for table in tables:
             print(f"Exporting {table}...")
             f.write(f"-- Data for table: {table}\n")
-            
+
             # Get columns
-            cursor.execute(f"SELECT column_name FROM information_schema.columns WHERE table_name = '{table}' ORDER BY ordinal_position")
+            cursor.execute(
+                f"SELECT column_name FROM information_schema.columns WHERE table_name = '{table}' ORDER BY ordinal_position"
+            )
             columns = [row[0] for row in cursor.fetchall()]
             col_list = ", ".join(f'"{c}"' for c in columns)
-            
+
             # Get data
             cursor.execute(sql.SQL("SELECT * FROM {}").format(sql.Identifier(table)))
             rows = cursor.fetchall()
-            
+
             for row in rows:
                 values = [format_value(val) for val in row]
                 val_list = ", ".join(values)
-                insert_stmt = f"INSERT INTO \"{table}\" ({col_list}) VALUES ({val_list});\n"
+                insert_stmt = (
+                    f'INSERT INTO "{table}" ({col_list}) VALUES ({val_list});\n'
+                )
                 f.write(insert_stmt)
-            
+
             f.write("\n")
-            
+
     print(f"Export completed to {output_file}")
     cursor.close()
     conn.close()
+
 
 if __name__ == "__main__":
     export_data()

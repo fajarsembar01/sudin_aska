@@ -9,6 +9,7 @@ import os
 import sys
 from contextlib import contextmanager
 
+
 # Load .env dari root project
 def load_env(env_path=".env"):
     if not os.path.exists(env_path):
@@ -20,6 +21,7 @@ def load_env(env_path=".env"):
             if line and not line.startswith("#") and "=" in line:
                 key, _, value = line.partition("=")
                 os.environ.setdefault(key.strip(), value.strip())
+
 
 load_env()
 
@@ -93,6 +95,7 @@ def run_migration():
     except Exception as e:
         print(f"✗ Migration failed: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
 

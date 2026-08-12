@@ -2,17 +2,22 @@
 
 import asyncio
 import time
-from typing import Optional, Set
 from threading import Lock
+from typing import Optional, Set
 
+from dotenv import load_dotenv
 from telegram import Message, Update
 from telegram.error import NetworkError
 from telegram.ext import ContextTypes
 
-from dotenv import load_dotenv
-
+from account_status import BLOCKING_STATUSES, build_status_notice
 from ai_core import build_qa_chain
-from db import save_chat, get_chat_history, get_telegram_user_status
+from db import get_chat_history, get_telegram_user_status, save_chat
+from flows.corruption_flow import handle_corruption
+from flows.psych_flow import handle_psych
+from flows.safety_flow import handle_bullying
+from flows.smalltalk_flow import handle_smalltalk
+from flows.teacher_flow import handle_teacher
 from rag_logger import save_rag_log
 from responses import (
     ASKA_NO_DATA_RESPONSE,
@@ -21,32 +26,25 @@ from responses import (
 )
 from utils import (
     IMG_MD,
-    normalize_input,
-    strip_markdown,
-    now_str,
-    format_history_for_chain,
-    coerce_to_text,
-    rewrite_schedule_query,
-    send_typing_once,
-    keep_typing_indicator,
-    send_thinking_bubble,
-    reply_with_markdown,
-    replace_bot_mentions,
-    should_respond,
-    resolve_target_message,
-    prepare_group_query,
     clean_aska_response,
+    coerce_to_text,
     ensure_aska_brand_style,
+    format_history_for_chain,
     is_llm_quota_error,
+    keep_typing_indicator,
+    normalize_input,
+    now_str,
+    prepare_group_query,
+    replace_bot_mentions,
+    reply_with_markdown,
+    resolve_target_message,
+    rewrite_schedule_query,
+    send_thinking_bubble,
+    send_typing_once,
+    should_respond,
+    strip_markdown,
 )
-from account_status import BLOCKING_STATUSES, build_status_notice
-from flows.safety_flow import handle_bullying
-from flows.corruption_flow import handle_corruption
-from flows.psych_flow import handle_psych
-from flows.teacher_flow import handle_teacher
-from flows.smalltalk_flow import handle_smalltalk
 from voice_handlers import handle_voice
-
 
 load_dotenv()
 qa_chain = build_qa_chain()
@@ -58,6 +56,7 @@ def reload_qa_chain() -> None:
     global qa_chain
     with _qa_chain_lock:
         qa_chain = build_qa_chain()
+
 
 TEACHER_TIMEOUT_SECONDS = 600
 PSYCH_TIMEOUT_SECONDS = 600
@@ -151,7 +150,11 @@ async def handle_user_query(
         raw_input = replace_bot_mentions(raw_input, bot_username)
         normalized_input = normalize_input(raw_input)
 
-        user_obj = target_user or getattr(reply_message, "from_user", None) or update.effective_user
+        user_obj = (
+            target_user
+            or getattr(reply_message, "from_user", None)
+            or update.effective_user
+        )
         user_id = getattr(user_obj, "id", None) or update.effective_user.id
         username = (
             getattr(user_obj, "username", None)
@@ -166,7 +169,9 @@ async def handle_user_query(
         storage_key = user_id if user_id is not None else f"anon:{username}"
 
         # Dedup frequent repeats
-        recent_messages_root = context.chat_data.setdefault("recent_messages_by_user", {})
+        recent_messages_root = context.chat_data.setdefault(
+            "recent_messages_by_user", {}
+        )
         recent_messages = recent_messages_root.setdefault(storage_key, {})
         now_ts = time.time()
         for msg_text, ts in list(recent_messages.items()):
@@ -206,7 +211,9 @@ async def handle_user_query(
                 return True
 
         # Persist user message
-        chat_log_id = save_chat(user_id, username, normalized_input, role="user", topic=topic)
+        chat_log_id = save_chat(
+            user_id, username, normalized_input, role="user", topic=topic
+        )
 
         def mark_responded():
             if responded_store is not None and responded_key is not None:
@@ -310,11 +317,15 @@ async def handle_user_query(
         try:
             thinking_message = await send_thinking_bubble(reply_message)
             await asyncio.sleep(1.0)
-            result = qa_chain.invoke({"input": normalized_input, "chat_history": chat_history})
+            result = qa_chain.invoke(
+                {"input": normalized_input, "chat_history": chat_history}
+            )
         finally:
             typing_task.cancel()
 
-        retrieved_context = result.get("context", []) if isinstance(result, dict) else []
+        retrieved_context = (
+            result.get("context", []) if isinstance(result, dict) else []
+        )
         source_mode = result.get("source_mode") if isinstance(result, dict) else None
         print(f"[{now_str()}] ASKA PAKAI {len(retrieved_context)} KONTEN FINAL:")
         for i, doc in enumerate(retrieved_context, 1):
@@ -381,22 +392,32 @@ async def handle_user_query(
         target_for_error = reply_message or update.message
         if target_for_error:
             if isinstance(e, NetworkError):
-                print(f"[{now_str()}] [WARN] Skipping error reply due to network issue: {e}")
+                print(
+                    f"[{now_str()}] [WARN] Skipping error reply due to network issue: {e}"
+                )
             else:
                 rate_limited = is_llm_quota_error(e)
                 fallback_message = (
-                    get_rate_limit_response() if rate_limited else ASKA_TECHNICAL_ISSUE_RESPONSE
+                    get_rate_limit_response()
+                    if rate_limited
+                    else ASKA_TECHNICAL_ISSUE_RESPONSE
                 )
                 if rate_limited:
-                    print(f"[{now_str()}] [WARN] Rate limit detected, sending notice to user.")
+                    print(
+                        f"[{now_str()}] [WARN] Rate limit detected, sending notice to user."
+                    )
                 try:
                     await target_for_error.reply_text(
                         fallback_message,
                         parse_mode="Markdown",
                     )
                 except NetworkError as send_exc:
-                    print(f"[{now_str()}] [WARN] Failed to send technical issue notice: {send_exc}")
+                    print(
+                        f"[{now_str()}] [WARN] Failed to send technical issue notice: {send_exc}"
+                    )
                 except Exception as send_exc:
-                    print(f"[{now_str()}] [WARN] Unexpected error while sending technical issue notice: {send_exc}")
+                    print(
+                        f"[{now_str()}] [WARN] Unexpected error while sending technical issue notice: {send_exc}"
+                    )
 
     return False

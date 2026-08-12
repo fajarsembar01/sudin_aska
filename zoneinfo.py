@@ -12,7 +12,6 @@ import importlib.util
 import sys
 import sysconfig
 
-
 if sys.version_info >= (3, 9):
     stdlib_path = sysconfig.get_path("stdlib")
     spec = importlib.machinery.PathFinder.find_spec("zoneinfo", [stdlib_path])

@@ -3,7 +3,8 @@ from typing import Optional
 
 from telegram.error import NetworkError
 
-from db import save_chat, record_bullying_report
+from db import record_bullying_report, save_chat
+from reporting_flags import reporting_enabled
 from responses import (
     CATEGORY_GENERAL,
     CATEGORY_PHYSICAL,
@@ -17,9 +18,7 @@ from responses import (
     get_bullying_timeout_message,
     is_bullying_stop_request,
 )
-from reporting_flags import reporting_enabled
 from utils import now_str, send_typing_once, strip_markdown
-
 
 BULLY_CATEGORY_RANK = {
     CATEGORY_GENERAL: 0,
@@ -116,7 +115,11 @@ async def handle_bullying(
             "final_severity": severity,
             "ended_by": reason,
             "timeout_seconds": timeout_seconds if reason == "timeout" else None,
-            "chat_log_ids": [msg.get("chat_log_id") for msg in messages if msg.get("chat_log_id") is not None],
+            "chat_log_ids": [
+                msg.get("chat_log_id")
+                for msg in messages
+                if msg.get("chat_log_id") is not None
+            ],
         }
         # Bersihkan metadata dari nilai None agar JSON rapi.
         metadata = {k: v for k, v in metadata.items() if v is not None}
@@ -135,7 +138,9 @@ async def handle_bullying(
             except Exception as exc:  # pragma: no cover - db issues
                 print(f"[{now_str()}] [ERROR] Failed to record bullying report: {exc}")
         else:
-            print(f"[{now_str()}] [WARN] Bullying session ended without chat_log_id to persist")
+            print(
+                f"[{now_str()}] [WARN] Bullying session ended without chat_log_id to persist"
+            )
 
         response = get_bullying_ack_response(category, report_text=aggregated_text)
         parts = [response]
@@ -153,7 +158,11 @@ async def handle_bullying(
     # Tutup sesi yang sudah idle terlalu lama sebelum memproses pesan baru.
     if session:
         last_user_time = session.get("last_user_time")
-        if last_user_time and (now_ts - last_user_time) > timeout_seconds and session.get("messages"):
+        if (
+            last_user_time
+            and (now_ts - last_user_time) > timeout_seconds
+            and session.get("messages")
+        ):
             await _finalize_session(session, reason="timeout")
             bullying_sessions.pop(storage_key, None)
             session = None
@@ -168,7 +177,9 @@ async def handle_bullying(
 
         current_category = session.get("category", CATEGORY_GENERAL)
         detected_category = detect_bullying_category(normalized_input)
-        if detected_category and BULLY_CATEGORY_RANK.get(detected_category, 0) > BULLY_CATEGORY_RANK.get(current_category, 0):
+        if detected_category and BULLY_CATEGORY_RANK.get(
+            detected_category, 0
+        ) > BULLY_CATEGORY_RANK.get(current_category, 0):
             session["category"] = detected_category
             history = session.setdefault("category_history", [])
             history.append(detected_category)
@@ -227,7 +238,9 @@ async def handle_bullying(
     if not bullying_category:
         return False
 
-    print(f"[{now_str()}]BULLYING REPORT DETECTED ({bullying_category.upper()}) - FLAGGING CHAT")
+    print(
+        f"[{now_str()}]BULLYING REPORT DETECTED ({bullying_category.upper()}) - FLAGGING CHAT"
+    )
 
     session_messages = [{"text": raw_input, "chat_log_id": chat_log_id}]
     severity_value = _calc_severity(bullying_category)

@@ -1530,13 +1530,22 @@ def list_master_activities(
         cur.execute(query, params)
         return [dict(row) for row in cur.fetchall()]
 
+def check_master_activity_exists(name: str, exclude_id: Optional[int] = None) -> bool:
+    init_activities_table()
+    with get_cursor() as cur:
+        if exclude_id is not None:
+            cur.execute("SELECT 1 FROM monev_bos_master_activities WHERE LOWER(name) = LOWER(%s) AND id != %s", (name, exclude_id))
+        else:
+            cur.execute("SELECT 1 FROM monev_bos_master_activities WHERE LOWER(name) = LOWER(%s)", (name,))
+        return bool(cur.fetchone())
+
+
 def create_master_activity(name: str, code_prefix: Optional[str] = None, fund_source: str = "ALL") -> int:
     with get_cursor(commit=True) as cur:
         cur.execute(
             """
             INSERT INTO monev_bos_master_activities (name, code_prefix, fund_source)
             VALUES (%s, %s, %s)
-            ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
             RETURNING id
             """,
             (name.strip(), (code_prefix or "").strip() or None, fund_source)
@@ -1958,6 +1967,16 @@ def list_account_codes(include_inactive: bool = False) -> List[Dict[str, Any]]:
         return [dict(row) for row in cur.fetchall()]
 
 
+def check_account_code_exists(code: str, exclude_id: Optional[int] = None) -> bool:
+    init_account_codes_table()
+    with get_cursor() as cur:
+        if exclude_id is not None:
+            cur.execute("SELECT 1 FROM monev_bos_account_codes WHERE code = %s AND id != %s", (code, exclude_id))
+        else:
+            cur.execute("SELECT 1 FROM monev_bos_account_codes WHERE code = %s", (code,))
+        return bool(cur.fetchone())
+
+
 def create_account_code(code: str, name: Optional[str] = None, description: Optional[str] = None) -> int:
     init_account_codes_table()
     with get_cursor(commit=True) as cur:
@@ -1965,8 +1984,6 @@ def create_account_code(code: str, name: Optional[str] = None, description: Opti
             """
             INSERT INTO monev_bos_account_codes (code, name, description)
             VALUES (%s, %s, %s)
-            ON CONFLICT (code) DO UPDATE 
-            SET name = EXCLUDED.name, description = EXCLUDED.description, is_active = TRUE, updated_at = NOW()
             RETURNING id
             """,
             (code.strip(), (name or "").strip() or None, (description or "").strip() or None)

@@ -2,207 +2,39 @@
 
 from __future__ import annotations
 
+import io
+import json
+import math
+import os
+import re
+import subprocess
+import sys
+import urllib.request as urlrequest
+import uuid
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 from pathlib import Path, PurePosixPath
 from urllib.parse import quote_plus, urlparse
-import subprocess
-import sys
-import math
-import json
-import uuid
-import re
-import os
-import io
-import urllib.request as urlrequest
 from zoneinfo import ZoneInfo
 
 from flask import (
     Blueprint,
     Response,
+    abort,
+    current_app,
     flash,
     jsonify,
+    make_response,
     redirect,
     render_template,
     request,
-    url_for,
-    current_app,
     send_file,
     send_from_directory,
-    abort,
     session,
-    make_response,
+    url_for,
 )
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from ..auth import current_user, role_required
-from dashboard.db_access import get_cursor
-from .permissions import (
-    is_superadmin,
-    can_assign_staff,
-    can_manage_periods,
-    can_reopen_assessment,
-    can_delete_assessment,
-    can_access_aska,
-)
-from .queries import (
-    list_portal_schools,
-    list_portal_rooms,
-    list_school_rooms,
-    get_school_by_id,
-    get_active_assessment,
-    get_active_period,
-    create_assessment,
-    get_assessment_by_id,
-    get_assessment_scores,
-    delete_assessment_scores,
-    save_assessment_score,
-    save_assessment_photo,
-    save_room_details,
-    get_assessment_room_details,
-    get_assessment_photos,
-    submit_assessment,
-    list_staff_assessments,
-    fetch_portal_stats,
-    list_recent_assessments,
-    list_staff_latest_assessments,
-    list_draft_assessments,
-    get_draft_assessment_inputs,
-    list_draft_assessment_staff_options,
-    fetch_top_schools,
-    create_room,
-    create_aspect,
-    create_school,
-    update_school_rooms,
-    list_periods,
-    reopen_assessment,
-    fetch_random_photos,
-    fetch_gallery_photos,
-    fetch_gallery_latest_date,
-    create_period,
-    list_all_staff,
-    list_all_staff_assignments_overview,
-    update_staff_assignment_notes,
-    delete_staff_assignments_by_ids,
-    reset_staff_school_assignments,
-    get_period_by_id,
-    delete_assessment,
-    fetch_school_avg_scores,
-    fetch_bottom_schools,
-    delete_photo,
-    ensure_classroom_rooms_for_school,
-    list_kecamatan,
-    list_kelurahan,
-    search_schools_by_npsn,
-    get_school_by_npsn,
-    get_room_by_id,
-    update_room,
-    delete_room,
-    get_aspect_by_id,
-    update_aspect,
-    delete_aspect,
-    list_kelurahan_by_urgency,
-    fetch_schools_for_sidak,
-    get_portal_schools_paginated,
-    # Staff school assignments
-    assign_staff_to_school,
-    get_staff_assigned_schools,
-    get_schools_assigned_to_staff_ids,
-    remove_staff_school_assignment,
-    list_all_staff_with_assignments,
-    get_latest_final_assessment_for_period,
-    # Assignment requests
-    create_assignment_request,
-    list_assignment_requests,
-    update_assignment_request_status,
-    list_coordinator_requests,
-    set_active_period,
-    update_period,
-    delete_period,
-    get_dashboard_user_profile,
-    update_dashboard_user_profile,
-    update_dashboard_user_profile_photo,
-    # Classroom configuration
-    enable_all_classroom_room_aspects_for_school,
-    list_school_classrooms,
-    create_school_classroom,
-    update_school_classroom,
-    delete_school_classroom,
-    save_school_classrooms_batch,
-    create_reopen_request,
-    get_latest_reopen_request,
-    update_reopen_request_status,
-    list_reopen_requests,
-    fetch_admin_pending_summary,
-    fetch_admin_pending_preview,
-    fetch_portal_undo_window_seconds,
-    list_preview_pins,
-    is_preview_pin,
-    add_preview_pin,
-    remove_preview_pin,
-    get_optional_rooms_for_schools,
-    get_room_with_aspects,
-    list_portal_kontak,
-    create_portal_kontak,
-    update_portal_kontak,
-    update_portal_kontak_status,
-    get_portal_kontak_by_wilayah,
-    delete_portal_kontak,
-    upsert_portal_undo_window_seconds,
-    list_school_user_ids_for_follow_up_notifications,
-    create_room_follow_up_ticket,
-    list_room_follow_up_tickets_for_school,
-    count_room_follow_up_nav_badge_for_school,
-    count_room_follow_up_nav_badge_for_staff,
-    list_room_follow_up_tickets_for_admin,
-    list_room_follow_up_tickets_for_staff,
-    get_room_follow_up_ticket,
-    get_latest_submitted_assessment_for_school,
-    list_room_follow_up_updates,
-    admin_create_room_follow_up_ticket,
-    admin_update_room_follow_up_ticket,
-    admin_delete_room_follow_up_ticket,
-    add_school_room_follow_up_update,
-    verify_room_follow_up_by_staff,
-    list_due_room_follow_up_reminders,
-    list_due_room_follow_up_reminders_for_staff,
-    mark_room_follow_up_reminders_sent,
-    PORTAL_FOLLOW_UP_STATUS_NEW,
-    PORTAL_FOLLOW_UP_STATUS_IN_PROGRESS,
-    PORTAL_FOLLOW_UP_STATUS_SUBMITTED,
-    PORTAL_FOLLOW_UP_STATUS_DONE,
-    PORTAL_UNDO_WINDOW_DEFAULT_SECONDS,
-    PORTAL_UNDO_WINDOW_MIN_SECONDS,
-    PORTAL_UNDO_WINDOW_MAX_SECONDS,
-)
-from dashboard.queries import (
-    create_team_member_request,
-    list_team_member_requests,
-    list_team_member_requests_for_team,
-    update_team_member_request_status,
-    get_team_member_request,
-    get_available_staff,
-    list_dashboard_users,
-)
-from .classroom_rules import (
-    expected_grade_levels,
-    get_classroom_levels,
-    get_template_room_name,
-    grade_label,
-    grade_label_map,
-    normalize_jenjang,
-    parse_room_info,
-    sanitize_submitted_classrooms,
-)
-from dashboard.photo_stamp import decode_data_url_image, stamp_live_photo
-from dashboard.telegram_notifications import (
-    notify_assignment_request,
-    notify_assignment_request_status_update,
-    notify_reopen_request,
-    notify_reopen_status_update,
-    notify_team_member_request,
-    notify_team_member_request_status_update,
-)
 from dashboard.daftar_tamu.queries import (
     PANBERS_ASSIGNMENT_NOTIFICATION_CATEGORY,
     PANBERS_FOLLOW_UP_NOTIFICATION_CATEGORY,
@@ -214,6 +46,172 @@ from dashboard.daftar_tamu.queries import (
     list_user_notifications,
     mark_user_notifications_read,
     sanitize_guestbook_notification_message_for_non_admin,
+)
+from dashboard.db_access import get_cursor
+from dashboard.photo_stamp import decode_data_url_image, stamp_live_photo
+from dashboard.queries import (
+    create_team_member_request,
+    get_available_staff,
+    get_team_member_request,
+    list_dashboard_users,
+    list_team_member_requests,
+    list_team_member_requests_for_team,
+    update_team_member_request_status,
+)
+from dashboard.telegram_notifications import (
+    notify_assignment_request,
+    notify_assignment_request_status_update,
+    notify_reopen_request,
+    notify_reopen_status_update,
+    notify_team_member_request,
+    notify_team_member_request_status_update,
+)
+
+from ..auth import current_user, role_required
+from .classroom_rules import (
+    expected_grade_levels,
+    get_classroom_levels,
+    get_template_room_name,
+    grade_label,
+    grade_label_map,
+    normalize_jenjang,
+    parse_room_info,
+    sanitize_submitted_classrooms,
+)
+from .permissions import (
+    can_access_aska,
+    can_assign_staff,
+    can_delete_assessment,
+    can_manage_periods,
+    can_reopen_assessment,
+    is_superadmin,
+)
+from .queries import (  # Staff school assignments; Assignment requests; Classroom configuration
+    PORTAL_FOLLOW_UP_STATUS_DONE,
+    PORTAL_FOLLOW_UP_STATUS_IN_PROGRESS,
+    PORTAL_FOLLOW_UP_STATUS_NEW,
+    PORTAL_FOLLOW_UP_STATUS_SUBMITTED,
+    PORTAL_UNDO_WINDOW_DEFAULT_SECONDS,
+    PORTAL_UNDO_WINDOW_MAX_SECONDS,
+    PORTAL_UNDO_WINDOW_MIN_SECONDS,
+    add_preview_pin,
+    add_school_room_follow_up_update,
+    admin_create_room_follow_up_ticket,
+    admin_delete_room_follow_up_ticket,
+    admin_update_room_follow_up_ticket,
+    assign_staff_to_school,
+    count_room_follow_up_nav_badge_for_school,
+    count_room_follow_up_nav_badge_for_staff,
+    create_aspect,
+    create_assessment,
+    create_assignment_request,
+    create_period,
+    create_portal_kontak,
+    create_reopen_request,
+    create_room,
+    create_room_follow_up_ticket,
+    create_school,
+    create_school_classroom,
+    delete_aspect,
+    delete_assessment,
+    delete_assessment_scores,
+    delete_period,
+    delete_photo,
+    delete_portal_kontak,
+    delete_room,
+    delete_school_classroom,
+    delete_staff_assignments_by_ids,
+    enable_all_classroom_room_aspects_for_school,
+    ensure_classroom_rooms_for_school,
+    fetch_admin_pending_preview,
+    fetch_admin_pending_summary,
+    fetch_bottom_schools,
+    fetch_gallery_latest_date,
+    fetch_gallery_photos,
+    fetch_portal_stats,
+    fetch_portal_undo_window_seconds,
+    fetch_random_photos,
+    fetch_school_avg_scores,
+    fetch_schools_for_sidak,
+    fetch_top_schools,
+    get_active_assessment,
+    get_active_period,
+    get_aspect_by_id,
+    get_assessment_by_id,
+    get_assessment_photos,
+    get_assessment_room_details,
+    get_assessment_scores,
+    get_dashboard_user_profile,
+    get_draft_assessment_inputs,
+    get_latest_final_assessment_for_period,
+    get_latest_reopen_request,
+    get_latest_submitted_assessment_for_school,
+    get_optional_rooms_for_schools,
+    get_period_by_id,
+    get_portal_kontak_by_wilayah,
+    get_portal_schools_paginated,
+    get_room_by_id,
+    get_room_follow_up_ticket,
+    get_room_with_aspects,
+    get_school_by_id,
+    get_school_by_npsn,
+    get_schools_assigned_to_staff_ids,
+    get_staff_assigned_schools,
+    is_preview_pin,
+    list_all_staff,
+    list_all_staff_assignments_overview,
+    list_all_staff_with_assignments,
+    list_assignment_requests,
+    list_coordinator_requests,
+    list_draft_assessment_staff_options,
+    list_draft_assessments,
+    list_due_room_follow_up_reminders,
+    list_due_room_follow_up_reminders_for_staff,
+    list_kecamatan,
+    list_kelurahan,
+    list_kelurahan_by_urgency,
+    list_periods,
+    list_portal_kontak,
+    list_portal_rooms,
+    list_portal_schools,
+    list_preview_pins,
+    list_recent_assessments,
+    list_reopen_requests,
+    list_room_follow_up_tickets_for_admin,
+    list_room_follow_up_tickets_for_school,
+    list_room_follow_up_tickets_for_staff,
+    list_room_follow_up_updates,
+    list_school_classrooms,
+    list_school_rooms,
+    list_school_user_ids_for_follow_up_notifications,
+    list_staff_assessments,
+    list_staff_latest_assessments,
+    mark_room_follow_up_reminders_sent,
+    remove_preview_pin,
+    remove_staff_school_assignment,
+    reopen_assessment,
+    reset_staff_school_assignments,
+    save_assessment_photo,
+    save_assessment_score,
+    save_room_details,
+    save_school_classrooms_batch,
+    search_schools_by_npsn,
+    set_active_period,
+    submit_assessment,
+    update_aspect,
+    update_assignment_request_status,
+    update_dashboard_user_profile,
+    update_dashboard_user_profile_photo,
+    update_period,
+    update_portal_kontak,
+    update_portal_kontak_status,
+    update_reopen_request_status,
+    update_room,
+    update_school_classroom,
+    update_school_rooms,
+    update_staff_assignment_notes,
+    upsert_portal_undo_window_seconds,
+    verify_room_follow_up_by_staff,
 )
 
 
@@ -278,7 +276,11 @@ def _normalize_assessment_scale_max(scale_max: int | None) -> int:
         parsed = int(scale_max) if scale_max is not None else _LEGACY_SCORE_SCALE_MAX
     except (TypeError, ValueError):
         parsed = _LEGACY_SCORE_SCALE_MAX
-    return _NEW_SCORE_SCALE_MAX if parsed == _NEW_SCORE_SCALE_MAX else _LEGACY_SCORE_SCALE_MAX
+    return (
+        _NEW_SCORE_SCALE_MAX
+        if parsed == _NEW_SCORE_SCALE_MAX
+        else _LEGACY_SCORE_SCALE_MAX
+    )
 
 
 def _assessment_score_min(scale_max: int) -> int:
@@ -301,7 +303,9 @@ def _score_pct_from_raw(score: float | int | None, scale_max: int) -> float:
 
 
 def _build_assessment_score_config(assessment: dict | None) -> dict:
-    scale_max = _normalize_assessment_scale_max((assessment or {}).get("score_scale_max"))
+    scale_max = _normalize_assessment_scale_max(
+        (assessment or {}).get("score_scale_max")
+    )
     score_min = _assessment_score_min(scale_max)
     score_baseline = _assessment_submit_baseline(scale_max)
     options = list(range(score_min, scale_max + 1))
@@ -320,7 +324,9 @@ def _build_assessment_score_config(assessment: dict | None) -> dict:
             {"value": 2, "label": "baik"},
             {"value": 3, "label": "sangat baik"},
         ]
-    default_label = next((item["label"] for item in legend if item["value"] == score_min), "")
+    default_label = next(
+        (item["label"] for item in legend if item["value"] == score_min), ""
+    )
     return {
         "min": score_min,
         "max": scale_max,
@@ -354,7 +360,10 @@ def _preview_read_only_block_response(*, fallback_url: str) -> Response:
         or "application/json" in content_type
     )
     if wants_json:
-        return jsonify({"success": False, "message": message, "preview_read_only": True}), 403
+        return (
+            jsonify({"success": False, "message": message, "preview_read_only": True}),
+            403,
+        )
 
     flash(message, "warning")
     target_url = (request.referrer or "").strip() or fallback_url
@@ -369,7 +378,9 @@ def _enforce_preview_read_only_mode() -> Response | None:
         return None
     if not _is_preview_read_only_session():
         return None
-    return _preview_read_only_block_response(fallback_url=url_for("portal.preview_accounts"))
+    return _preview_read_only_block_response(
+        fallback_url=url_for("portal.preview_accounts")
+    )
 
 
 def _get_low_score_rooms(
@@ -391,11 +402,12 @@ def _get_low_score_rooms(
 
     scores = get_assessment_scores(assessment_id)
     score_map = {
-        (s.get("school_room_id"), s.get("aspect_id")): s.get("score")
-        for s in scores
+        (s.get("school_room_id"), s.get("aspect_id")): s.get("score") for s in scores
     }
     photos = get_assessment_photos(assessment_id)
-    rooms_with_photos = {p.get("school_room_id") for p in photos if p.get("school_room_id") is not None}
+    rooms_with_photos = {
+        p.get("school_room_id") for p in photos if p.get("school_room_id") is not None
+    }
 
     missing: list[dict] = []
     for room in rooms:
@@ -465,7 +477,9 @@ def _status_badge_class(status: str) -> str:
 
 
 def _follow_up_status_label(status: str) -> str:
-    return FOLLOW_UP_STATUS_LABELS.get((status or "").strip().lower(), "Tidak diketahui")
+    return FOLLOW_UP_STATUS_LABELS.get(
+        (status or "").strip().lower(), "Tidak diketahui"
+    )
 
 
 def _follow_up_event_label(event_type: str) -> str:
@@ -545,6 +559,8 @@ def _ensure_follow_up_tickets_after_submit(
                 },
             )
     return created_count
+
+
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
 AREA_CONTACTS = [
     {"area": "Cilincing", "name": "Neni", "phone": "+62 851-1085-1681"},
@@ -573,7 +589,9 @@ def uploaded_file(filename):
     # Guestbook photos may be cleaned up while historical rows still reference them.
     # Fall back to a local placeholder so dashboard pages do not emit avoidable 404s.
     if requested_path.parts and requested_path.parts[0] == "daftar_tamu":
-        placeholder = Path(__file__).resolve().parent.parent / "static" / "logo" / "logo.png"
+        placeholder = (
+            Path(__file__).resolve().parent.parent / "static" / "logo" / "logo.png"
+        )
         if placeholder.is_file():
             return send_file(placeholder)
 
@@ -623,7 +641,9 @@ def _collect_orphan_photo_files() -> tuple[list[dict], dict]:
         if db_key in db_paths:
             continue
         stat = path.stat()
-        updated_at = datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).astimezone(JAKARTA_TZ)
+        updated_at = datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).astimezone(
+            JAKARTA_TZ
+        )
         orphans.append(
             {
                 "rel_path": rel,
@@ -691,15 +711,23 @@ def _serialize_follow_up_timeline(updates: list[dict]) -> list[dict]:
         event_type = (row.get("event_type") or "").strip().lower()
         status_after = (row.get("status_after") or "").strip().lower()
         row["event_label"] = _follow_up_event_label(event_type)
-        row["status_after_label"] = _follow_up_status_label(status_after) if status_after else ""
-        row["status_badge"] = _status_badge_class(status_after) if status_after else "secondary"
+        row["status_after_label"] = (
+            _follow_up_status_label(status_after) if status_after else ""
+        )
+        row["status_badge"] = (
+            _status_badge_class(status_after) if status_after else "secondary"
+        )
         row["created_label"] = _format_follow_up_datetime(row.get("created_at"))
-        row["photo_url"] = _build_portal_file_url((row.get("photo_path") or "").strip() or None)
+        row["photo_url"] = _build_portal_file_url(
+            (row.get("photo_path") or "").strip() or None
+        )
         serialized.append(row)
     return serialized
 
 
-def _dispatch_due_follow_up_reminders_for_user(*, user: dict, school: dict | None) -> int:
+def _dispatch_due_follow_up_reminders_for_user(
+    *, user: dict, school: dict | None
+) -> int:
     if not user or (user.get("role") or "").strip().lower() != "sekolah":
         return 0
     school_id = int((school or {}).get("id") or 0)
@@ -717,7 +745,9 @@ def _dispatch_due_follow_up_reminders_for_user(*, user: dict, school: dict | Non
         follow_up_id = int(item.get("id") or 0)
         if follow_up_id <= 0:
             continue
-        room_name = (item.get("room_name_snapshot") or "").strip() or f"Ruang {follow_up_id}"
+        room_name = (
+            item.get("room_name_snapshot") or ""
+        ).strip() or f"Ruang {follow_up_id}"
         ticket_code = (item.get("ticket_code") or "").strip()
         score_pct = float(item.get("trigger_score_pct") or 0.0)
         notif_title = "Pengingat Tindak Lanjut PANBERSS"
@@ -737,7 +767,8 @@ def _dispatch_due_follow_up_reminders_for_user(*, user: dict, school: dict | Non
             reference_table="portal_room_follow_up_tickets",
             reference_id=follow_up_id,
             metadata={
-                "status": (item.get("status") or "").strip().lower() or PORTAL_FOLLOW_UP_STATUS_IN_PROGRESS,
+                "status": (item.get("status") or "").strip().lower()
+                or PORTAL_FOLLOW_UP_STATUS_IN_PROGRESS,
                 "feature": "panbers_follow_up",
                 "ticket_id": follow_up_id,
                 "ticket_code": ticket_code or None,
@@ -753,7 +784,9 @@ def _dispatch_due_follow_up_reminders_for_user(*, user: dict, school: dict | Non
 
     if not notified_ids:
         return 0
-    mark_room_follow_up_reminders_sent(follow_up_ids=notified_ids, actor_user_id=user_id)
+    mark_room_follow_up_reminders_sent(
+        follow_up_ids=notified_ids, actor_user_id=user_id
+    )
     return len(notified_ids)
 
 
@@ -774,7 +807,9 @@ def _dispatch_due_follow_up_reminders_for_staff_user(*, user: dict) -> int:
         if follow_up_id <= 0:
             continue
         school_name = (item.get("school_name") or "").strip() or "Sekolah"
-        room_name = (item.get("room_name_snapshot") or "").strip() or f"Ruang {follow_up_id}"
+        room_name = (
+            item.get("room_name_snapshot") or ""
+        ).strip() or f"Ruang {follow_up_id}"
         ticket_code = (item.get("ticket_code") or "").strip()
         score_pct = float(item.get("trigger_score_pct") or 0.0)
         notif_title = "Reminder Verifikasi Tindak Lanjut PANBERSS"
@@ -808,7 +843,9 @@ def _dispatch_due_follow_up_reminders_for_staff_user(*, user: dict) -> int:
 
     if not notified_ids:
         return 0
-    mark_room_follow_up_reminders_sent(follow_up_ids=notified_ids, actor_user_id=user_id)
+    mark_room_follow_up_reminders_sent(
+        follow_up_ids=notified_ids, actor_user_id=user_id
+    )
     return len(notified_ids)
 
 
@@ -884,9 +921,8 @@ def _can_edit_assessment(user: dict | None, assessment: dict | None) -> bool:
         return False
     if user.get("role") == "admin":
         return True
-    return (
-        assessment.get("staff_id") == user.get("id")
-        and _can_assess_school(user, assessment.get("school_id"))
+    return assessment.get("staff_id") == user.get("id") and _can_assess_school(
+        user, assessment.get("school_id")
     )
 
 
@@ -1150,7 +1186,9 @@ def _notify_panbers_assignment_status_change(
     period_label = (period_name or "").strip()
     note_text = _truncate_notification_text(reviewer_note)
 
-    message_parts = [f"Pengajuan penugasan {staff_label} ke {school_label} {status_label.lower()}."]
+    message_parts = [
+        f"Pengajuan penugasan {staff_label} ke {school_label} {status_label.lower()}."
+    ]
     if period_label:
         message_parts.append(f"Periode: {period_label}.")
     if coordinator_label:
@@ -1211,7 +1249,9 @@ def _notify_panbers_team_member_request_status_change(
     requester_name = (request_row.get("requested_by_name") or "").strip()
     note_text = _truncate_notification_text(reviewer_note)
 
-    message_parts = [f"Permintaan anggota tim untuk {staff_name} di {team_name} {status_label.lower()}."]
+    message_parts = [
+        f"Permintaan anggota tim untuk {staff_name} di {team_name} {status_label.lower()}."
+    ]
     if requester_name:
         message_parts.append(f"Pengaju: {requester_name}.")
     if note_text:
@@ -1285,7 +1325,11 @@ def _compute_missing_profile_fields(school: dict | None) -> list[str]:
     if not school.get("logo_url"):
         missing.append("Logo sekolah")
     # alamat + kelurahan/kecamatan
-    if not (school.get("alamat") and school.get("kelurahan_name") and school.get("kecamatan_name")):
+    if not (
+        school.get("alamat")
+        and school.get("kelurahan_name")
+        and school.get("kecamatan_name")
+    ):
         missing.append("Alamat dan wilayah")
     for key, label in required_keys.items():
         value = meta.get(key)
@@ -1341,13 +1385,29 @@ def _detect_suspicious_profile_data(school: dict | None) -> list[str]:
                 total += val
         empty_by_grade_sum = total
 
-    if student_count is not None and inclusion_count is not None and inclusion_count > student_count:
+    if (
+        student_count is not None
+        and inclusion_count is not None
+        and inclusion_count > student_count
+    ):
         reasons.append("Siswa inklusi > total siswa")
-    if student_count is not None and rombel_count is not None and rombel_count > student_count:
+    if (
+        student_count is not None
+        and rombel_count is not None
+        and rombel_count > student_count
+    ):
         reasons.append("Rombel > total siswa")
-    if student_count is not None and empty_seats is not None and empty_seats > student_count:
+    if (
+        student_count is not None
+        and empty_seats is not None
+        and empty_seats > student_count
+    ):
         reasons.append("Bangku kosong > total siswa")
-    if student_count is not None and empty_by_grade_sum is not None and empty_by_grade_sum > student_count:
+    if (
+        student_count is not None
+        and empty_by_grade_sum is not None
+        and empty_by_grade_sum > student_count
+    ):
         reasons.append("Bangku kosong per kelas > total siswa")
     if student_count is not None and student_count > 0:
         if teacher_count == 0:
@@ -1485,6 +1545,7 @@ def _sync_classroom_aspects_from_template_room(room: dict | None) -> int:
 
 def _build_profile_payload(form_data: dict) -> dict:
     """Extract and normalize profile fields from form data or json."""
+
     def _clean_int(val):
         try:
             return int(val)
@@ -1594,15 +1655,21 @@ def _validate_profile_data(payload: dict, *, jenjang: str | None = None) -> list
             for g in expected_grades:
                 val = empty_map.get(str(g))
                 if val is None:
-                    errors.append(f"Bangku kosong {grade_label(jenjang, g)} wajib diisi.")
+                    errors.append(
+                        f"Bangku kosong {grade_label(jenjang, g)} wajib diisi."
+                    )
                     break
                 try:
                     int_val = int(val)
                     if int_val < 0:
-                        errors.append(f"Bangku kosong {grade_label(jenjang, g)} harus >= 0.")
+                        errors.append(
+                            f"Bangku kosong {grade_label(jenjang, g)} harus >= 0."
+                        )
                         break
                 except Exception:
-                    errors.append(f"Bangku kosong {grade_label(jenjang, g)} harus angka.")
+                    errors.append(
+                        f"Bangku kosong {grade_label(jenjang, g)} harus angka."
+                    )
                     break
     else:
         if payload.get("empty_seats") is None:
@@ -1637,34 +1704,38 @@ def _validate_profile_data(payload: dict, *, jenjang: str | None = None) -> list
 def _save_school_profile(school_id: int, data: dict) -> None:
     """Persist profile data into portal_schools (address + metadata + logo)."""
     import base64
-    
+
     logo_data = data.get("logo_data", "")
     logo_url = None
-    
+
     # Handle logo upload from base64
     if logo_data and logo_data.startswith("data:image"):
         try:
             # Remove data URL prefix
             header, encoded = logo_data.split(",", 1)
             img_bytes = base64.b64decode(encoded)
-            
+
             # Create logos directory
             logos_dir = UPLOAD_FOLDER / "logos"
             logos_dir.mkdir(parents=True, exist_ok=True)
-            
+
             # Save with school_id as filename
             filename = f"school_{school_id}.jpg"
             filepath = logos_dir / filename
             with open(filepath, "wb") as f:
                 f.write(img_bytes)
-            
+
             logo_url = url_for("portal.uploaded_file", filename=f"logos/{filename}")
         except Exception as e:
             current_app.logger.exception(f"Error saving logo: {e}")
-    
+
     # Exclude non-metadata fields
-    meta_fields = {k: v for k, v in data.items() if k not in {"alamat", "kelurahan_id", "logo_data"}}
-    
+    meta_fields = {
+        k: v
+        for k, v in data.items()
+        if k not in {"alamat", "kelurahan_id", "logo_data"}
+    }
+
     with get_cursor(commit=True) as cur:
         if logo_url:
             cur.execute(
@@ -1677,7 +1748,13 @@ def _save_school_profile(school_id: int, data: dict) -> None:
                     updated_at = NOW()
                 WHERE id = %s
                 """,
-                (data.get("alamat"), data.get("kelurahan_id"), logo_url, json.dumps(meta_fields), school_id),
+                (
+                    data.get("alamat"),
+                    data.get("kelurahan_id"),
+                    logo_url,
+                    json.dumps(meta_fields),
+                    school_id,
+                ),
             )
         else:
             cur.execute(
@@ -1689,7 +1766,12 @@ def _save_school_profile(school_id: int, data: dict) -> None:
                     updated_at = NOW()
                 WHERE id = %s
                 """,
-                (data.get("alamat"), data.get("kelurahan_id"), json.dumps(meta_fields), school_id),
+                (
+                    data.get("alamat"),
+                    data.get("kelurahan_id"),
+                    json.dumps(meta_fields),
+                    school_id,
+                ),
             )
         
         phone_val = data.get("coordinator_phone") or data.get("school_phone")
@@ -1712,7 +1794,9 @@ def _sanitize_phone(phone: str) -> str:
     return digits_only
 
 
-def _build_coordinator_contacts(school: dict | None = None, *, area_name: str | None = None) -> list[dict]:
+def _build_coordinator_contacts(
+    school: dict | None = None, *, area_name: str | None = None
+) -> list[dict]:
     """Return area contact list with wa links, optionally personalized with school or user area info."""
     contacts = []
     message = "Halo, kami ingin menghubungi admin wilayah."
@@ -1722,9 +1806,13 @@ def _build_coordinator_contacts(school: dict | None = None, *, area_name: str | 
             "ingin menghubungi admin wilayah."
         )
     elif school and school.get("name"):
-        message = f"Halo, kami dari {school.get('name')} ingin menghubungi admin wilayah."
+        message = (
+            f"Halo, kami dari {school.get('name')} ingin menghubungi admin wilayah."
+        )
     elif area_name:
-        message = f"Halo, kami dari wilayah {area_name} ingin menghubungi admin wilayah."
+        message = (
+            f"Halo, kami dari wilayah {area_name} ingin menghubungi admin wilayah."
+        )
     area_match_source = area_name
     if not area_match_source and school:
         area_match_source = school.get("kecamatan_name")
@@ -1792,7 +1880,7 @@ def home() -> Response:
     if role == "admin":
         return redirect(url_for("portal.admin_stats"))
 
-    if role == "staff":
+    if role in ("staff", "pengawas", "kasi", "operator"):
         cards = [
             {
                 "title": "PANBERSS",
@@ -1887,6 +1975,13 @@ def home() -> Response:
                 "href": url_for("penugasan.spmb_queue_picker"),
                 "col_class": "col-md-6 col-12",
             },
+            {
+                "title": "Laporan",
+                "description": "Lihat laporan dan riwayat laporan yang masuk.",
+                "icon": "bi-file-earmark-text",
+                "href": url_for("laporan.staff_laporan_list"),
+                "col_class": "col-md-6 col-12",
+            },
         ]
         return render_template(
             "role_selection.html",
@@ -1922,11 +2017,11 @@ def schools() -> Response:
     """List schools available for assessment."""
     user = current_user()
     role = user.get("role")
-    
+
     # Sekolah role redirect
     if role == "sekolah":
         return redirect(url_for("portal.sekolah_home"))
-    
+
     # Staff and coordinators assess from their assignment lists.
     if role == "staff":
         return redirect(url_for("portal.staff_assignments"))
@@ -1935,7 +2030,7 @@ def schools() -> Response:
     if role != "admin":
         flash("Anda tidak memiliki akses untuk melakukan penilaian.", "danger")
         return redirect(url_for("portal.home"))
-    
+
     search = request.args.get("q", "").strip()
     jenjang = request.args.get("jenjang", "").strip() or None
     page = request.args.get("page", 1, type=int)
@@ -1949,15 +2044,15 @@ def schools() -> Response:
         selected_period_id = active_period_id
     elif selected_period_id not in {p["id"] for p in periods}:
         selected_period_id = active_period_id
-    
+
     pagination = get_portal_schools_paginated(
-        page=page, 
-        per_page=per_page, 
-        search=search or None, 
+        page=page,
+        per_page=per_page,
+        search=search or None,
         jenjang=jenjang,
-        kecamatan_ids=None
+        kecamatan_ids=None,
     )
-    
+
     return render_template(
         "portal/assessments/school_select.html",
         schools=pagination["items"],
@@ -1970,9 +2065,8 @@ def schools() -> Response:
     )
 
 
-
-
 # ===== Sekolah Landing =====
+
 
 @portal_bp.route("/sekolah")
 @role_required("sekolah")
@@ -1991,12 +2085,12 @@ def sekolah_home() -> Response:
     headmaster_incomplete = not bool(h_name and h_nip and h_name != "-" and h_nip != "-")
 
     cards = [
-         {
-             "title": "PANBERSS",
-             "description": "Konfigurasi ruangan untuk pemantauan kebersihan dan sarana sekolah.",
-             "icon": "bi bi-building",
-             "href": url_for("portal.sekolah_rooms"),
-             "col_class": "col-lg-4 col-md-6 col-12",
+        {
+            "title": "PANBERSS",
+            "description": "Konfigurasi ruangan untuk pemantauan kebersihan dan sarana sekolah.",
+            "icon": "bi bi-building",
+            "href": url_for("portal.sekolah_rooms"),
+            "col_class": "col-lg-4 col-md-6 col-12",
         },
         {
             "title": "Hospitality",
@@ -2077,7 +2171,9 @@ def _can_access_follow_up_ticket(user: dict, ticket: dict) -> bool:
     return False
 
 
-def _parse_live_photo_payload() -> tuple[bytes | None, float | None, float | None, datetime | None]:
+def _parse_live_photo_payload() -> (
+    tuple[bytes | None, float | None, float | None, datetime | None]
+):
     photo_data = (request.form.get("photo_data") or "").strip()
     if not photo_data:
         return None, None, None, None
@@ -2105,8 +2201,12 @@ def _parse_live_photo_payload() -> tuple[bytes | None, float | None, float | Non
     return source_bytes, latitude, longitude, captured_at
 
 
-def _save_follow_up_photo(file_storage, *, follow_up_id: int, school_label: str | None) -> str | None:
-    live_source_bytes, live_latitude, live_longitude, live_captured_at = _parse_live_photo_payload()
+def _save_follow_up_photo(
+    file_storage, *, follow_up_id: int, school_label: str | None
+) -> str | None:
+    live_source_bytes, live_latitude, live_longitude, live_captured_at = (
+        _parse_live_photo_payload()
+    )
     if live_source_bytes:
         stamped = stamp_live_photo(
             source_bytes=live_source_bytes,
@@ -2123,7 +2223,9 @@ def _save_follow_up_photo(file_storage, *, follow_up_id: int, school_label: str 
     if not file_storage or not getattr(file_storage, "filename", ""):
         return None
     if not _allowed_file(file_storage.filename):
-        raise ValueError("Format foto tidak didukung. Gunakan PNG, JPG, JPEG, atau WEBP.")
+        raise ValueError(
+            "Format foto tidak didukung. Gunakan PNG, JPG, JPEG, atau WEBP."
+        )
     file_storage.stream.seek(0)
     source_bytes = file_storage.stream.read()
     stamped = stamp_live_photo(
@@ -2150,9 +2252,15 @@ def sekolah_follow_ups() -> Response:
 
     tickets = [
         _annotate_follow_up_ticket(item)
-        for item in list_room_follow_up_tickets_for_school(int(school.get("id")), include_done=True, limit=200)
+        for item in list_room_follow_up_tickets_for_school(
+            int(school.get("id")), include_done=True, limit=200
+        )
     ]
-    open_count = sum(1 for item in tickets if (item.get("status") or "").strip().lower() != PORTAL_FOLLOW_UP_STATUS_DONE)
+    open_count = sum(
+        1
+        for item in tickets
+        if (item.get("status") or "").strip().lower() != PORTAL_FOLLOW_UP_STATUS_DONE
+    )
     done_count = len(tickets) - open_count
     return render_template(
         "portal/sekolah/follow_ups.html",
@@ -2169,12 +2277,21 @@ def staff_follow_ups() -> Response:
     user = current_user()
     tickets = [
         _annotate_follow_up_ticket(item)
-        for item in list_room_follow_up_tickets_for_staff(int(user.get("id") or 0), include_done=True, limit=250)
+        for item in list_room_follow_up_tickets_for_staff(
+            int(user.get("id") or 0), include_done=True, limit=250
+        )
     ]
     pending_verify_count = sum(
-        1 for item in tickets if (item.get("status") or "").strip().lower() == PORTAL_FOLLOW_UP_STATUS_SUBMITTED
+        1
+        for item in tickets
+        if (item.get("status") or "").strip().lower()
+        == PORTAL_FOLLOW_UP_STATUS_SUBMITTED
     )
-    open_count = sum(1 for item in tickets if (item.get("status") or "").strip().lower() != PORTAL_FOLLOW_UP_STATUS_DONE)
+    open_count = sum(
+        1
+        for item in tickets
+        if (item.get("status") or "").strip().lower() != PORTAL_FOLLOW_UP_STATUS_DONE
+    )
     return render_template(
         "portal/staff/follow_ups.html",
         tickets=tickets,
@@ -2217,7 +2334,9 @@ def admin_follow_ups() -> Response:
     schools = list_portal_schools(active_only=False)
     staff_options = list_all_staff()
     create_school = get_school_by_id(create_school_id) if create_school_id else None
-    create_school_rooms = list_school_rooms(int(create_school_id)) if create_school_id else []
+    create_school_rooms = (
+        list_school_rooms(int(create_school_id)) if create_school_id else []
+    )
     create_latest_assessment = (
         get_latest_submitted_assessment_for_school(int(create_school_id))
         if create_school_id
@@ -2254,7 +2373,9 @@ def admin_follow_up_create() -> Response:
     note = (request.form.get("note") or "").strip()
 
     try:
-        trigger_score_pct = float((request.form.get("trigger_score_pct") or "").strip() or "0")
+        trigger_score_pct = float(
+            (request.form.get("trigger_score_pct") or "").strip() or "0"
+        )
     except (TypeError, ValueError):
         trigger_score_pct = -1.0
     try:
@@ -2292,7 +2413,11 @@ def admin_follow_up_create() -> Response:
         return redirect(url_for("portal.admin_follow_ups"))
     school_rooms = list_school_rooms(int(school_id))
     selected_room = next(
-        (item for item in school_rooms if int(item.get("school_room_id") or 0) == int(school_room_id)),
+        (
+            item
+            for item in school_rooms
+            if int(item.get("school_room_id") or 0) == int(school_room_id)
+        ),
         None,
     )
     if not selected_room:
@@ -2303,15 +2428,29 @@ def admin_follow_up_create() -> Response:
         assessment = get_assessment_by_id(int(assessment_id))
         if not assessment or int(assessment.get("school_id") or 0) != int(school_id):
             flash("Assessment tidak valid untuk sekolah ini.", "warning")
-            return redirect(url_for("portal.admin_follow_ups", create_school_id=school_id))
-        if (assessment.get("status") or "").strip().lower() not in {"submitted", "verified"}:
-            flash("Assessment harus berstatus submitted/verified untuk membuat tiket.", "warning")
-            return redirect(url_for("portal.admin_follow_ups", create_school_id=school_id))
+            return redirect(
+                url_for("portal.admin_follow_ups", create_school_id=school_id)
+            )
+        if (assessment.get("status") or "").strip().lower() not in {
+            "submitted",
+            "verified",
+        }:
+            flash(
+                "Assessment harus berstatus submitted/verified untuk membuat tiket.",
+                "warning",
+            )
+            return redirect(
+                url_for("portal.admin_follow_ups", create_school_id=school_id)
+            )
     else:
         latest_assessment = get_latest_submitted_assessment_for_school(int(school_id))
         if not latest_assessment:
-            flash("Belum ada assessment submitted/verified untuk sekolah ini.", "warning")
-            return redirect(url_for("portal.admin_follow_ups", create_school_id=school_id))
+            flash(
+                "Belum ada assessment submitted/verified untuk sekolah ini.", "warning"
+            )
+            return redirect(
+                url_for("portal.admin_follow_ups", create_school_id=school_id)
+            )
         assessment_id = int(latest_assessment.get("id") or 0)
 
     created = admin_create_room_follow_up_ticket(
@@ -2340,7 +2479,9 @@ def admin_follow_up_create() -> Response:
     return redirect(url_for("portal.follow_up_detail", follow_up_id=follow_up_id))
 
 
-@portal_bp.route("/admin/tindak-lanjut/<int:follow_up_id>/edit", methods=["GET", "POST"])
+@portal_bp.route(
+    "/admin/tindak-lanjut/<int:follow_up_id>/edit", methods=["GET", "POST"]
+)
 @role_required("admin")
 def admin_follow_up_edit(follow_up_id: int) -> Response:
     user = current_user()
@@ -2355,23 +2496,33 @@ def admin_follow_up_edit(follow_up_id: int) -> Response:
         note = (request.form.get("note") or "").strip()
         return_to = (request.form.get("return_to") or "").strip()
         try:
-            trigger_score_pct = float((request.form.get("trigger_score_pct") or "").strip() or "0")
+            trigger_score_pct = float(
+                (request.form.get("trigger_score_pct") or "").strip() or "0"
+            )
         except (TypeError, ValueError):
             trigger_score_pct = -1.0
         try:
-            threshold_pct = float((request.form.get("threshold_pct") or "").strip() or "60")
+            threshold_pct = float(
+                (request.form.get("threshold_pct") or "").strip() or "60"
+            )
         except (TypeError, ValueError):
             threshold_pct = -1.0
 
         if not staff_id or staff_id <= 0:
             flash("Staff penanggung jawab wajib dipilih.", "warning")
-            return redirect(url_for("portal.admin_follow_up_edit", follow_up_id=follow_up_id))
+            return redirect(
+                url_for("portal.admin_follow_up_edit", follow_up_id=follow_up_id)
+            )
         if trigger_score_pct < 0 or trigger_score_pct > 100:
             flash("Skor trigger harus di antara 0 sampai 100.", "warning")
-            return redirect(url_for("portal.admin_follow_up_edit", follow_up_id=follow_up_id))
+            return redirect(
+                url_for("portal.admin_follow_up_edit", follow_up_id=follow_up_id)
+            )
         if threshold_pct <= 0 or threshold_pct > 100:
             flash("Threshold harus di antara 1 sampai 100.", "warning")
-            return redirect(url_for("portal.admin_follow_up_edit", follow_up_id=follow_up_id))
+            return redirect(
+                url_for("portal.admin_follow_up_edit", follow_up_id=follow_up_id)
+            )
 
         updated = admin_update_room_follow_up_ticket(
             follow_up_id=follow_up_id,
@@ -2384,15 +2535,21 @@ def admin_follow_up_edit(follow_up_id: int) -> Response:
         )
         if not updated:
             flash("Gagal memperbarui tiket tindak lanjut.", "danger")
-            return redirect(url_for("portal.admin_follow_up_edit", follow_up_id=follow_up_id))
+            return redirect(
+                url_for("portal.admin_follow_up_edit", follow_up_id=follow_up_id)
+            )
 
         flash("Tiket tindak lanjut berhasil diperbarui.", "success")
         if return_to.startswith("/") and not return_to.startswith("//"):
             return redirect(return_to)
-        return redirect(url_for("portal.admin_follow_up_edit", follow_up_id=follow_up_id))
+        return redirect(
+            url_for("portal.admin_follow_up_edit", follow_up_id=follow_up_id)
+        )
 
     annotated = _annotate_follow_up_ticket(ticket)
-    timeline = _serialize_follow_up_timeline(list_room_follow_up_updates(follow_up_id, limit=200))
+    timeline = _serialize_follow_up_timeline(
+        list_room_follow_up_updates(follow_up_id, limit=200)
+    )
     staff_options = list_all_staff()
     return render_template(
         "portal/admin/follow_up_edit.html",
@@ -2439,29 +2596,40 @@ def follow_up_detail(follow_up_id: int) -> Response:
     school_room_id = int(annotated.get("school_room_id") or 0)
     score_rows = get_assessment_scores(int(annotated.get("assessment_id") or 0))
     aspect_scores = [
-        row for row in score_rows
+        row
+        for row in score_rows
         if int(row.get("school_room_id") or 0) == school_room_id
     ]
-    room_note_map = get_assessment_room_details(int(annotated.get("assessment_id") or 0))
+    room_note_map = get_assessment_room_details(
+        int(annotated.get("assessment_id") or 0)
+    )
     staff_room_note = (room_note_map.get(school_room_id) or "").strip()
     role_value = (user.get("role") or "").strip().lower()
     can_school_update = (
         role_value == "sekolah"
-        and int(annotated.get("school_id") or 0) == int((_fetch_user_school(user.get("id")) or {}).get("id") or 0)
-        and (annotated.get("status") or "").strip().lower() != PORTAL_FOLLOW_UP_STATUS_DONE
+        and int(annotated.get("school_id") or 0)
+        == int((_fetch_user_school(user.get("id")) or {}).get("id") or 0)
+        and (annotated.get("status") or "").strip().lower()
+        != PORTAL_FOLLOW_UP_STATUS_DONE
     )
     can_staff_verify = (
         role_value == "staff"
         and int(user.get("id") or 0) == int(annotated.get("staff_id") or 0)
-        and (annotated.get("status") or "").strip().lower() in {
+        and (annotated.get("status") or "").strip().lower()
+        in {
             PORTAL_FOLLOW_UP_STATUS_IN_PROGRESS,
             PORTAL_FOLLOW_UP_STATUS_SUBMITTED,
         }
     )
     status_value = (annotated.get("status") or "").strip().lower()
     is_waiting_staff_verification = status_value == PORTAL_FOLLOW_UP_STATUS_SUBMITTED
-    has_school_progress = any((item.get("event_type") or "").strip().lower() == "school_update" for item in raw_timeline)
-    can_submit_verification = can_school_update and has_school_progress and not is_waiting_staff_verification
+    has_school_progress = any(
+        (item.get("event_type") or "").strip().lower() == "school_update"
+        for item in raw_timeline
+    )
+    can_submit_verification = (
+        can_school_update and has_school_progress and not is_waiting_staff_verification
+    )
     return render_template(
         "portal/follow_up/detail.html",
         ticket=annotated,
@@ -2513,7 +2681,9 @@ def follow_up_update(follow_up_id: int) -> Response:
         return redirect(url_for("portal.follow_up_detail", follow_up_id=follow_up_id))
 
     if not note and not photo_path:
-        flash("Isi catatan atau ambil foto progress sebelum menyimpan update.", "warning")
+        flash(
+            "Isi catatan atau ambil foto progress sebelum menyimpan update.", "warning"
+        )
         return redirect(url_for("portal.follow_up_detail", follow_up_id=follow_up_id))
 
     updated = add_school_room_follow_up_update(
@@ -2548,13 +2718,22 @@ def follow_up_submit_for_verification(follow_up_id: int) -> Response:
         flash("Tiket sudah selesai.", "info")
         return redirect(url_for("portal.follow_up_detail", follow_up_id=follow_up_id))
     if status_value == PORTAL_FOLLOW_UP_STATUS_SUBMITTED:
-        flash("Tiket sudah diajukan. Jika belum diverifikasi, sistem akan kirim pengingat bulanan ke staff.", "info")
+        flash(
+            "Tiket sudah diajukan. Jika belum diverifikasi, sistem akan kirim pengingat bulanan ke staff.",
+            "info",
+        )
         return redirect(url_for("portal.follow_up_detail", follow_up_id=follow_up_id))
 
     timeline = list_room_follow_up_updates(follow_up_id, limit=200)
-    has_school_progress = any((item.get("event_type") or "").strip().lower() == "school_update" for item in timeline)
+    has_school_progress = any(
+        (item.get("event_type") or "").strip().lower() == "school_update"
+        for item in timeline
+    )
     if not has_school_progress:
-        flash("Simpan update progress terlebih dahulu sebelum mengajukan verifikasi.", "warning")
+        flash(
+            "Simpan update progress terlebih dahulu sebelum mengajukan verifikasi.",
+            "warning",
+        )
         return redirect(url_for("portal.follow_up_detail", follow_up_id=follow_up_id))
 
     updated = add_school_room_follow_up_update(
@@ -2612,7 +2791,10 @@ def follow_up_verify(follow_up_id: int) -> Response:
     if status_value == PORTAL_FOLLOW_UP_STATUS_DONE:
         flash("Tiket sudah selesai.", "info")
         return redirect(url_for("portal.follow_up_detail", follow_up_id=follow_up_id))
-    if status_value not in {PORTAL_FOLLOW_UP_STATUS_IN_PROGRESS, PORTAL_FOLLOW_UP_STATUS_SUBMITTED}:
+    if status_value not in {
+        PORTAL_FOLLOW_UP_STATUS_IN_PROGRESS,
+        PORTAL_FOLLOW_UP_STATUS_SUBMITTED,
+    }:
         flash("Sekolah belum mengajukan progres untuk diverifikasi.", "warning")
         return redirect(url_for("portal.follow_up_detail", follow_up_id=follow_up_id))
 
@@ -2627,7 +2809,9 @@ def follow_up_verify(follow_up_id: int) -> Response:
         flash("Gagal memverifikasi tindak lanjut.", "danger")
         return redirect(url_for("portal.follow_up_detail", follow_up_id=follow_up_id))
 
-    recipient_ids = list_school_user_ids_for_follow_up_notifications(int(updated.get("school_id") or 0))
+    recipient_ids = list_school_user_ids_for_follow_up_notifications(
+        int(updated.get("school_id") or 0)
+    )
     if recipient_ids:
         create_user_notifications(
             recipient_ids=recipient_ids,
@@ -2653,7 +2837,9 @@ def follow_up_verify(follow_up_id: int) -> Response:
     return redirect(url_for("portal.follow_up_detail", follow_up_id=follow_up_id))
 
 
-def _filter_assessment_rooms(rooms: list[dict], jenjang: str | None = None) -> list[dict]:
+def _filter_assessment_rooms(
+    rooms: list[dict], jenjang: str | None = None
+) -> list[dict]:
     """Filter rooms to hide base kelas when variant rooms exist."""
     filtered_rooms: list[dict] = []
     rooms_by_key: dict[tuple[str | None, int], list[dict]] = {}
@@ -2674,7 +2860,9 @@ def _filter_assessment_rooms(rooms: list[dict], jenjang: str | None = None) -> l
         filtered_rooms.append(room)
 
     for grouped_rooms in rooms_by_key.values():
-        has_variant = any(bool(item["parsed"].get("is_variant")) for item in grouped_rooms)
+        has_variant = any(
+            bool(item["parsed"].get("is_variant")) for item in grouped_rooms
+        )
         for item in grouped_rooms:
             if has_variant and not item["parsed"].get("is_variant"):
                 continue
@@ -2753,15 +2941,15 @@ def _augment_rooms_with_assessment_data(
         return rooms, existing_scores, photos_list, room_notes
 
     room_by_id = {r.get("school_room_id"): r for r in rooms if r.get("school_room_id")}
-    all_by_id = {r.get("school_room_id"): r for r in all_rooms if r.get("school_room_id")}
+    all_by_id = {
+        r.get("school_room_id"): r for r in all_rooms if r.get("school_room_id")
+    }
     for room_id in data_room_ids:
         if room_id and room_id not in room_by_id and room_id in all_by_id:
             rooms.append(all_by_id[room_id])
             room_by_id[room_id] = all_by_id[room_id]
 
     return rooms, existing_scores, photos_list, room_notes
-
-
 
 
 @portal_bp.route("/assess/<int:school_id>")
@@ -2772,20 +2960,26 @@ def assess(school_id: int) -> Response:
     role = user.get("role")
     period_id_arg = request.args.get("period_id", type=int)
     assessment_id_arg = request.args.get("assessment_id", type=int)
-    
+
     if role not in _PANBERS_ASSESSOR_ROLES:
-        flash("Hanya admin, staff, atau koordinator yang bisa melakukan penilaian.", "danger")
+        flash(
+            "Hanya admin, staff, atau koordinator yang bisa melakukan penilaian.",
+            "danger",
+        )
         return redirect(url_for("portal.home"))
-    
+
     if not _can_assess_school(user, school_id):
-        flash("Anda tidak memiliki akses ke sekolah ini. Hubungi admin untuk penugasan.", "danger")
+        flash(
+            "Anda tidak memiliki akses ke sekolah ini. Hubungi admin untuk penugasan.",
+            "danger",
+        )
         return redirect(_assessment_list_url(user))
-    
+
     school = get_school_by_id(school_id)
     if not school:
         flash("Sekolah tidak ditemukan.", "danger")
         return redirect(url_for("portal.schools"))
-    
+
     # Get draft by explicit assessment_id (keeps existing draft/photos)
     assessment = None
     if assessment_id_arg:
@@ -2794,7 +2988,9 @@ def assess(school_id: int) -> Response:
             flash("Penilaian tidak ditemukan.", "danger")
             return redirect(_assessment_list_url(user))
         if assessment.get("status") != "draft":
-            return redirect(url_for("portal.view_assessment", assessment_id=assessment_id_arg))
+            return redirect(
+                url_for("portal.view_assessment", assessment_id=assessment_id_arg)
+            )
         if assessment.get("school_id") != school_id:
             flash("Penilaian tidak sesuai sekolah.", "danger")
             return redirect(_assessment_list_url(user))
@@ -2804,7 +3000,9 @@ def assess(school_id: int) -> Response:
 
     # Get active draft for THIS user
     if assessment is None:
-        assessment = get_active_assessment(school_id, staff_id=user["id"], period_id=period_id_arg)
+        assessment = get_active_assessment(
+            school_id, staff_id=user["id"], period_id=period_id_arg
+        )
     if not assessment:
         # Prevent new draft if sudah ada penilaian selesai untuk periode yang sama
         target_period_id = period_id_arg
@@ -2816,8 +3014,13 @@ def assess(school_id: int) -> Response:
             school_id, user["id"], target_period_id
         )
         if existing_final:
-            flash("Sekolah ini sudah disubmit untuk periode tersebut. Silakan buka penilaian yang ada.", "info")
-            return redirect(url_for("portal.view_assessment", assessment_id=existing_final["id"]))
+            flash(
+                "Sekolah ini sudah disubmit untuk periode tersebut. Silakan buka penilaian yang ada.",
+                "info",
+            )
+            return redirect(
+                url_for("portal.view_assessment", assessment_id=existing_final["id"])
+            )
 
         # Create new assessment
         try:
@@ -2836,11 +3039,10 @@ def assess(school_id: int) -> Response:
             current_app.logger.exception("Error creating assessment")
             flash("Gagal membuat penilaian baru.", "danger")
             return redirect(_assessment_list_url(user))
-            
+
     assessment_id = assessment["id"]
     score_scale = _build_assessment_score_config(assessment)
 
-    
     # Ensure classroom variants are materialized as rooms for this school
     try:
         ensure_classroom_rooms_for_school(school_id)
@@ -2850,47 +3052,60 @@ def assess(school_id: int) -> Response:
     # Get school rooms with aspects
     all_rooms = list_school_rooms(school_id)
     rooms = _filter_assessment_rooms(all_rooms, school.get("jenjang"))
-    
+
     # Periode penilaian untuk badge UI
-    assessment_period = get_period_by_id(assessment.get("period_id")) if assessment.get("period_id") else get_active_period()
+    assessment_period = (
+        get_period_by_id(assessment.get("period_id"))
+        if assessment.get("period_id")
+        else get_active_period()
+    )
 
     # Get existing scores
     existing_scores = get_assessment_scores(assessment_id)
     photos_list = get_assessment_photos(assessment_id)
     room_notes = get_assessment_room_details(assessment_id)
-    rooms, existing_scores, photos_list, room_notes = _augment_rooms_with_assessment_data(
-        all_rooms,
-        rooms,
-        assessment_id,
-        existing_scores=existing_scores,
-        photos_list=photos_list,
-        room_notes=room_notes,
+    rooms, existing_scores, photos_list, room_notes = (
+        _augment_rooms_with_assessment_data(
+            all_rooms,
+            rooms,
+            assessment_id,
+            existing_scores=existing_scores,
+            photos_list=photos_list,
+            room_notes=room_notes,
+        )
     )
     rooms = _sort_assessment_rooms(rooms, school.get("jenjang"))
     total_aspects = sum(len(r.get("aspects", [])) for r in rooms)
     scores_map = {
-        (s["school_room_id"], s["aspect_id"]): s["score"]
-        for s in existing_scores
+        (s["school_room_id"], s["aspect_id"]): s["score"] for s in existing_scores
     }
-    
+
     photos_map = {}
     for photo in photos_list:
         room_id = photo["school_room_id"]
         if room_id in photos_map:
             continue  # keep the most recent photo only
         filename = Path(photo["photo_path"]).name if photo.get("photo_path") else None
-        photo["url"] = url_for("portal.uploaded_file", filename=filename) if filename else None
+        photo["url"] = (
+            url_for("portal.uploaded_file", filename=filename) if filename else None
+        )
         photos_map[room_id] = photo
 
     room_ids = {r.get("school_room_id") for r in rooms if r.get("school_room_id")}
-    photo_room_ids = sorted({p.get("school_room_id") for p in photos_list if p.get("school_room_id") in room_ids})
+    photo_room_ids = sorted(
+        {
+            p.get("school_room_id")
+            for p in photos_list
+            if p.get("school_room_id") in room_ids
+        }
+    )
     photo_uploaded_count = len(photo_room_ids)
     photo_min_required = math.ceil(len(rooms) * 0.2) if rooms else 0
     photo_max_allowed = math.ceil(len(rooms) * 0.5) if rooms else 0
-    
+
     # Get optional rooms for this school
     optional_rooms_data = get_optional_rooms_for_schools([school_id])
-    
+
     return render_template(
         "portal/assessments/assessment.html",
         school=school,
@@ -2934,13 +3149,34 @@ def save_score(school_id: int) -> Response:
             return jsonify({"success": False, "message": "Assessment not found"}), 404
 
         if assessment["school_id"] != school_id:
-            return jsonify({"success": False, "message": "Assessment tidak sesuai sekolah"}), 400
+            return (
+                jsonify(
+                    {"success": False, "message": "Assessment tidak sesuai sekolah"}
+                ),
+                400,
+            )
 
         if assessment.get("status") != "draft":
-            return jsonify({"success": False, "message": "Penilaian sudah dikirim/terverifikasi."}), 400
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "message": "Penilaian sudah dikirim/terverifikasi.",
+                    }
+                ),
+                400,
+            )
 
         if not _can_edit_assessment(user, assessment):
-            return jsonify({"success": False, "message": "Unauthorized access to this assessment"}), 403
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "message": "Unauthorized access to this assessment",
+                    }
+                ),
+                403,
+            )
 
         with get_cursor() as cur:
             cur.execute(
@@ -2968,17 +3204,31 @@ def save_score(school_id: int) -> Response:
                 (school_room_id, aspect_id, assessment_id),
             )
             if not cur.fetchone():
-                return jsonify({"success": False, "message": "Aspek tidak sesuai dengan ruangan yang dinilai"}), 400
+                return (
+                    jsonify(
+                        {
+                            "success": False,
+                            "message": "Aspek tidak sesuai dengan ruangan yang dinilai",
+                        }
+                    ),
+                    400,
+                )
 
         score_config = _build_assessment_score_config(assessment)
         min_score = score_config["min"]
         max_score = score_config["max"]
         if not (min_score <= score <= max_score):
             if max_score == _NEW_SCORE_SCALE_MAX:
-                return jsonify({"success": False, "message": "Nilai harus dalam rentang 1-5"}), 400
-            return jsonify({"success": False, "message": "Nilai harus dalam rentang 0-3"}), 400
-
-
+                return (
+                    jsonify(
+                        {"success": False, "message": "Nilai harus dalam rentang 1-5"}
+                    ),
+                    400,
+                )
+            return (
+                jsonify({"success": False, "message": "Nilai harus dalam rentang 0-3"}),
+                400,
+            )
 
         success = save_assessment_score(
             assessment_id,
@@ -3003,7 +3253,7 @@ def save_note(school_id: int) -> Response:
     user = current_user()
     if user.get("role") not in _PANBERS_ASSESSOR_ROLES:
         return jsonify({"success": False, "message": "Unauthorized"}), 403
-    
+
     data = request.get_json(silent=True) or {}
     try:
         assessment_id = int(data.get("assessment_id"))
@@ -3017,10 +3267,18 @@ def save_note(school_id: int) -> Response:
         return jsonify({"success": False, "message": "Assessment tidak ditemukan"}), 404
 
     if assessment["school_id"] != school_id:
-        return jsonify({"success": False, "message": "Assessment tidak sesuai sekolah"}), 400
+        return (
+            jsonify({"success": False, "message": "Assessment tidak sesuai sekolah"}),
+            400,
+        )
 
     if assessment.get("status") != "draft":
-        return jsonify({"success": False, "message": "Penilaian sudah dikirim/terverifikasi."}), 400
+        return (
+            jsonify(
+                {"success": False, "message": "Penilaian sudah dikirim/terverifikasi."}
+            ),
+            400,
+        )
 
     if not _can_edit_assessment(user, assessment):
         return jsonify({"success": False, "message": "Unauthorized"}), 403
@@ -3045,24 +3303,37 @@ def upload_photo(school_id: int) -> Response:
     user = current_user()
     if user.get("role") not in _PANBERS_ASSESSOR_ROLES:
         return jsonify({"success": False, "message": "Unauthorized"}), 403
-    
+
     assessment_id = request.form.get("assessment_id", type=int)
     school_room_id = request.form.get("school_room_id", type=int)
     latitude = request.form.get("latitude")
     longitude = request.form.get("longitude")
 
     if not assessment_id or not school_room_id:
-        return jsonify({"success": False, "message": "Assessment atau ruangan tidak valid"}), 400
+        return (
+            jsonify(
+                {"success": False, "message": "Assessment atau ruangan tidak valid"}
+            ),
+            400,
+        )
 
     assessment = get_assessment_by_id(assessment_id)
     if not assessment:
         return jsonify({"success": False, "message": "Assessment tidak ditemukan"}), 404
 
     if assessment["school_id"] != school_id:
-        return jsonify({"success": False, "message": "Assessment tidak sesuai sekolah"}), 400
+        return (
+            jsonify({"success": False, "message": "Assessment tidak sesuai sekolah"}),
+            400,
+        )
 
     if assessment.get("status") != "draft":
-        return jsonify({"success": False, "message": "Penilaian sudah dikirim/terverifikasi."}), 400
+        return (
+            jsonify(
+                {"success": False, "message": "Penilaian sudah dikirim/terverifikasi."}
+            ),
+            400,
+        )
 
     if not _can_edit_assessment(user, assessment):
         return jsonify({"success": False, "message": "Unauthorized"}), 403
@@ -3071,7 +3342,9 @@ def upload_photo(school_id: int) -> Response:
 
         all_rooms = list_school_rooms(school_id)
         school = get_school_by_id(school_id)
-        rooms = _filter_assessment_rooms(all_rooms, school.get("jenjang") if school else None)
+        rooms = _filter_assessment_rooms(
+            all_rooms, school.get("jenjang") if school else None
+        )
         photos_list = get_assessment_photos(assessment_id)
         rooms, _, photos_list, _ = _augment_rooms_with_assessment_data(
             all_rooms,
@@ -3083,36 +3356,47 @@ def upload_photo(school_id: int) -> Response:
         total_rooms = len(rooms)
         max_photos = math.ceil(total_rooms * 0.5) if total_rooms else 0
         if max_photos:
-            room_ids = {r.get("school_room_id") for r in rooms if r.get("school_room_id")}
+            room_ids = {
+                r.get("school_room_id") for r in rooms if r.get("school_room_id")
+            }
             photo_room_ids = {
                 p.get("school_room_id")
                 for p in photos_list
                 if p.get("school_room_id") in room_ids
             }
-            if len(photo_room_ids) >= max_photos and school_room_id not in photo_room_ids:
-                return jsonify(
-                    {
-                        "success": False,
-                        "message": "Jumlah upload foto sudah mencapai maksimal. Jika ingin menambahkan foto lagi, tolong hapus yang lain terlebih dahulu.",
-                    }
-                ), 400
+            if (
+                len(photo_room_ids) >= max_photos
+                and school_room_id not in photo_room_ids
+            ):
+                return (
+                    jsonify(
+                        {
+                            "success": False,
+                            "message": "Jumlah upload foto sudah mencapai maksimal. Jika ingin menambahkan foto lagi, tolong hapus yang lain terlebih dahulu.",
+                        }
+                    ),
+                    400,
+                )
     except Exception:
         current_app.logger.exception("Error validating max photo requirement")
-        return jsonify({"success": False, "message": "Gagal memvalidasi batas foto."}), 500
-    
+        return (
+            jsonify({"success": False, "message": "Gagal memvalidasi batas foto."}),
+            500,
+        )
+
     if "photo" not in request.files:
         return jsonify({"success": False, "message": "No photo provided"}), 400
-    
+
     file = request.files["photo"]
     if not file or not file.filename:
         return jsonify({"success": False, "message": "No file selected"}), 400
-    
+
     if not _allowed_file(file.filename):
         return jsonify({"success": False, "message": "Invalid file type"}), 400
-    
+
     # Ensure upload directory exists
     UPLOAD_FOLDER.mkdir(parents=True, exist_ok=True)
-    
+
     # Generate unique filename
     ext = file.filename.rsplit(".", 1)[1].lower()
     filename = f"{uuid.uuid4().hex}.{ext}"
@@ -3127,16 +3411,19 @@ def upload_photo(school_id: int) -> Response:
         lon_val = None
 
     if lat_val is None and lon_val is None:
-        return jsonify(
-            {
-                "success": False,
-                "message": "Lokasi belum terbaca. Aktifkan izin lokasi lalu coba lagi.",
-            }
-        ), 400
-    
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "Lokasi belum terbaca. Aktifkan izin lokasi lalu coba lagi.",
+                }
+            ),
+            400,
+        )
+
     try:
         file.save(str(filepath))
-        
+
         saved = save_assessment_photo(
             assessment_id=assessment_id,
             school_room_id=school_room_id,
@@ -3146,7 +3433,7 @@ def upload_photo(school_id: int) -> Response:
         )
         saved_filename = Path(saved.get("photo_path") or filename).name
         saved["url"] = url_for("portal.uploaded_file", filename=saved_filename)
-        
+
         return jsonify({"success": True, "photo": saved})
     except Exception as e:
         current_app.logger.exception("Error saving photo")
@@ -3161,7 +3448,7 @@ def submit(school_id: int) -> Response:
     if user.get("role") not in _PANBERS_ASSESSOR_ROLES:
         flash("Unauthorized", "danger")
         return redirect(url_for("portal.home"))
-    
+
     assessment_id = request.form.get("assessment_id")
     if not assessment_id:
         flash("Assessment ID tidak valid.", "danger")
@@ -3180,8 +3467,13 @@ def submit(school_id: int) -> Response:
 
     # Hanya draft yang boleh disimpan ulang, cegah status submitted/verified berubah jadi draft
     if assessment.get("status") != "draft":
-        flash("Penilaian sudah dikirim/terverifikasi, tidak bisa disimpan ulang.", "warning")
-        return redirect(url_for("portal.view_assessment", assessment_id=assessment_id_int))
+        flash(
+            "Penilaian sudah dikirim/terverifikasi, tidak bisa disimpan ulang.",
+            "warning",
+        )
+        return redirect(
+            url_for("portal.view_assessment", assessment_id=assessment_id_int)
+        )
 
     if assessment["school_id"] != school_id:
         flash("Penilaian tidak sesuai sekolah.", "danger")
@@ -3194,7 +3486,9 @@ def submit(school_id: int) -> Response:
     try:
         all_rooms = list_school_rooms(school_id)
         school = get_school_by_id(school_id)
-        rooms = _filter_assessment_rooms(all_rooms, school.get("jenjang") if school else None)
+        rooms = _filter_assessment_rooms(
+            all_rooms, school.get("jenjang") if school else None
+        )
         existing_scores = get_assessment_scores(assessment_id_int)
         photos_list = get_assessment_photos(assessment_id_int)
         rooms, existing_scores, photos_list, _ = _augment_rooms_with_assessment_data(
@@ -3210,7 +3504,9 @@ def submit(school_id: int) -> Response:
         min_photos = math.ceil(total_rooms * 0.2) if total_rooms else 0
         missing_messages = []
         if min_photos:
-            room_ids = {r.get("school_room_id") for r in rooms if r.get("school_room_id")}
+            room_ids = {
+                r.get("school_room_id") for r in rooms if r.get("school_room_id")
+            }
             photo_room_count = len(
                 {
                     p.get("school_room_id")
@@ -3231,7 +3527,7 @@ def submit(school_id: int) -> Response:
         current_app.logger.exception("Error validating submission requirements")
         flash("Gagal memvalidasi persyaratan submit. Coba lagi.", "danger")
         return redirect(url_for("portal.assess", school_id=school_id))
-    
+
     try:
 
         success = submit_assessment(
@@ -3257,7 +3553,9 @@ def submit(school_id: int) -> Response:
                         "warning",
                     )
             except Exception:
-                current_app.logger.exception("Gagal membuat tiket tindak lanjut PANBERSS.")
+                current_app.logger.exception(
+                    "Gagal membuat tiket tindak lanjut PANBERSS."
+                )
             flash("Penilaian berhasil disubmit!", "success")
         else:
             flash("Gagal submit penilaian.", "danger")
@@ -3272,7 +3570,9 @@ def submit(school_id: int) -> Response:
         return redirect(url_for("portal.staff_assignments"))
     if user.get("role") == "coordinator":
         if period_id:
-            return redirect(url_for("portal.coordinator_assessments", period_id=period_id))
+            return redirect(
+                url_for("portal.coordinator_assessments", period_id=period_id)
+            )
         return redirect(url_for("portal.coordinator_assessments"))
     if period_id:
         return redirect(_assessment_list_url(user, period_id=period_id))
@@ -3305,8 +3605,13 @@ def save_draft(school_id: int) -> Response:
         return redirect(url_for("portal.assess", school_id=school_id))
 
     if assessment.get("status") != "draft":
-        flash("Penilaian sudah dikirim/terverifikasi, ajukan reopen untuk mengubahnya.", "warning")
-        return redirect(url_for("portal.view_assessment", assessment_id=assessment_id_int))
+        flash(
+            "Penilaian sudah dikirim/terverifikasi, ajukan reopen untuk mengubahnya.",
+            "warning",
+        )
+        return redirect(
+            url_for("portal.view_assessment", assessment_id=assessment_id_int)
+        )
 
     if assessment["school_id"] != school_id:
         flash("Penilaian tidak sesuai sekolah.", "danger")
@@ -3341,6 +3646,7 @@ def request_reopen(assessment_id: int) -> Response:
     """Staff requests admin approval to reopen a submitted assessment."""
     user = current_user()
     from .queries import log_activity
+
     if user.get("role") not in _PANBERS_ASSESSOR_ROLES:
         flash("Unauthorized", "danger")
         return redirect(url_for("portal.home"))
@@ -3351,16 +3657,22 @@ def request_reopen(assessment_id: int) -> Response:
         return redirect(url_for("portal.home"))
 
     if assessment.get("status") != "submitted":
-        flash("Hanya penilaian yang sudah disubmit yang bisa diajukan reopen.", "warning")
+        flash(
+            "Hanya penilaian yang sudah disubmit yang bisa diajukan reopen.", "warning"
+        )
         return redirect(url_for("portal.view_assessment", assessment_id=assessment_id))
 
     if not _can_edit_assessment(user, assessment):
-        flash("Anda tidak memiliki akses untuk mengajukan reopen penilaian ini.", "danger")
+        flash(
+            "Anda tidak memiliki akses untuk mengajukan reopen penilaian ini.", "danger"
+        )
         return redirect(url_for("portal.home"))
 
     latest_req = get_latest_reopen_request(assessment_id)
     if latest_req and latest_req.get("status") == "pending":
-        flash("Permintaan reopen sebelumnya masih menunggu persetujuan admin.", "warning")
+        flash(
+            "Permintaan reopen sebelumnya masih menunggu persetujuan admin.", "warning"
+        )
         return redirect(url_for("portal.view_assessment", assessment_id=assessment_id))
 
     reason = request.form.get("reason", "").strip() or None
@@ -3405,7 +3717,9 @@ def request_reopen(assessment_id: int) -> Response:
                     reason=reason,
                 )
             except Exception:
-                current_app.logger.exception("Gagal mengirim notifikasi Telegram permintaan reopen.")
+                current_app.logger.exception(
+                    "Gagal mengirim notifikasi Telegram permintaan reopen."
+                )
         flash("Permintaan reopen dikirim. Menunggu persetujuan admin.", "success")
     except Exception as e:
         current_app.logger.exception("Error creating reopen request")
@@ -3419,12 +3733,16 @@ def request_reopen(assessment_id: int) -> Response:
 def approve_reopen(assessment_id: int) -> Response:
     """Admin approves reopen request and reopens assessment."""
     from .queries import log_activity
+
     request_id = request.form.get("request_id", type=int)
     note = request.form.get("reviewer_note", "").strip() or None
     wants_json = request.headers.get("X-Requested-With") == "XMLHttpRequest"
     if not request_id:
         if wants_json:
-            return jsonify({"success": False, "message": "Permintaan tidak valid."}), 400
+            return (
+                jsonify({"success": False, "message": "Permintaan tidak valid."}),
+                400,
+            )
         flash("Permintaan tidak valid.", "danger")
         return redirect(url_for("portal.view_assessment", assessment_id=assessment_id))
 
@@ -3461,7 +3779,11 @@ def approve_reopen(assessment_id: int) -> Response:
                 "UPDATE",
                 "REOPEN_REQUEST",
                 request_id,
-                assessment.get("school_name") if assessment else f"Assessment {assessment_id}",
+                (
+                    assessment.get("school_name")
+                    if assessment
+                    else f"Assessment {assessment_id}"
+                ),
                 details,
             )
             try:
@@ -3478,7 +3800,9 @@ def approve_reopen(assessment_id: int) -> Response:
                     reviewer_note=note,
                 )
             except Exception:
-                current_app.logger.exception("Gagal mengirim notifikasi Telegram status reopen.")
+                current_app.logger.exception(
+                    "Gagal mengirim notifikasi Telegram status reopen."
+                )
             try:
                 _notify_panbers_reopen_status_change(
                     request_id=request_id,
@@ -3490,21 +3814,26 @@ def approve_reopen(assessment_id: int) -> Response:
                     reviewer_note=note,
                 )
             except Exception:
-                current_app.logger.exception("Gagal menyimpan notifikasi aplikasi status reopen.")
+                current_app.logger.exception(
+                    "Gagal menyimpan notifikasi aplikasi status reopen."
+                )
             flash("Reopen disetujui dan penilaian dibuka kembali.", "success")
             success = True
         else:
             flash("Gagal menyetujui reopen.", "danger")
         if wants_json:
             status_code = 200 if success else 400
-            return jsonify(
-                {
-                    "success": success,
-                    "request_id": request_id,
-                    "assessment_id": assessment_id,
-                    "status": "approved" if success else "failed",
-                }
-            ), status_code
+            return (
+                jsonify(
+                    {
+                        "success": success,
+                        "request_id": request_id,
+                        "assessment_id": assessment_id,
+                        "status": "approved" if success else "failed",
+                    }
+                ),
+                status_code,
+            )
     except Exception as e:
         current_app.logger.exception("Error approving reopen")
         if wants_json:
@@ -3518,12 +3847,16 @@ def approve_reopen(assessment_id: int) -> Response:
 def reject_reopen(assessment_id: int) -> Response:
     """Admin rejects reopen request."""
     from .queries import log_activity
+
     request_id = request.form.get("request_id", type=int)
     note = request.form.get("reviewer_note", "").strip() or None
     wants_json = request.headers.get("X-Requested-With") == "XMLHttpRequest"
     if not request_id:
         if wants_json:
-            return jsonify({"success": False, "message": "Permintaan tidak valid."}), 400
+            return (
+                jsonify({"success": False, "message": "Permintaan tidak valid."}),
+                400,
+            )
         flash("Permintaan tidak valid.", "danger")
         return redirect(url_for("portal.view_assessment", assessment_id=assessment_id))
 
@@ -3559,7 +3892,11 @@ def reject_reopen(assessment_id: int) -> Response:
                 "UPDATE",
                 "REOPEN_REQUEST",
                 request_id,
-                assessment.get("school_name") if assessment else f"Assessment {assessment_id}",
+                (
+                    assessment.get("school_name")
+                    if assessment
+                    else f"Assessment {assessment_id}"
+                ),
                 details,
             )
             try:
@@ -3576,7 +3913,9 @@ def reject_reopen(assessment_id: int) -> Response:
                     reviewer_note=note,
                 )
             except Exception:
-                current_app.logger.exception("Gagal mengirim notifikasi Telegram status reopen.")
+                current_app.logger.exception(
+                    "Gagal mengirim notifikasi Telegram status reopen."
+                )
             try:
                 _notify_panbers_reopen_status_change(
                     request_id=request_id,
@@ -3588,20 +3927,25 @@ def reject_reopen(assessment_id: int) -> Response:
                     reviewer_note=note,
                 )
             except Exception:
-                current_app.logger.exception("Gagal menyimpan notifikasi aplikasi status reopen.")
+                current_app.logger.exception(
+                    "Gagal menyimpan notifikasi aplikasi status reopen."
+                )
             flash("Permintaan reopen ditolak.", "info")
         else:
             flash("Gagal menolak reopen.", "danger")
         if wants_json:
             status_code = 200 if ok else 400
-            return jsonify(
-                {
-                    "success": bool(ok),
-                    "request_id": request_id,
-                    "assessment_id": assessment_id,
-                    "status": "rejected" if ok else "failed",
-                }
-            ), status_code
+            return (
+                jsonify(
+                    {
+                        "success": bool(ok),
+                        "request_id": request_id,
+                        "assessment_id": assessment_id,
+                        "status": "rejected" if ok else "failed",
+                    }
+                ),
+                status_code,
+            )
     except Exception as e:
         current_app.logger.exception("Error rejecting reopen")
         if wants_json:
@@ -3619,14 +3963,14 @@ def view_assessment(assessment_id: int) -> Response:
     if not assessment:
         flash("Penilaian tidak ditemukan.", "danger")
         return redirect(url_for("portal.home"))
-    
+
     # Security check: owner, admin, or the owner's coordinator can view.
     if not _can_view_assessment(user, assessment):
         flash("Anda tidak memiliki akses untuk melihat penilaian ini.", "danger")
         return redirect(url_for("portal.home"))
 
     score_scale = _build_assessment_score_config(assessment)
-    
+
     scores = get_assessment_scores(assessment_id)
     photos = get_assessment_photos(assessment_id)
     room_notes = get_assessment_room_details(assessment_id)
@@ -3639,6 +3983,7 @@ def view_assessment(assessment_id: int) -> Response:
     if user.get("role") == "admin":
         # fetch all submitted assessments for this school (including current)
         from dashboard.db_access import get_cursor
+
         with get_cursor() as cur:
             cur.execute(
                 """
@@ -3665,7 +4010,7 @@ def view_assessment(assessment_id: int) -> Response:
             other_assessments = [dict(row) for row in cur.fetchall()]
         avg_map = fetch_school_avg_scores(period_id=None)
         school_avg = avg_map.get(assessment["school_id"])
-    
+
     # Group scores by room
     rooms_data = {}
     for s in scores:
@@ -3691,7 +4036,7 @@ def view_assessment(assessment_id: int) -> Response:
             related_photos[room_id] = []
 
     latest_reopen_request = get_latest_reopen_request(assessment_id)
-    
+
     return render_template(
         "portal/assessments/view.html",
         assessment=assessment,
@@ -3707,7 +4052,9 @@ def view_assessment(assessment_id: int) -> Response:
     )
 
 
-@portal_bp.route("/assess/<int:school_id>/photo/<int:photo_id>/delete", methods=["POST"])
+@portal_bp.route(
+    "/assess/<int:school_id>/photo/<int:photo_id>/delete", methods=["POST"]
+)
 @_portal_access_required
 def delete_photo_route(school_id: int, photo_id: int) -> Response:
     """Delete a photo belonging to an assessment."""
@@ -3724,10 +4071,18 @@ def delete_photo_route(school_id: int, photo_id: int) -> Response:
     if not assessment:
         return jsonify({"success": False, "message": "Assessment tidak ditemukan"}), 404
     if assessment["school_id"] != school_id:
-        return jsonify({"success": False, "message": "Assessment tidak sesuai sekolah"}), 400
+        return (
+            jsonify({"success": False, "message": "Assessment tidak sesuai sekolah"}),
+            400,
+        )
 
     if assessment.get("status") != "draft":
-        return jsonify({"success": False, "message": "Penilaian sudah dikirim/terverifikasi."}), 400
+        return (
+            jsonify(
+                {"success": False, "message": "Penilaian sudah dikirim/terverifikasi."}
+            ),
+            400,
+        )
 
     if not _can_edit_assessment(user, assessment):
         return jsonify({"success": False, "message": "Unauthorized"}), 403
@@ -3749,11 +4104,8 @@ def get_room_aspects_api(room_id: int) -> Response:
     room = get_room_with_aspects(room_id)
     if not room:
         return jsonify({"success": False, "message": "Room not found"}), 404
-    
-    return jsonify({
-        "success": True,
-        "aspects": room.get('aspects', [])
-    })
+
+    return jsonify({"success": True, "aspects": room.get("aspects", [])})
 
 
 @portal_bp.route("/assess/<int:school_id>/add-room", methods=["POST"])
@@ -3764,51 +4116,73 @@ def add_room_to_school(school_id: int) -> Response:
     if user.get("role") not in _PANBERS_ASSESSOR_ROLES:
         return jsonify({"success": False, "message": "Unauthorized"}), 403
     if not _can_assess_school(user, school_id):
-        return jsonify({"success": False, "message": "Anda tidak memiliki akses ke sekolah ini"}), 403
-    
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "Anda tidak memiliki akses ke sekolah ini",
+                }
+            ),
+            403,
+        )
+
     data = request.get_json()
     room_id = data.get("room_id")
     aspect_ids = data.get("aspect_ids", [])
-    
+
     if not room_id:
         return jsonify({"success": False, "message": "room_id required"}), 400
-    
+
     try:
         with get_cursor(commit=True) as cur:
             # Check if already exists
-            cur.execute("""
+            cur.execute(
+                """
                 SELECT id FROM portal_school_rooms
                 WHERE school_id = %s AND room_id = %s
-            """, (school_id, room_id))
-            
+            """,
+                (school_id, room_id),
+            )
+
             existing = cur.fetchone()
             if existing:
-                return jsonify({"success": False, "message": "Ruangan sudah ada di sekolah"}), 400
-            
+                return (
+                    jsonify(
+                        {"success": False, "message": "Ruangan sudah ada di sekolah"}
+                    ),
+                    400,
+                )
+
             # Insert school room
-            cur.execute("""
+            cur.execute(
+                """
                 INSERT INTO portal_school_rooms (school_id, room_id)
                 VALUES (%s, %s)
                 RETURNING id
-            """, (school_id, room_id))
-            
-            school_room_id = cur.fetchone()['id']
-            
+            """,
+                (school_id, room_id),
+            )
+
+            school_room_id = cur.fetchone()["id"]
+
             # Insert selected aspects
             if aspect_ids:
                 for aspect_id in aspect_ids:
-                    cur.execute("""
+                    cur.execute(
+                        """
                         INSERT INTO portal_school_room_aspects (school_room_id, aspect_id)
                         VALUES (%s, %s)
                         ON CONFLICT DO NOTHING
-                    """, (school_room_id, aspect_id))
-        
+                    """,
+                        (school_room_id, aspect_id),
+                    )
+
         current_app.logger.info(
             f"[add_room_to_school] Added room {room_id} to school {school_id} with aspects {aspect_ids}"
         )
-        
+
         return jsonify({"success": True, "message": "Ruangan berhasil ditambahkan"})
-    
+
     except Exception as e:
         current_app.logger.exception("Error adding room to school")
         return jsonify({"success": False, "message": str(e)}), 500
@@ -3868,13 +4242,15 @@ def staff_assignments() -> Response:
     photo_redirect = _require_profile_photo_redirect(user)
     if photo_redirect:
         return photo_redirect
-    
+
     if user.get("role") != "staff":
         flash("Halaman ini hanya untuk staf.", "warning")
         return redirect(url_for("portal.home"))
-    
+
     periods = list_periods()
-    active_period_id = next((p["id"] for p in periods if p.get("is_active")), None) or (periods[0]["id"] if periods else None)
+    active_period_id = next((p["id"] for p in periods if p.get("is_active")), None) or (
+        periods[0]["id"] if periods else None
+    )
     selected_period_id = request.args.get("period_id", type=int)
     if selected_period_id is None:
         selected_period_id = active_period_id
@@ -3903,26 +4279,26 @@ def staff_assignments() -> Response:
 def sekolah_rooms() -> Response:
     """School configures which rooms they have."""
     user = current_user()
-    
+
     # Get user's school_id from database
     user_school = None
     if user.get("role") == "sekolah":
         user_school = _fetch_user_school(user["id"])
-        
+
         if not user_school:
             flash("Akun Anda belum terhubung dengan sekolah. Hubungi admin.", "warning")
             return redirect(url_for("portal.home"))
-    
+
     current_school_id = None
 
     if request.method == "POST":
         school_id = request.form.get("school_id")
         room_ids = request.form.getlist("room_ids", type=int)
-        
+
         # For sekolah role, only allow updating their own school
         if user.get("role") == "sekolah" and user_school:
             school_id = str(user_school["id"])
-        
+
         aspect_map: dict[int, list[int]] = {}
         for rid in room_ids:
             aspect_ids = request.form.getlist(f"aspects_{rid}[]", type=int)
@@ -3949,17 +4325,27 @@ def sekolah_rooms() -> Response:
                 try:
                     ensure_classroom_rooms_for_school(current_school_id)
                 except Exception:
-                    current_app.logger.exception("Failed to sync classroom rooms before update_school_rooms")
+                    current_app.logger.exception(
+                        "Failed to sync classroom rooms before update_school_rooms"
+                    )
                 count = update_school_rooms(current_school_id, room_ids, aspect_map)
                 try:
                     ensure_classroom_rooms_for_school(current_school_id)
                 except Exception:
-                    current_app.logger.exception("Failed to sync classroom rooms after update_school_rooms")
+                    current_app.logger.exception(
+                        "Failed to sync classroom rooms after update_school_rooms"
+                    )
                 # Log what is stored after save
-                saved_after = list_school_rooms(current_school_id, include_all_aspects=True)
+                saved_after = list_school_rooms(
+                    current_school_id, include_all_aspects=True
+                )
                 saved_map = {
                     r["room_id"]: [
-                        (a["id"], bool(a.get("is_required")), bool(a.get("is_selected")))
+                        (
+                            a["id"],
+                            bool(a.get("is_required")),
+                            bool(a.get("is_selected")),
+                        )
                         for a in r.get("aspects", [])
                     ]
                     for r in saved_after
@@ -3969,7 +4355,10 @@ def sekolah_rooms() -> Response:
                     [r["room_id"] for r in saved_after],
                     saved_map,
                 )
-                flash(f"Berhasil menyimpan {count} ruangan beserta konfigurasi aspek.", "success")
+                flash(
+                    f"Berhasil menyimpan {count} ruangan beserta konfigurasi aspek.",
+                    "success",
+                )
             except Exception as e:
                 flash(f"Error: {e}", "danger")
 
@@ -3987,7 +4376,9 @@ def sekolah_rooms() -> Response:
         try:
             ensure_classroom_rooms_for_school(current_school_id)
         except Exception:
-            current_app.logger.exception("Failed to sync classroom rooms before rendering sekolah_rooms")
+            current_app.logger.exception(
+                "Failed to sync classroom rooms before rendering sekolah_rooms"
+            )
         saved_rooms = list_school_rooms(current_school_id, include_all_aspects=True)
         saved_room_ids = {r["room_id"] for r in saved_rooms}
 
@@ -3998,20 +4389,24 @@ def sekolah_rooms() -> Response:
 
     selected_school = user_school
     if not selected_school and current_school_id:
-        selected_school = next((s for s in schools if s.get("id") == current_school_id), None)
+        selected_school = next(
+            (s for s in schools if s.get("id") == current_school_id), None
+        )
     selected_jenjang = selected_school.get("jenjang") if selected_school else None
     selected_jenjang_upper = normalize_jenjang(selected_jenjang)
-    template_room_name = (get_template_room_name(selected_jenjang) or "").strip().lower()
+    template_room_name = (
+        (get_template_room_name(selected_jenjang) or "").strip().lower()
+    )
     classroom_levels = get_classroom_levels(selected_jenjang)
     classroom_level_labels = grade_label_map(selected_jenjang)
     profile_classroom_levels = get_classroom_levels(selected_jenjang, for_profile=True)
     profile_classroom_level_labels = grade_label_map(selected_jenjang, for_profile=True)
-    
+
     # Build set of (grade, variant) pairs for exact matching
     # e.g., {(1, 'A'), (2, 'A'), (3, 'A')} means only show Kelas 1A, 2A, 3A
     classroom_variants: set[tuple[int, str]] = set()
     classroom_grades: set[int] = set()
-    
+
     for cls in classrooms:
         try:
             g = int(cls.get("grade_level"))
@@ -4029,7 +4424,10 @@ def sekolah_rooms() -> Response:
     # Tag aspek yang sudah dipilih agar checkbox tercentang saat render
     if saved_rooms:
         saved_aspects_by_room = {
-            r["room_id"]: {a["id"]: bool(a.get("is_required") or a.get("is_selected")) for a in (r.get("aspects") or [])}
+            r["room_id"]: {
+                a["id"]: bool(a.get("is_required") or a.get("is_selected"))
+                for a in (r.get("aspects") or [])
+            }
             for r in saved_rooms
         }
         for r in all_rooms:
@@ -4038,7 +4436,8 @@ def sekolah_rooms() -> Response:
             r["aspects"] = [
                 {
                     **a,
-                    "is_selected": bool(a.get("is_required")) or bool(selected_flags.get(a.get("id"), False)),
+                    "is_selected": bool(a.get("is_required"))
+                    or bool(selected_flags.get(a.get("id"), False)),
                 }
                 for a in aspects
             ]
@@ -4054,9 +4453,10 @@ def sekolah_rooms() -> Response:
             return None
 
     def _is_variant_class(name: str) -> bool:
-        return bool((parse_room_info(name or "", selected_jenjang) or {}).get("is_variant"))
+        return bool(
+            (parse_room_info(name or "", selected_jenjang) or {}).get("is_variant")
+        )
 
-    
     def _room_variant(room: dict) -> str | None:
         """Extract variant letter from room name (e.g., 'A' from 'Ruang Kelas 1A')."""
         name_val = room.get("name") or room.get("room_name") or ""
@@ -4084,7 +4484,9 @@ def sekolah_rooms() -> Response:
         has_optional_selected = any(
             (not a.get("is_required")) and a.get("is_selected") for a in aspects
         )
-        r["default_select_all_aspects"] = bool(_room_grade(r) is not None and not has_optional_selected)
+        r["default_select_all_aspects"] = bool(
+            _room_grade(r) is not None and not has_optional_selected
+        )
 
     # Identifikasi jenjang yang sudah punya kelas paralel untuk sekolah aktif saja.
     variant_grades: set[int] = set()
@@ -4099,19 +4501,25 @@ def sekolah_rooms() -> Response:
     # Debug logging to diagnose filtering issues
     current_app.logger.info(
         "[sekolah_rooms] Starting room filtering for school_id=%s, classroom_grades=%s, classroom_variants=%s, variant_grades=%s, saved_room_ids count=%d",
-        current_school_id, classroom_grades, classroom_variants, variant_grades, len(saved_room_ids)
+        current_school_id,
+        classroom_grades,
+        classroom_variants,
+        variant_grades,
+        len(saved_room_ids),
     )
     current_app.logger.info(
         "[sekolah_rooms] Total rooms before filtering: %d (SD candidates: %d)",
         len(all_rooms),
-        len([r for r in all_rooms if _room_grade(r) in range(1, 7)])
+        len([r for r in all_rooms if _room_grade(r) in range(1, 7)]),
     )
 
     filtered_rooms = []
     skipped_variant_rooms = []
     skipped_base_rooms = []
-    hide_all_numeric_grade_rooms = selected_jenjang_upper in {"SD", "SMP", "SMA", "SMK"} and not classroom_grades
-    
+    hide_all_numeric_grade_rooms = (
+        selected_jenjang_upper in {"SD", "SMP", "SMA", "SMK"} and not classroom_grades
+    )
+
     for r in all_rooms:
         name_val = r.get("name") or ""
         g = _room_grade(r)
@@ -4121,7 +4529,8 @@ def sekolah_rooms() -> Response:
         if hide_all_numeric_grade_rooms and g is not None:
             current_app.logger.info(
                 "[sekolah_rooms] Skipping classroom room '%s' (grade=%s) because numeric classroom config is empty",
-                name_val, g
+                name_val,
+                g,
             )
             skipped_base_rooms.append(name_val)
             continue
@@ -4129,7 +4538,8 @@ def sekolah_rooms() -> Response:
         if classrooms and g is not None and g not in classroom_grades and not is_saved:
             current_app.logger.info(
                 "[sekolah_rooms] Skipping classroom room '%s' (grade=%s) because grade is not configured",
-                name_val, g
+                name_val,
+                g,
             )
             skipped_base_rooms.append(name_val)
             continue
@@ -4137,18 +4547,28 @@ def sekolah_rooms() -> Response:
         # Only show variant classrooms if exact (grade, variant) match OR already saved
         if _is_variant_class(name_val):
             variant = _room_variant(r)
-            
+
             # Check if this exact (grade, variant) pair is configured
-            is_exact_match = (g, variant) in classroom_variants if (g is not None and variant) else False
+            is_exact_match = (
+                (g, variant) in classroom_variants
+                if (g is not None and variant)
+                else False
+            )
             r["auto_select"] = bool(is_exact_match)
             should_skip = not is_exact_match and not is_saved
-            
+
             # Log each variant room decision
             current_app.logger.info(
                 "[sekolah_rooms] Variant room '%s': room_id=%s, grade=%s, variant='%s', exact_match=%s, is_saved=%s, SKIP=%s",
-                name_val, r.get("id"), g, variant, is_exact_match, is_saved, should_skip
+                name_val,
+                r.get("id"),
+                g,
+                variant,
+                is_exact_match,
+                is_saved,
+                should_skip,
             )
-            
+
             if should_skip:
                 skipped_variant_rooms.append(name_val)
                 continue
@@ -4158,21 +4578,28 @@ def sekolah_rooms() -> Response:
         if not _is_variant_class(name_val) and g is not None and g in variant_grades:
             current_app.logger.info(
                 "[sekolah_rooms] Skipping base room '%s' (grade=%s) because variants exist",
-                name_val, g
+                name_val,
+                g,
             )
             skipped_base_rooms.append(name_val)
             continue
         filtered_rooms.append(r)
-    
+
     # Summary logging
     current_app.logger.info(
         "[sekolah_rooms] Filtering complete: kept %d rooms, skipped %d variant rooms, skipped %d base rooms",
-        len(filtered_rooms), len(skipped_variant_rooms), len(skipped_base_rooms)
+        len(filtered_rooms),
+        len(skipped_variant_rooms),
+        len(skipped_base_rooms),
     )
     if skipped_variant_rooms:
-        current_app.logger.info("[sekolah_rooms] Skipped variant rooms: %s", skipped_variant_rooms)
+        current_app.logger.info(
+            "[sekolah_rooms] Skipped variant rooms: %s", skipped_variant_rooms
+        )
     if skipped_base_rooms:
-        current_app.logger.info("[sekolah_rooms] Skipped base rooms: %s", skipped_base_rooms)
+        current_app.logger.info(
+            "[sekolah_rooms] Skipped base rooms: %s", skipped_base_rooms
+        )
     sd_rooms = []
     smp_rooms = []
     sma_rooms = []
@@ -4185,7 +4612,11 @@ def sekolah_rooms() -> Response:
         room_name = (r.get("name") or "").strip().lower()
         if _room_is_other_jenjang_classroom(r):
             continue
-        if template_room_name and room_name == template_room_name and selected_jenjang_upper in {"SPS", "TPA", "KB", "SKB", "PKBM", "SLB"}:
+        if (
+            template_room_name
+            and room_name == template_room_name
+            and selected_jenjang_upper in {"SPS", "TPA", "KB", "SKB", "PKBM", "SLB"}
+        ):
             continue
         bucket = _room_bucket(r)
         grade = _room_grade(r)
@@ -4205,12 +4636,12 @@ def sekolah_rooms() -> Response:
             sma_rooms.append(r)
         else:
             umum_rooms.append(r)
-    
+
     missing_fields = _compute_missing_profile_fields(user_school) if user_school else []
     show_profile_modal = bool(missing_fields)
     kecamatan_list = list_kecamatan()
     kelurahan_list = list_kelurahan()  # full list to allow sekolah update
-    
+
     return render_template(
         "portal/sekolah/rooms.html",
         all_rooms=all_rooms,
@@ -4248,35 +4679,35 @@ def sekolah_rooms() -> Response:
 def _get_coordinator_team_context(user_id: int):
     """Return (team, team_members, staff_ids) for a coordinator."""
     from dashboard.queries import get_monev_teams, get_team_members
-    
+
     all_teams = get_monev_teams()
     team = next((t for t in all_teams if t.get("coordinator_id") == user_id), None)
     if not team:
         return None, [], []
-    
+
     team_members = get_team_members(team["id"])
     staff_ids = [m["staff_id"] for m in team_members]
     if user_id not in staff_ids:
         staff_ids.append(user_id)
-    
+
     return team, team_members, staff_ids
 
 
 def _get_team_staff_ids(team_id: int):
     """Return (staff_ids, team) for a given team id (includes coordinator)."""
     from dashboard.queries import get_monev_teams, get_team_members
-    
+
     teams = get_monev_teams()
     team = next((t for t in teams if t.get("id") == team_id), None)
     if not team:
         return [], None
-    
+
     members = get_team_members(team_id)
     staff_ids = [m["staff_id"] for m in members]
     coordinator_id = team.get("coordinator_id")
     if coordinator_id and coordinator_id not in staff_ids:
         staff_ids.append(coordinator_id)
-    
+
     return staff_ids, team
 
 
@@ -4304,7 +4735,9 @@ def _build_admin_stats_period_filter(
     selected_year = year if isinstance(year, int) and year in year_set else None
     selected_month = month if isinstance(month, int) and 1 <= month <= 12 else None
     if selected_year is None and selected_month is None and isinstance(period_id, int):
-        chosen = next(((pid, y, m) for (pid, y, m) in period_rows if pid == period_id), None)
+        chosen = next(
+            ((pid, y, m) for (pid, y, m) in period_rows if pid == period_id), None
+        )
         if chosen:
             selected_year = chosen[1]
             selected_month = chosen[2]
@@ -4319,11 +4752,19 @@ def _build_admin_stats_period_filter(
     if selected_month is None:
         return None, year_period_ids, year_options, selected_year, None
 
-    matching = [pid for (pid, y, m) in period_rows if y == selected_year and m == selected_month]
+    matching = [
+        pid for (pid, y, m) in period_rows if y == selected_year and m == selected_month
+    ]
     if not matching:
         return None, [], year_options, selected_year, selected_month
     selected_period_id = matching[0]
-    return selected_period_id, [selected_period_id], year_options, selected_year, selected_month
+    return (
+        selected_period_id,
+        [selected_period_id],
+        year_options,
+        selected_year,
+        selected_month,
+    )
 
 
 def _draft_datetime_value(value: object) -> datetime | None:
@@ -4335,7 +4776,11 @@ def _draft_datetime_value(value: object) -> datetime | None:
 
 
 def _draft_max_datetime(values: list[object]) -> datetime | None:
-    parsed = [item for item in (_draft_datetime_value(value) for value in values) if item is not None]
+    parsed = [
+        item
+        for item in (_draft_datetime_value(value) for value in values)
+        if item is not None
+    ]
     if not parsed:
         return None
     return max(parsed)
@@ -4356,14 +4801,15 @@ def _build_draft_analysis_row(
     notes: list[dict],
 ) -> dict:
     score_map = {
-        (score.get("school_room_id"), score.get("aspect_id")): score
-        for score in scores
+        (score.get("school_room_id"), score.get("aspect_id")): score for score in scores
     }
     scored_expected = 0
     expected_aspects = 0
     missing_aspects: list[dict[str, object]] = []
 
-    room_ids = {room.get("school_room_id") for room in rooms if room.get("school_room_id")}
+    room_ids = {
+        room.get("school_room_id") for room in rooms if room.get("school_room_id")
+    }
     for room in rooms:
         school_room_id = room.get("school_room_id")
         aspects = room.get("aspects") or []
@@ -4390,7 +4836,8 @@ def _build_draft_analysis_row(
     photo_room_ids = {
         photo.get("school_room_id")
         for photo in photos
-        if photo.get("school_room_id") in room_ids and int(photo.get("photo_count") or 0) > 0
+        if photo.get("school_room_id") in room_ids
+        and int(photo.get("photo_count") or 0) > 0
     }
     photo_room_count = len(photo_room_ids)
     raw_score_count = len(scores)
@@ -4425,10 +4872,20 @@ def _build_draft_analysis_row(
         state_label = "Siap submit"
         state_badge = "success"
         state_icon = "check-circle"
-        reason_text = "Foto minimal 20% ruangan sudah terpenuhi, tetapi status masih draft."
+        reason_text = (
+            "Foto minimal 20% ruangan sudah terpenuhi, tetapi status masih draft."
+        )
 
-    score_progress_pct = 100.0 if expected_aspects == 0 else round((scored_expected / expected_aspects) * 100, 1)
-    photo_progress_pct = 100.0 if min_photo_rooms == 0 else round(min((photo_room_count / min_photo_rooms) * 100, 100), 1)
+    score_progress_pct = (
+        100.0
+        if expected_aspects == 0
+        else round((scored_expected / expected_aspects) * 100, 1)
+    )
+    photo_progress_pct = (
+        100.0
+        if min_photo_rooms == 0
+        else round(min((photo_room_count / min_photo_rooms) * 100, 100), 1)
+    )
     latest_input_at = _draft_max_datetime(
         [
             row.get("updated_at"),
@@ -4459,10 +4916,16 @@ def _build_draft_analysis_row(
             "photo_progress_pct": photo_progress_pct,
             "room_note_count": room_note_count,
             "missing_aspects": missing_aspects,
-            "missing_aspect_more_count": max(missing_score_count - len(missing_aspects), 0),
+            "missing_aspect_more_count": max(
+                missing_score_count - len(missing_aspects), 0
+            ),
             "created_label": _format_follow_up_datetime(row.get("created_at")),
-            "updated_label": _format_follow_up_datetime(latest_input_at or row.get("updated_at")),
-            "latest_submitted_label": _format_follow_up_datetime(row.get("latest_submitted_at")),
+            "updated_label": _format_follow_up_datetime(
+                latest_input_at or row.get("updated_at")
+            ),
+            "latest_submitted_label": _format_follow_up_datetime(
+                row.get("latest_submitted_at")
+            ),
             "age_days": _draft_age_days(row.get("created_at")),
         }
     )
@@ -4490,7 +4953,9 @@ def _summarize_draft_analysis(rows: list[dict]) -> dict:
             staff_key,
             {
                 "staff_id": row.get("staff_id"),
-                "staff_name": row.get("staff_name") or row.get("staff_email") or "Tanpa nama",
+                "staff_name": row.get("staff_name")
+                or row.get("staff_email")
+                or "Tanpa nama",
                 "staff_email": row.get("staff_email"),
                 "staff_role": row.get("staff_role"),
                 "total": 0,
@@ -4508,33 +4973,39 @@ def _summarize_draft_analysis(rows: list[dict]) -> dict:
             staff["oldest_age_days"] = max(staff["oldest_age_days"], age_days)
 
     staff_rows = list(staff_map.values())
-    staff_rows.sort(key=lambda item: (-int(item.get("total") or 0), item.get("staff_name") or ""))
+    staff_rows.sort(
+        key=lambda item: (-int(item.get("total") or 0), item.get("staff_name") or "")
+    )
     summary["staff_rows"] = staff_rows
     return summary
 
 
-def _serialize_related_photos(school_id: int | None, room_id: int | None, staff_ids: list[int] | None = None):
+def _serialize_related_photos(
+    school_id: int | None, room_id: int | None, staff_ids: list[int] | None = None
+):
     """Serialize related photos response with optional staff filtering."""
     if not school_id or not room_id:
         return []
-    
+
     from .queries import fetch_related_photos
-    
+
     photos = fetch_related_photos(
         school_id=school_id,
         room_id=room_id,
         limit=10,
         staff_ids=staff_ids,
     )
-    
+
     result = []
     for p in photos:
         filename = (p.get("photo_path") or "").split("/")[-1]
         if p.get("photo_path", "").startswith("http"):
             photo_url = p["photo_path"]
         else:
-            photo_url = url_for("portal.uploaded_file", filename=filename) if filename else None
-        
+            photo_url = (
+                url_for("portal.uploaded_file", filename=filename) if filename else None
+            )
+
         raw_score_pct = p.get("room_score_pct")
         if raw_score_pct is None:
             score_base = float(p.get("room_score") or 0)
@@ -4542,17 +5013,21 @@ def _serialize_related_photos(school_id: int | None, room_id: int | None, staff_
             score_pct = _score_pct_from_raw(score_base, score_scale_max)
         else:
             score_pct = float(raw_score_pct)
-        
-        result.append({
-            "photo_url": photo_url,
-            "school_name": p.get("school_name"),
-            "room_name": p.get("room_name"),
-            "score": round(score_pct, 1),
-            "score_pct": round(score_pct, 1),
-            "captured_at": p["captured_at"].isoformat() if p.get("captured_at") else None,
-            "latitude": float(p["latitude"]) if p.get("latitude") else None,
-            "longitude": float(p["longitude"]) if p.get("longitude") else None,
-        })
+
+        result.append(
+            {
+                "photo_url": photo_url,
+                "school_name": p.get("school_name"),
+                "room_name": p.get("room_name"),
+                "score": round(score_pct, 1),
+                "score_pct": round(score_pct, 1),
+                "captured_at": (
+                    p["captured_at"].isoformat() if p.get("captured_at") else None
+                ),
+                "latitude": float(p["latitude"]) if p.get("latitude") else None,
+                "longitude": float(p["longitude"]) if p.get("longitude") else None,
+            }
+        )
     return result
 
 
@@ -4564,17 +5039,17 @@ def _serialize_related_photos(school_id: int | None, room_id: int | None, staff_
 def coordinator_stats() -> Response:
     """Coordinator view of team statistics - same as admin but filtered to team members only."""
     from .queries import (
-        list_team_assessments,
-        fetch_team_top_schools,
-        fetch_team_bottom_schools,
-        list_periods,
+        fetch_kecamatan_avg_scores,
         fetch_portal_stats,
-        fetch_score_distribution,
         fetch_random_photos,
         fetch_school_avg_scores,
-        fetch_kecamatan_avg_scores,
+        fetch_score_distribution,
+        fetch_team_bottom_schools,
+        fetch_team_top_schools,
+        list_periods,
+        list_team_assessments,
     )
-    
+
     user = current_user()
     photo_redirect = _require_profile_photo_redirect(user)
     if photo_redirect:
@@ -4584,9 +5059,9 @@ def coordinator_stats() -> Response:
     jenjang_filter = request.args.get("jenjang") or None
     order = request.args.get("order") or "recent"
     photo_order = request.args.get("photo_order", "random")
-    
+
     my_team, team_members, staff_ids = _get_coordinator_team_context(user_id)
-    
+
     if not my_team:
         flash("Anda belum ditugaskan sebagai koordinator tim manapun.", "warning")
         periods = list_periods()
@@ -4620,15 +5095,15 @@ def coordinator_stats() -> Response:
             photo_order=photo_order,
             selected_team_id=None,
         )
-        
+
     stats = fetch_portal_stats(period_id=period_id, staff_ids=staff_ids)
     score_dist = fetch_score_distribution(period_id=period_id, staff_ids=staff_ids)
-    
+
     # Get team-filtered assessments
     recent_assessments = list_team_assessments(staff_ids, limit=50, period_id=period_id)
     top_schools = fetch_team_top_schools(staff_ids, period_id=period_id, limit=10)
     bottom_schools = fetch_team_bottom_schools(staff_ids, period_id=period_id, limit=10)
-    
+
     # Other data for display
     random_photos = fetch_random_photos(
         period_id=period_id,
@@ -4639,8 +5114,10 @@ def coordinator_stats() -> Response:
     )
     school_avg_map = fetch_school_avg_scores(period_id=period_id, staff_ids=staff_ids)
     periods = list_periods()
-    kecamatan_stats = fetch_kecamatan_avg_scores(period_id=period_id, staff_ids=staff_ids)
-    
+    kecamatan_stats = fetch_kecamatan_avg_scores(
+        period_id=period_id, staff_ids=staff_ids
+    )
+
     return render_template(
         "portal/coordinator/stats.html",
         team=my_team,
@@ -4668,21 +5145,24 @@ def admin_stats() -> Response:
     """Admin view of portal statistics."""
     # Trigger reload
     from dashboard.queries import get_monev_teams
+
     from .queries import (
-        fetch_team_top_schools,
-        fetch_team_bottom_schools,
         fetch_negeri_assessment_frequency,
+        fetch_team_bottom_schools,
+        fetch_team_top_schools,
     )
 
     periods = list_periods()
     selected_year_arg = request.args.get("year", type=int)
     selected_month_arg = request.args.get("month", type=int)
     selected_period_arg = request.args.get("period_id", type=int)
-    period_id, period_ids, period_year_options, selected_year, selected_month = _build_admin_stats_period_filter(
-        periods,
-        selected_year_arg,
-        selected_month_arg,
-        selected_period_arg,
+    period_id, period_ids, period_year_options, selected_year, selected_month = (
+        _build_admin_stats_period_filter(
+            periods,
+            selected_year_arg,
+            selected_month_arg,
+            selected_period_arg,
+        )
     )
     team_id = request.args.get("team_id", type=int)
     school_status_filter = (request.args.get("school_status") or "").strip().lower()
@@ -4703,14 +5183,14 @@ def admin_stats() -> Response:
     }
     if order not in allowed_orders:
         order = "recent"
-    
+
     staff_ids: list[int] | None = None
     selected_team = None
     if team_id:
         staff_ids, selected_team = _get_team_staff_ids(team_id)
         if selected_team is None:
             staff_ids = None
-    
+
     stats = fetch_portal_stats(
         period_id=period_id,
         period_ids=period_ids,
@@ -4718,6 +5198,7 @@ def admin_stats() -> Response:
         school_status=school_status_filter,
     )
     from .queries import fetch_score_distribution
+
     score_dist = fetch_score_distribution(
         period_id=period_id,
         period_ids=period_ids,
@@ -4785,8 +5266,9 @@ def admin_stats() -> Response:
     all_schools = list_portal_schools()
     all_staff = list_all_staff()
     monev_teams = get_monev_teams()
-    
+
     from .queries import fetch_kecamatan_avg_scores
+
     kecamatan_stats = fetch_kecamatan_avg_scores(
         period_id=period_id,
         period_ids=period_ids,
@@ -4798,7 +5280,7 @@ def admin_stats() -> Response:
         period_ids=period_ids,
         staff_ids=staff_ids,
     )
-    
+
     return render_template(
         "portal/admin/stats.html",
         stats=stats,
@@ -4838,11 +5320,13 @@ def admin_draft_analysis() -> Response:
     selected_year_arg = request.args.get("year", type=int)
     selected_month_arg = request.args.get("month", type=int)
     selected_period_arg = request.args.get("period_id", type=int)
-    period_id, period_ids, period_year_options, selected_year, selected_month = _build_admin_stats_period_filter(
-        periods,
-        selected_year_arg,
-        selected_month_arg,
-        selected_period_arg,
+    period_id, period_ids, period_year_options, selected_year, selected_month = (
+        _build_admin_stats_period_filter(
+            periods,
+            selected_year_arg,
+            selected_month_arg,
+            selected_period_arg,
+        )
     )
 
     team_id = request.args.get("team_id", type=int)
@@ -4889,7 +5373,9 @@ def admin_draft_analysis() -> Response:
 
         if school_id not in room_cache:
             all_rooms = list_school_rooms(int(school_id))
-            filtered_rooms = _filter_assessment_rooms(list(all_rooms), row.get("school_jenjang"))
+            filtered_rooms = _filter_assessment_rooms(
+                list(all_rooms), row.get("school_jenjang")
+            )
             room_cache[int(school_id)] = (all_rooms, filtered_rooms)
         all_rooms, filtered_rooms = room_cache[int(school_id)]
 
@@ -4909,11 +5395,14 @@ def admin_draft_analysis() -> Response:
             photos_list=photos,
             room_notes=room_note_map,
         )
-        analyzed_drafts.append(_build_draft_analysis_row(row, rooms, scores, photos, notes))
+        analyzed_drafts.append(
+            _build_draft_analysis_row(row, rooms, scores, photos, notes)
+        )
 
     summary = _summarize_draft_analysis(analyzed_drafts)
     visible_drafts = [
-        draft for draft in analyzed_drafts
+        draft
+        for draft in analyzed_drafts
         if not state_filter or draft.get("draft_state") == state_filter
     ]
 
@@ -4967,17 +5456,20 @@ def admin_draft_analysis() -> Response:
 def admin_stats_negeri_frequency() -> Response:
     """Detail negeri school names grouped by assessment frequency."""
     from dashboard.queries import get_monev_teams
+
     from .queries import fetch_negeri_assessment_frequency
 
     periods = list_periods()
     selected_year_arg = request.args.get("year", type=int)
     selected_month_arg = request.args.get("month", type=int)
     selected_period_arg = request.args.get("period_id", type=int)
-    period_id, period_ids, period_year_options, selected_year, selected_month = _build_admin_stats_period_filter(
-        periods,
-        selected_year_arg,
-        selected_month_arg,
-        selected_period_arg,
+    period_id, period_ids, period_year_options, selected_year, selected_month = (
+        _build_admin_stats_period_filter(
+            periods,
+            selected_year_arg,
+            selected_month_arg,
+            selected_period_arg,
+        )
     )
     team_id = request.args.get("team_id", type=int)
     selected_count = request.args.get("count", type=int)
@@ -4998,9 +5490,15 @@ def admin_stats_negeri_frequency() -> Response:
     if selected_count is None and available_counts:
         selected_count = available_counts[0]
     selected_group = next(
-        (row for row in grouped if int(row.get("count_times") or 0) == int(selected_count))
-        if selected_count is not None
-        else None,
+        (
+            (
+                row
+                for row in grouped
+                if int(row.get("count_times") or 0) == int(selected_count)
+            )
+            if selected_count is not None
+            else None
+        ),
         None,
     )
 
@@ -5061,6 +5559,7 @@ def admin_gallery() -> Response:
     total_photos = sum(len(a.get("photos") or []) for a in albums)
 
     import random
+
     if order == "lowest":
         for album in albums:
             total_score = sum(
@@ -5086,7 +5585,14 @@ def admin_gallery() -> Response:
                     if not max_dt or dt > max_dt:
                         max_dt = dt
             album["_sort_date"] = max_dt
-        albums.sort(key=lambda a: a["_sort_date"] if a["_sort_date"] else datetime.min.replace(tzinfo=timezone.utc), reverse=True)
+        albums.sort(
+            key=lambda a: (
+                a["_sort_date"]
+                if a["_sort_date"]
+                else datetime.min.replace(tzinfo=timezone.utc)
+            ),
+            reverse=True,
+        )
     elif order == "random":
         random.shuffle(albums)
 
@@ -5096,9 +5602,7 @@ def admin_gallery() -> Response:
     else:
         latest_date = datetime.now().date()
     periods = [
-        p
-        for p in periods
-        if p.get("start_date") and p.get("start_date") <= latest_date
+        p for p in periods if p.get("start_date") and p.get("start_date") <= latest_date
     ]
     monev_teams = get_monev_teams()
 
@@ -5171,6 +5675,7 @@ def coordinator_gallery() -> Response:
     total_photos = sum(len(a.get("photos") or []) for a in albums)
 
     import random
+
     if order == "lowest":
         for album in albums:
             total_score = sum(
@@ -5196,7 +5701,14 @@ def coordinator_gallery() -> Response:
                     if not max_dt or dt > max_dt:
                         max_dt = dt
             album["_sort_date"] = max_dt
-        albums.sort(key=lambda a: a["_sort_date"] if a["_sort_date"] else datetime.min.replace(tzinfo=timezone.utc), reverse=True)
+        albums.sort(
+            key=lambda a: (
+                a["_sort_date"]
+                if a["_sort_date"]
+                else datetime.min.replace(tzinfo=timezone.utc)
+            ),
+            reverse=True,
+        )
     elif order == "random":
         random.shuffle(albums)
 
@@ -5206,9 +5718,7 @@ def coordinator_gallery() -> Response:
     else:
         latest_date = datetime.now().date()
     periods = [
-        p
-        for p in periods
-        if p.get("start_date") and p.get("start_date") <= latest_date
+        p for p in periods if p.get("start_date") and p.get("start_date") <= latest_date
     ]
 
     return render_template(
@@ -5228,8 +5738,8 @@ def coordinator_gallery() -> Response:
 @role_required("admin")
 def api_rankings() -> Response:
     """API endpoint for fetching additional rankings."""
-    from .queries import fetch_team_top_schools, fetch_team_bottom_schools
-    
+    from .queries import fetch_team_bottom_schools, fetch_team_top_schools
+
     type_ = request.args.get("type", "best")
     limit = request.args.get("limit", 10, type=int)
     offset = request.args.get("offset", 0, type=int)
@@ -5237,23 +5747,25 @@ def api_rankings() -> Response:
     selected_year_arg = request.args.get("year", type=int)
     selected_month_arg = request.args.get("month", type=int)
     selected_period_arg = request.args.get("period_id", type=int)
-    period_id, period_ids, _year_options, _selected_year, _selected_month = _build_admin_stats_period_filter(
-        periods,
-        selected_year_arg,
-        selected_month_arg,
-        selected_period_arg,
+    period_id, period_ids, _year_options, _selected_year, _selected_month = (
+        _build_admin_stats_period_filter(
+            periods,
+            selected_year_arg,
+            selected_month_arg,
+            selected_period_arg,
+        )
     )
     team_id = request.args.get("team_id", type=int)
     school_status_filter = (request.args.get("school_status") or "").strip().lower()
     if school_status_filter not in {"negeri", "swasta"}:
         school_status_filter = ""
-    
+
     staff_ids = None
     if team_id:
         staff_ids, team = _get_team_staff_ids(team_id)
         if team is None:
             staff_ids = None
-    
+
     if type_ == "best":
         if staff_ids:
             data = fetch_team_top_schools(
@@ -5290,7 +5802,7 @@ def api_rankings() -> Response:
                 period_ids=period_ids,
                 school_status=school_status_filter,
             )
-        
+
     return jsonify(data)
 
 
@@ -5298,23 +5810,27 @@ def api_rankings() -> Response:
 @role_required("coordinator")
 def coordinator_api_rankings() -> Response:
     """API endpoint for coordinator rankings limited to their team."""
-    from .queries import fetch_team_top_schools, fetch_team_bottom_schools
-    
+    from .queries import fetch_team_bottom_schools, fetch_team_top_schools
+
     type_ = request.args.get("type", "best")
     limit = request.args.get("limit", 10, type=int)
     offset = request.args.get("offset", 0, type=int)
     period_id = request.args.get("period_id", type=int) or None
-    
+
     user = current_user()
     _, _, staff_ids = _get_coordinator_team_context(user.get("id"))
     if not staff_ids:
         return jsonify([])
-    
+
     if type_ == "best":
-        data = fetch_team_top_schools(staff_ids, period_id=period_id, limit=limit, offset=offset)
+        data = fetch_team_top_schools(
+            staff_ids, period_id=period_id, limit=limit, offset=offset
+        )
     else:
-        data = fetch_team_bottom_schools(staff_ids, period_id=period_id, limit=limit, offset=offset)
-        
+        data = fetch_team_bottom_schools(
+            staff_ids, period_id=period_id, limit=limit, offset=offset
+        )
+
     return jsonify(data)
 
 
@@ -5326,11 +5842,13 @@ def export_excel() -> Response:
     selected_year_arg = request.args.get("year", type=int)
     selected_month_arg = request.args.get("month", type=int)
     selected_period_arg = request.args.get("period_id", type=int)
-    period_id, period_ids, _year_options, selected_year, selected_month = _build_admin_stats_period_filter(
-        periods,
-        selected_year_arg,
-        selected_month_arg,
-        selected_period_arg,
+    period_id, period_ids, _year_options, selected_year, selected_month = (
+        _build_admin_stats_period_filter(
+            periods,
+            selected_year_arg,
+            selected_month_arg,
+            selected_period_arg,
+        )
     )
     team_id = request.args.get("team_id", type=int)
     school_status_filter = (request.args.get("school_status") or "").strip().lower()
@@ -5354,8 +5872,9 @@ def export_excel() -> Response:
     if group_by not in {"staff", "school"}:
         flash("Pilih jenis data Excel yang ingin didownload.", "warning")
         return redirect(stats_url)
-    
+
     from .queries import fetch_export_data
+
     data = fetch_export_data(
         group_by=group_by,
         period_id=period_id,
@@ -5363,7 +5882,7 @@ def export_excel() -> Response:
         staff_ids=staff_ids,
         school_status=school_status_filter,
     )
-    
+
     if not data:
         flash("Tidak ada data untuk diexport.", "warning")
         return redirect(stats_url)
@@ -5389,13 +5908,15 @@ def export_excel() -> Response:
     worksheet.auto_filter.ref = worksheet.dimensions
     for column_cells in worksheet.columns:
         max_length = max(len(str(cell.value or "")) for cell in column_cells)
-        worksheet.column_dimensions[column_cells[0].column_letter].width = min(max_length + 2, 45)
+        worksheet.column_dimensions[column_cells[0].column_letter].width = min(
+            max_length + 2, 45
+        )
     workbook.save(output)
     output.seek(0)
-    
+
     group_label = "Staff" if group_by == "staff" else "Sekolah"
     filename = f"Laporan_Penilaian_Per_{group_label}_{datetime.now(JAKARTA_TZ).strftime('%Y%m%d')}.xlsx"
-    
+
     return send_file(
         output,
         as_attachment=True,
@@ -5412,24 +5933,26 @@ def admin_map_data() -> Response:
     selected_year_arg = request.args.get("year", type=int)
     selected_month_arg = request.args.get("month", type=int)
     selected_period_arg = request.args.get("period_id", type=int)
-    period_id, period_ids, _year_options, _selected_year, _selected_month = _build_admin_stats_period_filter(
-        periods,
-        selected_year_arg,
-        selected_month_arg,
-        selected_period_arg,
+    period_id, period_ids, _year_options, _selected_year, _selected_month = (
+        _build_admin_stats_period_filter(
+            periods,
+            selected_year_arg,
+            selected_month_arg,
+            selected_period_arg,
+        )
     )
     team_id = request.args.get("team_id", type=int)
     school_status_filter = (request.args.get("school_status") or "").strip().lower()
     if school_status_filter not in {"negeri", "swasta"}:
         school_status_filter = ""
     from .queries import fetch_map_data
-    
+
     staff_ids = None
     if team_id:
         staff_ids, team = _get_team_staff_ids(team_id)
         if team is None:
             staff_ids = None
-    
+
     data = fetch_map_data(
         period_id=period_id,
         period_ids=period_ids,
@@ -5445,7 +5968,7 @@ def coordinator_map_data() -> Response:
     """Return JSON data for school locations map - for coordinator role."""
     period_id = request.args.get("period_id", type=int)
     from .queries import fetch_map_data
-    
+
     user = current_user()
     _, _, staff_ids = _get_coordinator_team_context(user.get("id"))
     data = fetch_map_data(period_id, staff_ids=staff_ids)
@@ -5507,42 +6030,60 @@ def api_sekolah_profile() -> Response:
     """API for Next.js to view/update school profile data."""
     user = current_user()
     if user.get("role") != "sekolah":
-        return jsonify({"success": False, "message": "Hanya akun sekolah yang dapat mengakses ini."}), 403
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "Hanya akun sekolah yang dapat mengakses ini.",
+                }
+            ),
+            403,
+        )
 
     school = _fetch_user_school(user["id"])
     if not school:
-        return jsonify({"success": False, "message": "Akun belum terhubung dengan sekolah."}), 400
+        return (
+            jsonify(
+                {"success": False, "message": "Akun belum terhubung dengan sekolah."}
+            ),
+            400,
+        )
 
     if request.method == "POST":
         payload = _build_profile_payload(request.get_json() or {})
         form_errors = _validate_profile_data(payload, jenjang=school.get("jenjang"))
         if form_errors:
             return jsonify({"success": False, "errors": form_errors}), 400
-        
+
         _save_school_profile(school["id"], payload)
-        return jsonify({"success": True, "message": "Profil sekolah berhasil diperbarui."})
+        return jsonify(
+            {"success": True, "message": "Profil sekolah berhasil diperbarui."}
+        )
 
     meta = _normalize_metadata(school.get("metadata"))
     kecamatan_list = [dict(k) for k in list_kecamatan()]
     kelurahan_list = [dict(l) for l in list_kelurahan()]
-    
-    return jsonify({
-        "success": True,
-        "school": {
-            "id": school["id"],
-            "name": school["name"],
-            "npsn": school["npsn"],
-            "jenjang": school["jenjang"],
-            "alamat": school.get("alamat"),
-            "kecamatan_id": school.get("kecamatan_id"),
-            "kelurahan_id": school.get("kelurahan_id"),
-            "logo_url": school.get("logo_url")
-        },
-        "meta": meta,
-        "kecamatan_list": kecamatan_list,
-        "kelurahan_list": kelurahan_list,
-        "missing_fields": _compute_missing_profile_fields(school)
-    })
+
+    return jsonify(
+        {
+            "success": True,
+            "school": {
+                "id": school["id"],
+                "name": school["name"],
+                "npsn": school["npsn"],
+                "jenjang": school["jenjang"],
+                "alamat": school.get("alamat"),
+                "kecamatan_id": school.get("kecamatan_id"),
+                "kelurahan_id": school.get("kelurahan_id"),
+                "logo_url": school.get("logo_url"),
+            },
+            "meta": meta,
+            "kecamatan_list": kecamatan_list,
+            "kelurahan_list": kelurahan_list,
+            "missing_fields": _compute_missing_profile_fields(school),
+        }
+    )
+
 
 @portal_bp.route("/sekolah/password", methods=["GET", "POST"])
 @_portal_access_required
@@ -5576,7 +6117,9 @@ def sekolah_change_password() -> Response:
             for msg in errors:
                 flash(msg, "danger")
         else:
-            pw_hash = generate_password_hash(new_password, method="pbkdf2:sha256", salt_length=12)
+            pw_hash = generate_password_hash(
+                new_password, method="pbkdf2:sha256", salt_length=12
+            )
             update_dashboard_user_profile(
                 user_id=user["id"],
                 full_name=profile.get("full_name") or None,
@@ -5601,18 +6144,20 @@ def admin_photos_partial() -> Response:
     selected_year_arg = request.args.get("year", type=int)
     selected_month_arg = request.args.get("month", type=int)
     selected_period_arg = request.args.get("period_id", type=int)
-    period_id, period_ids, _year_options, _selected_year, _selected_month = _build_admin_stats_period_filter(
-        periods,
-        selected_year_arg,
-        selected_month_arg,
-        selected_period_arg,
+    period_id, period_ids, _year_options, _selected_year, _selected_month = (
+        _build_admin_stats_period_filter(
+            periods,
+            selected_year_arg,
+            selected_month_arg,
+            selected_period_arg,
+        )
     )
     photo_order = request.args.get("photo_order", "random")
     team_id = request.args.get("team_id", type=int)
     school_status_filter = (request.args.get("school_status") or "").strip().lower()
     if school_status_filter not in {"negeri", "swasta"}:
         school_status_filter = ""
-    
+
     staff_ids = None
     if team_id:
         staff_ids, team = _get_team_staff_ids(team_id)
@@ -5665,13 +6210,13 @@ def admin_related_photos() -> Response:
     school_id = request.args.get("school_id", type=int)
     room_id = request.args.get("room_id", type=int)
     team_id = request.args.get("team_id", type=int)
-    
+
     staff_ids = None
     if team_id:
         staff_ids, team = _get_team_staff_ids(team_id)
         if team is None:
             staff_ids = None
-    
+
     result = _serialize_related_photos(school_id, room_id, staff_ids=staff_ids)
     return jsonify(result)
 
@@ -5754,7 +6299,10 @@ def admin_photo_recovery_merge() -> Response:
         assessment_id = int(payload.get("assessment_id"))
         school_room_id = int(payload.get("school_room_id"))
     except (TypeError, ValueError):
-        return jsonify({"success": False, "message": "Data penilaian tidak valid."}), 400
+        return (
+            jsonify({"success": False, "message": "Data penilaian tidak valid."}),
+            400,
+        )
 
     rel_path = _normalize_photo_rel_path(file_path)
     if not rel_path:
@@ -5774,7 +6322,10 @@ def admin_photo_recovery_merge() -> Response:
 
     assessment = get_assessment_by_id(assessment_id)
     if not assessment:
-        return jsonify({"success": False, "message": "Assessment tidak ditemukan."}), 404
+        return (
+            jsonify({"success": False, "message": "Assessment tidak ditemukan."}),
+            404,
+        )
 
     if assessment.get("status") != "draft":
         return jsonify({"success": False, "message": "Assessment bukan draft."}), 400
@@ -5790,7 +6341,12 @@ def admin_photo_recovery_merge() -> Response:
         return jsonify({"success": False, "message": "Ruangan tidak ditemukan."}), 404
 
     if room_row["school_id"] != assessment.get("school_id"):
-        return jsonify({"success": False, "message": "Ruangan tidak sesuai sekolah draft."}), 400
+        return (
+            jsonify(
+                {"success": False, "message": "Ruangan tidak sesuai sekolah draft."}
+            ),
+            400,
+        )
 
     if action not in ("skip", "replace"):
         action = "skip"
@@ -5815,7 +6371,9 @@ def admin_photo_recovery_merge() -> Response:
         )
 
     photo_path = f"uploads/portal/{rel_path}"
-    captured_at = datetime.fromtimestamp(candidate.stat().st_mtime, tz=timezone.utc).astimezone(JAKARTA_TZ)
+    captured_at = datetime.fromtimestamp(
+        candidate.stat().st_mtime, tz=timezone.utc
+    ).astimezone(JAKARTA_TZ)
 
     try:
         saved = save_assessment_photo(
@@ -5847,9 +6405,10 @@ def coordinator_related_photos() -> Response:
     room_id = request.args.get("room_id", type=int)
     user = current_user()
     _, _, staff_ids = _get_coordinator_team_context(user.get("id"))
-    
+
     result = _serialize_related_photos(school_id, room_id, staff_ids=staff_ids)
     return jsonify(result)
+
 
 @portal_bp.route("/admin/periods/create", methods=["POST"])
 @role_required("admin")
@@ -5857,6 +6416,7 @@ def create_period_route() -> Response:
     """Create a new period."""
     user = current_user()
     from .queries import log_activity
+
     if not can_manage_periods(user):
         flash("Anda tidak memiliki izin mengelola periode.", "warning")
         return redirect(url_for("portal.admin_stats"))
@@ -5864,7 +6424,7 @@ def create_period_route() -> Response:
     start_date = request.form.get("start_date")
     end_date = request.form.get("end_date")
     is_active = request.form.get("is_active") == "on"
-    
+
     if not all([name, start_date, end_date]):
         flash("Mohon lengkapi data periode.", "warning")
     else:
@@ -5885,7 +6445,7 @@ def create_period_route() -> Response:
             flash("Periode berhasil dibuat.", "success")
         except Exception as e:
             flash(f"Error: {e}", "danger")
-        
+
     return redirect(url_for("portal.admin_stats"))
 
 
@@ -5895,6 +6455,7 @@ def admin_reopen_requests() -> Response:
     """Admin page to view reopen requests."""
     status = request.args.get("status") or None
     from .queries import fetch_activity_logs
+
     requests = list_reopen_requests(status=status)
     activity_logs = fetch_activity_logs(limit=50, target_types=("REOPEN_REQUEST",))
     return render_template(
@@ -6015,7 +6576,11 @@ def _serialize_user_app_notification(row: dict, fallback_link: str) -> dict:
         tone = "warning"
 
     created_at = row.get("created_at")
-    created_at_iso = created_at.isoformat(timespec="seconds") if isinstance(created_at, datetime) else ""
+    created_at_iso = (
+        created_at.isoformat(timespec="seconds")
+        if isinstance(created_at, datetime)
+        else ""
+    )
 
     return {
         "id": notification_id,
@@ -6046,8 +6611,12 @@ def user_app_notifications() -> Response:
     categories = list(USER_APP_NOTIFICATION_CATEGORIES)
 
     try:
-        summary = fetch_user_notification_summary(user_id=user_id, categories=categories)
-        rows = list_user_notifications(user_id=user_id, limit=limit, categories=categories)
+        summary = fetch_user_notification_summary(
+            user_id=user_id, categories=categories
+        )
+        rows = list_user_notifications(
+            user_id=user_id, limit=limit, categories=categories
+        )
     except Exception:
         current_app.logger.exception("Gagal mengambil notifikasi aplikasi pengguna.")
         return jsonify(
@@ -6063,7 +6632,9 @@ def user_app_notifications() -> Response:
     return jsonify(
         {
             "success": True,
-            "items": [_serialize_user_app_notification(row, fallback_link) for row in rows],
+            "items": [
+                _serialize_user_app_notification(row, fallback_link) for row in rows
+            ],
             "unread_count": int(summary.get("unread_count") or 0),
             "total_count": int(summary.get("total_count") or 0),
             "generated_at": datetime.now(JAKARTA_TZ).isoformat(timespec="seconds"),
@@ -6085,7 +6656,9 @@ def user_app_notifications_mark_read() -> Response:
 
     raw_ids = payload.get("ids")
     if not isinstance(raw_ids, list):
-        raw_ids = request.form.getlist("ids") or request.form.getlist("notification_ids")
+        raw_ids = request.form.getlist("ids") or request.form.getlist(
+            "notification_ids"
+        )
     if not raw_ids and request.form.get("id"):
         raw_ids = [request.form.get("id")]
 
@@ -6104,10 +6677,17 @@ def user_app_notifications_mark_read() -> Response:
             mark_all=mark_all,
             categories=categories,
         )
-        summary = fetch_user_notification_summary(user_id=user_id, categories=categories)
+        summary = fetch_user_notification_summary(
+            user_id=user_id, categories=categories
+        )
     except Exception:
-        current_app.logger.exception("Gagal memperbarui status baca notifikasi aplikasi pengguna.")
-        return jsonify({"success": False, "message": "Gagal memperbarui notifikasi."}), 500
+        current_app.logger.exception(
+            "Gagal memperbarui status baca notifikasi aplikasi pengguna."
+        )
+        return (
+            jsonify({"success": False, "message": "Gagal memperbarui notifikasi."}),
+            500,
+        )
 
     return jsonify(
         {
@@ -6124,7 +6704,8 @@ def user_app_notifications_mark_read() -> Response:
 def admin_periods() -> Response:
     """Admin page to manage assessment periods."""
     user = current_user()
-    from .queries import log_activity, fetch_activity_logs
+    from .queries import fetch_activity_logs, log_activity
+
     if not can_manage_periods(user):
         flash("Anda tidak memiliki izin mengelola periode.", "warning")
         return redirect(url_for("portal.admin_stats"))
@@ -6174,6 +6755,7 @@ def admin_activate_period(period_id: int) -> Response:
     """Set a period as the active period."""
     user = current_user()
     from .queries import log_activity
+
     if not can_manage_periods(user):
         flash("Anda tidak memiliki izin mengelola periode.", "warning")
         return redirect(url_for("portal.admin_stats"))
@@ -6200,6 +6782,7 @@ def admin_edit_period(period_id: int) -> Response:
     """Edit an existing period."""
     user = current_user()
     from .queries import log_activity
+
     if not can_manage_periods(user):
         flash("Anda tidak memiliki izin mengelola periode.", "warning")
         return redirect(url_for("portal.admin_stats"))
@@ -6241,6 +6824,7 @@ def admin_delete_period(period_id: int) -> Response:
     """Delete a non-active period."""
     user = current_user()
     from .queries import log_activity
+
     if not can_manage_periods(user):
         flash("Anda tidak memiliki izin mengelola periode.", "warning")
         return redirect(url_for("portal.admin_stats"))
@@ -6252,8 +6836,14 @@ def admin_delete_period(period_id: int) -> Response:
             details = None
             if period:
                 details = {
-                    "start_date": str(period.get("start_date")) if period.get("start_date") else None,
-                    "end_date": str(period.get("end_date")) if period.get("end_date") else None,
+                    "start_date": (
+                        str(period.get("start_date"))
+                        if period.get("start_date")
+                        else None
+                    ),
+                    "end_date": (
+                        str(period.get("end_date")) if period.get("end_date") else None
+                    ),
                     "active": bool(period.get("is_active")),
                 }
             log_activity(
@@ -6279,16 +6869,18 @@ def assign_assessment_route() -> Response:
     """Assign school to staff (without creating draft)."""
     school_id = request.form.get("school_id")
     staff_id = request.form.get("staff_id")
-    
+
     if not all([school_id, staff_id]):
         flash("Pilih sekolah dan staff.", "warning")
     else:
         try:
-            assign_staff_to_school(int(staff_id), int(school_id), current_user().get("id"))
+            assign_staff_to_school(
+                int(staff_id), int(school_id), current_user().get("id")
+            )
             flash("Sekolah berhasil ditugaskan ke staff.", "success")
         except Exception as e:
             flash(f"Error: {e}", "danger")
-        
+
     return redirect(url_for("portal.admin_stats"))
 
 
@@ -6315,8 +6907,7 @@ def admin_setup() -> Response:
     school_monitor_attention_count = 0
 
     with get_cursor() as cur:
-        cur.execute(
-            """
+        cur.execute("""
             SELECT
                 s.id,
                 s.npsn,
@@ -6349,8 +6940,7 @@ def admin_setup() -> Response:
                 GROUP BY school_id
             ) rc ON rc.school_id = s.id
             ORDER BY s.name
-            """
-        )
+            """)
         monitor_rows = cur.fetchall()
 
     for row in monitor_rows:
@@ -6378,11 +6968,13 @@ def admin_setup() -> Response:
                 )
                 ORDER BY r.name
                 """,
-                (school.get("id"),)
+                (school.get("id"),),
             )
             rooms_without_aspects = [row["name"] for row in cur.fetchall()]
 
-        operator_phone_raw = meta.get("coordinator_phone") or meta.get("school_phone") or ""
+        operator_phone_raw = (
+            meta.get("coordinator_phone") or meta.get("school_phone") or ""
+        )
         operator_phone_display = str(operator_phone_raw).strip()
         operator_phone = _sanitize_phone(operator_phone_display)
         wa_link = None
@@ -6398,14 +6990,18 @@ def admin_setup() -> Response:
             preview_items = missing_fields[:3]
             missing_preview = ", ".join(preview_items)
             if len(missing_fields) > 3:
-                missing_preview = f"{missing_preview} +{len(missing_fields) - 3} lainnya"
+                missing_preview = (
+                    f"{missing_preview} +{len(missing_fields) - 3} lainnya"
+                )
 
         suspicious_preview = ""
         if suspicious_reasons:
             preview_items = suspicious_reasons[:2]
             suspicious_preview = ", ".join(preview_items)
             if len(suspicious_reasons) > 2:
-                suspicious_preview = f"{suspicious_preview} +{len(suspicious_reasons) - 2} lainnya"
+                suspicious_preview = (
+                    f"{suspicious_preview} +{len(suspicious_reasons) - 2} lainnya"
+                )
 
         rooms_no_aspects_preview = ""
         if rooms_without_aspects:
@@ -6414,7 +7010,13 @@ def admin_setup() -> Response:
             if len(rooms_without_aspects) > 2:
                 rooms_no_aspects_preview = f"{rooms_no_aspects_preview} +{len(rooms_without_aspects) - 2} lainnya"
 
-        needs_attention = (not is_claimed) or (not has_rooms) or bool(missing_fields) or bool(suspicious_reasons) or bool(rooms_without_aspects)
+        needs_attention = (
+            (not is_claimed)
+            or (not has_rooms)
+            or bool(missing_fields)
+            or bool(suspicious_reasons)
+            or bool(rooms_without_aspects)
+        )
         if needs_attention:
             school_monitor_attention_count += 1
 
@@ -6476,7 +7078,11 @@ def admin_setup() -> Response:
         grade = _room_grade(name)
         is_variant = _is_variant_class(name)
         templ = None
-        is_tk_base = bool(re.search(r"^\\s*(?:Ruang\\s+)?Kelas\\s+-1\\s*$", name or "", flags=re.IGNORECASE))
+        is_tk_base = bool(
+            re.search(
+                r"^\\s*(?:Ruang\\s+)?Kelas\\s+-1\\s*$", name or "", flags=re.IGNORECASE
+            )
+        )
         if grade is not None:
             if grade <= 6:
                 templ = 1
@@ -6498,10 +7104,13 @@ def admin_setup() -> Response:
         if should_keep and name not in seen_names:
             base_rooms.append(r)
             seen_names.add(name)
-    
+
     from .queries import fetch_activity_logs
-    activity_logs = fetch_activity_logs(limit=50, target_types=("ROOM", "ASPECT", "SCHOOL"))
-    
+
+    activity_logs = fetch_activity_logs(
+        limit=50, target_types=("ROOM", "ASPECT", "SCHOOL")
+    )
+
     return render_template(
         "portal/admin/setup.html",
         rooms=rooms,
@@ -6527,7 +7136,10 @@ def admin_update_undo_window() -> Response:
         flash("Durasi undo harus berupa angka.", "danger")
         return redirect(fallback_url)
 
-    if requested_seconds < PORTAL_UNDO_WINDOW_MIN_SECONDS or requested_seconds > PORTAL_UNDO_WINDOW_MAX_SECONDS:
+    if (
+        requested_seconds < PORTAL_UNDO_WINDOW_MIN_SECONDS
+        or requested_seconds > PORTAL_UNDO_WINDOW_MAX_SECONDS
+    ):
         flash(
             f"Durasi undo harus di antara {PORTAL_UNDO_WINDOW_MIN_SECONDS} sampai "
             f"{PORTAL_UNDO_WINDOW_MAX_SECONDS} detik.",
@@ -6555,7 +7167,11 @@ def admin_update_undo_window() -> Response:
 @role_required("admin")
 def admin_refresh_knowledge() -> Response:
     """Regenerate Detail_Sekolah.md for ASKA knowledge base."""
-    script_path = Path(__file__).resolve().parents[2] / "scripts" / "generate_detail_sekolah_md.py"
+    script_path = (
+        Path(__file__).resolve().parents[2]
+        / "scripts"
+        / "generate_detail_sekolah_md.py"
+    )
     if not script_path.exists():
         flash("Script pembaruan Detail_Sekolah.md tidak ditemukan.", "danger")
         return redirect(url_for("portal.admin_setup"))
@@ -6588,7 +7204,9 @@ def admin_refresh_knowledge() -> Response:
         refresh_targets.append(("web", refresh_url, refresh_token))
 
     telegram_url = (os.getenv("ASKA_TELEGRAM_REFRESH_URL") or "").strip()
-    telegram_token = (os.getenv("ASKA_TELEGRAM_REFRESH_TOKEN") or refresh_token or "").strip()
+    telegram_token = (
+        os.getenv("ASKA_TELEGRAM_REFRESH_TOKEN") or refresh_token or ""
+    ).strip()
     if telegram_url and telegram_token:
         refresh_targets.append(("telegram", telegram_url, telegram_token))
 
@@ -6659,7 +7277,9 @@ def admin_activity_log_rows() -> Response:
     if not target_types:
         target_types_raw = request.args.get("target_types", "")
         if target_types_raw:
-            target_types = [item.strip() for item in target_types_raw.split(",") if item.strip()]
+            target_types = [
+                item.strip() for item in target_types_raw.split(",") if item.strip()
+            ]
 
     activity_logs = fetch_activity_logs(limit=limit, target_types=target_types or None)
 
@@ -6678,21 +7298,29 @@ def add_room() -> Response:
     category = request.form.get("category", "umum").strip()
     sort_order = int(request.form.get("sort_order", 0))
     is_required = request.form.get("is_required", "on") == "on"
-    
+
     if not name:
         flash("Nama ruangan wajib diisi.", "warning")
         return redirect(url_for("portal.admin_setup"))
-    
+
     try:
         create_room(name, description, category, sort_order, is_required)
-        
+
         from .queries import log_activity
-        log_activity(current_user().get("id"), "CREATE", "ROOM", None, name, {"category": category, "is_required": is_required})
-        
+
+        log_activity(
+            current_user().get("id"),
+            "CREATE",
+            "ROOM",
+            None,
+            name,
+            {"category": category, "is_required": is_required},
+        )
+
         flash(f"Ruangan '{name}' berhasil ditambahkan.", "success")
     except Exception as e:
         flash(f"Error: {e}", "danger")
-    
+
     return redirect(url_for("portal.admin_setup"))
 
 
@@ -6705,16 +7333,17 @@ def add_aspect() -> Response:
     description = request.form.get("description", "").strip() or None
     sort_order = int(request.form.get("sort_order", 0))
     is_required = request.form.get("is_required", "on") == "on"
-    
+
     if not room_id or not name:
         flash("Room ID dan nama aspek wajib diisi.", "warning")
         return redirect(url_for("portal.admin_setup"))
-    
+
     try:
         room = get_room_by_id(int(room_id))
         create_aspect(int(room_id), name, description, sort_order, is_required)
-        
+
         from .queries import log_activity
+
         log_activity(
             current_user().get("id"),
             "CREATE",
@@ -6723,19 +7352,21 @@ def add_aspect() -> Response:
             name,
             {"room_id": room_id, "room_name": room.get("name") if room else None},
         )
-        
+
         if request.is_json:
-            return jsonify({
-                "success": True,
-                "room_id": int(room_id),
-                "aspects": _get_room_aspects(int(room_id)),
-            })
+            return jsonify(
+                {
+                    "success": True,
+                    "room_id": int(room_id),
+                    "aspects": _get_room_aspects(int(room_id)),
+                }
+            )
         flash(f"Aspek '{name}' berhasil ditambahkan.", "success")
     except Exception as e:
         if request.is_json:
             return jsonify({"success": False, "error": str(e)}), 400
         flash(f"Error: {e}", "danger")
-    
+
     return redirect(url_for("portal.admin_setup"))
 
 
@@ -6746,52 +7377,59 @@ def add_aspects_batch() -> Response:
     data = request.get_json()
     aspects = data.get("aspects", [])
     is_required_default = bool(data.get("is_required", True))
-    
+
     if not aspects:
         return jsonify({"success": False, "error": "No aspects provided"})
-    
+
     created_count = 0
     errors = []
     touched_rooms: set[int] = set()
-    
+
     for item in aspects:
         room_id = item.get("roomId")
         name = item.get("name", "").strip()
         is_required = bool(item.get("is_required", is_required_default))
-        
+
         if not room_id or not name:
             errors.append(f"Missing room_id or name for aspect")
             continue
-        
+
         try:
             rid = int(room_id)
             room = get_room_by_id(rid)
             create_aspect(rid, name, None, 0, is_required)
-            
+
             from .queries import log_activity
+
             log_activity(
                 current_user().get("id"),
                 "CREATE",
                 "ASPECT",
                 None,
                 name,
-                {"room_id": rid, "room_name": room.get("name") if room else None, "batch": True},
+                {
+                    "room_id": rid,
+                    "room_name": room.get("name") if room else None,
+                    "batch": True,
+                },
             )
-            
+
             created_count += 1
             touched_rooms.add(rid)
         except Exception as e:
             errors.append(f"Error creating '{name}': {str(e)}")
-    
+
     room_aspects = {rid: _get_room_aspects(rid) for rid in touched_rooms}
-    
+
     if request.is_json:
-        return jsonify({
-            "success": created_count > 0,
-            "created": created_count,
-            "errors": errors,
-            "room_aspects": room_aspects,
-        })
+        return jsonify(
+            {
+                "success": created_count > 0,
+                "created": created_count,
+                "errors": errors,
+                "room_aspects": room_aspects,
+            }
+        )
     if created_count > 0:
         flash(f"{created_count} aspek berhasil ditambahkan.", "success")
     return redirect(url_for("portal.admin_setup"))
@@ -6807,25 +7445,35 @@ def edit_room(room_id: int) -> Response:
     sort_order = int(request.form.get("sort_order", 0))
     active = request.form.get("active") == "on"
     is_required = request.form.get("is_required") == "on"
-    
+
     if not name:
         flash("Nama ruangan wajib diisi.", "warning")
         return redirect(url_for("portal.admin_setup"))
-    
+
     try:
-        result = update_room(room_id, name, description, category, sort_order, active, is_required)
+        result = update_room(
+            room_id, name, description, category, sort_order, active, is_required
+        )
         if result:
             _sync_classroom_required_from_template(result, is_required)
             _sync_classroom_aspects_from_template_room(result)
             from .queries import log_activity
-            log_activity(current_user().get("id"), "UPDATE", "ROOM", room_id, name, {"active": active})
-            
+
+            log_activity(
+                current_user().get("id"),
+                "UPDATE",
+                "ROOM",
+                room_id,
+                name,
+                {"active": active},
+            )
+
             flash(f"Ruangan '{name}' berhasil diperbarui.", "success")
         else:
             flash("Ruangan tidak ditemukan.", "warning")
     except Exception as e:
         flash(f"Error: {e}", "danger")
-    
+
     return redirect(url_for("portal.admin_setup"))
 
 
@@ -6837,29 +7485,37 @@ def toggle_room_status(room_id: int) -> Response:
     if not room:
         flash("Ruangan tidak ditemukan.", "warning")
         return redirect(url_for("portal.admin_setup"))
-    
+
     try:
         new_status = not room.get("active", True)
         result = update_room(
-            room_id, 
-            room["name"], 
-            room.get("description"), 
-            room.get("category", "umum"), 
-            room.get("sort_order", 0), 
+            room_id,
+            room["name"],
+            room.get("description"),
+            room.get("category", "umum"),
+            room.get("sort_order", 0),
             new_status,
-            room.get("is_required", False)
+            room.get("is_required", False),
         )
         if result:
             from .queries import log_activity
-            log_activity(current_user().get("id"), "UPDATE", "ROOM", room_id, room["name"], {"status": "active" if new_status else "inactive"})
-            
+
+            log_activity(
+                current_user().get("id"),
+                "UPDATE",
+                "ROOM",
+                room_id,
+                room["name"],
+                {"status": "active" if new_status else "inactive"},
+            )
+
             status_text = "diaktifkan" if new_status else "dinonaktifkan"
             flash(f"Ruangan '{room['name']}' berhasil {status_text}.", "success")
         else:
             flash("Gagal mengubah status ruangan.", "danger")
     except Exception as e:
         flash(f"Error: {e}", "danger")
-    
+
     return redirect(url_for("portal.admin_setup") + f"#room-{room_id}")
 
 
@@ -6871,7 +7527,7 @@ def toggle_room_required(room_id: int) -> Response:
     if not room:
         flash("Ruangan tidak ditemukan.", "warning")
         return redirect(url_for("portal.admin_setup"))
-    
+
     try:
         new_required = not room.get("is_required", True)
         result = update_room(
@@ -6887,6 +7543,7 @@ def toggle_room_required(room_id: int) -> Response:
             _sync_classroom_required_from_template(room, new_required)
             _sync_classroom_aspects_from_template_room(room)
             from .queries import log_activity
+
             log_activity(
                 current_user().get("id"),
                 "UPDATE",
@@ -6895,12 +7552,15 @@ def toggle_room_required(room_id: int) -> Response:
                 room["name"],
                 {"required": new_required},
             )
-            flash(f"Ruangan '{room['name']}' kini {'wajib' if new_required else 'opsional'}.", "success")
+            flash(
+                f"Ruangan '{room['name']}' kini {'wajib' if new_required else 'opsional'}.",
+                "success",
+            )
         else:
             flash("Gagal mengubah status wajib ruangan.", "danger")
     except Exception as e:
         flash(f"Error: {e}", "danger")
-    
+
     return redirect(url_for("portal.admin_setup") + f"#room-{room_id}")
 
 
@@ -6917,7 +7577,10 @@ def reorder_rooms() -> Response:
         return jsonify({"success": False, "message": "Data ruangan tidak valid"}), 400
 
     if not room_ids:
-        return jsonify({"success": False, "message": "Tidak ada ruangan untuk diurutkan"}), 400
+        return (
+            jsonify({"success": False, "message": "Tidak ada ruangan untuk diurutkan"}),
+            400,
+        )
 
     try:
         with get_cursor(commit=True) as cur:
@@ -6950,22 +7613,30 @@ def toggle_room_status_api(room_id: int) -> Response:
     room = get_room_by_id(room_id)
     if not room:
         return jsonify({"success": False, "error": "Ruangan tidak ditemukan"})
-    
+
     try:
         new_status = not room.get("active", True)
         result = update_room(
-            room_id, 
-            room["name"], 
-            room.get("description"), 
-            room.get("category", "umum"), 
-            room.get("sort_order", 0), 
+            room_id,
+            room["name"],
+            room.get("description"),
+            room.get("category", "umum"),
+            room.get("sort_order", 0),
             new_status,
-            room.get("is_required", False)
+            room.get("is_required", False),
         )
         if result:
             from .queries import log_activity
-            log_activity(current_user().get("id"), "UPDATE", "ROOM", room_id, room["name"], {"status": "active" if new_status else "inactive"})
-            
+
+            log_activity(
+                current_user().get("id"),
+                "UPDATE",
+                "ROOM",
+                room_id,
+                room["name"],
+                {"status": "active" if new_status else "inactive"},
+            )
+
             return jsonify({"success": True, "active": new_status, "room_id": room_id})
         else:
             return jsonify({"success": False, "error": "Gagal mengubah status"})
@@ -6981,18 +7652,21 @@ def delete_room_route(room_id: int) -> Response:
     if not room:
         flash("Ruangan tidak ditemukan.", "warning")
         return redirect(url_for("portal.admin_setup"))
-    
+
     try:
         if delete_room(room_id):
             from .queries import log_activity
-            log_activity(current_user().get("id"), "DELETE", "ROOM", room_id, room["name"])
-            
+
+            log_activity(
+                current_user().get("id"), "DELETE", "ROOM", room_id, room["name"]
+            )
+
             flash(f"Ruangan '{room['name']}' berhasil dihapus.", "success")
         else:
             flash("Gagal menghapus ruangan.", "danger")
     except Exception as e:
         flash(f"Error: {e}", "danger")
-    
+
     return redirect(url_for("portal.admin_setup"))
 
 
@@ -7014,16 +7688,21 @@ def edit_aspect(aspect_id: int) -> Response:
         sort_order = int(request.form.get("sort_order", 0))
         active = request.form.get("active") == "on"
         is_required = request.form.get("is_required", "on") == "on"
-    
+
     if not name:
         if request.is_json:
-            return jsonify({"success": False, "message": "Nama aspek wajib diisi."}), 400
+            return (
+                jsonify({"success": False, "message": "Nama aspek wajib diisi."}),
+                400,
+            )
         flash("Nama aspek wajib diisi.", "warning")
         return redirect(url_for("portal.admin_setup"))
-    
+
     try:
         aspect_before = get_aspect_by_id(aspect_id)
-        result = update_aspect(aspect_id, name, description, sort_order, active, is_required)
+        result = update_aspect(
+            aspect_id, name, description, sort_order, active, is_required
+        )
         if result:
             if aspect_before:
                 _sync_classroom_aspect_required_from_template(
@@ -7032,31 +7711,42 @@ def edit_aspect(aspect_id: int) -> Response:
                     is_required,
                 )
             from .queries import log_activity
+
             log_activity(
                 current_user().get("id"),
                 "UPDATE",
                 "ASPECT",
                 aspect_id,
                 name,
-                {"room_id": aspect_before.get("room_id") if aspect_before else None, "room_name": aspect_before.get("room_name") if aspect_before else None},
+                {
+                    "room_id": aspect_before.get("room_id") if aspect_before else None,
+                    "room_name": (
+                        aspect_before.get("room_name") if aspect_before else None
+                    ),
+                },
             )
             if request.is_json:
                 room_id = aspect_before.get("room_id") if aspect_before else None
-                return jsonify({
-                    "success": True,
-                    "room_id": room_id,
-                    "aspects": _get_room_aspects(room_id) if room_id else [],
-                })
+                return jsonify(
+                    {
+                        "success": True,
+                        "room_id": room_id,
+                        "aspects": _get_room_aspects(room_id) if room_id else [],
+                    }
+                )
             flash(f"Aspek '{name}' berhasil diperbarui.", "success")
         else:
             if request.is_json:
-                return jsonify({"success": False, "message": "Aspek tidak ditemukan"}), 404
+                return (
+                    jsonify({"success": False, "message": "Aspek tidak ditemukan"}),
+                    404,
+                )
             flash("Aspek tidak ditemukan.", "warning")
     except Exception as e:
         if request.is_json:
             return jsonify({"success": False, "message": str(e)}), 500
         flash(f"Error: {e}", "danger")
-    
+
     return redirect(url_for("portal.admin_setup"))
 
 
@@ -7070,38 +7760,49 @@ def delete_aspect_route(aspect_id: int) -> Response:
             return jsonify({"success": True, "room_id": None, "aspects": []})
         flash("Aspek sudah dihapus atau tidak ditemukan.", "info")
         return redirect(url_for("portal.admin_setup"))
-    
+
     try:
         if delete_aspect(aspect_id):
             from .queries import log_activity
+
             log_activity(
                 current_user().get("id"),
                 "DELETE",
                 "ASPECT",
                 aspect_id,
                 aspect["name"],
-                {"room_id": aspect.get("room_id"), "room_name": aspect.get("room_name")},
+                {
+                    "room_id": aspect.get("room_id"),
+                    "room_name": aspect.get("room_name"),
+                },
             )
             if request.is_json:
-                return jsonify({
-                    "success": True,
-                    "room_id": aspect.get("room_id"),
-                    "aspects": _get_room_aspects(aspect.get("room_id")),
-                })
+                return jsonify(
+                    {
+                        "success": True,
+                        "room_id": aspect.get("room_id"),
+                        "aspects": _get_room_aspects(aspect.get("room_id")),
+                    }
+                )
             flash(f"Aspek '{aspect['name']}' berhasil dihapus.", "success")
         else:
             if request.is_json:
-                return jsonify({"success": False, "message": "Gagal menghapus aspek"}), 400
+                return (
+                    jsonify({"success": False, "message": "Gagal menghapus aspek"}),
+                    400,
+                )
             flash("Gagal menghapus aspek.", "danger")
     except Exception as e:
         if request.is_json:
             return jsonify({"success": False, "message": str(e)}), 500
         flash(f"Error: {e}", "danger")
-    
+
     return redirect(url_for("portal.admin_setup"))
 
 
-@portal_bp.route("/admin/setup/aspect/<int:aspect_id>/toggle-required", methods=["POST"])
+@portal_bp.route(
+    "/admin/setup/aspect/<int:aspect_id>/toggle-required", methods=["POST"]
+)
 @role_required("admin")
 def toggle_aspect_required(aspect_id: int) -> Response:
     """Toggle required flag for an aspect."""
@@ -7125,6 +7826,7 @@ def toggle_aspect_required(aspect_id: int) -> Response:
                 new_required,
             )
             from .queries import log_activity
+
             log_activity(
                 current_user().get("id"),
                 "UPDATE",
@@ -7134,15 +7836,21 @@ def toggle_aspect_required(aspect_id: int) -> Response:
                 {"is_required": new_required},
             )
             room_id = aspect.get("room_id")
-            return jsonify({
-                "success": True,
-                "room_id": room_id,
-                "is_required": new_required,
-                "aspects": _get_room_aspects(room_id) if room_id else [],
-            })
-        return jsonify({"success": False, "message": "Gagal mengubah status wajib"}), 500
+            return jsonify(
+                {
+                    "success": True,
+                    "room_id": room_id,
+                    "is_required": new_required,
+                    "aspects": _get_room_aspects(room_id) if room_id else [],
+                }
+            )
+        return (
+            jsonify({"success": False, "message": "Gagal mengubah status wajib"}),
+            500,
+        )
     except Exception as exc:
         return jsonify({"success": False, "message": str(exc)}), 500
+
 
 @portal_bp.route("/admin/setup/school", methods=["POST"])
 @role_required("admin")
@@ -7154,31 +7862,36 @@ def add_school() -> Response:
     alamat = request.form.get("alamat", "").strip() or None
     kelurahan_id = request.form.get("kelurahan_id", type=int)
     status = request.form.get("status", "NEGERI").strip()
-    
+
     if not npsn or not name:
         flash("NPSN dan nama sekolah wajib diisi.", "warning")
         return redirect(url_for("portal.admin_setup"))
-    
+
     if not kelurahan_id:
         flash("Kelurahan wajib dipilih.", "warning")
         return redirect(url_for("portal.admin_setup"))
-    
+
     try:
         from .queries import get_school_by_npsn, log_activity
-        
+
         # Check if school exists to determine log action
         existing_school = get_school_by_npsn(npsn)
         action = "UPDATE" if existing_school else "CREATE"
         school_id = existing_school.get("id") if existing_school else None
-        
+
         create_school(npsn, name, jenjang, alamat, kelurahan_id, status)
-        
-        log_activity(current_user().get("id"), action, "SCHOOL", school_id, name, {"npsn": npsn})
-        
-        flash(f"Sekolah '{name}' berhasil {'diperbarui' if action == 'UPDATE' else 'ditambahkan'}.", "success")
+
+        log_activity(
+            current_user().get("id"), action, "SCHOOL", school_id, name, {"npsn": npsn}
+        )
+
+        flash(
+            f"Sekolah '{name}' berhasil {'diperbarui' if action == 'UPDATE' else 'ditambahkan'}.",
+            "success",
+        )
     except Exception as e:
         flash(f"Error: {e}", "danger")
-    
+
     return redirect(url_for("portal.admin_setup"))
 
 
@@ -7186,26 +7899,29 @@ def add_school() -> Response:
 @role_required("admin")
 def delete_school_route(school_id: int) -> Response:
     """Delete a school."""
-    from .queries import get_school_by_id, delete_school, log_activity
-    
+    from .queries import delete_school, get_school_by_id, log_activity
+
     school = get_school_by_id(school_id)
     if not school:
         flash("Sekolah tidak ditemukan.", "warning")
         return redirect(url_for("portal.admin_setup"))
-    
+
     try:
         if delete_school(school_id):
-            log_activity(current_user().get("id"), "DELETE", "SCHOOL", school_id, school["name"])
+            log_activity(
+                current_user().get("id"), "DELETE", "SCHOOL", school_id, school["name"]
+            )
             flash(f"Sekolah '{school['name']}' berhasil dihapus.", "success")
         else:
             flash("Gagal menghapus sekolah.", "danger")
     except Exception as e:
         flash(f"Error: {e}", "danger")
-    
+
     return redirect(url_for("portal.admin_setup"))
 
 
 # ===== School Registration =====
+
 
 @portal_bp.route("/api/schools/search")
 def search_schools_api() -> Response:
@@ -7213,37 +7929,40 @@ def search_schools_api() -> Response:
     q = request.args.get("q", "").strip()
     if len(q) < 3:
         return jsonify([])
-    
+
     schools = search_schools_by_npsn(q, limit=10)
-    return jsonify([
-        {
-            "id": s["id"],
-            "npsn": s["npsn"],
-            "name": s["name"],
-            "jenjang": s["jenjang"],
-            "kecamatan": s.get("kecamatan_name") or "",
-        }
-        for s in schools
-    ])
+    return jsonify(
+        [
+            {
+                "id": s["id"],
+                "npsn": s["npsn"],
+                "name": s["name"],
+                "jenjang": s["jenjang"],
+                "kecamatan": s.get("kecamatan_name") or "",
+            }
+            for s in schools
+        ]
+    )
 
 
 @portal_bp.route("/register", methods=["GET", "POST"])
 def register_school() -> Response:
     """School account registration page."""
     from werkzeug.security import generate_password_hash
-    from dashboard.queries import get_user_by_email
+
     from dashboard.db_access import get_cursor
-    
+    from dashboard.queries import get_user_by_email
+
     # If user is logged in, redirect to home
     if current_user():
         return redirect(url_for("portal.home"))
-    
+
     if request.method == "POST":
         npsn = request.form.get("npsn", "").strip()
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
         confirm_password = request.form.get("confirm_password", "")
-        
+
         # Validate inputs
         errors = []
         if not npsn:
@@ -7256,12 +7975,12 @@ def register_school() -> Response:
             errors.append("Password dan konfirmasi tidak cocok.")
         if len(password) < 6:
             errors.append("Password minimal 6 karakter.")
-        
+
         # Check if school exists
         school = get_school_by_npsn(npsn) if npsn else None
         if npsn and not school:
             errors.append(f"Sekolah dengan NPSN {npsn} tidak ditemukan.")
-        
+
         existing_school_user = None
         if school:
             with get_cursor() as cur:
@@ -7282,21 +8001,25 @@ def register_school() -> Response:
                     coordinator_contacts=coordinator_contacts,
                     show_registered_modal=True,
                 )
-        
+
         # Check if email already registered
         if email and get_user_by_email(email):
             errors.append("Email sudah terdaftar. Silakan login.")
-        
+
         if errors:
             for err in errors:
                 flash(err, "warning")
-            return render_template("portal/registration/register_school.html", npsn=npsn, email=email)
-        
+            return render_template(
+                "portal/registration/register_school.html", npsn=npsn, email=email
+            )
+
         # Create user account with role "sekolah"
         try:
-            password_hash = generate_password_hash(password, method="pbkdf2:sha256", salt_length=12)
+            password_hash = generate_password_hash(
+                password, method="pbkdf2:sha256", salt_length=12
+            )
             from dashboard.db_access import get_cursor
-            
+
             with get_cursor(commit=True) as cur:
                 cur.execute(
                     """
@@ -7306,14 +8029,18 @@ def register_school() -> Response:
                     """,
                     (email, school["name"], password_hash, "sekolah", school["id"]),
                 )
-            
-            flash(f"Pendaftaran berhasil! Silakan login dengan email {email}.", "success")
+
+            flash(
+                f"Pendaftaran berhasil! Silakan login dengan email {email}.", "success"
+            )
             return redirect(url_for("auth.login"))
-        
+
         except Exception as e:
             flash(f"Gagal membuat akun: {e}", "danger")
-            return render_template("portal/registration/register_school.html", npsn=npsn, email=email)
-    
+            return render_template(
+                "portal/registration/register_school.html", npsn=npsn, email=email
+            )
+
     return render_template(
         "portal/registration/register_school.html",
         coordinator_contacts=_build_coordinator_contacts(),
@@ -7329,13 +8056,13 @@ def sidak_planner() -> Response:
     """Admin page for AI-powered sidak route planning."""
     period_id = request.args.get("period_id", type=int)
     periods = list_periods()
-    
+
     # Get kelurahan sorted by urgency (lowest score first)
     kelurahan_list = list_kelurahan_by_urgency(period_id)
-    
+
     # Get all kelurahan for Tab 2
     all_kelurahan_list = list_kelurahan()
-    
+
     return render_template(
         "portal/admin/sidak_planner.html",
         kelurahan_list=kelurahan_list,
@@ -7353,74 +8080,89 @@ def generate_sidak_route() -> Response:
     kelurahan_id = data.get("kelurahan_id")
     period_id = data.get("period_id")
     max_schools = data.get("max_schools", 10)
-    
+
     if not kelurahan_id:
         return jsonify({"success": False, "message": "Kelurahan harus dipilih"}), 400
-    
+
     try:
         kelurahan_id = int(kelurahan_id)
     except (TypeError, ValueError):
         return jsonify({"success": False, "message": "Kelurahan ID tidak valid"}), 400
-    
+
     # Get schools for sidak
     schools = fetch_schools_for_sidak(
         kelurahan_id=kelurahan_id,
         max_score_pct=60,
         period_id=period_id,
     )
-    
+
     if not schools:
-        return jsonify({"success": False, "message": "Tidak ada sekolah dengan data penilaian di kelurahan ini"}), 404
-    
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "Tidak ada sekolah dengan data penilaian di kelurahan ini",
+                }
+            ),
+            404,
+        )
+
     # Filter schools with GPS
     schools_with_gps = [s for s in schools if s.get("latitude") and s.get("longitude")]
-    
+
     if not schools_with_gps:
-        return jsonify({
-            "success": False, 
-            "message": "Tidak ada sekolah dengan data GPS di kelurahan ini. Perlu foto dengan lokasi.",
-            "schools": schools[:max_schools],
-        }), 200
-    
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "Tidak ada sekolah dengan data GPS di kelurahan ini. Perlu foto dengan lokasi.",
+                    "schools": schools[:max_schools],
+                }
+            ),
+            200,
+        )
+
     # Limit schools
     schools_to_optimize = schools_with_gps[:max_schools]
-    
+
     # Optimize route using nearest neighbor algorithm
     from .ai_route_planner import (
-        optimize_route,
-        generate_gmaps_deeplink,
-        calculate_route_stats,
         DEFAULT_START_LOCATION,
+        calculate_route_stats,
+        generate_gmaps_deeplink,
+        optimize_route,
     )
-    
+
     optimized = optimize_route(
         schools_to_optimize,
         start_lat=DEFAULT_START_LOCATION["latitude"],
         start_lon=DEFAULT_START_LOCATION["longitude"],
     )
-    
+
     # Generate Google Maps link
     gmaps_link = generate_gmaps_deeplink(
         optimized,
         start_lat=DEFAULT_START_LOCATION["latitude"],
         start_lon=DEFAULT_START_LOCATION["longitude"],
     )
-    
+
     # Calculate stats
     stats = calculate_route_stats(
         optimized,
         start_lat=DEFAULT_START_LOCATION["latitude"],
         start_lon=DEFAULT_START_LOCATION["longitude"],
     )
-    
-    return jsonify({
-        "success": True,
-        "start_location": DEFAULT_START_LOCATION,
-        "schools": optimized,
-        "all_schools": schools,
-        "gmaps_link": gmaps_link,
-        "stats": stats,
-    })
+
+    return jsonify(
+        {
+            "success": True,
+            "start_location": DEFAULT_START_LOCATION,
+            "schools": optimized,
+            "all_schools": schools,
+            "gmaps_link": gmaps_link,
+            "stats": stats,
+        }
+    )
 
 
 @portal_bp.route("/admin/school-rooms/<int:school_id>")
@@ -7428,7 +8170,7 @@ def generate_sidak_route() -> Response:
 def get_school_room_details(school_id: int) -> Response:
     """Get room details with scores, photos, and notes grouped by staff."""
     from .queries import get_cursor
-    
+
     query = """
         SELECT 
             r.id as room_id,
@@ -7468,11 +8210,11 @@ def get_school_room_details(school_id: int) -> Response:
         HAVING AVG(sc.score) IS NOT NULL
         ORDER BY avg_score_pct ASC, r.name, u.full_name
     """
-    
+
     with get_cursor() as cur:
         cur.execute(query, (school_id,))
         rows = [dict(row) for row in cur.fetchall()]
-    
+
     # Group by room, then by staff
     rooms = {}
     for row in rows:
@@ -7481,33 +8223,41 @@ def get_school_room_details(school_id: int) -> Response:
             rooms[room_id] = {
                 "room_id": room_id,
                 "room_name": row["room_name"],
-                "staff_assessments": []
+                "staff_assessments": [],
             }
-        
+
         photo_url = None
         if row.get("photo_path"):
             from pathlib import Path
+
             filename = Path(row["photo_path"]).name
             photo_url = url_for("portal.uploaded_file", filename=filename)
-        
-        rooms[room_id]["staff_assessments"].append({
-            "staff_id": row["staff_id"],
-            "staff_name": row["staff_name"],
-            "score_pct": float(row["avg_score_pct"]) if row.get("avg_score_pct") else 0,
-            "photo_url": photo_url,
-            "notes": row.get("notes") or "",
-        })
-    
+
+        rooms[room_id]["staff_assessments"].append(
+            {
+                "staff_id": row["staff_id"],
+                "staff_name": row["staff_name"],
+                "score_pct": (
+                    float(row["avg_score_pct"]) if row.get("avg_score_pct") else 0
+                ),
+                "photo_url": photo_url,
+                "notes": row.get("notes") or "",
+            }
+        )
+
     # Sort rooms by lowest score first
-    result = sorted(rooms.values(), key=lambda r: min(
-        [s["score_pct"] for s in r["staff_assessments"]] or [100]
-    ))
-    
-    return jsonify({
-        "success": True,
-        "school_id": school_id,
-        "rooms": result,
-    })
+    result = sorted(
+        rooms.values(),
+        key=lambda r: min([s["score_pct"] for s in r["staff_assessments"]] or [100]),
+    )
+
+    return jsonify(
+        {
+            "success": True,
+            "school_id": school_id,
+            "rooms": result,
+        }
+    )
 
 
 @portal_bp.route("/sekolah/classrooms", methods=["POST"])
@@ -7515,22 +8265,26 @@ def get_school_room_details(school_id: int) -> Response:
 def save_classrooms() -> Response:
     """Save classroom configurations for a school."""
     user = current_user()
-    
+
     if user.get("role") != "sekolah":
         return jsonify({"success": False, "message": "Unauthorized"}), 403
-    
+
     user_school = _fetch_user_school(user["id"])
     if not user_school:
         return jsonify({"success": False, "message": "Sekolah tidak ditemukan"}), 404
-    
+
     data = request.get_json(silent=True) or {}
-    classrooms = sanitize_submitted_classrooms(user_school.get("jenjang"), data.get("classrooms", []))
-    
+    classrooms = sanitize_submitted_classrooms(
+        user_school.get("jenjang"), data.get("classrooms", [])
+    )
+
     try:
         save_school_classrooms_batch(user_school["id"], classrooms)
         ensure_classroom_rooms_for_school(user_school["id"])
         enable_all_classroom_room_aspects_for_school(user_school["id"])
-        return jsonify({"success": True, "message": "Konfigurasi kelas berhasil disimpan"})
+        return jsonify(
+            {"success": True, "message": "Konfigurasi kelas berhasil disimpan"}
+        )
     except Exception as e:
         current_app.logger.exception("Error saving classrooms")
         return jsonify({"success": False, "message": str(e)}), 500
@@ -7541,10 +8295,10 @@ def save_classrooms() -> Response:
 def delete_classroom_route(classroom_id: int) -> Response:
     """Delete a classroom configuration."""
     user = current_user()
-    
+
     if user.get("role") != "sekolah":
         return jsonify({"success": False, "message": "Unauthorized"}), 403
-    
+
     try:
         if delete_school_classroom(classroom_id):
             return jsonify({"success": True})
@@ -7563,26 +8317,31 @@ def admin_manage_staff() -> Response:
     """Admin interface to manage staff-school assignments."""
     user = current_user()
     from .queries import fetch_activity_logs
-    
+
     # Admin only
     if not can_assign_staff(user):
-        flash("Anda tidak memiliki izin untuk mengelola staff. Hubungi admin utama.", "warning")
+        flash(
+            "Anda tidak memiliki izin untuk mengelola staff. Hubungi admin utama.",
+            "warning",
+        )
         return redirect(url_for("portal.admin_stats"))
-    
+
     # Get all staff with their assignments
     all_staff = list_all_staff_with_assignments()
     assignments_overview = list_all_staff_assignments_overview()
-    
+
     # Admin dapat melihat semua sekolah
     available_schools = list_portal_schools()
     pending_requests = list_assignment_requests(status="pending")
     periods = list_periods()
-    active_period_id = next((p["id"] for p in periods if p.get("is_active")), None) or (periods[0]["id"] if periods else None)
+    active_period_id = next((p["id"] for p in periods if p.get("is_active")), None) or (
+        periods[0]["id"] if periods else None
+    )
     activity_logs = fetch_activity_logs(
         limit=50,
         target_types=("STAFF_ASSIGNMENT", "ASSIGNMENT_REQUEST"),
     )
-    
+
     return render_template(
         "portal/admin/manage_staff.html",
         staff_list=all_staff,
@@ -7664,20 +8423,20 @@ def coordinator_manage_staff() -> Response:
 def admin_assign_school() -> Response:
     """Admin assigns a school to a staff member."""
     user = current_user()
-    from .queries import log_activity, fetch_activity_logs
-    
+    from .queries import fetch_activity_logs, log_activity
+
     # Admin only
     if not can_assign_staff(user):
         return jsonify({"success": False, "message": "Tidak memiliki izin"}), 403
-    
+
     staff_id = request.form.get("staff_id", type=int)
     school_id = request.form.get("school_id", type=int)
     period_id = request.form.get("period_id", type=int)
     notes = request.form.get("notes", "").strip()
-    
+
     if not staff_id or not school_id:
         return jsonify({"success": False, "message": "Data tidak lengkap"}), 400
-    
+
     try:
         assignment = assign_staff_to_school(staff_id, school_id, user["id"], notes)
         staff_info = _fetch_dashboard_user_summary(staff_id)
@@ -7717,6 +8476,7 @@ def admin_assign_school_batch() -> Response:
     """Admin assigns multiple schools to a staff member in one request."""
     user = current_user()
     from .queries import log_activity
+
     if not can_assign_staff(user):
         return jsonify({"success": False, "message": "Tidak memiliki izin"}), 403
 
@@ -7727,7 +8487,12 @@ def admin_assign_school_batch() -> Response:
     notes = (data.get("notes") or "").strip() or None
 
     if not staff_id or not school_ids:
-        return jsonify({"success": False, "message": "Staff dan daftar sekolah wajib diisi"}), 400
+        return (
+            jsonify(
+                {"success": False, "message": "Staff dan daftar sekolah wajib diisi"}
+            ),
+            400,
+        )
 
     try:
         staff_id_int = int(staff_id)
@@ -7750,7 +8515,7 @@ def admin_assign_school_batch() -> Response:
         total_assignments = len(get_staff_assigned_schools(staff_id_int))
     except Exception:
         total_assignments = None
-    
+
     if assigned > 0:
         staff_info = _fetch_dashboard_user_summary(staff_id_int)
         details = {
@@ -7776,12 +8541,14 @@ def admin_assign_school_batch() -> Response:
             details,
         )
 
-    return jsonify({
-        "success": assigned > 0,
-        "assigned": assigned,
-        "errors": errors,
-        "total_assignments": total_assignments,
-    })
+    return jsonify(
+        {
+            "success": assigned > 0,
+            "assigned": assigned,
+            "errors": errors,
+            "total_assignments": total_assignments,
+        }
+    )
 
 
 @portal_bp.route("/admin/assignment/<int:assignment_id>/update", methods=["POST"])
@@ -7799,10 +8566,17 @@ def admin_update_assignment_notes(assignment_id: int) -> Response:
     try:
         updated = update_staff_assignment_notes(assignment_id, notes, user.get("id"))
         if not updated:
-            return jsonify({"success": False, "message": "Penugasan tidak ditemukan"}), 404
+            return (
+                jsonify({"success": False, "message": "Penugasan tidak ditemukan"}),
+                404,
+            )
 
         staff_info = _fetch_dashboard_user_summary(updated.get("staff_id"))
-        school = get_school_by_id(updated.get("school_id")) if updated.get("school_id") else None
+        school = (
+            get_school_by_id(updated.get("school_id"))
+            if updated.get("school_id")
+            else None
+        )
         details = {
             "assignment_id": assignment_id,
             "staff_id": updated.get("staff_id"),
@@ -7849,7 +8623,10 @@ def admin_delete_assignments_batch() -> Response:
         return jsonify({"success": False, "message": "Format data tidak valid"}), 400
 
     if not assignment_ids:
-        return jsonify({"success": False, "message": "Tidak ada penugasan dipilih"}), 400
+        return (
+            jsonify({"success": False, "message": "Tidak ada penugasan dipilih"}),
+            400,
+        )
 
     try:
         deleted_count = delete_staff_assignments_by_ids(assignment_ids)
@@ -7907,19 +8684,26 @@ def admin_reset_staff_assignments(staff_id: int) -> Response:
         return jsonify({"success": False, "message": str(e)}), 500
 
 
-@portal_bp.route("/admin/assignment-requests/<int:request_id>/approve", methods=["POST"])
+@portal_bp.route(
+    "/admin/assignment-requests/<int:request_id>/approve", methods=["POST"]
+)
 @role_required("admin")
 def admin_approve_assignment_request(request_id: int) -> Response:
     """Admin approves a coordinator-submitted assignment request."""
     user = current_user()
     from .queries import log_activity
+
     reviewer_note = None
     if request.is_json:
         payload = request.get_json(silent=True) or {}
         reviewer_note = payload.get("reviewer_note")
     else:
         reviewer_note = request.form.get("reviewer_note")
-    reviewer_note = reviewer_note.strip() if isinstance(reviewer_note, str) and reviewer_note.strip() else None
+    reviewer_note = (
+        reviewer_note.strip()
+        if isinstance(reviewer_note, str) and reviewer_note.strip()
+        else None
+    )
 
     req = update_assignment_request_status(
         request_id,
@@ -7929,10 +8713,18 @@ def admin_approve_assignment_request(request_id: int) -> Response:
     )
     if not req:
         return jsonify({"success": False, "message": "Request tidak ditemukan"}), 404
-    coordinator_info = _fetch_dashboard_user_summary(req["coordinator_id"]) if req.get("coordinator_id") else None
-    period_info = get_period_by_id(req.get("period_id")) if req.get("period_id") else None
+    coordinator_info = (
+        _fetch_dashboard_user_summary(req["coordinator_id"])
+        if req.get("coordinator_id")
+        else None
+    )
+    period_info = (
+        get_period_by_id(req.get("period_id")) if req.get("period_id") else None
+    )
     try:
-        assignment = assign_staff_to_school(req["staff_id"], req["school_id"], user["id"], req.get("note"))
+        assignment = assign_staff_to_school(
+            req["staff_id"], req["school_id"], user["id"], req.get("note")
+        )
         staff_info = _fetch_dashboard_user_summary(req["staff_id"])
         school = get_school_by_id(req["school_id"])
         request_details = {
@@ -7982,7 +8774,9 @@ def admin_approve_assignment_request(request_id: int) -> Response:
         try:
             notify_assignment_request_status_update(
                 request_id=request_id,
-                coordinator_name=coordinator_info.get("full_name") if coordinator_info else None,
+                coordinator_name=(
+                    coordinator_info.get("full_name") if coordinator_info else None
+                ),
                 staff_name=staff_info.get("full_name") if staff_info else None,
                 school_name=school.get("name") if school else None,
                 period_name=period_info.get("name") if period_info else None,
@@ -7992,7 +8786,9 @@ def admin_approve_assignment_request(request_id: int) -> Response:
                 reviewer_note=reviewer_note,
             )
         except Exception:
-            current_app.logger.exception("Gagal mengirim notifikasi Telegram status assignment request.")
+            current_app.logger.exception(
+                "Gagal mengirim notifikasi Telegram status assignment request."
+            )
         try:
             _notify_panbers_assignment_status_change(
                 request_row=req,
@@ -8001,11 +8797,15 @@ def admin_approve_assignment_request(request_id: int) -> Response:
                 reviewer_note=reviewer_note,
                 school_name=school.get("name") if school else None,
                 staff_name=staff_info.get("full_name") if staff_info else None,
-                coordinator_name=coordinator_info.get("full_name") if coordinator_info else None,
+                coordinator_name=(
+                    coordinator_info.get("full_name") if coordinator_info else None
+                ),
                 period_name=period_info.get("name") if period_info else None,
             )
         except Exception:
-            current_app.logger.exception("Gagal menyimpan notifikasi aplikasi status assignment request.")
+            current_app.logger.exception(
+                "Gagal menyimpan notifikasi aplikasi status assignment request."
+            )
     except Exception as exc:
         current_app.logger.exception("Error assigning after approval")
         return jsonify({"success": False, "message": str(exc)}), 500
@@ -8018,13 +8818,18 @@ def admin_reject_assignment_request(request_id: int) -> Response:
     """Admin rejects a coordinator-submitted assignment request."""
     user = current_user()
     from .queries import log_activity
+
     reviewer_note = None
     if request.is_json:
         payload = request.get_json(silent=True) or {}
         reviewer_note = payload.get("reviewer_note")
     else:
         reviewer_note = request.form.get("reviewer_note")
-    reviewer_note = reviewer_note.strip() if isinstance(reviewer_note, str) and reviewer_note.strip() else None
+    reviewer_note = (
+        reviewer_note.strip()
+        if isinstance(reviewer_note, str) and reviewer_note.strip()
+        else None
+    )
 
     req = update_assignment_request_status(
         request_id,
@@ -8035,8 +8840,14 @@ def admin_reject_assignment_request(request_id: int) -> Response:
     if not req:
         return jsonify({"success": False, "message": "Request tidak ditemukan"}), 404
     staff_info = _fetch_dashboard_user_summary(req["staff_id"])
-    coordinator_info = _fetch_dashboard_user_summary(req["coordinator_id"]) if req.get("coordinator_id") else None
-    period_info = get_period_by_id(req.get("period_id")) if req.get("period_id") else None
+    coordinator_info = (
+        _fetch_dashboard_user_summary(req["coordinator_id"])
+        if req.get("coordinator_id")
+        else None
+    )
+    period_info = (
+        get_period_by_id(req.get("period_id")) if req.get("period_id") else None
+    )
     school = get_school_by_id(req["school_id"])
     details = {
         "status": "rejected",
@@ -8065,7 +8876,9 @@ def admin_reject_assignment_request(request_id: int) -> Response:
     try:
         notify_assignment_request_status_update(
             request_id=request_id,
-            coordinator_name=coordinator_info.get("full_name") if coordinator_info else None,
+            coordinator_name=(
+                coordinator_info.get("full_name") if coordinator_info else None
+            ),
             staff_name=staff_info.get("full_name") if staff_info else None,
             school_name=school.get("name") if school else None,
             period_name=period_info.get("name") if period_info else None,
@@ -8075,7 +8888,9 @@ def admin_reject_assignment_request(request_id: int) -> Response:
             reviewer_note=reviewer_note,
         )
     except Exception:
-        current_app.logger.exception("Gagal mengirim notifikasi Telegram status assignment request.")
+        current_app.logger.exception(
+            "Gagal mengirim notifikasi Telegram status assignment request."
+        )
     try:
         _notify_panbers_assignment_status_change(
             request_row=req,
@@ -8084,11 +8899,15 @@ def admin_reject_assignment_request(request_id: int) -> Response:
             reviewer_note=reviewer_note,
             school_name=school.get("name") if school else None,
             staff_name=staff_info.get("full_name") if staff_info else None,
-            coordinator_name=coordinator_info.get("full_name") if coordinator_info else None,
+            coordinator_name=(
+                coordinator_info.get("full_name") if coordinator_info else None
+            ),
             period_name=period_info.get("name") if period_info else None,
         )
     except Exception:
-        current_app.logger.exception("Gagal menyimpan notifikasi aplikasi status assignment request.")
+        current_app.logger.exception(
+            "Gagal menyimpan notifikasi aplikasi status assignment request."
+        )
     return jsonify({"success": True, "request": req})
 
 
@@ -8098,17 +8917,17 @@ def admin_remove_assignment() -> Response:
     """Admin removes a school assignment from a staff member."""
     user = current_user()
     from .queries import log_activity
-    
+
     # Superadmin only
     if not can_assign_staff(user):
         return jsonify({"success": False, "message": "Tidak memiliki izin"}), 403
-    
+
     staff_id = request.form.get("staff_id", type=int)
     school_id = request.form.get("school_id", type=int)
-    
+
     if not staff_id or not school_id:
         return jsonify({"success": False, "message": "Data tidak lengkap"}), 400
-    
+
     try:
         if remove_staff_school_assignment(staff_id, school_id):
             staff_info = _fetch_dashboard_user_summary(staff_id)
@@ -8137,7 +8956,6 @@ def admin_remove_assignment() -> Response:
     except Exception as e:
         current_app.logger.exception("Error removing assignment")
         return jsonify({"success": False, "message": str(e)}), 500
-
 
 
 @portal_bp.route("/admin/staff/<int:staff_id>/assigned-schools")
@@ -8172,16 +8990,10 @@ def get_staff_assignments_api(staff_id: int) -> Response:
     """API endpoint to get assignments for a specific staff member."""
     try:
         assignments = get_staff_assigned_schools(staff_id)
-        return jsonify({
-            "success": True,
-            "assignments": assignments
-        })
+        return jsonify({"success": True, "assignments": assignments})
     except Exception as e:
         current_app.logger.exception("Error fetching staff assignments")
-        return jsonify({
-            "success": False,
-            "message": str(e)
-        }), 500
+        return jsonify({"success": False, "message": str(e)}), 500
 
 
 @portal_bp.route("/coordinator/staff/<int:staff_id>/assignments")
@@ -8195,17 +9007,10 @@ def coordinator_staff_assignments_api(staff_id: int) -> Response:
 
     try:
         assignments = get_staff_assigned_schools(staff_id)
-        return jsonify({
-            "success": True,
-            "assignments": assignments
-        })
+        return jsonify({"success": True, "assignments": assignments})
     except Exception as e:
         current_app.logger.exception("Error fetching coordinator staff assignments")
-        return jsonify({
-            "success": False,
-            "message": str(e)
-        }), 500
-
+        return jsonify({"success": False, "message": str(e)}), 500
 
 
 # Add permissions to template context globally
@@ -8239,8 +9044,9 @@ def inject_permissions():
             session_user = session.get("user") or {}
             session_user["profile_photo_url"] = computed_photo_url
             session["user"] = session_user
-    
+
     from .permissions import get_permission_summary
+
     user_school = None
     user_area_name = None
     if user.get("role") == "sekolah":
@@ -8252,12 +9058,16 @@ def inject_permissions():
         try:
             _dispatch_due_follow_up_reminders_for_user(user=user, school=user_school)
         except Exception:
-            current_app.logger.exception("Gagal mengirim reminder tindak lanjut PANBERSS.")
+            current_app.logger.exception(
+                "Gagal mengirim reminder tindak lanjut PANBERSS."
+            )
     elif user.get("role") == "staff":
         try:
             _dispatch_due_follow_up_reminders_for_staff_user(user=user)
         except Exception:
-            current_app.logger.exception("Gagal mengirim reminder verifikasi tindak lanjut PANBERSS.")
+            current_app.logger.exception(
+                "Gagal mengirim reminder verifikasi tindak lanjut PANBERSS."
+            )
 
     area_contacts = _build_coordinator_contacts(user_school, area_name=user_area_name)
     admin_pending = {
@@ -8289,15 +9099,21 @@ def inject_permissions():
             user_app_notifications = {"unread_count": 0, "total_count": 0}
     if user.get("role") == "sekolah" and user_school:
         try:
-            follow_up_nav_badge_count = count_room_follow_up_nav_badge_for_school(int(user_school.get("id") or 0))
+            follow_up_nav_badge_count = count_room_follow_up_nav_badge_for_school(
+                int(user_school.get("id") or 0)
+            )
         except Exception:
             current_app.logger.exception("Failed to load follow-up nav badge count")
             follow_up_nav_badge_count = 0
     elif user.get("role") == "staff":
         try:
-            follow_up_nav_badge_count = count_room_follow_up_nav_badge_for_staff(int(user.get("id") or 0))
+            follow_up_nav_badge_count = count_room_follow_up_nav_badge_for_staff(
+                int(user.get("id") or 0)
+            )
         except Exception:
-            current_app.logger.exception("Failed to load staff follow-up nav badge count")
+            current_app.logger.exception(
+                "Failed to load staff follow-up nav badge count"
+            )
             follow_up_nav_badge_count = 0
     try:
         undo_window_seconds = fetch_portal_undo_window_seconds()
@@ -8310,6 +9126,7 @@ def inject_permissions():
     admin_notification_items = []
     if user.get("role") == "admin" and admin_pending:
         from flask import url_for
+
         admin_notification_items = [
             {
                 "href": url_for("portal.manage_users"),
@@ -8377,56 +9194,64 @@ def inject_permissions():
         ]
 
     return {
-        'permissions': get_permission_summary(user),
-        'is_superadmin': is_superadmin(user),
-        'can_access_aska': can_access_aska(user),
-        'user_school': user_school,
-        'area_contacts': area_contacts,
-        'admin_pending': admin_pending,
-        'admin_notification_items': admin_notification_items,
-        'user_app_notifications': user_app_notifications,
-        'follow_up_nav_badge_count': follow_up_nav_badge_count,
-        'undo_window_seconds': undo_window_seconds,
-        'undo_window_min_seconds': PORTAL_UNDO_WINDOW_MIN_SECONDS,
-        'undo_window_max_seconds': PORTAL_UNDO_WINDOW_MAX_SECONDS,
-        'require_profile_photo_upload': require_profile_photo_upload,
+        "permissions": get_permission_summary(user),
+        "is_superadmin": is_superadmin(user),
+        "can_access_aska": can_access_aska(user),
+        "user_school": user_school,
+        "area_contacts": area_contacts,
+        "admin_pending": admin_pending,
+        "admin_notification_items": admin_notification_items,
+        "user_app_notifications": user_app_notifications,
+        "follow_up_nav_badge_count": follow_up_nav_badge_count,
+        "undo_window_seconds": undo_window_seconds,
+        "undo_window_min_seconds": PORTAL_UNDO_WINDOW_MIN_SECONDS,
+        "undo_window_max_seconds": PORTAL_UNDO_WINDOW_MAX_SECONDS,
+        "require_profile_photo_upload": require_profile_photo_upload,
     }
 
 
-
 # ===== Coordinator Dashboard Routes =====
+
 
 @portal_bp.route("/coordinator/dashboard")
 @role_required("coordinator")
 def coordinator_dashboard() -> Response:
     """Coordinator dashboard - view team progress."""
     from dashboard.queries import get_monev_teams, get_team_members
-    
+
     user = current_user()
     user_id = user.get("id")
-    
+
     # Find the team where current user is coordinator
     all_teams = get_monev_teams()
     my_team = None
-    
+
     for team in all_teams:
-        if team.get('coordinator_id') == user_id:
+        if team.get("coordinator_id") == user_id:
             my_team = team
             break
-    
+
     if not my_team:
         # Show empty dashboard instead of redirecting to avoid loop
         return render_template(
             "portal/coordinator/dashboard.html",
-            section={"name": "Belum Ditugaskan", "description": "Anda belum menjadi koordinator tim manapun."},
+            section={
+                "name": "Belum Ditugaskan",
+                "description": "Anda belum menjadi koordinator tim manapun.",
+            },
             team_members=[],
-            stats={"total_staff": 0, "total_assessments": 0, "completed_assessments": 0, "schools_assessed": 0},
+            stats={
+                "total_staff": 0,
+                "total_assessments": 0,
+                "completed_assessments": 0,
+                "schools_assessed": 0,
+            },
             user=user,
         )
-    
+
     # Get team members
-    team_members_data = get_team_members(my_team['id'])
-    
+    team_members_data = get_team_members(my_team["id"])
+
     # Build team stats (basic)
     stats = {
         "total_staff": len(team_members_data),
@@ -8434,13 +9259,15 @@ def coordinator_dashboard() -> Response:
         "completed_assessments": 0,
         "schools_assessed": 0,
     }
-    
+
     # Create a section-like object for template compatibility
     team_as_section = {
-        "name": my_team.get('name') or my_team.get('kecamatan_name') or f"Tim ID {my_team['id']}",
+        "name": my_team.get("name")
+        or my_team.get("kecamatan_name")
+        or f"Tim ID {my_team['id']}",
         "description": f"Tim Monev ({my_team.get('team_type', 'kecamatan')})",
     }
-    
+
     return render_template(
         "portal/coordinator/dashboard.html",
         section=team_as_section,
@@ -8470,11 +9297,12 @@ def coordinator_request_member() -> Response:
     note = (request.form.get("note") or "").strip()
 
     coordinator_teams = [
-        team for team in get_monev_teams()
-        if team.get("coordinator_id") == user_id
+        team for team in get_monev_teams() if team.get("coordinator_id") == user_id
     ]
     if team_id is not None:
-        my_team = next((team for team in coordinator_teams if team.get("id") == team_id), None)
+        my_team = next(
+            (team for team in coordinator_teams if team.get("id") == team_id), None
+        )
     else:
         my_team = coordinator_teams[0] if coordinator_teams else None
 
@@ -8492,7 +9320,7 @@ def coordinator_request_member() -> Response:
         requested_by=user_id,
         note=note or None,
     )
-    
+
     status = result.get("status")
     if status == "already_member":
         flash("Staff sudah menjadi anggota tim.", "info")
@@ -8512,7 +9340,9 @@ def coordinator_request_member() -> Response:
                     note=note,
                 )
             except Exception:
-                current_app.logger.exception("Gagal mengirim notifikasi Telegram permintaan anggota tim.")
+                current_app.logger.exception(
+                    "Gagal mengirim notifikasi Telegram permintaan anggota tim."
+                )
         flash("Permintaan tambah anggota dikirim ke admin untuk verifikasi.", "success")
     else:
         flash("Gagal mengirim permintaan.", "danger")
@@ -8523,6 +9353,7 @@ def coordinator_request_member() -> Response:
 # =====================================================
 # User Profile (admin/coordinator/staff)
 # =====================================================
+
 
 @portal_bp.route("/profile/photo", methods=["POST"])
 @role_required("staff", "coordinator")
@@ -8573,7 +9404,11 @@ def upload_profile_photo() -> Response:
         if not updated:
             raise RuntimeError("Gagal menyimpan foto profil ke database.")
 
-        if previous_rel and previous_rel.startswith("profile/") and previous_rel != rel_path:
+        if (
+            previous_rel
+            and previous_rel.startswith("profile/")
+            and previous_rel != rel_path
+        ):
             old_abs_path = UPLOAD_FOLDER / previous_rel
             if old_abs_path.exists() and old_abs_path.is_file():
                 try:
@@ -8586,7 +9421,9 @@ def upload_profile_photo() -> Response:
 
         session_user = session.get("user") or {}
         session_user["profile_photo_path"] = db_photo_path
-        session_user["profile_photo_url"] = url_for("portal.uploaded_file", filename=rel_path)
+        session_user["profile_photo_url"] = url_for(
+            "portal.uploaded_file", filename=rel_path
+        )
         session["user"] = session_user
     except Exception as exc:
         if abs_path.exists():
@@ -8624,10 +9461,13 @@ _HOSPITALITY_DATE_MODE_KEY = "hospitality_date_mode"
 def set_hospitality_date_mode() -> Response:
     """Toggle the hospitality date display mode (original vs edit) stored in session (admin only)."""
     wants_json = (
-        request.headers.get("X-Requested-With") == "XMLHttpRequest"
-        or request.is_json
+        request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.is_json
     )
-    raw_mode = (request.get_json(silent=True) or {}).get("mode") if request.is_json else request.form.get("mode")
+    raw_mode = (
+        (request.get_json(silent=True) or {}).get("mode")
+        if request.is_json
+        else request.form.get("mode")
+    )
     mode = str(raw_mode or "edit").strip().lower()
     if mode not in {"original", "edit"}:
         mode = "edit"
@@ -8635,7 +9475,8 @@ def set_hospitality_date_mode() -> Response:
     if wants_json:
         return jsonify({"success": True, "mode": mode})
     flash(
-        "Mode tanggal Hospitality: " + ("Tanggal Edit" if mode == "edit" else "Tanggal Original"),
+        "Mode tanggal Hospitality: "
+        + ("Tanggal Edit" if mode == "edit" else "Tanggal Original"),
         "success",
     )
     return redirect(url_for("portal.user_profile_settings"))
@@ -8657,27 +9498,49 @@ def user_profile_settings() -> Response:
         flash("Profil tidak ditemukan.", "danger")
         return redirect(url_for("portal.home"))
     profile_view = {k: v for k, v in profile.items() if k != "password_hash"}
-    profile_view["profile_photo_url"] = _build_profile_photo_url(profile.get("profile_photo_path"))
+    profile_view["profile_photo_url"] = _build_profile_photo_url(
+        profile.get("profile_photo_path")
+    )
     is_staff_user = (user.get("role") or "").strip().lower() == "staff"
-    supporter_profile = get_supporter_staff_profile(int(user["id"])) if is_staff_user else {"socials": {}, "is_complete": False}
+    supporter_profile = (
+        get_supporter_staff_profile(int(user["id"]))
+        if is_staff_user
+        else {"socials": {}, "is_complete": False}
+    )
     profile_view["supporter_socials"] = supporter_profile.get("socials") or {}
-    profile_view["supporter_profile_complete"] = bool(supporter_profile.get("is_complete"))
+    profile_view["supporter_profile_complete"] = bool(
+        supporter_profile.get("is_complete")
+    )
 
     if request.method == "POST":
         form_type = (request.form.get("form_type") or "profile").strip().lower()
         # Default to existing profile data so password-only form doesn't blank fields.
-        full_name = (request.form.get("full_name") or profile.get("full_name") or "").strip()
-        email = (request.form.get("email") or profile.get("email") or "").strip().lower()
-        whatsapp = (request.form.get("whatsapp_number") or profile.get("whatsapp_number") or "").strip() or None
+        full_name = (
+            request.form.get("full_name") or profile.get("full_name") or ""
+        ).strip()
+        email = (
+            (request.form.get("email") or profile.get("email") or "").strip().lower()
+        )
+        whatsapp = (
+            request.form.get("whatsapp_number") or profile.get("whatsapp_number") or ""
+        ).strip() or None
         nip = (request.form.get("nip") or profile.get("nip") or "").strip() or None
         nrk = (request.form.get("nrk") or profile.get("nrk") or "").strip() or None
-        jabatan = (request.form.get("jabatan") or profile.get("jabatan") or "").strip() or None
-        social_username = (request.form.get("social_username") or profile.get("social_username") or "").strip() or None
+        jabatan = (
+            request.form.get("jabatan") or profile.get("jabatan") or ""
+        ).strip() or None
+        social_username = (
+            request.form.get("social_username") or profile.get("social_username") or ""
+        ).strip() or None
         supporter_socials = {}
         if is_staff_user and form_type == "profile":
             for key, _label, _required in SUPPORTER_SOCIAL_FIELDS:
-                supporter_socials[key] = (request.form.get(f"supporter_social_{key}") or "").strip()
-            social_username = (supporter_socials.get("instagram") or social_username or "").strip().lstrip("@") or None
+                supporter_socials[key] = (
+                    request.form.get(f"supporter_social_{key}") or ""
+                ).strip()
+            social_username = (
+                supporter_socials.get("instagram") or social_username or ""
+            ).strip().lstrip("@") or None
 
         current_password = request.form.get("current_password") or ""
         new_password = request.form.get("new_password") or ""
@@ -8697,7 +9560,12 @@ def user_profile_settings() -> Response:
                 errors.append("Profil tidak valid: email kosong.")
 
         # Password validation only when changing password
-        if form_type == "password" or new_password or confirm_password or current_password:
+        if (
+            form_type == "password"
+            or new_password
+            or confirm_password
+            or current_password
+        ):
             if not profile.get("password_hash"):
                 errors.append("Akun ini belum memiliki password, hubungi admin.")
             elif not current_password:
@@ -8718,7 +9586,9 @@ def user_profile_settings() -> Response:
                 flash(msg, "danger")
         else:
             pw_hash = (
-                generate_password_hash(new_password, method="pbkdf2:sha256", salt_length=12)
+                generate_password_hash(
+                    new_password, method="pbkdf2:sha256", salt_length=12
+                )
                 if new_password
                 else None
             )
@@ -8744,11 +9614,23 @@ def user_profile_settings() -> Response:
                 session["user"] = session_user
                 flash("Profil berhasil diperbarui.", "success")
                 profile = get_dashboard_user_profile(user["id"])
-                profile_view = {k: v for k, v in profile.items() if k != "password_hash"}
-                profile_view["profile_photo_url"] = _build_profile_photo_url(profile.get("profile_photo_path"))
-                supporter_profile = get_supporter_staff_profile(int(user["id"])) if is_staff_user else {"socials": {}, "is_complete": False}
-                profile_view["supporter_socials"] = supporter_profile.get("socials") or {}
-                profile_view["supporter_profile_complete"] = bool(supporter_profile.get("is_complete"))
+                profile_view = {
+                    k: v for k, v in profile.items() if k != "password_hash"
+                }
+                profile_view["profile_photo_url"] = _build_profile_photo_url(
+                    profile.get("profile_photo_path")
+                )
+                supporter_profile = (
+                    get_supporter_staff_profile(int(user["id"]))
+                    if is_staff_user
+                    else {"socials": {}, "is_complete": False}
+                )
+                profile_view["supporter_socials"] = (
+                    supporter_profile.get("socials") or {}
+                )
+                profile_view["supporter_profile_complete"] = bool(
+                    supporter_profile.get("is_complete")
+                )
             except Exception as exc:
                 current_app.logger.error(f"Gagal memperbarui profil: {exc}")
                 flash("Gagal memperbarui profil.", "danger")
@@ -8766,6 +9648,7 @@ def user_profile_settings() -> Response:
 # User Management & Monev Teams (Portal Integration)
 # =====================================================
 
+
 def _preview_admin_actor() -> dict | None:
     """Return admin actor from active session or preview session."""
     preview_admin = session.get(_PREVIEW_ADMIN_SESSION_KEY)
@@ -8779,6 +9662,7 @@ def _preview_admin_actor() -> dict | None:
 
 def _preview_access_required(view):
     """Allow access for logged-in admin and active preview-admin sessions."""
+
     @wraps(view)
     def wrapper(*args, **kwargs):
         actor = _preview_admin_actor()
@@ -8789,6 +9673,7 @@ def _preview_access_required(view):
             return redirect(url_for("auth.login", next=request.path))
         flash("Halaman ini hanya untuk admin.", "danger")
         return redirect(url_for("portal.home"))
+
     return wrapper
 
 
@@ -8824,7 +9709,9 @@ def _sanitize_preview_return_url(raw_url: str | None) -> str | None:
         return None
 
     # Prevent redirect loop back into preview workspace/stop endpoint.
-    if path == url_for("portal.preview_accounts") or path.startswith("/portal/preview/"):
+    if path == url_for("portal.preview_accounts") or path.startswith(
+        "/portal/preview/"
+    ):
         return None
 
     return f"{path}?{parsed.query}" if parsed.query else path
@@ -8896,7 +9783,9 @@ def _list_preview_accounts(pinned_ids: list[int] | None = None) -> list[dict]:
         if user.get("merged_to"):
             continue
         row = dict(user)
-        row["profile_photo_url"] = _build_profile_photo_url(row.get("profile_photo_path"))
+        row["profile_photo_url"] = _build_profile_photo_url(
+            row.get("profile_photo_path")
+        )
         row["preview_index"] = index
         try:
             row_id = int(row.get("id") or 0)
@@ -8948,7 +9837,9 @@ def preview_accounts() -> Response:
     preview_url = None
     if isinstance(selected_target, dict):
         selected_id = int(selected_target.get("id") or 0)
-        still_exists = any(int(user.get("id") or 0) == selected_id for user in preview_users)
+        still_exists = any(
+            int(user.get("id") or 0) == selected_id for user in preview_users
+        )
         if still_exists:
             preview_url = _build_preview_entry_url(
                 role=(selected_target.get("role") or ""),
@@ -8961,8 +9852,12 @@ def preview_accounts() -> Response:
 
     # Keep return destination so "Keluar Preview" can go back to previous page.
     referrer_return_url = _sanitize_preview_return_url(request.referrer)
-    stored_return_url = _sanitize_preview_return_url(session.get(_PREVIEW_RETURN_URL_SESSION_KEY))
-    preview_return_url = referrer_return_url or stored_return_url or _preview_home_fallback_url()
+    stored_return_url = _sanitize_preview_return_url(
+        session.get(_PREVIEW_RETURN_URL_SESSION_KEY)
+    )
+    preview_return_url = (
+        referrer_return_url or stored_return_url or _preview_home_fallback_url()
+    )
     session[_PREVIEW_RETURN_URL_SESSION_KEY] = preview_return_url
 
     return render_template(
@@ -8982,21 +9877,36 @@ def preview_start(user_id: int) -> Response:
     """Activate preview mode as selected target user."""
     target = _find_preview_target(user_id)
     if not target:
-        return jsonify({"success": False, "message": "Akun target tidak ditemukan."}), 404
+        return (
+            jsonify({"success": False, "message": "Akun target tidak ditemukan."}),
+            404,
+        )
 
     role = (target.get("role") or "").strip().lower()
     if role not in _PREVIEW_ALLOWED_ROLES:
-        return jsonify({"success": False, "message": "Role akun tidak didukung untuk preview."}), 400
+        return (
+            jsonify(
+                {"success": False, "message": "Role akun tidak didukung untuk preview."}
+            ),
+            400,
+        )
 
     actor = _preview_admin_actor()
     if not actor:
-        return jsonify({"success": False, "message": "Hanya admin yang dapat memulai preview."}), 403
+        return (
+            jsonify(
+                {"success": False, "message": "Hanya admin yang dapat memulai preview."}
+            ),
+            403,
+        )
 
     session[_PREVIEW_ADMIN_SESSION_KEY] = actor
     session["user"] = _build_session_user_payload(target)
     session[_PREVIEW_TARGET_SESSION_KEY] = _serialize_preview_target(target)
 
-    app_name = _normalize_preview_app(request.form.get("app") or request.args.get("app"))
+    app_name = _normalize_preview_app(
+        request.form.get("app") or request.args.get("app")
+    )
     session[_PREVIEW_APP_SESSION_KEY] = app_name
     preview_url = _build_preview_entry_url(role=role, app=app_name)
 
@@ -9016,11 +9926,22 @@ def preview_pin(user_id: int) -> Response:
     """Pin/unpin preview target accounts per admin."""
     actor = _preview_admin_actor()
     if not actor or not actor.get("id"):
-        return jsonify({"success": False, "message": "Hanya admin yang dapat menyematkan akun."}), 403
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "Hanya admin yang dapat menyematkan akun.",
+                }
+            ),
+            403,
+        )
 
     target = _find_preview_target(user_id)
     if not target:
-        return jsonify({"success": False, "message": "Akun target tidak ditemukan."}), 404
+        return (
+            jsonify({"success": False, "message": "Akun target tidak ditemukan."}),
+            404,
+        )
 
     try:
         admin_id = int(actor["id"])
@@ -9050,9 +9971,14 @@ def preview_pin(user_id: int) -> Response:
 @_preview_access_required
 def preview_stop() -> Response:
     """Stop preview mode and restore original admin session."""
-    stored_return_url = _sanitize_preview_return_url(session.get(_PREVIEW_RETURN_URL_SESSION_KEY))
+    stored_return_url = _sanitize_preview_return_url(
+        session.get(_PREVIEW_RETURN_URL_SESSION_KEY)
+    )
     admin_session_user = session.get(_PREVIEW_ADMIN_SESSION_KEY)
-    if isinstance(admin_session_user, dict) and admin_session_user.get("role") == "admin":
+    if (
+        isinstance(admin_session_user, dict)
+        and admin_session_user.get("role") == "admin"
+    ):
         session["user"] = admin_session_user
         flash("Mode preview dihentikan. Anda kembali ke akun admin.", "info")
 
@@ -9073,34 +9999,35 @@ def preview_stop() -> Response:
 @role_required("admin")
 def manage_monev_teams() -> Response:
     """Manage monev teams from Portal app."""
+    from dashboard.portal.queries import list_kecamatan
     from dashboard.queries import (
-        get_monev_teams,
-        get_team_members,
-        update_team_coordinator,
         add_team_member,
-        remove_team_member,
-        get_available_staff,
         create_monev_team,
         delete_monev_team,
-        list_team_member_requests,
-        update_team_member_request_status,
+        get_available_staff,
+        get_monev_teams,
         get_team_member_request,
+        get_team_members,
+        list_team_member_requests,
+        remove_team_member,
+        update_team_coordinator,
+        update_team_member_request_status,
     )
-    from dashboard.portal.queries import list_kecamatan
-    from .queries import log_activity, fetch_activity_logs
-    
+
+    from .queries import fetch_activity_logs, log_activity
+
     if request.method == "POST":
         action = request.form.get("action")
         actor_id = current_user().get("id") if current_user() else None
         wants_json = request.headers.get("X-Requested-With") == "XMLHttpRequest"
-        
+
         try:
             if action == "create_team":
                 name = request.form.get("team_name", "").strip()
                 team_type = request.form.get("team_type", "custom")
                 kecamatan_id = request.form.get("kecamatan_id")
                 kecamatan_id = int(kecamatan_id) if kecamatan_id else None
-                
+
                 if not name:
                     flash("Nama tim tidak boleh kosong.", "warning")
                 else:
@@ -9123,12 +10050,12 @@ def manage_monev_teams() -> Response:
                         flash(f"Tim '{name}' berhasil dibuat.", "success")
                     else:
                         flash("Gagal membuat tim.", "danger")
-                        
+
             elif action == "delete_team":
                 team_id = int(request.form.get("team_id"))
                 team_name = request.form.get("team_name", "")
                 team_info = _fetch_monev_team(team_id)
-                
+
                 if delete_monev_team(team_id):
                     details = {}
                     if team_info:
@@ -9147,16 +10074,18 @@ def manage_monev_teams() -> Response:
                     flash(f"Tim '{team_name}' berhasil dihapus.", "success")
                 else:
                     flash("Gagal menghapus tim.", "danger")
-                    
+
             elif action == "update_coordinator":
                 team_id = int(request.form.get("team_id"))
                 coordinator_id = request.form.get("coordinator_id")
                 coordinator_id = int(coordinator_id) if coordinator_id else None
-                
+
                 if update_team_coordinator(team_id, coordinator_id):
                     team_info = _fetch_monev_team(team_id)
                     coord_info = (
-                        _fetch_dashboard_user_summary(coordinator_id) if coordinator_id else None
+                        _fetch_dashboard_user_summary(coordinator_id)
+                        if coordinator_id
+                        else None
                     )
                     details = {}
                     if coordinator_id is not None:
@@ -9179,12 +10108,12 @@ def manage_monev_teams() -> Response:
                     flash("Koordinator berhasil diperbarui.", "success")
                 else:
                     flash("Gagal memperbarui koordinator.", "danger")
-                    
+
             elif action == "add_member":
                 team_id = int(request.form.get("team_id"))
                 staff_id = int(request.form.get("staff_id"))
                 admin_id = current_user().get("id") if current_user() else None
-                
+
                 if add_team_member(team_id, staff_id, admin_id):
                     team_info = _fetch_monev_team(team_id)
                     staff_info = _fetch_dashboard_user_summary(staff_id)
@@ -9203,21 +10132,31 @@ def manage_monev_teams() -> Response:
                         "CREATE",
                         "MONEV_TEAM_MEMBER",
                         member_id,
-                        staff_info.get("full_name") if staff_info else f"Staff {staff_id}",
+                        (
+                            staff_info.get("full_name")
+                            if staff_info
+                            else f"Staff {staff_id}"
+                        ),
                         details,
                     )
                     flash("Anggota berhasil ditambahkan.", "success")
                 else:
-                    flash("Anggota sudah ada dalam tim atau gagal ditambahkan.", "warning")
-                    
+                    flash(
+                        "Anggota sudah ada dalam tim atau gagal ditambahkan.", "warning"
+                    )
+
             elif action == "remove_member":
                 member_id = int(request.form.get("member_id"))
                 member_info = _fetch_monev_member(member_id)
-                team_info = _fetch_monev_team(member_info["team_id"]) if member_info else None
-                staff_info = (
-                    _fetch_dashboard_user_summary(member_info["staff_id"]) if member_info else None
+                team_info = (
+                    _fetch_monev_team(member_info["team_id"]) if member_info else None
                 )
-                
+                staff_info = (
+                    _fetch_dashboard_user_summary(member_info["staff_id"])
+                    if member_info
+                    else None
+                )
+
                 if remove_team_member(member_id):
                     details = {}
                     details["member_id"] = member_id
@@ -9234,21 +10173,35 @@ def manage_monev_teams() -> Response:
                         "DELETE",
                         "MONEV_TEAM_MEMBER",
                         member_id,
-                        staff_info.get("full_name") if staff_info else f"Member {member_id}",
+                        (
+                            staff_info.get("full_name")
+                            if staff_info
+                            else f"Member {member_id}"
+                        ),
                         details or None,
                     )
                     flash("Anggota berhasil dihapus dari tim.", "success")
                 else:
                     flash("Gagal menghapus anggota.", "danger")
-            
+
             elif action == "approve_request":
                 request_id = int(request.form.get("request_id"))
-                reviewer_note = (request.form.get("reviewer_note") or "").strip() or None
+                reviewer_note = (
+                    request.form.get("reviewer_note") or ""
+                ).strip() or None
                 admin_id = current_user().get("id") if current_user() else None
                 req = get_team_member_request(request_id)
                 if not req:
                     if wants_json:
-                        return jsonify({"success": False, "message": "Permintaan tidak ditemukan."}), 404
+                        return (
+                            jsonify(
+                                {
+                                    "success": False,
+                                    "message": "Permintaan tidak ditemukan.",
+                                }
+                            ),
+                            404,
+                        )
                     flash("Permintaan tidak ditemukan.", "danger")
                 else:
                     updated_req = update_team_member_request_status(
@@ -9305,7 +10258,9 @@ def manage_monev_teams() -> Response:
                             )
                     added = add_team_member(req["team_id"], req["staff_id"], admin_id)
                     if added:
-                        member_info = _fetch_monev_member_by_pair(req["team_id"], req["staff_id"])
+                        member_info = _fetch_monev_member_by_pair(
+                            req["team_id"], req["staff_id"]
+                        )
                         member_id = member_info.get("id") if member_info else None
                         log_activity(
                             actor_id,
@@ -9323,23 +10278,39 @@ def manage_monev_teams() -> Response:
                         )
                     if wants_json:
                         status_code = 200 if updated_req else 400
-                        return jsonify(
-                            {
-                                "success": bool(updated_req),
-                                "request_id": request_id,
-                                "status": "approved",
-                            }
-                        ), status_code
-                    flash(f"Permintaan anggota untuk {req.get('staff_name') or 'staff'} disetujui.", "success")
-            
+                        return (
+                            jsonify(
+                                {
+                                    "success": bool(updated_req),
+                                    "request_id": request_id,
+                                    "status": "approved",
+                                }
+                            ),
+                            status_code,
+                        )
+                    flash(
+                        f"Permintaan anggota untuk {req.get('staff_name') or 'staff'} disetujui.",
+                        "success",
+                    )
+
             elif action == "reject_request":
                 request_id = int(request.form.get("request_id"))
-                reviewer_note = (request.form.get("reviewer_note") or "").strip() or None
+                reviewer_note = (
+                    request.form.get("reviewer_note") or ""
+                ).strip() or None
                 admin_id = current_user().get("id") if current_user() else None
                 req = get_team_member_request(request_id)
                 if not req:
                     if wants_json:
-                        return jsonify({"success": False, "message": "Permintaan tidak ditemukan."}), 404
+                        return (
+                            jsonify(
+                                {
+                                    "success": False,
+                                    "message": "Permintaan tidak ditemukan.",
+                                }
+                            ),
+                            404,
+                        )
                     flash("Permintaan tidak ditemukan.", "danger")
                 else:
                     updated_req = update_team_member_request_status(
@@ -9396,39 +10367,47 @@ def manage_monev_teams() -> Response:
                             )
                     if wants_json:
                         status_code = 200 if updated_req else 400
-                        return jsonify(
-                            {
-                                "success": bool(updated_req),
-                                "request_id": request_id,
-                                "status": "rejected",
-                            }
-                        ), status_code
-                    flash(f"Permintaan anggota untuk {req.get('staff_name') or 'staff'} ditolak.", "info")
-                    
+                        return (
+                            jsonify(
+                                {
+                                    "success": bool(updated_req),
+                                    "request_id": request_id,
+                                    "status": "rejected",
+                                }
+                            ),
+                            status_code,
+                        )
+                    flash(
+                        f"Permintaan anggota untuk {req.get('staff_name') or 'staff'} ditolak.",
+                        "info",
+                    )
+
         except Exception as exc:
             current_app.logger.error(f"Error managing monev team: {exc}")
             if wants_json:
                 return jsonify({"success": False, "message": str(exc)}), 500
             flash(f"Terjadi kesalahan: {exc}", "danger")
-    
+
     # GET: Fetch teams by type and enrich with members
-    kasi_teams = get_monev_teams(team_type='kasi')
+    kasi_teams = get_monev_teams(team_type="kasi")
     for team in kasi_teams:
-        team['members'] = get_team_members(team['id'])
-    
-    kecamatan_teams = get_monev_teams(team_type='kecamatan')
+        team["members"] = get_team_members(team["id"])
+
+    kecamatan_teams = get_monev_teams(team_type="kecamatan")
     for team in kecamatan_teams:
-        team['members'] = get_team_members(team['id'])
-    
-    custom_teams = get_monev_teams(team_type='custom')
+        team["members"] = get_team_members(team["id"])
+
+    custom_teams = get_monev_teams(team_type="custom")
     for team in custom_teams:
-        team['members'] = get_team_members(team['id'])
+        team["members"] = get_team_members(team["id"])
 
     # Hitung anggota + koordinator per tim
     def _with_counts(teams: list[dict]) -> list[dict]:
         for t in teams:
             member_count = len(t.get("members") or [])
-            t["member_count_with_coord"] = member_count + (1 if t.get("coordinator_id") else 0)
+            t["member_count_with_coord"] = member_count + (
+                1 if t.get("coordinator_id") else 0
+            )
         return teams
 
     kasi_teams = _with_counts(kasi_teams)
@@ -9438,6 +10417,7 @@ def manage_monev_teams() -> Response:
     # Dedup Kasi teams by (slugged name + coordinator), keep the one with most members (fallback to highest id)
     def _slug(name: str) -> str:
         import re
+
         return re.sub(r"[^a-z0-9]+", "", (name or "").strip().lower())
 
     deduped_kasi: dict[tuple[str, int | None], dict] = {}
@@ -9450,7 +10430,9 @@ def manage_monev_teams() -> Response:
             continue
         curr_count = current.get("member_count_with_coord", 0)
         new_count = team.get("member_count_with_coord", 0)
-        if new_count > curr_count or (new_count == curr_count and team.get("id", 0) > current.get("id", 0)):
+        if new_count > curr_count or (
+            new_count == curr_count and team.get("id", 0) > current.get("id", 0)
+        ):
             deduped_kasi[key] = team
     kasi_teams = list(deduped_kasi.values())
 
@@ -9501,7 +10483,12 @@ def portal_kontak_wilayah() -> Response:
                         contact_index = int(contact_index_raw)
                     except (TypeError, ValueError):
                         contact_index = 0
-                    is_active = str(is_active_raw or "").strip().lower() in ("1", "true", "on", "yes")
+                    is_active = str(is_active_raw or "").strip().lower() in (
+                        "1",
+                        "true",
+                        "on",
+                        "yes",
+                    )
                     updated = update_portal_kontak_status(
                         kontak_id=int(kontak_id),
                         contact_index=contact_index,
@@ -9510,7 +10497,10 @@ def portal_kontak_wilayah() -> Response:
                     if updated:
                         flash("Status kontak berhasil diperbarui.", "success")
                     else:
-                        flash("Kontak tidak ditemukan atau status gagal diperbarui.", "warning")
+                        flash(
+                            "Kontak tidak ditemukan atau status gagal diperbarui.",
+                            "warning",
+                        )
 
             elif action in {"create", "update"}:
                 nama_1 = (request.form.get("nama_1") or "").strip()
@@ -9540,7 +10530,10 @@ def portal_kontak_wilayah() -> Response:
                         if updated:
                             flash("Kontak wilayah berhasil diperbarui.", "success")
                         else:
-                            flash("Kontak tidak ditemukan atau tidak ada perubahan.", "info")
+                            flash(
+                                "Kontak tidak ditemukan atau tidak ada perubahan.",
+                                "info",
+                            )
                     else:
                         create_portal_kontak(
                             wilayah=wilayah,
@@ -9569,7 +10562,10 @@ def portal_kontak_wilayah() -> Response:
                         if updated:
                             flash("Kontak wilayah berhasil diperbarui.", "success")
                         else:
-                            flash("Kontak tidak ditemukan atau tidak ada perubahan.", "info")
+                            flash(
+                                "Kontak tidak ditemukan atau tidak ada perubahan.",
+                                "info",
+                            )
 
             elif action == "delete":
                 if not kontak_id:
@@ -9610,13 +10606,13 @@ def view_my_team() -> Response:
 
     for team in all_teams:
         team_role = None
-        if team.get('coordinator_id') == user_id:
-            team_role = 'coordinator'
+        if team.get("coordinator_id") == user_id:
+            team_role = "coordinator"
 
-        members = get_team_members(team['id'])
+        members = get_team_members(team["id"])
 
-        if team_role is None and any(m.get('staff_id') == user_id for m in members):
-            team_role = 'member'
+        if team_role is None and any(m.get("staff_id") == user_id for m in members):
+            team_role = "member"
 
         if team_role is None:
             continue
@@ -9627,10 +10623,13 @@ def view_my_team() -> Response:
         if team_role == "coordinator":
             existing_member_ids = {m["staff_id"] for m in members}
             team_data["available_staff"] = [
-                staff for staff in all_available_staff
+                staff
+                for staff in all_available_staff
                 if staff["id"] not in existing_member_ids
             ]
-            team_data["member_requests"] = list_team_member_requests_for_team(team["id"])
+            team_data["member_requests"] = list_team_member_requests_for_team(
+                team["id"]
+            )
         else:
             team_data["available_staff"] = []
             team_data["member_requests"] = []
@@ -9665,14 +10664,22 @@ def coordinator_assignment_requests() -> Response:
     staff_options = list(team_members)
     team_staff_ids = {member.get("staff_id") for member in staff_options}
     if user.get("id") not in team_staff_ids:
-        staff_options.append({
-            "staff_id": user.get("id"),
-            "full_name": user.get("full_name") or my_team.get("coordinator_name") or "Saya (Koordinator)",
-            "role": user.get("role") or my_team.get("coordinator_role") or "coordinator",
-        })
+        staff_options.append(
+            {
+                "staff_id": user.get("id"),
+                "full_name": user.get("full_name")
+                or my_team.get("coordinator_name")
+                or "Saya (Koordinator)",
+                "role": user.get("role")
+                or my_team.get("coordinator_role")
+                or "coordinator",
+            }
+        )
     schools = list_portal_schools()
     periods = list_periods()
-    active_period_id = next((p["id"] for p in periods if p.get("is_active")), None) or (periods[0]["id"] if periods else None)
+    active_period_id = next((p["id"] for p in periods if p.get("is_active")), None) or (
+        periods[0]["id"] if periods else None
+    )
     staff_name_map = {}
     for member in staff_options:
         staff_value = member.get("staff_id")
@@ -9712,11 +10719,21 @@ def coordinator_assignment_requests() -> Response:
             note = (data.get("note") or "").strip() or None
             period_id_raw = data.get("period_id")
             if not staff_id or not school_ids:
-                return jsonify(success=False, message="Pilih staff dan minimal satu sekolah."), 400
+                return (
+                    jsonify(
+                        success=False, message="Pilih staff dan minimal satu sekolah."
+                    ),
+                    400,
+                )
             if staff_id not in staff_ids and staff_id != user.get("id"):
-                return jsonify(success=False, message="Staff tidak ada di tim Anda."), 403
+                return (
+                    jsonify(success=False, message="Staff tidak ada di tim Anda."),
+                    403,
+                )
             try:
-                period_id = int(period_id_raw) if period_id_raw not in (None, "") else None
+                period_id = (
+                    int(period_id_raw) if period_id_raw not in (None, "") else None
+                )
             except (TypeError, ValueError):
                 return jsonify(success=False, message="Periode tidak valid."), 400
 
@@ -9724,7 +10741,9 @@ def coordinator_assignment_requests() -> Response:
             errors = []
             for sid in school_ids:
                 try:
-                    created_row = create_assignment_request(user["id"], int(staff_id), int(sid), note, period_id)
+                    created_row = create_assignment_request(
+                        user["id"], int(staff_id), int(sid), note, period_id
+                    )
                     created += 1
                     created_row_id = created_row.get("id") if created_row else None
                     if created_row_id is not None:
@@ -9739,10 +10758,15 @@ def coordinator_assignment_requests() -> Response:
                         try:
                             notify_assignment_request(
                                 request_id=int(created_row_id),
-                                coordinator_name=user.get("full_name") or user.get("email"),
+                                coordinator_name=user.get("full_name")
+                                or user.get("email"),
                                 staff_name=staff_name_map.get(staff_key or -1),
                                 school_name=school_name_map.get(school_key or -1),
-                                period_name=period_name_map.get(period_id) if period_id is not None else None,
+                                period_name=(
+                                    period_name_map.get(period_id)
+                                    if period_id is not None
+                                    else None
+                                ),
                                 note=note,
                             )
                         except Exception:
@@ -9764,7 +10788,9 @@ def coordinator_assignment_requests() -> Response:
             flash("Staff tidak ada di tim Anda.", "danger")
         else:
             try:
-                created_row = create_assignment_request(user["id"], staff_id, school_id, note, period_id)
+                created_row = create_assignment_request(
+                    user["id"], staff_id, school_id, note, period_id
+                )
                 created_row_id = created_row.get("id") if created_row else None
                 if created_row_id is not None:
                     try:
@@ -9773,11 +10799,17 @@ def coordinator_assignment_requests() -> Response:
                             coordinator_name=user.get("full_name") or user.get("email"),
                             staff_name=staff_name_map.get(staff_id),
                             school_name=school_name_map.get(school_id),
-                            period_name=period_name_map.get(period_id) if period_id is not None else None,
+                            period_name=(
+                                period_name_map.get(period_id)
+                                if period_id is not None
+                                else None
+                            ),
                             note=note,
                         )
                     except Exception:
-                        current_app.logger.exception("Gagal mengirim notifikasi Telegram permintaan assignment.")
+                        current_app.logger.exception(
+                            "Gagal mengirim notifikasi Telegram permintaan assignment."
+                        )
                 flash("Permintaan penugasan dikirim ke admin.", "success")
             except Exception as exc:
                 flash(f"Gagal mengirim permintaan: {exc}", "danger")
@@ -9803,8 +10835,10 @@ def coordinator_assessments() -> Response:
     if photo_redirect:
         return photo_redirect
     periods = list_periods()
-    active_period_id = next((p["id"] for p in periods if p.get("is_active")), None) or (periods[0]["id"] if periods else None)
-    
+    active_period_id = next((p["id"] for p in periods if p.get("is_active")), None) or (
+        periods[0]["id"] if periods else None
+    )
+
     selected_period_id = request.args.get("period_id", type=int)
     if selected_period_id is None:
         selected_period_id = active_period_id

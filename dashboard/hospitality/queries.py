@@ -1,11 +1,13 @@
 """Query helpers for Hospitality assessments."""
+
 from __future__ import annotations
 
 from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Sequence
 
-from dashboard.db_access import get_cursor
 from psycopg2.extras import Json
+
+from dashboard.db_access import get_cursor
 
 try:
     from zoneinfo import ZoneInfo
@@ -39,8 +41,7 @@ def _ensure_soft_delete_schema() -> None:
     if _SOFT_DELETE_SCHEMA_READY:
         return
     with get_cursor(commit=True) as cur:
-        cur.execute(
-            """
+        cur.execute("""
             CREATE TABLE IF NOT EXISTS daftar_tamu_general_transactions (
                 id SERIAL PRIMARY KEY,
                 school_id INTEGER NOT NULL REFERENCES portal_schools(id) ON DELETE CASCADE,
@@ -55,28 +56,20 @@ def _ensure_soft_delete_schema() -> None:
                 created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
             )
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE INDEX IF NOT EXISTS idx_daftar_tamu_general_transactions_school
             ON daftar_tamu_general_transactions (school_id)
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE INDEX IF NOT EXISTS idx_daftar_tamu_general_transactions_status
             ON daftar_tamu_general_transactions (status)
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE INDEX IF NOT EXISTS idx_daftar_tamu_general_transactions_visit_at
             ON daftar_tamu_general_transactions (visit_at DESC)
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE TABLE IF NOT EXISTS daftar_tamu_general_transaction_guests (
                 id SERIAL PRIMARY KEY,
                 transaction_id INTEGER NOT NULL REFERENCES daftar_tamu_general_transactions(id) ON DELETE CASCADE,
@@ -90,22 +83,16 @@ def _ensure_soft_delete_schema() -> None:
                 student_name TEXT,
                 created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
             )
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE INDEX IF NOT EXISTS idx_daftar_tamu_general_transaction_guests_tx
             ON daftar_tamu_general_transaction_guests (transaction_id)
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE INDEX IF NOT EXISTS idx_daftar_tamu_general_transaction_guests_guest
             ON daftar_tamu_general_transaction_guests (general_guest_id)
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE TABLE IF NOT EXISTS hospitality_guestbook_reviews (
                 id SERIAL PRIMARY KEY,
                 transaction_id INTEGER NOT NULL REFERENCES daftar_tamu_general_transactions(id) ON DELETE CASCADE,
@@ -119,86 +106,59 @@ def _ensure_soft_delete_schema() -> None:
                 updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 CONSTRAINT hospitality_guestbook_reviews_rating_check CHECK (rating IS NULL OR rating BETWEEN 1 AND 5)
             )
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE UNIQUE INDEX IF NOT EXISTS uq_hosp_guestbook_reviews_transaction
             ON hospitality_guestbook_reviews (transaction_id)
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE INDEX IF NOT EXISTS idx_hosp_guestbook_reviews_school
             ON hospitality_guestbook_reviews (school_id)
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE INDEX IF NOT EXISTS idx_hosp_guestbook_reviews_status
             ON hospitality_guestbook_reviews (status)
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE INDEX IF NOT EXISTS idx_hosp_guestbook_reviews_completed_at
             ON hospitality_guestbook_reviews (completed_at DESC)
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             ALTER TABLE hospitality_assessments
             ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN NOT NULL DEFAULT FALSE
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             ALTER TABLE hospitality_assessments
             ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             ALTER TABLE hospitality_assessments
             ADD COLUMN IF NOT EXISTS deleted_by INTEGER REFERENCES dashboard_users(id)
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             ALTER TABLE hospitality_guestbook_reviews
             ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN NOT NULL DEFAULT FALSE
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             ALTER TABLE hospitality_guestbook_reviews
             ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             ALTER TABLE hospitality_guestbook_reviews
             ADD COLUMN IF NOT EXISTS deleted_by INTEGER REFERENCES dashboard_users(id)
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             ALTER TABLE hospitality_guestbook_reviews
             ADD COLUMN IF NOT EXISTS tanggal_edit TIMESTAMPTZ
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             DROP INDEX IF EXISTS uq_hosp_assessment_daily
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE UNIQUE INDEX uq_hosp_assessment_daily
             ON hospitality_assessments (school_id, staff_id, ((created_at AT TIME ZONE 'Asia/Jakarta')::date))
             WHERE COALESCE(is_deleted, FALSE) = FALSE
-            """
-        )
+            """)
     _SOFT_DELETE_SCHEMA_READY = True
 
 
@@ -207,21 +167,17 @@ def _ensure_preview_access_schema() -> None:
     if _PREVIEW_ACCESS_SCHEMA_READY:
         return
     with get_cursor(commit=True) as cur:
-        cur.execute(
-            """
+        cur.execute("""
             CREATE TABLE IF NOT EXISTS hospitality_preview_access (
                 user_id INTEGER PRIMARY KEY REFERENCES dashboard_users(id) ON DELETE CASCADE,
                 granted_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
                 granted_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
             )
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE INDEX IF NOT EXISTS idx_hospitality_preview_access_granted_by
             ON hospitality_preview_access (granted_by)
-            """
-        )
+            """)
     _PREVIEW_ACCESS_SCHEMA_READY = True
 
 
@@ -230,8 +186,7 @@ def _ensure_activity_logs_schema() -> None:
     if _ACTIVITY_LOGS_SCHEMA_READY:
         return
     with get_cursor(commit=True) as cur:
-        cur.execute(
-            """
+        cur.execute("""
             CREATE TABLE IF NOT EXISTS hospitality_activity_logs (
                 id SERIAL PRIMARY KEY,
                 user_id INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
@@ -242,20 +197,15 @@ def _ensure_activity_logs_schema() -> None:
                 details JSONB,
                 created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
             )
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE INDEX IF NOT EXISTS idx_hospitality_activity_logs_created
             ON hospitality_activity_logs (created_at DESC)
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE INDEX IF NOT EXISTS idx_hospitality_activity_logs_target
             ON hospitality_activity_logs (target_type, target_id)
-            """
-        )
+            """)
     _ACTIVITY_LOGS_SCHEMA_READY = True
 
 
@@ -265,8 +215,7 @@ def _ensure_guestbook_extra_schema() -> None:
         return
     _ensure_soft_delete_schema()
     with get_cursor(commit=True) as cur:
-        cur.execute(
-            """
+        cur.execute("""
             CREATE TABLE IF NOT EXISTS hospitality_guestbook_extra_questions (
                 id SERIAL PRIMARY KEY,
                 question_text TEXT NOT NULL,
@@ -276,16 +225,12 @@ def _ensure_guestbook_extra_schema() -> None:
                 created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
             )
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE INDEX IF NOT EXISTS idx_hosp_extra_questions_active_order
             ON hospitality_guestbook_extra_questions (active, sort_order, id)
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE TABLE IF NOT EXISTS hospitality_guestbook_extra_answers (
                 id SERIAL PRIMARY KEY,
                 review_id INTEGER NOT NULL REFERENCES hospitality_guestbook_reviews(id) ON DELETE CASCADE,
@@ -295,20 +240,15 @@ def _ensure_guestbook_extra_schema() -> None:
                 updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 UNIQUE (review_id, question_id)
             )
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE INDEX IF NOT EXISTS idx_hosp_extra_answers_review
             ON hospitality_guestbook_extra_answers (review_id)
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE INDEX IF NOT EXISTS idx_hosp_extra_answers_question
             ON hospitality_guestbook_extra_answers (question_id)
-            """
-        )
+            """)
     _GUESTBOOK_EXTRA_SCHEMA_READY = True
 
 
@@ -327,7 +267,9 @@ def has_hospitality_preview_access(*, user_id: int) -> bool:
         return cur.fetchone() is not None
 
 
-def list_hospitality_preview_access_users(*, search: str | None = None, limit: int = 200) -> List[Dict[str, Any]]:
+def list_hospitality_preview_access_users(
+    *, search: str | None = None, limit: int = 200
+) -> List[Dict[str, Any]]:
     _ensure_preview_access_schema()
     clauses = ["TRUE"]
     params: List[Any] = []
@@ -361,7 +303,9 @@ def list_hospitality_preview_access_users(*, search: str | None = None, limit: i
         return [dict(row) for row in cur.fetchall()]
 
 
-def list_hospitality_preview_candidates(*, search: str | None = None, limit: int = 100) -> List[Dict[str, Any]]:
+def list_hospitality_preview_candidates(
+    *, search: str | None = None, limit: int = 100
+) -> List[Dict[str, Any]]:
     _ensure_preview_access_schema()
     clauses = [
         "u.account_status = 'approved'",
@@ -388,7 +332,9 @@ def list_hospitality_preview_candidates(*, search: str | None = None, limit: int
         return [dict(row) for row in cur.fetchall()]
 
 
-def grant_hospitality_preview_access(*, user_id: int, granted_by: int | None = None) -> None:
+def grant_hospitality_preview_access(
+    *, user_id: int, granted_by: int | None = None
+) -> None:
     _ensure_preview_access_schema()
     with get_cursor(commit=True) as cur:
         cur.execute(
@@ -406,7 +352,9 @@ def grant_hospitality_preview_access(*, user_id: int, granted_by: int | None = N
 def revoke_hospitality_preview_access(*, user_id: int) -> bool:
     _ensure_preview_access_schema()
     with get_cursor(commit=True) as cur:
-        cur.execute("DELETE FROM hospitality_preview_access WHERE user_id = %s", (user_id,))
+        cur.execute(
+            "DELETE FROM hospitality_preview_access WHERE user_id = %s", (user_id,)
+        )
         return cur.rowcount > 0
 
 
@@ -534,7 +482,9 @@ def ensure_daily_limit(*, school_id: int, staff_id: int, max_per_day: int = 1) -
         )
         row = cur.fetchone() or {}
         if int(row.get("cnt", 0)) >= max_per_day:
-            raise ValueError("Sudah ada penilaian untuk sekolah ini hari ini oleh staff yang sama.")
+            raise ValueError(
+                "Sudah ada penilaian untuk sekolah ini hari ini oleh staff yang sama."
+            )
 
 
 def create_assessment(
@@ -599,7 +549,9 @@ def get_latest_draft_assessment_for_staff(*, staff_id: int) -> Optional[Dict[str
     return dict(row) if row else None
 
 
-def get_latest_assessment_for_staff_school(*, school_id: int, staff_id: int) -> Optional[Dict[str, Any]]:
+def get_latest_assessment_for_staff_school(
+    *, school_id: int, staff_id: int
+) -> Optional[Dict[str, Any]]:
     _ensure_soft_delete_schema()
     with get_cursor() as cur:
         cur.execute(
@@ -730,7 +682,9 @@ def delete_assessment(*, assessment_id: int, deleted_by: Optional[int] = None) -
         return cur.rowcount > 0
 
 
-def delete_guestbook_review(*, review_id: int, deleted_by: Optional[int] = None) -> bool:
+def delete_guestbook_review(
+    *, review_id: int, deleted_by: Optional[int] = None
+) -> bool:
     """Soft-delete hospitality guestbook review (admin action)."""
     _ensure_soft_delete_schema()
     with get_cursor(commit=True) as cur:
@@ -813,8 +767,7 @@ def fetch_stats() -> Dict[str, Any]:
     """Return aggregate hospitality stats."""
     _ensure_soft_delete_schema()
     with get_cursor() as cur:
-        cur.execute(
-            """
+        cur.execute("""
             SELECT
                 COUNT(*) FILTER (WHERE TRUE) AS total_assessments,
                 COUNT(*) FILTER (WHERE status = 'verified') AS verified_assessments,
@@ -825,12 +778,10 @@ def fetch_stats() -> Dict[str, Any]:
                 ) AS today_assessments
             FROM hospitality_assessments
             WHERE COALESCE(is_deleted, FALSE) = FALSE
-            """
-        )
+            """)
         row = cur.fetchone() or {}
 
-        cur.execute(
-            """
+        cur.execute("""
             WITH scored AS (
                 SELECT
                     a.id,
@@ -846,8 +797,7 @@ def fetch_stats() -> Dict[str, Any]:
                 CASE WHEN scale_max > 0 THEN (avg_score / scale_max) * 100 ELSE NULL END
             )::DECIMAL(5,2) AS avg_score_pct
             FROM scored
-            """
-        )
+            """)
         avg_row = cur.fetchone() or {}
 
     return {
@@ -864,8 +814,7 @@ def fetch_component_averages() -> List[Dict[str, Any]]:
     """Return average score percentage for each component."""
     _ensure_soft_delete_schema()
     with get_cursor() as cur:
-        cur.execute(
-            """
+        cur.execute("""
             WITH scored AS (
                 SELECT
                     a.id,
@@ -887,8 +836,7 @@ def fetch_component_averages() -> List[Dict[str, Any]]:
             JOIN hospitality_components c ON c.id = sc.component_id
             GROUP BY c.id, c.name, c.sort_order
             ORDER BY c.sort_order, c.id
-            """
-        )
+            """)
         return [dict(row) for row in cur.fetchall()]
 
 
@@ -1047,7 +995,6 @@ def fetch_recent_assessments(*, limit: int = 20) -> List[Dict[str, Any]]:
         return [dict(row) for row in cur.fetchall()]
 
 
-
 def fetch_all_assessed_schools(
     *,
     search: str | None = None,
@@ -1191,12 +1138,20 @@ def _build_guestbook_review_filters(
         params.append(school_id)
 
     clean_review_status = (review_status or "").strip().lower()
-    if clean_review_status and clean_review_status != "all" and clean_review_status in GUESTBOOK_REVIEW_STATUSES:
+    if (
+        clean_review_status
+        and clean_review_status != "all"
+        and clean_review_status in GUESTBOOK_REVIEW_STATUSES
+    ):
         clauses.append("LOWER(r.status) = %s")
         params.append(clean_review_status)
 
     clean_transaction_status = (transaction_status or "").strip().lower()
-    if clean_transaction_status and clean_transaction_status != "all" and clean_transaction_status in {"pending", "approved", "rejected"}:
+    if (
+        clean_transaction_status
+        and clean_transaction_status != "all"
+        and clean_transaction_status in {"pending", "approved", "rejected"}
+    ):
         clauses.append("LOWER(t.status) = %s")
         params.append(clean_transaction_status)
 
@@ -1220,8 +1175,7 @@ def _build_guestbook_review_filters(
     clean_search = (search or "").strip()
     if clean_search:
         like = f"%{clean_search}%"
-        clauses.append(
-            """
+        clauses.append("""
             (
                 s.name ILIKE %s
                 OR s.npsn ILIKE %s
@@ -1239,8 +1193,7 @@ def _build_guestbook_review_filters(
                     )
                 )
             )
-            """
-        )
+            """)
         params.extend([like, like, like, like, like, like, like, like])
 
     return " AND ".join(clauses), params
@@ -1254,7 +1207,9 @@ def fetch_guestbook_review_stats(
     use_tanggal_edit: bool = True,
 ) -> Dict[str, Any]:
     _dexpr_completed = _date_expr(use_tanggal_edit)
-    _dexpr_created = "COALESCE(r.tanggal_edit, r.created_at)" if use_tanggal_edit else "r.created_at"
+    _dexpr_created = (
+        "COALESCE(r.tanggal_edit, r.created_at)" if use_tanggal_edit else "r.created_at"
+    )
     where_sql, params = _build_guestbook_review_filters(
         school_id=school_id,
         start_date=start_date,
@@ -1294,7 +1249,9 @@ def fetch_guestbook_review_stats(
     pending_reviews = int(stats_row.get("pending_reviews") or 0)
     linked_reviews = int(stats_row.get("linked_reviews") or 0)
     unlinked_reviews = int(stats_row.get("unlinked_reviews") or 0)
-    completion_rate = (completed_reviews / total_reviews * 100) if total_reviews else 0.0
+    completion_rate = (
+        (completed_reviews / total_reviews * 100) if total_reviews else 0.0
+    )
     linked_rate = (linked_reviews / total_reviews * 100) if total_reviews else 0.0
     avg_rating = float(stats_row.get("avg_rating") or 0)
     with get_cursor() as cur:
@@ -1320,13 +1277,12 @@ def fetch_guestbook_review_stats(
     total_extra = 0.0
     for extra_row in extra_stats_rows:
         score = float(extra_row["avg_score"] or 0)
-        extra_stats.append({
-            "name": extra_row["name"],
-            "avg_score": score
-        })
+        extra_stats.append({"name": extra_row["name"], "avg_score": score})
         total_extra += score
-    
-    avg_extra_rating = (total_extra / len(extra_stats_rows)) if extra_stats_rows else 0.0
+
+    avg_extra_rating = (
+        (total_extra / len(extra_stats_rows)) if extra_stats_rows else 0.0
+    )
 
     return {
         "total_reviews": total_reviews,
@@ -1426,8 +1382,7 @@ def fetch_guestbook_review_rating_distribution(
 
     counts = {int(row.get("rating") or 0): int(row.get("total") or 0) for row in rows}
     return [
-        {"rating": rating, "total": counts.get(rating, 0)}
-        for rating in range(1, 6)
+        {"rating": rating, "total": counts.get(rating, 0)} for rating in range(1, 6)
     ]
 
 
@@ -1714,8 +1669,14 @@ def list_guestbook_reviews(
         else:
             row["guest_display"] = None
         row["review_status"] = (row.get("review_status") or "").strip().lower()
-        row["transaction_status"] = (row.get("transaction_status") or "").strip().lower()
-        row["linked_assessment_id"] = int(row.get("linked_assessment_id")) if row.get("linked_assessment_id") is not None else None
+        row["transaction_status"] = (
+            (row.get("transaction_status") or "").strip().lower()
+        )
+        row["linked_assessment_id"] = (
+            int(row.get("linked_assessment_id"))
+            if row.get("linked_assessment_id") is not None
+            else None
+        )
         rating_val = row.get("rating")
         row["rating"] = int(rating_val) if rating_val is not None else None
         comment = (row.get("comment") or "").strip()
@@ -1812,8 +1773,14 @@ def fetch_guestbook_reviews_export(
         else:
             row["guest_display"] = None
         row["review_status"] = (row.get("review_status") or "").strip().lower()
-        row["transaction_status"] = (row.get("transaction_status") or "").strip().lower()
-        row["linked_assessment_id"] = int(row.get("linked_assessment_id")) if row.get("linked_assessment_id") is not None else None
+        row["transaction_status"] = (
+            (row.get("transaction_status") or "").strip().lower()
+        )
+        row["linked_assessment_id"] = (
+            int(row.get("linked_assessment_id"))
+            if row.get("linked_assessment_id") is not None
+            else None
+        )
         rating_val = row.get("rating")
         row["rating"] = int(rating_val) if rating_val is not None else None
         comment = (row.get("comment") or "").strip()
@@ -1917,8 +1884,14 @@ def get_guestbook_review_detail(review_id: int) -> Dict[str, Any] | None:
     else:
         detail["guest_display"] = None
     detail["review_status"] = (detail.get("review_status") or "").strip().lower()
-    detail["transaction_status"] = (detail.get("transaction_status") or "").strip().lower()
-    detail["linked_assessment_id"] = int(detail.get("linked_assessment_id")) if detail.get("linked_assessment_id") is not None else None
+    detail["transaction_status"] = (
+        (detail.get("transaction_status") or "").strip().lower()
+    )
+    detail["linked_assessment_id"] = (
+        int(detail.get("linked_assessment_id"))
+        if detail.get("linked_assessment_id") is not None
+        else None
+    )
     rating_val = detail.get("rating")
     detail["rating"] = int(rating_val) if rating_val is not None else None
     for item in extra_rows:
@@ -1929,6 +1902,7 @@ def get_guestbook_review_detail(review_id: int) -> Dict[str, Any] | None:
 
 
 # ===== Master data (component / aspect) =====
+
 
 def create_component(
     *,
@@ -2009,7 +1983,10 @@ def delete_component(component_id: int) -> bool:
                 (component_id,),
             )
             return True
-        cur.execute("DELETE FROM hospitality_components WHERE id = %s RETURNING id", (component_id,))
+        cur.execute(
+            "DELETE FROM hospitality_components WHERE id = %s RETURNING id",
+            (component_id,),
+        )
     return cur.fetchone() is not None
 
 
@@ -2119,7 +2096,9 @@ def delete_hosp_aspect(aspect_id: int) -> bool:
                 (aspect_id,),
             )
             return True
-        cur.execute("DELETE FROM hospitality_aspects WHERE id = %s RETURNING id", (aspect_id,))
+        cur.execute(
+            "DELETE FROM hospitality_aspects WHERE id = %s RETURNING id", (aspect_id,)
+        )
         return cur.fetchone() is not None
 
 
@@ -2160,7 +2139,9 @@ def reorder_hosp_aspects(order_ids: list[int]) -> None:
             )
 
 
-def list_guestbook_extra_questions(*, active_only: Optional[bool] = None) -> List[Dict[str, Any]]:
+def list_guestbook_extra_questions(
+    *, active_only: Optional[bool] = None
+) -> List[Dict[str, Any]]:
     _ensure_guestbook_extra_schema()
     clauses: List[str] = []
     params: List[Any] = []
@@ -2292,7 +2273,9 @@ def delete_guestbook_extra_question(question_id: int) -> bool:
         return cur.fetchone() is not None
 
 
-def toggle_guestbook_extra_question_active(question_id: int) -> Optional[Dict[str, Any]]:
+def toggle_guestbook_extra_question_active(
+    question_id: int,
+) -> Optional[Dict[str, Any]]:
     question = get_guestbook_extra_question(question_id)
     if not question:
         return None
@@ -2422,14 +2405,20 @@ def list_guestbook_candidates(
         if isinstance(visit_date, date):
             is_same_day = visit_date == today
         row["is_same_day"] = is_same_day
-        row["can_link"] = (row.get("status") or "").lower() == "approved" and not bool(row.get("is_linked"))
+        row["can_link"] = (row.get("status") or "").lower() == "approved" and not bool(
+            row.get("is_linked")
+        )
     # Sort: approved + same-day + unlinked first, pending after approved, linked last
     rows.sort(
         key=lambda r: (
             0 if (r.get("status") or "").lower() == "approved" else 1,
             0 if (r.get("is_same_day") and not r.get("is_linked")) else 1,
             0 if not r.get("is_linked") else 1,
-            -(r.get("visit_at").timestamp() if isinstance(r.get("visit_at"), datetime) else 0),
+            -(
+                r.get("visit_at").timestamp()
+                if isinstance(r.get("visit_at"), datetime)
+                else 0
+            ),
         )
     )
     return rows
@@ -2520,11 +2509,15 @@ def link_guestbook_transaction(
 
         transaction_status = (row.get("status") or "").lower()
         if transaction_status == "pending":
-            raise ValueError("Kunjungan buku tamu masih pending dan belum bisa diverifikasi")
+            raise ValueError(
+                "Kunjungan buku tamu masih pending dan belum bisa diverifikasi"
+            )
         if transaction_status != "approved":
             raise ValueError("Kunjungan buku tamu belum terverifikasi")
 
-        if existing_link and int(existing_link.get("transaction_id") or 0) == int(transaction_id):
+        if existing_link and int(existing_link.get("transaction_id") or 0) == int(
+            transaction_id
+        ):
             cur.execute(
                 """
                 SELECT *
@@ -2575,7 +2568,12 @@ def link_guestbook_transaction(
 
 
 def create_comment(
-    *, assessment_id: int, author_user_id: int, author_role: str, message: str, parent_comment_id: Optional[int] = None
+    *,
+    assessment_id: int,
+    author_user_id: int,
+    author_role: str,
+    message: str,
+    parent_comment_id: Optional[int] = None,
 ) -> Dict[str, Any]:
     clean_msg = (message or "").strip()
     if not clean_msg:
@@ -2633,7 +2631,9 @@ def create_reopen_request(
     return dict(row) if row else {}
 
 
-def list_reopen_requests(*, status: Optional[str] = None, limit: int = 200) -> List[Dict[str, Any]]:
+def list_reopen_requests(
+    *, status: Optional[str] = None, limit: int = 200
+) -> List[Dict[str, Any]]:
     _ensure_soft_delete_schema()
     conditions = []
     params: List[Any] = []
@@ -2788,6 +2788,7 @@ def log_activity(
             )
     except Exception as exc:  # pragma: no cover
         import logging
+
         logging.error(f"Failed to log hospitality activity: {exc}")
 
 

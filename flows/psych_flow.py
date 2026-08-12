@@ -1,8 +1,10 @@
 import asyncio
 from typing import Optional
 
-from db import save_chat, record_psych_report
 from telegram.error import NetworkError
+
+from db import record_psych_report, save_chat
+from reporting_flags import reporting_enabled
 from responses import (
     SEVERITY_CRITICAL,
     SEVERITY_ELEVATED,
@@ -10,12 +12,12 @@ from responses import (
     classify_message_severity,
     detect_psych_intent,
     get_psych_closing_message,
-    get_psych_conversation_reply,
     get_psych_confirmation_prompt,
+    get_psych_conversation_reply,
     get_psych_critical_message,
     get_psych_stage_prompt,
-    get_psych_validation,
     get_psych_support_message,
+    get_psych_validation,
     is_psych_negative_confirmation,
     is_psych_positive_confirmation,
     is_psych_stop_request,
@@ -23,9 +25,7 @@ from responses import (
     psych_stage_exists,
     summarize_psych_message,
 )
-from reporting_flags import reporting_enabled
 from utils import now_str, send_typing_once, strip_markdown
-
 
 PSYCH_SEVERITY_RANK = {
     SEVERITY_GENERAL: 0,
@@ -48,7 +48,9 @@ def _summarize_snippet(text: Optional[str], limit: int = 80) -> str:
     return f"{cleaned[: limit - 1].rstrip()}…"
 
 
-def _store_psych_session(session_data: dict, *, reason: str, aggregated_text: Optional[str] = None) -> None:
+def _store_psych_session(
+    session_data: dict, *, reason: str, aggregated_text: Optional[str] = None
+) -> None:
     messages = session_data.get("messages") or []
     if aggregated_text is None:
         aggregated_text = _aggregate_messages(messages)
@@ -63,13 +65,21 @@ def _store_psych_session(session_data: dict, *, reason: str, aggregated_text: Op
             if chat_id is not None:
                 base_chat_log_id = chat_id
                 break
-    chat_log_id = messages[-1].get("chat_log_id") if messages else session_data.get("base_chat_log_id")
+    chat_log_id = (
+        messages[-1].get("chat_log_id")
+        if messages
+        else session_data.get("base_chat_log_id")
+    )
     metadata_extra = {
         "message_count": len(messages),
         "severity_history": session_data.get("severity_history"),
         "stage_history": session_data.get("stage_history"),
         "ended_by": reason,
-        "chat_log_ids": [msg.get("chat_log_id") for msg in messages if msg.get("chat_log_id") is not None],
+        "chat_log_ids": [
+            msg.get("chat_log_id")
+            for msg in messages
+            if msg.get("chat_log_id") is not None
+        ],
         "message_chunks": [msg.get("text") for msg in messages if msg.get("text")],
         "timeout_seconds": session_data.get("timeout_seconds"),
     }
@@ -101,7 +111,9 @@ def _persist_psych_report(
 ) -> None:
     if not message_text:
         return
-    target_chat_log_id = base_chat_log_id if base_chat_log_id is not None else chat_log_id
+    target_chat_log_id = (
+        base_chat_log_id if base_chat_log_id is not None else chat_log_id
+    )
     metadata = {
         "stage": stage_label,
         "source": source,
@@ -164,7 +176,9 @@ async def handle_psych(
                 sent_successfully = True
                 break
             except NetworkError as exc:  # pragma: no cover - network flakiness
-                print(f"[{now_str()}] Network error sending psych reply (attempt {attempt+1}/10): {exc}")
+                print(
+                    f"[{now_str()}] Network error sending psych reply (attempt {attempt+1}/10): {exc}"
+                )
                 if attempt < 9:
                     await asyncio.sleep(5)
         if not sent_successfully:
@@ -270,13 +284,15 @@ async def handle_psych(
             return True
         if is_psych_negative_confirmation(raw_input):
             severity_value = psych_session.get("severity", SEVERITY_GENERAL)
-            response = (
-                "Oke, tidak apa-apa. Kalau nanti butuh teman cerita lagi, ASKA siap standby 😊"
-            )
+            response = "Oke, tidak apa-apa. Kalau nanti butuh teman cerita lagi, ASKA siap standby 😊"
             if severity_value == SEVERITY_CRITICAL:
                 response = f"{response}\n\n{get_psych_critical_message()}"
             aggregated_text = _aggregate_messages(psych_session.get("messages", []))
-            _store_psych_session(psych_session, reason="declined_confirmation", aggregated_text=aggregated_text)
+            _store_psych_session(
+                psych_session,
+                reason="declined_confirmation",
+                aggregated_text=aggregated_text,
+            )
             await _send_message(response)
             psych_sessions.pop(storage_key, None)
             mark_responded()
@@ -291,7 +307,9 @@ async def handle_psych(
         if is_psych_stop_request(raw_input):
             aggregated_text = _aggregate_messages(psych_session.get("messages", []))
             severity_value = psych_session.get("severity", SEVERITY_GENERAL)
-            _store_psych_session(psych_session, reason="user_stop", aggregated_text=aggregated_text)
+            _store_psych_session(
+                psych_session, reason="user_stop", aggregated_text=aggregated_text
+            )
             closing = get_psych_closing_message(
                 aggregated_text=aggregated_text,
                 severity=severity_value,
@@ -315,8 +333,12 @@ async def handle_psych(
         aggregated_text = _aggregate_messages(session_messages)
 
         current_severity = psych_session.get("severity", SEVERITY_GENERAL)
-        message_severity = classify_message_severity(raw_input, default=current_severity)
-        if PSYCH_SEVERITY_RANK.get(message_severity, 0) > PSYCH_SEVERITY_RANK.get(current_severity, 0):
+        message_severity = classify_message_severity(
+            raw_input, default=current_severity
+        )
+        if PSYCH_SEVERITY_RANK.get(message_severity, 0) > PSYCH_SEVERITY_RANK.get(
+            current_severity, 0
+        ):
             psych_session["severity"] = message_severity
             current_severity = message_severity
         severity_history = psych_session.setdefault("severity_history", [])
@@ -336,7 +358,11 @@ async def handle_psych(
             aggregated_text=aggregated_text,
             latest_message=raw_input,
             stage=current_stage,
-            next_stage=next_stage_value if next_stage_value and psych_stage_exists(next_stage_value) else None,
+            next_stage=(
+                next_stage_value
+                if next_stage_value and psych_stage_exists(next_stage_value)
+                else None
+            ),
             severity=current_severity,
             message_index=len(session_messages),
         )
@@ -345,7 +371,9 @@ async def handle_psych(
             if next_stage_value and psych_stage_exists(next_stage_value):
                 psych_session["stage"] = next_stage_value
                 stage_history = psych_session.setdefault("stage_history", [])
-                if next_stage_value and (not stage_history or stage_history[-1] != next_stage_value):
+                if next_stage_value and (
+                    not stage_history or stage_history[-1] != next_stage_value
+                ):
                     stage_history.append(next_stage_value)
             else:
                 _store_psych_session(
@@ -373,7 +401,9 @@ async def handle_psych(
             if next_stage_value and psych_stage_exists(next_stage_value):
                 psych_session["stage"] = next_stage_value
                 stage_history = psych_session.setdefault("stage_history", [])
-                if next_stage_value and (not stage_history or stage_history[-1] != next_stage_value):
+                if next_stage_value and (
+                    not stage_history or stage_history[-1] != next_stage_value
+                ):
                     stage_history.append(next_stage_value)
                 response_parts.append(get_psych_stage_prompt(next_stage_value))
             else:

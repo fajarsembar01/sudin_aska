@@ -1,6 +1,6 @@
 """Permission helpers for admin role management."""
 
-from typing import Dict, Any
+from typing import Any, Dict
 
 
 def is_superadmin(user: Dict[str, Any]) -> bool:
@@ -13,10 +13,10 @@ def is_superadmin(user: Dict[str, Any]) -> bool:
 def is_viewer_admin(user: Dict[str, Any]) -> bool:
     """
     Check if user is a viewer admin (read-only).
-    
+
     Args:
         user: Current user dict with role, admin_level fields
-        
+
     Returns:
         True if user is admin with viewer level
     """
@@ -26,10 +26,10 @@ def is_viewer_admin(user: Dict[str, Any]) -> bool:
 def can_access_aska(user: Dict[str, Any]) -> bool:
     """
     Check if user can access ASKA dashboard (not just Portal).
-    
+
     Args:
         user: Current user dict with access_scope field
-        
+
     Returns:
         True if user has full_access scope
     """
@@ -39,12 +39,12 @@ def can_access_aska(user: Dict[str, Any]) -> bool:
 def can_edit_data(user: Dict[str, Any]) -> bool:
     """
     Check if user can edit/delete data (CRUD operations).
-    
+
     Admins can edit data.
-    
+
     Args:
         user: Current user dict
-        
+
     Returns:
         True if user can perform edit/delete operations
     """
@@ -54,10 +54,10 @@ def can_edit_data(user: Dict[str, Any]) -> bool:
 def can_assign_staff(user: Dict[str, Any]) -> bool:
     """
     Check if user can assign staff to schools.
-    
+
     Args:
         user: Current user dict
-        
+
     Returns:
         True if user can manage staff assignments
     """
@@ -67,10 +67,10 @@ def can_assign_staff(user: Dict[str, Any]) -> bool:
 def can_manage_periods(user: Dict[str, Any]) -> bool:
     """
     Check if user can create/edit assessment periods.
-    
+
     Args:
         user: Current user dict
-        
+
     Returns:
         True if user can manage periods
     """
@@ -80,10 +80,10 @@ def can_manage_periods(user: Dict[str, Any]) -> bool:
 def can_reopen_assessment(user: Dict[str, Any]) -> bool:
     """
     Check if user can reopen submitted assessments.
-    
+
     Args:
         user: Current user dict
-        
+
     Returns:
         True if user can reopen assessments
     """
@@ -93,10 +93,10 @@ def can_reopen_assessment(user: Dict[str, Any]) -> bool:
 def can_delete_assessment(user: Dict[str, Any]) -> bool:
     """
     Check if user can delete assessments.
-    
+
     Args:
         user: Current user dict
-        
+
     Returns:
         True if user can delete assessments
     """
@@ -106,12 +106,12 @@ def can_delete_assessment(user: Dict[str, Any]) -> bool:
 def can_export_data(user: Dict[str, Any]) -> bool:
     """
     Check if user can export data.
-    
+
     Admins can export data.
-    
+
     Args:
         user: Current user dict
-        
+
     Returns:
         True if user can export data
     """
@@ -121,12 +121,12 @@ def can_export_data(user: Dict[str, Any]) -> bool:
 def get_permission_summary(user: Dict[str, Any]) -> Dict[str, bool]:
     """
     Get a summary of all permissions for a user.
-    
+
     Useful for debugging and UI conditional rendering.
-    
+
     Args:
         user: Current user dict
-        
+
     Returns:
         Dictionary of permission flags
     """

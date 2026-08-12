@@ -11,19 +11,22 @@ from typing import Optional
 from dotenv import load_dotenv
 from langchain.chains import create_history_aware_retriever
 from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables import RunnableLambda, RunnablePassthrough
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 # --- Embed Logger ---
 _embed_log = logging.getLogger("aska.embed")
 if not _embed_log.handlers:
     _handler = logging.StreamHandler()
     _handler.setFormatter(
-        logging.Formatter("[%(asctime)s] [EMBED] %(levelname)s %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+        logging.Formatter(
+            "[%(asctime)s] [EMBED] %(levelname)s %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+        )
     )
     _embed_log.addHandler(_handler)
     _embed_log.setLevel(logging.DEBUG)
@@ -40,6 +43,7 @@ def _embed_log_also_file(msg: str, level: str = "info") -> None:
         pass
     getattr(_embed_log, level, _embed_log.info)(msg)
 
+
 from knowledge_loader import load_kecerdasan
 
 try:  # opsional, hanya dipakai bila backend lokal diaktifkan
@@ -48,6 +52,7 @@ except Exception:  # pragma: no cover - optional dependency
     HuggingFaceEmbeddings = None  # type: ignore[misc,assignment]
 
 load_dotenv()
+
 
 def _is_truthy(value: Optional[str]) -> bool:
     return (value or "").strip().lower() in {"1", "true", "yes", "on"}
@@ -65,7 +70,9 @@ def _env_int(name: str, default: int, *, minimum: int = 1) -> int:
     return max(minimum, value)
 
 
-def _env_float(name: str, default: float, *, minimum: float = 0.0, maximum: float = 1.0) -> float:
+def _env_float(
+    name: str, default: float, *, minimum: float = 0.0, maximum: float = 1.0
+) -> float:
     try:
         value = float(os.getenv(name, str(default)))
     except (TypeError, ValueError):
@@ -87,12 +94,21 @@ _SCHEDULE_TERMS = ("jadwal", "kapan", "pendaftaran", "pengajuan akun", "daftar u
 _PMB_LEVELS = ("spaud", "sd", "smp", "sma", "smk", "slb", "skb")
 _SCHOOL_LEVEL_PATTERNS = {
     "sd": re.compile(r"\b(?:sdn|sd\s*n|sd\s+negeri|sd|sekolah dasar)\b", re.IGNORECASE),
-    "smp": re.compile(r"\b(?:smpn|smp\s+negeri|smp|sekolah menengah pertama)\b", re.IGNORECASE),
-    "sma": re.compile(r"\b(?:sman|sma\s+negeri|sma|sekolah menengah atas)\b", re.IGNORECASE),
-    "smk": re.compile(r"\b(?:smkn|smk\s+negeri|smk|sekolah menengah kejuruan)\b", re.IGNORECASE),
+    "smp": re.compile(
+        r"\b(?:smpn|smp\s+negeri|smp|sekolah menengah pertama)\b", re.IGNORECASE
+    ),
+    "sma": re.compile(
+        r"\b(?:sman|sma\s+negeri|sma|sekolah menengah atas)\b", re.IGNORECASE
+    ),
+    "smk": re.compile(
+        r"\b(?:smkn|smk\s+negeri|smk|sekolah menengah kejuruan)\b", re.IGNORECASE
+    ),
 }
 _LOCATION_QUERY_PATTERNS = (
-    re.compile(r"\b(?:rumah|tinggal|domisili|alamat)(?:\s+(?:saya|aku|kami|anak|cmb|calon murid)){0,3}\s+(?:ada\s+)?(?:di|dari)\s+([a-z]+(?:\s+[a-z]+){0,5})", re.IGNORECASE),
+    re.compile(
+        r"\b(?:rumah|tinggal|domisili|alamat)(?:\s+(?:saya|aku|kami|anak|cmb|calon murid)){0,3}\s+(?:ada\s+)?(?:di|dari)\s+([a-z]+(?:\s+[a-z]+){0,5})",
+        re.IGNORECASE,
+    ),
     re.compile(r"\b(?:kelurahan|kel\.?)\s+([a-z]+(?:\s+[a-z]+){0,5})", re.IGNORECASE),
 )
 _LOCATION_TRAILING_STOPWORDS = {
@@ -238,32 +254,43 @@ def _requires_official_context(inputs: dict) -> bool:
 
 
 def _is_spmb_schedule_query(question_norm: str) -> bool:
-    return _has_any(question_norm, _SPMB_TERMS) and _has_any(question_norm, _SCHEDULE_TERMS)
+    return _has_any(question_norm, _SPMB_TERMS) and _has_any(
+        question_norm, _SCHEDULE_TERMS
+    )
 
 
 def _requested_pmb_levels(question_norm: str) -> tuple[str, ...]:
-    return tuple(level for level in _PMB_LEVELS if re.search(rf"\b{level}\b", question_norm))
+    return tuple(
+        level for level in _PMB_LEVELS if re.search(rf"\b{level}\b", question_norm)
+    )
 
 
 def _requested_school_levels(question_norm: str) -> tuple[str, ...]:
-    return tuple(level for level, pattern in _SCHOOL_LEVEL_PATTERNS.items() if pattern.search(question_norm))
+    return tuple(
+        level
+        for level, pattern in _SCHOOL_LEVEL_PATTERNS.items()
+        if pattern.search(question_norm)
+    )
 
 
 def _doc_matches_school_level(content_norm: str, level: str) -> bool:
     if level == "sd":
-        return (
-            "wilayah pmb prioritas" in content_norm
-            and (
-                re.search(r"####\s*\d+\.\s+sdn\b", content_norm)
-                or re.search(r"####\s*\d+\.\s+sd\s*n\b", content_norm)
-            )
+        return "wilayah pmb prioritas" in content_norm and (
+            re.search(r"####\s*\d+\.\s+sdn\b", content_norm)
+            or re.search(r"####\s*\d+\.\s+sd\s*n\b", content_norm)
         )
     if level == "smp":
-        return "wilayah pmb prioritas" in content_norm and re.search(r"####\s*\d+\.\s+smp negeri\b", content_norm)
+        return "wilayah pmb prioritas" in content_norm and re.search(
+            r"####\s*\d+\.\s+smp negeri\b", content_norm
+        )
     if level == "sma":
-        return "wilayah pmb prioritas" in content_norm and re.search(r"####\s*\d+\.\s+sma negeri\b", content_norm)
+        return "wilayah pmb prioritas" in content_norm and re.search(
+            r"####\s*\d+\.\s+sma negeri\b", content_norm
+        )
     if level == "smk":
-        return "wilayah pmb prioritas" in content_norm and re.search(r"####\s*\d+\.\s+smk negeri\b", content_norm)
+        return "wilayah pmb prioritas" in content_norm and re.search(
+            r"####\s*\d+\.\s+smk negeri\b", content_norm
+        )
     return False
 
 
@@ -290,8 +317,10 @@ def _extract_residence_location(question_norm: str) -> str:
 
 def _location_priority_score(content_norm: str, location: str) -> int:
     best = 0
-    for match in re.finditer(rf"(?<![a-z0-9]){re.escape(location)}(?![a-z0-9])", content_norm):
-        nearby_before = content_norm[max(0, match.start() - 260):match.start()]
+    for match in re.finditer(
+        rf"(?<![a-z0-9]){re.escape(location)}(?![a-z0-9])", content_norm
+    ):
+        nearby_before = content_norm[max(0, match.start() - 260) : match.start()]
         if "prioritas pertama" in nearby_before:
             best = max(best, 360)
         elif "prioritas kedua" in nearby_before:
@@ -315,7 +344,7 @@ def _sd_named_variants(question_norm: str) -> tuple[str, ...]:
     if not match:
         return ()
     school_name = re.sub(r"\s+", " ", match.group(1)).strip()
-    school_no = (match.group(2).lstrip("0") or "0")
+    school_no = match.group(2).lstrip("0") or "0"
     school_no_padded = school_no.zfill(2)
     return (
         f"sdn {school_name} {school_no_padded}",
@@ -333,7 +362,9 @@ def _looks_like_spmb_schedule_content(content_norm: str) -> bool:
         or "ringkasan jadwal spmb/pmb" in content_norm
         or "ringkasan jadwal pendaftaran utama" in content_norm
     )
-    has_schedule_rows = all(marker in content_norm for marker in ("kegiatan:", "tanggal:", "waktu:"))
+    has_schedule_rows = all(
+        marker in content_norm for marker in ("kegiatan:", "tanggal:", "waktu:")
+    )
     has_account_schedule = (
         "pengajuan akun dan verifikasi kartu keluarga" in content_norm
         or "jadwal pengajuan akun" in content_norm
@@ -344,7 +375,13 @@ def _looks_like_spmb_schedule_content(content_norm: str) -> bool:
         content_norm,
     )
     has_current_year = "2026" in content_norm or "2026/2027" in content_norm
-    return bool(has_summary_schedule or ((has_schedule_rows or has_account_schedule) and (has_pmb_context or has_current_year)))
+    return bool(
+        has_summary_schedule
+        or (
+            (has_schedule_rows or has_account_schedule)
+            and (has_pmb_context or has_current_year)
+        )
+    )
 
 
 def _document_keyword_boost(question: str, page_content: str) -> int:
@@ -360,13 +397,18 @@ def _document_keyword_boost(question: str, page_content: str) -> int:
         priority_score = _location_priority_score(content_norm, residence_location)
         if priority_score:
             boost += priority_score
-            if requested_school_levels and any(_doc_matches_school_level(content_norm, level) for level in requested_school_levels):
+            if requested_school_levels and any(
+                _doc_matches_school_level(content_norm, level)
+                for level in requested_school_levels
+            ):
                 boost += 180
             elif requested_school_levels:
                 boost -= 80
 
     sd_named_variants = _sd_named_variants(question_norm)
-    if sd_named_variants and any(_contains_phrase(content_norm, variant) for variant in sd_named_variants):
+    if sd_named_variants and any(
+        _contains_phrase(content_norm, variant) for variant in sd_named_variants
+    ):
         boost += 160
         if "wilayah pmb prioritas" in content_norm:
             boost += 60
@@ -408,20 +450,28 @@ def _document_keyword_boost(question: str, page_content: str) -> int:
             )
         if any(_contains_phrase(content_norm, variant) for variant in school_variants):
             boost += 120
-        if school_kind[:2] in content_norm and re.search(rf"\b{re.escape(school_no)}\b", content_norm):
+        if school_kind[:2] in content_norm and re.search(
+            rf"\b{re.escape(school_no)}\b", content_norm
+        ):
             boost += 40
 
     if "prioritas" in question_norm:
         if "wilayah pmb prioritas" in content_norm:
             boost += 25
-        if all(keyword in content_norm for keyword in ("prioritas pertama", "prioritas kedua", "prioritas ketiga")):
+        if all(
+            keyword in content_norm
+            for keyword in ("prioritas pertama", "prioritas kedua", "prioritas ketiga")
+        ):
             boost += 35
 
     if _is_spmb_schedule_query(question_norm):
         requested_levels = _requested_pmb_levels(question_norm)
         if _has_any(content_norm, _ASKA_PROFILE_MARKERS):
             boost -= 120
-        if "ringkasan jadwal spmb" in content_norm or "ringkasan jadwal spmb/pmb" in content_norm:
+        if (
+            "ringkasan jadwal spmb" in content_norm
+            or "ringkasan jadwal spmb/pmb" in content_norm
+        ):
             boost += 260
         if _looks_like_spmb_schedule_content(content_norm):
             boost += 140
@@ -453,7 +503,8 @@ def _document_keyword_boost(question: str, page_content: str) -> int:
     query_tokens = {
         token
         for token in _QUERY_TOKEN_RE.findall(question_norm)
-        if len(token) > 2 and token not in {"untuk", "yang", "dan", "atau", "dari", "sampai", "tanya"}
+        if len(token) > 2
+        and token not in {"untuk", "yang", "dan", "atau", "dari", "sampai", "tanya"}
     }
     boost += sum(1 for token in query_tokens if token in content_norm)
     return boost
@@ -493,7 +544,9 @@ def _iter_vectorstore_documents(vectorstore: FAISS):
         yield from docstore_dict.values()
 
 
-def _location_documents_from_vectorstore(vectorstore: FAISS, question: str, *, limit: int = 8) -> list:
+def _location_documents_from_vectorstore(
+    vectorstore: FAISS, question: str, *, limit: int = 8
+) -> list:
     question_norm = _normalize_search_text(question)
     location = _extract_residence_location(question_norm)
     requested_levels = _requested_school_levels(question_norm)
@@ -517,7 +570,10 @@ def _location_documents_from_vectorstore(vectorstore: FAISS, question: str, *, l
             block_norm = _normalize_search_text(block)
             if not _contains_phrase(block_norm, location):
                 continue
-            if not any(_doc_matches_school_level(block_norm, level) for level in requested_levels):
+            if not any(
+                _doc_matches_school_level(block_norm, level)
+                for level in requested_levels
+            ):
                 continue
             if not _location_priority_score(block_norm, location):
                 continue
@@ -527,13 +583,21 @@ def _location_documents_from_vectorstore(vectorstore: FAISS, question: str, *, l
             seen_blocks.add(block_key)
             matches.append(Document(page_content=block))
 
-    matches.sort(key=lambda doc: -_document_keyword_boost(question, getattr(doc, "page_content", "")))
+    matches.sort(
+        key=lambda doc: -_document_keyword_boost(
+            question, getattr(doc, "page_content", "")
+        )
+    )
     return matches[:limit]
 
 
-def _keyword_documents_from_vectorstore(vectorstore: FAISS, question: str, *, limit: int = 5) -> list:
+def _keyword_documents_from_vectorstore(
+    vectorstore: FAISS, question: str, *, limit: int = 5
+) -> list:
     question_norm = _normalize_search_text(question)
-    location_docs = _location_documents_from_vectorstore(vectorstore, question, limit=limit)
+    location_docs = _location_documents_from_vectorstore(
+        vectorstore, question, limit=limit
+    )
     if location_docs:
         return location_docs
 
@@ -545,9 +609,16 @@ def _keyword_documents_from_vectorstore(vectorstore: FAISS, question: str, *, li
             for doc in _iter_vectorstore_documents(vectorstore):
                 content = getattr(doc, "page_content", "")
                 content_norm = _normalize_search_text(content)
-                if any(_contains_phrase(content_norm, variant) for variant in sd_named_variants):
+                if any(
+                    _contains_phrase(content_norm, variant)
+                    for variant in sd_named_variants
+                ):
                     matches.append(doc)
-            matches.sort(key=lambda doc: -_document_keyword_boost(question, getattr(doc, "page_content", "")))
+            matches.sort(
+                key=lambda doc: -_document_keyword_boost(
+                    question, getattr(doc, "page_content", "")
+                )
+            )
             return matches[:limit]
 
         if not _is_spmb_schedule_query(question_norm):
@@ -559,7 +630,11 @@ def _keyword_documents_from_vectorstore(vectorstore: FAISS, question: str, *, li
             content_norm = _normalize_search_text(content)
             if _looks_like_spmb_schedule_content(content_norm):
                 matches.append(doc)
-        matches.sort(key=lambda doc: -_document_keyword_boost(question, getattr(doc, "page_content", "")))
+        matches.sort(
+            key=lambda doc: -_document_keyword_boost(
+                question, getattr(doc, "page_content", "")
+            )
+        )
         return matches[:limit]
 
     school_kind = school_match.group(1)
@@ -597,7 +672,11 @@ def _keyword_documents_from_vectorstore(vectorstore: FAISS, question: str, *, li
         content_norm = _normalize_search_text(content)
         if any(_contains_phrase(content_norm, variant) for variant in variants):
             matches.append(doc)
-    matches.sort(key=lambda doc: -_document_keyword_boost(question, getattr(doc, "page_content", "")))
+    matches.sort(
+        key=lambda doc: -_document_keyword_boost(
+            question, getattr(doc, "page_content", "")
+        )
+    )
     return matches[:limit]
 
 
@@ -633,7 +712,9 @@ def _needs_history_for_keywords(question: str) -> bool:
     if _is_spmb_schedule_query(question_norm):
         return False
     tokens = _QUERY_TOKEN_RE.findall(question_norm)
-    if len(tokens) <= 4 and _has_any(question_norm, ("apa", "mana", "iya", "itu", "sekolah")):
+    if len(tokens) <= 4 and _has_any(
+        question_norm, ("apa", "mana", "iya", "itu", "sekolah")
+    ):
         return True
     return False
 
@@ -715,7 +796,9 @@ def _load_cached_vectorstore_fallback(
         )
         return vs
     except Exception as exc:
-        _embed_log_also_file(f"[FALLBACK] Gagal memuat vectorstore lama: {exc}", "error")
+        _embed_log_also_file(
+            f"[FALLBACK] Gagal memuat vectorstore lama: {exc}", "error"
+        )
         return None
 
 
@@ -740,26 +823,34 @@ def build_qa_chain():
     llm = ChatOpenAI(
         temperature=float(os.getenv("ASKA_QA_TEMPERATURE", "0")),
         model=os.getenv("ASKA_QA_MODEL", "llama-3.1-8b-instant"),
-        max_tokens=int(os.getenv("ASKA_QA_MAX_TOKENS", "1000")),  # ⬅️ batas jawaban agar tidak ngalor ngidul
+        max_tokens=int(
+            os.getenv("ASKA_QA_MAX_TOKENS", "1000")
+        ),  # ⬅️ batas jawaban agar tidak ngalor ngidul
         openai_api_key=api_key,
         openai_api_base=api_base,
     )
 
     backend_pref = os.getenv("ASKA_EMBEDDING_BACKEND", "auto").lower()
-    embedding_api_key = os.getenv("ASKA_EMBEDDING_API_KEY") or os.getenv("OPENAI_API_KEY")
+    embedding_api_key = os.getenv("ASKA_EMBEDDING_API_KEY") or os.getenv(
+        "OPENAI_API_KEY"
+    )
     embedding_signature: dict[str, str]
-    _embed_log_also_file(f"ASKA_EMBEDDING_BACKEND={backend_pref!r}  api_key_ada={bool(embedding_api_key)}")
+    _embed_log_also_file(
+        f"ASKA_EMBEDDING_BACKEND={backend_pref!r}  api_key_ada={bool(embedding_api_key)}"
+    )
 
     if backend_pref not in {"auto", "openai", "local"}:
-        _embed_log_also_file(f"Backend tidak dikenal '{backend_pref}', reset ke 'auto'", "warning")
+        _embed_log_also_file(
+            f"Backend tidak dikenal '{backend_pref}', reset ke 'auto'", "warning"
+        )
         backend_pref = "auto"
 
-    use_local = backend_pref == "local" or (backend_pref == "auto" and not embedding_api_key)
+    use_local = backend_pref == "local" or (
+        backend_pref == "auto" and not embedding_api_key
+    )
     if use_local:
         if HuggingFaceEmbeddings is None:
-            msg = (
-                "Embedding backend disetel ke 'local' tetapi dependensi langchain-huggingface/sentence-transformers belum terpasang."
-            )
+            msg = "Embedding backend disetel ke 'local' tetapi dependensi langchain-huggingface/sentence-transformers belum terpasang."
             _embed_log_also_file(msg, "error")
             raise RuntimeError(
                 "Embedding backend disetel ke 'local' tetapi dependensi langchain-huggingface/sentence-transformers belum terpasang.\n"
@@ -769,14 +860,18 @@ def build_qa_chain():
         local_model = os.getenv(
             "ASKA_EMBEDDING_MODEL_LOCAL", "sentence-transformers/all-MiniLM-L6-v2"
         )
-        _embed_log_also_file(f"Menggunakan embedding LOCAL: model={local_model!r} device={local_device!r}")
+        _embed_log_also_file(
+            f"Menggunakan embedding LOCAL: model={local_model!r} device={local_device!r}"
+        )
         try:
             embedding = HuggingFaceEmbeddings(
                 model_name=local_model,
                 model_kwargs={"device": local_device},
                 encode_kwargs={"normalize_embeddings": True},
             )
-            _embed_log_also_file(f"HuggingFaceEmbeddings berhasil dimuat: {local_model}")
+            _embed_log_also_file(
+                f"HuggingFaceEmbeddings berhasil dimuat: {local_model}"
+            )
         except Exception as exc:
             _embed_log_also_file(f"GAGAL memuat HuggingFaceEmbeddings: {exc}", "error")
             raise
@@ -795,7 +890,9 @@ def build_qa_chain():
             or os.getenv("OPENAI_EMBEDDING_API_BASE")
             or "https://api.openai.com/v1"
         )
-        openai_embedding_model = os.getenv("ASKA_EMBEDDING_MODEL", "text-embedding-3-large")
+        openai_embedding_model = os.getenv(
+            "ASKA_EMBEDDING_MODEL", "text-embedding-3-large"
+        )
         _embed_log_also_file(
             f"Menggunakan embedding OPENAI: model={openai_embedding_model!r} api_base={embedding_api_base!r}"
         )
@@ -821,12 +918,21 @@ def build_qa_chain():
 
     chunk_size = int(os.getenv("ASKA_CHUNK_SIZE", "2000"))
     chunk_overlap = int(os.getenv("ASKA_CHUNK_OVERLAP", "200"))
-    _embed_log_also_file(f"Chunking: chunk_size={chunk_size} chunk_overlap={chunk_overlap}")
+    _embed_log_also_file(
+        f"Chunking: chunk_size={chunk_size} chunk_overlap={chunk_overlap}"
+    )
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=chunk_size,
         chunk_overlap=chunk_overlap,
-        separators=["\n|", "\n## ", "\n\n", "\n", " ", ""],  # urutkan dari yang paling “kuat”
-        keep_separator=True
+        separators=[
+            "\n|",
+            "\n## ",
+            "\n\n",
+            "\n",
+            " ",
+            "",
+        ],  # urutkan dari yang paling “kuat”
+        keep_separator=True,
     )
 
     doc_hash = hashlib.sha256(content.encode("utf-8")).hexdigest()
@@ -851,7 +957,9 @@ def build_qa_chain():
         allow_reindex = _is_truthy(os.getenv("ASKA_ALLOW_REMOTE_EMBEDDING_REINDEX"))
         is_remote = embedding_signature.get("provider") == "openai"
 
-        allow_stale_fallback = not _is_falsey(os.getenv("ASKA_ALLOW_STALE_VECTORSTORE_FALLBACK", "true"))
+        allow_stale_fallback = not _is_falsey(
+            os.getenv("ASKA_ALLOW_STALE_VECTORSTORE_FALLBACK", "true")
+        )
         vectorstore = (
             _load_cached_vectorstore_fallback(
                 cache_dir=cache_dir,
@@ -885,10 +993,13 @@ def build_qa_chain():
             try:
                 vectorstore = FAISS.from_documents(docs, embedding)
                 dur_ms = int((time.perf_counter() - t_embed) * 1000)
-                _embed_log_also_file(f"Embedding selesai dalam {dur_ms} ms — menyimpan cache...")
+                _embed_log_also_file(
+                    f"Embedding selesai dalam {dur_ms} ms — menyimpan cache..."
+                )
             except Exception as exc:
                 _embed_log_also_file(
-                    f"GAGAL saat FAISS.from_documents: {type(exc).__name__}: {exc}", "error"
+                    f"GAGAL saat FAISS.from_documents: {type(exc).__name__}: {exc}",
+                    "error",
                 )
                 raise
             _save_vectorstore_cache(
@@ -923,7 +1034,10 @@ def build_qa_chain():
     # berdasarkan history (misal: "berapa besaran KJP untuk SMA?").
     contextualize_q_prompt = ChatPromptTemplate.from_messages(
         [
-            ("system", "Diberikan riwayat chat dan pertanyaan terbaru, formulasikan ulang pertanyaan itu menjadi pertanyaan mandiri tanpa mengubah isinya."),
+            (
+                "system",
+                "Diberikan riwayat chat dan pertanyaan terbaru, formulasikan ulang pertanyaan itu menjadi pertanyaan mandiri tanpa mengubah isinya.",
+            ),
             MessagesPlaceholder("chat_history"),
             ("human", "{input}"),
         ]
@@ -936,23 +1050,26 @@ def build_qa_chain():
     # Prompt ini akan menerima dokumen (context) dari retriever di atas.
     qa_prompt = ChatPromptTemplate.from_messages(
         [
-            ("system", "Nama aku ASKA. Jawab dengan Bahasa Indonesia santai ala Gen Z, ramah, sopan, dan ringkas. "
-                     "Untuk setiap jawaban normal, WAJIB pakai 1-3 emoji yang relevan dan boleh pakai slang ringan seperlunya seperti 'sip', 'sat-set', 'biar nggak zonk', atau 'gas'. "
-                     "Jangan terlalu kaku/formal; tetap jelas untuk informasi resmi sekolah. "
-                     "Untuk pesan terima kasih/pujian singkat, balas singkat ala Gen Z dengan 1-2 emoji, tanpa perlu mengambil konteks. "
-                     "Dalam konteks data ini, SPMB/PMB berarti Penerimaan Murid Baru, bukan mahasiswa baru. "
-                     "Jika user menanyakan jadwal SPMB/PMB secara umum tanpa jenjang atau jalur, jelaskan bahwa jadwal berbeda per jenjang/jalur, "
-                     "sebutkan ringkasan yang ada di konteks, lalu arahkan user menyebut jenjang/jalur jika ingin detail. "
-                     "Untuk jadwal, pertahankan nama jalur/tahap persis dari konteks; jangan mengubah 'afirmasi prioritas kedua' menjadi 'tahap kedua'. "
-                     "Jika user minta saran memilih sekolah berdasarkan domisili/kelurahan, sebutkan nama sekolah yang ada di konteks, "
-                     "kelompokkan berdasarkan Prioritas Pertama/Kedua/Ketiga jika tersedia, dan minta RT/RW jika diperlukan untuk memastikan pilihan paling tepat. "
-                     "Jika user bertanya lanjutan seperti 'SMP apa?' atau 'sekolah apa?', jawab nama sekolahnya dulu; jangan hanya meminta RT/RW. "
-                     "Jika RT/RW belum diketahui, jangan merinci RT/RW secara berlebihan; cukup sebutkan kandidat sekolah dan minta RT/RW untuk verifikasi. "
-                     "Selalu sebut nama **'ASKA'** secara alami. Jawab hanya berdasarkan konteks. "
-                     "Jika konteks kosong atau tidak memuat jawaban yang relevan, jawab persis: "
-                     "\"ASKA belum punya data resmi untuk pertanyaan itu.\" "
-                     "Jangan mengarang, jangan menebak, dan jangan mengaku sudah mengubah data sistem.\n\n"
-                     "Konteks:\n{context}"),
+            (
+                "system",
+                "Nama aku ASKA. Jawab dengan Bahasa Indonesia santai ala Gen Z, ramah, sopan, dan ringkas. "
+                "Untuk setiap jawaban normal, WAJIB pakai 1-3 emoji yang relevan dan boleh pakai slang ringan seperlunya seperti 'sip', 'sat-set', 'biar nggak zonk', atau 'gas'. "
+                "Jangan terlalu kaku/formal; tetap jelas untuk informasi resmi sekolah. "
+                "Untuk pesan terima kasih/pujian singkat, balas singkat ala Gen Z dengan 1-2 emoji, tanpa perlu mengambil konteks. "
+                "Dalam konteks data ini, SPMB/PMB berarti Penerimaan Murid Baru, bukan mahasiswa baru. "
+                "Jika user menanyakan jadwal SPMB/PMB secara umum tanpa jenjang atau jalur, jelaskan bahwa jadwal berbeda per jenjang/jalur, "
+                "sebutkan ringkasan yang ada di konteks, lalu arahkan user menyebut jenjang/jalur jika ingin detail. "
+                "Untuk jadwal, pertahankan nama jalur/tahap persis dari konteks; jangan mengubah 'afirmasi prioritas kedua' menjadi 'tahap kedua'. "
+                "Jika user minta saran memilih sekolah berdasarkan domisili/kelurahan, sebutkan nama sekolah yang ada di konteks, "
+                "kelompokkan berdasarkan Prioritas Pertama/Kedua/Ketiga jika tersedia, dan minta RT/RW jika diperlukan untuk memastikan pilihan paling tepat. "
+                "Jika user bertanya lanjutan seperti 'SMP apa?' atau 'sekolah apa?', jawab nama sekolahnya dulu; jangan hanya meminta RT/RW. "
+                "Jika RT/RW belum diketahui, jangan merinci RT/RW secara berlebihan; cukup sebutkan kandidat sekolah dan minta RT/RW untuk verifikasi. "
+                "Selalu sebut nama **'ASKA'** secara alami. Jawab hanya berdasarkan konteks. "
+                "Jika konteks kosong atau tidak memuat jawaban yang relevan, jawab persis: "
+                '"ASKA belum punya data resmi untuk pertanyaan itu." '
+                "Jangan mengarang, jangan menebak, dan jangan mengaku sudah mengubah data sistem.\n\n"
+                "Konteks:\n{context}",
+            ),
             MessagesPlaceholder("chat_history"),
             ("human", "{input}"),
         ]

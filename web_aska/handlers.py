@@ -2,21 +2,25 @@
 import asyncio
 import os
 import time
-from typing import Optional
 from threading import Lock
+from typing import Optional
 
 from dotenv import load_dotenv
-# from openai import OpenAI  # not used in web handler
 
 from ai_core import build_qa_chain
+from db import get_chat_history, save_chat
+from flows.corruption_flow import handle_corruption
+from flows.psych_flow import handle_psych
+from flows.safety_flow import handle_bullying
+from flows.smalltalk_flow import handle_smalltalk
+from flows.teacher_flow import handle_teacher
 from knowledge_loader import (
-    GENERAL_FILE,
-    SPECIFIC_FILE,
     DATA_SEKOLAH_FILE,
     DETAIL_SEKOLAH_FILE,
+    GENERAL_FILE,
+    SPECIFIC_FILE,
     STRUKTUR_ORG_FILE,
 )
-from db import save_chat, get_chat_history
 from rag_logger import save_rag_log
 from responses import (
     ASKA_NO_DATA_RESPONSE,
@@ -24,21 +28,19 @@ from responses import (
     get_rate_limit_response,
 )
 from utils import (
+    coerce_to_text,
+    ensure_aska_brand_style,
+    format_history_for_chain,
+    is_llm_quota_error,
     normalize_input,
     now_str,
-    format_history_for_chain,
-    coerce_to_text,
-    rewrite_schedule_query,
-    replace_bot_mentions,
     remove_trailing_signature,
-    ensure_aska_brand_style,
-    is_llm_quota_error,
+    replace_bot_mentions,
+    rewrite_schedule_query,
 )
-from flows.safety_flow import handle_bullying
-from flows.corruption_flow import handle_corruption
-from flows.psych_flow import handle_psych
-from flows.teacher_flow import handle_teacher
-from flows.smalltalk_flow import handle_smalltalk
+
+# from openai import OpenAI  # not used in web handler
+
 
 # --- Mock Telegram Objects ---
 class MockBot:
@@ -49,11 +51,13 @@ class MockBot:
         # No-op for web environment
         return None
 
+
 class MockUser:
     def __init__(self, user_id, first_name="WebUser", username=None):
         self.id = user_id
         self.first_name = first_name
         self.username = username if username else first_name
+
 
 class MockMessage:
     def __init__(self, user, text):
@@ -69,12 +73,14 @@ class MockMessage:
         self._last_reply = remove_trailing_signature(text)
         return None
 
+
 class MockUpdate:
     def __init__(self, message):
         self.message = message
         self.effective_user = message.from_user
-        self.effective_chat = self # Simplified for web
+        self.effective_chat = self  # Simplified for web
         self.id = id(self)
+
 
 class MockContext:
     def __init__(self, chat_data):
@@ -84,6 +90,7 @@ class MockContext:
     @property
     def chat_data(self):
         return self._chat_data
+
 
 # --- Session Management ---
 web_sessions = {}
@@ -166,6 +173,7 @@ def _ensure_qa_chain() -> None:
             print(f"[ASKA] ⚠️ Gagal build QA chain (embedding error): {exc}")
             qa_chain = None
 
+
 TEACHER_CONVERSATION_LIMIT = 10
 TEACHER_TIMEOUT_SECONDS = 600
 PSYCH_TIMEOUT_SECONDS = 600
@@ -183,6 +191,7 @@ PSYCH_TIMEOUT_MESSAGE = (
 
 # Psych severity rank handled inside shared flows (responses/psychologist)
 
+
 async def process_channel_request(
     user_id: int,
     user_input: str,
@@ -191,7 +200,7 @@ async def process_channel_request(
     topic: str = "web",
 ) -> tuple[str, Optional[int]]:
     """Main function to handle chat request from non-Telegram channels.
-    
+
     Returns:
         tuple: (response_text, chat_log_id) where chat_log_id is the ID of the bot's response
     """
@@ -208,7 +217,13 @@ async def process_channel_request(
     if qa_chain is None:
         print(f"[{now_str()}] ⚠️ QA chain tidak tersedia — menjawab gangguan teknis")
         fallback_msg = "Maaf ya, ASKA lagi gangguan teknis nih 😔🔧 Coba lagi nanti ya!"
-        save_chat(user_id, username, (user_input or "").strip(), role="user", topic=normalized_topic)
+        save_chat(
+            user_id,
+            username,
+            (user_input or "").strip(),
+            role="user",
+            topic=normalized_topic,
+        )
         save_chat(user_id, "ASKA", fallback_msg, role="aska", topic=normalized_topic)
         return fallback_msg, None
 
@@ -235,7 +250,9 @@ async def process_channel_request(
 
         storage_key = user_id
 
-        recent_messages_root = context.chat_data.setdefault("recent_messages_by_user", {})
+        recent_messages_root = context.chat_data.setdefault(
+            "recent_messages_by_user", {}
+        )
         recent_messages = recent_messages_root.setdefault(storage_key, {})
         now_ts = time.time()
         for msg_text, ts in list(recent_messages.items()):
@@ -248,7 +265,7 @@ async def process_channel_request(
             return (
                 "Uh-oh, chat kamu kembar sama yang barusan nih jadi aku skip dulu biar "
                 "nggak kebaca spam 😅 Cobain kirim versi beda atau tunggu bentar ya ✨",
-                None
+                None,
             )
         recent_messages[normalized_input] = now_ts
 
@@ -380,9 +397,13 @@ async def process_channel_request(
             # QA chain bisa jadi None kalau reload gagal di tengah jalan
             raise RuntimeError("QA chain tidak tersedia (embedding error)")
 
-        result = await asyncio.to_thread(qa_chain.invoke, {"input": normalized_input, "chat_history": chat_history})
+        result = await asyncio.to_thread(
+            qa_chain.invoke, {"input": normalized_input, "chat_history": chat_history}
+        )
 
-        retrieved_context = result.get("context", []) if isinstance(result, dict) else []
+        retrieved_context = (
+            result.get("context", []) if isinstance(result, dict) else []
+        )
         source_mode = result.get("source_mode") if isinstance(result, dict) else None
         print(f"[{now_str()}] ASKA PAKAI {len(retrieved_context)} KONTEN FINAL:")
         for i, doc in enumerate(retrieved_context, 1):
@@ -425,12 +446,16 @@ async def process_channel_request(
     except Exception as e:
         print(f"[{now_str()}] [ERROR] {e}")
         if is_llm_quota_error(e):
-            print(f"[{now_str()}] [WARN] Rate limit detected, returning notice to user.")
+            print(
+                f"[{now_str()}] [WARN] Rate limit detected, returning notice to user."
+            )
             return get_rate_limit_response(), None
         return ASKA_TECHNICAL_ISSUE_RESPONSE, None
 
 
-async def process_web_request(user_id: int, user_input: str, username: str = "WebUser") -> tuple[str, Optional[int]]:
+async def process_web_request(
+    user_id: int, user_input: str, username: str = "WebUser"
+) -> tuple[str, Optional[int]]:
     """Backward-compatible wrapper for existing web endpoint."""
     return await process_channel_request(
         user_id,
