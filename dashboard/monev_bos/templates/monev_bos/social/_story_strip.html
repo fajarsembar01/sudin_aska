@@ -1,5 +1,5 @@
 {% if current_user and current_user.role in ['admin', 'sekolah'] %}
-{% if active_story_groups or current_user.role == 'admin' %}
+{% if active_story_groups or current_user.role in ['admin', 'sekolah'] %}
 <section class="monev-story-shell no-print" aria-label="Foto Live sekolah">
     <div class="d-flex align-items-center gap-3 overflow-auto py-2 px-1 monev-story-strip">
         {% for group in active_story_groups %}
@@ -12,12 +12,12 @@
         </button>
         {% endfor %}
 
-        {% if current_user.role == 'admin' %}
+        {% if current_user.role in ['admin', 'sekolah'] %}
         <a href="{{ url_for('monev_bos.school_posts_explore') }}" class="monev-story-item text-decoration-none p-0">
             <span class="monev-story-ring monev-story-search-ring">
                 <span class="monev-story-avatar bg-body-tertiary text-body"><i class="bi bi-search fs-5"></i></span>
             </span>
-            <span class="monev-story-name">Cari Post</span>
+            <span class="monev-story-name">Lihat Semua</span>
         </a>
         {% endif %}
     </div>

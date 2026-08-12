@@ -15,7 +15,7 @@
     </div>
 
     <!-- Peringatan jika belum ada periode aktif -->
-    {% if not active_period %}
+    {% if not active_periods %}
     <div class="alert alert-warning d-flex align-items-center" role="alert">
         <i class="bi bi-exclamation-triangle-fill flex-shrink-0 me-2"></i>
         <div>
@@ -26,8 +26,12 @@
     <div class="alert alert-info d-flex align-items-center" role="alert">
         <i class="bi bi-info-circle-fill flex-shrink-0 me-2"></i>
         <div>
-            Periode Penugasan Aktif: <strong>Tahun {{ active_period.year }} TW {{ active_period.tw }}</strong> 
-            ({{ active_period.start_date }} s/d {{ active_period.end_date }})
+            <div class="mb-1">Periode Penugasan Aktif: <strong>{{ active_periods|length }} periode</strong></div>
+            <div class="d-flex flex-wrap gap-1">
+                {% for period in active_periods %}
+                <span class="badge bg-primary">Tahun {{ period.year }} · TW {{ period.tw }}</span>
+                {% endfor %}
+            </div>
         </div>
     </div>
     {% endif %}
@@ -42,10 +46,15 @@
                 <div class="card-body p-0">
                     <div class="list-group list-group-flush">
                         {% for team in teams %}
+                        {% set team_school_groups = team_assignment_groups.get(team.id, []) %}
                         <div class="list-group-item p-3">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <h6 class="mb-0 fw-bold">{{ team.name }}</h6>
                                 <div>
+                                    <button class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#viewTeamAssignmentsModal{{ team.id }}" title="Lihat dan kelola sekolah dalam tim">
+                                        <i class="bi bi-eye"></i>
+                                        {% if team_school_groups %}<span class="badge bg-info text-dark ms-1">{{ team_school_groups|length }}</span>{% endif %}
+                                    </button>
                                     <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editTeamModal{{ team.id }}">
                                         <i class="bi bi-pencil"></i>
                                     </button>
@@ -69,6 +78,115 @@
                             </div>
                             <div class="text-sm mt-1">
                                 <strong>Admin Input:</strong> {{ team.input_admin_name or 'Tidak ada' }}
+                            </div>
+                        </div>
+
+                        <!-- Modal Detail & Kelola Penugasan Tim -->
+                        <div class="modal fade" id="viewTeamAssignmentsModal{{ team.id }}" tabindex="-1">
+                            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <div>
+                                            <h5 class="modal-title">Penugasan {{ team.name }}</h5>
+                                            <small class="text-muted">Kelola sekolah pada seluruh periode aktif.</small>
+                                        </div>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="d-flex justify-content-between align-items-center mb-2 gap-2">
+                                            <h6 class="fw-bold mb-0">Sekolah yang Ditugaskan</h6>
+                                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle">{{ team_school_groups|length }} Sekolah</span>
+                                        </div>
+
+                                        {% if team_school_groups %}
+                                        <div class="table-responsive border rounded mb-4">
+                                            <table class="table table-sm align-middle mb-0 text-sm">
+                                                <thead class="table-light">
+                                                    <tr>
+                                                        <th class="ps-3">Sekolah</th>
+                                                        <th>Periode</th>
+                                                        <th class="text-end pe-3">Aksi</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for school_group in team_school_groups %}
+                                                    <tr>
+                                                        <td class="ps-3">
+                                                            <strong class="d-block">{{ school_group.school_name }}</strong>
+                                                            <small class="text-muted">{{ school_group.school_email or '-' }}</small>
+                                                        </td>
+                                                        <td>
+                                                            <div class="d-flex flex-wrap gap-1">
+                                                                {% for team_assignment in school_group.assignments %}
+                                                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle">{{ team_assignment.period_year }} · TW {{ team_assignment.period_tw }}</span>
+                                                                {% endfor %}
+                                                            </div>
+                                                        </td>
+                                                        <td class="text-end pe-3">
+                                                            <div class="d-flex flex-wrap justify-content-end gap-1">
+                                                            {% for team_assignment in school_group.assignments %}
+                                                            <form action="{{ url_for('monev_bos.admin_teams') }}" method="POST" class="d-inline" onsubmit="return confirm('Hapus sekolah dari tim untuk periode ini?');">
+                                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                                <input type="hidden" name="action" value="unassign">
+                                                                <input type="hidden" name="assignment_id" value="{{ team_assignment.id }}">
+                                                                <button type="submit" class="btn btn-sm btn-outline-danger py-1 px-2 text-nowrap" title="Hapus penugasan {{ team_assignment.period_year }} TW {{ team_assignment.period_tw }}">
+                                                                    <i class="bi bi-trash me-1"></i>TW {{ team_assignment.period_tw }}
+                                                                </button>
+                                                            </form>
+                                                            {% endfor %}
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        {% else %}
+                                        <div class="alert alert-light border text-muted mb-4">
+                                            <i class="bi bi-building-x me-1"></i>Belum ada sekolah yang ditugaskan ke tim ini pada periode aktif.
+                                        </div>
+                                        {% endif %}
+
+                                        <h6 class="fw-bold mb-2"><i class="bi bi-plus-circle me-1 text-primary"></i>Tambah Sekolah ke Tim</h6>
+                                        {% if active_periods and sekolah_users %}
+                                        <form action="{{ url_for('monev_bos.admin_teams') }}" method="POST" class="border rounded p-3 bg-body-tertiary">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <input type="hidden" name="action" value="assign">
+                                            <input type="hidden" name="team_id" value="{{ team.id }}">
+                                            <div class="row g-3">
+                                                <div class="col-md-5">
+                                                    <label class="form-label text-sm fw-bold">Periode Aktif</label>
+                                                    <select class="form-select ts-select" name="period_id" required data-placeholder="Pilih periode...">
+                                                        <option value="">-- Pilih Periode --</option>
+                                                        <option value="all">Semua Periode Aktif ({{ active_periods|length }})</option>
+                                                        {% for period in active_periods %}
+                                                        <option value="{{ period.id }}">{{ period.year }} · TW {{ period.tw }}</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-7">
+                                                    <label class="form-label text-sm fw-bold">Sekolah</label>
+                                                    <select class="form-select ts-select" name="school_id" required data-placeholder="Ketik nama sekolah...">
+                                                        <option value="">-- Pilih Sekolah --</option>
+                                                        {% for sekolah in sekolah_users %}
+                                                        <option value="{{ sekolah.id }}">{{ sekolah.full_name }} ({{ sekolah.email }})</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="d-flex justify-content-between align-items-center gap-2 mt-3 flex-wrap">
+                                                <small class="text-muted">Jika sekolah sudah berada di tim lain pada periode tersebut, penugasannya akan dipindahkan ke tim ini.</small>
+                                                <button type="submit" class="btn btn-primary btn-sm px-3"><i class="bi bi-plus-lg me-1"></i>Tambah Sekolah</button>
+                                            </div>
+                                        </form>
+                                        {% else %}
+                                        <div class="alert alert-warning mb-0">Periode aktif atau data sekolah belum tersedia.</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -115,12 +233,19 @@
         <div class="col-lg-6 mb-4">
             <div class="card shadow-sm h-100">
                 <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-                    <h6 class="m-0 font-weight-bold text-primary">Penugasan Sekolah (Periode Aktif)</h6>
-                    {% if active_period and teams and sekolah_users %}
-                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#assignSchoolModal">
-                        <i class="bi bi-link"></i> Assign Sekolah
-                    </button>
-                    {% endif %}
+                    <h6 class="m-0 font-weight-bold text-primary">Penugasan Sekolah (Semua Periode Aktif)</h6>
+                    <div class="d-flex gap-1 flex-wrap justify-content-end">
+                        {% if active_periods|length > 1 and assignments %}
+                        <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#copyAllAssignmentsModal">
+                            <i class="bi bi-copy me-1"></i>Salin Semua Penugasan
+                        </button>
+                        {% endif %}
+                        {% if active_periods and teams and sekolah_users %}
+                        <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#assignSchoolModal">
+                            <i class="bi bi-link"></i> Assign Sekolah
+                        </button>
+                        {% endif %}
+                    </div>
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
@@ -128,32 +253,55 @@
                             <thead class="table-light">
                                 <tr>
                                     <th class="ps-3">Sekolah</th>
+                                    <th>Periode</th>
                                     <th>Tim Ditugaskan</th>
                                     <th>Admin Input</th>
                                     <th class="text-end pe-3">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for assign in assignments %}
+                                {% for school_group in assignment_groups %}
                                 <tr>
-                                    <td class="ps-3 fw-bold">{{ assign.school_name }}</td>
-                                    <td><span class="badge bg-info">{{ assign.team_name }}</span></td>
-                                    <td>{{ assign.input_admin_name or 'Tidak ada' }}</td>
+                                    <td class="ps-3">
+                                        <strong class="d-block">{{ school_group.school_name }}</strong>
+                                        <small class="text-muted">{{ school_group.school_email or '-' }}</small>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex flex-wrap gap-1">
+                                            {% for assign in school_group.assignments %}
+                                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle" title="{{ assign.team_name }}">
+                                                {{ assign.period_year }} · TW {{ assign.period_tw }}{% if school_group.teams|length > 1 %} · {{ assign.team_name }}{% endif %}
+                                            </span>
+                                            {% endfor %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex flex-wrap gap-1">
+                                            {% for team in school_group.teams %}
+                                            <span class="badge bg-info">{{ team.name }}</span>
+                                            {% endfor %}
+                                        </div>
+                                    </td>
+                                    <td>{{ school_group.admin_names | join(', ') }}</td>
                                     <td class="text-end pe-3">
-                                        <form action="{{ url_for('monev_bos.admin_teams') }}" method="POST" class="d-inline" onsubmit="return confirm('Lepas tugas sekolah ini dari tim?');">
+                                        <div class="d-flex flex-wrap justify-content-end gap-1">
+                                        {% for assign in school_group.assignments %}
+                                        <form action="{{ url_for('monev_bos.admin_teams') }}" method="POST" class="d-inline" onsubmit="return confirm('Lepas tugas sekolah ini dari tim pada {{ assign.period_year }} TW {{ assign.period_tw }}?');">
                                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                             <input type="hidden" name="action" value="unassign">
                                             <input type="hidden" name="assignment_id" value="{{ assign.id }}">
-                                            <button type="submit" class="btn btn-sm btn-outline-danger border-0">
-                                                <i class="bi bi-x-circle"></i>
+                                            <button type="submit" class="btn btn-sm btn-outline-danger py-1 px-2 text-nowrap" title="Hapus penugasan {{ assign.period_year }} TW {{ assign.period_tw }}">
+                                                <i class="bi bi-x-circle me-1"></i>TW {{ assign.period_tw }}
                                             </button>
                                         </form>
+                                        {% endfor %}
+                                        </div>
                                     </td>
                                 </tr>
                                 {% else %}
                                 <tr>
-                                    <td colspan="4" class="text-center py-4 text-muted">
-                                        {% if not active_period %}
+                                    <td colspan="5" class="text-center py-4 text-muted">
+                                        {% if not active_periods %}
                                         Aktifkan periode terlebih dahulu.
                                         {% else %}
                                         Belum ada sekolah yang ditugaskan ke tim manapun.
@@ -206,18 +354,27 @@
 </div>
 
 <!-- Modal Assign School -->
-{% if active_period %}
+{% if active_periods %}
 <div class="modal fade" id="assignSchoolModal" tabindex="-1">
     <div class="modal-dialog">
         <form action="{{ url_for('monev_bos.admin_teams') }}" method="POST" class="modal-content">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="action" value="assign">
-            <input type="hidden" name="period_id" value="{{ active_period.id }}">
             <div class="modal-header">
                 <h5 class="modal-title">Assign Sekolah ke Tim</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Pilih Periode Aktif</label>
+                    <select class="form-select ts-select" name="period_id" required data-placeholder="Pilih tahun dan triwulan...">
+                        <option value="">-- Pilih Periode --</option>
+                        <option value="all">Semua Periode Aktif ({{ active_periods|length }})</option>
+                        {% for period in active_periods %}
+                        <option value="{{ period.id }}">Tahun {{ period.year }} · TW {{ period.tw }} ({{ period.start_date }} s/d {{ period.end_date }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
                 <div class="mb-3">
                     <label class="form-label">Pilih Sekolah</label>
                     <select class="form-select ts-select" name="school_id" required data-placeholder="Ketik nama sekolah...">
@@ -240,6 +397,50 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
                 <button type="submit" class="btn btn-primary">Tugaskan</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<!-- Modal Salin Semua Penugasan antar Periode Aktif -->
+{% if active_periods|length > 1 and assignments %}
+<div class="modal fade" id="copyAllAssignmentsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form action="{{ url_for('monev_bos.admin_teams') }}" method="POST" class="modal-content">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="action" value="copy_all_assignments">
+            <div class="modal-header">
+                <h5 class="modal-title">Salin Semua Penugasan</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info py-2 text-sm">
+                    Semua sekolah beserta timnya akan disalin. Penugasan pada periode asal tetap dipertahankan.
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Periode Aktif Asal</label>
+                    <select class="form-select ts-select" name="source_period_id" required data-placeholder="Pilih periode asal...">
+                        <option value="">-- Pilih Periode Asal --</option>
+                        {% for period in active_periods %}
+                        <option value="{{ period.id }}">Tahun {{ period.year }} · TW {{ period.tw }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label">Pilih Periode Aktif Tujuan</label>
+                    <select class="form-select ts-select" name="target_period_id" required data-placeholder="Pilih periode tujuan...">
+                        <option value="">-- Pilih Periode Tujuan --</option>
+                        {% for period in active_periods %}
+                        <option value="{{ period.id }}">Tahun {{ period.year }} · TW {{ period.tw }} ({{ period.start_date }} s/d {{ period.end_date }})</option>
+                        {% endfor %}
+                    </select>
+                    <div class="form-text">Sekolah yang sudah memiliki penugasan di periode tujuan akan dilewati dan tidak ditimpa.</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="submit" class="btn btn-primary" onclick="return confirm('Salin seluruh penugasan dari periode asal ke periode tujuan?');"><i class="bi bi-copy me-1"></i>Salin Semua</button>
             </div>
         </form>
     </div>

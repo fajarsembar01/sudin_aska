@@ -1,6 +1,7 @@
 {% extends "monev_bos/base_monev_bos.html" %}
 
 {% block monev_bos_content %}
+{% set fund_source_label = 'BOSP' if fund_source == 'BOS' else fund_source %}
 <div class="container-fluid py-3 py-md-4">
     <!-- Header Title Bar & Back Link -->
     <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
@@ -19,11 +20,11 @@
             <a href="{{ url_for('monev_bos.sekolah_activities_export', period_id=active_period.id, fund_source=fund_source) }}" class="btn btn-sm btn-success rounded-pill px-3 shadow-xs">
                 <i class="bi bi-file-earmark-excel me-1.5"></i> Download Laporan Excel
             </a>
-            <div class="dropdown">
+            <div class="dropdown no-print activities-print-actions">
                 <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3 shadow-xs dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
                     <i class="bi bi-printer me-1.5"></i> Cetak / PDF
                 </button>
-                <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                <ul class="dropdown-menu dropdown-menu-end shadow-sm no-print">
                     <li>
                         <button type="button" class="dropdown-item" onclick="openActivitiesPrintDialog(false)">
                             <i class="bi bi-printer me-2"></i>Cetak ke Printer
@@ -40,6 +41,11 @@
                 <i class="bi bi-arrow-left me-1.5"></i> Pilih Sumber Dana
             </a>
         </div>
+    </div>
+
+    <div class="print-only print-school-identity">
+        <div><strong>Nama Sekolah:</strong> {{ school_display_name }}</div>
+        <div>Dana {{ fund_source_label }} &middot; Triwulan {{ active_period.tw }} Tahun {{ active_period.year }}</div>
     </div>
 
     <!-- Segmented Control Tab Switcher (BOS / BOP) -->
@@ -74,10 +80,10 @@
     <div class="alert alert-info border-2 shadow-xs d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
         <div>
             <h6 class="fw-bold mb-1 text-sm"><i class="bi bi-check-circle-fill me-1"></i> Perbaikan Kegiatan Berhasil Disimpan!</h6>
-            <span class="text-xs">Silakan konfirmasi ke Staff Auditor <strong>{{ wa_revision_prompt.staff_name }}</strong> via WhatsApp untuk melakukan validasi ulang kegiatan <strong>{{ wa_revision_prompt.activity_code }}</strong>.</span>
+            <span class="text-xs">Silakan konfirmasi ke Staff Verifikator <strong>{{ wa_revision_prompt.staff_name }}</strong> via WhatsApp untuk melakukan verifikasi ulang kegiatan <strong>{{ wa_revision_prompt.activity_code }}</strong>.</span>
         </div>
         <a href="{{ wa_revision_prompt.wa_url }}" target="_blank" class="btn btn-sm btn-success fw-bold text-nowrap px-3 py-1.5 shadow-xs">
-            <i class="bi bi-whatsapp me-1"></i> WhatsApp Staff Audit
+            <i class="bi bi-whatsapp me-1"></i> WhatsApp Staff Verifikator
         </a>
     </div>
     {% endif %}
@@ -93,7 +99,7 @@
                     </div>
                     <div class="flex-grow-1">
                         <div class="d-flex justify-content-between align-items-center mb-0.5">
-                            <span class="text-uppercase text-body-secondary fw-bold text-xs">Total Penerimaan {{ fund_source }}</span>
+                            <span class="text-uppercase text-body-secondary fw-bold text-xs">Total Penerimaan {{ fund_source_label }}</span>
                             {% if report.status in ['draft', 'needs_revision'] %}
                             <button type="button" class="btn btn-xs btn-outline-success py-0 px-1.5 ms-1" data-bs-toggle="modal" data-bs-target="#editReceiptModal" title="Edit Nominal Penerimaan">
                                 <i class="bi bi-pencil-fill text-xs"></i> Edit
@@ -205,35 +211,44 @@
                 <table class="table table-hover align-middle mb-0" style="font-size: 0.85rem;">
                     <thead class="table-light">
                         <tr>
-                            <th class="ps-3 ps-md-4" width="30%">Nama Kegiatan & Vendor</th>
-                            <th width="15%">No. BKU</th>
-                            <th width="15%" class="text-end">Realisasi</th>
-                            <th width="15%">Dokumen</th>
-                            <th width="13%">Status Audit</th>
-                            <th class="text-end pe-3 pe-md-4" width="12%">Aksi</th>
+                            <th class="ps-3 ps-md-4 print-col-activity" width="30%">Nama Kegiatan & Vendor</th>
+                            <th class="print-col-account" width="15%">
+                                <span class="no-print">No. BKU</span>
+                                <span class="print-only">Kode Rekening</span>
+                            </th>
+                            <th width="15%" class="text-end print-col-realization">Realisasi</th>
+                            <th class="print-col-documents" width="15%">
+                                <span class="no-print">Dokumen</span>
+                                <span class="print-only">Dokumen Tidak Ada</span>
+                            </th>
+                            <th class="print-col-notes" width="13%">
+                                <span class="no-print">Status Verifikasi</span>
+                                <span class="print-only">Catatan</span>
+                            </th>
+                            <th class="text-end pe-3 pe-md-4 no-print" width="12%">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for act in activities %}
                         <tr class="sekolah-act-row">
-                            <td class="ps-3 ps-md-4">
+                            <td class="ps-3 ps-md-4 print-col-activity">
                                 <strong class="text-body d-block">{{ act.activity_name }}</strong>
                                 <small class="text-body-secondary d-block mt-0.5">
                                     <i class="bi bi-shop me-1"></i>{{ act.vendor_name or '-' }}
                                     {% if act.item_name %}&bull; {{ act.item_name }}{% endif %}
                                 </small>
                             </td>
-                            <td>
+                            <td class="print-col-account">
                                 <span class="badge bg-body-tertiary text-body border font-monospace" style="font-size: 0.72rem;">{{ act.bku_number or '-' }}</span>
                                 {% if act.account_code %}
-                                <small class="d-block text-body-secondary font-monospace text-xs mt-0.5" title="Kode Rekening">Rek: {{ act.account_code }}</small>
+                                <small class="d-block text-body-secondary font-monospace text-xs mt-0.5" title="Kode Rekening"><span class="no-print">Rek: </span>{{ act.account_code }}</small>
                                 {% endif %}
                             </td>
-                            <td class="text-end fw-bold text-success text-nowrap">
+                            <td class="text-end fw-bold text-success text-nowrap print-col-realization">
                                 Rp {{ "{:,.0f}".format(act.realized_amount).replace(',', '.') }}
                             </td>
-                            <td>
-                                <div class="d-flex flex-wrap gap-1">
+                            <td class="print-col-documents">
+                                <div class="d-flex flex-wrap gap-1 no-print">
                                     {% if act.docs.get('invoice') %}
                                     <a href="/{{ act.docs['invoice'].file_path }}" class="badge bg-secondary-subtle text-secondary-emphasis border text-decoration-none activity-doc-preview-link" data-doc-title="Faktur & Kwitansi - {{ act.activity_name }}" title="Lihat Faktur & Kwitansi">
                                         <i class="bi bi-receipt me-1"></i>Faktur & Kwitansi
@@ -256,8 +271,19 @@
                                     <span class="badge bg-body-tertiary text-body-secondary border" style="font-size: 0.68rem;">Belum Ada Doc</span>
                                     {% endif %}
                                 </div>
+                                <div class="print-only print-missing-documents">
+                                    {% set missing_documents = namespace(count=0) %}
+                                    {% for checklist_result in act.checklist_results %}
+                                        {% if checklist_result.status == 'no' %}
+                                            {% set missing_documents.count = missing_documents.count + 1 %}
+                                            <div>{{ checklist_result.checklist_name }}</div>
+                                        {% endif %}
+                                    {% endfor %}
+                                    {% if missing_documents.count == 0 %}-{% endif %}
+                                </div>
                             </td>
-                            <td>
+                            <td class="print-col-notes">
+                                <div class="no-print">
                                 {% if act.status == 'pending' %}
                                 <span class="badge bg-warning text-dark" style="font-size: 0.7rem;"><i class="bi bi-hourglass-split me-1"></i>Pending</span>
                                 {% elif act.status == 'valid' %}
@@ -265,7 +291,7 @@
                                 {% elif act.status == 'invalid' %}
                                 <span class="badge bg-danger" style="font-size: 0.7rem;"><i class="bi bi-x-circle me-1"></i>Revisi</span>
                                 {% elif act.status == 'in_review' %}
-                                <span class="badge bg-info text-dark" style="font-size: 0.7rem;"><i class="bi bi-gear-wide-connected me-1 spin-icon"></i>Sedang Diaudit</span>
+                                <span class="badge bg-info text-dark" style="font-size: 0.7rem;"><i class="bi bi-gear-wide-connected me-1 spin-icon"></i>Sedang Diverifikasi</span>
                                 {% endif %}
 
                                 {% if act.pending_edit_request %}
@@ -274,19 +300,33 @@
 
                                 {% if act.audit_notes %}
                                     {% if act.status == 'invalid' %}
-                                    <small class="text-danger d-block mt-1 fw-semibold" style="font-size: 0.7rem;"><i class="bi bi-exclamation-circle me-1"></i>{{ act.audit_notes | truncate(40) }}</small>
+                                    <small class="text-danger d-block mt-1 fw-semibold text-break" style="font-size: 0.7rem;"><i class="bi bi-exclamation-circle me-1"></i><strong>Catatan Keseluruhan:</strong> {{ act.audit_notes }}</small>
                                     {% else %}
-                                    <small class="text-body-secondary d-block mt-1" style="font-size: 0.7rem;"><i class="bi bi-info-circle me-1"></i>{{ act.audit_notes | truncate(40) }}</small>
+                                    <small class="text-body-secondary d-block mt-1 text-break" style="font-size: 0.7rem;"><i class="bi bi-info-circle me-1"></i><strong>Catatan Keseluruhan:</strong> {{ act.audit_notes }}</small>
                                     {% endif %}
                                 {% endif %}
+
+                                {% for checklist_note in act.checklist_notes %}
+                                <small class="text-body-secondary d-block mt-1 text-break" style="font-size: 0.7rem;">
+                                    <i class="bi bi-card-checklist me-1"></i><strong>{{ checklist_note.checklist_name }}:</strong> {{ checklist_note.notes }}
+                                </small>
+                                {% endfor %}
 
                                 {% if act.history %}
                                 <button class="btn btn-link btn-sm p-0 text-body-secondary d-block mt-0.5 text-decoration-none" style="font-size: 0.68rem;" data-bs-toggle="modal" data-bs-target="#historyModal{{ act.id }}">
                                     <i class="bi bi-clock-history me-1"></i>{{ act.history|length }} riwayat
                                 </button>
                                 {% endif %}
+                                </div>
+                                <div class="print-only print-notes">
+                                    {% if act.audit_notes %}<div><strong>Keseluruhan:</strong> {{ act.audit_notes }}</div>{% endif %}
+                                    {% for checklist_note in act.checklist_notes %}
+                                    <div><strong>{{ checklist_note.checklist_name }}:</strong> {{ checklist_note.notes }}</div>
+                                    {% endfor %}
+                                    {% if not act.audit_notes and not act.checklist_notes %}-{% endif %}
+                                </div>
                             </td>
-                            <td class="text-end pe-3 pe-md-4 text-nowrap">
+                            <td class="text-end pe-3 pe-md-4 text-nowrap no-print">
                                 <div class="d-inline-flex gap-1 align-items-center">
                                     <button type="button" class="btn btn-xs btn-outline-info py-1 px-2" data-bs-toggle="modal" data-bs-target="#viewActivityModal{{ act.id }}" title="Detail Kegiatan">
                                         <i class="bi bi-eye"></i>
@@ -322,7 +362,7 @@
 
                                         {% else %}
                                             {% if act.staff_wa_url %}
-                                            <a href="{{ act.staff_wa_url }}" target="_blank" class="btn btn-xs btn-success py-1 px-2" title="WhatsApp Staff Audit">
+                                            <a href="{{ act.staff_wa_url }}" target="_blank" class="btn btn-xs btn-success py-1 px-2" title="WhatsApp Staff Verifikator">
                                                 <i class="bi bi-whatsapp"></i>
                                             </a>
                                             {% endif %}
@@ -379,7 +419,7 @@
                                 {% elif act.status == 'invalid' %}
                                 <span class="badge bg-danger text-xs"><i class="bi bi-x-circle me-1"></i>Revisi</span>
                                 {% elif act.status == 'in_review' %}
-                                <span class="badge bg-info text-dark text-xs"><i class="bi bi-gear-wide-connected me-1 spin-icon"></i>Sedang Diaudit</span>
+                                <span class="badge bg-info text-dark text-xs"><i class="bi bi-gear-wide-connected me-1 spin-icon"></i>Sedang Diverifikasi</span>
                                 {% endif %}
                             </div>
                         </div>
@@ -419,7 +459,7 @@
                             {% endif %}
                         </div>
 
-                        <!-- Baris 5: Catatan Audit / Reopen Alert -->
+                        <!-- Baris 5: Catatan Verifikasi / Reopen Alert -->
                         {% if act.pending_edit_request %}
                         <div class="alert alert-warning py-1 px-2 mb-2 text-xs">
                             <i class="bi bi-clock-history me-1"></i> Menunggu Reopen Admin
@@ -428,9 +468,15 @@
 
                         {% if act.audit_notes %}
                         <div class="alert {% if act.status == 'invalid' %}alert-danger{% else %}alert-secondary{% endif %} py-1 px-2 mb-2 text-xs">
-                            <i class="bi bi-info-circle me-1"></i> {{ act.audit_notes }}
+                            <i class="bi bi-info-circle me-1"></i> <strong>Catatan Keseluruhan:</strong> {{ act.audit_notes }}
                         </div>
                         {% endif %}
+
+                        {% for checklist_note in act.checklist_notes %}
+                        <div class="alert alert-light border py-1 px-2 mb-2 text-xs text-break">
+                            <i class="bi bi-card-checklist me-1"></i><strong>{{ checklist_note.checklist_name }}:</strong> {{ checklist_note.notes }}
+                        </div>
+                        {% endfor %}
 
                         <!-- Baris 6: Tombol Aksi Toolbar Mobile -->
                         <div class="d-flex justify-content-end align-items-center gap-1.5 pt-1.5 border-top">
@@ -497,22 +543,22 @@
                 </div>
             </div>
         </div>
-        <!-- Tanda Tangan & Tim Verifikator/Auditor Monev -->
+        <!-- Tanda Tangan & Tim Verifikator Monev -->
         <div class="card border-0 shadow-sm mt-4 signature-section">
             <div class="card-body p-4">
                 <div class="row align-items-start g-4">
                     <!-- TTD Kepala Sekolah -->
                     <div class="col-md-6 text-center signature-column signature-headmaster">
                         <p class="mb-1 text-body-secondary small">Mengetahui / Menyetujui,</p>
-                        <p class="fw-bold mb-4 text-body">Kepala {{ report.school_name or 'Sekolah' }}</p>
+                        <p class="fw-bold mb-4 text-body">Kepala {{ school_display_name }}</p>
                         <div style="height: 65px;"></div>
                         <p class="fw-bold mb-0 text-body border-bottom d-inline-block px-4 pb-1">{{ headmaster_info.name if headmaster_info else '-' }}</p>
                         <p class="text-body-secondary small mb-0 mt-1">NIP. {{ headmaster_info.nip if headmaster_info else '-' }}</p>
                     </div>
 
-                    <!-- Tim Auditor Monev -->
+                    <!-- Tim Verifikator Monev -->
                     <div class="col-md-6 text-center signature-column signature-auditors">
-                        <p class="mb-3 text-body-secondary small">Tim Verifikator / Auditor Monev:</p>
+                        <p class="mb-3 text-body-secondary small">Tim Verifikator Monev:</p>
                         {% if auditor_team and auditor_team.members %}
                             <div class="d-inline-block text-start">
                                 {% for m in auditor_team.members %}
@@ -574,6 +620,46 @@
                         <p class="fw-bold text-body">{{ act.item_name or '-' }}</p>
                     </div>
                 </div>
+
+                <div class="mb-3">
+                    <p class="mb-1 text-body-secondary text-xs">Catatan Keseluruhan</p>
+                    {% if act.audit_notes %}
+                    <div class="alert {% if act.status == 'invalid' %}alert-danger{% else %}alert-secondary{% endif %} mb-0 py-2 text-break">
+                        <i class="bi bi-info-circle me-1"></i>{{ act.audit_notes }}
+                    </div>
+                    {% else %}
+                    <p class="text-body-secondary mb-0">Belum ada catatan keseluruhan.</p>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <p class="mb-2 text-body-secondary text-xs">Kelengkapan yang Diverifikasi Staff</p>
+                    {% if act.checklist_results %}
+                    <div class="list-group">
+                        {% for checklist_result in act.checklist_results %}
+                        <div class="list-group-item px-3 py-2">
+                            <div class="d-flex justify-content-between align-items-start gap-2">
+                                <strong class="text-body text-sm">{{ checklist_result.checklist_name }}</strong>
+                                {% if checklist_result.status == 'yes' %}
+                                <span class="badge bg-success flex-shrink-0"><i class="bi bi-check-circle me-1"></i>Ada</span>
+                                {% elif checklist_result.status == 'no' %}
+                                <span class="badge bg-danger flex-shrink-0"><i class="bi bi-x-circle me-1"></i>Tidak Ada</span>
+                                {% else %}
+                                <span class="badge bg-secondary flex-shrink-0">Tidak Berlaku</span>
+                                {% endif %}
+                            </div>
+                            {% if checklist_result.notes %}
+                            <div class="text-body-secondary text-xs text-break mt-1"><strong>Catatan:</strong> {{ checklist_result.notes }}</div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="alert alert-light border mb-0 py-2 text-body-secondary">
+                        <i class="bi bi-info-circle me-1"></i>Belum ada kelengkapan yang diverifikasi staff.
+                    </div>
+                    {% endif %}
+                </div>
                 
                 {% if act.field_photos %}
                 <div class="mb-3">
@@ -632,7 +718,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <p class="text-sm">Kegiatan ini telah disetujui oleh tim auditor (status <strong>Sesuai</strong>). Kegiatan yang sudah valid tidak dapat dihapus secara langsung.</p>
+                <p class="text-sm">Kegiatan ini telah disetujui oleh tim verifikator (status <strong>Sesuai</strong>). Kegiatan yang sudah valid tidak dapat dihapus secara langsung.</p>
                 <p class="text-sm mb-0">Jika ingin mengubah atau membatalkan, silakan klik <strong>Ajukan Reopen</strong> terlebih dahulu untuk meminta izin dari Admin Wilayah Kecamatan.</p>
             </div>
             <div class="modal-footer">
@@ -663,7 +749,7 @@
                         {% endfor %}
                     </select>
                     <div class="form-text text-xs audit-requirements" data-audit-requirements>
-                        <span class="text-muted">Pilih Jenis Belanja untuk melihat kelengkapan yang diperiksa auditor.</span>
+                        <span class="text-muted">Pilih Jenis Belanja untuk melihat kelengkapan yang diperiksa verifikator.</span>
                     </div>
                 </div>
                 <div class="mb-3">
@@ -722,7 +808,7 @@
                             <optgroup label="Diinput Sekolah Anda">
                             {% for v in own_vendors %}
                                 <option value="{{ v.id }}" {% if act.vendor_id == v.id or (not act.vendor_id and act.vendor_name == v.name) %}selected{% endif %}>
-                                    {{ v.name }}{% if v.vendor_type == 'narsum' %} — Narasumber{% else %} — Vendor{% endif %}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'pending' %} ⚠ Belum Divalidasi{% endif %}
+                                    {{ v.name }}{% if v.vendor_type == 'narsum' %} — Narasumber{% else %} — Vendor{% endif %}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'pending' %} ⚠ Belum Diverifikasi{% endif %}
                                 </option>
                             {% endfor %}
                             </optgroup>
@@ -731,7 +817,7 @@
                             <optgroup label="🏪 Vendor / Toko">
                             {% for v in verified_vendors if not v.is_own_school and v.vendor_type != 'narsum' %}
                                 <option value="{{ v.id }}" {% if act.vendor_id == v.id or (not act.vendor_id and act.vendor_name == v.name) %}selected{% endif %}>
-                                    {{ v.name }}{% if v.registered_school_name %} — {{ v.registered_school_name }}{% endif %}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'pending' %} ⚠ Belum Divalidasi{% endif %}
+                                    {{ v.name }}{% if v.registered_school_name %} — {{ v.registered_school_name }}{% endif %}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'pending' %} ⚠ Belum Diverifikasi{% endif %}
                                 </option>
                             {% endfor %}
                             </optgroup>
@@ -740,7 +826,7 @@
                             <optgroup label="🎤 Narasumber / Instruktur">
                             {% for v in verified_vendors if not v.is_own_school and v.vendor_type == 'narsum' %}
                                 <option value="{{ v.id }}" {% if act.vendor_id == v.id or (not act.vendor_id and act.vendor_name == v.name) %}selected{% endif %}>
-                                    {{ v.name }}{% if v.registered_school_name %} — {{ v.registered_school_name }}{% endif %}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'pending' %} ⚠ Belum Divalidasi{% endif %}
+                                    {{ v.name }}{% if v.registered_school_name %} — {{ v.registered_school_name }}{% endif %}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'pending' %} ⚠ Belum Diverifikasi{% endif %}
                                 </option>
                             {% endfor %}
                             </optgroup>
@@ -840,7 +926,7 @@
                                     </button>
                                     <span class="badge bg-dark position-absolute bottom-0 start-50 translate-middle-x mb-2 field-photo-preview-counter">1 / 1</span>
                                 </div>
-                                <div class="form-text text-xs text-success field-photo-status"><i class="bi bi-check-circle me-1"></i>{{ act.valid_field_photos|length }}/3 foto sah tersimpan{% if act.invalid_field_photos %}; {{ act.invalid_field_photos|length }} dianulir auditor{% endif %}.</div>
+                                <div class="form-text text-xs text-success field-photo-status"><i class="bi bi-check-circle me-1"></i>{{ act.valid_field_photos|length }}/3 foto sah tersimpan{% if act.invalid_field_photos %}; {{ act.invalid_field_photos|length }} dianulir verifikator{% endif %}.</div>
                                 {% else %}
                                 <div class="field-photo-preview-wrap position-relative d-none mt-1">
                                     <img id="editPhotoPreview{{ act.id }}" class="img-thumbnail camera-photo-preview w-100" alt="Preview Foto Kegiatan" style="height: 160px; object-fit: contain;">
@@ -927,7 +1013,7 @@
                         {% endfor %}
                     </select>
                     <div class="form-text text-xs audit-requirements" data-audit-requirements>
-                        <span class="text-muted">Pilih Jenis Belanja untuk melihat kelengkapan yang diperiksa auditor.</span>
+                        <span class="text-muted">Pilih Jenis Belanja untuk melihat kelengkapan yang diperiksa verifikator.</span>
                     </div>
                 </div>
                 <div class="mb-3">
@@ -980,21 +1066,21 @@
                             {% if own_vendors_add %}
                             <optgroup label="Diinput Sekolah Anda">
                             {% for v in own_vendors_add %}
-                                <option value="{{ v.id }}">{{ v.name }}{% if v.vendor_type == 'narsum' %} — Narasumber{% else %} — Vendor{% endif %}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'pending' %} ⚠ Belum Divalidasi{% endif %}</option>
+                                <option value="{{ v.id }}">{{ v.name }}{% if v.vendor_type == 'narsum' %} — Narasumber{% else %} — Vendor{% endif %}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'pending' %} ⚠ Belum Diverifikasi{% endif %}</option>
                             {% endfor %}
                             </optgroup>
                             {% endif %}
                             {% if has_vendor_add %}
                             <optgroup label="🏪 Vendor / Toko">
                             {% for v in verified_vendors if not v.is_own_school and v.vendor_type != 'narsum' %}
-                                <option value="{{ v.id }}">{{ v.name }}{% if v.registered_school_name %} — {{ v.registered_school_name }}{% endif %}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'pending' %} ⚠ Belum Divalidasi{% endif %}</option>
+                                <option value="{{ v.id }}">{{ v.name }}{% if v.registered_school_name %} — {{ v.registered_school_name }}{% endif %}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'pending' %} ⚠ Belum Diverifikasi{% endif %}</option>
                             {% endfor %}
                             </optgroup>
                             {% endif %}
                             {% if has_narsum_add %}
                             <optgroup label="🎤 Narasumber / Instruktur">
                             {% for v in verified_vendors if not v.is_own_school and v.vendor_type == 'narsum' %}
-                                <option value="{{ v.id }}">{{ v.name }}{% if v.registered_school_name %} — {{ v.registered_school_name }}{% endif %}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'pending' %} ⚠ Belum Divalidasi{% endif %}</option>
+                                <option value="{{ v.id }}">{{ v.name }}{% if v.registered_school_name %} — {{ v.registered_school_name }}{% endif %}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'pending' %} ⚠ Belum Diverifikasi{% endif %}</option>
                             {% endfor %}
                             </optgroup>
                             {% endif %}
@@ -1287,19 +1373,31 @@ let activeCameraPreview = null;
 let activeDocInput = null;
 let activeDocFileNameEl = null;
 let capturedSchoolPhoto = '';
-const activitiesPrintTitle = {{ ('Laporan Monev ' ~ fund_source ~ ' TW' ~ active_period.tw ~ ' ' ~ active_period.year)|tojson }};
+const activitiesPrintTitle = {{ ('Laporan Monev ' ~ fund_source_label ~ ' - ' ~ school_display_name ~ ' - TW' ~ active_period.tw ~ ' ' ~ active_period.year)|tojson }};
 const auditRequirementsByExpenseType = {{ checklist_requirements_by_expense_type|default({})|tojson }};
 
 function openActivitiesPrintDialog(saveAsPdf) {
     const originalTitle = document.title;
+    const printActions = document.querySelector('.activities-print-actions');
+    const printToggle = printActions ? printActions.querySelector('[data-bs-toggle="dropdown"]') : null;
+    const openMenu = printActions ? printActions.querySelector('.dropdown-menu.show') : null;
+    if (openMenu) openMenu.classList.remove('show');
+    if (printToggle) {
+        printToggle.classList.remove('show');
+        printToggle.setAttribute('aria-expanded', 'false');
+    }
+    document.documentElement.classList.add('activities-print-mode');
+
     if (saveAsPdf) {
         document.title = activitiesPrintTitle;
     }
 
     const restoreTitle = function () {
         document.title = originalTitle;
+        document.documentElement.classList.remove('activities-print-mode');
     };
     window.addEventListener('afterprint', restoreTitle, { once: true });
+    void document.documentElement.offsetHeight;
     window.print();
     window.setTimeout(restoreTitle, 1000);
 }
@@ -1318,7 +1416,7 @@ function updateAuditRequirements(form) {
     if (!expenseTypeId) {
         const prompt = document.createElement('span');
         prompt.className = 'text-muted';
-        prompt.textContent = 'Pilih Jenis Belanja untuk melihat kelengkapan yang diperiksa auditor.';
+        prompt.textContent = 'Pilih Jenis Belanja untuk melihat kelengkapan yang diperiksa verifikator.';
         container.appendChild(prompt);
         return;
     }
@@ -1326,7 +1424,7 @@ function updateAuditRequirements(form) {
     if (!requirements.length) {
         const empty = document.createElement('span');
         empty.className = 'text-warning';
-        empty.textContent = 'Belum ada kelengkapan audit yang ditetapkan untuk Jenis Belanja ini.';
+        empty.textContent = 'Belum ada kelengkapan verifikasi yang ditetapkan untuk Jenis Belanja ini.';
         container.appendChild(empty);
         return;
     }
@@ -1336,7 +1434,7 @@ function updateAuditRequirements(form) {
 
     const title = document.createElement('span');
     title.className = 'fw-semibold';
-    title.textContent = 'Kelengkapan yang diperiksa auditor: ';
+    title.textContent = 'Kelengkapan yang diperiksa verifikator: ';
     content.appendChild(title);
 
     content.appendChild(document.createTextNode(requirements.join(', ')));
@@ -2006,7 +2104,7 @@ document.addEventListener('DOMContentLoaded', function () {
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="action" value="update_receipts">
             <div class="modal-header">
-                <h5 class="modal-title fw-bold" id="editReceiptModalLabel"><i class="bi bi-pencil-square text-success me-2"></i>Edit Total Penerimaan {{ fund_source }}</h5>
+                <h5 class="modal-title fw-bold" id="editReceiptModalLabel"><i class="bi bi-pencil-square text-success me-2"></i>Edit Total Penerimaan {{ fund_source_label }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -2037,8 +2135,40 @@ document.addEventListener('DOMContentLoaded', function () {
 {% endif %}
 
 <style>
+.print-only {
+    display: none !important;
+}
+.activities-print-mode .activities-print-actions,
+.activities-print-mode .activities-print-actions * {
+    display: none !important;
+}
 @media print {
-    .sidebar, nav, header, footer, .btn, .modal, .alert, .no-print, [data-bs-toggle], .badge {
+    .print-only {
+        display: inline !important;
+    }
+    .print-notes {
+        display: block !important;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        line-height: 1.2;
+    }
+    .print-notes > div + div,
+    .print-missing-documents > div + div {
+        margin-top: 2px;
+    }
+    .print-missing-documents {
+        display: block !important;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        line-height: 1.2;
+    }
+    .print-school-identity {
+        display: block !important;
+        margin: -4px 0 10px;
+        font-size: 10pt;
+        line-height: 1.35;
+    }
+    .sidebar, nav, header, footer, .btn, .modal, .alert, .no-print, .activities-print-actions, .dropdown-menu, [data-bs-toggle], .badge {
         display: none !important;
     }
     body {
@@ -2056,9 +2186,27 @@ document.addEventListener('DOMContentLoaded', function () {
     .table {
         width: 100% !important;
         border-collapse: collapse !important;
+        table-layout: fixed !important;
     }
     .table th, .table td {
         border: 1px solid #000 !important;
+        vertical-align: top !important;
+        padding: 4px 5px !important;
+    }
+    .table .print-col-activity {
+        width: 24% !important;
+    }
+    .table .print-col-account {
+        width: 12% !important;
+    }
+    .table .print-col-realization {
+        width: 14% !important;
+    }
+    .table .print-col-documents {
+        width: 18% !important;
+    }
+    .table .print-col-notes {
+        width: 32% !important;
     }
     .signature-section {
         break-inside: avoid !important;

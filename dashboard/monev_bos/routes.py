@@ -151,9 +151,7 @@ def inject_monev_bos_context() -> dict:
     active_story_groups = []
     if user and user.get("role") in ["admin", "sekolah"]:
         try:
-            active_story_groups = queries.list_active_story_groups(
-                school_user_id=int(user["id"]) if user.get("role") == "sekolah" else None,
-            )
+            active_story_groups = queries.list_active_story_groups()
         except Exception:
             current_app.logger.exception("Failed to load active Monev school stories")
 
@@ -535,34 +533,142 @@ def admin_teams():
         elif action == "assign":
             team_id = int(request.form.get("team_id"))
             school_id = int(request.form.get("school_id"))
-            period_id = int(request.form.get("period_id"))
-            queries.assign_team_to_school(team_id, school_id, period_id)
-            _record_monev_admin_action(
-                "ASSIGN",
-                "MONEV_SCHOOL_ASSIGNMENT",
-                target_id=school_id,
-                metadata={"team_id": team_id, "period_id": period_id},
-            )
-            flash("Sekolah berhasil ditugaskan ke tim", "success")
+            period_value = (request.form.get("period_id") or "").strip()
+            active_period_ids = [
+                int(period["id"]) for period in queries.get_active_periods()
+            ]
+            if period_value == "all":
+                target_period_ids = active_period_ids
+            elif period_value.isdigit() and int(period_value) in active_period_ids:
+                target_period_ids = [int(period_value)]
+            else:
+                target_period_ids = []
+
+            if not target_period_ids:
+                flash("Periode penugasan tidak aktif atau tidak ditemukan.", "warning")
+            else:
+                for period_id in target_period_ids:
+                    queries.assign_team_to_school(team_id, school_id, period_id)
+                    _record_monev_admin_action(
+                        "ASSIGN",
+                        "MONEV_SCHOOL_ASSIGNMENT",
+                        target_id=school_id,
+                        metadata={
+                            "team_id": team_id,
+                            "period_id": period_id,
+                            "all_active_periods": period_value == "all",
+                        },
+                    )
+                if period_value == "all":
+                    flash(
+                        f"Sekolah berhasil ditugaskan ke tim pada {len(target_period_ids)} periode aktif.",
+                        "success",
+                    )
+                else:
+                    flash("Sekolah berhasil ditugaskan ke tim", "success")
         elif action == "unassign":
             assignment_id = int(request.form.get("assignment_id"))
             queries.unassign_school(assignment_id)
             _record_monev_admin_action("UNASSIGN", "MONEV_SCHOOL_ASSIGNMENT", target_id=assignment_id)
             flash("Tugas sekolah berhasil dilepas", "success")
+        elif action == "copy_all_assignments":
+            source_period_id = int(request.form.get("source_period_id"))
+            target_period_id = int(request.form.get("target_period_id"))
+            active_period_ids = {
+                int(period["id"]) for period in queries.get_active_periods()
+            }
+            if source_period_id not in active_period_ids:
+                flash("Periode asal sudah tidak aktif.", "warning")
+            elif target_period_id not in active_period_ids:
+                flash("Periode tujuan tidak aktif atau tidak ditemukan.", "warning")
+            elif source_period_id == target_period_id:
+                flash("Periode tujuan harus berbeda dari periode asal.", "warning")
+            else:
+                copy_result = queries.copy_all_assignments_between_periods(
+                    source_period_id,
+                    target_period_id,
+                )
+                if copy_result["source_count"] == 0:
+                    flash("Periode asal belum memiliki penugasan untuk disalin.", "warning")
+                else:
+                    _record_monev_admin_action(
+                        "COPY_ALL_ASSIGNMENTS",
+                        "MONEV_SCHOOL_ASSIGNMENT",
+                        target_id=target_period_id,
+                        metadata={
+                            "source_period_id": source_period_id,
+                            "target_period_id": target_period_id,
+                            **copy_result,
+                        },
+                    )
+                    message = f"{copy_result['copied_count']} penugasan berhasil disalin ke periode tujuan."
+                    if copy_result["skipped_count"]:
+                        message += f" {copy_result['skipped_count']} sekolah dilewati karena sudah memiliki penugasan di periode tujuan."
+                    flash(message, "success")
         return redirect(url_for("monev_bos.admin_teams"))
 
     teams = queries.list_teams()
     queries.attach_admin_input_names(teams, "MONEV_TEAM")
     staff_users = queries.get_staff_users()
     sekolah_users = queries.get_sekolah_users()
-    active_period = queries.get_active_period()
-    assignments = queries.list_assignments(active_period["id"]) if active_period else []
+    active_periods = queries.get_active_periods()
+    assignments = queries.list_assignments_for_periods(
+        [int(period["id"]) for period in active_periods]
+    )
     queries.attach_admin_input_names(
         assignments,
         "MONEV_SCHOOL_ASSIGNMENT",
         actions=["ASSIGN"],
         item_id_field="school_id",
     )
+    assignment_groups_by_school = {}
+    for assignment in assignments:
+        school_id = int(assignment["school_id"])
+        group = assignment_groups_by_school.setdefault(
+            school_id,
+            {
+                "school_id": school_id,
+                "school_name": assignment.get("school_name") or "Sekolah",
+                "school_email": assignment.get("school_email"),
+                "assignments": [],
+                "teams": [],
+                "admin_names": [],
+            },
+        )
+        group["assignments"].append(assignment)
+        if not any(team["id"] == int(assignment["team_id"]) for team in group["teams"]):
+            group["teams"].append(
+                {"id": int(assignment["team_id"]), "name": assignment["team_name"]}
+            )
+        admin_name = assignment.get("input_admin_name") or "Tidak ada"
+        if admin_name not in group["admin_names"]:
+            group["admin_names"].append(admin_name)
+    assignment_groups = sorted(
+        assignment_groups_by_school.values(),
+        key=lambda group: str(group["school_name"]).lower(),
+    )
+    team_groups_by_id = {}
+    for assignment in assignments:
+        team_id = int(assignment["team_id"])
+        school_id = int(assignment["school_id"])
+        team_school_groups = team_groups_by_id.setdefault(team_id, {})
+        school_group = team_school_groups.setdefault(
+            school_id,
+            {
+                "school_id": school_id,
+                "school_name": assignment.get("school_name") or "Sekolah",
+                "school_email": assignment.get("school_email"),
+                "assignments": [],
+            },
+        )
+        school_group["assignments"].append(assignment)
+    team_assignment_groups = {
+        team_id: sorted(
+            school_groups.values(),
+            key=lambda group: str(group["school_name"]).lower(),
+        )
+        for team_id, school_groups in team_groups_by_id.items()
+    }
     activity_logs = queries.list_admin_action_history(
         ["MONEV_TEAM", "MONEV_TEAM_MEMBER", "MONEV_SCHOOL_ASSIGNMENT"]
     )
@@ -572,8 +678,10 @@ def admin_teams():
         teams=teams, 
         staff_users=staff_users,
         sekolah_users=sekolah_users,
-        active_period=active_period,
+        active_periods=active_periods,
         assignments=assignments,
+        assignment_groups=assignment_groups,
+        team_assignment_groups=team_assignment_groups,
         activity_logs=activity_logs,
     )
 
@@ -900,8 +1008,11 @@ def protect_private_school_story_files():
     user = current_user() or {}
     if user.get("role") in {"admin", "staff"}:
         return None
-    if user.get("role") == "sekolah" and int(user.get("id") or 0) == int(post["school_user_id"]):
-        return None
+    if user.get("role") == "sekolah":
+        if int(user.get("id") or 0) == int(post["school_user_id"]):
+            return None
+        if post.get("is_active_story"):
+            return None
     abort(404)
 
 
@@ -911,7 +1022,11 @@ def _can_view_school_post_photo(post: dict) -> bool:
     user = current_user() or {}
     if user.get("role") in {"admin", "staff"}:
         return True
-    return user.get("role") == "sekolah" and int(user.get("id") or 0) == int(post["school_user_id"])
+    if user.get("role") != "sekolah":
+        return False
+    if int(user.get("id") or 0) == int(post["school_user_id"]):
+        return True
+    return bool(post.get("is_active_story"))
 
 
 def _load_report_font(size: int, bold: bool = False):
@@ -1085,11 +1200,16 @@ def _build_school_photo_report_pdf(posts: list, profile: dict) -> io.BytesIO:
 
 
 @monev_bos_bp.route("/posts")
-@role_required("admin")
+@role_required("admin", "sekolah")
 def school_posts_explore():
+    user = current_user()
     search_query = request.args.get("q", "").strip()
-    posts = queries.list_school_posts(search_query=search_query, limit=300)
-    audit_logs = queries.list_story_audit_logs(limit=100) if current_user().get("role") == "admin" else []
+    posts = queries.list_school_posts(
+        search_query=search_query,
+        shared_only=user.get("role") == "sekolah",
+        limit=300,
+    )
+    audit_logs = queries.list_story_audit_logs(limit=100) if user.get("role") == "admin" else []
     return render_template(
         "monev_bos/social/posts.html",
         posts=posts,
@@ -1102,9 +1222,7 @@ def school_posts_explore():
 @role_required("admin", "sekolah")
 def school_posts_profile(school_user_id: int):
     user = current_user()
-    if user.get("role") == "sekolah" and int(school_user_id) != int(user["id"]):
-        flash("Sekolah hanya dapat melihat Foto Live dan post miliknya sendiri.", "warning")
-        return redirect(url_for("monev_bos.school_posts_profile", school_user_id=user["id"]))
+    is_own_profile = user.get("role") == "sekolah" and int(school_user_id) == int(user["id"])
     profile = queries.get_school_post_profile(school_user_id)
     if not profile:
         flash("Profil sekolah tidak ditemukan.", "warning")
@@ -1115,6 +1233,7 @@ def school_posts_profile(school_user_id: int):
     posts = queries.list_school_posts(
         school_user_id=school_user_id,
         search_query=search_query,
+        shared_only=user.get("role") == "sekolah" and not is_own_profile,
         limit=300,
     )
     external_photo_links = (
@@ -1134,6 +1253,7 @@ def school_posts_profile(school_user_id: int):
         search_query=search_query,
         external_photo_links=external_photo_links,
         external_photo_teachers=external_photo_teachers,
+        can_manage_profile=user.get("role") == "admin" or is_own_profile,
     )
 
 
@@ -1881,7 +2001,7 @@ def sekolah_activities():
 
             # Jika sudah sesuai (valid), harus minta persetujuan admin
             if act and act.get("status") == "valid":
-                flash("Kegiatan ini sudah divalidasi sebagai Sesuai. Edit harus melalui pengajuan perubahan ke admin.", "warning")
+                flash("Kegiatan ini sudah diverifikasi sebagai Sesuai. Edit harus melalui pengajuan perubahan ke admin.", "warning")
                 return redirect(url_for("monev_bos.sekolah_activities", period_id=period_id, fund_source=fund_source))
 
             was_invalid = act and act.get("status") == "invalid"
@@ -1914,22 +2034,22 @@ def sekolah_activities():
             }
             queries.update_activity(activity_id, data)
             
-            # Kembalikan status kegiatan dari 'invalid' ke 'pending' (Menunggu Validasi Ulang Tim Audit)
+            # Kembalikan status kegiatan dari 'invalid' ke 'pending' (menunggu verifikasi ulang)
             queries.update_activity_audit(activity_id, "pending", act.get("audit_notes") or "")
 
-            # Kirim notifikasi in-app & siapkan WA prompt ke Staff Auditor jika sebelumnya berstatus revisi
+            # Kirim notifikasi in-app & siapkan WA prompt ke Staff Verifikator jika sebelumnya berstatus revisi
             if was_invalid:
                 queries.send_revised_activity_notification_to_staff(activity_id)
                 staff_wa_info = queries.get_auditor_staff_wa_for_report(report["id"], report["school_id"], period_id, activity_id=activity_id)
                 if staff_wa_info.get("staff_phone"):
                     import urllib.parse
                     wa_msg = (
-                        f"Yth. Bapak/Ibu {staff_wa_info['staff_name']} (Tim Audit Monev BOS/BOP),\n\n"
+                        f"Yth. Bapak/Ibu {staff_wa_info['staff_name']} (Tim Verifikator Monev BOS/BOP),\n\n"
                         f"Saya dari {report.get('school_name', 'Sekolah')} telah memperbarui/merevisi data kegiatan:\n"
                         f"• Kode Kegiatan: {act['activity_code']}\n"
                         f"• Uraian: {data['activity_name']}\n"
                         f"• Nominal Realisasi: Rp {data['realized_amount']:,.0f}\n\n"
-                        f"Mohon kesediaannya untuk melakukan validasi ulang. Terima kasih."
+                        f"Mohon kesediaannya untuk melakukan verifikasi ulang. Terima kasih."
                     )
                     wa_url = f"https://wa.me/{staff_wa_info['staff_phone']}?text={urllib.parse.quote(wa_msg)}"
                     session["wa_revision_prompt"] = {
@@ -1975,7 +2095,7 @@ def sekolah_activities():
                     elif saved_path:
                         queries.add_activity_doc(activity_id, doc_type, saved_path, file.content_length or 0, user["id"])
             
-            flash("Perubahan kegiatan berhasil disimpan. Status kegiatan kini kembali Pending dan notifikasi telah dikirim ke Staff Audit.", "success")
+            flash("Perubahan kegiatan berhasil disimpan. Status kegiatan kini kembali Pending dan notifikasi telah dikirim ke Staff Verifikator.", "success")
             
         elif action == "submit_report":
             queries.submit_school_report(report["id"])
@@ -2051,8 +2171,17 @@ def sekolah_activities():
     wa_revision_prompt = session.pop("wa_revision_prompt", None)
     admin_info = queries.get_school_kecamatan_and_admin_wa(user["id"])
     staff_wa_info = queries.get_auditor_staff_wa_for_report(report["id"], report["school_id"], period_id)
+    checklist_results_by_activity = queries.get_checklist_results_by_activity_ids(
+        [int(act["id"]) for act in activities]
+    )
 
     for act in activities:
+        act["checklist_results"] = checklist_results_by_activity.get(int(act["id"]), [])
+        act["checklist_notes"] = [
+            result
+            for result in act["checklist_results"]
+            if str(result.get("notes") or "").strip()
+        ]
         docs = queries.get_activity_docs(act["id"])
         act["docs"] = {doc["doc_type"]: doc for doc in docs}
         act["field_photos"] = [doc for doc in docs if doc["doc_type"] == "field_photo"]
@@ -2085,12 +2214,12 @@ def sekolah_activities():
         if act["status"] == "pending" and act.get("history") and act_staff_wa.get("staff_phone"):
             import urllib.parse
             wa_msg_staff = (
-                f"Yth. Bapak/Ibu {act_staff_wa['staff_name']} (Tim Audit Monev BOS/BOP),\n\n"
+                f"Yth. Bapak/Ibu {act_staff_wa['staff_name']} (Tim Verifikator Monev BOS/BOP),\n\n"
                 f"Saya dari {report.get('school_name', 'Sekolah')} telah memperbarui/merevisi data kegiatan:\n"
                 f"• Kode Kegiatan: {act['activity_code']}\n"
                 f"• Uraian: {act['activity_name']}\n"
                 f"• Nominal Realisasi: Rp {act.get('realized_amount', 0):,.0f}\n\n"
-                f"Mohon kesediaannya untuk melakukan validasi ulang. Terima kasih."
+                f"Mohon kesediaannya untuk melakukan verifikasi ulang. Terima kasih."
             )
             act["staff_wa_url"] = f"https://wa.me/{act_staff_wa['staff_phone']}?text={urllib.parse.quote(wa_msg_staff)}"
 
@@ -2130,9 +2259,10 @@ def sekolah_activities():
     try:
         auditor_team = queries.get_assigned_auditors_for_school(report["school_id"], active_period["id"])
     except Exception:
-        current_app.logger.exception("Failed to load assigned Monev BOS auditors")
+        current_app.logger.exception("Failed to load assigned Monev BOS verifiers")
         auditor_team = {"team_name": None, "members": []}
 
+    school_info_data = None
     try:
         from dashboard.portal.routes import _fetch_user_school, _normalize_metadata
         school_info_data = _fetch_user_school(user["id"])
@@ -2144,6 +2274,13 @@ def sekolah_activities():
         "name": school_meta.get("headmaster_name") or "-",
         "nip": school_meta.get("headmaster_nip") or "-"
     }
+    school_display_name = (
+        (school_info_data or {}).get("name")
+        or user.get("full_name")
+        or user.get("username")
+        or user.get("email")
+        or "Sekolah"
+    )
 
     return render_template("monev_bos/sekolah/activities.html", 
                            active_period=active_period, 
@@ -2165,6 +2302,7 @@ def sekolah_activities():
                            staff_wa_info=staff_wa_info,
                            auditor_team=auditor_team,
                            headmaster_info=headmaster_info,
+                           school_display_name=school_display_name,
                            bop_claim=bop_claim,
                            bop_claim_supported=bop_claim_supported)
 
@@ -2264,7 +2402,7 @@ def sekolah_activities_export():
         "Nama Toko / Vendor",
         "Detail Kegiatan",
         "Nilai Realisasi (Rp)",
-        "Status Audit"
+        "Status Verifikasi"
     ]
 
     start_row = 10
@@ -2276,7 +2414,7 @@ def sekolah_activities_export():
 
     status_labels = {
         "draft": "Draft",
-        "pending": "Menunggu Validasi",
+        "pending": "Menunggu Verifikasi",
         "approved": "Disetujui",
         "needs_revision": "Perlu Perbaikan",
         "rejected": "Ditolak"
@@ -2326,7 +2464,7 @@ def sekolah_activities_export():
         cell.border = thin_border
         cell.fill = summary_fill
 
-    # Signature & Auditor Section in Excel Export
+    # Signature & Verifier Section in Excel Export
     auditor_team = queries.get_assigned_auditors_for_school(report["school_id"], active_period["id"])
     from dashboard.portal.routes import _fetch_user_school, _normalize_metadata
     school_info_data = _fetch_user_school(user["id"])
@@ -2347,7 +2485,7 @@ def sekolah_activities_export():
     ws.cell(row=sig_start_row + 6, column=2, value=f"( {headmaster_info['name']} )").font = bold_font
     ws.cell(row=sig_start_row + 7, column=2, value=f"NIP. {headmaster_info['nip']}").font = normal_font
     
-    team_title = f"Tim Auditor Monev ({auditor_team['team_name']}):" if auditor_team.get("team_name") else "Tim Verifikator / Auditor Monev:"
+    team_title = f"Tim Verifikator Monev ({auditor_team['team_name']}):" if auditor_team.get("team_name") else "Tim Verifikator Monev:"
     ws.cell(row=sig_start_row + 1, column=6, value=team_title).font = bold_font
     
     auditor_members = auditor_team.get("members") or []
@@ -2386,7 +2524,61 @@ def sekolah_activities_export():
 @role_required("staff", "admin")
 def staff_dashboard():
     user = current_user()
-    active_period = queries.get_active_period()
+    periods = queries.list_periods()
+    requested_period_id = request.args.get("period_id", type=int)
+    requested_year = request.args.get("year", type=int)
+    requested_tw = request.args.get("tw", type=int)
+
+    active_period = None
+    if requested_period_id:
+        active_period = next(
+            (period for period in periods if int(period["id"]) == requested_period_id),
+            None,
+        )
+    if active_period is None and requested_year:
+        year_periods = [
+            period for period in periods if int(period["year"]) == requested_year
+        ]
+        if requested_tw:
+            active_period = next(
+                (
+                    period
+                    for period in year_periods
+                    if int(period["tw"]) == requested_tw
+                ),
+                None,
+            )
+        if active_period is None and year_periods:
+            active_period = max(year_periods, key=lambda period: int(period["tw"]))
+    if active_period is None:
+        default_active_period = queries.get_active_period()
+        if default_active_period:
+            active_period = next(
+                (
+                    period
+                    for period in periods
+                    if int(period["id"]) == int(default_active_period["id"])
+                ),
+                default_active_period,
+            )
+        elif periods:
+            active_period = max(
+                periods,
+                key=lambda period: (int(period["year"]), int(period["tw"])),
+            )
+
+    available_years = sorted(
+        {int(period["year"]) for period in periods}, reverse=True
+    )
+    selected_year_periods = (
+        [
+            period
+            for period in periods
+            if int(period["year"]) == int(active_period["year"])
+        ]
+        if active_period
+        else []
+    )
     teams = queries.get_teams_for_staff(user["id"])
     
     assigned_schools = []
@@ -2398,6 +2590,8 @@ def staff_dashboard():
         
     return render_template("monev_bos/staff/dashboard.html", 
                            active_period=active_period, 
+                           available_years=available_years,
+                           selected_year_periods=selected_year_periods,
                            teams=teams, 
                            assigned_schools=assigned_schools)
 
@@ -2452,6 +2646,7 @@ def staff_my_team():
     return render_template("monev_bos/staff/my_team.html", team=team, members=members, available_staff=available_staff)
 
 @monev_bos_bp.route("/staff/audit/<int:report_id>", methods=["GET", "POST"])
+@monev_bos_bp.route("/staff/verifikasi/<int:report_id>", methods=["GET", "POST"])
 @role_required("staff", "admin")
 def staff_audit_report(report_id):
     user = current_user()
@@ -2582,6 +2777,7 @@ def staff_audit_report(report_id):
     )
 
 @monev_bos_bp.route("/staff/audit/activity/<int:activity_id>", methods=["POST"])
+@monev_bos_bp.route("/staff/verifikasi/kegiatan/<int:activity_id>", methods=["POST"])
 @role_required("staff", "admin")
 def staff_audit_activity(activity_id):
     user = current_user()
@@ -2623,7 +2819,7 @@ def staff_audit_activity(activity_id):
                     doc_id,
                     is_valid,
                     int(user["id"]),
-                    reason if not is_valid else "Disahkan kembali oleh auditor",
+                    reason if not is_valid else "Disahkan kembali oleh verifikator",
                 )
             except ValueError as exc:
                 return jsonify({"success": False, "message": str(exc)}), 400
@@ -2672,20 +2868,20 @@ def staff_audit_activity(activity_id):
                 "success": True,
                 "activity_id": activity_id,
                 "saved_items": saved_items,
-                "message": "Perubahan audit tersimpan otomatis.",
+                "message": "Perubahan verifikasi tersimpan otomatis.",
             })
 
         if action == "validate":
             status = request.form.get("status")
             if not status or status not in ["valid", "invalid", "in_review", "pending"]:
                 if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.headers.get("Accept") == "application/json":
-                    return jsonify({"success": False, "message": "Pilih status validasi yang sesuai."}), 400
-                flash("Pilih status validasi yang valid (Sesuai atau Perlu Revisi).", "warning")
+                    return jsonify({"success": False, "message": "Pilih status verifikasi yang sesuai."}), 400
+                flash("Pilih status verifikasi yang valid (Sesuai atau Perlu Revisi).", "warning")
                 return redirect(url_for("monev_bos.staff_audit_report", report_id=report_id))
 
             if status == "valid" and _activity_vendor_is_unverified(act):
                 vendor_name_disp = act.get("vendor_display_name") or act.get("vendor_name") or "terkait"
-                msg = f"Kegiatan tidak dapat divalidasi (Sesuai) karena vendor / narasumber '{vendor_name_disp}' belum terverifikasi. Silakan verifikasi terlebih dahulu."
+                msg = f"Kegiatan tidak dapat dinyatakan Sesuai karena vendor / narasumber '{vendor_name_disp}' belum terverifikasi. Silakan verifikasi terlebih dahulu."
                 if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.headers.get("Accept") == "application/json":
                     return jsonify({"success": False, "message": msg}), 400
                 flash(msg, "warning")
@@ -2702,8 +2898,8 @@ def staff_audit_activity(activity_id):
                 if cl_status and cl_status in ["yes", "no", "na"]:
                     queries.save_checklist_result(activity_id, cl['id'], cl_status, cl_notes, user["id"])
                     
-            status_label = "Sesuai" if status == "valid" else ("Tidak Sesuai (Revisi)" if status == "invalid" else ("Proses Audit" if status == "in_review" else "Pending"))
-            queries.add_audit_log(report_id, activity_id, user["id"], "VALIDATE", f"Memvalidasi kegiatan status '{status_label}'" + (f": {notes}" if notes else ""))
+            status_label = "Sesuai" if status == "valid" else ("Tidak Sesuai (Revisi)" if status == "invalid" else ("Proses Verifikasi" if status == "in_review" else "Pending"))
+            queries.add_audit_log(report_id, activity_id, user["id"], "VALIDATE", f"Memverifikasi kegiatan dengan status '{status_label}'" + (f": {notes}" if notes else ""))
             _record_monev_admin_action(
                 "VALIDATE",
                 "MONEV_ACTIVITY",
@@ -2719,10 +2915,10 @@ def staff_audit_activity(activity_id):
                     "status_label": status_label,
                     "activity_id": activity_id,
                     "auditor_name": user.get("full_name") or user.get("email") or "Staff",
-                    "message": f"Hasil validasi kegiatan berhasil disimpan ({status_label})."
+                    "message": f"Hasil verifikasi kegiatan berhasil disimpan ({status_label})."
                 })
 
-            flash("Hasil validasi kegiatan berhasil disimpan.", "success")
+            flash("Hasil verifikasi kegiatan berhasil disimpan.", "success")
             return redirect(url_for("monev_bos.staff_audit_report", report_id=report_id))
 
         elif action == "start_audit":
@@ -2736,7 +2932,7 @@ def staff_audit_activity(activity_id):
                     metadata={"report_id": report_id, "previous_status": act.get("status")},
                 )
                 staff_name = user.get("full_name") or user.get("email") or "Staff"
-                return jsonify({"success": True, "status": "in_review", "original_status": act.get("status"), "message": f"Status kegiatan diubah ke Proses Audit oleh {staff_name}"})
+                return jsonify({"success": True, "status": "in_review", "original_status": act.get("status"), "message": f"Status kegiatan diubah ke Proses Verifikasi oleh {staff_name}"})
             return jsonify({"success": True, "status": act.get("status") if act else "pending"})
 
         elif action == "cancel_audit":
@@ -2783,10 +2979,10 @@ def staff_audit_activity(activity_id):
 
     except Exception as e:
         import logging
-        logging.error(f"Error processing staff audit activity {activity_id}: {e}", exc_info=True)
+        logging.error(f"Error processing staff verification activity {activity_id}: {e}", exc_info=True)
         if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.headers.get("Accept") == "application/json":
-            return jsonify({"success": False, "message": f"Terjadi kesalahan pada server saat memproses validasi: {str(e)}"}), 500
-        flash("Terjadi kesalahan pada server saat memproses validasi kegiatan.", "danger")
+            return jsonify({"success": False, "message": f"Terjadi kesalahan pada server saat memproses verifikasi: {str(e)}"}), 500
+        flash("Terjadi kesalahan pada server saat memproses verifikasi kegiatan.", "danger")
 
     return redirect(url_for("monev_bos.staff_audit_report", report_id=report_id))
 
@@ -2854,24 +3050,84 @@ def sekolah_vendors():
 def admin_vendors():
     user = current_user()
 
+    def filtered_redirect():
+        return redirect(url_for(
+            "monev_bos.admin_vendors",
+            status=request.args.get("status", ""),
+            q=request.args.get("q", ""),
+            vendor_type=request.args.get("vendor_type", "vendor"),
+            school_id=request.args.get("school_id", ""),
+        ))
+
     if request.method == "POST":
         action = request.form.get("action", "")
         vendor_id = request.form.get("vendor_id", type=int)
 
         if action == "verify_vendor" and vendor_id:
-            if queries.update_vendor_status(vendor_id, "verified", user["id"]):
+            duplicate_matches = queries.find_vendor_duplicate_matches(vendor_id)
+            duplicate_confirmation = " ".join(
+                (request.form.get("duplicate_confirmation") or "").casefold().split()
+            )
+            if duplicate_matches and duplicate_confirmation != "vendor berbeda":
+                flash(
+                    "Data terindikasi duplikat. Periksa data pembanding lalu ketik tepat 'vendor berbeda' untuk melanjutkan verifikasi.",
+                    "danger",
+                )
+                return filtered_redirect()
+
+            verification_notes = "vendor berbeda" if duplicate_matches else None
+            if queries.update_vendor_status(
+                vendor_id,
+                "verified",
+                user["id"],
+                verification_notes=verification_notes,
+            ):
                 v_obj = queries.get_vendor_by_id(vendor_id)
-                v_name = v_obj["name"] if v_obj else "Vendor"
+                v_name = (
+                    (v_obj.get("owner_name") or v_obj.get("name"))
+                    if v_obj and v_obj.get("vendor_type") == "narsum"
+                    else (v_obj.get("name") if v_obj else "Vendor")
+                )
+                type_label = "Narasumber" if v_obj and v_obj.get("vendor_type") == "narsum" else "Vendor"
+                duplicate_metadata = {
+                    "duplicate_override": bool(duplicate_matches),
+                    "duplicate_confirmation": verification_notes,
+                    "duplicate_matches": [
+                        {
+                            "vendor_id": match["id"],
+                            "school_id": match.get("school_id"),
+                            "matching_fields": match.get("duplicate_fields") or [],
+                        }
+                        for match in duplicate_matches
+                    ],
+                }
                 _record_monev_admin_action(
                     "VERIFY_APPROVE",
                     "MONEV_VENDOR",
                     target_id=vendor_id,
                     target_name=v_name,
+                    metadata=duplicate_metadata,
                 )
-                flash(f"Vendor '{v_name}' berhasil diverifikasi dan disetujui.", "success")
+                if duplicate_matches and user.get("role") != "admin":
+                    try:
+                        record_admin_action(
+                            user_id=user.get("id"),
+                            feature_key="monev_bos",
+                            action="VERIFY_DUPLICATE_OVERRIDE",
+                            target_type="MONEV_VENDOR",
+                            target_id=vendor_id,
+                            target_name=v_name,
+                            metadata=duplicate_metadata,
+                        )
+                    except Exception:
+                        current_app.logger.exception(
+                            "Failed to record duplicate vendor verification by user #%s",
+                            user.get("id"),
+                        )
+                flash(f"{type_label} '{v_name}' berhasil diverifikasi dan disetujui.", "success")
             else:
-                flash("Gagal memverifikasi vendor.", "danger")
-            return redirect(url_for("monev_bos.admin_vendors", status=request.args.get("status", ""), q=request.args.get("q", "")))
+                flash("Gagal memverifikasi data vendor/narasumber.", "danger")
+            return filtered_redirect()
 
         elif action == "reject_vendor" and vendor_id:
             reason = (request.form.get("rejection_reason") or "").strip()
@@ -2887,15 +3143,16 @@ def admin_vendors():
                         target_name=v_obj.get("name") if v_obj else None,
                         metadata={"has_rejection_reason": True},
                     )
-                    flash("Vendor berhasil ditolak.", "info")
+                    type_label = "Narasumber" if v_obj and v_obj.get("vendor_type") == "narsum" else "Vendor"
+                    flash(f"{type_label} berhasil ditolak.", "info")
                 else:
-                    flash("Gagal menolak vendor.", "danger")
-            return redirect(url_for("monev_bos.admin_vendors", status=request.args.get("status", ""), q=request.args.get("q", "")))
+                    flash("Gagal menolak data vendor/narasumber.", "danger")
+            return filtered_redirect()
 
         elif action == "update_master_banks":
             if user.get("role") != "admin":
                 flash("Hanya Admin yang berhak mengubah daftar pilihan bank.", "danger")
-                return redirect(url_for("monev_bos.admin_vendors", status=request.args.get("status", ""), q=request.args.get("q", "")))
+                return filtered_redirect()
 
             bank_lines = request.form.get("bank_list", "").splitlines()
             bank_list = [b.strip() for b in bank_lines if b.strip()]
@@ -2909,10 +3166,30 @@ def admin_vendors():
                 flash("Daftar master pilihan bank berhasil diperbarui.", "success")
             else:
                 flash("Gagal memperbarui daftar bank.", "danger")
-            return redirect(url_for("monev_bos.admin_vendors", status=request.args.get("status", ""), q=request.args.get("q", "")))
+            return filtered_redirect()
 
     search_query = request.args.get("q", "").strip()
     status_filter = request.args.get("status", "")
-    vendors = queries.list_all_vendors_for_admin(status_filter if status_filter in ["pending", "verified", "rejected"] else None, search_query=search_query)
+    vendor_type_filter = request.args.get("vendor_type", "vendor")
+    if vendor_type_filter not in ["vendor", "narsum"]:
+        vendor_type_filter = "vendor"
+    school_id_filter = request.args.get("school_id", type=int)
+    vendors = queries.list_all_vendors_for_admin(
+        status_filter if status_filter in ["pending", "verified", "rejected"] else None,
+        search_query=search_query,
+        vendor_type_filter=vendor_type_filter,
+        school_id_filter=school_id_filter,
+    )
+    queries.attach_vendor_duplicate_matches(vendors)
+    vendor_schools = queries.list_vendor_schools_for_admin()
     master_banks = queries.get_master_banks()
-    return render_template("monev_bos/admin/admin_vendors.html", vendors=vendors, status_filter=status_filter, search_query=search_query, master_banks=master_banks)
+    return render_template(
+        "monev_bos/admin/admin_vendors.html",
+        vendors=vendors,
+        status_filter=status_filter,
+        search_query=search_query,
+        vendor_type_filter=vendor_type_filter,
+        school_id_filter=school_id_filter,
+        vendor_schools=vendor_schools,
+        master_banks=master_banks,
+    )

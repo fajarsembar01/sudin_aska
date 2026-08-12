@@ -12,7 +12,11 @@
             <div class="flex-grow-1">
                 <h1 class="h3 fw-bold mb-1">{{ profile.school_name }}</h1>
                 <div class="text-body-secondary small">{% if profile.npsn %}NPSN {{ profile.npsn }} · {% endif %}{{ profile.alamat or 'Alamat belum tersedia' }}</div>
+                {% if can_manage_profile %}
                 <div class="fw-semibold mt-2">{{ profile.post_count }} post permanen</div>
+                {% else %}
+                <div class="fw-semibold mt-2">{{ posts|length }} Foto Live aktif atau post publik</div>
+                {% endif %}
             </div>
             {% if current_user.role == 'sekolah' and current_user.id == profile.school_user_id %}
             {% if external_photo_teachers %}
@@ -135,7 +139,7 @@
         </div>
     </form>
 
-    {% if posts %}
+    {% if posts and can_manage_profile %}
     <div class="card border-primary-subtle bg-primary-subtle mb-3 no-print sticky-top photo-report-toolbar" style="top: 76px; z-index: 1010;">
         <div class="card-body py-2 px-3 d-flex align-items-center justify-content-between gap-2 flex-wrap">
             <div>
@@ -181,7 +185,7 @@
 </div>
 {% endif %}
 
-{% if posts %}
+{% if posts and can_manage_profile %}
 <div class="modal fade" id="photoReportPublishModal" tabindex="-1" aria-labelledby="photoReportPublishModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <form method="POST" action="{{ url_for('monev_bos.school_posts_photo_report', school_user_id=profile.school_user_id) }}" target="_blank" class="modal-content" id="photoReportForm">
@@ -250,7 +254,7 @@ document.addEventListener('click', async function (event) {
     }
 });
 </script>
-{% if posts %}
+{% if posts and can_manage_profile %}
 <script>
 (function () {
     const checkboxes = Array.from(document.querySelectorAll('.photo-report-checkbox'));

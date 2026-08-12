@@ -4,9 +4,24 @@
 <style>
     .vendor-mobile-list { display: none; }
     @media (max-width: 767.98px) {
-        .vendor-admin-container { padding: 10px !important; }
-        .vendor-page-header { margin-bottom: 10px !important; gap: 8px !important; }
-        .vendor-page-header h4 { margin-bottom: 0 !important; font-size: 0.95rem; }
+        .vendor-admin-container {
+            width: 100%;
+            max-width: 100%;
+            padding: 10px !important;
+            overflow-x: hidden;
+        }
+        .vendor-admin-container .row { margin-right: 0; margin-left: 0; }
+        .vendor-page-header {
+            position: relative;
+            width: 100%;
+            min-width: 0;
+            margin-bottom: 10px !important;
+            padding-right: 42px;
+            gap: 8px !important;
+        }
+        .vendor-page-header > div:first-child { min-width: 0; }
+        .vendor-bank-settings-wrap { position: absolute; top: 0; right: 0; }
+        .vendor-page-header h4 { margin-bottom: 0 !important; font-size: 0.95rem; line-height: 1.25; overflow-wrap: anywhere; }
         .vendor-page-header p { display: none; }
         .vendor-bank-settings { width: 34px; height: 34px; padding: 0 !important; border-radius: 6px; }
         .vendor-bank-settings i { margin: 0 !important; }
@@ -17,9 +32,20 @@
         .vendor-stat-label { font-size: 0.58rem !important; line-height: 1.15; }
         .vendor-stat-value { font-size: 1rem !important; }
         .vendor-stat-icon { display: none; }
-        .vendor-filter-card { margin-bottom: 10px !important; border-radius: 7px; box-shadow: none !important; }
+        .vendor-filter-card { width: 100%; max-width: 100%; margin-bottom: 10px !important; overflow: visible; border-radius: 7px; box-shadow: none !important; }
         .vendor-filter-card .card-body { padding: 8px !important; }
+        .vendor-type-tabs { width: 100%; min-width: 0; }
+        .vendor-type-tabs .nav-item { min-width: 0; }
+        .vendor-type-tabs .nav-link { min-height: 34px; padding: 7px 5px; overflow: hidden; font-size: 0.68rem; line-height: 1.2; text-overflow: ellipsis; white-space: nowrap; }
+        .vendor-filter-fields { --bs-gutter-x: 0.4rem; }
+        .vendor-filter-fields > * { min-width: 0; }
+        .vendor-filter-fields .ts-wrapper,
+        .vendor-filter-fields .ts-control,
+        .vendor-search-form .input-group { width: 100%; max-width: 100%; min-width: 0; }
+        .vendor-filter-fields .ts-control { overflow: hidden; }
+        .vendor-filter-fields .ts-control > input { min-width: 0 !important; }
         .vendor-search-form { margin-bottom: 7px; }
+        .vendor-filter-fields .form-select,
         .vendor-search-form .form-control,
         .vendor-search-form .input-group-text,
         .vendor-search-form .btn { min-height: 32px; font-size: 0.68rem; }
@@ -40,8 +66,11 @@
         }
         .vendor-status-filters .btn i { display: none; }
         .vendor-desktop-table { display: none; }
-        .vendor-mobile-list { display: grid; gap: 8px; }
+        .vendor-mobile-list { display: grid; width: 100%; max-width: 100%; min-width: 0; gap: 8px; overflow: hidden; }
         .vendor-mobile-card {
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
             padding: 10px;
             border: 1px solid var(--bs-border-color);
             border-radius: 7px;
@@ -50,7 +79,7 @@
         .vendor-mobile-head { min-width: 0; }
         .vendor-mobile-name { overflow: hidden; font-size: 0.8rem; line-height: 1.2; text-overflow: ellipsis; white-space: nowrap; }
         .vendor-mobile-type, .vendor-mobile-status { padding: 3px 6px; font-size: 0.58rem; white-space: nowrap; }
-        .vendor-mobile-school { margin-top: 3px; font-size: 0.64rem; }
+        .vendor-mobile-school { margin-top: 3px; overflow-wrap: anywhere; font-size: 0.64rem; }
         .vendor-mobile-meta {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -64,9 +93,21 @@
         .vendor-mobile-meta-label { display: block; color: var(--bs-secondary-color); font-size: 0.56rem; }
         .vendor-mobile-meta-value { display: block; overflow: hidden; font-size: 0.65rem; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
         .vendor-mobile-reason { margin-top: 6px; font-size: 0.62rem; line-height: 1.3; }
-        .vendor-mobile-actions { display: flex; gap: 6px; margin-top: 8px; }
-        .vendor-mobile-actions form, .vendor-mobile-actions .btn { flex: 1; }
-        .vendor-mobile-actions .btn { width: 100%; min-height: 32px; padding: 5px 8px; border-radius: 5px; font-size: 0.65rem; }
+        .vendor-mobile-actions { display: grid; width: 100%; min-width: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
+        .vendor-mobile-actions > form,
+        .vendor-mobile-actions > .btn { width: 100%; min-width: 0; max-width: 100%; }
+        .vendor-mobile-actions > :only-child { grid-column: 1 / -1; }
+        .vendor-mobile-actions .btn { width: 100%; min-height: 32px; padding: 5px 6px; overflow: hidden; border-radius: 5px; font-size: 0.65rem; line-height: 1.2; text-overflow: ellipsis; white-space: normal; }
+        .vendor-mobile-list .modal-dialog { width: auto; max-width: calc(100vw - 16px); margin-right: auto !important; margin-left: auto !important; }
+        .vendor-mobile-list .modal-body { overflow-wrap: anywhere; }
+        .vendor-mobile-list .modal-footer { flex-wrap: wrap; }
+        .vendor-mobile-list .modal-footer .btn { flex: 1 1 120px; }
+    }
+    @media (max-width: 380px) {
+        .vendor-type-tabs .nav-link { font-size: 0.62rem; }
+        .vendor-mobile-meta { grid-template-columns: 1fr; }
+        .vendor-mobile-actions { grid-template-columns: 1fr; }
+        .vendor-mobile-actions > * { grid-column: 1 / -1; }
     }
 </style>
 
@@ -74,11 +115,11 @@
     <!-- Header -->
     <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3 vendor-page-header">
         <div>
-            <h4 class="fw-bold mb-1"><i class="bi bi-shop text-primary me-2"></i>Verifikasi Vendor Sekolah</h4>
-            <p class="text-muted mb-0 small">Tinjau dan lakukan verifikasi pendaftaran vendor/toko yang diajukan oleh sekolah penerima dana BOS/BOP.</p>
+            <h4 class="fw-bold mb-1"><i class="bi bi-shop text-primary me-2"></i>Verifikasi Vendor / Narasumber Sekolah</h4>
+            <p class="text-muted mb-0 small">Tinjau pendaftaran vendor/toko dan narasumber/instruktur yang diajukan sekolah penerima dana BOS/BOP.</p>
         </div>
         {% if current_user and current_user.role == 'admin' %}
-        <div>
+        <div class="vendor-bank-settings-wrap">
             <button type="button" class="btn btn-outline-primary fw-bold shadow-sm vendor-bank-settings" data-bs-toggle="modal" data-bs-target="#manageBanksModal" title="Pengaturan pilihan bank" aria-label="Pengaturan pilihan bank">
                 <i class="bi bi-gear-fill me-1"></i><span class="vendor-bank-settings-label">Pengaturan Pilihan Bank</span>
             </button>
@@ -135,27 +176,56 @@
         </div>
     </div>
 
-    <!-- Filter Status -->
+    <!-- Filter Tipe, Sekolah, Pencarian, dan Status -->
     <div class="card border-0 shadow-sm mb-4 vendor-filter-card">
         <div class="card-body p-3">
-            <form method="GET" action="{{ url_for('monev_bos.admin_vendors') }}" class="input-group input-group-sm vendor-search-form">
+            <ul class="nav nav-pills nav-fill gap-2 mb-3 vendor-type-tabs" role="tablist" aria-label="Tipe pendaftaran">
+                <li class="nav-item" role="presentation">
+                    <a href="{{ url_for('monev_bos.admin_vendors', vendor_type='vendor', status=status_filter, school_id=school_id_filter, q=search_query) }}" class="nav-link fw-bold border {% if vendor_type_filter == 'vendor' %}active{% else %}text-primary{% endif %}" {% if vendor_type_filter == 'vendor' %}aria-current="page"{% endif %}>
+                        <i class="bi bi-shop me-1"></i>Vendor / Toko
+                    </a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a href="{{ url_for('monev_bos.admin_vendors', vendor_type='narsum', status=status_filter, school_id=school_id_filter, q=search_query) }}" class="nav-link fw-bold border {% if vendor_type_filter == 'narsum' %}active bg-info{% else %}text-info{% endif %}" {% if vendor_type_filter == 'narsum' %}aria-current="page"{% endif %}>
+                        <i class="bi bi-person-video3 me-1"></i>Narasumber / Instruktur
+                    </a>
+                </li>
+            </ul>
+
+            <form method="GET" action="{{ url_for('monev_bos.admin_vendors') }}" class="row g-2 align-items-end mb-3 vendor-search-form vendor-filter-fields">
+                <input type="hidden" name="vendor_type" value="{{ vendor_type_filter }}">
                 {% if status_filter %}<input type="hidden" name="status" value="{{ status_filter }}">{% endif %}
-                <span class="input-group-text bg-body border-end-0"><i class="bi bi-search"></i></span>
-                <input type="search" name="q" class="form-control border-start-0" value="{{ search_query or '' }}" placeholder="Cari vendor, narsum, sekolah, NPWP...">
-                {% if search_query %}<a href="{{ url_for('monev_bos.admin_vendors', status=status_filter) }}" class="btn btn-outline-secondary" title="Hapus pencarian"><i class="bi bi-x-lg"></i></a>{% endif %}
+                <div class="col-12 col-md-5">
+                    <label for="vendorSchoolFilter" class="form-label small fw-semibold text-body-secondary mb-1"><i class="bi bi-building me-1"></i>Filter Sekolah</label>
+                    <select id="vendorSchoolFilter" name="school_id" class="form-select form-select-sm" data-placeholder="Ketik nama sekolah atau NPSN...">
+                        <option value="">Semua Sekolah</option>
+                        {% for school in vendor_schools %}
+                        <option value="{{ school.id }}" {% if school_id_filter == school.id %}selected{% endif %}>{{ school.school_name }}{% if school.npsn %} — {{ school.npsn }}{% endif %}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-12 col-md-7">
+                    <label for="vendorAdminSearch" class="form-label small fw-semibold text-body-secondary mb-1"><i class="bi bi-search me-1"></i>Pencarian</label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-body border-end-0"><i class="bi bi-search"></i></span>
+                        <input id="vendorAdminSearch" type="search" name="q" class="form-control border-start-0" value="{{ search_query or '' }}" placeholder="Cari nama, sekolah, NPWP, atau kontak...">
+                        {% if search_query %}<a href="{{ url_for('monev_bos.admin_vendors', vendor_type=vendor_type_filter, status=status_filter, school_id=school_id_filter) }}" class="btn btn-outline-secondary" title="Hapus pencarian"><i class="bi bi-x-lg"></i></a>{% endif %}
+                        <button type="submit" class="btn btn-primary fw-bold">Cari</button>
+                    </div>
+                </div>
             </form>
             <div class="d-flex flex-wrap align-items-center gap-2 vendor-status-filters">
                 <span class="fw-semibold me-2 small text-muted vendor-filter-label">Filter Status:</span>
-                <a href="{{ url_for('monev_bos.admin_vendors', q=search_query) }}" class="btn btn-sm {% if not status_filter %}btn-primary{% else %}btn-outline-secondary{% endif %} rounded-pill px-3">
+                <a href="{{ url_for('monev_bos.admin_vendors', vendor_type=vendor_type_filter, school_id=school_id_filter, q=search_query) }}" class="btn btn-sm {% if not status_filter %}btn-primary{% else %}btn-outline-secondary{% endif %} rounded-pill px-3">
                     Semua ({{ vendors|length }})
                 </a>
-                <a href="{{ url_for('monev_bos.admin_vendors', status='pending', q=search_query) }}" class="btn btn-sm {% if status_filter == 'pending' %}btn-warning text-dark{% else %}btn-outline-warning text-dark{% endif %} rounded-pill px-3">
+                <a href="{{ url_for('monev_bos.admin_vendors', vendor_type=vendor_type_filter, school_id=school_id_filter, status='pending', q=search_query) }}" class="btn btn-sm {% if status_filter == 'pending' %}btn-warning text-dark{% else %}btn-outline-warning text-dark{% endif %} rounded-pill px-3">
                     <i class="bi bi-clock-history me-1"></i>Menunggu
                 </a>
-                <a href="{{ url_for('monev_bos.admin_vendors', status='verified', q=search_query) }}" class="btn btn-sm {% if status_filter == 'verified' %}btn-success{% else %}btn-outline-success{% endif %} rounded-pill px-3">
+                <a href="{{ url_for('monev_bos.admin_vendors', vendor_type=vendor_type_filter, school_id=school_id_filter, status='verified', q=search_query) }}" class="btn btn-sm {% if status_filter == 'verified' %}btn-success{% else %}btn-outline-success{% endif %} rounded-pill px-3">
                     <i class="bi bi-check-circle me-1"></i>Terverifikasi
                 </a>
-                <a href="{{ url_for('monev_bos.admin_vendors', status='rejected', q=search_query) }}" class="btn btn-sm {% if status_filter == 'rejected' %}btn-danger{% else %}btn-outline-danger{% endif %} rounded-pill px-3">
+                <a href="{{ url_for('monev_bos.admin_vendors', vendor_type=vendor_type_filter, school_id=school_id_filter, status='rejected', q=search_query) }}" class="btn btn-sm {% if status_filter == 'rejected' %}btn-danger{% else %}btn-outline-danger{% endif %} rounded-pill px-3">
                     <i class="bi bi-x-circle me-1"></i>Ditolak
                 </a>
             </div>
@@ -171,12 +241,12 @@
                         <tr>
                             <th class="ps-4">No</th>
                             <th>Sekolah Pemohon</th>
-                            <th>Tipe</th>
-                            <th>Nama Toko / Vendor / Narsum</th>
-                            <th>NPWP / No. KTP &amp; Kontak</th>
-                            <th>PJ / Narsum &amp; Bank</th>
+                            <th>Jenis</th>
+                            <th>{{ 'Nama Narasumber / Instruktur' if vendor_type_filter == 'narsum' else 'Nama Toko / Vendor' }}</th>
+                            <th>{{ 'No. KTP & Kontak' if vendor_type_filter == 'narsum' else 'NPWP & Kontak' }}</th>
+                            <th>{{ 'NPWP & Bank / Rekening' if vendor_type_filter == 'narsum' else 'Penanggung Jawab & Bank / Rekening' }}</th>
                             <th>Status</th>
-                            <th class="pe-4 text-end">Aksi Verifikasi</th>
+                            <th class="pe-4 text-end">Verifikasi {{ 'Narasumber' if vendor_type_filter == 'narsum' else 'Vendor' }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -196,7 +266,12 @@
                                     {% endif %}
                                 </td>
                                 <td>
-                                    <div class="fw-bold text-primary">{{ v.name }}</div>
+                                    <div class="fw-bold text-primary">{{ (v.owner_name or '-') if v.vendor_type == 'narsum' else v.name }}</div>
+                                    {% if v.duplicate_matches %}
+                                    <button type="button" class="badge bg-danger-subtle text-danger border border-danger p-1 mt-1" data-bs-toggle="modal" data-bs-target="#duplicateVendorModal{{ v.id }}">
+                                        <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ v.duplicate_matches|length }} data mirip
+                                    </button>
+                                    {% endif %}
                                     {% if v.address %}
                                     <div class="small text-muted text-truncate" style="max-width: 200px;" title="{{ v.address }}">
                                         <i class="bi bi-geo-alt me-1"></i>{{ v.address }}
@@ -204,14 +279,14 @@
                                     {% endif %}
                                 </td>
                                 <td>
-                                    <div class="small fw-semibold">{{ v.npwp or '-' }}</div>
+                                    <div class="small fw-semibold">{{ v.name if v.vendor_type == 'narsum' else (v.npwp or '-') }}</div>
                                     {% if v.phone %}
                                     <div class="small text-muted"><i class="bi bi-telephone me-1"></i>{{ v.phone }}</div>
                                     {% endif %}
                                 </td>
                                 <td>
                                     {% if v.vendor_type == 'narsum' %}
-                                    <span class="small d-block text-info fw-semibold">{{ v.owner_name or '-' }}</span>
+                                    <span class="small d-block text-info fw-semibold">NPWP: {{ v.npwp or '-' }}</span>
                                     {% else %}
                                     <span class="small d-block">{{ v.owner_name or '-' }}</span>
                                     {% endif %}
@@ -229,6 +304,9 @@
                                             oleh {{ v.verified_by_name }}
                                             {% if v.verified_at %}<br><span class="text-secondary">{{ v.verified_at|jakarta('%d %b %Y %H:%M') }}</span>{% endif %}
                                         </div>
+                                        {% endif %}
+                                        {% if v.verification_notes %}
+                                        <div class="text-xs text-success fw-semibold mt-1"><i class="bi bi-shield-check me-1"></i>{{ v.verification_notes }}</div>
                                         {% endif %}
                                     {% elif v.status == 'rejected' %}
                                         <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1">
@@ -249,44 +327,101 @@
                                 <td class="pe-4 text-end">
                                     {% if v.status == 'pending' %}
                                         <div class="btn-group" role="group">
-                                            <form method="POST" action="{{ url_for('monev_bos.admin_vendors', status=status_filter) }}" class="d-inline" onsubmit="return confirm('Setujui dan verifikasi vendor {{ v.name }}?')">
+                                            {% if v.duplicate_matches %}
+                                            <button type="button" class="btn btn-sm btn-warning text-dark fw-bold" data-bs-toggle="modal" data-bs-target="#duplicateVendorModal{{ v.id }}">
+                                                <i class="bi bi-exclamation-triangle-fill me-1"></i>Cek &amp; Verifikasi
+                                            </button>
+                                            {% else %}
+                                            <form method="POST" action="{{ url_for('monev_bos.admin_vendors', vendor_type=vendor_type_filter, school_id=school_id_filter, status=status_filter, q=search_query) }}" class="d-inline" onsubmit="return confirm('Setujui dan verifikasi data ini?')">
                                                 <input type="hidden" name="action" value="verify_vendor">
                                                 <input type="hidden" name="vendor_id" value="{{ v.id }}">
                                                 <button type="submit" class="btn btn-sm btn-success">
                                                     <i class="bi bi-check-lg me-1"></i> Verifikasi
                                                 </button>
                                             </form>
+                                            {% endif %}
                                             <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#rejectVendorModal{{ v.id }}">
                                                 <i class="bi bi-x-lg"></i> Tolak
                                             </button>
                                         </div>
                                     {% elif v.status == 'rejected' %}
-                                        <form method="POST" action="{{ url_for('monev_bos.admin_vendors', status=status_filter) }}" class="d-inline" onsubmit="return confirm('Ubah status vendor ini menjadi Terverifikasi?')">
+                                        {% if v.duplicate_matches %}
+                                        <button type="button" class="btn btn-sm btn-warning text-dark fw-bold" data-bs-toggle="modal" data-bs-target="#duplicateVendorModal{{ v.id }}">
+                                            <i class="bi bi-exclamation-triangle-fill me-1"></i>Cek &amp; Setujui
+                                        </button>
+                                        {% else %}
+                                        <form method="POST" action="{{ url_for('monev_bos.admin_vendors', vendor_type=vendor_type_filter, school_id=school_id_filter, status=status_filter, q=search_query) }}" class="d-inline" onsubmit="return confirm('Ubah status data ini menjadi Terverifikasi?')">
                                             <input type="hidden" name="action" value="verify_vendor">
                                             <input type="hidden" name="vendor_id" value="{{ v.id }}">
                                             <button type="submit" class="btn btn-sm btn-outline-success">
                                                 <i class="bi bi-check-lg me-1"></i> Setujui
                                             </button>
                                         </form>
+                                        {% endif %}
                                     {% else %}
                                         <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#rejectVendorModal{{ v.id }}">
                                             <i class="bi bi-x-lg me-1"></i> Batalkan Verifikasi
                                         </button>
                                     {% endif %}
 
+                                    {% if v.duplicate_matches %}
+                                    <div class="modal fade text-start" id="duplicateVendorModal{{ v.id }}" tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog modal-dialog-centered modal-lg">
+                                            <form method="POST" action="{{ url_for('monev_bos.admin_vendors', vendor_type=vendor_type_filter, school_id=school_id_filter, status=status_filter, q=search_query) }}" class="modal-content">
+                                                <input type="hidden" name="action" value="verify_vendor">
+                                                <input type="hidden" name="vendor_id" value="{{ v.id }}">
+                                                <div class="modal-header bg-warning-subtle border-warning-subtle">
+                                                    <h5 class="modal-title fw-bold text-warning-emphasis"><i class="bi bi-exclamation-triangle-fill me-2"></i>Periksa Kemungkinan Duplikat</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <p class="mb-3">Data <strong>{{ (v.owner_name or v.name) if v.vendor_type == 'narsum' else v.name }}</strong> memiliki kesamaan dengan pendaftaran berikut. Pastikan bukan entri yang sama sebelum memverifikasi.</p>
+                                                    <div class="table-responsive border rounded mb-3">
+                                                        <table class="table table-sm align-middle mb-0">
+                                                            <thead class="table-light"><tr><th>Sekolah</th><th>Data Pembanding</th><th>Kesamaan</th><th>Status</th></tr></thead>
+                                                            <tbody>
+                                                                {% for duplicate in v.duplicate_matches %}
+                                                                <tr>
+                                                                    <td><strong>{{ duplicate.school_name }}</strong>{% if duplicate.npsn %}<div class="small text-muted">NPSN {{ duplicate.npsn }}</div>{% endif %}</td>
+                                                                    <td>
+                                                                        <strong>{{ (duplicate.owner_name or duplicate.name) if v.vendor_type == 'narsum' else duplicate.name }}</strong>
+                                                                        <div class="small text-muted">KTP/NPWP: {{ duplicate.name if v.vendor_type == 'narsum' else (duplicate.npwp or '-') }} · Kontak: {{ duplicate.phone or '-' }}</div>
+                                                                    </td>
+                                                                    <td>{% for field in duplicate.duplicate_fields %}<span class="badge text-bg-danger me-1">{{ field }}</span>{% endfor %}</td>
+                                                                    <td><span class="badge {{ 'text-bg-success' if duplicate.status == 'verified' else ('text-bg-danger' if duplicate.status == 'rejected' else 'text-bg-warning') }}">{{ {'verified': 'Terverifikasi', 'rejected': 'Ditolak', 'pending': 'Menunggu'}.get(duplicate.status, duplicate.status) }}</span></td>
+                                                                </tr>
+                                                                {% endfor %}
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                    <div class="alert alert-danger small"><strong>Jangan verifikasi</strong> jika data tersebut merupakan vendor/narasumber yang sama.</div>
+                                                    {% if v.status != 'verified' %}
+                                                    <label class="form-label fw-bold" for="duplicateConfirmation{{ v.id }}">Jika memang berbeda, ketik <code>vendor berbeda</code></label>
+                                                    <input id="duplicateConfirmation{{ v.id }}" name="duplicate_confirmation" class="form-control" autocomplete="off" placeholder="vendor berbeda" required pattern="[Vv][Ee][Nn][Dd][Oo][Rr] [Bb][Ee][Rr][Bb][Ee][Dd][Aa]">
+                                                    {% endif %}
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                                                    {% if v.status != 'verified' %}<button type="submit" class="btn btn-warning fw-bold"><i class="bi bi-shield-check me-1"></i>Konfirmasi Verifikasi</button>{% endif %}
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+
                                     <!-- Modal Tolak Vendor -->
                                     <div class="modal fade text-start" id="rejectVendorModal{{ v.id }}" tabindex="-1" aria-hidden="true">
                                         <div class="modal-dialog modal-dialog-centered">
                                             <div class="modal-content">
-                                                <form method="POST" action="{{ url_for('monev_bos.admin_vendors', status=status_filter) }}">
+                                                <form method="POST" action="{{ url_for('monev_bos.admin_vendors', vendor_type=vendor_type_filter, school_id=school_id_filter, status=status_filter, q=search_query) }}">
                                                     <input type="hidden" name="action" value="reject_vendor">
                                                     <input type="hidden" name="vendor_id" value="{{ v.id }}">
                                                     <div class="modal-header">
-                                                        <h5 class="modal-title fw-bold text-danger">Tolak Pengajuan Vendor</h5>
+                                                        <h5 class="modal-title fw-bold text-danger">Tolak Pengajuan {{ 'Narasumber' if v.vendor_type == 'narsum' else 'Vendor' }}</h5>
                                                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                                     </div>
                                                     <div class="modal-body">
-                                                        <p class="mb-2">Anda akan menolak pengajuan vendor <strong>{{ v.name }}</strong> dari <strong>{{ v.school_name }}</strong>.</p>
+                                                        <p class="mb-2">Anda akan menolak pengajuan {{ 'narasumber' if v.vendor_type == 'narsum' else 'vendor' }} <strong>{{ v.name }}</strong> dari <strong>{{ v.school_name }}</strong>.</p>
                                                         <div class="mb-3">
                                                             <label class="form-label fw-semibold">Alasan Penolakan <span class="text-danger">*</span></label>
                                                             <textarea class="form-control" name="rejection_reason" rows="3" placeholder="Contoh: NPWP tidak valid / Alamat toko tidak jelas" required></textarea>
@@ -308,7 +443,7 @@
                                 <td colspan="8" class="text-center py-5">
                                     <div class="text-muted">
                                         <i class="bi bi-shop fs-1 d-block mb-2 text-secondary opacity-50"></i>
-                                        Tidak ada pendaftaran vendor{% if status_filter %} dengan status ini{% endif %}.
+                                        Tidak ada pendaftaran {{ 'narasumber' if vendor_type_filter == 'narsum' else 'vendor' }} dengan filter ini.
                                     </div>
                                 </td>
                             </tr>
@@ -341,24 +476,25 @@
                         <span class="badge bg-primary-subtle text-primary border vendor-mobile-type"><i class="bi bi-shop me-1"></i>Vendor</span>
                         {% endif %}
                     </div>
-                    <h2 class="fw-bold text-body mb-0 vendor-mobile-name" title="{{ v.name }}">{{ v.name }}</h2>
+                    <h2 class="fw-bold text-body mb-0 vendor-mobile-name" title="{{ (v.owner_name or '-') if v.vendor_type == 'narsum' else v.name }}">{{ (v.owner_name or '-') if v.vendor_type == 'narsum' else v.name }}</h2>
                     <div class="text-body-secondary vendor-mobile-school"><i class="bi bi-building me-1"></i>{{ v.school_name }}{% if v.npsn %} · {{ v.npsn }}{% endif %}</div>
+                    {% if v.duplicate_matches %}<span class="badge bg-danger-subtle text-danger border border-danger mt-1 vendor-mobile-type"><i class="bi bi-exclamation-triangle-fill me-1"></i>{{ v.duplicate_matches|length }} data mirip</span>{% endif %}
                 </div>
                 <span class="badge bg-{{ mobile_status_colors.get(v.status, 'secondary') }} vendor-mobile-status">{{ mobile_status_labels.get(v.status, v.status) }}</span>
             </div>
 
             <div class="vendor-mobile-meta">
                 <div class="vendor-mobile-meta-item">
-                    <span class="vendor-mobile-meta-label">NPWP / KTP</span>
-                    <span class="vendor-mobile-meta-value">{{ v.npwp or '-' }}</span>
+                    <span class="vendor-mobile-meta-label">{% if v.vendor_type == 'narsum' %}No. KTP{% else %}NPWP{% endif %}</span>
+                    <span class="vendor-mobile-meta-value">{{ v.name if v.vendor_type == 'narsum' else (v.npwp or '-') }}</span>
                 </div>
                 <div class="vendor-mobile-meta-item">
                     <span class="vendor-mobile-meta-label">Kontak</span>
                     <span class="vendor-mobile-meta-value">{{ v.phone or '-' }}</span>
                 </div>
                 <div class="vendor-mobile-meta-item">
-                    <span class="vendor-mobile-meta-label">{% if v.vendor_type == 'narsum' %}Narasumber{% else %}Penanggung Jawab{% endif %}</span>
-                    <span class="vendor-mobile-meta-value">{{ v.owner_name or '-' }}</span>
+                    <span class="vendor-mobile-meta-label">{% if v.vendor_type == 'narsum' %}NPWP{% else %}Penanggung Jawab{% endif %}</span>
+                    <span class="vendor-mobile-meta-value">{{ (v.npwp or '-') if v.vendor_type == 'narsum' else (v.owner_name or '-') }}</span>
                 </div>
                 <div class="vendor-mobile-meta-item">
                     <span class="vendor-mobile-meta-label">Bank / Rekening</span>
@@ -369,31 +505,75 @@
             {% if v.status == 'rejected' and v.rejection_reason %}
             <div class="text-danger vendor-mobile-reason"><i class="bi bi-info-circle me-1"></i>{{ v.rejection_reason }}</div>
             {% endif %}
+            {% if v.verification_notes %}
+            <div class="text-success vendor-mobile-reason fw-semibold"><i class="bi bi-shield-check me-1"></i>{{ v.verification_notes }}</div>
+            {% endif %}
 
             <div class="vendor-mobile-actions">
                 {% if v.status == 'pending' %}
-                <form method="POST" action="{{ url_for('monev_bos.admin_vendors', status=status_filter, q=search_query) }}" onsubmit="return confirm('Setujui dan verifikasi vendor {{ v.name }}?')">
+                {% if v.duplicate_matches %}
+                <button type="button" class="btn btn-warning text-dark fw-bold" data-bs-toggle="modal" data-bs-target="#duplicateVendorMobileModal{{ v.id }}"><i class="bi bi-exclamation-triangle-fill me-1"></i>Cek &amp; Verifikasi</button>
+                {% else %}
+                <form method="POST" action="{{ url_for('monev_bos.admin_vendors', vendor_type=vendor_type_filter, school_id=school_id_filter, status=status_filter, q=search_query) }}" onsubmit="return confirm('Setujui dan verifikasi data ini?')">
                     <input type="hidden" name="action" value="verify_vendor">
                     <input type="hidden" name="vendor_id" value="{{ v.id }}">
                     <button type="submit" class="btn btn-success fw-bold"><i class="bi bi-check-lg me-1"></i>Verifikasi</button>
                 </form>
+                {% endif %}
                 <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#rejectVendorMobileModal{{ v.id }}"><i class="bi bi-x-lg me-1"></i>Tolak</button>
                 {% elif v.status == 'rejected' %}
-                <form method="POST" action="{{ url_for('monev_bos.admin_vendors', status=status_filter, q=search_query) }}" onsubmit="return confirm('Ubah status vendor ini menjadi Terverifikasi?')">
+                {% if v.duplicate_matches %}
+                <button type="button" class="btn btn-warning text-dark fw-bold" data-bs-toggle="modal" data-bs-target="#duplicateVendorMobileModal{{ v.id }}"><i class="bi bi-exclamation-triangle-fill me-1"></i>Cek &amp; Setujui</button>
+                {% else %}
+                <form method="POST" action="{{ url_for('monev_bos.admin_vendors', vendor_type=vendor_type_filter, school_id=school_id_filter, status=status_filter, q=search_query) }}" onsubmit="return confirm('Ubah status data ini menjadi Terverifikasi?')">
                     <input type="hidden" name="action" value="verify_vendor">
                     <input type="hidden" name="vendor_id" value="{{ v.id }}">
                     <button type="submit" class="btn btn-outline-success fw-bold"><i class="bi bi-check-lg me-1"></i>Setujui</button>
                 </form>
+                {% endif %}
                 {% else %}
                 <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#rejectVendorMobileModal{{ v.id }}"><i class="bi bi-x-lg me-1"></i>Batalkan Verifikasi</button>
                 {% endif %}
             </div>
         </article>
 
+        {% if v.duplicate_matches %}
+        <div class="modal fade" id="duplicateVendorMobileModal{{ v.id }}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered mx-2">
+                <form method="POST" action="{{ url_for('monev_bos.admin_vendors', vendor_type=vendor_type_filter, school_id=school_id_filter, status=status_filter, q=search_query) }}" class="modal-content">
+                    <input type="hidden" name="action" value="verify_vendor">
+                    <input type="hidden" name="vendor_id" value="{{ v.id }}">
+                    <div class="modal-header bg-warning-subtle py-2 px-3">
+                        <h5 class="modal-title fw-bold fs-6"><i class="bi bi-exclamation-triangle-fill text-warning me-1"></i>Periksa Data Mirip</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                    </div>
+                    <div class="modal-body p-3">
+                        <p class="small">Pastikan data berikut bukan vendor/narasumber yang sama:</p>
+                        <div class="vstack gap-2 mb-3">
+                            {% for duplicate in v.duplicate_matches %}
+                            <div class="border rounded p-2 small">
+                                <strong>{{ (duplicate.owner_name or duplicate.name) if v.vendor_type == 'narsum' else duplicate.name }}</strong>
+                                <div class="text-muted">{{ duplicate.school_name }}{% if duplicate.npsn %} · {{ duplicate.npsn }}{% endif %}</div>
+                                <div class="mt-1">Sama pada: {% for field in duplicate.duplicate_fields %}<span class="badge text-bg-danger me-1">{{ field }}</span>{% endfor %}</div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <label class="form-label small fw-bold" for="duplicateMobileConfirmation{{ v.id }}">Jika berbeda, ketik <code>vendor berbeda</code></label>
+                        <input id="duplicateMobileConfirmation{{ v.id }}" name="duplicate_confirmation" class="form-control form-control-sm" autocomplete="off" placeholder="vendor berbeda" required pattern="[Vv][Ee][Nn][Dd][Oo][Rr] [Bb][Ee][Rr][Bb][Ee][Dd][Aa]">
+                    </div>
+                    <div class="modal-footer p-2">
+                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-sm btn-warning fw-bold">Konfirmasi Verifikasi</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
         <div class="modal fade" id="rejectVendorMobileModal{{ v.id }}" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered mx-3">
                 <div class="modal-content">
-                    <form method="POST" action="{{ url_for('monev_bos.admin_vendors', status=status_filter, q=search_query) }}">
+                    <form method="POST" action="{{ url_for('monev_bos.admin_vendors', vendor_type=vendor_type_filter, school_id=school_id_filter, status=status_filter, q=search_query) }}">
                         <input type="hidden" name="action" value="reject_vendor">
                         <input type="hidden" name="vendor_id" value="{{ v.id }}">
                         <div class="modal-header py-2 px-3">
@@ -414,7 +594,7 @@
             </div>
         </div>
         {% else %}
-        <div class="text-center text-body-secondary py-4 small">Tidak ada pendaftaran vendor dengan filter ini.</div>
+        <div class="text-center text-body-secondary py-4 small">Tidak ada pendaftaran {{ 'narasumber' if vendor_type_filter == 'narsum' else 'vendor' }} dengan filter ini.</div>
         {% endfor %}
     </div>
 </div>
@@ -424,7 +604,7 @@
 <div class="modal fade" id="manageBanksModal" tabindex="-1" aria-labelledby="manageBanksModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <form method="POST" action="{{ url_for('monev_bos.admin_vendors') }}">
+            <form method="POST" action="{{ url_for('monev_bos.admin_vendors', vendor_type=vendor_type_filter, school_id=school_id_filter, status=status_filter, q=search_query) }}">
                 <input type="hidden" name="action" value="update_master_banks">
                 <div class="modal-header">
                     <h5 class="modal-title fw-bold" id="manageBanksModalLabel">
@@ -445,4 +625,36 @@
     </div>
 </div>
 {% endif %}
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css">
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const schoolSelect = document.getElementById('vendorSchoolFilter');
+    if (!schoolSelect) return;
+
+    function submitSchoolFilter() {
+        if (schoolSelect.form) schoolSelect.form.submit();
+    }
+
+    if (!window.TomSelect) {
+        schoolSelect.addEventListener('change', submitSchoolFilter);
+        return;
+    }
+
+    new TomSelect(schoolSelect, {
+        create: false,
+        allowEmptyOption: true,
+        placeholder: schoolSelect.dataset.placeholder,
+        searchField: ['text'],
+        plugins: ['clear_button'],
+        onChange: submitSchoolFilter,
+        render: {
+            no_results: function () {
+                return '<div class="no-results p-2 text-body-secondary text-center small">Sekolah atau NPSN tidak ditemukan</div>';
+            }
+        }
+    });
+});
+</script>
 {% endblock %}

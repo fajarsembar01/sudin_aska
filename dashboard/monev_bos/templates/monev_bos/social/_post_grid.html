@@ -2,7 +2,7 @@
     {% for post in posts %}
     <div class="col-12 col-sm-6 col-lg-4 col-xl-3 monev-post-grid-item" id="post-{{ post.id }}">
         <article class="card h-100 border-0 shadow-sm overflow-hidden position-relative">
-            {% if profile is defined %}
+            {% if can_manage_profile|default(false) %}
             <label class="position-absolute top-0 start-0 m-2 z-3 bg-white rounded-pill shadow-sm px-2 py-1 d-flex align-items-center gap-1 photo-report-selector" title="Pilih untuk laporan PDF">
                 <input type="checkbox" class="form-check-input mt-0 photo-report-checkbox" value="{{ post.id }}" data-is-public="{{ 'true' if post.is_public else 'false' }}" aria-label="Pilih {{ post.title }}">
                 <span class="small fw-semibold">Pilih</span>

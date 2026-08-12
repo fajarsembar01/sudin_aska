@@ -262,24 +262,24 @@
                     <i class="bi bi-calendar3 me-1"></i> Tahun {{ report.year or '2026' }} &bull; TW {{ report.tw or 'I' }}
                 </span>
             </div>
-            <p class="text-body-secondary small mb-0 d-none d-sm-block">Monitoring dan validasi kegiatan laporan pertanggungjawaban sekolah</p>
+            <p class="text-body-secondary small mb-0 d-none d-sm-block">Monitoring dan verifikasi kegiatan laporan pertanggungjawaban sekolah</p>
         </div>
         <div class="d-flex align-items-center gap-2 flex-wrap audit-header-actions">
             <div class="d-flex align-items-center gap-1.5 bg-body border rounded-pill px-3 py-1 shadow-2xs audit-status-control">
-                <span class="text-body-secondary fw-bold text-xs text-nowrap"><i class="bi bi-clipboard-check me-1"></i>Status Audit:</span>
+                <span class="text-body-secondary fw-bold text-xs text-nowrap"><i class="bi bi-clipboard-check me-1"></i>Status Verifikasi:</span>
                 <form action="{{ url_for('monev_bos.staff_audit_report', report_id=report.id) }}" method="POST" class="m-0">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="action" value="update_report_status">
                     <select name="status" class="form-select form-select-sm fw-bold text-xs border-0 bg-transparent py-0 pe-4 shadow-none" onchange="this.form.submit()">
-                        <option value="submitted" {% if report.status == 'submitted' %}selected{% endif %}>Menunggu Audit</option>
-                        <option value="in_review" {% if report.status == 'in_review' %}selected{% endif %}>Sedang Diaudit</option>
+                        <option value="submitted" {% if report.status == 'submitted' %}selected{% endif %}>Menunggu Verifikasi</option>
+                        <option value="in_review" {% if report.status == 'in_review' %}selected{% endif %}>Sedang Diverifikasi</option>
                         <option value="needs_revision" {% if report.status == 'needs_revision' %}selected{% endif %}>Butuh Revisi</option>
                         <option value="completed_with_notes" {% if report.status == 'completed_with_notes' %}selected{% endif %}>Selesai dengan Catatan</option>
-                        <option value="completed" {% if report.status == 'completed' %}selected{% endif %}>Audit Selesai</option>
+                        <option value="completed" {% if report.status == 'completed' %}selected{% endif %}>Verifikasi Selesai</option>
                     </select>
                 </form>
             </div>
-            <a href="{{ url_for('monev_bos.staff_dashboard') }}" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+            <a href="{{ url_for('monev_bos.staff_dashboard', period_id=report.period_id) }}" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
                 <i class="bi bi-arrow-left me-1.5"></i> Dashboard
             </a>
         </div>
@@ -485,7 +485,7 @@
                     <!-- Baris 1: Judul -->
                     <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
                         <h6 class="m-0 font-weight-bold text-primary text-sm">
-                            Daftar Kegiatan Audit <span class="badge bg-primary-subtle text-primary border ms-1">{{ activities|length }}</span>
+                            Daftar Kegiatan Verifikasi <span class="badge bg-primary-subtle text-primary border ms-1">{{ activities|length }}</span>
                         </h6>
                     </div>
                     
@@ -513,7 +513,7 @@
                                             {% elif act.status == 'invalid' %}
                                             <span class="badge bg-danger" style="font-size: 0.7rem;"><i class="bi bi-x-circle me-1"></i>Revisi</span>
                                             {% elif act.status == 'in_review' %}
-                                            <span class="badge bg-info text-dark" style="font-size: 0.7rem;"><i class="bi bi-gear-wide-connected me-1 spin-icon"></i>Proses Audit</span>
+                                            <span class="badge bg-info text-dark" style="font-size: 0.7rem;"><i class="bi bi-gear-wide-connected me-1 spin-icon"></i>Proses Verifikasi</span>
                                             {% else %}
                                             <span class="badge bg-warning text-dark" style="font-size: 0.7rem;"><i class="bi bi-hourglass-split me-1"></i>Pending</span>
                                             {% endif %}
@@ -522,7 +522,7 @@
                                     </div>
                                 </div>
 
-                                <!-- Uraian Kegiatan & Auditor Name -->
+                                <!-- Uraian Kegiatan & Nama Verifikator -->
                                 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 activity-header-content">
                                     <div class="text-body fw-semibold flex-grow-1 activity-header-title" style="font-size: 0.84rem; line-height: 1.3;">{{ act.activity_name }}</div>
                                     <div class="d-flex align-items-center gap-1 flex-wrap activity-indicators">
@@ -535,7 +535,7 @@
                                         <span class="badge bg-danger-subtle text-danger border text-xs"><i class="bi bi-camera me-1"></i>Tanpa foto sekolah</span>
                                         {% endif %}
                                         {% if (act.vendor_id or act.vendor_name) and act.vendor_status != 'verified' %}
-                                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning text-xs" title="Vendor belum divalidasi"><i class="bi bi-shop me-1"></i>Vendor Belum Divalidasi</span>
+                                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning text-xs" title="Vendor belum diverifikasi"><i class="bi bi-shop me-1"></i>Vendor Belum Diverifikasi</span>
                                         {% endif %}
                                         {% if act.invalid_school_photos %}
                                         <span class="badge bg-danger-subtle text-danger border text-xs"><i class="bi bi-slash-circle me-1"></i>Dianulir: {{ act.invalid_school_photos|length }}</span>
@@ -543,11 +543,11 @@
                                     </div>
                                     {% if act.auditor_name %}
                                     <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill text-xs fw-normal flex-shrink-0 activity-auditor-badge" id="auditorBadge{{ act.id }}">
-                                        <i class="bi bi-person-check me-1"></i> Auditor: <strong>{{ act.auditor_name }}</strong>
+                                        <i class="bi bi-person-check me-1"></i> Verifikator: <strong>{{ act.auditor_name }}</strong>
                                     </span>
                                     {% else %}
                                     <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill text-xs fw-normal flex-shrink-0 activity-auditor-badge" id="auditorBadge{{ act.id }}" style="display: none;">
-                                        <i class="bi bi-person-check me-1"></i> Auditor: <strong>-</strong>
+                                        <i class="bi bi-person-check me-1"></i> Verifikator: <strong>-</strong>
                                     </span>
                                     {% endif %}
                                 </div>
@@ -573,7 +573,7 @@
                                          <small class="text-body-secondary d-block" style="font-size: 0.72rem;">Vendor / Toko:</small>
                                          <span class="text-body">{{ act.vendor_display_name or act.vendor_name or '-' }}</span>
                                          {% if (act.vendor_id or act.vendor_name) and act.vendor_status != 'verified' %}
-                                             <span class="badge bg-warning text-dark text-xs ms-1">Belum Divalidasi</span>
+                                             <span class="badge bg-warning text-dark text-xs ms-1">Belum Diverifikasi</span>
                                          {% endif %}
                                      </div>
                                      <div class="col-6 col-sm-3">
@@ -666,7 +666,7 @@
                                     {% endif %}
                                 </div>
 
-                                 <!-- Form Validasi -->
+                                 <!-- Form Verifikasi -->
                                 <div class="bg-body p-2.5 p-sm-3 border rounded shadow-sm audit-form-box">
                                     <form action="{{ url_for('monev_bos.staff_audit_activity', activity_id=act.id) }}" method="POST" class="validate-activity-form" data-activity-id="{{ act.id }}">
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -748,25 +748,25 @@
                                                     <span class="text-secondary"><strong>{{ act.vendor_display_name or act.vendor_name or 'Entri terkait' }}</strong> belum diverifikasi oleh Staff/Admin. Kegiatan ini tidak dapat disetujui (Sesuai) sebelum verifikasi selesai.</span>
                                                 </div>
                                             </div>
-                                            <a href="{{ url_for('monev_bos.admin_vendors', q=act.vendor_display_name or act.vendor_name or '', status='pending') }}" target="_blank" class="btn btn-sm btn-warning text-dark fw-bold text-nowrap ms-2 shadow-2xs vendor-verification-action">
-                                                <i class="bi bi-shield-check me-1"></i>Verifikasi Vendor
+                                            <a href="{{ url_for('monev_bos.admin_vendors', vendor_type=act.linked_vendor_type if act.linked_vendor_type in ['vendor', 'narsum'] else 'vendor', school_id=report.school_id, q=act.vendor_display_name or act.vendor_name or '', status='pending') }}" target="_blank" rel="noopener" class="btn btn-sm btn-warning text-dark fw-bold text-nowrap ms-2 shadow-2xs vendor-verification-action" title="Buka verifikasi {{ 'narasumber' if act.linked_vendor_type == 'narsum' else 'vendor' }} dari {{ report.school_name }} di tab baru">
+                                                <i class="bi bi-box-arrow-up-right me-1"></i>Verifikasi {{ 'Narasumber' if act.linked_vendor_type == 'narsum' else 'Vendor' }}
                                             </a>
                                         </div>
                                         {% endif %}
 
-                                        <!-- Catatan Audit -->
+                                        <!-- Catatan Verifikasi -->
                                         <div class="mb-3">
-                                            <label class="form-label text-xs fw-bold mb-1">Catatan Audit / Temuan</label>
-                                            <textarea name="audit_notes" class="form-control form-control-sm bg-body-tertiary" rows="2" placeholder="Tuliskan catatan audit temuan atau instruksi revisi untuk sekolah (opsional)...">{{ act.audit_notes or '' }}</textarea>
+                                            <label class="form-label text-xs fw-bold mb-1">Catatan Verifikasi</label>
+                                            <textarea name="audit_notes" class="form-control form-control-sm bg-body-tertiary" rows="2" placeholder="Tuliskan hasil verifikasi atau instruksi revisi untuk sekolah (opsional)...">{{ act.audit_notes or '' }}</textarea>
                                         </div>
 
-                                        <!-- 2 Tombol Utama Validasi (1 Baris: Kiri Perlu Revisi, Kanan Sesuai) -->
+                                        <!-- 2 Tombol Utama Verifikasi (1 Baris: Kiri Perlu Revisi, Kanan Sesuai) -->
                                         <div class="d-flex gap-2 pt-2 border-top audit-validation-actions">
                                             <button type="submit" name="status" value="invalid" onclick="this.form.querySelector('.activity-status-input').value='invalid';" class="btn btn-sm btn-danger py-2 px-2.5 fw-bold flex-fill shadow-2xs">
                                                 <i class="bi bi-x-circle-fill me-1"></i> Perlu Revisi
                                             </button>
                                             {% if (act.vendor_id or act.vendor_name) and act.vendor_status != 'verified' %}
-                                            <button type="button" class="btn btn-sm btn-secondary py-2 px-2.5 fw-bold flex-fill shadow-2xs opacity-75" disabled data-bs-toggle="tooltip" title="Vendor belum divalidasi. Verifikasi vendor terlebih dahulu.">
+                                            <button type="button" class="btn btn-sm btn-secondary py-2 px-2.5 fw-bold flex-fill shadow-2xs opacity-75" disabled data-bs-toggle="tooltip" title="Vendor belum diverifikasi. Verifikasi vendor terlebih dahulu.">
                                                 <i class="bi bi-lock-fill me-1"></i> Sesuai (Valid)
                                             </button>
                                             {% else %}
@@ -792,11 +792,11 @@
             </div>
         </div>
 
-        <!-- Kolom Kanan: Log Audit Trail -->
+        <!-- Kolom Kanan: Riwayat Verifikasi -->
         <div class="col-lg-4 audit-log-column">
             <div class="card shadow-sm mb-3 border-0 audit-log-card">
                 <div class="card-header bg-body-tertiary py-2 px-3 d-flex justify-content-between align-items-center">
-                    <h6 class="m-0 font-weight-bold text-primary text-sm audit-log-title"><i class="bi bi-clock-history me-1"></i> Log Audit Tim</h6>
+                    <h6 class="m-0 font-weight-bold text-primary text-sm audit-log-title"><i class="bi bi-clock-history me-1"></i> Riwayat Verifikasi Tim</h6>
                     <span class="badge bg-body-tertiary text-body-secondary border text-xs audit-log-count">{{ audit_logs|length }} log</span>
                 </div>
                 <div class="card-body p-0">
@@ -813,7 +813,7 @@
                             {% endif %}
                         </li>
                         {% else %}
-                        <li class="list-group-item text-body-secondary text-center py-3 text-xs">Belum ada riwayat audit.</li>
+                        <li class="list-group-item text-body-secondary text-center py-3 text-xs">Belum ada riwayat verifikasi.</li>
                         {% endfor %}
                     </ul>
                 </div>
@@ -968,7 +968,7 @@
                 
                 const badgeContainer = document.getElementById('statusBadgeContainer' + id);
                 if (badgeContainer) {
-                    badgeContainer.innerHTML = '<span class="badge bg-info text-dark" style="font-size: 0.7rem;"><i class="bi bi-gear-wide-connected me-1 spin-icon"></i>Proses Audit</span>';
+                    badgeContainer.innerHTML = '<span class="badge bg-info text-dark" style="font-size: 0.7rem;"><i class="bi bi-gear-wide-connected me-1 spin-icon"></i>Proses Verifikasi</span>';
                 }
 
                 const formData = new FormData();
@@ -1229,7 +1229,7 @@
         }
     }
 
-    // Draft checklist dan catatan disimpan tanpa mengubah status validasi kegiatan.
+    // Draft checklist dan catatan disimpan tanpa mengubah status verifikasi kegiatan.
     const auditAutosaveStates = new WeakMap();
     const dirtyAuditForms = new Set();
 
@@ -1382,7 +1382,7 @@
             }
 
             // Biarkan request draft yang sudah berjalan selesai lebih dulu agar
-            // respons lama tidak menimpa detail terbaru dari validasi akhir.
+            // respons lama tidak menimpa detail terbaru dari verifikasi akhir.
             while (autosaveState.inFlight) {
                 await new Promise(function (resolve) { window.setTimeout(resolve, 50); });
             }
@@ -1439,7 +1439,7 @@
                         } else if (status === 'invalid') {
                             badgeContainer.innerHTML = '<span class="badge bg-danger" style="font-size: 0.7rem;"><i class="bi bi-x-circle me-1"></i>Revisi</span>';
                         } else if (status === 'in_review') {
-                            badgeContainer.innerHTML = '<span class="badge bg-info text-dark" style="font-size: 0.7rem;"><i class="bi bi-gear-wide-connected me-1 spin-icon"></i>Proses Audit</span>';
+                            badgeContainer.innerHTML = '<span class="badge bg-info text-dark" style="font-size: 0.7rem;"><i class="bi bi-gear-wide-connected me-1 spin-icon"></i>Proses Verifikasi</span>';
                         } else {
                             badgeContainer.innerHTML = '<span class="badge bg-warning text-dark" style="font-size: 0.7rem;"><i class="bi bi-hourglass-split me-1"></i>Pending</span>';
                         }
@@ -1448,7 +1448,7 @@
                     if (data.auditor_name) {
                         const auditorBadge = document.getElementById('auditorBadge' + actId);
                         if (auditorBadge) {
-                            auditorBadge.innerHTML = '<i class="bi bi-person-check me-1"></i> Auditor: <strong>' + data.auditor_name + '</strong>';
+                            auditorBadge.innerHTML = '<i class="bi bi-person-check me-1"></i> Verifikator: <strong>' + data.auditor_name + '</strong>';
                             auditorBadge.style.display = 'inline-block';
                         }
                     }
@@ -1463,7 +1463,7 @@
                         toast.style.zIndex = '9999';
                         document.body.appendChild(toast);
                     }
-                    toast.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i> ' + (data.message || 'Hasil validasi berhasil disimpan.');
+                    toast.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i> ' + (data.message || 'Hasil verifikasi berhasil disimpan.');
                     toast.style.display = 'block';
                     setTimeout(() => { toast.style.display = 'none'; }, 3500);
                 }

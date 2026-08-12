@@ -136,7 +136,7 @@
                 <h5 class="fw-bold text-warning-emphasis mb-0">
                     {{ year_stats.filled_tw_count }} / 4 TW
                 </h5>
-                <small class="text-body-secondary" style="font-size: 0.72rem;">{{ year_stats.completed_tw_count }} Audit Selesai</small>
+                <small class="text-body-secondary" style="font-size: 0.72rem;">{{ year_stats.completed_tw_count }} Verifikasi Selesai</small>
             </div>
         </div>
     </div>
@@ -179,7 +179,7 @@
                             <div class="text-end">
                                 {% if card.status_key == 'completed' %}
                                 <span class="badge bg-success text-white px-2.5 py-1.5 shadow-xs" style="font-size: 0.75rem;">
-                                    <i class="bi bi-check-circle-fill me-1"></i>Audit Selesai
+                                    <i class="bi bi-check-circle-fill me-1"></i>Verifikasi Selesai
                                 </span>
                                 {% elif card.status_key == 'completed_with_notes' %}
                                 <span class="badge bg-warning text-dark px-2.5 py-1.5 shadow-xs" style="font-size: 0.75rem;">
@@ -191,11 +191,11 @@
                                 </span>
                                 {% elif card.status_key == 'in_review' %}
                                 <span class="badge bg-info text-dark px-2.5 py-1.5 shadow-xs" style="font-size: 0.75rem;">
-                                    <i class="bi bi-gear-wide-connected me-1 spin-icon"></i>Sedang Diaudit
+                                    <i class="bi bi-gear-wide-connected me-1 spin-icon"></i>Sedang Diverifikasi
                                 </span>
                                 {% elif card.status_key == 'submitted' %}
                                 <span class="badge bg-primary text-white px-2.5 py-1.5 shadow-xs" style="font-size: 0.75rem;">
-                                    <i class="bi bi-clock-history me-1"></i>Menunggu Audit
+                                    <i class="bi bi-clock-history me-1"></i>Menunggu Verifikasi
                                 </span>
                                 {% elif card.status_key == 'draft' %}
                                 <span class="badge bg-warning text-dark px-2.5 py-1.5 shadow-xs" style="font-size: 0.75rem;">
@@ -229,7 +229,7 @@
                         <div class="alert alert-danger p-2 px-3 text-xs mb-3 rounded-3 d-flex align-items-center gap-2">
                             <i class="bi bi-exclamation-octagon-fill fs-5 text-danger"></i>
                             <div>
-                                <strong>Perhatian:</strong> Terdapat catatan revisi dari Tim Audit Staff. Silakan periksa dan perbaiki kegiatan Anda.
+                                <strong>Perhatian:</strong> Terdapat catatan revisi dari Tim Verifikator Staff. Silakan periksa dan perbaiki kegiatan Anda.
                             </div>
                         </div>
                         {% endif %}

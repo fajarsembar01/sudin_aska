@@ -92,7 +92,7 @@
                 {% if current_user and current_user.role == 'staff' %}
                 <li class="nav-item">
                     <a class="nav-link {% if request.endpoint == 'monev_bos.staff_dashboard' %}active{% endif %}" href="{{ url_for('monev_bos.staff_dashboard') }}">
-                        <i class="bi bi-check2-square nav-icon"></i>Audit Sekolah
+                        <i class="bi bi-check2-square nav-icon"></i>Verifikasi Sekolah
                         {% if submitted_reports_count and submitted_reports_count > 0 %}
                         <span class="badge bg-warning text-dark rounded-pill ms-1">{{ submitted_reports_count }}</span>
                         {% endif %}
@@ -112,7 +112,7 @@
 
                 {% if current_user and current_user.role in ['admin', 'sekolah'] %}
                 <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint in ['monev_bos.school_posts_explore', 'monev_bos.school_posts_profile'] %}active{% endif %}" href="{% if current_user.role == 'admin' %}{{ url_for('monev_bos.school_posts_explore') }}{% else %}{{ url_for('monev_bos.school_posts_profile', school_user_id=current_user.id) }}{% endif %}">
+                    <a class="nav-link {% if request.endpoint in ['monev_bos.school_posts_explore', 'monev_bos.school_posts_profile'] %}active{% endif %}" href="{{ url_for('monev_bos.school_posts_explore') }}">
                         <i class="bi bi-images nav-icon"></i>Foto Live & Post
                     </a>
                 </li>

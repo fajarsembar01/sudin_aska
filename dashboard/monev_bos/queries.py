@@ -9,6 +9,29 @@ from .external_photos import generate_access_token
 SUPPORTED_BOP_CLAIM_PERIODS = {(2025, 4), (2026, 1), (2026, 2)}
 
 
+def _verification_display_text(value: Any) -> Any:
+    """Normalize legacy review wording before it is shown in the Monev UI."""
+    if not isinstance(value, str):
+        return value
+    replacements = (
+        ("Memvalidasi", "Memverifikasi"),
+        ("memvalidasi", "memverifikasi"),
+        ("Divalidasi", "Diverifikasi"),
+        ("divalidasi", "diverifikasi"),
+        ("Validasi", "Verifikasi"),
+        ("validasi", "verifikasi"),
+        ("Auditor", "Verifikator"),
+        ("auditor", "verifikator"),
+        ("Diaudit", "Diverifikasi"),
+        ("diaudit", "diverifikasi"),
+        ("Audit", "Verifikasi"),
+        ("audit", "verifikasi"),
+    )
+    for old, new in replacements:
+        value = value.replace(old, new)
+    return value
+
+
 def attach_admin_input_names(
     items: List[Dict[str, Any]],
     target_type: str,
@@ -366,6 +389,34 @@ def list_assignments(period_id: int) -> List[Dict[str, Any]]:
         )
         return [dict(row) for row in cur.fetchall()]
 
+
+def list_assignments_for_periods(period_ids: List[int]) -> List[Dict[str, Any]]:
+    """List assignments from all requested periods with their period identity."""
+    if not period_ids:
+        return []
+
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT a.*,
+                   t.name AS team_name,
+                   s.full_name AS school_name,
+                   s.email AS school_email,
+                   p.year AS period_year,
+                   p.tw AS period_tw,
+                   p.start_date AS period_start_date,
+                   p.end_date AS period_end_date
+            FROM monev_bos_assignments a
+            JOIN monev_bos_teams t ON a.team_id = t.id
+            JOIN dashboard_users s ON a.school_id = s.id
+            JOIN monev_bos_periods p ON a.period_id = p.id
+            WHERE a.period_id = ANY(%s)
+            ORDER BY p.year DESC, p.tw ASC, s.full_name ASC
+            """,
+            (period_ids,),
+        )
+        return [dict(row) for row in cur.fetchall()]
+
 def assign_team_to_school(team_id: int, school_id: int, period_id: int) -> None:
     with get_cursor(commit=True) as cur:
         cur.execute(
@@ -376,6 +427,33 @@ def assign_team_to_school(team_id: int, school_id: int, period_id: int) -> None:
             """,
             (team_id, school_id, period_id)
         )
+
+
+def copy_all_assignments_between_periods(source_period_id: int, target_period_id: int) -> Dict[str, int]:
+    """Copy every source-period assignment without overwriting target assignments."""
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            "SELECT COUNT(*) FROM monev_bos_assignments WHERE period_id = %s",
+            (source_period_id,),
+        )
+        source_count = int(cur.fetchone()[0])
+        cur.execute(
+            """
+            INSERT INTO monev_bos_assignments (team_id, school_id, period_id)
+            SELECT team_id, school_id, %s
+            FROM monev_bos_assignments
+            WHERE period_id = %s
+            ON CONFLICT (school_id, period_id) DO NOTHING
+            RETURNING id
+            """,
+            (target_period_id, source_period_id),
+        )
+        copied_count = len(cur.fetchall())
+        return {
+            "source_count": source_count,
+            "copied_count": copied_count,
+            "skipped_count": source_count - copied_count,
+        }
 
 def unassign_school(assignment_id: int) -> None:
     with get_cursor(commit=True) as cur:
@@ -811,7 +889,7 @@ def get_edit_request_by_id(request_id: int) -> Optional[Dict[str, Any]]:
         return dict(row) if row else None
 
 def send_reopen_notification_to_staff(activity_id: int, review_notes: str = None) -> None:
-    """Kirim notifikasi in-app ke Staff Auditor yang bertugas bahwa kegiatan telah di-reopen untuk validasi ulang."""
+    """Kirim notifikasi in-app ke Staff Verifikator bahwa kegiatan dibuka untuk verifikasi ulang."""
     try:
         with get_cursor(commit=True) as cur:
             cur.execute(
@@ -842,7 +920,7 @@ def send_reopen_notification_to_staff(activity_id: int, review_notes: str = None
             )
             team_staff = [r[0] for r in cur.fetchall() if r[0]]
 
-            # 2. Staff yang sebelumnya pernah melakukan audit / validasi pada laporan ini
+            # 2. Staff yang sebelumnya pernah melakukan verifikasi pada laporan ini
             cur.execute(
                 """
                 SELECT DISTINCT l.user_id
@@ -856,16 +934,16 @@ def send_reopen_notification_to_staff(activity_id: int, review_notes: str = None
 
             staff_ids = list(set(team_staff + previous_auditors))
 
-            # Jika tidak ada penugasan tim spesifik maupun auditor terdahulu, kirim ke semua user role 'staff'
+            # Jika tidak ada penugasan tim spesifik maupun verifikator terdahulu, kirim ke semua user role 'staff'
             if not staff_ids:
                 cur.execute("SELECT id FROM dashboard_users WHERE role = 'staff' AND account_status = 'approved'")
                 staff_ids = [r[0] for r in cur.fetchall() if r[0]]
 
-            title = f"Reopen Audit: {act['activity_code']}"
-            message = f"Kegiatan {act['activity_code']} ({act['school_name']}) telah di-reopen oleh admin untuk revisi. Silakan lakukan validasi ulang setelah sekolah memperbarui data."
+            title = f"Verifikasi Ulang: {act['activity_code']}"
+            message = f"Kegiatan {act['activity_code']} ({act['school_name']}) telah dibuka kembali oleh admin untuk revisi. Silakan lakukan verifikasi ulang setelah sekolah memperbarui data."
             if review_notes:
                 message += f" Catatan admin: {review_notes}"
-            link = f"/monev-bos/staff/audit/{act['report_id']}"
+            link = f"/monev-bos/staff/verifikasi/{act['report_id']}"
 
             for staff_id in staff_ids:
                 cur.execute(
@@ -879,7 +957,7 @@ def send_reopen_notification_to_staff(activity_id: int, review_notes: str = None
         print(f"Error sending staff notification: {e}")
 
 def send_revised_activity_notification_to_staff(activity_id: int) -> None:
-    """Kirim notifikasi in-app ke Staff Auditor bahwa sekolah telah selesai merevisi/memperbarui data kegiatan dan siap divalidasi ulang."""
+    """Kirim notifikasi in-app ke Staff Verifikator bahwa revisi kegiatan siap diverifikasi ulang."""
     try:
         with get_cursor(commit=True) as cur:
             cur.execute(
@@ -910,7 +988,7 @@ def send_revised_activity_notification_to_staff(activity_id: int) -> None:
             )
             team_staff = [r[0] for r in cur.fetchall() if r[0]]
 
-            # 2. Staff yang sebelumnya pernah melakukan audit / validasi pada laporan ini
+            # 2. Staff yang sebelumnya pernah melakukan verifikasi pada laporan ini
             cur.execute(
                 """
                 SELECT DISTINCT l.user_id
@@ -924,14 +1002,14 @@ def send_revised_activity_notification_to_staff(activity_id: int) -> None:
 
             staff_ids = list(set(team_staff + previous_auditors))
 
-            # Jika tidak ada penugasan tim spesifik maupun auditor terdahulu, kirim ke semua user role 'staff'
+            # Jika tidak ada penugasan tim spesifik maupun verifikator terdahulu, kirim ke semua user role 'staff'
             if not staff_ids:
                 cur.execute("SELECT id FROM dashboard_users WHERE role = 'staff' AND account_status = 'approved'")
                 staff_ids = [r[0] for r in cur.fetchall() if r[0]]
 
             title = f"Perbaikan Kegiatan: {act['activity_code']}"
-            message = f"{act['school_name']} telah memperbarui data kegiatan {act['activity_code']} ({act['activity_name']}). Silakan lakukan validasi ulang."
-            link = f"/monev-bos/staff/audit/{act['report_id']}"
+            message = f"{act['school_name']} telah memperbarui data kegiatan {act['activity_code']} ({act['activity_name']}). Silakan lakukan verifikasi ulang."
+            link = f"/monev-bos/staff/verifikasi/{act['report_id']}"
 
             for staff_id in staff_ids:
                 cur.execute(
@@ -973,7 +1051,7 @@ def approve_edit_request(request_id: int, reviewed_by: int, review_notes: str = 
             (reviewed_by, review_notes, request_id)
         )
 
-    # 4. Kirim notifikasi in-app ke Staff Auditor yang bertugas
+    # 4. Kirim notifikasi in-app ke Staff Verifikator yang bertugas
     send_reopen_notification_to_staff(activity_id, review_notes)
 
 def reject_edit_request(request_id: int, reviewed_by: int, review_notes: str = None) -> None:
@@ -1135,7 +1213,7 @@ def remove_team_member(team_id: int, staff_id: int) -> None:
             (team_id, staff_id)
         )
 
-# --- AUDIT (STAFF) ---
+# --- VERIFIKASI (STAFF) ---
 def get_schools_for_team(team_id: int, period_id: int) -> List[Dict[str, Any]]:
     with get_cursor() as cur:
         cur.execute(
@@ -1171,17 +1249,17 @@ def get_schools_for_team(team_id: int, period_id: int) -> List[Dict[str, Any]]:
                     clean = "62" + clean[1:]
                 elif not clean.startswith("62") and clean:
                     clean = "62" + clean
-                msg = f"Halo Operator {row['school_name']}, kami dari Tim Audit MONEV BOS/BOP Sudin Pendidikan..."
+                msg = f"Halo Operator {row['school_name']}, kami dari Tim Verifikator MONEV BOS/BOP Sudin Pendidikan..."
                 row["wa_url"] = f"https://wa.me/{clean}?text={quote(msg)}"
             else:
                 row["wa_url"] = None
         return rows
 
 def get_auditor_staff_wa_for_report(report_id: int, school_id: int, period_id: int, activity_id: Optional[int] = None) -> Dict[str, Any]:
-    """Retrieves staff auditor name and WhatsApp phone number who specifically audited/validated this activity or report."""
+    """Retrieve the assigned verifier's name and WhatsApp number for this activity or report."""
     with get_cursor() as cur:
         staff_row = None
-        # 1. Staff who validated/audited this SPECIFIC activity
+        # 1. Staff who verified this specific activity
         if activity_id:
             cur.execute(
                 """
@@ -1198,7 +1276,7 @@ def get_auditor_staff_wa_for_report(report_id: int, school_id: int, period_id: i
             )
             staff_row = cur.fetchone()
 
-        # 2. Staff who logged audit actions for this report
+        # 2. Staff who logged verification actions for this report
         if not staff_row:
             cur.execute(
                 """
@@ -1215,7 +1293,7 @@ def get_auditor_staff_wa_for_report(report_id: int, school_id: int, period_id: i
             )
             staff_row = cur.fetchone()
 
-        # 3. If not found in audit logs, check team assignment
+        # 3. If not found in the history, check team assignment
         if not staff_row:
             cur.execute(
                 """
@@ -1243,7 +1321,7 @@ def get_auditor_staff_wa_for_report(report_id: int, school_id: int, period_id: i
 
         return {
             "staff_id": s.get("id"),
-            "staff_name": s.get("full_name") or "Staff Audit",
+            "staff_name": s.get("full_name") or "Staff Verifikator",
             "staff_phone": phone_formatted
         }
 
@@ -1368,7 +1446,7 @@ def update_activity_audit(activity_id: int, status: str, notes: str) -> None:
         )
 
 def update_activity_audit_notes(activity_id: int, notes: str) -> None:
-    """Persist draft audit notes without changing the activity validation status."""
+    """Persist draft verification notes without changing the activity status."""
     with get_cursor(commit=True) as cur:
         cur.execute(
             "UPDATE monev_bos_activities SET audit_notes = %s, updated_at = NOW() WHERE id = %s",
@@ -1391,6 +1469,33 @@ def get_activity_checklist_results(activity_id: int) -> Dict[int, Dict[str, Any]
     with get_cursor() as cur:
         cur.execute("SELECT * FROM monev_bos_checklist_results WHERE activity_id = %s", (activity_id,))
         return {row['checklist_id']: dict(row) for row in cur.fetchall()}
+
+
+def get_checklist_results_by_activity_ids(activity_ids: List[int]) -> Dict[int, List[Dict[str, Any]]]:
+    """Return saved checklist results, including results from inactive checklist masters."""
+    if not activity_ids:
+        return {}
+
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT cr.activity_id,
+                   cr.checklist_id,
+                   cr.status,
+                   cr.notes,
+                   c.name AS checklist_name
+            FROM monev_bos_checklist_results cr
+            JOIN monev_bos_checklists c ON c.id = cr.checklist_id
+            WHERE cr.activity_id = ANY(%s)
+            ORDER BY cr.activity_id, c.sort_order, c.id
+            """,
+            (activity_ids,),
+        )
+        results_by_activity: Dict[int, List[Dict[str, Any]]] = {}
+        for row in cur.fetchall():
+            result = dict(row)
+            results_by_activity.setdefault(int(result["activity_id"]), []).append(result)
+        return results_by_activity
 
 def add_audit_log(report_id: int, activity_id: Optional[int], user_id: int, action: str, details: str) -> None:
     with get_cursor(commit=True) as cur:
@@ -1485,7 +1590,10 @@ def get_audit_logs(report_id: int) -> List[Dict[str, Any]]:
             """,
             (report_id,)
         )
-        return [dict(row) for row in cur.fetchall()]
+        logs = [dict(row) for row in cur.fetchall()]
+        for log in logs:
+            log["details"] = _verification_display_text(log.get("details"))
+        return logs
 
 
 # --- VENDOR MANAGEMENT QUERIES ---
@@ -1513,7 +1621,12 @@ def list_school_vendors(school_id: int, status_filter: str = None, search_query:
         return [dict(row) for row in cur.fetchall()]
 
 
-def list_all_vendors_for_admin(status_filter: str = None, search_query: str = None) -> List[Dict[str, Any]]:
+def list_all_vendors_for_admin(
+    status_filter: Optional[str] = None,
+    search_query: Optional[str] = None,
+    vendor_type_filter: Optional[str] = None,
+    school_id_filter: Optional[int] = None,
+) -> List[Dict[str, Any]]:
     """List all vendor registration requests for admin/staff verification."""
     query = """
         SELECT v.*, 
@@ -1530,6 +1643,12 @@ def list_all_vendors_for_admin(status_filter: str = None, search_query: str = No
     if status_filter:
         query += " AND v.status = %s"
         params.append(status_filter)
+    if vendor_type_filter:
+        query += " AND v.vendor_type = %s"
+        params.append(vendor_type_filter)
+    if school_id_filter:
+        query += " AND v.school_id = %s"
+        params.append(school_id_filter)
     if search_query:
         query += " AND (v.name ILIKE %s OR v.npwp ILIKE %s OR v.phone ILIKE %s OR v.owner_name ILIKE %s OR COALESCE(ps.name, u_school.full_name) ILIKE %s)"
         pattern = f"%{search_query.strip()}%"
@@ -1539,6 +1658,112 @@ def list_all_vendors_for_admin(status_filter: str = None, search_query: str = No
     with get_cursor() as cur:
         cur.execute(query, tuple(params))
         return [dict(row) for row in cur.fetchall()]
+
+
+def list_vendor_schools_for_admin() -> List[Dict[str, Any]]:
+    """Return schools that have at least one vendor or speaker registration."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT DISTINCT v.school_id AS id,
+                   COALESCE(ps.name, u_school.full_name) AS school_name,
+                   ps.npsn
+            FROM monev_bos_vendors v
+            JOIN dashboard_users u_school ON u_school.id = v.school_id
+            LEFT JOIN portal_schools ps ON ps.id = u_school.school_id
+            ORDER BY school_name ASC
+            """
+        )
+        return [dict(row) for row in cur.fetchall()]
+
+
+def _vendor_duplicate_signatures(vendor: Dict[str, Any]) -> List[tuple]:
+    """Build normalized identity fields used to flag likely duplicate registrations."""
+    vendor_type = vendor.get("vendor_type") or "vendor"
+
+    def normalized_text(value: Any) -> str:
+        cleaned = "".join(
+            char if char.isalnum() else " "
+            for char in str(value or "").casefold()
+        )
+        return " ".join(cleaned.split())
+
+    def normalized_identifier(value: Any) -> str:
+        return "".join(char for char in str(value or "").casefold() if char.isalnum())
+
+    def normalized_phone(value: Any) -> str:
+        digits = "".join(char for char in str(value or "") if char.isdigit())
+        if digits.startswith("62"):
+            digits = "0" + digits[2:]
+        return digits
+
+    signatures = []
+    if vendor_type == "narsum":
+        signatures.extend([
+            ("Nama narasumber", normalized_text(vendor.get("owner_name"))),
+            ("No. KTP", normalized_identifier(vendor.get("name"))),
+        ])
+    else:
+        signatures.append(("Nama vendor", normalized_text(vendor.get("name"))))
+    signatures.extend([
+        ("NPWP", normalized_identifier(vendor.get("npwp"))),
+        ("Kontak", normalized_phone(vendor.get("phone"))),
+    ])
+    return [(label, value) for label, value in signatures if value]
+
+
+def attach_vendor_duplicate_matches(vendors: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Attach registrations sharing a normalized name, identity number, NPWP, or phone."""
+    for vendor in vendors:
+        vendor["duplicate_matches"] = []
+    if not vendors:
+        return vendors
+
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT v.*,
+                   COALESCE(ps.name, u_school.full_name) AS school_name,
+                   ps.npsn
+            FROM monev_bos_vendors v
+            JOIN dashboard_users u_school ON u_school.id = v.school_id
+            LEFT JOIN portal_schools ps ON ps.id = u_school.school_id
+            ORDER BY v.id DESC
+            """
+        )
+        candidates = [dict(row) for row in cur.fetchall()]
+
+    signature_index: Dict[tuple, List[Dict[str, Any]]] = {}
+    for candidate in candidates:
+        candidate_type = candidate.get("vendor_type") or "vendor"
+        for label, value in _vendor_duplicate_signatures(candidate):
+            signature_index.setdefault((candidate_type, label, value), []).append(candidate)
+
+    for vendor in vendors:
+        vendor_id = int(vendor["id"])
+        vendor_type = vendor.get("vendor_type") or "vendor"
+        matches: Dict[int, Dict[str, Any]] = {}
+        for label, value in _vendor_duplicate_signatures(vendor):
+            for candidate in signature_index.get((vendor_type, label, value), []):
+                candidate_id = int(candidate["id"])
+                if candidate_id == vendor_id:
+                    continue
+                match = matches.setdefault(candidate_id, dict(candidate, duplicate_fields=[]))
+                if label not in match["duplicate_fields"]:
+                    match["duplicate_fields"].append(label)
+        vendor["duplicate_matches"] = sorted(
+            matches.values(),
+            key=lambda item: (item.get("status") != "verified", -int(item["id"])),
+        )
+    return vendors
+
+
+def find_vendor_duplicate_matches(vendor_id: int) -> List[Dict[str, Any]]:
+    vendor = get_vendor_by_id(vendor_id)
+    if not vendor:
+        return []
+    attach_vendor_duplicate_matches([vendor])
+    return vendor["duplicate_matches"]
 
 
 def get_report_selectable_vendors(school_id: Optional[int] = None) -> List[Dict[str, Any]]:
@@ -1605,7 +1830,13 @@ def create_vendor(school_id: int, data: Dict[str, Any]) -> int:
         return cur.fetchone()[0]
 
 
-def update_vendor_status(vendor_id: int, new_status: str, verifier_user_id: int, rejection_reason: str = None) -> bool:
+def update_vendor_status(
+    vendor_id: int,
+    new_status: str,
+    verifier_user_id: int,
+    rejection_reason: Optional[str] = None,
+    verification_notes: Optional[str] = None,
+) -> bool:
     """Approve (verify) or Reject a vendor request."""
     if new_status not in ["verified", "rejected"]:
         return False
@@ -1617,10 +1848,17 @@ def update_vendor_status(vendor_id: int, new_status: str, verifier_user_id: int,
                 verified_by = %s,
                 verified_at = NOW(),
                 rejection_reason = %s,
+                verification_notes = %s,
                 updated_at = NOW()
             WHERE id = %s
             """,
-            (new_status, verifier_user_id, rejection_reason if new_status == "rejected" else None, vendor_id)
+            (
+                new_status,
+                verifier_user_id,
+                rejection_reason if new_status == "rejected" else None,
+                verification_notes if new_status == "verified" else None,
+                vendor_id,
+            )
         )
         return cur.rowcount > 0
 
@@ -1756,7 +1994,7 @@ def delete_account_code(account_code_id: int) -> None:
 
 
 def get_assigned_auditors_for_school(school_id: int, period_id: int) -> Dict[str, Any]:
-    """Return assigned team info and list of auditor staff members (including team leader) for a school and period."""
+    """Return assigned team info and verifier members (including the team leader)."""
     with get_cursor() as cur:
         cur.execute(
             """
@@ -2019,6 +2257,7 @@ def get_school_post(post_id: int, *, include_deleted: bool = False) -> Optional[
             SELECT p.*,
                    COALESCE(s.name, owner.full_name, owner.email, 'Sekolah') AS school_name,
                    s.logo_url AS school_logo_url,
+                   CASE WHEN p.story_expires_at > NOW() THEN TRUE ELSE FALSE END AS is_active_story,
                    COALESCE(creator.full_name, creator.email, 'Tidak ada') AS creator_name,
                    COALESCE(deleter.full_name, deleter.email, 'Tidak ada') AS deleter_name
             FROM monev_bos_school_posts p
@@ -2135,7 +2374,8 @@ def get_school_post_by_photo_path(photo_path: str) -> Optional[Dict[str, Any]]:
     with get_cursor() as cur:
         cur.execute(
             """
-            SELECT id, school_user_id, is_public, public_token, deleted_at
+            SELECT id, school_user_id, is_public, public_token, deleted_at,
+                   CASE WHEN story_expires_at > NOW() THEN TRUE ELSE FALSE END AS is_active_story
             FROM monev_bos_school_posts
             WHERE photo_path = %s
             ORDER BY id DESC
@@ -2173,6 +2413,7 @@ def list_school_posts(
     *,
     school_user_id: Optional[int] = None,
     search_query: str = "",
+    shared_only: bool = False,
     limit: int = 100,
 ) -> List[Dict[str, Any]]:
     with get_cursor() as cur:
@@ -2190,6 +2431,8 @@ def list_school_posts(
         if school_user_id is not None:
             query += " AND p.school_user_id = %s"
             params.append(school_user_id)
+        if shared_only:
+            query += " AND (p.is_public = TRUE OR p.story_expires_at > NOW())"
         if search_query.strip():
             pattern = f"%{search_query.strip()}%"
             query += """
@@ -2362,7 +2605,7 @@ def finalize_school_post_delete(
     copied_links: List[Dict[str, Any]],
     details: Dict[str, Any],
 ) -> None:
-    """Atomically repoint linked activity docs, mark the post deleted, and write its audit log."""
+    """Atomically repoint linked activity docs, mark the post deleted, and record its history."""
     with get_cursor(commit=True) as cur:
         for copied in copied_links:
             cur.execute(

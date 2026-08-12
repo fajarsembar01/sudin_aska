@@ -7,6 +7,11 @@
             <h1 class="h3 fw-bold mb-1">Foto Live & Post Sekolah</h1>
             <p class="text-body-secondary mb-0">Cari dokumentasi foto seluruh sekolah berdasarkan judul, sekolah, atau koordinat GPS.</p>
         </div>
+        {% if current_user.role == 'sekolah' %}
+        <a href="{{ url_for('monev_bos.school_posts_profile', school_user_id=current_user.id) }}" class="btn btn-outline-primary monev-social-primary-action">
+            <i class="bi bi-building me-1"></i>Kelola Post Sekolah Saya
+        </a>
+        {% endif %}
     </div>
 
     <form method="GET" class="card border-0 shadow-sm mb-4">
@@ -29,7 +34,7 @@
     {% if current_user.role == 'admin' %}
     <div class="card border-0 shadow-sm mt-4">
         <div class="card-header bg-body d-flex justify-content-between align-items-center">
-            <h2 class="h6 fw-bold mb-0"><i class="bi bi-clock-history me-2"></i>Audit Foto Live & Post</h2>
+            <h2 class="h6 fw-bold mb-0"><i class="bi bi-clock-history me-2"></i>Riwayat Verifikasi Foto Live & Post</h2>
             <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#storyAuditTable">Tampilkan</button>
         </div>
         <div class="collapse" id="storyAuditTable">
@@ -43,7 +48,7 @@
                             <td>{{ log.actor_name }}</td><td>{{ log.action }}</td><td>{{ log.school_name }}</td>
                             <td>{{ log.post_title or ('#' ~ log.post_id) }}</td><td><code class="text-wrap">{{ log.details|tojson }}</code></td>
                         </tr>
-                        {% else %}<tr><td colspan="6" class="text-center text-muted py-3">Belum ada audit log.</td></tr>{% endfor %}
+                        {% else %}<tr><td colspan="6" class="text-center text-muted py-3">Belum ada riwayat verifikasi.</td></tr>{% endfor %}
                     </tbody>
                 </table>
             </div>

@@ -29,9 +29,9 @@
     {% set status_labels = {
         'draft': 'Draft / Sedang Diisi',
         'submitted': 'Sudah Dikirim',
-        'in_review': 'Sedang Diaudit',
+        'in_review': 'Sedang Diverifikasi',
         'completed_with_notes': 'Selesai dengan Catatan',
-        'completed': 'Audit Selesai',
+        'completed': 'Verifikasi Selesai',
         'needs_revision': 'Butuh Revisi'
     } %}
     <div class="alert alert-{{ status_colors[report.status] }} d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
@@ -144,8 +144,8 @@
     <div class="card shadow-sm border-0 bg-light">
         <div class="card-body p-4 text-center">
             <h5 class="mb-2 fw-bold text-dark">Submit Laporan Seluruh Kegiatan</h5>
-            <p class="text-muted mb-3">Jika seluruh kegiatan BOS & BOP telah selesai dimasukkan, silakan submit laporan ini ke Tim Monev untuk diaudit.</p>
-            <form action="{{ url_for('monev_bos.sekolah_activities', period_id=active_period.id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin mensubmit laporan ini? Data yang disubmit tidak dapat diubah lagi sampai audit selesai.');">
+            <p class="text-muted mb-3">Jika seluruh kegiatan BOS & BOP telah selesai dimasukkan, silakan submit laporan ini ke Tim Monev untuk diverifikasi.</p>
+            <form action="{{ url_for('monev_bos.sekolah_activities', period_id=active_period.id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin mensubmit laporan ini? Data yang disubmit tidak dapat diubah lagi sampai verifikasi selesai.');">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="action" value="submit_report">
                 <button type="submit" class="btn btn-success btn-lg px-5">
