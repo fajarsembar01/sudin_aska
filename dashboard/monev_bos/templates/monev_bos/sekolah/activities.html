@@ -768,17 +768,16 @@
                     </div>
                     <div class="col-md-4 mb-3">
                         <label class="form-label fw-bold">Kode Rekening</label>
-                        <select class="form-select searchable-account-select" name="account_code" data-placeholder="Cari kode atau nama rekening...">
-                            <option value="">-- Pilih Kode Rekening --</option>
-                            {% set account_code_state = namespace(found=false) %}
+                        <select class="form-select searchable-account-select multi-account-select" name="account_code" multiple data-placeholder="Cari dan pilih satu atau beberapa kode rekening...">
+                            {% set available_account_code_values = account_codes | map(attribute='code') | list %}
                             {% for ac in account_codes %}
-                            {% if ac.code == act.account_code %}{% set account_code_state.found = true %}{% endif %}
-                            <option value="{{ ac.code }}" {% if ac.code == act.account_code %}selected{% endif %}>{{ ac.code }}{% if ac.name %} - {{ ac.name }}{% endif %}</option>
+                            <option value="{{ ac.code }}" {% if ac.code in act.account_code_values %}selected{% endif %}>{{ ac.code }}{% if ac.name %} - {{ ac.name }}{% endif %}</option>
                             {% endfor %}
-                            {% if act.account_code and not account_code_state.found %}
-                            <option value="{{ act.account_code }}" selected>{{ act.account_code }}</option>
-                            {% endif %}
+                            {% for selected_code in act.account_code_values if selected_code not in available_account_code_values %}
+                            <option value="{{ selected_code }}" selected>{{ selected_code }}</option>
+                            {% endfor %}
                         </select>
+                        <div class="form-text text-xs">Dapat memilih lebih dari satu kode rekening.</div>
                         {% if not account_codes %}
                         <div class="form-text text-xs text-warning">Belum ada kode rekening aktif. Hubungi admin untuk mengisi Master Kode Rekening.</div>
                         {% endif %}
@@ -799,15 +798,14 @@
                                 <i class="bi bi-plus-circle me-1"></i>Daftarkan Baru
                             </a>
                         </div>
-                        <select class="form-select vendor-ts-select" name="vendor_id" id="vendorSelectEdit_{{ act.id }}">
-                            <option value="">-- Pilih Vendor / Narsum --</option>
+                        <select class="form-select vendor-ts-select multi-vendor-select" name="vendor_id" id="vendorSelectEdit_{{ act.id }}" multiple data-placeholder="Cari dan pilih satu atau beberapa vendor / narasumber...">
                             {% set own_vendors = verified_vendors|selectattr('is_own_school', 'equalto', true)|list %}
                             {% set has_vendor = verified_vendors|rejectattr('is_own_school', 'equalto', true)|selectattr('vendor_type', 'equalto', 'vendor')|list|length > 0 %}
                             {% set has_narsum = verified_vendors|rejectattr('is_own_school', 'equalto', true)|selectattr('vendor_type', 'equalto', 'narsum')|list|length > 0 %}
                             {% if own_vendors %}
                             <optgroup label="Diinput Sekolah Anda">
                             {% for v in own_vendors %}
-                                <option value="{{ v.id }}" {% if act.vendor_id == v.id or (not act.vendor_id and act.vendor_name == v.name) %}selected{% endif %}>
+                                <option value="{{ v.id }}" {% if v.id in act.vendor_ids %}selected{% endif %}>
                                     {{ v.name }}{% if v.vendor_type == 'narsum' %} — Narasumber{% else %} — Vendor{% endif %}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'pending' %} ⚠ Belum Diverifikasi{% endif %}
                                 </option>
                             {% endfor %}
@@ -816,7 +814,7 @@
                             {% if has_vendor %}
                             <optgroup label="🏪 Vendor / Toko">
                             {% for v in verified_vendors if not v.is_own_school and v.vendor_type != 'narsum' %}
-                                <option value="{{ v.id }}" {% if act.vendor_id == v.id or (not act.vendor_id and act.vendor_name == v.name) %}selected{% endif %}>
+                                <option value="{{ v.id }}" {% if v.id in act.vendor_ids %}selected{% endif %}>
                                     {{ v.name }}{% if v.registered_school_name %} — {{ v.registered_school_name }}{% endif %}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'pending' %} ⚠ Belum Diverifikasi{% endif %}
                                 </option>
                             {% endfor %}
@@ -825,16 +823,14 @@
                             {% if has_narsum %}
                             <optgroup label="🎤 Narasumber / Instruktur">
                             {% for v in verified_vendors if not v.is_own_school and v.vendor_type == 'narsum' %}
-                                <option value="{{ v.id }}" {% if act.vendor_id == v.id or (not act.vendor_id and act.vendor_name == v.name) %}selected{% endif %}>
+                                <option value="{{ v.id }}" {% if v.id in act.vendor_ids %}selected{% endif %}>
                                     {{ v.name }}{% if v.registered_school_name %} — {{ v.registered_school_name }}{% endif %}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'pending' %} ⚠ Belum Diverifikasi{% endif %}
                                 </option>
                             {% endfor %}
                             </optgroup>
                             {% endif %}
-                            {% if act.vendor_name and not act.vendor_id %}
-                                <option value="" selected>{{ act.vendor_name }}</option>
-                            {% endif %}
                         </select>
+                        <div class="form-text text-xs">Dapat memilih lebih dari satu vendor atau narasumber.</div>
                     </div>
                     <div class="col-md-6 mb-3">
                         <label class="form-label fw-bold">Detail Kegiatan</label>
@@ -1032,12 +1028,12 @@
                     </div>
                     <div class="col-md-4 mb-3">
                         <label class="form-label fw-bold">Kode Rekening</label>
-                        <select class="form-select searchable-account-select" name="account_code" data-placeholder="Cari kode atau nama rekening...">
-                            <option value="">-- Pilih Kode Rekening --</option>
+                        <select class="form-select searchable-account-select multi-account-select" name="account_code" multiple data-placeholder="Cari dan pilih satu atau beberapa kode rekening...">
                             {% for ac in account_codes %}
                             <option value="{{ ac.code }}">{{ ac.code }}{% if ac.name %} - {{ ac.name }}{% endif %}</option>
                             {% endfor %}
                         </select>
+                        <div class="form-text text-xs">Dapat memilih lebih dari satu kode rekening.</div>
                         {% if not account_codes %}
                         <div class="form-text text-xs text-warning">Belum ada kode rekening aktif. Hubungi admin untuk mengisi Master Kode Rekening.</div>
                         {% endif %}
@@ -1058,8 +1054,7 @@
                                 <i class="bi bi-plus-circle me-1"></i>Daftarkan Baru
                             </a>
                         </div>
-                        <select class="form-select vendor-ts-select" name="vendor_id" id="vendorSelectAdd">
-                            <option value="">-- Pilih Vendor / Narsum --</option>
+                        <select class="form-select vendor-ts-select multi-vendor-select" name="vendor_id" id="vendorSelectAdd" multiple data-placeholder="Cari dan pilih satu atau beberapa vendor / narasumber...">
                             {% set own_vendors_add = verified_vendors|selectattr('is_own_school', 'equalto', true)|list %}
                             {% set has_vendor_add = verified_vendors|rejectattr('is_own_school', 'equalto', true)|selectattr('vendor_type', 'equalto', 'vendor')|list|length > 0 %}
                             {% set has_narsum_add = verified_vendors|rejectattr('is_own_school', 'equalto', true)|selectattr('vendor_type', 'equalto', 'narsum')|list|length > 0 %}
@@ -1085,6 +1080,7 @@
                             </optgroup>
                             {% endif %}
                         </select>
+                        <div class="form-text text-xs">Dapat memilih lebih dari satu vendor atau narasumber.</div>
                     </div>
                     <div class="col-md-6 mb-3">
                         <label class="form-label fw-bold">Detail Kegiatan</label>
@@ -1456,13 +1452,14 @@ function initActivitySearchableSelects(container) {
     selects.forEach(function (select) {
         if (select.tomselect) return;
 
+        const isMultiAccount = select.classList.contains('multi-account-select');
         const tom = new TomSelect(select, {
             create: false,
             allowEmptyOption: !select.required,
-            maxItems: select.classList.contains('searchable-story-post-select') ? 3 : 1,
+            maxItems: isMultiAccount ? null : (select.classList.contains('searchable-story-post-select') ? 3 : 1),
             placeholder: select.getAttribute('data-placeholder') || 'Ketik untuk mencari...',
             searchField: ['text'],
-            plugins: select.required && !select.classList.contains('claim-account-select') ? [] : ['clear_button'],
+            plugins: isMultiAccount ? ['remove_button'] : (select.required && !select.classList.contains('claim-account-select') ? [] : ['clear_button']),
             render: {
                 no_results: function () {
                     return '<div class="no-results">Data tidak ditemukan</div>';
@@ -2303,10 +2300,13 @@ document.addEventListener('DOMContentLoaded', function () {
         if (tsInstances[key]) {
             try { tsInstances[key].destroy(); } catch(e) {}
         }
+        const isMultiVendor = el.classList.contains('multi-vendor-select');
         tsInstances[key] = new TomSelect(el, {
             allowEmptyOption: true,
-            placeholder: '-- Cari / Pilih Vendor / Narsum --',
+            placeholder: el.getAttribute('data-placeholder') || '-- Cari / Pilih Vendor / Narsum --',
             searchField: ['text'],
+            maxItems: isMultiVendor ? null : 1,
+            plugins: isMultiVendor ? ['remove_button'] : [],
             maxOptions: 200,
             render: {
                 option: function(data, escape) {

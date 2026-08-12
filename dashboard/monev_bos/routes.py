@@ -30,8 +30,36 @@ def _resolve_school_report_vendor(vendor_id_raw):
     return vendor_id, vendor.get("name"), None
 
 
+def _resolve_school_report_vendors(vendor_id_values):
+    vendor_ids = []
+    vendor_names = []
+    for raw_vendor_id in vendor_id_values:
+        vendor_id, vendor_name, error = _resolve_school_report_vendor(raw_vendor_id)
+        if error:
+            return [], [], error
+        if vendor_id is not None and vendor_id not in vendor_ids:
+            vendor_ids.append(vendor_id)
+            vendor_names.append(vendor_name)
+    return vendor_ids, vendor_names, None
+
+
+def _activity_account_code_data(form) -> dict:
+    """Normalize a multi-select account code submission while preserving order."""
+    selected_codes = []
+    for raw_code in form.getlist("account_code"):
+        code = str(raw_code or "").strip()
+        if code and code not in selected_codes:
+            selected_codes.append(code)
+    return {
+        "account_code": ", ".join(selected_codes) or None,
+        "primary_account_code": selected_codes[0] if selected_codes else None,
+    }
+
+
 def _activity_vendor_is_unverified(activity):
     """Return True when an attached vendor exists but is not verified yet."""
+    if activity.get("vendors"):
+        return any(vendor.get("status") != "verified" for vendor in activity["vendors"])
     has_vendor = bool(
         activity.get("vendor_id")
         or (activity.get("vendor_name") or "").strip()
@@ -1889,8 +1917,9 @@ def sekolah_activities():
 
         if action == "add_activity":
             target_fund_source = request.form.get("fund_source", fund_source)
-            vendor_id, vendor_name, vendor_error = _resolve_school_report_vendor(
-                request.form.get("vendor_id")
+            account_code_data = _activity_account_code_data(request.form)
+            vendor_ids, vendor_names, vendor_error = _resolve_school_report_vendors(
+                request.form.getlist("vendor_id")
             )
             if vendor_error:
                 flash(vendor_error, "warning")
@@ -1902,11 +1931,11 @@ def sekolah_activities():
             data = {
                 "activity_code": request.form.get("activity_code") or request.form.get("bku_number") or "-",
                 "activity_name": request.form.get("activity_name"),
-                "account_code": request.form.get("account_code"),
+                **account_code_data,
                 "expense_type_id": expense_type_id,
                 "realized_amount": _parse_float(request.form.get("realized_amount")),
-                "vendor_id": vendor_id,
-                "vendor_name": vendor_name,
+                "vendor_id": vendor_ids[0] if vendor_ids else None,
+                "vendor_name": ", ".join(vendor_names) or None,
                 "bku_number": request.form.get("bku_number"),
                 "item_name": request.form.get("item_name"),
                 "item_specs": request.form.get("item_specs"),
@@ -1919,6 +1948,7 @@ def sekolah_activities():
                 return redirect(url_for("monev_bos.sekolah_activities", period_id=period_id, fund_source=fund_source))
 
             activity_id = queries.create_activity(report["id"], target_fund_source, data)
+            queries.set_activity_vendors(activity_id, vendor_ids)
             
             # Handle optional document uploads (Faktur/Kwitansi & Bukti Transfer)
             base_dir = os.path.join(monev_bos_bp.root_path, "..", "static", "uploads")
@@ -2036,8 +2066,8 @@ def sekolah_activities():
             if was_invalid:
                 queries.save_activity_history(activity_id, user["id"], reason="Perbaikan data oleh sekolah saat status Revisi")
 
-            vendor_id, vendor_name, vendor_error = _resolve_school_report_vendor(
-                request.form.get("vendor_id")
+            vendor_ids, vendor_names, vendor_error = _resolve_school_report_vendors(
+                request.form.getlist("vendor_id")
             )
             if vendor_error:
                 flash(vendor_error, "warning")
@@ -2045,21 +2075,23 @@ def sekolah_activities():
 
             expense_type_id_raw = request.form.get("expense_type_id")
             expense_type_id = int(expense_type_id_raw) if expense_type_id_raw and expense_type_id_raw.isdigit() else None
+            account_code_data = _activity_account_code_data(request.form)
 
             data = {
                 "activity_code": request.form.get("activity_code") or (act and act.get("activity_code")) or request.form.get("bku_number") or "-",
                 "activity_name": request.form.get("activity_name"),
-                "account_code": request.form.get("account_code"),
+                **account_code_data,
                 "expense_type_id": expense_type_id,
                 "realized_amount": _parse_float(request.form.get("realized_amount")),
-                "vendor_id": vendor_id,
-                "vendor_name": vendor_name,
+                "vendor_id": vendor_ids[0] if vendor_ids else None,
+                "vendor_name": ", ".join(vendor_names) or None,
                 "bku_number": request.form.get("bku_number"),
                 "item_name": request.form.get("item_name"),
                 "item_specs": request.form.get("item_specs"),
                 "item_quantity": int(request.form.get("item_quantity", 0) or 0)
             }
             queries.update_activity(activity_id, data)
+            queries.set_activity_vendors(activity_id, vendor_ids)
             
             # Kembalikan status kegiatan dari 'invalid' ke 'pending' (menunggu verifikasi ulang)
             queries.update_activity_audit(activity_id, "pending", act.get("audit_notes") or "")
@@ -2203,6 +2235,11 @@ def sekolah_activities():
     )
 
     for act in activities:
+        act["account_code_values"] = [
+            code.strip()
+            for code in str(act.get("account_code") or "").split(",")
+            if code.strip()
+        ]
         act["checklist_results"] = checklist_results_by_activity.get(int(act["id"]), [])
         act["checklist_notes"] = [
             result
@@ -2907,7 +2944,7 @@ def staff_audit_activity(activity_id):
                 return redirect(url_for("monev_bos.staff_audit_report", report_id=report_id))
 
             if status == "valid" and _activity_vendor_is_unverified(act):
-                vendor_name_disp = act.get("vendor_display_name") or act.get("vendor_name") or "terkait"
+                vendor_name_disp = act.get("unverified_vendor_names") or act.get("vendor_display_name") or act.get("vendor_name") or "terkait"
                 msg = f"Kegiatan tidak dapat dinyatakan Sesuai karena vendor / narasumber '{vendor_name_disp}' belum terverifikasi. Silakan verifikasi terlebih dahulu."
                 if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.headers.get("Accept") == "application/json":
                     return jsonify({"success": False, "message": msg}), 400

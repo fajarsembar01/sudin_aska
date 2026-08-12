@@ -2275,6 +2275,18 @@ _MONEV_BOS_ACTIVITIES_INDEX_SQL = """
 CREATE INDEX IF NOT EXISTS idx_monev_bos_activities_report ON monev_bos_activities (report_id);
 """
 
+_MONEV_BOS_ACTIVITY_VENDORS_SQL = """
+CREATE TABLE IF NOT EXISTS monev_bos_activity_vendors (
+    activity_id INTEGER NOT NULL REFERENCES monev_bos_activities(id) ON DELETE CASCADE,
+    vendor_id INTEGER NOT NULL REFERENCES monev_bos_vendors(id) ON DELETE CASCADE,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (activity_id, vendor_id)
+);
+CREATE INDEX IF NOT EXISTS idx_monev_bos_activity_vendors_vendor
+    ON monev_bos_activity_vendors (vendor_id, activity_id);
+"""
+
 _MONEV_BOS_ACTIVITY_DOCS_SQL = """
 CREATE TABLE IF NOT EXISTS monev_bos_activity_docs (
     id SERIAL PRIMARY KEY,
@@ -2580,6 +2592,8 @@ def ensure_monev_bos_schema() -> None:
         "UPDATE monev_bos_activities a SET account_code_id = ac.id FROM monev_bos_account_codes ac WHERE a.account_code_id IS NULL AND a.account_code = ac.code;",
         "ALTER TABLE monev_bos_activities DROP CONSTRAINT IF EXISTS monev_bos_activities_status_check;",
         "ALTER TABLE monev_bos_activities ADD CONSTRAINT monev_bos_activities_status_check CHECK (status IN ('pending', 'in_review', 'valid', 'invalid'));",
+        _MONEV_BOS_ACTIVITY_VENDORS_SQL,
+        "INSERT INTO monev_bos_activity_vendors (activity_id, vendor_id, sort_order) SELECT id, vendor_id, 0 FROM monev_bos_activities WHERE vendor_id IS NOT NULL ON CONFLICT DO NOTHING;",
         _MONEV_BOS_ACTIVITY_DOCS_SQL,
         _MONEV_BOS_ACTIVITY_DOCS_INDEX_SQL,
         "ALTER TABLE monev_bos_activity_docs ADD COLUMN IF NOT EXISTS is_audit_valid BOOLEAN NOT NULL DEFAULT TRUE;",

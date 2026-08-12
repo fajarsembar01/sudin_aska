@@ -692,7 +692,84 @@ def list_activities(report_id: int) -> List[Dict[str, Any]]:
             """,
             (report_id,)
         )
-        return [dict(row) for row in cur.fetchall()]
+        activities = [dict(row) for row in cur.fetchall()]
+    attach_activity_vendors(activities)
+    return activities
+
+
+def get_activity_vendors_by_activity_ids(activity_ids: List[int]) -> Dict[int, List[Dict[str, Any]]]:
+    if not activity_ids:
+        return {}
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT av.activity_id, av.sort_order, v.*,
+                   COALESCE(ps.name, school.full_name) AS registered_school_name
+            FROM monev_bos_activity_vendors av
+            JOIN monev_bos_vendors v ON v.id = av.vendor_id
+            LEFT JOIN dashboard_users school ON school.id = v.school_id
+            LEFT JOIN LATERAL (
+                SELECT candidate.name
+                FROM portal_schools candidate
+                WHERE candidate.user_id = school.id OR candidate.id = school.school_id
+                ORDER BY CASE WHEN candidate.id = school.school_id THEN 0 ELSE 1 END, candidate.id
+                LIMIT 1
+            ) ps ON TRUE
+            WHERE av.activity_id = ANY(%s)
+            ORDER BY av.activity_id, av.sort_order, av.created_at, v.id
+            """,
+            (activity_ids,),
+        )
+        grouped: Dict[int, List[Dict[str, Any]]] = {}
+        for row in cur.fetchall():
+            item = dict(row)
+            grouped.setdefault(int(item["activity_id"]), []).append(item)
+        return grouped
+
+
+def attach_activity_vendors(activities: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    grouped = get_activity_vendors_by_activity_ids(
+        [int(activity["id"]) for activity in activities if activity.get("id") is not None]
+    )
+    for activity in activities:
+        vendors = grouped.get(int(activity["id"]), [])
+        activity["vendors"] = vendors
+        activity["unverified_vendors"] = [
+            vendor for vendor in vendors if vendor.get("status") != "verified"
+        ]
+        activity["vendor_ids"] = [int(vendor["id"]) for vendor in vendors]
+        if vendors:
+            names = [vendor.get("name") or "Vendor" for vendor in vendors]
+            unverified = activity["unverified_vendors"]
+            activity["vendor_name"] = ", ".join(names)
+            activity["vendor_display_name"] = ", ".join(names)
+            activity["vendor_status"] = "pending" if unverified else "verified"
+            activity["unverified_vendor_names"] = ", ".join(
+                vendor.get("name") or "Vendor" for vendor in unverified
+            )
+            if unverified:
+                activity["linked_vendor_type"] = unverified[0].get("vendor_type")
+        elif activity.get("vendor_id"):
+            activity["vendor_ids"] = [int(activity["vendor_id"])]
+            activity["unverified_vendors"] = []
+    return activities
+
+
+def set_activity_vendors(activity_id: int, vendor_ids: List[int]) -> None:
+    unique_vendor_ids = list(dict.fromkeys(int(vendor_id) for vendor_id in vendor_ids))
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            "DELETE FROM monev_bos_activity_vendors WHERE activity_id = %s",
+            (activity_id,),
+        )
+        for sort_order, vendor_id in enumerate(unique_vendor_ids):
+            cur.execute(
+                """
+                INSERT INTO monev_bos_activity_vendors (activity_id, vendor_id, sort_order)
+                VALUES (%s, %s, %s)
+                """,
+                (activity_id, vendor_id, sort_order),
+            )
 
 def create_activity(report_id: int, fund_source: str, data: Dict[str, Any]) -> int:
     with get_cursor(commit=True) as cur:
@@ -703,7 +780,7 @@ def create_activity(report_id: int, fund_source: str, data: Dict[str, Any]) -> i
             VALUES (%s, %s, %s, %s, %s, (SELECT id FROM monev_bos_account_codes WHERE code = %s AND is_active = TRUE LIMIT 1), %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id
             """,
             (
-                report_id, fund_source, data['activity_code'], data['activity_name'], data.get('account_code'), data.get('account_code'),
+                report_id, fund_source, data['activity_code'], data['activity_name'], data.get('account_code'), data.get('primary_account_code') or data.get('account_code'),
                 data['realized_amount'], data.get('vendor_name'), data.get('vendor_id'), data.get('bku_number'),
                 data.get('item_name'), data.get('item_specs'), data.get('item_quantity'), data.get('activity_type_id'), data.get('expense_type_id')
             )
@@ -723,7 +800,7 @@ def update_activity(activity_id: int, data: Dict[str, Any]) -> None:
             WHERE id = %s
             """,
             (
-                data['activity_code'], data['activity_name'], data.get('account_code'), data.get('account_code'), data['realized_amount'],
+                data['activity_code'], data['activity_name'], data.get('account_code'), data.get('primary_account_code') or data.get('account_code'), data['realized_amount'],
                 data.get('vendor_name'), data.get('vendor_id'), data.get('bku_number'),
                 data.get('item_name'), data.get('item_specs'), data.get('item_quantity'),
                 data.get('activity_type_id'), data.get('expense_type_id'),
@@ -753,7 +830,10 @@ def get_activity_by_id(activity_id: int) -> Optional[Dict[str, Any]]:
             (activity_id,)
         )
         row = cur.fetchone()
-        return dict(row) if row else None
+        activity = dict(row) if row else None
+    if activity:
+        attach_activity_vendors([activity])
+    return activity
 
 def delete_activity(activity_id: int) -> None:
     with get_cursor(commit=True) as cur:

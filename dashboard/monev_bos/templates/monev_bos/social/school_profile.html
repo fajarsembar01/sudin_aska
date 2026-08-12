@@ -88,10 +88,10 @@
             <p class="small text-body-secondary mb-0">Bagikan link beserta token kepada guru. Setiap link berlaku 24 jam.</p>
         </div>
         <div class="card-body px-3 px-md-4">
-            <div class="vstack gap-3">
+            <div class="vstack gap-3 external-photo-link-list" data-external-photo-link-list tabindex="0" aria-label="Daftar Link Foto Live Eksternal">
                 {% for item in external_photo_links %}
                 {% set capture_url = url_for('monev_bos.external_photo_capture', public_id=item.public_id, _external=True) %}
-                <div class="border rounded-3 p-3 {{ 'border-success-subtle bg-success-subtle' if item.is_active else 'bg-body-tertiary' }}">
+                <div class="border rounded-3 p-3 external-photo-link-item {{ 'border-success-subtle bg-success-subtle' if item.is_active else 'bg-body-tertiary' }}">
                     <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap mb-2">
                         <div>
                             {% if item.is_active %}
@@ -224,6 +224,17 @@
 .monev-post-grid-item:has(.photo-report-checkbox:checked) .card { box-shadow: 0 0 0 3px rgba(13, 110, 253, .45) !important; }
 .photo-report-selector { cursor: pointer; user-select: none; }
 .letter-spacing { letter-spacing: .18em; }
+.external-photo-link-list {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+    scroll-snap-type: y proximity;
+    padding-right: .35rem;
+}
+.external-photo-link-item {
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+}
 @media (max-width: 575.98px) {
     .monev-social-page { padding-inline: .75rem; }
     .monev-school-profile-header { align-items: flex-start !important; padding: .75rem; }
@@ -253,6 +264,26 @@ document.addEventListener('click', async function (event) {
         document.execCommand('copy');
     }
 });
+
+(function () {
+    const lists = document.querySelectorAll('[data-external-photo-link-list]');
+    lists.forEach(function (list) {
+        const firstItem = list.querySelector('.external-photo-link-item');
+        if (!firstItem) return;
+
+        function fitSingleItem() {
+            const itemHeight = Math.ceil(firstItem.getBoundingClientRect().height);
+            if (itemHeight > 0) list.style.maxHeight = itemHeight + 'px';
+        }
+
+        fitSingleItem();
+        window.addEventListener('load', fitSingleItem, { once: true });
+        if ('ResizeObserver' in window) {
+            const observer = new ResizeObserver(fitSingleItem);
+            observer.observe(firstItem);
+        }
+    });
+})();
 </script>
 {% if posts and can_manage_profile %}
 <script>

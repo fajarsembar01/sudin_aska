@@ -745,12 +745,20 @@
                                                 <i class="bi bi-exclamation-triangle-fill fs-6 text-warning flex-shrink-0"></i>
                                                 <div class="vendor-verification-copy">
                                                     <strong class="d-block text-dark">Vendor / Narasumber Belum Terverifikasi</strong>
-                                                    <span class="text-secondary"><strong>{{ act.vendor_display_name or act.vendor_name or 'Entri terkait' }}</strong> belum diverifikasi oleh Staff/Admin. Kegiatan ini tidak dapat disetujui (Sesuai) sebelum verifikasi selesai.</span>
+                                                    <span class="text-secondary"><strong>{{ act.unverified_vendor_names or act.vendor_display_name or act.vendor_name or 'Entri terkait' }}</strong> belum diverifikasi oleh Staff/Admin. Kegiatan ini tidak dapat disetujui (Sesuai) sebelum seluruh vendor/narasumber selesai diverifikasi.</span>
                                                 </div>
                                             </div>
-                                            <a href="{{ url_for('monev_bos.admin_vendors', vendor_type=act.linked_vendor_type if act.linked_vendor_type in ['vendor', 'narsum'] else 'vendor', school_id=report.school_id, q=act.vendor_display_name or act.vendor_name or '', status='pending') }}" target="_blank" rel="noopener" class="btn btn-sm btn-warning text-dark fw-bold text-nowrap ms-2 shadow-2xs vendor-verification-action" title="Buka verifikasi {{ 'narasumber' if act.linked_vendor_type == 'narsum' else 'vendor' }} dari {{ report.school_name }} di tab baru">
-                                                <i class="bi bi-box-arrow-up-right me-1"></i>Verifikasi {{ 'Narasumber' if act.linked_vendor_type == 'narsum' else 'Vendor' }}
-                                            </a>
+                                            <div class="d-flex flex-wrap gap-1 ms-2 vendor-verification-action">
+                                                {% for pending_vendor in act.unverified_vendors %}
+                                                <a href="{{ url_for('monev_bos.admin_vendors', vendor_type=pending_vendor.vendor_type if pending_vendor.vendor_type in ['vendor', 'narsum'] else 'vendor', school_id=report.school_id, q=pending_vendor.name, status='pending') }}" target="_blank" rel="noopener" class="btn btn-sm btn-warning text-dark fw-bold text-nowrap shadow-2xs" title="Buka verifikasi {{ pending_vendor.name }} di tab baru">
+                                                    <i class="bi bi-box-arrow-up-right me-1"></i>{{ pending_vendor.name }}
+                                                </a>
+                                                {% else %}
+                                                <a href="{{ url_for('monev_bos.admin_vendors', vendor_type=act.linked_vendor_type if act.linked_vendor_type in ['vendor', 'narsum'] else 'vendor', school_id=report.school_id, q=act.vendor_display_name or act.vendor_name or '', status='pending') }}" target="_blank" rel="noopener" class="btn btn-sm btn-warning text-dark fw-bold text-nowrap shadow-2xs">
+                                                    <i class="bi bi-box-arrow-up-right me-1"></i>Verifikasi Vendor
+                                                </a>
+                                                {% endfor %}
+                                            </div>
                                         </div>
                                         {% endif %}
 
