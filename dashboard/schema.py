@@ -1855,6 +1855,7 @@ CREATE TABLE IF NOT EXISTS laporan_forms (
     target_scope TEXT NOT NULL DEFAULT 'all' CHECK (target_scope IN ('all', 'jenjang', 'specific')),
     target_audience TEXT NOT NULL DEFAULT 'sekolah' CHECK (target_audience IN ('sekolah', 'staff')),
     target_jenjang TEXT,
+    is_mandatory BOOLEAN NOT NULL DEFAULT TRUE,
     allow_multiple BOOLEAN NOT NULL DEFAULT FALSE,
     allow_late BOOLEAN NOT NULL DEFAULT FALSE,
     very_late_after_minutes INTEGER NOT NULL DEFAULT 180,
@@ -2002,6 +2003,11 @@ EXCEPTION
 END $$;
 """
 
+_LAPORAN_FORMS_MANDATORY_MIGRATION_SQL = """
+ALTER TABLE laporan_forms
+ADD COLUMN IF NOT EXISTS is_mandatory BOOLEAN NOT NULL DEFAULT TRUE;
+"""
+
 _LAPORAN_SUBMISSIONS_LATE_MIGRATION_SQL = """
 ALTER TABLE laporan_submissions ADD COLUMN IF NOT EXISTS is_late BOOLEAN NOT NULL DEFAULT FALSE;
 ALTER TABLE laporan_submissions ADD COLUMN IF NOT EXISTS late_days INTEGER DEFAULT 0;
@@ -2116,6 +2122,7 @@ def ensure_laporan_schema() -> None:
         _LAPORAN_FORMS_LATE_MIGRATION_SQL,
         _LAPORAN_FORMS_STATUS_FILTER_MIGRATION_SQL,
         _LAPORAN_FORMS_AUDIENCE_MIGRATION_SQL,
+        _LAPORAN_FORMS_MANDATORY_MIGRATION_SQL,
         _LAPORAN_FORMS_INDEX_SQL,
         _LAPORAN_FORM_TARGETS_SQL,
         _LAPORAN_FORM_TARGETS_INDEX_SQL,
