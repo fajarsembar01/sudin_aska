@@ -180,7 +180,8 @@ def inject_monev_bos_context() -> dict:
     active_story_groups = []
     if user and user.get("role") in ["admin", "sekolah"]:
         try:
-            active_story_groups = queries.list_active_story_groups()
+            school_user_id = int(user["id"]) if user.get("role") == "sekolah" else None
+            active_story_groups = queries.list_active_story_groups(school_user_id=school_user_id)
         except Exception:
             current_app.logger.exception("Failed to load active Monev school stories")
 
