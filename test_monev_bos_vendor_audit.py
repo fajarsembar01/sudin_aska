@@ -168,6 +168,8 @@ def test_admin_dashboard_uses_live_period_metrics(monkeypatch):
     monkeypatch.setattr(routes.queries, "get_active_period", lambda: period)
     monkeypatch.setattr(routes.queries, "get_admin_dashboard_overview", lambda period_id: overview)
     monkeypatch.setattr(routes.queries, "list_recent_period_reports", lambda period_id: recent_reports)
+    monkeypatch.setattr(routes.queries, "list_admin_team_performance", lambda period_id: [])
+    monkeypatch.setattr(routes.queries, "list_admin_activity_photos", lambda period_id, **kwargs: [])
     monkeypatch.setattr(routes, "render_template", lambda template, **context: (template, context))
 
     with app.test_request_context("/monev-bos/admin"):
@@ -201,6 +203,8 @@ def test_admin_dashboard_can_switch_to_requested_period(monkeypatch):
         lambda period_id: requested_ids.append(period_id) or {},
     )
     monkeypatch.setattr(routes.queries, "list_recent_period_reports", lambda period_id: [])
+    monkeypatch.setattr(routes.queries, "list_admin_team_performance", lambda period_id: [])
+    monkeypatch.setattr(routes.queries, "list_admin_activity_photos", lambda period_id, **kwargs: [])
     monkeypatch.setattr(routes, "render_template", lambda template, **context: context)
 
     with app.test_request_context("/monev-bos/admin?period_id=2"):
@@ -252,6 +256,63 @@ def test_admin_analytics_filters_metric_and_search(monkeypatch):
     assert [row["school_name"] for row in context["school_rows"]] == ["SDN Contoh"]
     assert context["school_rows"][0]["verification_rate"] == 75
     assert context["metric_counts"]["unreported"] == 1
+
+
+def test_admin_analytics_can_filter_specific_team(monkeypatch):
+    app = Flask(__name__)
+    period = {"id": 2, "year": 2026, "tw": 2}
+    schools = [
+        {"school_name": "Sekolah Tim A", "team_id": 1, "is_assigned": True, "report_id": None, "total_activities": 0, "valid_activities": 0, "invalid_activities": 0},
+        {"school_name": "Sekolah Tim B", "team_id": 2, "is_assigned": True, "report_id": None, "total_activities": 0, "valid_activities": 0, "invalid_activities": 0},
+    ]
+    teams = [
+        {"team_id": 1, "team_name": "Tim A", "assigned_schools": 1, "total_reports": 0, "total_activities": 0, "audited_activities": 0},
+        {"team_id": 2, "team_name": "Tim B", "assigned_schools": 1, "total_reports": 0, "total_activities": 0, "audited_activities": 0},
+    ]
+    monkeypatch.setattr(routes.queries, "list_periods", lambda: [period])
+    monkeypatch.setattr(routes.queries, "get_admin_dashboard_overview", lambda period_id: {})
+    monkeypatch.setattr(routes.queries, "list_admin_period_school_analytics", lambda period_id: schools)
+    monkeypatch.setattr(routes.queries, "list_admin_team_performance", lambda period_id: teams)
+    monkeypatch.setattr(routes, "render_template", lambda template, **context: context)
+
+    with app.test_request_context("/monev-bos/admin/analytics/all?period_id=2&team_id=2"):
+        context = routes.admin_analytics.__wrapped__("all")
+
+    assert context["selected_team"]["team_name"] == "Tim B"
+    assert [row["school_name"] for row in context["school_rows"]] == ["Sekolah Tim B"]
+    assert context["metric_counts"]["all"] == 1
+
+
+def test_admin_activity_gallery_forwards_period_and_photo_filters(monkeypatch):
+    app = Flask(__name__)
+    period = {"id": 2, "year": 2026, "tw": 2}
+    teams = [{"team_id": 11, "team_name": "Tim Monev", "assigned_schools": 4}]
+    calls = []
+    monkeypatch.setattr(routes.queries, "list_periods", lambda: [period])
+    monkeypatch.setattr(routes.queries, "list_admin_team_performance", lambda period_id: teams)
+    monkeypatch.setattr(
+        routes.queries,
+        "list_admin_activity_photos",
+        lambda period_id, **kwargs: calls.append((period_id, kwargs)) or [{"photo_id": 1}],
+    )
+    monkeypatch.setattr(routes, "_usable_activity_photos", lambda rows: rows)
+    monkeypatch.setattr(routes, "render_template", lambda template, **context: (template, context))
+
+    with app.test_request_context(
+        "/monev-bos/admin/activity-gallery?period_id=2&team_id=11&fund_source=BOP&photo_status=invalid&order=oldest&q=atk"
+    ):
+        template, context = routes.admin_activity_gallery.__wrapped__()
+
+    assert template == "monev_bos/admin/activity_gallery.html"
+    assert calls == [(2, {
+        "limit": 500,
+        "team_id": 11,
+        "fund_source": "BOP",
+        "photo_status": "invalid",
+        "search_query": "atk",
+        "order": "oldest",
+    })]
+    assert context["photos"] == [{"photo_id": 1}]
 
 
 def test_school_can_update_own_pending_vendor_and_va_clears_account_number(monkeypatch):

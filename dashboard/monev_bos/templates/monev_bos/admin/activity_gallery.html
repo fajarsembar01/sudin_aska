@@ -1,0 +1,141 @@
+{% extends "monev_bos/base_monev_bos.html" %}
+
+{% block title %}Galeri Foto Kegiatan - MONEV BOS/BOP{% endblock %}
+
+{% block monev_bos_content %}
+<style>
+    .activity-gallery-page { --gallery-radius: 16px; }
+    .activity-gallery-hero { border: 0; border-radius: var(--gallery-radius); color: #fff; background: linear-gradient(120deg, #0f172a, #164e63 58%, #0e7490); }
+    .activity-gallery-panel { border: 1px solid var(--bs-border-color); border-radius: var(--gallery-radius); background: var(--bs-body-bg); box-shadow: 0 7px 22px rgba(15,23,42,.045); }
+    .activity-gallery-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .8rem; }
+    .activity-gallery-card { position: relative; aspect-ratio: 1 / 1; overflow: hidden; padding: 0; border: 0; border-radius: 14px; color: #fff; background: #020617; text-align: left; box-shadow: 0 5px 16px rgba(15,23,42,.12); }
+    .activity-gallery-card img { width: 100%; height: 100%; object-fit: cover; transition: transform .25s ease; }
+    .activity-gallery-card:hover img { transform: scale(1.06); }
+    .activity-gallery-card::after { position: absolute; inset: 28% 0 0; content: ""; background: linear-gradient(transparent, rgba(2,6,23,.94)); pointer-events: none; }
+    .activity-gallery-top { position: absolute; z-index: 2; top: .55rem; left: .55rem; right: .55rem; display: flex; justify-content: space-between; gap: .35rem; }
+    .activity-gallery-caption { position: absolute; z-index: 2; left: .65rem; right: .65rem; bottom: .65rem; }
+    .activity-gallery-caption strong, .activity-gallery-caption span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .activity-gallery-modal-image { width: 100%; max-height: 72vh; object-fit: contain; background: #020617; }
+    .activity-gallery-detail { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .55rem; }
+    .activity-gallery-detail > div { padding: .65rem; border-radius: 10px; background: var(--bs-tertiary-bg); }
+    [data-bs-theme="dark"] .activity-gallery-panel { box-shadow: none; }
+    @media (max-width: 991.98px) { .activity-gallery-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    @media (max-width: 575.98px) {
+        .activity-gallery-page { padding-left: 10px !important; padding-right: 10px !important; --gallery-radius: 13px; }
+        .activity-gallery-hero .card-body { padding: 1rem !important; }
+        .activity-gallery-hero h1 { font-size: 1.15rem; }
+        .activity-gallery-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .45rem; }
+        .activity-gallery-caption { left: .5rem; right: .5rem; bottom: .5rem; }
+    }
+</style>
+
+<div class="container-fluid py-3 py-md-4 activity-gallery-page">
+    <section class="card activity-gallery-hero mb-3">
+        <div class="card-body p-4">
+            <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+                <div>
+                    <div class="d-flex gap-2 mb-2"><a href="{{ url_for('monev_bos.admin_dashboard', period_id=active_period.id) }}#activityPhotoGallery" class="btn btn-sm btn-light text-info"><i class="bi bi-arrow-left"></i></a><span class="badge border border-light border-opacity-25 bg-light bg-opacity-10 text-white">{% if all_periods %}Semua Periode{% else %}{{ active_period.year }} · TW {{ active_period.tw }}{% endif %}</span></div>
+                    <h1 class="h3 fw-bold text-white mb-1">Galeri Foto Kegiatan</h1>
+                    <p class="text-white-50 small mb-0">Dokumentasi kegiatan sekolah dan foto lapangan tim MONEV BOS/BOP.</p>
+                </div>
+                <div class="text-md-end"><strong class="fs-4 d-block">{{ photos|length }}</strong><span class="text-white-50 text-xs">foto sesuai filter</span></div>
+            </div>
+        </div>
+    </section>
+
+    <section class="activity-gallery-panel mb-3">
+        <div class="p-3">
+            <form method="GET" action="{{ url_for('monev_bos.admin_activity_gallery') }}" class="row g-2 align-items-end">
+                <div class="col-6 col-lg-2"><label class="form-label text-xs fw-bold mb-1">Periode</label><select name="period_id" class="form-select form-select-sm" onchange="this.form.submit()"><option value="all" {% if all_periods %}selected{% endif %}>Semua Periode</option>{% for period in periods %}<option value="{{ period.id }}" {% if not all_periods and period.id == active_period.id %}selected{% endif %}>{{ period.year }} · TW {{ period.tw }}{% if period.is_active %} — Aktif{% endif %}</option>{% endfor %}</select></div>
+                <div class="col-6 col-lg-2"><label class="form-label text-xs fw-bold mb-1">Tim</label><select name="team_id" class="form-select form-select-sm"><option value="">Semua Tim</option>{% for team in team_performance %}<option value="{{ team.team_id }}" {% if team_id == team.team_id %}selected{% endif %}>{{ team.team_name }}</option>{% endfor %}</select></div>
+                <div class="col-6 col-lg-1"><label class="form-label text-xs fw-bold mb-1">Dana</label><select name="fund_source" class="form-select form-select-sm"><option value="">Semua</option><option value="BOS" {% if fund_source == 'BOS' %}selected{% endif %}>BOSP</option><option value="BOP" {% if fund_source == 'BOP' %}selected{% endif %}>BOP</option></select></div>
+                <div class="col-6 col-lg-2"><label class="form-label text-xs fw-bold mb-1">Status Foto</label><select name="photo_status" class="form-select form-select-sm"><option value="">Semua Status</option><option value="valid" {% if photo_status == 'valid' %}selected{% endif %}>Sah</option><option value="invalid" {% if photo_status == 'invalid' %}selected{% endif %}>Dianulir</option></select></div>
+                <div class="col-6 col-lg-1"><label class="form-label text-xs fw-bold mb-1">Urutan</label><select name="order" class="form-select form-select-sm"><option value="newest" {% if photo_order == 'newest' %}selected{% endif %}>Terbaru</option><option value="oldest" {% if photo_order == 'oldest' %}selected{% endif %}>Terlama</option><option value="random" {% if photo_order == 'random' %}selected{% endif %}>Acak</option></select></div>
+                <div class="col-12 col-lg-4"><label class="form-label text-xs fw-bold mb-1">Pencarian</label><div class="input-group input-group-sm"><span class="input-group-text"><i class="bi bi-search"></i></span><input type="search" class="form-control" name="q" value="{{ search_query }}" placeholder="Sekolah, kegiatan, BKU, atau vendor..."><button class="btn btn-primary" type="submit">Tampilkan</button>{% if search_query or team_id or fund_source or photo_status %}<a href="{{ url_for('monev_bos.admin_activity_gallery', period_id='all' if all_periods else active_period.id) }}" class="btn btn-outline-secondary"><i class="bi bi-x-lg"></i></a>{% endif %}</div></div>
+            </form>
+        </div>
+    </section>
+
+    <section class="activity-gallery-panel">
+        <div class="p-3 p-md-4">
+            {% if photos %}
+            <div class="activity-gallery-grid">
+                {% for photo in photos %}
+                <button type="button" class="activity-gallery-card" data-bs-toggle="modal" data-bs-target="#activityGalleryModal"
+                        data-photo-src="{{ photo.photo_url }}"
+                        data-photo-school="{{ photo.school_name|e }}"
+                        data-photo-activity="{{ photo.activity_name|e }}"
+                        data-photo-code="{{ (photo.activity_code or '-')|e }}"
+                        data-photo-bku="{{ (photo.bku_number or '-')|e }}"
+                        data-photo-vendor="{{ (photo.vendor_name or '-')|e }}"
+                        data-photo-fund="{{ 'BOSP' if photo.fund_source == 'BOS' else 'BOP' }}"
+                        data-photo-team="{{ (photo.team_name or 'Belum ada tim')|e }}"
+                        data-photo-uploader="{{ (photo.uploader_name or '-')|e }}"
+                        data-photo-date="{% if photo.photo_created_at %}{{ photo.photo_created_at|jakarta('%d %b %Y %H:%M') }}{% else %}-{% endif %}"
+                        data-photo-status="{{ 'Sah' if photo.is_audit_valid else 'Dianulir' }}"
+                        data-photo-notes="{{ (photo.photo_audit_notes or '')|e }}"
+                        data-photo-report-url="{{ url_for('monev_bos.staff_audit_report', report_id=photo.report_id) }}">
+                    <img src="{{ photo.photo_url }}" alt="Foto {{ photo.activity_name }} - {{ photo.school_name }}" loading="lazy">
+                    <span class="activity-gallery-top"><span class="badge bg-{{ 'success' if photo.fund_source == 'BOS' else 'info' }}">{{ photo.period_year }} · TW {{ photo.period_tw }} · {{ 'BOSP' if photo.fund_source == 'BOS' else 'BOP' }}</span><span class="badge bg-{{ 'success' if photo.is_audit_valid else 'danger' }}"><i class="bi bi-{{ 'check-circle' if photo.is_audit_valid else 'x-circle' }} me-1"></i>{{ 'Sah' if photo.is_audit_valid else 'Dianulir' }}</span></span>
+                    <span class="activity-gallery-caption"><strong class="small">{{ photo.school_name }}</strong><span class="text-white-50 text-xs">{{ photo.activity_name }}</span><span class="text-white-50" style="font-size:.62rem"><i class="bi bi-calendar3 me-1"></i>{% if photo.photo_created_at %}{{ photo.photo_created_at|jakarta('%d %b %Y') }}{% else %}-{% endif %}</span></span>
+                </button>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-5"><i class="bi bi-images fs-1 text-body-secondary opacity-50 d-block mb-2"></i><strong class="d-block">Foto kegiatan tidak ditemukan</strong><span class="text-body-secondary small">Coba ubah periode atau filter galeri.</span></div>
+            {% endif %}
+        </div>
+    </section>
+</div>
+
+<div class="modal fade" id="activityGalleryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content overflow-hidden">
+            <div class="modal-header"><div><h5 class="modal-title fw-bold mb-0" id="activityGalleryTitle">Foto Kegiatan</h5><span class="text-body-secondary text-xs" id="activityGallerySchool"></span></div><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="row g-0">
+                <div class="col-lg-8 bg-dark d-flex align-items-center"><img src="" alt="Foto kegiatan" class="activity-gallery-modal-image" id="activityGalleryImage"></div>
+                <div class="col-lg-4"><div class="p-3"><div class="activity-gallery-detail">
+                    <div><span class="text-body-secondary text-xs d-block">Sumber Dana</span><strong class="small" id="activityGalleryFund"></strong></div>
+                    <div><span class="text-body-secondary text-xs d-block">Status Foto</span><strong class="small" id="activityGalleryStatus"></strong></div>
+                    <div><span class="text-body-secondary text-xs d-block">Kode Kegiatan</span><strong class="small" id="activityGalleryCode"></strong></div>
+                    <div><span class="text-body-secondary text-xs d-block">Nomor BKU</span><strong class="small" id="activityGalleryBku"></strong></div>
+                    <div><span class="text-body-secondary text-xs d-block">Vendor</span><strong class="small" id="activityGalleryVendor"></strong></div>
+                    <div><span class="text-body-secondary text-xs d-block">Tim</span><strong class="small" id="activityGalleryTeam"></strong></div>
+                    <div><span class="text-body-secondary text-xs d-block">Pengunggah</span><strong class="small" id="activityGalleryUploader"></strong></div>
+                    <div><span class="text-body-secondary text-xs d-block">Tanggal</span><strong class="small" id="activityGalleryDate"></strong></div>
+                </div><div class="alert alert-danger mt-3 mb-0 d-none" id="activityGalleryNotes"></div></div></div>
+            </div>
+            <div class="modal-footer justify-content-between"><a href="#" target="_blank" rel="noopener" class="btn btn-outline-secondary btn-sm" id="activityGalleryOriginal"><i class="bi bi-arrows-fullscreen me-1"></i>Buka Foto Asli</a><a href="#" target="_blank" rel="noopener" class="btn btn-primary btn-sm" id="activityGalleryReport"><i class="bi bi-eye me-1"></i>Buka Laporan Sekolah</a></div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const modal = document.getElementById('activityGalleryModal');
+    if (!modal) return;
+    const setText = (id, value) => { document.getElementById(id).textContent = value || '-'; };
+    modal.addEventListener('show.bs.modal', function (event) {
+        const item = event.relatedTarget;
+        if (!item) return;
+        document.getElementById('activityGalleryImage').src = item.dataset.photoSrc || '';
+        document.getElementById('activityGalleryOriginal').href = item.dataset.photoSrc || '#';
+        document.getElementById('activityGalleryReport').href = item.dataset.photoReportUrl || '#';
+        setText('activityGalleryTitle', item.dataset.photoActivity);
+        setText('activityGallerySchool', item.dataset.photoSchool);
+        setText('activityGalleryFund', item.dataset.photoFund);
+        setText('activityGalleryStatus', item.dataset.photoStatus);
+        setText('activityGalleryCode', item.dataset.photoCode);
+        setText('activityGalleryBku', item.dataset.photoBku);
+        setText('activityGalleryVendor', item.dataset.photoVendor);
+        setText('activityGalleryTeam', item.dataset.photoTeam);
+        setText('activityGalleryUploader', item.dataset.photoUploader);
+        setText('activityGalleryDate', item.dataset.photoDate);
+        const notes = document.getElementById('activityGalleryNotes');
+        notes.textContent = item.dataset.photoNotes ? 'Catatan verifikator: ' + item.dataset.photoNotes : '';
+        notes.classList.toggle('d-none', !item.dataset.photoNotes);
+    });
+    modal.addEventListener('hidden.bs.modal', function () { document.getElementById('activityGalleryImage').src = ''; });
+});
+</script>
+{% endblock %}

@@ -50,8 +50,8 @@
                         <span class="badge border border-light border-opacity-25 bg-light bg-opacity-10 text-white">{{ active_period.year }} · TW {{ active_period.tw }}</span>
                         {% if active_period.is_active %}<span class="badge bg-success">Aktif</span>{% endif %}
                     </div>
-                    <h1 class="h3 fw-bold text-white mb-1">Analitik {{ metric_config[0] }}</h1>
-                    <p class="text-white-50 small mb-0">{{ metric_config[1] }}</p>
+                    <h1 class="h3 fw-bold text-white mb-1">Analitik {{ metric_config[0] }}{% if selected_team %} · {{ selected_team.team_name }}{% endif %}</h1>
+                    <p class="text-white-50 small mb-0">{{ metric_config[1] }}{% if selected_team %} Data dibatasi untuk sekolah penugasan {{ selected_team.team_name }}.{% endif %}</p>
                 </div>
                 <div class="d-flex align-items-end gap-2 analytics-no-print">
                     <form method="GET" action="{{ url_for('monev_bos.admin_analytics', metric=metric) }}">
@@ -70,16 +70,26 @@
         <div class="analytics-panel-body">
             <div class="d-flex gap-2 overflow-auto pb-2">
                 {% for metric_key, config in metric_configs.items() %}
-                <a href="{{ url_for('monev_bos.admin_analytics', metric=metric_key, period_id=active_period.id) }}" class="analytics-filter {% if metric_key == metric %}active{% endif %}">{{ config[0] }} <span class="badge bg-body-tertiary text-body-secondary border">{{ metric_counts[metric_key] }}</span></a>
+                <a href="{{ url_for('monev_bos.admin_analytics', metric=metric_key, period_id=active_period.id, team_id=selected_team_id or '') }}" class="analytics-filter {% if metric_key == metric %}active{% endif %}">{{ config[0] }} <span class="badge bg-body-tertiary text-body-secondary border">{{ metric_counts[metric_key] }}</span></a>
                 {% endfor %}
             </div>
             <form method="GET" action="{{ url_for('monev_bos.admin_analytics', metric=metric) }}" class="mt-2">
                 <input type="hidden" name="period_id" value="{{ active_period.id }}">
-                <div class="input-group input-group-sm">
-                    <span class="input-group-text bg-body-tertiary border-end-0"><i class="bi bi-search"></i></span>
-                    <input type="search" name="q" class="form-control bg-body-tertiary border-start-0" value="{{ search_query }}" placeholder="Cari nama sekolah, NPSN, atau tim verifikator...">
-                    {% if search_query %}<a href="{{ url_for('monev_bos.admin_analytics', metric=metric, period_id=active_period.id) }}" class="btn btn-outline-secondary"><i class="bi bi-x-lg"></i></a>{% endif %}
-                    <button type="submit" class="btn btn-primary">Cari</button>
+                <div class="row g-2">
+                    <div class="col-12 col-md-4">
+                        <select name="team_id" class="form-select form-select-sm bg-body-tertiary" onchange="this.form.submit()" aria-label="Filter tim verifikator">
+                            <option value="">Semua Tim Verifikator</option>
+                            {% for team in team_performance %}<option value="{{ team.team_id }}" {% if selected_team_id == team.team_id %}selected{% endif %}>{{ team.team_name }} · {{ team.assigned_schools }} sekolah</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-8">
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-body-tertiary border-end-0"><i class="bi bi-search"></i></span>
+                            <input type="search" name="q" class="form-control bg-body-tertiary border-start-0" value="{{ search_query }}" placeholder="Cari nama sekolah, NPSN, atau tim verifikator...">
+                            {% if search_query %}<a href="{{ url_for('monev_bos.admin_analytics', metric=metric, period_id=active_period.id, team_id=selected_team_id or '') }}" class="btn btn-outline-secondary"><i class="bi bi-x-lg"></i></a>{% endif %}
+                            <button type="submit" class="btn btn-primary">Cari</button>
+                        </div>
+                    </div>
                 </div>
             </form>
         </div>
@@ -158,7 +168,7 @@
         <div class="analytics-panel-head"><h2 class="h6 fw-bold mb-1"><i class="bi bi-people text-primary me-2"></i>Performa Tim Verifikator</h2><p class="text-body-secondary text-xs mb-0">Perbandingan pelaporan sekolah dan penyelesaian verifikasi setiap tim.</p></div>
         {% if team_performance %}
         <div class="table-responsive"><table class="table align-middle mb-0 analytics-table"><thead><tr><th class="ps-3">Peringkat / Tim</th><th>Penugasan</th><th>Laporan Masuk</th><th>Antrean / Revisi</th><th>Verifikasi Kegiatan</th><th class="pe-3">Selesai</th></tr></thead><tbody>
-            {% for team in team_performance %}<tr><td class="ps-3"><div class="d-flex align-items-center gap-2"><span class="analytics-team-rank">{{ loop.index }}</span><div><strong class="small d-block">{{ team.team_name }}</strong><span class="text-body-secondary text-xs">{{ team.leader_name or 'Ketua belum ditetapkan' }}</span></div></div></td><td><strong>{{ team.assigned_schools }}</strong><span class="text-body-secondary text-xs d-block">sekolah</span></td><td><strong>{{ team.total_reports }}</strong><span class="text-body-secondary text-xs d-block">{{ team.reporting_rate }}% melapor</span></td><td><span class="badge bg-warning-subtle text-warning border border-warning-subtle me-1">{{ team.review_queue }}</span><span class="badge bg-danger-subtle text-danger border border-danger-subtle">{{ team.revision_reports }}</span></td><td style="min-width:150px"><div class="d-flex justify-content-between text-xs mb-1"><span>{{ team.audited_activities }}/{{ team.total_activities }}</span><strong>{{ team.verification_rate }}%</strong></div><div class="analytics-progress"><span class="bg-success" style="width:{{ team.verification_rate }}%"></span></div></td><td class="pe-3"><strong class="text-success">{{ team.completed_reports }}</strong><span class="text-body-secondary text-xs d-block">laporan</span></td></tr>{% endfor %}
+            {% for team in team_performance %}<tr><td class="ps-3"><div class="d-flex align-items-center gap-2"><span class="analytics-team-rank">{{ loop.index }}</span><div><a href="{{ url_for('monev_bos.admin_analytics', metric='all', period_id=active_period.id, team_id=team.team_id) }}" class="small fw-bold text-decoration-none">{{ team.team_name }} <i class="bi bi-arrow-up-right text-xs"></i></a><span class="text-body-secondary text-xs d-block">{{ team.leader_name or 'Ketua belum ditetapkan' }}</span></div></div></td><td><strong>{{ team.assigned_schools }}</strong><span class="text-body-secondary text-xs d-block">sekolah</span></td><td><strong>{{ team.total_reports }}</strong><span class="text-body-secondary text-xs d-block">{{ team.reporting_rate }}% melapor</span></td><td><span class="badge bg-warning-subtle text-warning border border-warning-subtle me-1">{{ team.review_queue }}</span><span class="badge bg-danger-subtle text-danger border border-danger-subtle">{{ team.revision_reports }}</span></td><td style="min-width:150px"><div class="d-flex justify-content-between text-xs mb-1"><span>{{ team.audited_activities }}/{{ team.total_activities }}</span><strong>{{ team.verification_rate }}%</strong></div><div class="analytics-progress"><span class="bg-success" style="width:{{ team.verification_rate }}%"></span></div></td><td class="pe-3"><strong class="text-success">{{ team.completed_reports }}</strong><span class="text-body-secondary text-xs d-block">laporan</span></td></tr>{% endfor %}
         </tbody></table></div>
         {% else %}<div class="analytics-panel-body text-center text-body-secondary small">Belum ada penugasan tim pada periode ini.</div>{% endif %}
     </section>

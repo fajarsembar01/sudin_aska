@@ -24,6 +24,18 @@
     .admin-progress-track { height: 8px; border-radius: 999px; background: var(--bs-tertiary-bg); overflow: hidden; }
     .admin-progress-bar { height: 100%; border-radius: inherit; }
     .admin-status-dot { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; }
+    .admin-team-card { padding: .85rem; border: 1px solid var(--bs-border-color); border-radius: 14px; background: var(--bs-body-bg); }
+    .admin-team-card:hover { border-color: var(--bs-primary-border-subtle); }
+    .admin-team-meta { display: flex; flex-wrap: wrap; gap: .35rem; }
+    .admin-photo-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: .6rem; }
+    .admin-photo-card { position: relative; width: 100%; aspect-ratio: 4 / 3; overflow: hidden; padding: 0; border: 0; border-radius: 13px; color: #fff; background: #0f172a; text-align: left; }
+    .admin-photo-card img { width: 100%; height: 100%; object-fit: cover; transition: transform .25s ease; }
+    .admin-photo-card:hover img { transform: scale(1.055); }
+    .admin-photo-card::after { position: absolute; inset: 35% 0 0; content: ""; background: linear-gradient(transparent, rgba(2,6,23,.9)); pointer-events: none; }
+    .admin-photo-top { position: absolute; z-index: 2; top: .45rem; left: .45rem; right: .45rem; display: flex; justify-content: space-between; gap: .3rem; }
+    .admin-photo-caption { position: absolute; z-index: 2; left: .55rem; right: .55rem; bottom: .5rem; }
+    .admin-photo-caption strong, .admin-photo-caption span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .admin-photo-modal-image { max-height: 72vh; width: 100%; object-fit: contain; background: #020617; }
     .admin-attention-item { display: flex; align-items: center; gap: .75rem; padding: .75rem; border: 1px solid var(--bs-border-color); border-radius: 13px; color: inherit; text-decoration: none; transition: background .15s ease, border-color .15s ease; }
     .admin-attention-item:hover { color: inherit; background: var(--bs-tertiary-bg); border-color: var(--bs-secondary-border-subtle); }
     .admin-attention-icon { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 11px; flex: 0 0 auto; }
@@ -47,7 +59,10 @@
         .admin-desktop-reports { display: none; }
         .admin-mobile-reports { display: block; }
         .admin-panel-header, .admin-panel-body { padding: .9rem; }
+        .admin-photo-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .45rem; }
+        .admin-photo-card:nth-child(n+7) { display: none; }
     }
+    @media (min-width: 768px) and (max-width: 1199.98px) { .admin-photo-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 </style>
 
 <div class="container-fluid py-3 py-md-4 admin-dashboard">
@@ -124,6 +139,39 @@
         {% endfor %}
     </div>
 
+    <section class="admin-panel mb-3 mb-md-4" id="activityPhotoGallery">
+        <div class="admin-panel-header d-flex align-items-center justify-content-between gap-2">
+            <div><h2 class="h6 fw-bold mb-1"><i class="bi bi-images text-info me-2"></i>Foto Kegiatan Terbaru</h2><p class="text-body-secondary text-xs mb-0">Dokumentasi kegiatan lapangan yang diunggah sekolah dan tim verifikator.</p></div>
+            <div class="d-flex align-items-center gap-2">
+                <div class="btn-group btn-group-sm d-none d-md-flex" role="group" aria-label="Urutan foto kegiatan">
+                    <a href="{{ url_for('monev_bos.admin_dashboard', period_id=active_period.id, photo_order='newest') }}#activityPhotoGallery" class="btn btn-outline-primary {% if photo_order == 'newest' %}active{% endif %}">Terbaru</a>
+                    <a href="{{ url_for('monev_bos.admin_dashboard', period_id=active_period.id, photo_order='random') }}#activityPhotoGallery" class="btn btn-outline-primary {% if photo_order == 'random' %}active{% endif %}">Acak</a>
+                </div>
+                <a href="{{ url_for('monev_bos.admin_activity_gallery', period_id='all', order=photo_order) }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary"><i class="bi bi-box-arrow-up-right me-1"></i>Lihat Semua <span class="badge bg-primary ms-1">{{ activity_photo_total }}</span></a>
+            </div>
+        </div>
+        <div class="admin-panel-body">
+            {% if activity_photos %}
+            <div class="admin-photo-grid">
+                {% for photo in activity_photos %}
+                <button type="button" class="admin-photo-card" data-bs-toggle="modal" data-bs-target="#adminActivityPhotoModal"
+                        data-photo-src="{{ photo.photo_url }}"
+                        data-photo-school="{{ photo.school_name|e }}"
+                        data-photo-activity="{{ photo.activity_name|e }}"
+                        data-photo-meta="{{ photo.period_year }} · TW {{ photo.period_tw }} · {{ photo.fund_source }} · {% if photo.photo_created_at %}{{ photo.photo_created_at|jakarta('%d %b %Y %H:%M') }}{% else %}-{% endif %}"
+                        data-photo-report-url="{{ url_for('monev_bos.staff_audit_report', report_id=photo.report_id) }}">
+                    <img src="{{ photo.photo_url }}" alt="Foto {{ photo.activity_name }} - {{ photo.school_name }}" loading="lazy">
+                    <span class="admin-photo-top"><span class="badge bg-{{ 'success' if photo.fund_source == 'BOS' else 'info' }}">{{ 'BOSP' if photo.fund_source == 'BOS' else 'BOP' }}</span>{% if not photo.is_audit_valid %}<span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Dianulir</span>{% endif %}</span>
+                    <span class="admin-photo-caption"><strong class="text-xs">{{ photo.school_name }}</strong><span class="text-white-50" style="font-size:.62rem">{{ photo.period_year }} · TW {{ photo.period_tw }} · {{ photo.activity_name }}</span></span>
+                </button>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-4"><i class="bi bi-camera fs-2 text-body-secondary opacity-50 d-block mb-2"></i><strong class="small d-block">Belum ada foto kegiatan</strong><span class="text-body-secondary text-xs">Foto yang diunggah pada kegiatan sekolah akan tampil di sini.</span></div>
+            {% endif %}
+        </div>
+    </section>
+
     <div class="row g-3 g-xl-4">
         <div class="col-xl-8">
             <section class="admin-panel mb-3 mb-xl-4">
@@ -148,6 +196,44 @@
                         <div class="col-6 col-md"><div class="p-2 p-md-3 rounded-3 bg-body-tertiary border h-100"><div class="d-flex align-items-center gap-2 mb-1"><span class="admin-status-dot bg-{{ color }}"></span><span class="text-body-secondary text-xs">{{ label }}</span></div><strong class="fs-5">{{ count }}</strong></div></div>
                         {% endfor %}
                     </div>
+                </div>
+            </section>
+
+            <section class="admin-panel mb-3 mb-xl-4">
+                <div class="admin-panel-header d-flex align-items-center justify-content-between gap-2">
+                    <div><h2 class="h6 fw-bold mb-1"><i class="bi bi-people-fill text-primary me-2"></i>Progres per Tim</h2><p class="text-body-secondary text-xs mb-0">Aktivitas pelaporan dan verifikasi setiap tim pada periode ini.</p></div>
+                    <a href="{{ url_for('monev_bos.admin_analytics', metric='all', period_id=active_period.id) }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary"><i class="bi bi-bar-chart me-1"></i>Semua Tim</a>
+                </div>
+                <div class="admin-panel-body">
+                    {% if team_performance %}
+                    <div class="row g-2">
+                        {% for team in team_performance %}
+                        <div class="col-12 col-md-6">
+                            <div class="admin-team-card h-100">
+                                <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
+                                    <div class="overflow-hidden"><strong class="small d-block text-truncate">{{ team.team_name }}</strong><span class="text-body-secondary text-xs text-truncate d-block">{{ team.leader_name or 'Ketua belum ditetapkan' }}</span></div>
+                                    <a href="{{ url_for('monev_bos.admin_analytics', metric='all', period_id=active_period.id, team_id=team.team_id) }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary admin-metric-view" title="Lihat aktivitas {{ team.team_name }}"><i class="bi bi-eye"></i></a>
+                                </div>
+                                <div class="mb-2">
+                                    <div class="d-flex justify-content-between text-xs mb-1"><span class="text-body-secondary">Sekolah melapor</span><strong>{{ team.total_reports }}/{{ team.assigned_schools }} · {{ team.reporting_rate }}%</strong></div>
+                                    <div class="admin-progress-track" style="height:5px"><div class="admin-progress-bar bg-primary" style="width:{{ team.reporting_rate }}%"></div></div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between text-xs mb-1"><span class="text-body-secondary">Kegiatan diverifikasi</span><strong>{{ team.audited_activities }}/{{ team.total_activities }} · {{ team.verification_rate }}%</strong></div>
+                                    <div class="admin-progress-track" style="height:5px"><div class="admin-progress-bar bg-success" style="width:{{ team.verification_rate }}%"></div></div>
+                                </div>
+                                <div class="admin-team-meta">
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle">{{ team.completed_reports }} selesai</span>
+                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">{{ team.review_queue }} antrean</span>
+                                    {% if team.revision_reports %}<span class="badge bg-danger-subtle text-danger border border-danger-subtle">{{ team.revision_reports }} revisi</span>{% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4"><i class="bi bi-people fs-2 text-body-secondary opacity-50 d-block mb-2"></i><span class="text-body-secondary small">Belum ada penugasan tim pada periode ini.</span></div>
+                    {% endif %}
                 </div>
             </section>
 
@@ -225,4 +311,34 @@
     </div>
     {% endif %}
 </div>
+
+{% if active_period %}
+<div class="modal fade" id="adminActivityPhotoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content overflow-hidden">
+            <div class="modal-header"><div><h5 class="modal-title fw-bold mb-0" id="adminActivityPhotoTitle">Foto Kegiatan</h5><span class="text-body-secondary text-xs" id="adminActivityPhotoMeta"></span></div><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body p-0"><img src="" alt="Foto kegiatan" class="admin-photo-modal-image" id="adminActivityPhotoImage"></div>
+            <div class="modal-footer justify-content-between"><span class="text-body-secondary small" id="adminActivityPhotoSchool"></span><a href="#" target="_blank" rel="noopener" class="btn btn-primary btn-sm" id="adminActivityPhotoReport"><i class="bi bi-eye me-1"></i>Buka Laporan</a></div>
+        </div>
+    </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const modal = document.getElementById('adminActivityPhotoModal');
+    if (!modal) return;
+    modal.addEventListener('show.bs.modal', function (event) {
+        const button = event.relatedTarget;
+        if (!button) return;
+        document.getElementById('adminActivityPhotoImage').src = button.dataset.photoSrc || '';
+        document.getElementById('adminActivityPhotoTitle').textContent = button.dataset.photoActivity || 'Foto Kegiatan';
+        document.getElementById('adminActivityPhotoSchool').textContent = button.dataset.photoSchool || '';
+        document.getElementById('adminActivityPhotoMeta').textContent = button.dataset.photoMeta || '';
+        document.getElementById('adminActivityPhotoReport').href = button.dataset.photoReportUrl || '#';
+    });
+    modal.addEventListener('hidden.bs.modal', function () {
+        document.getElementById('adminActivityPhotoImage').src = '';
+    });
+});
+</script>
+{% endif %}
 {% endblock %}

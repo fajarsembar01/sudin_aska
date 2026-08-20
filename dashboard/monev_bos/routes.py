@@ -227,17 +227,57 @@ def _selected_admin_period(periods, requested_period_id=None):
         return max(periods, key=lambda period: (int(period["year"]), int(period["tw"])))
     return None
 
+
+def _usable_activity_photos(photo_rows):
+    """Exclude stale database records whose local image file is missing or empty."""
+    dashboard_root = os.path.realpath(os.path.join(monev_bos_bp.root_path, ".."))
+    static_root = os.path.realpath(os.path.join(dashboard_root, "static"))
+    usable = []
+    for photo in photo_rows:
+        relative_path = str(photo.get("file_path") or "").lstrip("/")
+        if not relative_path.startswith("static/uploads/monev_bos/"):
+            continue
+        absolute_path = os.path.realpath(os.path.join(dashboard_root, relative_path))
+        try:
+            if os.path.commonpath([static_root, absolute_path]) != static_root:
+                continue
+            if not os.path.isfile(absolute_path) or os.path.getsize(absolute_path) <= 0:
+                continue
+        except (OSError, ValueError):
+            continue
+        photo["photo_url"] = "/" + relative_path
+        usable.append(photo)
+    return usable
+
 @monev_bos_bp.route("/admin")
 @role_required("admin")
 def admin_dashboard():
     periods = queries.list_periods()
     active_period = _selected_admin_period(periods, request.args.get("period_id", type=int))
+    photo_order = (request.args.get("photo_order") or "newest").lower()
+    if photo_order not in {"newest", "random"}:
+        photo_order = "newest"
     overview = {}
     recent_reports = []
+    team_performance = []
+    activity_photos = []
     days_remaining = None
     if active_period:
         overview = queries.get_admin_dashboard_overview(active_period["id"])
         recent_reports = queries.list_recent_period_reports(active_period["id"])
+        team_performance = queries.list_admin_team_performance(active_period["id"])
+        all_activity_photos = _usable_activity_photos(
+            queries.list_admin_activity_photos(None, limit=500, order=photo_order)
+        )
+        activity_photos = all_activity_photos[:12]
+        activity_photo_total = len(all_activity_photos)
+        for team in team_performance:
+            assigned = int(team.get("assigned_schools") or 0)
+            reports = int(team.get("total_reports") or 0)
+            total = int(team.get("total_activities") or 0)
+            audited = int(team.get("audited_activities") or 0)
+            team["reporting_rate"] = min(round(reports / assigned * 100), 100) if assigned else 0
+            team["verification_rate"] = min(round(audited / total * 100), 100) if total else 0
         end_date = active_period.get("end_date")
         if isinstance(end_date, datetime):
             end_date = end_date.date()
@@ -264,6 +304,10 @@ def admin_dashboard():
         recent_reports=recent_reports,
         days_remaining=days_remaining,
         periods=periods,
+        team_performance=team_performance,
+        activity_photos=activity_photos,
+        photo_order=photo_order,
+        activity_photo_total=activity_photo_total if active_period else 0,
     )
 
 
@@ -282,6 +326,18 @@ def admin_analytics(metric):
     overview = queries.get_admin_dashboard_overview(selected_period["id"])
     all_school_rows = queries.list_admin_period_school_analytics(selected_period["id"])
     team_performance = queries.list_admin_team_performance(selected_period["id"])
+    selected_team_id = request.args.get("team_id", type=int)
+    selected_team = next(
+        (team for team in team_performance if int(team["team_id"]) == selected_team_id),
+        None,
+    ) if selected_team_id else None
+    if selected_team_id and not selected_team:
+        selected_team_id = None
+
+    scoped_school_rows = [
+        row for row in all_school_rows
+        if selected_team_id is None or row.get("team_id") == selected_team_id
+    ]
 
     def matches_metric(row):
         status = row.get("report_status")
@@ -301,7 +357,7 @@ def admin_analytics(metric):
             return status == "draft"
         return True
 
-    school_rows = [row for row in all_school_rows if matches_metric(row)]
+    school_rows = [row for row in scoped_school_rows if matches_metric(row)]
     search_query = (request.args.get("q") or "").strip()
     if search_query:
         search_normalized = search_query.casefold()
@@ -329,7 +385,7 @@ def admin_analytics(metric):
         team["verification_rate"] = min(round(audited / total * 100), 100) if total else 0
 
     metric_counts = {
-        key: sum(1 for row in all_school_rows if (
+        key: sum(1 for row in scoped_school_rows if (
             (key == "all")
             or (key == "assigned" and row.get("is_assigned"))
             or (key == "reports" and row.get("report_id"))
@@ -365,6 +421,60 @@ def admin_analytics(metric):
         team_performance=team_performance,
         financial_analytics=financial_analytics,
         search_query=search_query,
+        selected_team_id=selected_team_id,
+        selected_team=selected_team,
+    )
+
+
+@monev_bos_bp.route("/admin/activity-gallery")
+@role_required("admin")
+def admin_activity_gallery():
+    periods = queries.list_periods()
+    raw_period_id = (request.args.get("period_id") or "all").lower()
+    all_periods = raw_period_id == "all"
+    requested_period_id = int(raw_period_id) if raw_period_id.isdigit() else None
+    selected_period = _selected_admin_period(periods, requested_period_id)
+    if not selected_period:
+        flash("Belum ada periode MONEV yang tersedia.", "warning")
+        return redirect(url_for("monev_bos.admin_dashboard"))
+
+    team_performance = queries.list_admin_team_performance(selected_period["id"])
+    requested_team_id = request.args.get("team_id", type=int)
+    team_id = requested_team_id if any(
+        int(team["team_id"]) == requested_team_id for team in team_performance
+    ) else None
+    fund_source = (request.args.get("fund_source") or "").upper()
+    if fund_source not in {"BOS", "BOP"}:
+        fund_source = ""
+    photo_status = (request.args.get("photo_status") or "").lower()
+    if photo_status not in {"valid", "invalid"}:
+        photo_status = ""
+    photo_order = (request.args.get("order") or "newest").lower()
+    if photo_order not in {"newest", "oldest", "random"}:
+        photo_order = "newest"
+    search_query = (request.args.get("q") or "").strip()
+
+    photos = _usable_activity_photos(queries.list_admin_activity_photos(
+        None if all_periods else selected_period["id"],
+        limit=500,
+        team_id=team_id,
+        fund_source=fund_source or None,
+        photo_status=photo_status or None,
+        search_query=search_query or None,
+        order=photo_order,
+    ))
+    return render_template(
+        "monev_bos/admin/activity_gallery.html",
+        active_period=selected_period,
+        periods=periods,
+        team_performance=team_performance,
+        team_id=team_id,
+        fund_source=fund_source,
+        photo_status=photo_status,
+        photo_order=photo_order,
+        search_query=search_query,
+        photos=photos,
+        all_periods=all_periods,
     )
 
 @monev_bos_bp.route("/admin/periods", methods=["GET", "POST"])

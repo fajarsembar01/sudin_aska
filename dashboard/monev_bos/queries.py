@@ -226,10 +226,16 @@ def get_admin_dashboard_overview(period_id: int) -> Dict[str, Any]:
             )
             SELECT report_stats.*, activity_stats.*, assignment_stats.*,
                    (SELECT COUNT(*) FROM monev_bos_vendors WHERE status = 'pending') AS pending_vendors,
-                   (SELECT COUNT(*) FROM monev_bos_edit_requests WHERE status = 'pending') AS pending_edit_requests
+                   (SELECT COUNT(*) FROM monev_bos_edit_requests WHERE status = 'pending') AS pending_edit_requests,
+                   (SELECT COUNT(*)
+                    FROM monev_bos_activity_docs photo
+                    JOIN monev_bos_activities photo_activity ON photo_activity.id = photo.activity_id
+                    JOIN monev_bos_reports photo_report ON photo_report.id = photo_activity.report_id
+                    WHERE photo_report.period_id = %s
+                      AND photo.doc_type IN ('field_photo', 'live_photo')) AS total_activity_photos
             FROM report_stats, activity_stats, assignment_stats
             """,
-            (period_id, period_id, period_id),
+            (period_id, period_id, period_id, period_id),
         )
         row = cur.fetchone()
         return dict(row) if row else {}
@@ -368,6 +374,102 @@ def list_admin_team_performance(period_id: int) -> List[Dict[str, Any]]:
             """,
             (period_id, period_id),
         )
+        return [dict(row) for row in cur.fetchall()]
+
+
+def list_admin_activity_photos(
+    period_id: Optional[int],
+    limit: int = 24,
+    team_id: Optional[int] = None,
+    fund_source: Optional[str] = None,
+    photo_status: Optional[str] = None,
+    search_query: Optional[str] = None,
+    order: str = "newest",
+) -> List[Dict[str, Any]]:
+    """List activity and live photos with school, activity, and verification context."""
+    query = """
+        SELECT photo.id AS photo_id,
+               photo.file_path,
+               photo.doc_type,
+               photo.file_size,
+               photo.lat,
+               photo.lng,
+               photo.is_audit_valid,
+               photo.photo_audit_notes,
+               photo.created_at AS photo_created_at,
+               photo.photo_audited_at,
+               activity.id AS activity_id,
+               activity.activity_name,
+               activity.activity_code,
+               activity.bku_number,
+               activity.fund_source,
+               activity.status AS activity_status,
+               activity.realized_amount,
+               activity.vendor_name,
+               report.id AS report_id,
+               report.period_id,
+               period.year AS period_year,
+               period.tw AS period_tw,
+               COALESCE(school.name, school_user.full_name) AS school_name,
+               school.npsn,
+               team.id AS team_id,
+               team.name AS team_name,
+               uploader.full_name AS uploader_name,
+               auditor.full_name AS photo_auditor_name
+        FROM monev_bos_activity_docs photo
+        JOIN monev_bos_activities activity ON activity.id = photo.activity_id
+        JOIN monev_bos_reports report ON report.id = activity.report_id
+        JOIN monev_bos_periods period ON period.id = report.period_id
+        JOIN dashboard_users school_user ON school_user.id = report.school_id
+        LEFT JOIN LATERAL (
+            SELECT portal_school.name, portal_school.npsn
+            FROM portal_schools portal_school
+            WHERE portal_school.id = school_user.school_id OR portal_school.user_id = school_user.id
+            ORDER BY CASE WHEN portal_school.id = school_user.school_id THEN 0 ELSE 1 END
+            LIMIT 1
+        ) school ON TRUE
+        LEFT JOIN monev_bos_assignments assignment
+               ON assignment.school_id = report.school_id AND assignment.period_id = report.period_id
+        LEFT JOIN monev_bos_teams team ON team.id = assignment.team_id
+        LEFT JOIN dashboard_users uploader ON uploader.id = photo.uploaded_by
+        LEFT JOIN dashboard_users auditor ON auditor.id = photo.photo_audited_by
+        WHERE photo.doc_type IN ('field_photo', 'live_photo')
+    """
+    params: List[Any] = []
+    if period_id is not None:
+        query += " AND report.period_id = %s"
+        params.append(period_id)
+    if team_id:
+        query += " AND team.id = %s"
+        params.append(team_id)
+    if fund_source in ("BOS", "BOP"):
+        query += " AND activity.fund_source = %s"
+        params.append(fund_source)
+    if photo_status == "valid":
+        query += " AND photo.is_audit_valid = TRUE"
+    elif photo_status == "invalid":
+        query += " AND photo.is_audit_valid = FALSE"
+    if search_query:
+        pattern = f"%{search_query.strip()}%"
+        query += """
+            AND (activity.activity_name ILIKE %s
+                 OR activity.activity_code ILIKE %s
+                 OR activity.bku_number ILIKE %s
+                 OR activity.vendor_name ILIKE %s
+                 OR COALESCE(school.name, school_user.full_name) ILIKE %s)
+        """
+        params.extend([pattern] * 5)
+    if order == "oldest":
+        query += " ORDER BY photo.created_at ASC, photo.id ASC"
+    elif order == "random":
+        query += " ORDER BY RANDOM()"
+    else:
+        query += " ORDER BY photo.created_at DESC, photo.id DESC"
+    query += " LIMIT %s"
+    params.append(max(1, min(int(limit), 500)))
+
+    with get_cursor() as cur:
+        cur.execute(query, tuple(params))
         return [dict(row) for row in cur.fetchall()]
 
 def set_active_period(period_id: int) -> None:
