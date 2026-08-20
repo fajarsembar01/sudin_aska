@@ -290,8 +290,8 @@
                                     {% else %}
                                     <span class="small d-block">{{ v.owner_name or '-' }}</span>
                                     {% endif %}
-                                    {% if v.bank_name or v.bank_account %}
-                                    <span class="small text-muted">{{ v.bank_name }} ({{ v.bank_account }})</span>
+                                    {% if v.bank_name or v.bank_account or (v.bank_account_type or 'rekening') == 'va' %}
+                                    <span class="small text-muted">{{ v.bank_name or 'Bank' }} · {% if (v.bank_account_type or 'rekening') == 'va' %}Virtual Account (VA){% else %}{{ v.bank_account or '-' }}{% endif %}</span>
                                     {% endif %}
                                 </td>
                                 <td>
@@ -497,8 +497,8 @@
                     <span class="vendor-mobile-meta-value">{{ (v.npwp or '-') if v.vendor_type == 'narsum' else (v.owner_name or '-') }}</span>
                 </div>
                 <div class="vendor-mobile-meta-item">
-                    <span class="vendor-mobile-meta-label">Bank / Rekening</span>
-                    <span class="vendor-mobile-meta-value">{{ v.bank_name or '-' }}{% if v.bank_account %} · {{ v.bank_account }}{% endif %}</span>
+                    <span class="vendor-mobile-meta-label">Bank / Pembayaran</span>
+                    <span class="vendor-mobile-meta-value">{{ v.bank_name or '-' }} · {% if (v.bank_account_type or 'rekening') == 'va' %}Virtual Account (VA){% else %}{{ v.bank_account or '-' }}{% endif %}</span>
                 </div>
             </div>
 

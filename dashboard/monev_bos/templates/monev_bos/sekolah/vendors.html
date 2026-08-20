@@ -67,10 +67,10 @@
                             <th>Nama Toko / Vendor / Narsum</th>
                             <th>NPWP &amp; Kontak</th>
                             <th>Penanggung Jawab / Narsum</th>
-                            <th>Bank &amp; Rekening</th>
+                            <th>Bank &amp; Pembayaran</th>
                             <th>Status Verifikasi</th>
                             <th>Tgl Didaftarkan</th>
-                            <th class="pe-4 text-end">Aksi</th>
+                            <th class="pe-4 text-end text-nowrap">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -104,9 +104,13 @@
                                     <span class="small">{{ v.owner_name or '-' }}</span>
                                 </td>
                                 <td>
-                                    {% if v.bank_name or v.bank_account %}
+                                    {% if v.bank_name or v.bank_account or (v.bank_account_type or 'rekening') == 'va' %}
                                     <div class="small fw-semibold text-primary">{{ v.bank_name or 'Bank' }}</div>
+                                    {% if (v.bank_account_type or 'rekening') == 'va' %}
+                                    <span class="badge bg-info-subtle text-info border border-info-subtle">Virtual Account (VA)</span>
+                                    {% else %}
                                     <div class="small text-muted">{{ v.bank_account or '-' }}</div>
+                                    {% endif %}
                                     {% else %}
                                     <span class="text-muted small">-</span>
                                     {% endif %}
@@ -143,13 +147,22 @@
                                 <td class="small text-muted">
                                     {{ v.created_at|jakarta('%d %b %Y %H:%M') }}
                                 </td>
-                                <td class="pe-4 text-end">
+                                <td class="pe-4 text-end text-nowrap">
                                     {% if v.status == 'pending' %}
+                                    <button type="button" class="btn btn-sm btn-outline-primary me-1 edit-vendor-button" title="Edit Vendor" aria-label="Edit Vendor"
+                                            data-bs-toggle="modal" data-bs-target="#editVendorModal"
+                                            data-vendor-id="{{ v.id }}" data-vendor-type="{{ v.vendor_type or 'vendor' }}"
+                                            data-name="{{ v.name|e }}" data-npwp="{{ (v.npwp or '')|e }}"
+                                            data-phone="{{ (v.phone or '')|e }}" data-owner-name="{{ (v.owner_name or '')|e }}"
+                                            data-address="{{ (v.address or '')|e }}" data-bank-name="{{ (v.bank_name or '')|e }}"
+                                            data-bank-account-type="{{ v.bank_account_type or 'rekening' }}" data-bank-account="{{ (v.bank_account or '')|e }}">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </button>
                                     <form method="POST" action="{{ url_for('monev_bos.sekolah_vendors') }}" class="d-inline" onsubmit="return confirm('Yakin ingin menghapus pengajuan ini?')">
                                         <input type="hidden" name="action" value="delete_vendor">
                                         <input type="hidden" name="vendor_id" value="{{ v.id }}">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Batalkan Pendaftaran">
-                                            <i class="bi bi-trash"></i> Hapus
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Hapus Pendaftaran" aria-label="Hapus Pendaftaran">
+                                            <i class="bi bi-trash"></i>
                                         </button>
                                     </form>
                                     {% else %}
@@ -228,9 +241,13 @@
                             <span class="fw-semibold text-dark">{{ v.owner_name or '-' }}</span>
                         </div>
                         <div class="col-6">
-                            <span class="text-muted d-block">Bank &amp; Rekening:</span>
+                            <span class="text-muted d-block">Bank &amp; Pembayaran:</span>
                             <span class="fw-bold text-primary">{{ v.bank_name or '-' }}</span>
+                            {% if (v.bank_account_type or 'rekening') == 'va' %}
+                            <span class="d-block text-info fw-semibold">Virtual Account (VA)</span>
+                            {% else %}
                             <span class="d-block text-dark">{{ v.bank_account or '' }}</span>
+                            {% endif %}
                         </div>
                     </div>
 
@@ -248,7 +265,16 @@
                     {% endif %}
 
                     {% if v.status == 'pending' %}
-                    <div class="mt-2 pt-1 border-top text-end">
+                    <div class="mt-2 pt-2 border-top d-grid gap-2">
+                        <button type="button" class="btn btn-sm btn-outline-primary edit-vendor-button"
+                                data-bs-toggle="modal" data-bs-target="#editVendorModal"
+                                data-vendor-id="{{ v.id }}" data-vendor-type="{{ v.vendor_type or 'vendor' }}"
+                                data-name="{{ v.name|e }}" data-npwp="{{ (v.npwp or '')|e }}"
+                                data-phone="{{ (v.phone or '')|e }}" data-owner-name="{{ (v.owner_name or '')|e }}"
+                                data-address="{{ (v.address or '')|e }}" data-bank-name="{{ (v.bank_name or '')|e }}"
+                                data-bank-account-type="{{ v.bank_account_type or 'rekening' }}" data-bank-account="{{ (v.bank_account or '')|e }}">
+                            <i class="bi bi-pencil-square me-1"></i>Edit Data
+                        </button>
                         <form method="POST" action="{{ url_for('monev_bos.sekolah_vendors') }}" class="d-inline" onsubmit="return confirm('Yakin ingin menghapus pengajuan ini?')">
                             <input type="hidden" name="action" value="delete_vendor">
                             <input type="hidden" name="vendor_id" value="{{ v.id }}">
@@ -340,9 +366,21 @@
                                     <option value="{{ b }}" {% if b == 'Bank DKI' %}selected{% endif %}>{{ b }}</option>
                                 {% endfor %}
                             </select>
-                            <div class="form-text text-xs">Jika nama bank belum ada, minta Admin untuk menambahkannya.</div>
                         </div>
-                        <div class="col-12 col-md-6" id="fieldBankAccount">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold d-block">Jenis Rekening</label>
+                            <div class="d-flex gap-4 pt-2">
+                                <div class="form-check">
+                                    <input class="form-check-input bank-account-type" type="radio" name="bank_account_type" id="addAccountTypeRekening" value="rekening" checked>
+                                    <label class="form-check-label" for="addAccountTypeRekening">Rekening</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input bank-account-type" type="radio" name="bank_account_type" id="addAccountTypeVa" value="va">
+                                    <label class="form-check-label" for="addAccountTypeVa">Virtual Account (VA)</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6" id="fieldBankAccount" data-bank-account-field>
                             <label class="form-label fw-semibold">No. Rekening Bank</label>
                             <input type="text" class="form-control" name="bank_account" placeholder="Contoh: 12345678901">
                         </div>
@@ -353,6 +391,82 @@
                     <button type="submit" class="btn btn-primary fw-bold w-100 w-sm-auto px-4" id="btnSubmitForm">
                         <i class="bi bi-send me-1"></i> <span id="submitBtnText">Kirim Pendaftaran Vendor</span>
                     </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Edit Vendor / Narsum (hanya data berstatus pending) -->
+<div class="modal fade" id="editVendorModal" tabindex="-1" aria-labelledby="editVendorModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('monev_bos.sekolah_vendors') }}" id="editVendorForm">
+                <input type="hidden" name="action" value="update_vendor">
+                <input type="hidden" name="vendor_id">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="editVendorModalLabel"><i class="bi bi-pencil-square text-primary me-2"></i>Edit Vendor / Narasumber</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning py-2 small"><i class="bi bi-clock-history me-1"></i>Data hanya dapat diedit selama masih menunggu verifikasi.</div>
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold">Tipe Pendaftaran</label>
+                            <select class="form-select" name="vendor_type">
+                                <option value="vendor">Vendor / Toko</option>
+                                <option value="narsum">Narasumber / Instruktur</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold">Nama Vendor / No. KTP Narsum <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="name" required>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold">NPWP Vendor</label>
+                            <input type="text" class="form-control" name="npwp">
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold">No. Telepon / WhatsApp</label>
+                            <input type="text" class="form-control" name="phone">
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold">Penanggung Jawab / Nama Narsum</label>
+                            <input type="text" class="form-control" name="owner_name">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Alamat Lengkap</label>
+                            <textarea class="form-control" name="address" rows="2"></textarea>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold">Nama Bank</label>
+                            <select class="form-select" name="bank_name">
+                                <option value="">-- Pilih Nama Bank --</option>
+                                {% for b in master_banks %}<option value="{{ b }}">{{ b }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold d-block">Jenis Rekening</label>
+                            <div class="d-flex gap-4 pt-2">
+                                <div class="form-check">
+                                    <input class="form-check-input bank-account-type" type="radio" name="bank_account_type" id="editAccountTypeRekening" value="rekening">
+                                    <label class="form-check-label" for="editAccountTypeRekening">Rekening</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input bank-account-type" type="radio" name="bank_account_type" id="editAccountTypeVa" value="va">
+                                    <label class="form-check-label" for="editAccountTypeVa">Virtual Account (VA)</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6" data-bank-account-field>
+                            <label class="form-label fw-semibold">No. Rekening Bank</label>
+                            <input type="text" class="form-control" name="bank_account">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary fw-bold"><i class="bi bi-save me-1"></i>Simpan Perubahan</button>
                 </div>
             </form>
         </div>
@@ -383,6 +497,53 @@ function setVendorType(type) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+    function syncBankAccountField(form) {
+        const selected = form.querySelector('input[name="bank_account_type"]:checked');
+        const field = form.querySelector('[data-bank-account-field]');
+        if (!selected || !field) return;
+        const accountInput = field.querySelector('input[name="bank_account"]');
+        const isVa = selected.value === 'va';
+        field.classList.toggle('d-none', isVa);
+        accountInput.disabled = isVa;
+        if (isVa) accountInput.value = '';
+    }
+
+    document.querySelectorAll('form').forEach(function(form) {
+        if (!form.querySelector('.bank-account-type')) return;
+        form.querySelectorAll('.bank-account-type').forEach(function(radio) {
+            radio.addEventListener('change', function() { syncBankAccountField(form); });
+        });
+        syncBankAccountField(form);
+    });
+
+    const editModal = document.getElementById('editVendorModal');
+    if (editModal) {
+        editModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const form = document.getElementById('editVendorForm');
+            if (!button || !form) return;
+            const values = {
+                vendor_id: button.dataset.vendorId,
+                vendor_type: button.dataset.vendorType,
+                name: button.dataset.name,
+                npwp: button.dataset.npwp,
+                phone: button.dataset.phone,
+                owner_name: button.dataset.ownerName,
+                address: button.dataset.address,
+                bank_name: button.dataset.bankName,
+                bank_account: button.dataset.bankAccount
+            };
+            Object.entries(values).forEach(function(entry) {
+                const input = form.elements.namedItem(entry[0]);
+                if (input) input.value = entry[1] || '';
+            });
+            const accountType = button.dataset.bankAccountType === 'va' ? 'va' : 'rekening';
+            const accountRadio = form.querySelector('input[name="bank_account_type"][value="' + accountType + '"]');
+            if (accountRadio) accountRadio.checked = true;
+            syncBankAccountField(form);
+        });
+    }
+
     const searchInput = document.getElementById('vendorSearchInput');
     if (!searchInput) return;
 

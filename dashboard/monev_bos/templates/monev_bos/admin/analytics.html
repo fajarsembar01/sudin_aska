@@ -1,0 +1,166 @@
+{% extends "monev_bos/base_monev_bos.html" %}
+
+{% block title %}Analitik {{ metric_config[0] }} - MONEV BOS/BOP{% endblock %}
+
+{% block monev_bos_content %}
+<style>
+    .analytics-page { --analytics-radius: 16px; }
+    .analytics-header { border: 0; border-radius: var(--analytics-radius); color: #fff; background: linear-gradient(120deg, #172554, #1d4ed8 55%, #0891b2); }
+    .analytics-panel { border: 1px solid var(--bs-border-color); border-radius: var(--analytics-radius); background: var(--bs-body-bg); box-shadow: 0 7px 22px rgba(15,23,42,.045); }
+    .analytics-panel-head { padding: 1rem 1.1rem; border-bottom: 1px solid var(--bs-border-color); }
+    .analytics-panel-body { padding: 1.1rem; }
+    .analytics-filter { display: inline-flex; align-items: center; gap: .4rem; padding: .45rem .75rem; border: 1px solid var(--bs-border-color); border-radius: 999px; color: var(--bs-secondary-color); text-decoration: none; background: var(--bs-body-bg); font-size: .72rem; font-weight: 650; white-space: nowrap; }
+    .analytics-filter:hover, .analytics-filter.active { color: var(--bs-primary); border-color: var(--bs-primary-border-subtle); background: var(--bs-primary-bg-subtle); }
+    .analytics-kpi { height: 100%; padding: 1rem; border: 1px solid var(--bs-border-color); border-radius: 14px; background: var(--bs-body-bg); }
+    .analytics-kpi-icon { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 11px; }
+    .analytics-kpi-value { font-size: 1.45rem; line-height: 1.1; letter-spacing: -.03em; }
+    .analytics-progress { height: 6px; overflow: hidden; border-radius: 999px; background: var(--bs-tertiary-bg); }
+    .analytics-progress > span { display: block; height: 100%; border-radius: inherit; }
+    .analytics-table th { color: var(--bs-secondary-color); font-size: .66rem; letter-spacing: .045em; text-transform: uppercase; white-space: nowrap; }
+    .analytics-table td { padding-top: .75rem; padding-bottom: .75rem; }
+    .analytics-mobile-list { display: none; }
+    .analytics-school-card { padding: .85rem; border: 1px solid var(--bs-border-color); border-radius: 13px; }
+    .analytics-team-rank { display: inline-flex; align-items: center; justify-content: center; width: 27px; height: 27px; border-radius: 8px; background: var(--bs-primary-bg-subtle); color: var(--bs-primary); font-size: .72rem; font-weight: 800; }
+    [data-bs-theme="dark"] .analytics-header { background: linear-gradient(120deg, #172554, #1e3a8a 55%, #164e63); }
+    [data-bs-theme="dark"] .analytics-panel { box-shadow: none; }
+    @media print {
+        nav, .analytics-no-print, .toast-container, footer { display: none !important; }
+        .analytics-page { padding: 0 !important; }
+        .analytics-header { color: #000 !important; background: #fff !important; border: 1px solid #ccc; }
+        .analytics-panel { box-shadow: none; break-inside: avoid; }
+    }
+    @media (max-width: 767.98px) {
+        .analytics-page { padding-left: 10px !important; padding-right: 10px !important; --analytics-radius: 13px; }
+        .analytics-header .card-body { padding: 1rem !important; }
+        .analytics-header h1 { font-size: 1.15rem; }
+        .analytics-desktop-table { display: none; }
+        .analytics-mobile-list { display: block; }
+        .analytics-panel-head, .analytics-panel-body { padding: .85rem; }
+        .analytics-filter { padding: .38rem .62rem; font-size: .65rem; }
+    }
+</style>
+
+<div class="container-fluid py-3 py-md-4 analytics-page">
+    <section class="card analytics-header mb-3">
+        <div class="card-body p-4">
+            <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
+                <div>
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <a href="{{ url_for('monev_bos.admin_dashboard', period_id=active_period.id) }}" class="btn btn-sm btn-light text-primary analytics-no-print" title="Kembali ke dashboard"><i class="bi bi-arrow-left"></i></a>
+                        <span class="badge border border-light border-opacity-25 bg-light bg-opacity-10 text-white">{{ active_period.year }} · TW {{ active_period.tw }}</span>
+                        {% if active_period.is_active %}<span class="badge bg-success">Aktif</span>{% endif %}
+                    </div>
+                    <h1 class="h3 fw-bold text-white mb-1">Analitik {{ metric_config[0] }}</h1>
+                    <p class="text-white-50 small mb-0">{{ metric_config[1] }}</p>
+                </div>
+                <div class="d-flex align-items-end gap-2 analytics-no-print">
+                    <form method="GET" action="{{ url_for('monev_bos.admin_analytics', metric=metric) }}">
+                        <label for="analyticsPeriod" class="form-label text-white-50 text-xs fw-bold mb-1">Ganti Periode</label>
+                        <select id="analyticsPeriod" name="period_id" class="form-select form-select-sm" onchange="this.form.submit()" style="min-width:180px">
+                            {% for period in periods %}<option value="{{ period.id }}" {% if period.id == active_period.id %}selected{% endif %}>{{ period.year }} · TW {{ period.tw }}{% if period.is_active %} — Aktif{% endif %}</option>{% endfor %}
+                        </select>
+                    </form>
+                    <button type="button" class="btn btn-sm btn-light text-primary" onclick="window.print()" title="Cetak analitik"><i class="bi bi-printer"></i></button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="analytics-panel mb-3 analytics-no-print">
+        <div class="analytics-panel-body">
+            <div class="d-flex gap-2 overflow-auto pb-2">
+                {% for metric_key, config in metric_configs.items() %}
+                <a href="{{ url_for('monev_bos.admin_analytics', metric=metric_key, period_id=active_period.id) }}" class="analytics-filter {% if metric_key == metric %}active{% endif %}">{{ config[0] }} <span class="badge bg-body-tertiary text-body-secondary border">{{ metric_counts[metric_key] }}</span></a>
+                {% endfor %}
+            </div>
+            <form method="GET" action="{{ url_for('monev_bos.admin_analytics', metric=metric) }}" class="mt-2">
+                <input type="hidden" name="period_id" value="{{ active_period.id }}">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-body-tertiary border-end-0"><i class="bi bi-search"></i></span>
+                    <input type="search" name="q" class="form-control bg-body-tertiary border-start-0" value="{{ search_query }}" placeholder="Cari nama sekolah, NPSN, atau tim verifikator...">
+                    {% if search_query %}<a href="{{ url_for('monev_bos.admin_analytics', metric=metric, period_id=active_period.id) }}" class="btn btn-outline-secondary"><i class="bi bi-x-lg"></i></a>{% endif %}
+                    <button type="submit" class="btn btn-primary">Cari</button>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <div class="row g-2 g-md-3 mb-3">
+        <div class="col-6 col-xl-3"><div class="analytics-kpi"><div class="d-flex justify-content-between mb-3"><span class="analytics-kpi-icon bg-primary-subtle text-primary"><i class="bi bi-buildings"></i></span><span class="badge bg-primary-subtle text-primary border border-primary-subtle">Ditampilkan</span></div><div class="analytics-kpi-value fw-bold">{{ school_rows|length }}</div><div class="small fw-semibold mt-1">Sekolah</div><div class="text-body-secondary text-xs mt-1">Sesuai filter saat ini</div></div></div>
+        <div class="col-6 col-xl-3"><div class="analytics-kpi"><div class="d-flex justify-content-between mb-3"><span class="analytics-kpi-icon bg-info-subtle text-info"><i class="bi bi-wallet2"></i></span></div><div class="analytics-kpi-value fw-bold">Rp {{ "{:,.0f}".format((overview.bosp_receipts or 0) + (overview.bop_receipts or 0)).replace(',', '.') }}</div><div class="small fw-semibold mt-1">Total Penerimaan</div><div class="text-body-secondary text-xs mt-1">Akumulasi BOSP dan BOP</div></div></div>
+        <div class="col-6 col-xl-3"><div class="analytics-kpi"><div class="d-flex justify-content-between mb-3"><span class="analytics-kpi-icon bg-success-subtle text-success"><i class="bi bi-cash-stack"></i></span></div><div class="analytics-kpi-value fw-bold">Rp {{ "{:,.0f}".format((overview.bos_realized or 0) + (overview.bop_realized or 0)).replace(',', '.') }}</div><div class="small fw-semibold mt-1">Total Realisasi</div><div class="text-body-secondary text-xs mt-1">Seluruh kegiatan periode</div></div></div>
+        <div class="col-6 col-xl-3"><div class="analytics-kpi"><div class="d-flex justify-content-between mb-3"><span class="analytics-kpi-icon bg-warning-subtle text-warning"><i class="bi bi-percent"></i></span></div><div class="analytics-kpi-value fw-bold">{{ financial_analytics.total_absorption }}%</div><div class="small fw-semibold mt-1">Serapan Dana</div><div class="analytics-progress mt-2"><span class="bg-warning" style="width:{{ [financial_analytics.total_absorption, 100]|min }}%"></span></div></div></div>
+    </div>
+
+    <div class="row g-3 mb-3">
+        <div class="col-xl-7">
+            <section class="analytics-panel h-100">
+                <div class="analytics-panel-head"><h2 class="h6 fw-bold mb-1"><i class="bi bi-pie-chart text-primary me-2"></i>Komposisi Verifikasi Kegiatan</h2><p class="text-body-secondary text-xs mb-0">Status seluruh kegiatan dalam periode terpilih.</p></div>
+                <div class="analytics-panel-body">
+                    {% set activity_stats = [('Pending', overview.pending_activities or 0, 'warning', 'bi-hourglass'), ('Diperiksa', overview.in_review_activities or 0, 'info', 'bi-search'), ('Sesuai', overview.valid_activities or 0, 'success', 'bi-check-circle'), ('Revisi', overview.invalid_activities or 0, 'danger', 'bi-x-circle')] %}
+                    <div class="row g-2">
+                        {% for label, value, color, icon in activity_stats %}<div class="col-6 col-md-3"><div class="p-3 bg-{{ color }}-subtle border border-{{ color }}-subtle rounded-3 h-100"><i class="bi {{ icon }} text-{{ color }}"></i><strong class="fs-5 d-block mt-2">{{ value }}</strong><span class="text-body-secondary text-xs">{{ label }}</span></div></div>{% endfor %}
+                    </div>
+                </div>
+            </section>
+        </div>
+        <div class="col-xl-5">
+            <section class="analytics-panel h-100">
+                <div class="analytics-panel-head"><h2 class="h6 fw-bold mb-1"><i class="bi bi-bar-chart text-success me-2"></i>Serapan per Sumber Dana</h2><p class="text-body-secondary text-xs mb-0">Perbandingan penerimaan dan realisasi.</p></div>
+                <div class="analytics-panel-body">
+                    {% set fund_stats = [('BOSP', overview.bosp_receipts or 0, overview.bos_realized or 0, financial_analytics.bos_absorption, 'success'), ('BOP', overview.bop_receipts or 0, overview.bop_realized or 0, financial_analytics.bop_absorption, 'info')] %}
+                    {% for label, receipt, realized, percent, color in fund_stats %}
+                    <div class="{% if not loop.last %}mb-3 pb-3 border-bottom{% endif %}"><div class="d-flex justify-content-between mb-1"><strong class="small text-{{ color }}">{{ label }}</strong><strong class="small">{{ percent }}%</strong></div><div class="d-flex justify-content-between text-xs text-body-secondary mb-2"><span>Penerimaan Rp {{ "{:,.0f}".format(receipt).replace(',', '.') }}</span><span>Realisasi Rp {{ "{:,.0f}".format(realized).replace(',', '.') }}</span></div><div class="analytics-progress"><span class="bg-{{ color }}" style="width:{{ [percent, 100]|min }}%"></span></div></div>
+                    {% endfor %}
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <section class="analytics-panel mb-3">
+        <div class="analytics-panel-head d-flex justify-content-between align-items-center gap-2"><div><h2 class="h6 fw-bold mb-1"><i class="bi bi-list-ul text-info me-2"></i>Daftar {{ metric_config[0] }}</h2><p class="text-body-secondary text-xs mb-0">{{ school_rows|length }} sekolah ditemukan{% if search_query %} untuk “{{ search_query }}”{% endif %}.</p></div><span class="badge bg-info-subtle text-info border border-info-subtle">{{ active_period.year }} · TW {{ active_period.tw }}</span></div>
+        {% set status_labels = {'draft':'Draft', 'submitted':'Sudah Submit', 'in_review':'Diverifikasi', 'needs_revision':'Perlu Revisi', 'completed':'Selesai', 'completed_with_notes':'Selesai + Catatan'} %}
+        {% set status_classes = {'draft':'secondary', 'submitted':'info', 'in_review':'primary', 'needs_revision':'danger', 'completed':'success', 'completed_with_notes':'warning'} %}
+        {% if school_rows %}
+        <div class="table-responsive analytics-desktop-table">
+            <table class="table table-hover align-middle mb-0 analytics-table">
+                <thead><tr><th class="ps-3">No</th><th>Sekolah / Tim</th><th>Status Laporan</th><th>Progres Kegiatan</th><th>BOSP</th><th>BOP</th><th class="text-end pe-3">Aksi</th></tr></thead>
+                <tbody>
+                    {% for school in school_rows %}
+                    <tr>
+                        <td class="ps-3 text-body-secondary text-xs">{{ loop.index }}</td>
+                        <td><strong class="small d-block">{{ school.school_name }}</strong><span class="text-body-secondary text-xs">{% if school.npsn %}NPSN {{ school.npsn }} · {% endif %}{{ school.team_name or 'Belum ditugaskan ke tim' }}</span></td>
+                        <td>{% if school.report_id %}<span class="badge bg-{{ status_classes.get(school.report_status, 'secondary') }}-subtle text-{{ status_classes.get(school.report_status, 'secondary') }} border border-{{ status_classes.get(school.report_status, 'secondary') }}-subtle">{{ status_labels.get(school.report_status, school.report_status) }}</span>{% else %}<span class="badge bg-body-tertiary text-body-secondary border">Belum Ada Laporan</span>{% endif %}</td>
+                        <td style="min-width:150px"><div class="d-flex justify-content-between text-xs mb-1"><span>{{ school.audited_activities }}/{{ school.total_activities }}</span><span>{{ school.verification_rate }}%</span></div><div class="analytics-progress"><span class="{% if school.verification_rate == 100 %}bg-success{% else %}bg-primary{% endif %}" style="width:{{ school.verification_rate }}%"></span></div><span class="text-body-secondary text-xs">{{ school.valid_activities }} sesuai · {{ school.invalid_activities }} revisi</span></td>
+                        <td><strong class="text-xs d-block">Rp {{ "{:,.0f}".format(school.bos_realized or 0).replace(',', '.') }}</strong><span class="text-body-secondary text-xs">{{ school.bos_activities }} kegiatan</span></td>
+                        <td><strong class="text-xs d-block">Rp {{ "{:,.0f}".format(school.bop_realized or 0).replace(',', '.') }}</strong><span class="text-body-secondary text-xs">{{ school.bop_activities }} kegiatan</span></td>
+                        <td class="text-end pe-3">{% if school.report_id %}<a href="{{ url_for('monev_bos.staff_audit_report', report_id=school.report_id) }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary" title="Buka laporan {{ school.school_name }}"><i class="bi bi-eye"></i></a>{% else %}<button class="btn btn-sm btn-outline-secondary" disabled><i class="bi bi-eye-slash"></i></button>{% endif %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="analytics-mobile-list analytics-panel-body">
+            {% for school in school_rows %}
+            <div class="analytics-school-card {% if not loop.last %}mb-2{% endif %}">
+                <div class="d-flex justify-content-between gap-2 mb-2"><div class="overflow-hidden"><strong class="small d-block text-truncate">{{ school.school_name }}</strong><span class="text-body-secondary text-xs">{{ school.team_name or 'Belum ada tim' }}</span></div>{% if school.report_id %}<span class="badge bg-{{ status_classes.get(school.report_status, 'secondary') }}-subtle text-{{ status_classes.get(school.report_status, 'secondary') }} align-self-start">{{ status_labels.get(school.report_status, school.report_status) }}</span>{% else %}<span class="badge bg-body-tertiary text-body-secondary border align-self-start">Belum Lapor</span>{% endif %}</div>
+                <div class="d-flex justify-content-between text-xs mb-1"><span>Verifikasi kegiatan</span><strong>{{ school.audited_activities }}/{{ school.total_activities }} · {{ school.verification_rate }}%</strong></div><div class="analytics-progress mb-2"><span class="bg-primary" style="width:{{ school.verification_rate }}%"></span></div>
+                <div class="d-flex align-items-center justify-content-between"><span class="text-body-secondary text-xs">BOSP Rp {{ "{:,.0f}".format(school.bos_realized or 0).replace(',', '.') }} · BOP Rp {{ "{:,.0f}".format(school.bop_realized or 0).replace(',', '.') }}</span>{% if school.report_id %}<a href="{{ url_for('monev_bos.staff_audit_report', report_id=school.report_id) }}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i></a>{% endif %}</div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="analytics-panel-body text-center py-5"><i class="bi bi-search fs-2 text-body-secondary opacity-50 d-block mb-2"></i><strong class="small d-block">Tidak ada sekolah ditemukan</strong><span class="text-body-secondary text-xs">Coba pilih kategori atau kata pencarian lain.</span></div>
+        {% endif %}
+    </section>
+
+    <section class="analytics-panel">
+        <div class="analytics-panel-head"><h2 class="h6 fw-bold mb-1"><i class="bi bi-people text-primary me-2"></i>Performa Tim Verifikator</h2><p class="text-body-secondary text-xs mb-0">Perbandingan pelaporan sekolah dan penyelesaian verifikasi setiap tim.</p></div>
+        {% if team_performance %}
+        <div class="table-responsive"><table class="table align-middle mb-0 analytics-table"><thead><tr><th class="ps-3">Peringkat / Tim</th><th>Penugasan</th><th>Laporan Masuk</th><th>Antrean / Revisi</th><th>Verifikasi Kegiatan</th><th class="pe-3">Selesai</th></tr></thead><tbody>
+            {% for team in team_performance %}<tr><td class="ps-3"><div class="d-flex align-items-center gap-2"><span class="analytics-team-rank">{{ loop.index }}</span><div><strong class="small d-block">{{ team.team_name }}</strong><span class="text-body-secondary text-xs">{{ team.leader_name or 'Ketua belum ditetapkan' }}</span></div></div></td><td><strong>{{ team.assigned_schools }}</strong><span class="text-body-secondary text-xs d-block">sekolah</span></td><td><strong>{{ team.total_reports }}</strong><span class="text-body-secondary text-xs d-block">{{ team.reporting_rate }}% melapor</span></td><td><span class="badge bg-warning-subtle text-warning border border-warning-subtle me-1">{{ team.review_queue }}</span><span class="badge bg-danger-subtle text-danger border border-danger-subtle">{{ team.revision_reports }}</span></td><td style="min-width:150px"><div class="d-flex justify-content-between text-xs mb-1"><span>{{ team.audited_activities }}/{{ team.total_activities }}</span><strong>{{ team.verification_rate }}%</strong></div><div class="analytics-progress"><span class="bg-success" style="width:{{ team.verification_rate }}%"></span></div></td><td class="pe-3"><strong class="text-success">{{ team.completed_reports }}</strong><span class="text-body-secondary text-xs d-block">laporan</span></td></tr>{% endfor %}
+        </tbody></table></div>
+        {% else %}<div class="analytics-panel-body text-center text-body-secondary small">Belum ada penugasan tim pada periode ini.</div>{% endif %}
+    </section>
+</div>
+{% endblock %}

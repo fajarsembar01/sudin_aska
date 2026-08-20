@@ -222,7 +222,7 @@
                                 <span class="print-only">Dokumen Tidak Ada</span>
                             </th>
                             <th class="print-col-notes" width="13%">
-                                <span class="no-print">Status Verifikasi</span>
+                                <span class="no-print">Status</span>
                                 <span class="print-only">Catatan</span>
                             </th>
                             <th class="text-end pe-3 pe-md-4 no-print" width="12%">Aksi</th>
@@ -353,6 +353,13 @@
                                             <button type="button" class="btn btn-xs btn-outline-warning py-1 px-2" data-bs-toggle="modal" data-bs-target="#editActivityModal{{ act.id }}" title="Edit Kegiatan">
                                                 <i class="bi bi-pencil"></i>
                                             </button>
+                                            <form action="{{ url_for('monev_bos.sekolah_activities', period_id=active_period.id, fund_source=fund_source) }}" method="POST" class="d-inline" onsubmit="return confirm('Pindahkan kegiatan ini dari {{ fund_source }} ke {{ 'BOP' if fund_source == 'BOS' else 'BOS' }}?');">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <input type="hidden" name="action" value="move_activity_fund_source">
+                                                <input type="hidden" name="activity_id" value="{{ act.id }}">
+                                                <input type="hidden" name="target_fund_source" value="{{ 'BOP' if fund_source == 'BOS' else 'BOS' }}">
+                                                <button type="submit" class="btn btn-xs btn-outline-primary py-1 px-2" title="Pindahkan ke {{ 'BOP' if fund_source == 'BOS' else 'BOS' }}"><i class="bi bi-arrow-left-right"></i></button>
+                                            </form>
                                             <form action="{{ url_for('monev_bos.sekolah_activities', period_id=active_period.id, fund_source=fund_source) }}" method="POST" class="d-inline" onsubmit="return confirm('Hapus kegiatan ini?');">
                                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                                 <input type="hidden" name="action" value="delete_activity">
@@ -369,6 +376,13 @@
                                             <button type="button" class="btn btn-xs btn-outline-warning py-1 px-2" data-bs-toggle="modal" data-bs-target="#editActivityModal{{ act.id }}" title="Edit Kegiatan">
                                                 <i class="bi bi-pencil"></i>
                                             </button>
+                                            <form action="{{ url_for('monev_bos.sekolah_activities', period_id=active_period.id, fund_source=fund_source) }}" method="POST" class="d-inline" onsubmit="return confirm('Pindahkan kegiatan ini dari {{ fund_source }} ke {{ 'BOP' if fund_source == 'BOS' else 'BOS' }}?');">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <input type="hidden" name="action" value="move_activity_fund_source">
+                                                <input type="hidden" name="activity_id" value="{{ act.id }}">
+                                                <input type="hidden" name="target_fund_source" value="{{ 'BOP' if fund_source == 'BOS' else 'BOS' }}">
+                                                <button type="submit" class="btn btn-xs btn-outline-primary py-1 px-2" title="Pindahkan ke {{ 'BOP' if fund_source == 'BOS' else 'BOS' }}"><i class="bi bi-arrow-left-right"></i></button>
+                                            </form>
                                             <form action="{{ url_for('monev_bos.sekolah_activities', period_id=active_period.id, fund_source=fund_source) }}" method="POST" class="d-inline" onsubmit="return confirm('Hapus kegiatan ini?');">
                                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                                 <input type="hidden" name="action" value="delete_activity">
@@ -505,6 +519,13 @@
                                     <button type="button" class="btn btn-xs btn-outline-warning py-1 px-2.5 text-xs" data-bs-toggle="modal" data-bs-target="#editActivityModal{{ act.id }}">
                                         <i class="bi bi-pencil me-1"></i> Edit
                                     </button>
+                                    <form action="{{ url_for('monev_bos.sekolah_activities', period_id=active_period.id, fund_source=fund_source) }}" method="POST" class="d-inline" onsubmit="return confirm('Pindahkan kegiatan ini ke {{ 'BOP' if fund_source == 'BOS' else 'BOS' }}?');">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <input type="hidden" name="action" value="move_activity_fund_source">
+                                        <input type="hidden" name="activity_id" value="{{ act.id }}">
+                                        <input type="hidden" name="target_fund_source" value="{{ 'BOP' if fund_source == 'BOS' else 'BOS' }}">
+                                        <button type="submit" class="btn btn-xs btn-outline-primary py-1 px-2 text-xs" title="Pindahkan sumber dana"><i class="bi bi-arrow-left-right"></i></button>
+                                    </form>
                                     <form action="{{ url_for('monev_bos.sekolah_activities', period_id=active_period.id, fund_source=fund_source) }}" method="POST" class="d-inline" onsubmit="return confirm('Hapus kegiatan ini?');">
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                         <input type="hidden" name="action" value="delete_activity">
@@ -521,6 +542,13 @@
                                     <button type="button" class="btn btn-xs btn-outline-warning py-1 px-2.5 text-xs" data-bs-toggle="modal" data-bs-target="#editActivityModal{{ act.id }}">
                                         <i class="bi bi-pencil me-1"></i> Edit
                                     </button>
+                                    <form action="{{ url_for('monev_bos.sekolah_activities', period_id=active_period.id, fund_source=fund_source) }}" method="POST" class="d-inline" onsubmit="return confirm('Pindahkan kegiatan ini ke {{ 'BOP' if fund_source == 'BOS' else 'BOS' }}?');">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <input type="hidden" name="action" value="move_activity_fund_source">
+                                        <input type="hidden" name="activity_id" value="{{ act.id }}">
+                                        <input type="hidden" name="target_fund_source" value="{{ 'BOP' if fund_source == 'BOS' else 'BOS' }}">
+                                        <button type="submit" class="btn btn-xs btn-outline-primary py-1 px-2 text-xs" title="Pindahkan sumber dana"><i class="bi bi-arrow-left-right"></i></button>
+                                    </form>
                                     <form action="{{ url_for('monev_bos.sekolah_activities', period_id=active_period.id, fund_source=fund_source) }}" method="POST" class="d-inline" onsubmit="return confirm('Hapus kegiatan ini?');">
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                         <input type="hidden" name="action" value="delete_activity">

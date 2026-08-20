@@ -149,6 +149,169 @@ def test_admin_vendor_filters_are_forwarded_to_query(monkeypatch):
     assert context["vendor_schools"] == schools
 
 
+def test_admin_dashboard_uses_live_period_metrics(monkeypatch):
+    app = Flask(__name__)
+    period = {"id": 2, "year": 2026, "tw": 2, "end_date": None}
+    overview = {
+        "assigned_schools": 10,
+        "total_reports": 8,
+        "total_activities": 20,
+        "valid_activities": 12,
+        "invalid_activities": 2,
+        "submitted_reports": 2,
+        "in_review_reports": 1,
+        "completed_reports": 3,
+        "completed_with_notes_reports": 1,
+    }
+    recent_reports = [{"report_id": 7, "school_name": "SDN Contoh"}]
+    monkeypatch.setattr(routes.queries, "list_periods", lambda: [period])
+    monkeypatch.setattr(routes.queries, "get_active_period", lambda: period)
+    monkeypatch.setattr(routes.queries, "get_admin_dashboard_overview", lambda period_id: overview)
+    monkeypatch.setattr(routes.queries, "list_recent_period_reports", lambda period_id: recent_reports)
+    monkeypatch.setattr(routes, "render_template", lambda template, **context: (template, context))
+
+    with app.test_request_context("/monev-bos/admin"):
+        template, context = routes.admin_dashboard.__wrapped__()
+
+    assert template == "monev_bos/admin/dashboard.html"
+    assert context["overview"] == overview
+    assert context["recent_reports"] == recent_reports
+    assert context["periods"] == [period]
+    assert context["dashboard_metrics"] == {
+        "unreported_schools": 2,
+        "reporting_rate": 80,
+        "verification_rate": 70,
+        "audited_activities": 14,
+        "review_queue": 3,
+        "finished_reports": 4,
+    }
+
+
+def test_admin_dashboard_can_switch_to_requested_period(monkeypatch):
+    app = Flask(__name__)
+    periods = [
+        {"id": 1, "year": 2026, "tw": 1, "end_date": None},
+        {"id": 2, "year": 2026, "tw": 2, "end_date": None},
+    ]
+    requested_ids = []
+    monkeypatch.setattr(routes.queries, "list_periods", lambda: periods)
+    monkeypatch.setattr(
+        routes.queries,
+        "get_admin_dashboard_overview",
+        lambda period_id: requested_ids.append(period_id) or {},
+    )
+    monkeypatch.setattr(routes.queries, "list_recent_period_reports", lambda period_id: [])
+    monkeypatch.setattr(routes, "render_template", lambda template, **context: context)
+
+    with app.test_request_context("/monev-bos/admin?period_id=2"):
+        context = routes.admin_dashboard.__wrapped__()
+
+    assert requested_ids == [2]
+    assert context["active_period"]["id"] == 2
+
+
+def test_admin_analytics_filters_metric_and_search(monkeypatch):
+    app = Flask(__name__)
+    period = {"id": 2, "year": 2026, "tw": 2}
+    schools = [
+        {
+            "school_id": 10,
+            "school_name": "SDN Contoh",
+            "npsn": "123",
+            "team_name": "Tim A",
+            "is_assigned": True,
+            "report_id": 7,
+            "report_status": "submitted",
+            "total_activities": 4,
+            "valid_activities": 2,
+            "invalid_activities": 1,
+        },
+        {
+            "school_id": 11,
+            "school_name": "SDN Belum Lapor",
+            "npsn": "456",
+            "team_name": "Tim B",
+            "is_assigned": True,
+            "report_id": None,
+            "report_status": None,
+            "total_activities": 0,
+            "valid_activities": 0,
+            "invalid_activities": 0,
+        },
+    ]
+    monkeypatch.setattr(routes.queries, "list_periods", lambda: [period])
+    monkeypatch.setattr(routes.queries, "get_admin_dashboard_overview", lambda period_id: {})
+    monkeypatch.setattr(routes.queries, "list_admin_period_school_analytics", lambda period_id: schools)
+    monkeypatch.setattr(routes.queries, "list_admin_team_performance", lambda period_id: [])
+    monkeypatch.setattr(routes, "render_template", lambda template, **context: (template, context))
+
+    with app.test_request_context("/monev-bos/admin/analytics/reports?period_id=2&q=contoh"):
+        template, context = routes.admin_analytics.__wrapped__("reports")
+
+    assert template == "monev_bos/admin/analytics.html"
+    assert [row["school_name"] for row in context["school_rows"]] == ["SDN Contoh"]
+    assert context["school_rows"][0]["verification_rate"] == 75
+    assert context["metric_counts"]["unreported"] == 1
+
+
+def test_school_can_update_own_pending_vendor_and_va_clears_account_number(monkeypatch):
+    app = Flask(__name__)
+    saved = []
+    monkeypatch.setattr(routes, "current_user", lambda: {"id": 10, "role": "sekolah"})
+    monkeypatch.setattr(
+        routes.queries,
+        "update_pending_vendor",
+        lambda vendor_id, school_id, data: saved.append((vendor_id, school_id, data)) or True,
+    )
+    monkeypatch.setattr(routes, "flash", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(routes, "url_for", lambda *_args, **_kwargs: "/monev-bos/sekolah/vendors")
+    monkeypatch.setattr(routes, "redirect", lambda location: location)
+
+    with app.test_request_context(
+        "/monev-bos/sekolah/vendors",
+        method="POST",
+        data={
+            "action": "update_vendor",
+            "vendor_id": "23",
+            "vendor_type": "vendor",
+            "name": "Toko Maju",
+            "bank_name": "Bank DKI",
+            "bank_account_type": "va",
+            "bank_account": "nomor-lama-yang-harus-dihapus",
+        },
+    ):
+        response = routes.sekolah_vendors.__wrapped__()
+
+    assert response == "/monev-bos/sekolah/vendors"
+    assert saved[0][0:2] == (23, 10)
+    assert saved[0][2]["bank_account_type"] == "va"
+    assert saved[0][2]["bank_account"] == ""
+
+
+def test_update_pending_vendor_is_restricted_by_owner_and_status(monkeypatch):
+    executed = {}
+
+    class FakeCursor:
+        rowcount = 1
+
+        def execute(self, query, params):
+            executed["query"] = " ".join(query.split())
+            executed["params"] = params
+
+    class FakeCursorContext:
+        def __enter__(self):
+            return FakeCursor()
+
+        def __exit__(self, *_args):
+            return False
+
+    monkeypatch.setattr(routes.queries, "get_cursor", lambda **_kwargs: FakeCursorContext())
+
+    assert routes.queries.update_pending_vendor(23, 10, {"name": "Toko Maju"}) is True
+    assert "WHERE id = %s AND school_id = %s AND status = 'pending'" in executed["query"]
+    assert executed["params"][-2:] == (23, 10)
+
+
 def test_duplicate_vendor_detection_normalizes_identity_and_phone(monkeypatch):
     target = {
         "id": 1,

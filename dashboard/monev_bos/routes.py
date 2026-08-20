@@ -194,13 +194,178 @@ def inject_monev_bos_context() -> dict:
         "undo_window_seconds": 7,
     }
 
-from datetime import datetime
+from datetime import date, datetime
+
+
+ADMIN_ANALYTICS_METRICS = {
+    "all": ("Semua Sekolah", "Seluruh sekolah yang ditugaskan atau memiliki laporan."),
+    "assigned": ("Sekolah Ditugaskan", "Daftar sekolah yang sudah ditempatkan ke tim verifikator."),
+    "reports": ("Laporan Masuk", "Sekolah yang sudah membuat laporan, termasuk laporan draft."),
+    "review": ("Perlu Diverifikasi", "Laporan yang sudah disubmit atau sedang diverifikasi."),
+    "completed": ("Verifikasi Selesai", "Laporan yang verifikasinya sudah diselesaikan."),
+    "unreported": ("Belum Melapor", "Sekolah penugasan yang belum membuat laporan."),
+    "revision": ("Perlu Revisi", "Laporan yang dikembalikan kepada sekolah untuk diperbaiki."),
+    "draft": ("Laporan Draft", "Laporan yang masih disusun dan belum dikirim untuk verifikasi."),
+}
+
+
+def _selected_admin_period(periods, requested_period_id=None):
+    if requested_period_id:
+        selected = next(
+            (period for period in periods if int(period["id"]) == int(requested_period_id)),
+            None,
+        )
+        if selected:
+            return selected
+    default_period = queries.get_active_period()
+    if default_period:
+        return next(
+            (period for period in periods if int(period["id"]) == int(default_period["id"])),
+            default_period,
+        )
+    if periods:
+        return max(periods, key=lambda period: (int(period["year"]), int(period["tw"])))
+    return None
 
 @monev_bos_bp.route("/admin")
 @role_required("admin")
 def admin_dashboard():
-    active_period = queries.get_active_period()
-    return render_template("monev_bos/admin/dashboard.html", active_period=active_period)
+    periods = queries.list_periods()
+    active_period = _selected_admin_period(periods, request.args.get("period_id", type=int))
+    overview = {}
+    recent_reports = []
+    days_remaining = None
+    if active_period:
+        overview = queries.get_admin_dashboard_overview(active_period["id"])
+        recent_reports = queries.list_recent_period_reports(active_period["id"])
+        end_date = active_period.get("end_date")
+        if isinstance(end_date, datetime):
+            end_date = end_date.date()
+        if isinstance(end_date, date):
+            days_remaining = (end_date - date.today()).days
+
+    assigned_schools = int(overview.get("assigned_schools") or 0)
+    total_reports = int(overview.get("total_reports") or 0)
+    total_activities = int(overview.get("total_activities") or 0)
+    audited_activities = int(overview.get("valid_activities") or 0) + int(overview.get("invalid_activities") or 0)
+    dashboard_metrics = {
+        "unreported_schools": max(assigned_schools - total_reports, 0),
+        "reporting_rate": min(round(total_reports / assigned_schools * 100), 100) if assigned_schools else 0,
+        "verification_rate": min(round(audited_activities / total_activities * 100), 100) if total_activities else 0,
+        "audited_activities": audited_activities,
+        "review_queue": int(overview.get("submitted_reports") or 0) + int(overview.get("in_review_reports") or 0),
+        "finished_reports": int(overview.get("completed_reports") or 0) + int(overview.get("completed_with_notes_reports") or 0),
+    }
+    return render_template(
+        "monev_bos/admin/dashboard.html",
+        active_period=active_period,
+        overview=overview,
+        dashboard_metrics=dashboard_metrics,
+        recent_reports=recent_reports,
+        days_remaining=days_remaining,
+        periods=periods,
+    )
+
+
+@monev_bos_bp.route("/admin/analytics/<metric>")
+@role_required("admin")
+def admin_analytics(metric):
+    if metric not in ADMIN_ANALYTICS_METRICS:
+        metric = "all"
+
+    periods = queries.list_periods()
+    selected_period = _selected_admin_period(periods, request.args.get("period_id", type=int))
+    if not selected_period:
+        flash("Belum ada periode MONEV yang tersedia.", "warning")
+        return redirect(url_for("monev_bos.admin_dashboard"))
+
+    overview = queries.get_admin_dashboard_overview(selected_period["id"])
+    all_school_rows = queries.list_admin_period_school_analytics(selected_period["id"])
+    team_performance = queries.list_admin_team_performance(selected_period["id"])
+
+    def matches_metric(row):
+        status = row.get("report_status")
+        if metric == "assigned":
+            return bool(row.get("is_assigned"))
+        if metric == "reports":
+            return bool(row.get("report_id"))
+        if metric == "review":
+            return status in {"submitted", "in_review"}
+        if metric == "completed":
+            return status in {"completed", "completed_with_notes"}
+        if metric == "unreported":
+            return bool(row.get("is_assigned")) and not row.get("report_id")
+        if metric == "revision":
+            return status == "needs_revision"
+        if metric == "draft":
+            return status == "draft"
+        return True
+
+    school_rows = [row for row in all_school_rows if matches_metric(row)]
+    search_query = (request.args.get("q") or "").strip()
+    if search_query:
+        search_normalized = search_query.casefold()
+        school_rows = [
+            row for row in school_rows
+            if search_normalized in " ".join([
+                str(row.get("school_name") or ""),
+                str(row.get("npsn") or ""),
+                str(row.get("team_name") or ""),
+            ]).casefold()
+        ]
+
+    for row in all_school_rows:
+        audited = int(row.get("valid_activities") or 0) + int(row.get("invalid_activities") or 0)
+        total = int(row.get("total_activities") or 0)
+        row["audited_activities"] = audited
+        row["verification_rate"] = min(round(audited / total * 100), 100) if total else 0
+
+    for team in team_performance:
+        assigned = int(team.get("assigned_schools") or 0)
+        reports = int(team.get("total_reports") or 0)
+        total = int(team.get("total_activities") or 0)
+        audited = int(team.get("audited_activities") or 0)
+        team["reporting_rate"] = min(round(reports / assigned * 100), 100) if assigned else 0
+        team["verification_rate"] = min(round(audited / total * 100), 100) if total else 0
+
+    metric_counts = {
+        key: sum(1 for row in all_school_rows if (
+            (key == "all")
+            or (key == "assigned" and row.get("is_assigned"))
+            or (key == "reports" and row.get("report_id"))
+            or (key == "review" and row.get("report_status") in {"submitted", "in_review"})
+            or (key == "completed" and row.get("report_status") in {"completed", "completed_with_notes"})
+            or (key == "unreported" and row.get("is_assigned") and not row.get("report_id"))
+            or (key == "revision" and row.get("report_status") == "needs_revision")
+            or (key == "draft" and row.get("report_status") == "draft")
+        ))
+        for key in ADMIN_ANALYTICS_METRICS
+    }
+
+    bos_receipts = float(overview.get("bosp_receipts") or 0)
+    bop_receipts = float(overview.get("bop_receipts") or 0)
+    bos_realized = float(overview.get("bos_realized") or 0)
+    bop_realized = float(overview.get("bop_realized") or 0)
+    financial_analytics = {
+        "bos_absorption": round(bos_realized / bos_receipts * 100, 1) if bos_receipts else 0,
+        "bop_absorption": round(bop_realized / bop_receipts * 100, 1) if bop_receipts else 0,
+        "total_absorption": round((bos_realized + bop_realized) / (bos_receipts + bop_receipts) * 100, 1) if (bos_receipts + bop_receipts) else 0,
+    }
+
+    return render_template(
+        "monev_bos/admin/analytics.html",
+        active_period=selected_period,
+        periods=periods,
+        metric=metric,
+        metric_config=ADMIN_ANALYTICS_METRICS[metric],
+        metric_configs=ADMIN_ANALYTICS_METRICS,
+        metric_counts=metric_counts,
+        school_rows=school_rows,
+        overview=overview,
+        team_performance=team_performance,
+        financial_analytics=financial_analytics,
+        search_query=search_query,
+    )
 
 @monev_bos_bp.route("/admin/periods", methods=["GET", "POST"])
 @role_required("admin")
@@ -1996,6 +2161,33 @@ def sekolah_activities():
             if not has_error:
                 flash("Kegiatan berhasil ditambahkan.", "success")
             
+        elif action == "move_activity_fund_source":
+            activity_id = request.form.get("activity_id", type=int)
+            target_source = (request.form.get("target_fund_source") or "").upper()
+            activity = queries.get_activity_by_id(activity_id) if activity_id else None
+
+            if report["status"] not in ["draft", "needs_revision"]:
+                flash("Laporan sudah tidak bisa diubah.", "warning")
+            elif target_source not in ["BOS", "BOP"]:
+                flash("Tujuan migrasi sumber dana tidak valid.", "warning")
+            elif not activity or activity.get("report_id") != report["id"]:
+                flash("Kegiatan tidak ditemukan pada laporan sekolah ini.", "danger")
+            elif activity.get("status") == "valid":
+                flash("Kegiatan berstatus Sesuai harus melalui pengajuan perubahan terlebih dahulu.", "warning")
+            elif activity.get("fund_source") == target_source:
+                flash(f"Kegiatan sudah berada pada sumber dana {target_source}.", "info")
+            elif queries.move_activity_fund_source(
+                activity_id, report["id"], target_source, user["id"]
+            ):
+                flash(f"Kegiatan berhasil dipindahkan ke {target_source}.", "success")
+                return redirect(url_for(
+                    "monev_bos.sekolah_activities",
+                    period_id=period_id,
+                    fund_source=target_source,
+                ))
+            else:
+                flash("Kegiatan gagal dipindahkan.", "danger")
+
         elif action == "delete_activity":
             activity_id = int(request.form.get("activity_id"))
             queries.delete_activity(activity_id)
@@ -2467,7 +2659,7 @@ def sekolah_activities_export():
         "Nama Toko / Vendor",
         "Detail Kegiatan",
         "Nilai Realisasi (Rp)",
-        "Status Verifikasi"
+        "Status"
     ]
 
     start_row = 10
@@ -3062,14 +3254,17 @@ def sekolah_vendors():
 
     if request.method == "POST":
         action = request.form.get("action", "")
-        if action == "create_vendor":
+        if action in ("create_vendor", "update_vendor"):
             name = (request.form.get("name") or "").strip()
             npwp = (request.form.get("npwp") or "").strip()
             phone = (request.form.get("phone") or "").strip()
             address = (request.form.get("address") or "").strip()
             owner_name = (request.form.get("owner_name") or "").strip()
             bank_name = (request.form.get("bank_name") or "").strip()
-            bank_account = (request.form.get("bank_account") or "").strip()
+            bank_account_type = (request.form.get("bank_account_type") or "rekening").strip().lower()
+            if bank_account_type not in ("rekening", "va"):
+                bank_account_type = "rekening"
+            bank_account = "" if bank_account_type == "va" else (request.form.get("bank_account") or "").strip()
             vendor_type = request.form.get("vendor_type", "vendor")
             if vendor_type not in ("vendor", "narsum"):
                 vendor_type = "vendor"
@@ -3084,15 +3279,22 @@ def sekolah_vendors():
                     "address": address,
                     "owner_name": owner_name,
                     "bank_name": bank_name,
+                    "bank_account_type": bank_account_type,
                     "bank_account": bank_account,
                     "vendor_type": vendor_type,
                 }
-                new_id = queries.create_vendor(school_id, data)
                 type_label = "Narasumber/Instruktur" if vendor_type == "narsum" else "Vendor"
-                if new_id:
-                    flash(f"{type_label} '{name}' berhasil didaftarkan dan menunggu verifikasi admin/staff.", "success")
+                if action == "create_vendor":
+                    saved = queries.create_vendor(school_id, data)
                 else:
-                    flash(f"Gagal mendaftarkan {type_label.lower()}.", "danger")
+                    vendor_id = request.form.get("vendor_id", type=int)
+                    saved = vendor_id and queries.update_pending_vendor(vendor_id, school_id, data)
+                if saved and action == "create_vendor":
+                    flash(f"{type_label} '{name}' berhasil didaftarkan dan menunggu verifikasi admin/staff.", "success")
+                elif saved:
+                    flash(f"Data {type_label.lower()} '{name}' berhasil diperbarui.", "success")
+                else:
+                    flash(f"Gagal menyimpan {type_label.lower()}. Data mungkin sudah diverifikasi atau bukan milik sekolah Anda.", "danger")
             return redirect(url_for("monev_bos.sekolah_vendors"))
 
         elif action == "delete_vendor":
