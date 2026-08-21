@@ -827,32 +827,22 @@
                             </a>
                         </div>
                         <select class="form-select vendor-ts-select multi-vendor-select" name="vendor_id" id="vendorSelectEdit_{{ act.id }}" multiple data-placeholder="Cari dan pilih satu atau beberapa vendor / narasumber...">
-                            {% set own_vendors = verified_vendors|selectattr('is_own_school', 'equalto', true)|list %}
-                            {% set has_vendor = verified_vendors|rejectattr('is_own_school', 'equalto', true)|selectattr('vendor_type', 'equalto', 'vendor')|list|length > 0 %}
-                            {% set has_narsum = verified_vendors|rejectattr('is_own_school', 'equalto', true)|selectattr('vendor_type', 'equalto', 'narsum')|list|length > 0 %}
-                            {% if own_vendors %}
-                            <optgroup label="Diinput Sekolah Anda">
-                            {% for v in own_vendors %}
-                                <option value="{{ v.id }}" {% if v.id in act.vendor_ids %}selected{% endif %}>
-                                    {{ v.name }}{% if v.vendor_type == 'narsum' %} — Narasumber{% else %} — Vendor{% endif %}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'pending' %} ⚠ Belum Diverifikasi{% endif %}
+                            {% set own_vendor_options = verified_vendors|selectattr('is_own_school', 'equalto', true)|list %}
+                            {% set other_vendor_options = verified_vendors|rejectattr('is_own_school', 'equalto', true)|list %}
+                            {% if own_vendor_options %}
+                            <optgroup label="Vendor Sekolah Anda">
+                            {% for v in own_vendor_options %}
+                                <option value="{{ v.id }}" data-priority="{% if v.status == 'verified' %}0{% else %}1{% endif %}" {% if v.id in act.vendor_ids %}selected{% endif %}>
+                                    {{ v.name }}{% if v.vendor_type == 'narsum' %} — Narasumber{% else %} — Vendor{% endif %}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'verified' %} ✓ Verif{% else %} ⚠ Belum Diverifikasi{% endif %}
                                 </option>
                             {% endfor %}
                             </optgroup>
                             {% endif %}
-                            {% if has_vendor %}
-                            <optgroup label="🏪 Vendor / Toko">
-                            {% for v in verified_vendors if not v.is_own_school and v.vendor_type != 'narsum' %}
-                                <option value="{{ v.id }}" {% if v.id in act.vendor_ids %}selected{% endif %}>
-                                    {{ v.name }}{% if v.registered_school_name %} — {{ v.registered_school_name }}{% endif %}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'pending' %} ⚠ Belum Diverifikasi{% endif %}
-                                </option>
-                            {% endfor %}
-                            </optgroup>
-                            {% endif %}
-                            {% if has_narsum %}
-                            <optgroup label="🎤 Narasumber / Instruktur">
-                            {% for v in verified_vendors if not v.is_own_school and v.vendor_type == 'narsum' %}
-                                <option value="{{ v.id }}" {% if v.id in act.vendor_ids %}selected{% endif %}>
-                                    {{ v.name }}{% if v.registered_school_name %} — {{ v.registered_school_name }}{% endif %}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'pending' %} ⚠ Belum Diverifikasi{% endif %}
+                            {% if other_vendor_options %}
+                            <optgroup label="Vendor Lain">
+                            {% for v in other_vendor_options %}
+                                <option value="{{ v.id }}" data-priority="{% if v.status == 'verified' %}2{% else %}3{% endif %}" {% if v.id in act.vendor_ids %}selected{% endif %}>
+                                    {{ v.name }}{% if v.vendor_type == 'narsum' %} — Narasumber{% else %} — Vendor{% endif %}{% if v.registered_school_name %} — {{ v.registered_school_name }}{% endif %}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'verified' %} ✓ Verif{% else %} ⚠ Belum Diverifikasi{% endif %}
                                 </option>
                             {% endfor %}
                             </optgroup>
@@ -1083,27 +1073,19 @@
                             </a>
                         </div>
                         <select class="form-select vendor-ts-select multi-vendor-select" name="vendor_id" id="vendorSelectAdd" multiple data-placeholder="Cari dan pilih satu atau beberapa vendor / narasumber...">
-                            {% set own_vendors_add = verified_vendors|selectattr('is_own_school', 'equalto', true)|list %}
-                            {% set has_vendor_add = verified_vendors|rejectattr('is_own_school', 'equalto', true)|selectattr('vendor_type', 'equalto', 'vendor')|list|length > 0 %}
-                            {% set has_narsum_add = verified_vendors|rejectattr('is_own_school', 'equalto', true)|selectattr('vendor_type', 'equalto', 'narsum')|list|length > 0 %}
-                            {% if own_vendors_add %}
-                            <optgroup label="Diinput Sekolah Anda">
-                            {% for v in own_vendors_add %}
-                                <option value="{{ v.id }}">{{ v.name }}{% if v.vendor_type == 'narsum' %} — Narasumber{% else %} — Vendor{% endif %}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'pending' %} ⚠ Belum Diverifikasi{% endif %}</option>
+                            {% set own_vendor_options_add = verified_vendors|selectattr('is_own_school', 'equalto', true)|list %}
+                            {% set other_vendor_options_add = verified_vendors|rejectattr('is_own_school', 'equalto', true)|list %}
+                            {% if own_vendor_options_add %}
+                            <optgroup label="Vendor Sekolah Anda">
+                            {% for v in own_vendor_options_add %}
+                                <option value="{{ v.id }}" data-priority="{% if v.status == 'verified' %}0{% else %}1{% endif %}">{{ v.name }}{% if v.vendor_type == 'narsum' %} — Narasumber{% else %} — Vendor{% endif %}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'verified' %} ✓ Verif{% else %} ⚠ Belum Diverifikasi{% endif %}</option>
                             {% endfor %}
                             </optgroup>
                             {% endif %}
-                            {% if has_vendor_add %}
-                            <optgroup label="🏪 Vendor / Toko">
-                            {% for v in verified_vendors if not v.is_own_school and v.vendor_type != 'narsum' %}
-                                <option value="{{ v.id }}">{{ v.name }}{% if v.registered_school_name %} — {{ v.registered_school_name }}{% endif %}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'pending' %} ⚠ Belum Diverifikasi{% endif %}</option>
-                            {% endfor %}
-                            </optgroup>
-                            {% endif %}
-                            {% if has_narsum_add %}
-                            <optgroup label="🎤 Narasumber / Instruktur">
-                            {% for v in verified_vendors if not v.is_own_school and v.vendor_type == 'narsum' %}
-                                <option value="{{ v.id }}">{{ v.name }}{% if v.registered_school_name %} — {{ v.registered_school_name }}{% endif %}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'pending' %} ⚠ Belum Diverifikasi{% endif %}</option>
+                            {% if other_vendor_options_add %}
+                            <optgroup label="Vendor Lain">
+                            {% for v in other_vendor_options_add %}
+                                <option value="{{ v.id }}" data-priority="{% if v.status == 'verified' %}2{% else %}3{% endif %}">{{ v.name }}{% if v.vendor_type == 'narsum' %} — Narasumber{% else %} — Vendor{% endif %}{% if v.registered_school_name %} — {{ v.registered_school_name }}{% endif %}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'verified' %} ✓ Verif{% else %} ⚠ Belum Diverifikasi{% endif %}</option>
                             {% endfor %}
                             </optgroup>
                             {% endif %}
@@ -2302,11 +2284,48 @@ document.addEventListener('DOMContentLoaded', function () {
     background-color: #0d6efd !important;
     color: #fff !important;
 }
-/* Warning badge dalam opsi */
-.ts-dropdown .option .badge-pending {
-    font-size: 0.7em;
-    color: #fd7e14;
-    font-weight: 600;
+.vendor-option-content {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.35rem;
+    width: 100%;
+}
+.vendor-option-label {
+    min-width: 0;
+}
+.vendor-verification-badge {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    padding: 0;
+    border: 1px solid #86efac;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #ecfdf5, #dcfce7);
+    color: #15803d;
+    font-size: 0.68rem;
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: 0.02em;
+    box-shadow: 0 1px 2px rgba(21, 128, 61, 0.12);
+}
+.vendor-verification-badge i {
+    font-size: 0.78rem;
+}
+.ts-control .vendor-option-content {
+    gap: 0.3rem;
+}
+.ts-control .vendor-verification-badge {
+    width: 1.1rem;
+    height: 1.1rem;
+    padding: 0;
+}
+.ts-dropdown .option.selected .vendor-verification-badge {
+    border-color: rgba(255, 255, 255, 0.65);
+    box-shadow: none;
 }
 @media print {
     .ts-wrapper { display: none !important; }
@@ -2321,6 +2340,28 @@ document.addEventListener('DOMContentLoaded', function () {
     // Simpan semua instance TomSelect agar bisa di-destroy/re-create
     const tsInstances = {};
 
+    function vendorStatusParts(text) {
+        const value = text || '';
+        const verifiedMarker = ' ✓ Verif';
+        const pendingMarker = ' ⚠ Belum Diverifikasi';
+        if (value.endsWith(verifiedMarker)) {
+            return { label: value.slice(0, -verifiedMarker.length), status: 'verified' };
+        }
+        if (value.endsWith(pendingMarker)) {
+            return { label: value.slice(0, -pendingMarker.length), status: 'pending' };
+        }
+        return { label: value, status: null };
+    }
+
+    function renderVendorChoice(data, escape) {
+        const parts = vendorStatusParts(data.text);
+        let badge = '';
+        if (parts.status === 'verified') {
+            badge = '<span class="vendor-verification-badge" title="Terverifikasi" aria-label="Terverifikasi"><i class="bi bi-check-lg" aria-hidden="true"></i></span>';
+        }
+        return `<div class="vendor-option-content">${badge}<span class="vendor-option-label">${escape(parts.label)}</span></div>`;
+    }
+
     function initTomSelect(el) {
         if (!el) return;
         const key = el.id || el.name + '_' + Math.random();
@@ -2333,16 +2374,31 @@ document.addEventListener('DOMContentLoaded', function () {
             allowEmptyOption: true,
             placeholder: el.getAttribute('data-placeholder') || '-- Cari / Pilih Vendor / Narsum --',
             searchField: ['text'],
+            // Prioritas eksplisit menjaga hasil pencarian tetap berurutan walaupun
+            // tingkat kecocokan teks tiap nama berbeda.
+            score: function(search) {
+                const baseScore = this.getScoreFunction(search);
+                return function(item) {
+                    const matchScore = baseScore(item);
+                    if (!matchScore || !isMultiVendor || typeof item.priority === 'undefined') {
+                        return matchScore;
+                    }
+                    return ((4 - Number(item.priority)) * 10) + matchScore;
+                };
+            },
+            sortField: [
+                { field: '$score', direction: 'desc' },
+                { field: '$order', direction: 'asc' }
+            ],
             maxItems: isMultiVendor ? null : 1,
             plugins: isMultiVendor ? ['remove_button'] : [],
             maxOptions: 200,
             render: {
                 option: function(data, escape) {
-                    const isPending = data.text && data.text.includes('⚠');
-                    return `<div class="option">${escape(data.text)}${isPending ? '' : ''}</div>`;
+                    return `<div class="option">${renderVendorChoice(data, escape)}</div>`;
                 },
                 item: function(data, escape) {
-                    return `<div>${escape(data.text)}</div>`;
+                    return `<div>${renderVendorChoice(data, escape)}</div>`;
                 },
                 no_results: function(data, escape) {
                     return `<div class="no-results text-muted small px-3 py-2">Tidak ada vendor/narsum ditemukan untuk "<em>${escape(data.input)}</em>"</div>`;

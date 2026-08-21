@@ -2209,7 +2209,7 @@ def find_vendor_duplicate_matches(vendor_id: int) -> List[Dict[str, Any]]:
 
 
 def get_report_selectable_vendors(school_id: Optional[int] = None) -> List[Dict[str, Any]]:
-    """Get selectable vendors, prioritizing entries registered by the current school."""
+    """Get selectable vendors, prioritizing the current school then verified entries."""
     with get_cursor() as cur:
         cur.execute(
             """
@@ -2221,7 +2221,9 @@ def get_report_selectable_vendors(school_id: Optional[int] = None) -> List[Dict[
             JOIN dashboard_users u_school ON u_school.id = v.school_id
             LEFT JOIN portal_schools ps ON ps.id = u_school.school_id
             WHERE v.status IN ('verified', 'pending')
-            ORDER BY is_own_school DESC NULLS LAST, v.vendor_type, v.name ASC, v.id DESC
+            ORDER BY is_own_school DESC NULLS LAST,
+                     CASE WHEN v.status = 'verified' THEN 0 ELSE 1 END,
+                     v.vendor_type, v.name ASC, v.id DESC
             """,
             (school_id,),
         )
