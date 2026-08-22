@@ -324,6 +324,7 @@ def test_school_can_update_own_pending_vendor_and_va_clears_account_number(monke
         "update_pending_vendor",
         lambda vendor_id, school_id, data: saved.append((vendor_id, school_id, data)) or True,
     )
+    monkeypatch.setattr(routes.queries, "find_vendor_duplicate_matches_for_data", lambda *_args, **_kwargs: [])
     monkeypatch.setattr(routes, "flash", lambda *_args, **_kwargs: None)
     monkeypatch.setattr(routes, "url_for", lambda *_args, **_kwargs: "/monev-bos/sekolah/vendors")
     monkeypatch.setattr(routes, "redirect", lambda location: location)
@@ -347,6 +348,112 @@ def test_school_can_update_own_pending_vendor_and_va_clears_account_number(monke
     assert saved[0][0:2] == (23, 10)
     assert saved[0][2]["bank_account_type"] == "va"
     assert saved[0][2]["bank_account"] == ""
+
+
+def test_school_duplicate_vendor_is_not_saved_before_confirmation(monkeypatch):
+    app = Flask(__name__)
+    created = []
+    rendered = []
+    duplicate = {
+        "id": 9,
+        "school_id": 42,
+        "school_name": "SDN Lain",
+        "name": "Toko Maju",
+        "status": "verified",
+        "duplicate_fields": ["Nama vendor"],
+    }
+    monkeypatch.setattr(routes, "current_user", lambda: {"id": 10, "role": "sekolah"})
+    monkeypatch.setattr(routes.queries, "find_vendor_duplicate_matches_for_data", lambda *_args, **_kwargs: [duplicate])
+    monkeypatch.setattr(routes.queries, "create_vendor", lambda *args: created.append(args))
+    monkeypatch.setattr(routes.queries, "list_school_vendors", lambda *_args, **_kwargs: [])
+    monkeypatch.setattr(routes.queries, "get_master_banks", lambda: [])
+    monkeypatch.setattr(routes, "flash", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(
+        routes,
+        "render_template",
+        lambda template, **context: rendered.append((template, context)) or context,
+    )
+
+    with app.test_request_context(
+        "/monev-bos/sekolah/vendors",
+        method="POST",
+        data={"action": "create_vendor", "vendor_type": "vendor", "name": "Toko Maju"},
+    ):
+        response = routes.sekolah_vendors.__wrapped__()
+
+    assert created == []
+    assert response["duplicate_warning"]["matches"] == [duplicate]
+    assert rendered[0][0] == "monev_bos/sekolah/vendors.html"
+
+
+def test_school_can_confirm_that_duplicate_vendor_is_different(monkeypatch):
+    app = Flask(__name__)
+    created = []
+    monkeypatch.setattr(routes, "current_user", lambda: {"id": 10, "role": "sekolah"})
+    monkeypatch.setattr(routes.queries, "find_vendor_duplicate_matches_for_data", lambda *_args, **_kwargs: [{"id": 9}])
+    monkeypatch.setattr(routes.queries, "create_vendor", lambda school_id, data: created.append((school_id, data)) or 24)
+    monkeypatch.setattr(routes, "flash", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(routes, "url_for", lambda *_args, **_kwargs: "/monev-bos/sekolah/vendors")
+    monkeypatch.setattr(routes, "redirect", lambda location: location)
+
+    with app.test_request_context(
+        "/monev-bos/sekolah/vendors",
+        method="POST",
+        data={
+            "action": "create_vendor",
+            "vendor_type": "vendor",
+            "name": "Toko Maju",
+            "duplicate_confirmation": "vendor berbeda",
+        },
+    ):
+        response = routes.sekolah_vendors.__wrapped__()
+
+    assert response == "/monev-bos/sekolah/vendors"
+    assert created[0][0] == 10
+
+
+def test_school_duplicate_confirmation_must_be_exact(monkeypatch):
+    app = Flask(__name__)
+    created = []
+    duplicate = {"id": 9, "school_name": "SDN Lain", "name": "Toko Maju"}
+    monkeypatch.setattr(routes, "current_user", lambda: {"id": 10, "role": "sekolah"})
+    monkeypatch.setattr(routes.queries, "find_vendor_duplicate_matches_for_data", lambda *_args, **_kwargs: [duplicate])
+    monkeypatch.setattr(routes.queries, "create_vendor", lambda *args: created.append(args))
+    monkeypatch.setattr(routes.queries, "list_school_vendors", lambda *_args, **_kwargs: [])
+    monkeypatch.setattr(routes.queries, "get_master_banks", lambda: [])
+    monkeypatch.setattr(routes, "render_template", lambda _template, **context: context)
+
+    with app.test_request_context(
+        "/monev-bos/sekolah/vendors",
+        method="POST",
+        data={
+            "action": "create_vendor",
+            "vendor_type": "vendor",
+            "name": "Toko Maju",
+            "duplicate_confirmation": "sudah berbeda",
+        },
+    ):
+        response = routes.sekolah_vendors.__wrapped__()
+
+    assert created == []
+    assert response["duplicate_warning"]["matches"] == [duplicate]
+
+
+def test_duplicate_lookup_excludes_vendor_being_edited(monkeypatch):
+    captured = []
+    monkeypatch.setattr(
+        routes.queries,
+        "attach_vendor_duplicate_matches",
+        lambda vendors: captured.extend(vendors) or vendors[0].update(duplicate_matches=[]),
+    )
+
+    matches = routes.queries.find_vendor_duplicate_matches_for_data(
+        {"name": "Toko Maju", "vendor_type": "vendor"},
+        exclude_vendor_id=23,
+    )
+
+    assert matches == []
+    assert captured[0]["id"] == 23
 
 
 def test_update_pending_vendor_is_restricted_by_owner_and_status(monkeypatch):
@@ -373,7 +480,7 @@ def test_update_pending_vendor_is_restricted_by_owner_and_status(monkeypatch):
     assert executed["params"][-2:] == (23, 10)
 
 
-def test_duplicate_vendor_detection_normalizes_identity_and_phone(monkeypatch):
+def test_duplicate_vendor_detection_normalizes_identity_but_ignores_phone(monkeypatch):
     target = {
         "id": 1,
         "vendor_type": "vendor",
@@ -414,7 +521,48 @@ def test_duplicate_vendor_detection_normalizes_identity_and_phone(monkeypatch):
     routes.queries.attach_vendor_duplicate_matches([target])
 
     assert len(target["duplicate_matches"]) == 1
-    assert target["duplicate_matches"][0]["duplicate_fields"] == ["Nama vendor", "NPWP", "Kontak"]
+    assert target["duplicate_matches"][0]["duplicate_fields"] == ["Nama vendor", "NPWP"]
+
+
+def test_duplicate_vendor_detection_does_not_match_phone_only(monkeypatch):
+    target = {
+        "id": 1,
+        "vendor_type": "vendor",
+        "name": "Toko Pertama",
+        "phone": "081234567890",
+    }
+    candidates = [
+        target,
+        {
+            "id": 2,
+            "school_id": 42,
+            "school_name": "SDN Contoh",
+            "vendor_type": "vendor",
+            "name": "Toko Berbeda",
+            "phone": "+62 812-3456-7890",
+            "status": "verified",
+        },
+    ]
+
+    class FakeCursor:
+        def execute(self, *_args, **_kwargs):
+            pass
+
+        def fetchall(self):
+            return candidates
+
+    class FakeCursorContext:
+        def __enter__(self):
+            return FakeCursor()
+
+        def __exit__(self, *_args):
+            return False
+
+    monkeypatch.setattr(routes.queries, "get_cursor", lambda **_kwargs: FakeCursorContext())
+
+    routes.queries.attach_vendor_duplicate_matches([target])
+
+    assert target["duplicate_matches"] == []
 
 
 def test_duplicate_vendor_requires_exact_confirmation(monkeypatch):

@@ -3362,6 +3362,23 @@ def sekolah_vendors():
     user = current_user()
     school_id = user["id"]
 
+    def render_vendor_page(duplicate_warning=None):
+        search_query = request.args.get("q", "").strip()
+        status_filter = request.args.get("status", "")
+        vendors = queries.list_school_vendors(
+            school_id,
+            status_filter if status_filter in ["pending", "verified", "rejected"] else None,
+            search_query=search_query,
+        )
+        return render_template(
+            "monev_bos/sekolah/vendors.html",
+            vendors=vendors,
+            status_filter=status_filter,
+            search_query=search_query,
+            master_banks=queries.get_master_banks(),
+            duplicate_warning=duplicate_warning,
+        )
+
     if request.method == "POST":
         action = request.form.get("action", "")
         if action in ("create_vendor", "update_vendor"):
@@ -3394,10 +3411,24 @@ def sekolah_vendors():
                     "vendor_type": vendor_type,
                 }
                 type_label = "Narasumber/Instruktur" if vendor_type == "narsum" else "Vendor"
+                vendor_id = request.form.get("vendor_id", type=int) if action == "update_vendor" else None
+                duplicate_matches = queries.find_vendor_duplicate_matches_for_data(
+                    data,
+                    exclude_vendor_id=vendor_id,
+                )
+                duplicate_confirmation = " ".join(
+                    (request.form.get("duplicate_confirmation") or "").casefold().split()
+                )
+                if duplicate_matches and duplicate_confirmation != "vendor berbeda":
+                    return render_vendor_page({
+                        "action": action,
+                        "vendor_id": vendor_id,
+                        "data": data,
+                        "matches": duplicate_matches,
+                    })
                 if action == "create_vendor":
                     saved = queries.create_vendor(school_id, data)
                 else:
-                    vendor_id = request.form.get("vendor_id", type=int)
                     saved = vendor_id and queries.update_pending_vendor(vendor_id, school_id, data)
                 if saved and action == "create_vendor":
                     flash(f"{type_label} '{name}' berhasil didaftarkan dan menunggu verifikasi admin/staff.", "success")
@@ -3415,11 +3446,7 @@ def sekolah_vendors():
                 flash("Gagal menghapus vendor.", "danger")
             return redirect(url_for("monev_bos.sekolah_vendors"))
 
-    search_query = request.args.get("q", "").strip()
-    status_filter = request.args.get("status", "")
-    vendors = queries.list_school_vendors(school_id, status_filter if status_filter in ["pending", "verified", "rejected"] else None, search_query=search_query)
-    master_banks = queries.get_master_banks()
-    return render_template("monev_bos/sekolah/vendors.html", vendors=vendors, status_filter=status_filter, search_query=search_query, master_banks=master_banks)
+    return render_vendor_page()
 
 
 @monev_bos_bp.route("/admin/vendors", methods=["GET", "POST"])

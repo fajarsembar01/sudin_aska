@@ -833,7 +833,7 @@
                             <optgroup label="Vendor Sekolah Anda">
                             {% for v in own_vendor_options %}
                                 <option value="{{ v.id }}" data-priority="{% if v.status == 'verified' %}0{% else %}1{% endif %}" {% if v.id in act.vendor_ids %}selected{% endif %}>
-                                    {{ v.name }}{% if v.vendor_type == 'narsum' %} — Narasumber{% else %} — Vendor{% endif %}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'verified' %} ✓ Verif{% else %} ⚠ Belum Diverifikasi{% endif %}
+                                    {{ (v.owner_name or v.name) if v.vendor_type == 'narsum' else v.name }}{% if v.vendor_type == 'narsum' %} — Narasumber{% if v.name %} (KTP: {{ v.name }}){% endif %}{% else %} — Vendor{% endif %}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'verified' %} ✓ Verif{% else %} ⚠ Belum Verifikasi{% endif %}
                                 </option>
                             {% endfor %}
                             </optgroup>
@@ -842,7 +842,7 @@
                             <optgroup label="Vendor Lain">
                             {% for v in other_vendor_options %}
                                 <option value="{{ v.id }}" data-priority="{% if v.status == 'verified' %}2{% else %}3{% endif %}" {% if v.id in act.vendor_ids %}selected{% endif %}>
-                                    {{ v.name }}{% if v.vendor_type == 'narsum' %} — Narasumber{% else %} — Vendor{% endif %}{% if v.registered_school_name %} — {{ v.registered_school_name }}{% endif %}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'verified' %} ✓ Verif{% else %} ⚠ Belum Diverifikasi{% endif %}
+                                    {{ (v.owner_name or v.name) if v.vendor_type == 'narsum' else v.name }}{% if v.vendor_type == 'narsum' %} — Narasumber{% if v.name %} (KTP: {{ v.name }}){% endif %}{% else %} — Vendor{% endif %}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'verified' %} ✓ Verif{% else %} ⚠ Belum Verifikasi{% endif %}
                                 </option>
                             {% endfor %}
                             </optgroup>
@@ -1078,14 +1078,14 @@
                             {% if own_vendor_options_add %}
                             <optgroup label="Vendor Sekolah Anda">
                             {% for v in own_vendor_options_add %}
-                                <option value="{{ v.id }}" data-priority="{% if v.status == 'verified' %}0{% else %}1{% endif %}">{{ v.name }}{% if v.vendor_type == 'narsum' %} — Narasumber{% else %} — Vendor{% endif %}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'verified' %} ✓ Verif{% else %} ⚠ Belum Diverifikasi{% endif %}</option>
+                                <option value="{{ v.id }}" data-priority="{% if v.status == 'verified' %}0{% else %}1{% endif %}">{{ (v.owner_name or v.name) if v.vendor_type == 'narsum' else v.name }}{% if v.vendor_type == 'narsum' %} — Narasumber{% if v.name %} (KTP: {{ v.name }}){% endif %}{% else %} — Vendor{% endif %}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'verified' %} ✓ Verif{% else %} ⚠ Belum Verifikasi{% endif %}</option>
                             {% endfor %}
                             </optgroup>
                             {% endif %}
                             {% if other_vendor_options_add %}
                             <optgroup label="Vendor Lain">
                             {% for v in other_vendor_options_add %}
-                                <option value="{{ v.id }}" data-priority="{% if v.status == 'verified' %}2{% else %}3{% endif %}">{{ v.name }}{% if v.vendor_type == 'narsum' %} — Narasumber{% else %} — Vendor{% endif %}{% if v.registered_school_name %} — {{ v.registered_school_name }}{% endif %}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'verified' %} ✓ Verif{% else %} ⚠ Belum Diverifikasi{% endif %}</option>
+                                <option value="{{ v.id }}" data-priority="{% if v.status == 'verified' %}2{% else %}3{% endif %}">{{ (v.owner_name or v.name) if v.vendor_type == 'narsum' else v.name }}{% if v.vendor_type == 'narsum' %} — Narasumber{% if v.name %} (KTP: {{ v.name }}){% endif %}{% else %} — Vendor{% endif %}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'verified' %} ✓ Verif{% else %} ⚠ Belum Verifikasi{% endif %}</option>
                             {% endfor %}
                             </optgroup>
                             {% endif %}
@@ -2285,14 +2285,78 @@ document.addEventListener('DOMContentLoaded', function () {
     color: #fff !important;
 }
 .vendor-option-content {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 0.35rem;
+    display: block;
     width: 100%;
+    line-height: 1.45;
 }
 .vendor-option-label {
+    display: inline;
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+.vendor-pending-label {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    padding: 0.1rem 0.35rem;
+    border: 1px solid #f59e0b;
+    border-radius: 0.3rem;
+    background: #fffbeb;
+    color: #b45309;
+    font-size: 0.68rem;
+    font-weight: 800;
+    line-height: 1.15;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+.ts-dropdown .option.selected .vendor-pending-label {
+    border-color: rgba(255, 255, 255, 0.7);
+    background: rgba(255, 255, 255, 0.18);
+    color: #fff;
+}
+.ts-dropdown .vendor-option-content {
     min-width: 0;
+    width: 100%;
+}
+.ts-dropdown .vendor-option-label {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+.ts-control > .item {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+}
+.ts-control > .item .vendor-option-content {
+    grid-column: 1;
+    grid-row: 1;
+    width: 100%;
+    min-width: 0;
+}
+.ts-control > .item .vendor-option-label {
+    display: inline;
+    width: auto;
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+.ts-control > .item .remove {
+    display: inline-flex !important;
+    grid-column: 2;
+    grid-row: 1;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 1;
+    align-self: stretch;
 }
 .vendor-verification-badge {
     display: inline-flex;
@@ -2311,12 +2375,10 @@ document.addEventListener('DOMContentLoaded', function () {
     line-height: 1.15;
     letter-spacing: 0.02em;
     box-shadow: 0 1px 2px rgba(21, 128, 61, 0.12);
+    vertical-align: middle;
 }
 .vendor-verification-badge i {
     font-size: 0.78rem;
-}
-.ts-control .vendor-option-content {
-    gap: 0.3rem;
 }
 .ts-control .vendor-verification-badge {
     width: 1.1rem;
@@ -2343,7 +2405,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function vendorStatusParts(text) {
         const value = text || '';
         const verifiedMarker = ' ✓ Verif';
-        const pendingMarker = ' ⚠ Belum Diverifikasi';
+        const pendingMarker = ' ⚠ Belum Verifikasi';
         if (value.endsWith(verifiedMarker)) {
             return { label: value.slice(0, -verifiedMarker.length), status: 'verified' };
         }
@@ -2359,7 +2421,11 @@ document.addEventListener('DOMContentLoaded', function () {
         if (parts.status === 'verified') {
             badge = '<span class="vendor-verification-badge" title="Terverifikasi" aria-label="Terverifikasi"><i class="bi bi-check-lg" aria-hidden="true"></i></span>';
         }
-        return `<div class="vendor-option-content">${badge}<span class="vendor-option-label">${escape(parts.label)}</span></div>`;
+        const pendingLabel = parts.status === 'pending'
+            ? '<strong class="vendor-pending-label">Belum Verifikasi</strong>'
+            : '';
+        const separator = parts.status ? '<span aria-hidden="true"> — </span>' : '';
+        return `<div class="vendor-option-content" title="${escape(data.text || '')}">${badge}${pendingLabel}${separator}<span class="vendor-option-label">${escape(parts.label)}</span></div>`;
     }
 
     function initTomSelect(el) {

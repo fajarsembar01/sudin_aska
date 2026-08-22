@@ -2133,12 +2133,6 @@ def _vendor_duplicate_signatures(vendor: Dict[str, Any]) -> List[tuple]:
     def normalized_identifier(value: Any) -> str:
         return "".join(char for char in str(value or "").casefold() if char.isalnum())
 
-    def normalized_phone(value: Any) -> str:
-        digits = "".join(char for char in str(value or "") if char.isdigit())
-        if digits.startswith("62"):
-            digits = "0" + digits[2:]
-        return digits
-
     signatures = []
     if vendor_type == "narsum":
         signatures.extend([
@@ -2147,15 +2141,12 @@ def _vendor_duplicate_signatures(vendor: Dict[str, Any]) -> List[tuple]:
         ])
     else:
         signatures.append(("Nama vendor", normalized_text(vendor.get("name"))))
-    signatures.extend([
-        ("NPWP", normalized_identifier(vendor.get("npwp"))),
-        ("Kontak", normalized_phone(vendor.get("phone"))),
-    ])
+    signatures.append(("NPWP", normalized_identifier(vendor.get("npwp"))))
     return [(label, value) for label, value in signatures if value]
 
 
 def attach_vendor_duplicate_matches(vendors: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    """Attach registrations sharing a normalized name, identity number, NPWP, or phone."""
+    """Attach registrations sharing a normalized name, identity number, or NPWP."""
     for vendor in vendors:
         vendor["duplicate_matches"] = []
     if not vendors:
@@ -2204,6 +2195,19 @@ def find_vendor_duplicate_matches(vendor_id: int) -> List[Dict[str, Any]]:
     vendor = get_vendor_by_id(vendor_id)
     if not vendor:
         return []
+    attach_vendor_duplicate_matches([vendor])
+    return vendor["duplicate_matches"]
+
+
+def find_vendor_duplicate_matches_for_data(
+    data: Dict[str, Any],
+    exclude_vendor_id: Optional[int] = None,
+) -> List[Dict[str, Any]]:
+    """Find matching registrations before a school creates or updates a vendor."""
+    vendor = dict(data)
+    # Reuse the same matching rules used during admin verification.  On edit,
+    # using the current id prevents the record from matching its stored version.
+    vendor["id"] = exclude_vendor_id or 0
     attach_vendor_duplicate_matches([vendor])
     return vendor["duplicate_matches"]
 
