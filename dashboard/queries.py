@@ -4461,6 +4461,7 @@ def fetch_admin_activity_events() -> List[Dict[str, Any]]:
             FROM laporan_forms f
             JOIN dashboard_users updater ON updater.id = f.updated_by
             WHERE updater.role = 'admin'
+              AND f.status <> 'draft'
               AND f.updated_at > f.created_at + INTERVAL '1 second'
               AND NOT EXISTS (
                   SELECT 1
@@ -4701,11 +4702,26 @@ def fetch_admin_activity_events() -> List[Dict[str, Any]]:
             FROM dashboard_admin_action_logs a
             JOIN dashboard_users u ON u.id = a.user_id
             WHERE u.role = 'admin'
+              AND NOT (
+                  a.feature_key = 'laporan'
+                  AND UPPER(TRIM(a.action)) = 'AUTOSAVE'
+              )
             """)
         events.extend(
             _normalize_admin_performance_event(dict(row)) for row in cur.fetchall()
         )
 
+    # Autosave is a technical persistence event, not an admin performance action.
+    # Keep this defensive filter in addition to the SQL predicate in case another
+    # activity source starts exposing Laporan autosaves in the future.
+    events = [
+        event
+        for event in events
+        if not (
+            event.get("feature_key") == "laporan"
+            and event.get("action") == "AUTOSAVE"
+        )
+    ]
     events.sort(
         key=lambda item: (
             item["created_at"].timestamp() if item.get("created_at") else 0
@@ -5299,4 +5315,3 @@ def get_system_diagnostic_info() -> Dict[str, Any]:
         info["db_connected"] = False
 
     return info
-
