@@ -102,15 +102,29 @@ def _dashboard_base_url() -> str:
 
 def _list_admin_recipients() -> List[Dict[str, Any]]:
     with get_cursor() as cur:
-        cur.execute("""
-            SELECT
+        cur.execute(
+            """
+            SELECT DISTINCT ON (
+                COALESCE(
+                    tu.telegram_user_id::text,
+                    LOWER(TRIM(ta.telegram_username))
+                )
+            )
                 ta.telegram_username,
                 tu.telegram_user_id
             FROM telegram_admin_accounts ta
             JOIN dashboard_users u ON u.id = ta.dashboard_user_id AND u.role = 'admin'
             LEFT JOIN telegram_users tu ON LOWER(tu.username) = LOWER(ta.telegram_username)
-            ORDER BY LOWER(ta.telegram_username) ASC
-            """)
+            WHERE ta.notification_scope = %s
+            ORDER BY
+                COALESCE(
+                    tu.telegram_user_id::text,
+                    LOWER(TRIM(ta.telegram_username))
+                ),
+                LOWER(ta.telegram_username) ASC
+            """,
+            ("default",),
+        )
         rows = cur.fetchall()
     return [dict(row) for row in rows]
 
