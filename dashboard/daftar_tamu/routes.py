@@ -930,6 +930,25 @@ def _build_sudin_duplicate_warning_message(
     )
 
 
+def _attach_sudin_duplicate_warning(transaction: dict) -> None:
+    duplicate_rows = transaction.get("same_day_approved_duplicates") or []
+    repeat_count = int(transaction.get("duplicate_repeat_count") or 0)
+    if not duplicate_rows or repeat_count < 2:
+        transaction["same_day_duplicate_warning"] = ""
+        return
+    guest_names = ", ".join(
+        str(row.get("guest_name") or "").strip()
+        for row in duplicate_rows
+        if str(row.get("guest_name") or "").strip()
+    )
+    guest_text = guest_names or "Tamu terpilih"
+    school_text = str(transaction.get("school_name") or "sekolah ini").strip()
+    transaction["same_day_duplicate_warning"] = (
+        f"{guest_text} memiliki kunjungan lain yang sudah disetujui di "
+        f"{school_text} pada tanggal yang sama. Periksa sebelum memvalidasi transaksi ini."
+    )
+
+
 def _web_aska_base_url() -> str:
     base = (
         os.getenv("WEB_ASKA_BASE_URL")
@@ -3556,6 +3575,9 @@ def admin_validation() -> Response:
             per_page=per_page,
         )
 
+    for row in rows:
+        _attach_sudin_duplicate_warning(row)
+
     date_from_str = date_from.isoformat() if date_from else ""
     date_to_str = date_to.isoformat() if date_to else ""
 
@@ -3579,9 +3601,11 @@ def admin_validation() -> Response:
 @daftar_tamu_bp.route("/admin/transactions/<int:transaction_id>")
 @role_required("admin")
 def admin_transaction_detail(transaction_id: int) -> Response:
-    detail = get_transaction_detail(transaction_id)
+    detail = get_transaction_detail(transaction_id, include_duplicate_summary=True)
     if not detail:
         return jsonify({"success": False, "message": "Transaksi tidak ditemukan"}), 404
+
+    _attach_sudin_duplicate_warning(detail)
 
     return jsonify({"success": True, "transaction": detail})
 

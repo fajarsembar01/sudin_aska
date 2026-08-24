@@ -50,6 +50,19 @@
         text-align: center;
         color: #6c757d;
     }
+
+    .same-day-duplicate-badge {
+        background: #fff1f2;
+        border: 1px solid #fecdd3;
+        color: #be123c;
+        white-space: normal;
+    }
+
+    .same-day-duplicate-alert {
+        background: linear-gradient(135deg, #fff1f2 0%, #fff7ed 100%);
+        border-color: #fda4af;
+        color: #881337;
+    }
 </style>
 {% endblock %}
 
@@ -219,7 +232,8 @@
                     </thead>
                     <tbody>
                         {% for row in rows %}
-                        <tr data-transaction-id="{{ row.id }}">
+                        <tr data-transaction-id="{{ row.id }}"
+                            data-duplicate-warning="{{ row.same_day_duplicate_warning or '' }}">
                             <td>
                                 <input class="form-check-input admin-select" type="checkbox" name="transaction_ids"
                                     value="{{ row.id }}">
@@ -237,6 +251,21 @@
                             <td>
                                 <div class="fw-semibold">{{ row.guest_display or '-' }}</div>
                                 <div class="small text-muted">{{ row.guest_count or 0 }} tamu</div>
+                                {% if row.duplicate_repeat_count and row.duplicate_repeat_count >= 2 %}
+                                <div class="mt-1">
+                                    <span class="badge same-day-duplicate-badge"
+                                        title="{{ row.same_day_duplicate_warning }}">
+                                        <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                                        Duplikat {{ row.duplicate_repeat_count }}X
+                                    </span>
+                                </div>
+                                <div class="small text-danger mt-1">
+                                    {% for duplicate in row.same_day_approved_duplicates %}
+                                    {{ duplicate.guest_name }}{% if not loop.last %}, {% endif %}
+                                    {% endfor %}
+                                    sudah terverifikasi di sekolah ini pada hari yang sama.
+                                </div>
+                                {% endif %}
                                 {% if row.staff_note_text %}
                                 <div class="small mt-1">
                                     <span class="badge text-bg-{% if row.staff_note_level == 'mendesak' %}danger{% elif row.staff_note_level == 'tindak_lanjut' %}warning{% elif row.staff_note_level == 'pantau' %}info{% else %}secondary{% endif %}">
@@ -353,6 +382,15 @@
                     <div class="spinner-border"></div>
                 </div>
                 <div id="detailContent" class="d-none">
+                    <div id="detailDuplicateWarning" class="alert same-day-duplicate-alert d-none" role="alert">
+                        <div class="d-flex align-items-start gap-2">
+                            <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+                            <div>
+                                <div class="fw-bold" id="detailDuplicateTitle">Duplikat kunjungan hari yang sama</div>
+                                <div class="small mt-1" id="detailDuplicateMessage"></div>
+                            </div>
+                        </div>
+                    </div>
                     <div class="row g-3">
                         <div class="col-md-7">
                             <div class="fw-semibold" id="detailSchoolName">-</div>
@@ -460,6 +498,7 @@
         var currentTransactionId = null;
         var currentRow = null;
         var currentDetailStatus = null;
+        var currentDuplicateWarning = '';
         var detailActionBusy = false;
         var bulkActionSubmitting = false;
         var uploadBase = "{{ url_for('portal.uploaded_file', filename='__FILE__') }}";
@@ -634,6 +673,7 @@
             currentTransactionId = transactionId;
             currentRow = rowEl;
             currentDetailStatus = null;
+            currentDuplicateWarning = '';
             showDetailLoading(true);
             configureDetailButtons(null);
             document.getElementById('detailAdminNote').value = '';
@@ -669,6 +709,18 @@
                     document.getElementById('detailReviewerTelegram').textContent = reviewerTelegramText || '-';
                     document.getElementById('detailReviewerTelegramWrap').classList.toggle('d-none', !reviewerTelegramText);
                     document.getElementById('detailAdminNote').value = trx.reviewer_notes || '';
+
+                    var duplicateRepeatCount = Number(trx.duplicate_repeat_count || 0);
+                    var duplicateWarningEl = document.getElementById('detailDuplicateWarning');
+                    var hasSameDayDuplicate = duplicateRepeatCount >= 2 && !!trx.same_day_duplicate_warning;
+                    currentDuplicateWarning = hasSameDayDuplicate ? trx.same_day_duplicate_warning : '';
+                    duplicateWarningEl.classList.toggle('d-none', !hasSameDayDuplicate);
+                    document.getElementById('detailDuplicateTitle').textContent = hasSameDayDuplicate
+                        ? ('Duplikat ' + duplicateRepeatCount + 'X pada hari yang sama')
+                        : 'Duplikat kunjungan hari yang sama';
+                    document.getElementById('detailDuplicateMessage').textContent = hasSameDayDuplicate
+                        ? trx.same_day_duplicate_warning
+                        : '';
 
                     var guestWrap = document.getElementById('detailGuests');
                     guestWrap.innerHTML = '';
@@ -789,6 +841,9 @@
         function submitDecision(action, triggerBtn) {
             if (!currentTransactionId) return;
             if (detailActionBusy) return;
+            if (action === 'approve' && currentDuplicateWarning) {
+                if (!window.confirm(currentDuplicateWarning + '\n\nTetap setujui transaksi ini?')) return;
+            }
             var note = document.getElementById('detailAdminNote').value.trim();
             if (action === 'reject' && !note) {
                 alert('Catatan penolakan wajib diisi.');
@@ -837,6 +892,10 @@
 
         function submitQuickDecision(transactionId, action, rowEl, note, triggerBtn) {
             if (!rowEl || rowEl.getAttribute('data-action-loading') === '1') return;
+            var duplicateWarning = rowEl.getAttribute('data-duplicate-warning') || '';
+            if (action === 'approve' && duplicateWarning) {
+                if (!window.confirm(duplicateWarning + '\n\nTetap setujui transaksi ini?')) return;
+            }
             setRowActionLoading(rowEl, triggerBtn, true);
             var formData = new FormData();
             if (note) formData.append('reviewer_note', note);
@@ -992,6 +1051,21 @@
                             event.preventDefault();
                             alert('Catatan penolakan wajib diisi.');
                             return;
+                        }
+                    }
+                    if (submitter && submitter.id === 'bulkApproveAdmin') {
+                        var duplicateRows = checks.filter(function (el) {
+                            if (!el.checked) return false;
+                            var row = el.closest('tr');
+                            return row && !!row.getAttribute('data-duplicate-warning');
+                        });
+                        if (duplicateRows.length > 0) {
+                            var confirmationText = duplicateRows.length
+                                + ' transaksi terpilih terdeteksi sebagai kunjungan berulang pada hari yang sama.\n\nTetap setujui semuanya?';
+                            if (!window.confirm(confirmationText)) {
+                                event.preventDefault();
+                                return;
+                            }
                         }
                     }
                     setBulkSubmitting(submitter || null, true);

@@ -150,6 +150,85 @@ _PUBLIC_GUEST_COUNT_SUBQUERY = """
     WHERE g.transaction_id = {tx_ref}
 """
 
+
+def _get_same_day_approved_duplicates_by_transaction(
+    transaction_ids: List[int],
+) -> Dict[int, List[Dict[str, Any]]]:
+    """Return approved same-school/day visits for each transaction's SUDIN guests."""
+    safe_ids = sorted(
+        {int(transaction_id) for transaction_id in transaction_ids if transaction_id}
+    )
+    if not safe_ids:
+        return {}
+
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            WITH current_guests AS (
+                SELECT DISTINCT
+                    t.id AS transaction_id,
+                    t.school_id,
+                    t.visit_at,
+                    g.user_id
+                FROM daftar_tamu_transactions t
+                JOIN daftar_tamu_transaction_guests g ON g.transaction_id = t.id
+                WHERE t.id = ANY(%s::INT[])
+                  AND g.user_id IS NOT NULL
+                  AND (g.guest_type = 'sudin' OR g.guest_type IS NULL)
+            )
+            SELECT
+                cg.transaction_id,
+                cg.user_id AS guest_id,
+                COALESCE(
+                    NULLIF(TRIM(u.full_name), ''),
+                    NULLIF(TRIM(u.email), ''),
+                    CONCAT('ID ', cg.user_id::TEXT)
+                ) AS guest_name,
+                COUNT(DISTINCT approved_t.id)::INT AS approved_count
+            FROM current_guests cg
+            JOIN daftar_tamu_transaction_guests approved_g
+              ON approved_g.user_id = cg.user_id
+             AND (approved_g.guest_type = 'sudin' OR approved_g.guest_type IS NULL)
+            JOIN daftar_tamu_transactions approved_t
+              ON approved_t.id = approved_g.transaction_id
+             AND approved_t.id <> cg.transaction_id
+             AND approved_t.school_id = cg.school_id
+             AND approved_t.status = 'approved'
+             AND DATE(approved_t.visit_at AT TIME ZONE 'Asia/Jakarta') =
+                 DATE(cg.visit_at AT TIME ZONE 'Asia/Jakarta')
+            LEFT JOIN dashboard_users u ON u.id = cg.user_id
+            GROUP BY cg.transaction_id, cg.user_id, guest_name
+            HAVING COUNT(DISTINCT approved_t.id) >= 1
+            ORDER BY cg.transaction_id, approved_count DESC, guest_name ASC
+            """,
+            (safe_ids,),
+        )
+        rows = [dict(row) for row in cur.fetchall()]
+
+    duplicates_by_transaction: Dict[int, List[Dict[str, Any]]] = {}
+    for row in rows:
+        transaction_id = int(row.pop("transaction_id"))
+        row["approved_count"] = int(row.get("approved_count") or 0)
+        duplicates_by_transaction.setdefault(transaction_id, []).append(row)
+    return duplicates_by_transaction
+
+
+def _attach_same_day_duplicate_summary(
+    transactions: List[Dict[str, Any]],
+) -> None:
+    duplicates_by_transaction = _get_same_day_approved_duplicates_by_transaction(
+        [int(row.get("id") or 0) for row in transactions]
+    )
+    for transaction in transactions:
+        duplicate_rows = duplicates_by_transaction.get(
+            int(transaction.get("id") or 0), []
+        )
+        transaction["same_day_approved_duplicates"] = duplicate_rows
+        transaction["duplicate_repeat_count"] = max(
+            (int(row.get("approved_count") or 0) + 1 for row in duplicate_rows),
+            default=0,
+        )
+
 _PUBLIC_GUEST_CONTEXT_SUBQUERY = """
     SELECT STRING_AGG(
         CASE
@@ -2976,6 +3055,8 @@ def list_admin_transactions(
         row.update(_summarize_staff_notes(row.get("metadata")))
         row.pop("metadata", None)
 
+    _attach_same_day_duplicate_summary(rows)
+
     return rows, total_rows
 
 
@@ -3286,7 +3367,9 @@ def list_admin_public_school_summary(
     return rows, total_rows
 
 
-def get_transaction_detail(transaction_id: int) -> Optional[Dict[str, Any]]:
+def get_transaction_detail(
+    transaction_id: int, *, include_duplicate_summary: bool = False
+) -> Optional[Dict[str, Any]]:
     profile_photo_select = (
         "u.profile_photo_path AS profile_photo_path"
         if _has_dashboard_user_profile_photo_path()
@@ -3387,6 +3470,9 @@ def get_transaction_detail(transaction_id: int) -> Optional[Dict[str, Any]]:
             (transaction_id, transaction_id),
         )
         detail["guests"] = [dict(row) for row in cur.fetchall()]
+
+    if include_duplicate_summary:
+        _attach_same_day_duplicate_summary([detail])
 
     return detail
 
