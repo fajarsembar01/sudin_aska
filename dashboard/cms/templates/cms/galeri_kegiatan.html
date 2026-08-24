@@ -1,508 +1,103 @@
 {% extends 'cms/base_cms.html' %}
-{% block title %}Kelola Galeri Kegiatan - CMS{% endblock %}
+{% block title %}Galeri Kegiatan - CMS{% endblock %}
 
 {% block cms_content %}
 <div class="container-lg px-lg-4 py-4">
-    <!-- Page Header -->
-    <div class="mb-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
         <div>
             <h1 class="h3 fw-bold mb-1">Galeri Kegiatan</h1>
-            <p class="text-muted mb-0">Kelola dokumentasi foto kegiatan Sudin Pendidikan</p>
+            <p class="text-muted mb-0">Galeri aktif dan berstatus Published otomatis tampil di landing page.</p>
         </div>
-        <div>
-            <button type="button" class="btn btn-primary px-4 py-2 fw-semibold shadow-sm d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#tambahModal">
-                <i class="bi bi-plus-lg"></i> Tambah Galeri
-            </button>
-        </div>
+        <button class="btn btn-primary px-4" data-bs-toggle="collapse" data-bs-target="#formTambahPanel"><i class="bi bi-plus-lg me-2"></i>Tambah Galeri</button>
     </div>
+    <div id="alertPlaceholder"></div>
 
-    <!-- Data Table -->
-    <div class="card border-0 shadow-sm mb-4">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="bg-light">
-                        <tr>
-                            <th class="py-3 px-4" width="5%">No</th>
-                            <th class="py-3 px-4" width="15%">Thumbnail</th>
-                            <th class="py-3 px-4" width="35%">Nama Kegiatan</th>
-                            <th class="py-3 px-4" width="15%">Jumlah Foto</th>
-                            <th class="py-3 px-4" width="10%">Status</th>
-                            <th class="py-3 px-4 text-center" width="20%">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% if galeri %}
-                            {% for item in galeri %}
-                            <tr>
-                                <td class="px-4 text-muted">{{ loop.index }}</td>
-                                <td class="px-4">
-                                    <div class="bg-light rounded d-flex align-items-center justify-content-center overflow-hidden border shadow-sm" style="width: 80px; height: 60px;">
-                                        <!-- Dummy image placeholder if thumbnail not found -->
-                                        <div class="text-muted small fw-medium d-flex flex-column align-items-center">
-                                            <i class="bi bi-image text-secondary fs-5 mb-1"></i>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="px-4">
-                                    <div class="fw-semibold text-dark mb-1 d-block text-truncate" style="max-width: 300px;">{{ item.nama_kegiatan }}</div>
-                                    <div class="d-flex align-items-center text-muted fs-7 gap-3">
-                                        <span title="Penulis"><i class="bi bi-person me-1"></i>{{ item.penulis }}</span>
-                                        <span title="Tanggal Dibuat"><i class="bi bi-calendar3 me-1"></i>{{ item.tanggal }}</span>
-                                    </div>
-                                </td>
-                                <td class="px-4">
-                                    <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 rounded px-2 py-1"><i class="bi bi-images me-1"></i>{{ item.gambar_kegiatan|length }} Foto</span>
-                                </td>
-                                <td class="px-4">
-                                    <div class="d-flex flex-column gap-1">
-                                        {% if item.status_publikasi == 'Published' %}
-                                            <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-1 fw-medium border border-success border-opacity-25" style="width: fit-content;">Published</span>
-                                        {% else %}
-                                            <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-3 py-1 fw-medium border border-secondary border-opacity-25" style="width: fit-content;">Draft</span>
-                                        {% endif %}
-                                        
-                                        {% if item.status == 'Aktif' %}
-                                            <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-1 fw-medium border border-primary border-opacity-25" style="width: fit-content;">Aktif</span>
-                                        {% else %}
-                                            <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-3 py-1 fw-medium border border-danger border-opacity-25" style="width: fit-content;">Tidak Aktif</span>
-                                        {% endif %}
-                                    </div>
-                                </td>
-                                <td class="px-4 text-center">
-                                    <div class="d-flex justify-content-center gap-2">
-                                        <button type="button" class="btn btn-sm btn-outline-info d-flex align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#detailModal{{ item.id }}" title="Lihat">
-                                            <i class="bi bi-eye"></i>
-                                        </button>
-                                        <button type="button" class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#editModal{{ item.id }}" title="Edit">
-                                            <i class="bi bi-pencil-square"></i>
-                                        </button>
-                                        <button type="button" class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1" title="Hapus">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        {% else %}
-                            <tr>
-                                <td colspan="6" class="text-center py-5 text-muted">
-                                    <i class="bi bi-images fs-2 d-block mb-3 text-secondary opacity-50"></i>
-                                    Belum ada data galeri kegiatan
-                                </td>
-                            </tr>
-                        {% endif %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        <!-- Pagination Placeholder -->
-        <div class="card-footer bg-white border-top p-3 d-flex justify-content-between align-items-center">
-            <span class="text-muted small">Menampilkan 1-3 dari 3 data</span>
-            <nav aria-label="Page navigation">
-                <ul class="pagination pagination-sm mb-0">
-                    <li class="page-item disabled"><a class="page-link" href="#">Sebelumnya</a></li>
-                    <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                    <li class="page-item disabled"><a class="page-link" href="#">Selanjutnya</a></li>
-                </ul>
-            </nav>
-        </div>
-    </div>
-</div>
-
-<!-- Modal Tambah Galeri -->
-<div class="modal fade" id="tambahModal" tabindex="-1" aria-labelledby="tambahModalLabel" aria-hidden="true" data-bs-backdrop="static">
-    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header border-bottom-0 bg-light pb-3 pt-4 px-4">
-                <h5 class="modal-title fw-bold" id="tambahModalLabel"><i class="bi bi-plus-circle text-primary me-2"></i>Tambah Galeri Kegiatan</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body px-4 py-4">
-                <form id="formTambah">
-                    <div class="row g-4">
-                        <!-- Info Dasar -->
-                        <div class="col-12">
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold">Nama Kegiatan <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control form-control-lg fs-6" placeholder="Beri nama untuk galeri ini..." required>
-                            </div>
-                            <div class="row g-3">
-                                <div class="col-sm-6">
-                                    <label class="form-label fw-semibold fs-7 text-muted">Tanggal Kegiatan <span class="text-danger">*</span></label>
-                                    <input type="date" class="form-control" required>
-                                </div>
-                                <div class="col-sm-6">
-                                    <label class="form-label fw-semibold fs-7 text-muted">Penulis <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" placeholder="Nama pengunggah..." required>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Media Box -->
-                        <div class="col-12">
-                            <h6 class="fw-bold fs-6 mb-3 border-bottom pb-2">Media Gambar</h6>
-                            <div class="row g-4">
-                                <!-- Thumbnail -->
-                                <div class="col-md-5">
-                                    <label class="form-label fw-semibold fs-7 text-muted">Thumbnail Galeri <span class="text-danger">*</span></label>
-                                    <div class="text-center p-2 border rounded bg-light mb-2">
-                                        <img id="previewThumbnailTambah" src="data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20200%20150%22%3E%3Crect%20fill%3D%22%23f8f9fa%22%20width%3D%22200%22%20height%3D%22150%22%2F%3E%3Ctext%20fill%3D%22%23adb5bd%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20font-weight%3D%22bold%22%20x%3D%2250%25%22%20y%3D%2250%25%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%3EThumbnail%3C%2Ftext%3E%3C%2Fsvg%3E" alt="Preview" class="img-fluid rounded" style="height: 140px; width: 100%; object-fit: cover;">
-                                    </div>
-                                    <input type="file" class="form-control form-control-sm" accept="image/*" required onchange="previewImage(this, 'previewThumbnailTambah')">
-                                </div>
-                                
-                                <!-- Multiple Images -->
-                                <div class="col-md-7">
-                                    <label class="form-label fw-semibold fs-7 text-muted">Foto Kegiatan (Bisa > 1) <span class="text-danger">*</span></label>
-                                    <div class="file-upload-wrapper p-4 text-center border rounded-3 bg-light h-100 d-flex flex-column justify-content-center align-items-center" style="border-style: dashed !important; min-height: 140px;">
-                                        <i class="bi bi-images text-primary mb-2 d-block fs-3"></i>
-                                        <p class="mb-0 fs-7 text-muted fw-medium">Pilih beberapa foto sekaligus</p>
-                                        <input type="file" class="form-control d-none" id="fileUploadTambah" accept="image/*" multiple required>
-                                    </div>
-                                </div>
-                            </div>
-                            <!-- Image Previews Container -->
-                            <div class="row g-2 mt-2 d-none" id="imagePreviewGridTambah"></div>
-                        </div>
-
-                        <!-- Status -->
-                        <div class="col-12">
-                            <div class="row g-3">
-                                <div class="col-sm-6">
-                                    <label class="form-label fw-semibold">Status Aktif</label>
-                                    <div class="p-3 border rounded-3 bg-light d-flex align-items-center justify-content-between">
-                                        <div>
-                                            <div class="fw-medium text-primary fs-7 mb-0" id="statusAktifLabelTambah">Aktif</div>
-                                        </div>
-                                        <div class="form-check form-switch fs-4 mb-0">
-                                            <input class="form-check-input mt-0" type="checkbox" role="switch" id="statusAktifTambah" name="statusAktif" value="Aktif" checked onchange="toggleStatusAktif(this, 'statusAktifLabelTambah')">
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-sm-6">
-                                    <label class="form-label fw-semibold">Status Publikasi</label>
-                                    <div class="p-3 border rounded-3 bg-light d-flex align-items-center justify-content-between">
-                                        <div>
-                                            <div class="fw-medium text-success fs-7 mb-0" id="statusLabelTambah">Published</div>
-                                        </div>
-                                        <div class="form-check form-switch fs-4 mb-0">
-                                            <input class="form-check-input mt-0" type="checkbox" role="switch" id="statusGaleriTambah" name="statusPublikasi" value="Published" checked onchange="toggleStatus(this, 'statusLabelTambah')">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer border-top-0 bg-light px-4 py-3">
-                <button type="button" class="btn btn-secondary px-4 fw-medium" data-bs-dismiss="modal">Batal</button>
-                <button type="button" class="btn btn-primary px-4 fw-medium shadow-sm"><i class="bi bi-save me-2"></i>Simpan Galeri</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal Detail & Edit Iteration -->
-{% for item in galeri %}
-<!-- Modal Detail -->
-<div class="modal fade" id="detailModal{{ item.id }}" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header border-bottom position-relative bg-light pb-3">
-                <div class="d-flex flex-column w-100 pe-4">
-                    <div class="d-flex align-items-center gap-2 mb-2">
-                        {% if item.status_publikasi == 'Published' %}
-                            <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25">Published</span>
-                        {% else %}
-                            <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25">Draft</span>
-                        {% endif %}
-                        
-                        {% if item.status == 'Aktif' %}
-                            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25">Aktif</span>
-                        {% else %}
-                            <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25">Tidak Aktif</span>
-                        {% endif %}
-                        <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25"><i class="bi bi-images me-1"></i>{{ item.gambar_kegiatan|length }} Foto</span>
-                    </div>
-                    <h4 class="modal-title fw-bold lh-base mb-2">{{ item.nama_kegiatan }}</h4>
-                    <div class="d-flex flex-wrap gap-3 text-muted fs-7">
-                        <span><i class="bi bi-person me-1"></i>{{ item.penulis }}</span>
-                        <span><i class="bi bi-calendar3 me-1"></i>{{ item.tanggal }}</span>
-                    </div>
-                </div>
-                <button type="button" class="btn-close position-absolute top-0 end-0 mt-3 me-3" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body px-4 py-4">
-                <h6 class="fw-bold fs-6 mb-3 border-bottom pb-2">Thumbnail Utama</h6>
-                <div class="text-center mb-4 bg-light rounded border p-2">
-                    <div class="d-flex align-items-center justify-content-center text-muted gap-2" style="height: 250px; background: #e9ecef border-radius: 6px;">
-                        <i class="bi bi-image fs-1"></i> <span class="fw-medium">Thumbnail ({{ item.thumbnail }})</span>
-                    </div>
-                </div>
-                
-                {% if item.gambar_kegiatan %}
-                <h6 class="fw-bold fs-6 mb-3 border-bottom pb-2 mt-4">Koleksi Foto Kegiatan</h6>
+    <div class="collapse mb-4" id="formTambahPanel">
+        <div class="card border-0 shadow-sm cms-editor-card"><div class="card-body p-4">
+            <h2 class="h5 fw-bold mb-4">Galeri Baru</h2>
+            <form class="cms-ajax-form" data-action="{{ url_for('cms.galeri_kegiatan') }}" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="row g-3">
-                    {% for img in item.gambar_kegiatan %}
-                    <div class="col-sm-6 col-md-4">
-                        <div class="position-relative bg-light rounded border p-1" style="height: 140px;">
-                            <div class="w-100 h-100 d-flex flex-column align-items-center justify-content-center text-muted bg-white rounded">
-                                <i class="bi bi-image text-secondary fs-3 mb-1"></i>
-                                <span class="fs-8 text-truncate px-2 w-100 text-center">{{ img }}</span>
-                            </div>
-                        </div>
+                    <div class="col-lg-6"><label class="form-label fw-semibold">Nama Kegiatan</label><input name="nama_kegiatan" class="form-control" required></div>
+                    <div class="col-md-3"><label class="form-label fw-semibold">Tanggal</label><input type="date" name="tanggal" class="form-control" required></div>
+                    <div class="col-md-3"><label class="form-label fw-semibold">Pengunggah</label><input name="penulis" value="{{ default_penulis }}" class="form-control" required></div>
+                    <div class="col-md-6"><label class="form-label fw-semibold">Thumbnail</label><input type="file" name="thumbnail" accept="image/*" class="form-control"></div>
+                    <div class="col-md-6"><label class="form-label fw-semibold">Foto Kegiatan</label><input type="file" name="gambar_kegiatan" accept="image/*" multiple class="form-control" required></div>
+                    <div class="col-12 d-flex gap-4">
+                        <label class="form-check form-switch"><input class="form-check-input" type="checkbox" name="statusAktif" value="Aktif" checked> Aktif</label>
+                        <label class="form-check form-switch"><input class="form-check-input" type="checkbox" name="statusPublikasi" value="Published" checked> Published</label>
                     </div>
-                    {% endfor %}
                 </div>
-                {% endif %}
-            </div>
-            <div class="modal-footer border-top bg-light px-4 py-3">
-                <button type="button" class="btn btn-primary px-4 fw-medium" data-bs-dismiss="modal">Tutup Detail</button>
-            </div>
-        </div>
+                <button class="btn btn-primary mt-3 px-4" type="submit"><i class="bi bi-save me-2"></i>Simpan</button>
+            </form>
+        </div></div>
     </div>
-</div>
 
-<!-- Modal Edit Galeri -->
-<div class="modal fade" id="editModal{{ item.id }}" tabindex="-1" aria-labelledby="editModalLabel{{ item.id }}" aria-hidden="true" data-bs-backdrop="static">
-    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header border-bottom-0 bg-light pb-3 pt-4 px-4">
-                <h5 class="modal-title fw-bold" id="editModalLabel{{ item.id }}"><i class="bi bi-pencil-square text-primary me-2"></i>Edit Galeri Kegiatan</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body px-4 py-4">
-                <form id="formEdit{{ item.id }}">
-                    <div class="row g-4">
-                        <div class="col-12">
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold">Nama Kegiatan <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control form-control-lg fs-6" value="{{ item.nama_kegiatan }}" required>
-                            </div>
-                            <div class="row g-3">
-                                <div class="col-sm-6">
-                                    <label class="form-label fw-semibold fs-7 text-muted">Tanggal Kegiatan <span class="text-danger">*</span></label>
-                                    <input type="date" class="form-control" value="{{ item.tanggal }}" required>
-                                </div>
-                                <div class="col-sm-6">
-                                    <label class="form-label fw-semibold fs-7 text-muted">Penulis <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" value="{{ item.penulis }}" required>
-                                </div>
+    {% if galeri %}
+    <div class="row g-4">
+        {% for item in galeri %}
+        <div class="col-lg-6">
+            <details class="card border-0 shadow-sm h-100 cms-editor-card">
+                <summary class="card-body p-4 d-flex gap-3 align-items-center">
+                    {% if item.thumbnail_url %}<img src="{{ item.thumbnail_url }}" alt="" class="cms-gallery-thumb">{% elif item.gambar_kegiatan %}<img src="{{ item.gambar_kegiatan[0].url }}" alt="" class="cms-gallery-thumb">{% else %}<span class="cms-gallery-thumb bg-light d-flex align-items-center justify-content-center"><i class="bi bi-images"></i></span>{% endif %}
+                    <div class="flex-grow-1 min-w-0"><h2 class="h6 fw-bold text-truncate mb-1">{{ item.nama_kegiatan }}</h2><div class="small text-muted">{{ item.tanggal }} · {{ item.gambar_kegiatan|length }} foto</div></div>
+                    <span class="badge {{ 'text-bg-success' if item.status == 'Aktif' and item.status_publikasi == 'Published' else 'text-bg-secondary' }}">{{ item.status_publikasi }}</span>
+                </summary>
+                <div class="card-body border-top p-4">
+                    <div class="row g-2 mb-3">{% for image in item.gambar_kegiatan %}<div class="col-3"><img src="{{ image.url }}" alt="" class="w-100 cms-mini-photo"><label class="form-check small mt-1"><input class="form-check-input" form="galeriEdit{{ item.id }}" type="checkbox" name="hapus_gambar_ids" value="{{ image.id }}"> Hapus</label></div>{% endfor %}</div>
+                    <form id="galeriEdit{{ item.id }}" class="cms-ajax-form" data-action="{{ url_for('cms.update_galeri', galeri_id=item.id) }}" enctype="multipart/form-data">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="row g-3">
+                            <div class="col-12"><label class="form-label fw-semibold">Nama Kegiatan</label><input name="nama_kegiatan" value="{{ item.nama_kegiatan }}" class="form-control" required></div>
+                            <div class="col-md-6"><label class="form-label fw-semibold">Tanggal</label><input type="date" name="tanggal" value="{{ item.tanggal }}" class="form-control" required></div>
+                            <div class="col-md-6"><label class="form-label fw-semibold">Pengunggah</label><input name="penulis" value="{{ item.penulis }}" class="form-control" required></div>
+                            <div class="col-md-6"><label class="form-label fw-semibold">Ganti Thumbnail</label><input type="file" name="thumbnail" accept="image/*" class="form-control"></div>
+                            <div class="col-md-6"><label class="form-label fw-semibold">Tambah Foto</label><input type="file" name="gambar_kegiatan" accept="image/*" multiple class="form-control"></div>
+                            <div class="col-12 d-flex gap-4">
+                                <label class="form-check form-switch"><input class="form-check-input" type="checkbox" name="statusAktif" value="Aktif" {{ 'checked' if item.status == 'Aktif' }}> Aktif</label>
+                                <label class="form-check form-switch"><input class="form-check-input" type="checkbox" name="statusPublikasi" value="Published" {{ 'checked' if item.status_publikasi == 'Published' }}> Published</label>
                             </div>
                         </div>
-
-                        <div class="col-12">
-                            <h6 class="fw-bold fs-6 mb-3 border-bottom pb-2">Media Gambar</h6>
-                            <div class="row g-4 mb-3">
-                                <div class="col-md-5">
-                                    <label class="form-label fw-semibold fs-7 text-muted">Thumbnail Saat Ini</label>
-                                    <div class="text-center p-2 border rounded bg-light mb-2">
-                                        <div class="d-flex flex-column align-items-center justify-content-center text-muted bg-white rounded border py-4">
-                                            <i class="bi bi-image fs-3 mb-1"></i>
-                                            <span class="fs-8">{{ item.thumbnail }}</span>
-                                        </div>
-                                        <img id="previewThumbnailEdit{{ item.id }}" src="" class="img-fluid rounded d-none" style="height: 140px; width: 100%; object-fit: cover;">
-                                    </div>
-                                    <label class="form-label fw-semibold fs-7 text-muted mt-2">Ubah Thumbnail</label>
-                                    <input type="file" class="form-control form-control-sm" accept="image/*" onchange="previewImage(this, 'previewThumbnailEdit{{ item.id }}')">
-                                </div>
-                                
-                                <div class="col-md-7">
-                                    <label class="form-label fw-semibold fs-7 text-muted">Foto Kegiatan Tersimpan ({{ item.gambar_kegiatan|length }})</label>
-                                    <div class="bg-light p-2 rounded border mb-2" style="max-height: 150px; overflow-y: auto;">
-                                        {% for img in item.gambar_kegiatan %}
-                                        <div class="d-flex justify-content-between align-items-center bg-white border p-2 mb-1 rounded">
-                                            <div class="d-flex align-items-center text-truncate fs-8">
-                                                <i class="bi bi-image text-secondary me-2"></i> {{ img }}
-                                            </div>
-                                            <button type="button" class="btn btn-sm text-danger border-0 p-0"><i class="bi bi-trash"></i></button>
-                                        </div>
-                                        {% endfor %}
-                                    </div>
-                                    
-                                    <label class="form-label fw-semibold fs-7 text-muted mt-2">Tambah Foto Baru</label>
-                                    <input type="file" class="form-control form-control-sm" accept="image/*" multiple>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-12">
-                            <div class="row g-3">
-                                <div class="col-sm-6">
-                                    <label class="form-label fw-semibold">Status Aktif</label>
-                                    <div class="p-3 border rounded-3 bg-light d-flex align-items-center justify-content-between">
-                                        <div>
-                                            <div class="fw-medium text-{% if item.status == 'Aktif' %}primary{% else %}danger{% endif %} fs-7 mb-0" id="statusAktifLabelEdit{{ item.id }}">{{ item.status }}</div>
-                                        </div>
-                                        <div class="form-check form-switch fs-4 mb-0">
-                                            <input class="form-check-input mt-0" type="checkbox" role="switch" id="statusAktifEdit{{ item.id }}" name="statusAktif" value="Aktif" {% if item.status == 'Aktif' %}checked{% endif %} onchange="toggleStatusAktif(this, 'statusAktifLabelEdit{{ item.id }}')">
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-sm-6">
-                                    <label class="form-label fw-semibold">Status Publikasi</label>
-                                    <div class="p-3 border rounded-3 bg-light d-flex align-items-center justify-content-between">
-                                        <div>
-                                            <div class="fw-medium text-{% if item.status_publikasi == 'Published' %}success{% else %}secondary{% endif %} fs-7 mb-0" id="statusLabelEdit{{ item.id }}">{{ item.status_publikasi }}</div>
-                                        </div>
-                                        <div class="form-check form-switch fs-4 mb-0">
-                                            <input class="form-check-input mt-0" type="checkbox" role="switch" id="statusGaleriEdit{{ item.id }}" name="statusPublikasi" value="Published" {% if item.status_publikasi == 'Published' %}checked{% endif %} onchange="toggleStatus(this, 'statusLabelEdit{{ item.id }}')">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer border-top-0 bg-light px-4 py-3">
-                <button type="button" class="btn btn-secondary px-4 fw-medium" data-bs-dismiss="modal">Batal</button>
-                <button type="button" class="btn btn-primary px-4 fw-medium shadow-sm"><i class="bi bi-save me-2"></i>Simpan Perubahan</button>
-            </div>
+                        <div class="d-flex gap-2 mt-3"><button class="btn btn-primary" type="submit">Simpan Perubahan</button><button class="btn btn-outline-danger cms-delete" type="button" data-action="{{ url_for('cms.delete_galeri', galeri_id=item.id) }}" data-title="{{ item.nama_kegiatan }}">Hapus</button></div>
+                    </form>
+                </div>
+            </details>
         </div>
+        {% endfor %}
     </div>
+    {% else %}
+    <div class="card border-0 shadow-sm"><div class="card-body py-5 text-center text-muted"><i class="bi bi-images fs-1 d-block mb-3"></i>Belum ada galeri kegiatan.</div></div>
+    {% endif %}
 </div>
-{% endfor %}
 
 <style>
-    .fs-7 { font-size: 0.875rem; }
-    .fs-8 { font-size: 0.75rem; }
-    
-    .file-upload-wrapper {
-        transition: all 0.2s ease-in-out;
-        cursor: pointer;
-    }
-    .file-upload-wrapper:hover {
-        background-color: var(--bs-primary-bg-subtle) !important;
-        border-color: var(--bs-primary) !important;
-    }
-    
-    .table-hover tbody tr {
-        transition: background-color 0.15s ease-in-out;
-    }
-    
-    .modal-content {
-        border-radius: 1rem;
-    }
-    
-    /* Image Grid Styling */
-    .preview-image-item {
-        position: relative;
-        height: 100px;
-        border-radius: 6px;
-        overflow: hidden;
-        border: 1px solid #dee2e6;
-    }
-    .preview-image-item img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-    .preview-image-item .remove-btn {
-        position: absolute;
-        top: 4px;
-        right: 4px;
-        background: rgba(220, 53, 69, 0.9);
-        color: white;
-        border: none;
-        border-radius: 50%;
-        width: 24px;
-        height: 24px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 12px;
-        cursor: pointer;
-    }
+.cms-editor-card { border-radius: 1rem; overflow: hidden; }
+.cms-editor-card summary { cursor: pointer; list-style: none; }
+.cms-editor-card summary::-webkit-details-marker { display: none; }
+.cms-gallery-thumb { width: 88px; height: 66px; border-radius: .75rem; object-fit: cover; flex: 0 0 auto; }
+.cms-mini-photo { height: 76px; object-fit: cover; border-radius: .5rem; }
+.min-w-0 { min-width: 0; }
 </style>
+{% endblock %}
 
+{% block scripts %}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Setup Grid Preview for Multiple Images (Tambah Modal) 
-        const fileInput = document.getElementById('fileUploadTambah');
-        const gridPreview = document.getElementById('imagePreviewGridTambah');
-        const dropzone = document.querySelector('.file-upload-wrapper');
-        
-        let selectedFiles = []; // Array to keep track of files
-
-        if (fileInput && gridPreview && dropzone) {
-            fileInput.addEventListener('change', function(e) {
-                const files = Array.from(e.target.files);
-                
-                if (files.length > 0) {
-                    gridPreview.classList.remove('d-none');
-                    // In a real app we'd merge or manage selectedFiles. For dummy, we just re-render.
-                    gridPreview.innerHTML = ''; 
-                    
-                    files.forEach((file, index) => {
-                        if (!file.type.startsWith('image/')) return;
-                        
-                        const reader = new FileReader();
-                        reader.onload = function(e) {
-                            const col = document.createElement('div');
-                            col.className = 'col-4 col-sm-3';
-                            col.innerHTML = `
-                                <div class="preview-image-item shadow-sm">
-                                    <img src="${e.target.result}" alt="Preview">
-                                </div>
-                            `;
-                            gridPreview.appendChild(col);
-                        }
-                        reader.readAsDataURL(file);
-                    });
-                }
-            });
-            
-            dropzone.addEventListener('click', () => fileInput.click());
-        }
-    });
-
-    // Toggle Status Logic
-    function toggleStatus(checkbox, labelId) {
-        const label = document.getElementById(labelId);
-        
-        if (checkbox.checked) {
-            checkbox.value = 'Published';
-            label.textContent = 'Published';
-            label.className = 'fw-medium text-success fs-7 mb-0';
-        } else {
-            checkbox.value = 'Draft';
-            label.textContent = 'Draft';
-            label.className = 'fw-medium text-secondary fs-7 mb-0';
-        }
-    }
-
-    function toggleStatusAktif(checkbox, labelId) {
-        const label = document.getElementById(labelId);
-        
-        if (checkbox.checked) {
-            checkbox.value = 'Aktif';
-            label.textContent = 'Aktif';
-            label.className = 'fw-medium text-primary fs-7 mb-0';
-        } else {
-            checkbox.value = 'Tidak Aktif';
-            label.textContent = 'Tidak Aktif';
-            label.className = 'fw-medium text-danger fs-7 mb-0';
-        }
-    }
-
-    // Image Preview Handlers for single thumbnail
-    function previewImage(input, previewId) {
-        if (input.files && input.files[0]) {
-            var reader = new FileReader();
-            reader.onload = function(e) {
-                const img = document.getElementById(previewId);
-                img.src = e.target.result;
-                img.classList.remove('d-none');
-                
-                // Hide generic placeholder div if present in same parent
-                const placeholder = img.parentElement.querySelector('div.d-flex');
-                if (placeholder) placeholder.classList.add('d-none');
-            }
-            reader.readAsDataURL(input.files[0]);
-        }
-    }
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.cms-ajax-form').forEach(form => form.addEventListener('submit', async event => {
+        event.preventDefault();
+        const button = form.querySelector('button[type="submit"]'); button.disabled = true;
+        const response = await fetch(form.dataset.action, { method: 'POST', body: new FormData(form) });
+        const result = await response.json();
+        if (result.success) location.reload(); else { button.disabled = false; showAlert(result.error || 'Gagal menyimpan.', 'danger'); }
+    }));
+    document.querySelectorAll('.cms-delete').forEach(button => button.addEventListener('click', async () => {
+        if (!confirm(`Hapus galeri “${button.dataset.title}”?`)) return;
+        const body = new FormData(); body.append('csrf_token', '{{ csrf_token() }}');
+        const response = await fetch(button.dataset.action, { method: 'POST', body });
+        const result = await response.json();
+        if (result.success) location.reload(); else showAlert(result.error || 'Gagal menghapus.', 'danger');
+    }));
+});
+function showAlert(message, type) { document.getElementById('alertPlaceholder').innerHTML = `<div class="alert alert-${type}">${message}</div>`; window.scrollTo({top: 0, behavior: 'smooth'}); }
 </script>
 {% endblock %}

@@ -1327,6 +1327,42 @@ CREATE INDEX IF NOT EXISTS idx_cms_artikel_files_artikel_id
 ON cms_artikel_files (artikel_id, created_at);
 """
 
+_CMS_PENGUMUMAN_SQL = """
+CREATE TABLE IF NOT EXISTS cms_pengumuman (
+    id SERIAL PRIMARY KEY,
+    judul TEXT NOT NULL,
+    kategori TEXT NOT NULL DEFAULT 'Pengumuman',
+    tanggal_publikasi DATE NOT NULL,
+    deskripsi TEXT NOT NULL,
+    thumbnail_path TEXT,
+    penulis TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'Aktif' CHECK (status IN ('Aktif', 'Tidak Aktif')),
+    status_publikasi TEXT NOT NULL DEFAULT 'Draft' CHECK (status_publikasi IN ('Draft', 'Published')),
+    files JSONB NOT NULL DEFAULT '[]'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_cms_pengumuman_public
+ON cms_pengumuman (status, status_publikasi, tanggal_publikasi DESC);
+"""
+
+_CMS_GALERI_SQL = """
+CREATE TABLE IF NOT EXISTS cms_galeri (
+    id SERIAL PRIMARY KEY,
+    nama_kegiatan TEXT NOT NULL,
+    tanggal_kegiatan DATE NOT NULL,
+    thumbnail_path TEXT,
+    gambar_kegiatan JSONB NOT NULL DEFAULT '[]'::jsonb,
+    penulis TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'Aktif' CHECK (status IN ('Aktif', 'Tidak Aktif')),
+    status_publikasi TEXT NOT NULL DEFAULT 'Draft' CHECK (status_publikasi IN ('Draft', 'Published')),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_cms_galeri_public
+ON cms_galeri (status, status_publikasi, tanggal_kegiatan DESC);
+"""
+
 # ===== Call Center Schema =====
 
 _CC_CONVERSATIONS_SQL = """
@@ -1787,6 +1823,8 @@ def ensure_dashboard_schema() -> None:
         _CMS_ARTIKEL_INDEX_SQL,
         _CMS_ARTIKEL_FILES_SQL,
         _CMS_ARTIKEL_FILES_INDEX_SQL,
+        _CMS_PENGUMUMAN_SQL,
+        _CMS_GALERI_SQL,
         # ===== Call Center tables =====
         _CC_CONVERSATIONS_SQL,
         _CC_CONVERSATIONS_INDEX_SQL,
@@ -2168,6 +2206,18 @@ def ensure_cms_artikel_schema() -> None:
             if "pg_type_typname_nsp_index" in message and "cms_artikel" in message:
                 continue
             print(f"Error executing CMS artikel schema statement #{i+1}: {e}")
+            print(f"Statement: {statement[:100]}...")
+            raise
+
+
+def ensure_cms_publication_schema() -> None:
+    """Create persistent CMS announcement and gallery tables."""
+    for i, statement in enumerate((_CMS_PENGUMUMAN_SQL, _CMS_GALERI_SQL)):
+        try:
+            with get_cursor(commit=True) as cur:
+                cur.execute(statement)
+        except Exception as e:
+            print(f"Error executing CMS publication schema statement #{i+1}: {e}")
             print(f"Statement: {statement[:100]}...")
             raise
 
@@ -2646,4 +2696,4 @@ def ensure_monev_bos_schema() -> None:
             print(f"Statement: {statement[:100]}...")
 
 
-__all__ = ["ensure_dashboard_schema", "ensure_cms_artikel_schema", "ensure_laporan_schema", "ensure_monev_bos_schema"]
+__all__ = ["ensure_dashboard_schema", "ensure_cms_artikel_schema", "ensure_cms_publication_schema", "ensure_laporan_schema", "ensure_monev_bos_schema"]

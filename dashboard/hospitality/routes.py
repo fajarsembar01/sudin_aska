@@ -173,6 +173,59 @@ def _parse_guestbook_date(raw_value: Optional[str]) -> Optional[date]:
         return None
 
 
+def _public_school_logo_url(value: Optional[str]) -> Optional[str]:
+    clean = (value or "").strip().replace("\\", "/")
+    if not clean:
+        return None
+    if clean.startswith(("http://", "https://")):
+        return clean
+    if "/portal/uploads/" in clean:
+        clean = clean.split("/portal/uploads/", 1)[1]
+    clean = clean.lstrip("/")
+    if clean.startswith("portal/uploads/"):
+        clean = clean[len("portal/uploads/") :]
+    elif clean.startswith("uploads/portal/"):
+        clean = clean[len("uploads/portal/") :]
+    elif clean.startswith("uploads/"):
+        clean = clean[len("uploads/") :]
+    if not clean or ".." in clean.split("/"):
+        return None
+    return url_for("portal.uploaded_file", filename=clean, _external=True)
+
+
+@hospitality_bp.route("/api/public/top-schools", methods=["GET"])
+def public_top_hospitality_schools() -> Response:
+    limit = min(11, max(1, request.args.get("limit", 11, type=int)))
+    min_reviews = max(300, request.args.get("min_reviews", 300, type=int))
+    rows = fetch_guestbook_review_top_schools(
+        limit=limit, min_reviews=min_reviews
+    )
+    schools = []
+    for raw in rows:
+        row = dict(raw)
+        schools.append(
+            {
+                "school_id": int(row.get("school_id") or 0),
+                "school_name": row.get("school_name") or "",
+                "npsn": row.get("npsn") or "",
+                "jenjang": row.get("jenjang") or "",
+                "logo_url": _public_school_logo_url(row.get("logo_url")),
+                "review_count": int(row.get("review_count") or 0),
+                "avg_rating": float(row.get("avg_rating") or 0),
+            }
+        )
+    response = jsonify(
+        {
+            "success": True,
+            "data": schools,
+            "meta": {"minimum_reviews": min_reviews, "limit": limit},
+        }
+    )
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
 def _list_active_schools(*, limit: int = 500) -> List[Dict[str, Any]]:
     safe_limit = max(1, min(int(limit or 500), 2000))
     with get_cursor() as cur:

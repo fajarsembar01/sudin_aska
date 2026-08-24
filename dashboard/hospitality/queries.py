@@ -1386,8 +1386,11 @@ def fetch_guestbook_review_rating_distribution(
     ]
 
 
-def fetch_guestbook_review_top_schools(*, limit: int = 10) -> List[Dict[str, Any]]:
+def fetch_guestbook_review_top_schools(
+    *, limit: int = 10, min_reviews: int = 1
+) -> List[Dict[str, Any]]:
     safe_limit = max(1, min(int(limit or 10), 100))
+    safe_min_reviews = max(1, min(int(min_reviews or 1), 1000000))
     _ensure_soft_delete_schema()
     with get_cursor() as cur:
         cur.execute(
@@ -1407,17 +1410,18 @@ def fetch_guestbook_review_top_schools(*, limit: int = 10) -> List[Dict[str, Any
                 s.name AS school_name,
                 s.npsn,
                 s.jenjang,
+                s.logo_url,
                 COUNT(*) AS review_count,
                 AVG(scored.rating)::DECIMAL(5,2) AS avg_rating,
                 MAX(scored.completed_at) AS last_completed_at
             FROM scored
             JOIN portal_schools s ON s.id = scored.school_id
-            GROUP BY s.id, s.name, s.npsn, s.jenjang
-            HAVING COUNT(*) > 0
+            GROUP BY s.id, s.name, s.npsn, s.jenjang, s.logo_url
+            HAVING COUNT(*) >= %s
             ORDER BY avg_rating DESC NULLS LAST, review_count DESC, s.name ASC
             LIMIT %s
             """,
-            (safe_limit,),
+            (safe_min_reviews, safe_limit),
         )
         return [dict(row) for row in cur.fetchall()]
 

@@ -1,13 +1,17 @@
 // File: src/app/page.tsx
 'use client'
 
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
+import LandingCmsSections from './components/LandingCmsSections'
+import type { CmsContent } from '@/lib/cms'
 
 const dashboardUrl = process.env.NEXT_PUBLIC_DASHBOARD_URL || 'https://admin.sudindikju2.com'
 
 export default function Page() {
   const isLoaded = true
   const askaButtonRef = useRef<HTMLAnchorElement>(null)
+  const [cmsContent, setCmsContent] = useState<CmsContent | null>(null)
+  const [cmsLoading, setCmsLoading] = useState(true)
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -16,10 +20,25 @@ export default function Page() {
     return () => clearTimeout(timer)
   }, [])
 
+  useEffect(() => {
+    const controller = new AbortController()
+    fetch('/api/konten-cms', { signal: controller.signal, cache: 'no-store' })
+      .then(response => response.ok ? response.json() : Promise.reject(new Error('CMS unavailable')))
+      .then(payload => setCmsContent(payload?.success && payload?.data ? payload.data : null))
+      .catch(error => {
+        if (error.name !== 'AbortError') setCmsContent(null)
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setCmsLoading(false)
+      })
+    return () => controller.abort()
+  }, [])
+
   return (
-    <main className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-slate-100 relative flex flex-col">
+    <main className="min-h-screen bg-slate-50">
+      <section id="beranda" className="relative flex min-h-screen flex-col overflow-hidden bg-gradient-to-br from-sky-50 via-white to-slate-100">
       {/* Animated Background Pattern */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-0 left-1/4 w-[400px] h-[400px] bg-gradient-to-br from-sky-200/30 to-blue-300/20 rounded-full blur-3xl animate-float" />
         <div className="absolute bottom-0 right-1/4 w-[350px] h-[350px] bg-gradient-to-br from-blue-200/25 to-indigo-300/15 rounded-full blur-3xl animate-float-delayed" />
         <div
@@ -32,7 +51,7 @@ export default function Page() {
       </div>
 
       {/* Navigation Bar */}
-      <nav className={`w-full px-4 sm:px-6 py-3 flex items-center justify-between z-20 flex-shrink-0 transition-all duration-500 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
+      <nav className={`hero-enter-nav w-full px-4 sm:px-6 py-3 flex items-center justify-between z-20 flex-shrink-0 transition-all duration-500 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
         {/* Logo */}
         <div className="flex items-center gap-2 group cursor-pointer">
           <img
@@ -51,7 +70,27 @@ export default function Page() {
         </div>
 
         {/* Desktop nav buttons */}
-        <div className="hidden sm:flex items-center gap-3">
+        <div className="hidden xl:flex items-center gap-3">
+          <a
+            href="#tentang"
+            className="relative inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-xs font-bold text-sky-700 shadow-sm ring-1 ring-sky-500/30 transition-all duration-300 hover:scale-105 hover:shadow-md active:scale-95"
+          >
+            <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 21h18M5 21V7l7-4 7 4v14M9 10h1m4 0h1M9 14h1m4 0h1M9 18h6" />
+            </svg>
+            <span>Profil Instansi</span>
+          </a>
+
+          <a
+            href="#informasi-publik"
+            className="relative inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-xs font-bold text-indigo-700 shadow-sm ring-1 ring-indigo-500/30 transition-all duration-300 hover:scale-105 hover:shadow-md active:scale-95"
+          >
+            <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 4h14v16H5zM8 8h8M8 12h8M8 16h5" />
+            </svg>
+            <span>Informasi</span>
+          </a>
+
           <a
             href="/live-spmb"
             className="relative inline-flex items-center gap-2 group/btn px-4 py-2 overflow-hidden rounded-full bg-white text-emerald-600 font-bold text-xs shadow-sm hover:shadow-md hover:scale-105 active:scale-95 transition-all duration-300 ring-1 ring-emerald-500/30"
@@ -88,8 +127,28 @@ export default function Page() {
           </a>
         </div>
 
-        {/* Mobile: only Portal Kepegawaian icon button */}
-        <div className="sm:hidden">
+        {/* Mobile navigation */}
+        <div className="flex items-center gap-2 xl:hidden">
+          <a
+            href="#tentang"
+            aria-label="Profil Instansi"
+            title="Profil Instansi"
+            className="grid h-9 w-9 place-items-center rounded-full bg-white text-sky-700 shadow-sm ring-1 ring-sky-500/30 transition active:scale-95"
+          >
+            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 21h18M5 21V7l7-4 7 4v14M9 10h1m4 0h1M9 14h1m4 0h1M9 18h6" />
+            </svg>
+          </a>
+          <a
+            href="#informasi-publik"
+            aria-label="Informasi dan Layanan Publik"
+            title="Informasi dan Layanan Publik"
+            className="grid h-9 w-9 place-items-center rounded-full bg-white text-indigo-700 shadow-sm ring-1 ring-indigo-500/30 transition active:scale-95"
+          >
+            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 4h14v16H5zM8 8h8M8 12h8M8 16h5" />
+            </svg>
+          </a>
           <a
             href={dashboardUrl}
             target="_blank"
@@ -110,7 +169,7 @@ export default function Page() {
           <div className="grid lg:grid-cols-2 gap-6 lg:gap-12 items-center">
 
             {/* Left Column */}
-            <div className={`order-2 lg:order-1 text-center lg:text-left transition-all duration-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+            <div className={`hero-enter-copy order-2 lg:order-1 text-center lg:text-left transition-all duration-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
               <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/80 rounded-full mb-3 border border-sky-200/50 shadow-sm">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -174,7 +233,7 @@ export default function Page() {
             </div>
 
             {/* Right Column - Video Card */}
-            <div className={`order-1 lg:order-2 transition-all duration-700 ${isLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}>
+            <div className={`hero-enter-visual order-1 lg:order-2 transition-all duration-700 ${isLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}>
               <div className="relative max-w-xs sm:max-w-sm mx-auto lg:max-w-none animate-float">
                 {/* Aura */}
                 <div className="absolute -top-10 -right-10 w-80 h-80 bg-sky-400/60 rounded-full blur-[80px] pointer-events-none" />
@@ -230,13 +289,23 @@ export default function Page() {
         </div>
       </div>
 
-      {/* Footer */}
+      <a href="#tentang" className="hero-enter-cue absolute bottom-14 left-1/2 z-20 flex -translate-x-1/2 flex-col items-center gap-1 text-[10px] font-bold uppercase tracking-[.18em] text-sky-700 transition hover:text-sky-900" aria-label="Gulir ke profil instansi">
+        <span className="hidden sm:inline">Jelajahi Profil</span>
+        <span className="grid h-8 w-8 place-items-center rounded-full border border-sky-300 bg-white/80 shadow-sm backdrop-blur animate-bounce">
+          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="m6 9 6 6 6-6" /></svg>
+        </span>
+      </a>
+
+      {/* Hero footer */}
       <footer className={`w-full px-4 py-3 border-t border-slate-200/50 bg-white/40 flex-shrink-0 transition-opacity duration-500 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
         <div className="max-w-5xl mx-auto flex items-center justify-between text-xs text-slate-500">
-          <span>© 2025 Sudin Pendidikan JU 2</span>
+          <span>Sudin Pendidikan JU 2</span>
           <span className="hidden sm:inline">Dibangun dengan ❤️ untuk pendidikan</span>
         </div>
       </footer>
+      </section>
+
+      <LandingCmsSections content={cmsContent} loading={cmsLoading} />
 
       <style jsx global>{`
         @keyframes float {
@@ -247,8 +316,28 @@ export default function Page() {
           0%, 100% { transform: translateY(0px); }
           50% { transform: translateY(-10px); }
         }
+        @keyframes hero-nav-enter {
+          from { opacity: 0; transform: translateY(-18px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes hero-copy-enter {
+          from { opacity: 0; transform: translate3d(-38px, 26px, 0); }
+          to { opacity: 1; transform: translate3d(0, 0, 0); }
+        }
+        @keyframes hero-visual-enter {
+          from { opacity: 0; transform: translate3d(42px, 18px, 0) scale(.92); }
+          to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+        }
+        @keyframes hero-cue-enter {
+          from { opacity: 0; transform: translate(-50%, 18px); }
+          to { opacity: 1; transform: translate(-50%, 0); }
+        }
         .animate-float { animation: float 6s ease-in-out infinite; }
         .animate-float-delayed { animation: float-delayed 8s ease-in-out infinite; animation-delay: -2s; }
+        .hero-enter-nav { animation: hero-nav-enter .7s .05s both cubic-bezier(.22,1,.36,1); }
+        .hero-enter-copy { animation: hero-copy-enter .9s .18s both cubic-bezier(.22,1,.36,1); }
+        .hero-enter-visual { animation: hero-visual-enter 1s .32s both cubic-bezier(.22,1,.36,1); }
+        .hero-enter-cue { animation: hero-cue-enter .8s 1.15s both cubic-bezier(.22,1,.36,1); }
       `}</style>
     </main>
   )

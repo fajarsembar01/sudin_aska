@@ -1372,6 +1372,123 @@ def _build_photo_thumb_url(
     )
 
 
+def _serialize_public_guestbook_photo(row: dict) -> dict:
+    captured_at = row.get("captured_at")
+    return {
+        "transaction_id": int(row.get("transaction_id") or 0),
+        "school_id": int(row.get("school_id") or 0),
+        "school_name": row.get("school_name") or "Sekolah",
+        "school_jenjang": row.get("school_jenjang") or "",
+        "guest_names": row.get("guest_names") or "Staff Sudin Pendidikan",
+        "guest_count": int(row.get("guest_count") or 0),
+        "purpose": row.get("purpose") or "Kunjungan ke sekolah",
+        "captured_at": captured_at.isoformat() if captured_at else None,
+        "photo_url": _build_photo_url(row.get("photo_path"), external=True),
+    }
+
+
+@daftar_tamu_bp.route("/api/public/staff-visit-photos", methods=["GET"])
+def public_staff_visit_photos() -> Response:
+    limit = min(12, max(4, request.args.get("limit", 12, type=int)))
+    newest_rows = fetch_guestbook_gallery_photos(
+        limit=limit,
+        guest_scope="sudin",
+        order="newest",
+    )
+    newest_ids = {int(row.get("transaction_id") or 0) for row in newest_rows}
+    random_candidates = fetch_guestbook_gallery_photos(
+        limit=min(100, limit * 5),
+        guest_scope="sudin",
+        order="random",
+    )
+    random_rows = [
+        row
+        for row in random_candidates
+        if int(row.get("transaction_id") or 0) not in newest_ids
+    ][:limit]
+    if len(random_rows) < limit:
+        selected_ids = {int(row.get("transaction_id") or 0) for row in random_rows}
+        random_rows.extend(
+            row
+            for row in random_candidates
+            if int(row.get("transaction_id") or 0) not in selected_ids
+        )
+        random_rows = random_rows[:limit]
+
+    response = jsonify(
+        {
+            "success": True,
+            "data": {
+                "random": [_serialize_public_guestbook_photo(row) for row in random_rows],
+                "newest": [_serialize_public_guestbook_photo(row) for row in newest_rows],
+            },
+        }
+    )
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
+@daftar_tamu_bp.route("/api/public/service-usage-stats", methods=["GET"])
+def public_service_usage_stats() -> Response:
+    """Return live unique-user totals for public-facing service cards."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT COUNT(DISTINCT user_id) AS total
+            FROM chat_logs
+            WHERE role = 'user' AND user_id IS NOT NULL
+            """
+        )
+        aska_unique_users = int((cur.fetchone() or {}).get("total") or 0)
+
+        cur.execute(
+            """
+            WITH guest_usage AS (
+                SELECT general_guest_id, full_name, email, phone
+                FROM daftar_tamu_general_transaction_guests
+                UNION ALL
+                SELECT tg.general_guest_id, g.full_name, g.email, g.phone
+                FROM daftar_tamu_transaction_guests tg
+                LEFT JOIN daftar_tamu_general_guests g
+                    ON g.id = tg.general_guest_id
+                WHERE tg.guest_type = 'umum'
+            )
+            SELECT COUNT(DISTINCT COALESCE(
+                'id:' || general_guest_id::text,
+                CASE
+                    WHEN NULLIF(LOWER(TRIM(email)), '') IS NOT NULL
+                    THEN 'email:' || LOWER(TRIM(email))
+                END,
+                CASE
+                    WHEN NULLIF(REGEXP_REPLACE(COALESCE(phone, ''), '\\D', '', 'g'), '') IS NOT NULL
+                    THEN 'phone:' || REGEXP_REPLACE(phone, '\\D', '', 'g')
+                END,
+                CASE
+                    WHEN NULLIF(LOWER(TRIM(full_name)), '') IS NOT NULL
+                    THEN 'name:' || LOWER(TRIM(full_name))
+                END
+            )) AS total
+            FROM guest_usage
+            """
+        )
+        guestbook_unique_users = int((cur.fetchone() or {}).get("total") or 0)
+
+    response = jsonify(
+        {
+            "success": True,
+            "data": {
+                "aska_unique_users": aska_unique_users,
+                "guestbook_unique_users": guestbook_unique_users,
+                "updated_at": current_jakarta_time().isoformat(),
+            },
+        }
+    )
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
 def _format_guest_reference_button_label(
     *,
     kind: str,

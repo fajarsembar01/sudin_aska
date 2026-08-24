@@ -568,7 +568,7 @@ def list_random_adiwiyata_photos(limit: int = 12) -> list[dict]:
 
 
 def list_adiwiyata_photos_sorted(limit: int = 6, sort: str = "newest") -> list[dict]:
-    """Ambil foto (image only) untuk sidebar, diurut berdasarkan terbaru atau jumlah like."""
+    """Ambil posting Adiwiyata, diurut berdasarkan terbaru atau jumlah like."""
     order = "p.created_at DESC"
     if sort == "top":
         order = "COALESCE(lk.likes, 0) DESC, p.created_at DESC"
@@ -593,7 +593,6 @@ def list_adiwiyata_photos_sorted(limit: int = 6, sort: str = "newest") -> list[d
                 SELECT post_id, COUNT(*) AS likes
                 FROM adiwiyata_post_likes WHERE action = 'like' GROUP BY post_id
             ) lk ON lk.post_id = p.id
-            WHERE p.media_type = 'image'
             ORDER BY {order}
             LIMIT %s
             """,
@@ -610,7 +609,7 @@ def list_adiwiyata_photos_sorted(limit: int = 6, sort: str = "newest") -> list[d
         row = dict(raw)
         val = row.get("media_path") or ""
         urls = []
-        if val.strip().startswith("[") and val.strip().endswith("]"):
+        if row.get("media_type") == "image" and val.strip().startswith("[") and val.strip().endswith("]"):
             try:
                 paths = json.loads(val)
                 if isinstance(paths, list) and paths:
@@ -621,26 +620,27 @@ def list_adiwiyata_photos_sorted(limit: int = 6, sort: str = "newest") -> list[d
                     ]
             except Exception:
                 pass
-        if not urls and val:
+        if row.get("media_type") == "image" and not urls and val:
             urls = [url_for("portal.uploaded_file", filename=val, _external=True)]
-        if urls:
-            created_at = row.get("created_at")
-            rows.append(
-                {
-                    "id": row["id"],
-                    "url": urls[0],
-                    "media_urls": urls,
-                    "school_id": row.get("school_id"),
-                    "school_name": row.get("school_name", ""),
-                    "school_logo_url": _build_school_logo_url(
-                        row.get("school_logo_url"), external=True
-                    ),
-                    "category": row.get("category", ""),
-                    "description": row.get("description") or "",
-                    "created_at": created_at.isoformat() if created_at else None,
-                    "likes": int(row.get("likes") or 0),
-                }
-            )
+        created_at = row.get("created_at")
+        rows.append(
+            {
+                "id": row["id"],
+                "url": urls[0] if urls else "",
+                "media_urls": urls,
+                "media_type": row.get("media_type") or "image",
+                "media_path": val,
+                "school_id": row.get("school_id"),
+                "school_name": row.get("school_name", ""),
+                "school_logo_url": _build_school_logo_url(
+                    row.get("school_logo_url"), external=True
+                ),
+                "category": row.get("category", ""),
+                "description": row.get("description") or "",
+                "created_at": created_at.isoformat() if created_at else None,
+                "likes": int(row.get("likes") or 0),
+            }
+        )
     return rows
 
 

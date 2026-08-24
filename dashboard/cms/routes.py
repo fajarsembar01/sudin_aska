@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 from datetime import datetime
 from pathlib import Path, PurePosixPath
@@ -12,7 +13,7 @@ from werkzeug.utils import secure_filename
 
 from dashboard.auth import current_user, role_required
 from dashboard.db_access import get_cursor
-from dashboard.schema import ensure_cms_artikel_schema
+from dashboard.schema import ensure_cms_artikel_schema, ensure_cms_publication_schema
 
 cms_bp = Blueprint("cms", __name__, url_prefix="/cms", template_folder="templates")
 
@@ -24,7 +25,21 @@ UPLOAD_PROFIL = CMS_UPLOAD_ROOT / "profil_instansi"
 UPLOAD_ARTIKEL_ROOT = CMS_UPLOAD_ROOT / "artikel"
 UPLOAD_ARTIKEL_THUMBNAILS = UPLOAD_ARTIKEL_ROOT / "thumbnails"
 UPLOAD_ARTIKEL_ATTACHMENTS = UPLOAD_ARTIKEL_ROOT / "attachments"
-for _path in (UPLOAD_PROFIL, UPLOAD_ARTIKEL_THUMBNAILS, UPLOAD_ARTIKEL_ATTACHMENTS):
+UPLOAD_PENGUMUMAN_ROOT = CMS_UPLOAD_ROOT / "pengumuman"
+UPLOAD_PENGUMUMAN_THUMBNAILS = UPLOAD_PENGUMUMAN_ROOT / "thumbnails"
+UPLOAD_PENGUMUMAN_ATTACHMENTS = UPLOAD_PENGUMUMAN_ROOT / "attachments"
+UPLOAD_GALERI_ROOT = CMS_UPLOAD_ROOT / "galeri"
+UPLOAD_GALERI_THUMBNAILS = UPLOAD_GALERI_ROOT / "thumbnails"
+UPLOAD_GALERI_IMAGES = UPLOAD_GALERI_ROOT / "images"
+for _path in (
+    UPLOAD_PROFIL,
+    UPLOAD_ARTIKEL_THUMBNAILS,
+    UPLOAD_ARTIKEL_ATTACHMENTS,
+    UPLOAD_PENGUMUMAN_THUMBNAILS,
+    UPLOAD_PENGUMUMAN_ATTACHMENTS,
+    UPLOAD_GALERI_THUMBNAILS,
+    UPLOAD_GALERI_IMAGES,
+):
     _path.mkdir(parents=True, exist_ok=True)
 
 ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
@@ -56,6 +71,7 @@ ARTICLE_CATEGORIES = (
     "Informasi",
 )
 _CMS_ARTIKEL_SCHEMA_READY = False
+_CMS_PUBLICATION_SCHEMA_READY = False
 
 
 def allowed_file(filename):
@@ -133,6 +149,10 @@ def _build_upload_url(stored_path: str | None) -> str | None:
     if not normalized.startswith("uploads/portal/"):
         return None
 
+    target_path = _resolve_stored_upload_path(normalized)
+    if not target_path or not target_path.is_file():
+        return None
+
     relative = normalized[len("uploads/portal/") :].lstrip("/")
     if not relative:
         return None
@@ -184,6 +204,97 @@ def _ensure_artikel_schema() -> None:
         if "pg_type_typname_nsp_index" not in message or "cms_artikel" not in message:
             raise
     _CMS_ARTIKEL_SCHEMA_READY = True
+
+
+def _ensure_publication_schema() -> None:
+    global _CMS_PUBLICATION_SCHEMA_READY
+    if _CMS_PUBLICATION_SCHEMA_READY:
+        return
+    ensure_cms_publication_schema()
+    _CMS_PUBLICATION_SCHEMA_READY = True
+
+
+def _parse_date_field(name: str, label: str):
+    raw_value = (request.form.get(name) or "").strip()
+    if not raw_value:
+        raise ValueError(f"{label} wajib diisi.")
+    try:
+        return datetime.strptime(raw_value, "%Y-%m-%d").date()
+    except ValueError as exc:
+        raise ValueError(f"Format {label.lower()} tidak valid.") from exc
+
+
+def _publication_status() -> tuple[str, str]:
+    status = "Aktif" if request.form.get("statusAktif") == "Aktif" else "Tidak Aktif"
+    publication = (
+        "Published"
+        if request.form.get("statusPublikasi") == "Published"
+        else "Draft"
+    )
+    return status, publication
+
+
+def _save_file_entries(
+    files,
+    *,
+    upload_dir: Path,
+    prefix: str,
+    validator,
+    max_size: int,
+    label: str,
+) -> list[dict]:
+    entries: list[dict] = []
+    for file_storage in files:
+        if not _safe_client_filename(getattr(file_storage, "filename", "")):
+            continue
+        original_name, stored_path = _save_uploaded_asset(
+            file_storage,
+            upload_dir=upload_dir,
+            prefix=prefix,
+            max_size=max_size,
+            validator=validator,
+            label=label,
+        )
+        entries.append(
+            {
+                "id": os.urandom(6).hex(),
+                "name": original_name,
+                "path": stored_path,
+            }
+        )
+    return entries
+
+
+def _json_list(value) -> list[dict]:
+    if isinstance(value, list):
+        return [item for item in value if isinstance(item, dict)]
+    if isinstance(value, str):
+        try:
+            parsed = json.loads(value)
+            if isinstance(parsed, list):
+                return [item for item in parsed if isinstance(item, dict)]
+        except (TypeError, ValueError):
+            pass
+    return []
+
+
+def _serialize_media_entries(value) -> list[dict]:
+    return [
+        {**entry, "url": _build_upload_url(entry.get("path"))}
+        for entry in _json_list(value)
+    ]
+
+
+def _stored_media_entries(value) -> list[dict]:
+    return [
+        {
+            "id": entry.get("id") or os.urandom(6).hex(),
+            "name": entry.get("name") or Path(entry.get("path") or "file").name,
+            "path": entry.get("path"),
+        }
+        for entry in _json_list(value)
+        if entry.get("path")
+    ]
 
 
 def _parse_int_list(values: Iterable[str]) -> list[int]:
@@ -353,6 +464,24 @@ def _get_profil_instansi():
     return dict(row)
 
 
+def _serialize_public_profil_instansi(profil: dict | None) -> dict:
+    """Bangun payload profil yang stabil untuk landing page publik."""
+    profil = profil or {}
+    updated_at = profil.get("updated_at")
+
+    return {
+        "deskripsi_utama": profil.get("cms_deskripsi_utama") or "",
+        "visi": profil.get("cms_visi") or "",
+        "misi": profil.get("cms_misi") or "",
+        "tugas_fungsi": profil.get("cms_tugas_fungsi") or "",
+        "motto_pelayanan": profil.get("cms_motto_pelayanan") or "",
+        "struktur_organisasi_url": _build_upload_url(
+            profil.get("cms_struktur_organisasi")
+        ),
+        "updated_at": updated_at.isoformat() if updated_at else None,
+    }
+
+
 def _save_profil_instansi(data):
     """Simpan atau update profil instansi."""
     with get_cursor(commit=True) as cur:
@@ -518,6 +647,18 @@ def profil():
     profil_data = _get_profil_instansi()
 
     return render_template("cms/profil_instansi.html", profil=profil_data or {})
+
+
+@cms_bp.route("/api/public/profil", methods=["GET"])
+def public_profil():
+    """Endpoint baca-saja untuk menampilkan profil CMS pada landing page."""
+    profil_data = _get_profil_instansi()
+    return jsonify(
+        {
+            "success": True,
+            "data": _serialize_public_profil_instansi(profil_data),
+        }
+    )
 
 
 def _get_informasi_publik():
@@ -1057,91 +1198,449 @@ def delete_artikel(artikel_id: int):
         return jsonify({"success": False, "error": str(exc)}), 500
 
 
-@cms_bp.route("/pengumuman")
+def _serialize_pengumuman(row: dict) -> dict:
+    date_value = row.get("tanggal_publikasi")
+    return {
+        "id": row.get("id"),
+        "judul": row.get("judul") or "",
+        "kategori": row.get("kategori") or "Pengumuman",
+        "tanggal": date_value.isoformat() if date_value else "",
+        "deskripsi": row.get("deskripsi") or "",
+        "thumbnail_path": row.get("thumbnail_path"),
+        "thumbnail_url": _build_upload_url(row.get("thumbnail_path")),
+        "penulis": row.get("penulis") or "-",
+        "status": row.get("status") or "Tidak Aktif",
+        "status_publikasi": row.get("status_publikasi") or "Draft",
+        "files": _serialize_media_entries(row.get("files")),
+    }
+
+
+def _fetch_pengumuman(*, public_only: bool = False) -> list[dict]:
+    _ensure_publication_schema()
+    where_clause = ""
+    if public_only:
+        where_clause = "WHERE status = 'Aktif' AND status_publikasi = 'Published' AND tanggal_publikasi <= CURRENT_DATE"
+    with get_cursor() as cur:
+        cur.execute(
+            f"SELECT * FROM cms_pengumuman {where_clause} "
+            "ORDER BY tanggal_publikasi DESC, created_at DESC, id DESC"
+        )
+        return [_serialize_pengumuman(dict(row)) for row in cur.fetchall()]
+
+
+def _get_pengumuman(pengumuman_id: int) -> dict | None:
+    _ensure_publication_schema()
+    with get_cursor() as cur:
+        cur.execute("SELECT * FROM cms_pengumuman WHERE id = %s", (pengumuman_id,))
+        row = cur.fetchone()
+    return _serialize_pengumuman(dict(row)) if row else None
+
+
+def _parse_pengumuman_form() -> dict:
+    judul = (request.form.get("judul") or "").strip()
+    deskripsi = request.form.get("deskripsi") or ""
+    if not judul or not deskripsi.strip():
+        raise ValueError("Judul dan isi pengumuman wajib diisi.")
+    status, publication = _publication_status()
+    return {
+        "judul": judul,
+        "kategori": (request.form.get("kategori") or "Pengumuman").strip(),
+        "tanggal": _parse_date_field("tanggal", "Tanggal publikasi"),
+        "deskripsi": deskripsi,
+        "penulis": (request.form.get("penulis") or _current_author_name()).strip(),
+        "status": status,
+        "publication": publication,
+    }
+
+
+@cms_bp.route("/pengumuman", methods=["GET", "POST"])
 @role_required("admin")
 def pengumuman():
-    """Halaman untuk mengelola pengumuman (media & publikasi)."""
+    """Kelola pengumuman persisten yang dapat dipublikasikan ke LP."""
+    _ensure_publication_schema()
+    if request.method == "POST":
+        saved_paths: list[str] = []
+        try:
+            payload = _parse_pengumuman_form()
+            thumbnail_path = None
+            thumbnail = request.files.get("thumbnail")
+            if thumbnail and _safe_client_filename(thumbnail.filename):
+                _, thumbnail_path = _save_uploaded_asset(
+                    thumbnail,
+                    upload_dir=UPLOAD_PENGUMUMAN_THUMBNAILS,
+                    prefix="pengumuman_thumb",
+                    max_size=MAX_IMAGE_SIZE,
+                    validator=allowed_file,
+                    label="Thumbnail",
+                )
+                saved_paths.append(thumbnail_path)
+            files = _save_file_entries(
+                request.files.getlist("lampiran"),
+                upload_dir=UPLOAD_PENGUMUMAN_ATTACHMENTS,
+                prefix="pengumuman_file",
+                validator=_allowed_attachment_file,
+                max_size=MAX_ATTACHMENT_SIZE,
+                label="Lampiran",
+            )
+            saved_paths.extend(item["path"] for item in files)
+            with get_cursor(commit=True) as cur:
+                cur.execute(
+                    """INSERT INTO cms_pengumuman
+                    (judul, kategori, tanggal_publikasi, deskripsi, thumbnail_path,
+                     penulis, status, status_publikasi, files)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s::jsonb)""",
+                    (
+                        payload["judul"], payload["kategori"], payload["tanggal"],
+                        payload["deskripsi"], thumbnail_path, payload["penulis"],
+                        payload["status"], payload["publication"], json.dumps(files),
+                    ),
+                )
+            return jsonify({"success": True, "message": "Pengumuman berhasil ditambahkan."})
+        except Exception as exc:
+            for path in saved_paths:
+                _delete_stored_file(path)
+            status_code = 400 if isinstance(exc, ValueError) else 500
+            return jsonify({"success": False, "error": str(exc)}), status_code
 
-    # Dummy data
-    dummy_pengumuman = [
-        {
-            "id": 1,
-            "judul": "Pengumuman Libur Nasional Hari Raya 2024",
-            "kategori": "Pengumuman",
-            "tanggal": "2024-03-20",
-            "deskripsi": "<p>Diberitahukan kepada seluruh jajaran bahwa libur nasional akan dilaksanakan pada...</p>",
-            "thumbnail": "libur_nasional.jpg",
-            "penulis": "Admin Sudin JU2",
-            "status": "Aktif",
-            "status_publikasi": "Published",
-            "files": ["Surat_Edaran_Libur.pdf"],
-        },
-        {
-            "id": 2,
-            "judul": "Hasil Seleksi OSN Tingkat Kota Jakarta Utara",
-            "kategori": "Kegiatan",
-            "tanggal": "2024-02-15",
-            "deskripsi": "<p>Selamat kepada para siswa yang telah lolos seleksi OSN. Berikut daftarnya:</p>",
-            "thumbnail": "hasil_osn.png",
-            "penulis": "Tim Kurikulum",
-            "status": "Aktif",
-            "status_publikasi": "Published",
-            "files": ["Daftar_Lolos_OSN_2024.pdf"],
-        },
-        {
-            "id": 3,
-            "judul": "Pendaftaran Lomba Guru Berprestasi V",
-            "kategori": "Pendidikan",
-            "tanggal": "2024-01-10",
-            "deskripsi": "<p>Pendaftaran telah resmi dibatalkan untuk sementara waktu karena <em>force majeure</em>.</p>",
-            "thumbnail": "lomba_guru.jpg",
-            "penulis": "Humas Sudin JU2",
-            "status": "Tidak Aktif",
-            "status_publikasi": "Draft",
-            "files": ["Revisi_Jadwal.pdf"],
-        },
-    ]
-
-    return render_template("cms/pengumuman.html", pengumuman=dummy_pengumuman)
+    return render_template(
+        "cms/pengumuman.html",
+        pengumuman=_fetch_pengumuman(),
+        default_penulis=_current_author_name(),
+    )
 
 
-@cms_bp.route("/galeri-kegiatan")
+@cms_bp.route("/pengumuman/<int:pengumuman_id>/update", methods=["POST"])
+@role_required("admin")
+def update_pengumuman(pengumuman_id: int):
+    existing = _get_pengumuman(pengumuman_id)
+    if not existing:
+        return jsonify({"success": False, "error": "Pengumuman tidak ditemukan."}), 404
+    saved_paths: list[str] = []
+    cleanup_paths: list[str] = []
+    try:
+        payload = _parse_pengumuman_form()
+        thumbnail_path = existing.get("thumbnail_path")
+        thumbnail = request.files.get("thumbnail")
+        if thumbnail and _safe_client_filename(thumbnail.filename):
+            _, thumbnail_path = _save_uploaded_asset(
+                thumbnail,
+                upload_dir=UPLOAD_PENGUMUMAN_THUMBNAILS,
+                prefix=f"pengumuman_thumb_{pengumuman_id}",
+                max_size=MAX_IMAGE_SIZE,
+                validator=allowed_file,
+                label="Thumbnail",
+            )
+            saved_paths.append(thumbnail_path)
+            if existing.get("thumbnail_path"):
+                cleanup_paths.append(existing["thumbnail_path"])
+        new_files = _save_file_entries(
+            request.files.getlist("lampiran"),
+            upload_dir=UPLOAD_PENGUMUMAN_ATTACHMENTS,
+            prefix=f"pengumuman_file_{pengumuman_id}",
+            validator=_allowed_attachment_file,
+            max_size=MAX_ATTACHMENT_SIZE,
+            label="Lampiran",
+        )
+        saved_paths.extend(item["path"] for item in new_files)
+        deleted_ids = set(request.form.getlist("hapus_file_ids"))
+        kept_files = []
+        for entry in _stored_media_entries(existing.get("files")):
+            if str(entry.get("id")) in deleted_ids:
+                cleanup_paths.append(entry["path"])
+            else:
+                kept_files.append(entry)
+        files = kept_files + new_files
+        with get_cursor(commit=True) as cur:
+            cur.execute(
+                """UPDATE cms_pengumuman SET judul=%s, kategori=%s,
+                tanggal_publikasi=%s, deskripsi=%s, thumbnail_path=%s, penulis=%s,
+                status=%s, status_publikasi=%s, files=%s::jsonb, updated_at=NOW()
+                WHERE id=%s""",
+                (
+                    payload["judul"], payload["kategori"], payload["tanggal"],
+                    payload["deskripsi"], thumbnail_path, payload["penulis"],
+                    payload["status"], payload["publication"], json.dumps(files),
+                    pengumuman_id,
+                ),
+            )
+        for path in cleanup_paths:
+            _delete_stored_file(path)
+        return jsonify({"success": True, "message": "Pengumuman berhasil diperbarui."})
+    except Exception as exc:
+        for path in saved_paths:
+            _delete_stored_file(path)
+        status_code = 400 if isinstance(exc, ValueError) else 500
+        return jsonify({"success": False, "error": str(exc)}), status_code
+
+
+@cms_bp.route("/pengumuman/<int:pengumuman_id>/delete", methods=["POST"])
+@role_required("admin")
+def delete_pengumuman(pengumuman_id: int):
+    existing = _get_pengumuman(pengumuman_id)
+    if not existing:
+        return jsonify({"success": False, "error": "Pengumuman tidak ditemukan."}), 404
+    with get_cursor(commit=True) as cur:
+        cur.execute("DELETE FROM cms_pengumuman WHERE id = %s", (pengumuman_id,))
+    paths = [existing.get("thumbnail_path")]
+    paths.extend(item.get("path") for item in existing.get("files", []))
+    for path in paths:
+        _delete_stored_file(path)
+    return jsonify({"success": True, "message": "Pengumuman berhasil dihapus."})
+
+
+def _serialize_galeri(row: dict) -> dict:
+    date_value = row.get("tanggal_kegiatan")
+    return {
+        "id": row.get("id"),
+        "nama_kegiatan": row.get("nama_kegiatan") or "",
+        "tanggal": date_value.isoformat() if date_value else "",
+        "thumbnail_path": row.get("thumbnail_path"),
+        "thumbnail_url": _build_upload_url(row.get("thumbnail_path")),
+        "gambar_kegiatan": _serialize_media_entries(row.get("gambar_kegiatan")),
+        "penulis": row.get("penulis") or "-",
+        "status": row.get("status") or "Tidak Aktif",
+        "status_publikasi": row.get("status_publikasi") or "Draft",
+    }
+
+
+def _fetch_galeri(*, public_only: bool = False) -> list[dict]:
+    _ensure_publication_schema()
+    where_clause = ""
+    if public_only:
+        where_clause = "WHERE status = 'Aktif' AND status_publikasi = 'Published' AND tanggal_kegiatan <= CURRENT_DATE"
+    with get_cursor() as cur:
+        cur.execute(
+            f"SELECT * FROM cms_galeri {where_clause} "
+            "ORDER BY tanggal_kegiatan DESC, created_at DESC, id DESC"
+        )
+        return [_serialize_galeri(dict(row)) for row in cur.fetchall()]
+
+
+def _get_galeri(galeri_id: int) -> dict | None:
+    _ensure_publication_schema()
+    with get_cursor() as cur:
+        cur.execute("SELECT * FROM cms_galeri WHERE id = %s", (galeri_id,))
+        row = cur.fetchone()
+    return _serialize_galeri(dict(row)) if row else None
+
+
+def _parse_galeri_form() -> dict:
+    name = (request.form.get("nama_kegiatan") or "").strip()
+    if not name:
+        raise ValueError("Nama kegiatan wajib diisi.")
+    status, publication = _publication_status()
+    return {
+        "name": name,
+        "tanggal": _parse_date_field("tanggal", "Tanggal kegiatan"),
+        "penulis": (request.form.get("penulis") or _current_author_name()).strip(),
+        "status": status,
+        "publication": publication,
+    }
+
+
+@cms_bp.route("/galeri-kegiatan", methods=["GET", "POST"])
 @role_required("admin")
 def galeri_kegiatan():
-    """Halaman untuk mengelola galeri kegiatan (media & publikasi)."""
+    """Kelola galeri persisten yang dapat dipublikasikan ke LP."""
+    _ensure_publication_schema()
+    if request.method == "POST":
+        saved_paths: list[str] = []
+        try:
+            payload = _parse_galeri_form()
+            thumbnail_path = None
+            thumbnail = request.files.get("thumbnail")
+            if thumbnail and _safe_client_filename(thumbnail.filename):
+                _, thumbnail_path = _save_uploaded_asset(
+                    thumbnail,
+                    upload_dir=UPLOAD_GALERI_THUMBNAILS,
+                    prefix="galeri_thumb",
+                    max_size=MAX_IMAGE_SIZE,
+                    validator=allowed_file,
+                    label="Thumbnail",
+                )
+                saved_paths.append(thumbnail_path)
+            images = _save_file_entries(
+                request.files.getlist("gambar_kegiatan"),
+                upload_dir=UPLOAD_GALERI_IMAGES,
+                prefix="galeri_image",
+                validator=allowed_file,
+                max_size=MAX_IMAGE_SIZE,
+                label="Gambar kegiatan",
+            )
+            saved_paths.extend(item["path"] for item in images)
+            if not images:
+                raise ValueError("Minimal satu gambar kegiatan wajib diunggah.")
+            with get_cursor(commit=True) as cur:
+                cur.execute(
+                    """INSERT INTO cms_galeri
+                    (nama_kegiatan, tanggal_kegiatan, thumbnail_path, gambar_kegiatan,
+                     penulis, status, status_publikasi)
+                    VALUES (%s, %s, %s, %s::jsonb, %s, %s, %s)""",
+                    (
+                        payload["name"], payload["tanggal"], thumbnail_path,
+                        json.dumps(images), payload["penulis"], payload["status"],
+                        payload["publication"],
+                    ),
+                )
+            return jsonify({"success": True, "message": "Galeri berhasil ditambahkan."})
+        except Exception as exc:
+            for path in saved_paths:
+                _delete_stored_file(path)
+            status_code = 400 if isinstance(exc, ValueError) else 500
+            return jsonify({"success": False, "error": str(exc)}), status_code
 
-    # Dummy data
-    dummy_galeri = [
-        {
-            "id": 1,
-            "nama_kegiatan": "Peringatan Hari Guru Nasional 2023",
-            "tanggal": "2023-11-25",
-            "thumbnail": "hari_guru.jpg",
-            "gambar_kegiatan": ["kegiatan_1.jpg", "kegiatan_2.jpg", "kegiatan_3.jpg"],
-            "penulis": "Humas Sudin JU2",
-            "status": "Aktif",
-            "status_publikasi": "Published",
-        },
-        {
-            "id": 2,
-            "nama_kegiatan": "Pusdiklat Kepemimpinan Kepala Sekolah",
-            "tanggal": "2023-10-10",
-            "thumbnail": "pusdiklat_kepsek.png",
-            "gambar_kegiatan": ["diklat_a.jpg", "diklat_b.jpg"],
-            "penulis": "Admin Sudin JU2",
-            "status": "Aktif",
-            "status_publikasi": "Published",
-        },
-        {
-            "id": 3,
-            "nama_kegiatan": "Lomba Paduan Suara Tingkat SD",
-            "tanggal": "2023-08-17",
-            "thumbnail": "paduan_suara.jpg",
-            "gambar_kegiatan": ["padus_1.jpg"],
-            "penulis": "Tim Kurikulum",
-            "status": "Tidak Aktif",
-            "status_publikasi": "Draft",
-        },
+    return render_template(
+        "cms/galeri_kegiatan.html",
+        galeri=_fetch_galeri(),
+        default_penulis=_current_author_name(),
+    )
+
+
+@cms_bp.route("/galeri-kegiatan/<int:galeri_id>/update", methods=["POST"])
+@role_required("admin")
+def update_galeri(galeri_id: int):
+    existing = _get_galeri(galeri_id)
+    if not existing:
+        return jsonify({"success": False, "error": "Galeri tidak ditemukan."}), 404
+    saved_paths: list[str] = []
+    cleanup_paths: list[str] = []
+    try:
+        payload = _parse_galeri_form()
+        thumbnail_path = existing.get("thumbnail_path")
+        thumbnail = request.files.get("thumbnail")
+        if thumbnail and _safe_client_filename(thumbnail.filename):
+            _, thumbnail_path = _save_uploaded_asset(
+                thumbnail,
+                upload_dir=UPLOAD_GALERI_THUMBNAILS,
+                prefix=f"galeri_thumb_{galeri_id}",
+                max_size=MAX_IMAGE_SIZE,
+                validator=allowed_file,
+                label="Thumbnail",
+            )
+            saved_paths.append(thumbnail_path)
+            if existing.get("thumbnail_path"):
+                cleanup_paths.append(existing["thumbnail_path"])
+        new_images = _save_file_entries(
+            request.files.getlist("gambar_kegiatan"),
+            upload_dir=UPLOAD_GALERI_IMAGES,
+            prefix=f"galeri_image_{galeri_id}",
+            validator=allowed_file,
+            max_size=MAX_IMAGE_SIZE,
+            label="Gambar kegiatan",
+        )
+        saved_paths.extend(item["path"] for item in new_images)
+        deleted_ids = set(request.form.getlist("hapus_gambar_ids"))
+        kept_images = []
+        for entry in _stored_media_entries(existing.get("gambar_kegiatan")):
+            if str(entry.get("id")) in deleted_ids:
+                cleanup_paths.append(entry["path"])
+            else:
+                kept_images.append(entry)
+        images = kept_images + new_images
+        if not images:
+            raise ValueError("Galeri harus memiliki minimal satu foto kegiatan.")
+        with get_cursor(commit=True) as cur:
+            cur.execute(
+                """UPDATE cms_galeri SET nama_kegiatan=%s, tanggal_kegiatan=%s,
+                thumbnail_path=%s, gambar_kegiatan=%s::jsonb, penulis=%s, status=%s,
+                status_publikasi=%s, updated_at=NOW() WHERE id=%s""",
+                (
+                    payload["name"], payload["tanggal"], thumbnail_path,
+                    json.dumps(images), payload["penulis"], payload["status"],
+                    payload["publication"], galeri_id,
+                ),
+            )
+        for path in cleanup_paths:
+            _delete_stored_file(path)
+        return jsonify({"success": True, "message": "Galeri berhasil diperbarui."})
+    except Exception as exc:
+        for path in saved_paths:
+            _delete_stored_file(path)
+        status_code = 400 if isinstance(exc, ValueError) else 500
+        return jsonify({"success": False, "error": str(exc)}), status_code
+
+
+@cms_bp.route("/galeri-kegiatan/<int:galeri_id>/delete", methods=["POST"])
+@role_required("admin")
+def delete_galeri(galeri_id: int):
+    existing = _get_galeri(galeri_id)
+    if not existing:
+        return jsonify({"success": False, "error": "Galeri tidak ditemukan."}), 404
+    with get_cursor(commit=True) as cur:
+        cur.execute("DELETE FROM cms_galeri WHERE id = %s", (galeri_id,))
+    paths = [existing.get("thumbnail_path")]
+    paths.extend(item.get("path") for item in existing.get("gambar_kegiatan", []))
+    for path in paths:
+        _delete_stored_file(path)
+    return jsonify({"success": True, "message": "Galeri berhasil dihapus."})
+
+
+def _serialize_public_information(info: dict | None) -> dict:
+    info = info or {}
+    updated_at = info.get("updated_at")
+    return {
+        "jaminan_pelayanan": info.get("cms_jaminan_pelayanan") or "",
+        "keamanan_keselamatan": info.get("cms_keamanan_keselamatan") or "",
+        "kompensasi_pelayanan": info.get("cms_kompensasi_pelayanan") or "",
+        "updated_at": updated_at.isoformat() if updated_at else None,
+    }
+
+
+def _serialize_public_service(row: dict) -> dict:
+    return {
+        "id": row.get("id"),
+        "nama": row.get("cms_nama_layanan") or "",
+        "deskripsi": row.get("cms_deskripsi") or "",
+        "icon": row.get("cms_icon") or "bi-star",
+        "files": _serialize_media_entries(row.get("cms_files")),
+    }
+
+
+def _public_articles() -> list[dict]:
+    today = datetime.now().date().isoformat()
+    result = []
+    for article in _fetch_all_artikel():
+        if article.get("status") != "Aktif":
+            continue
+        if article.get("status_publikasi") != "Published":
+            continue
+        if article.get("tanggal") and article["tanggal"] > today:
+            continue
+        result.append(
+            {
+                "id": article.get("id"),
+                "judul": article.get("judul") or "",
+                "kategori": article.get("kategori") or "Informasi",
+                "tanggal": article.get("tanggal") or "",
+                "deskripsi": article.get("deskripsi") or "",
+                "thumbnail_url": article.get("thumbnail_url"),
+                "penulis": article.get("penulis") or "-",
+                "files": article.get("files") or [],
+            }
+        )
+    return result
+
+
+@cms_bp.route("/api/public/content", methods=["GET"])
+def public_content():
+    """Semua konten CMS yang layak ditampilkan pada landing page."""
+    services = [
+        _serialize_public_service(row)
+        for row in _list_layanan_publik()
+        if row.get("cms_status") == "Aktif"
     ]
-
-    return render_template("cms/galeri_kegiatan.html", galeri=dummy_galeri)
+    return jsonify(
+        {
+            "success": True,
+            "data": {
+                "profil": _serialize_public_profil_instansi(_get_profil_instansi()),
+                "informasi_publik": _serialize_public_information(
+                    _get_informasi_publik()
+                ),
+                "layanan": services,
+                "artikel": _public_articles(),
+                "pengumuman": _fetch_pengumuman(public_only=True),
+                "galeri": _fetch_galeri(public_only=True),
+            },
+        }
+    )
