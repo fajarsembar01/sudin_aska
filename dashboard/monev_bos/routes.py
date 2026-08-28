@@ -27,7 +27,8 @@ def _resolve_school_report_vendor(vendor_id_raw):
     if vendor.get("status") not in {"pending", "verified"}:
         return None, None, "Vendor / narasumber yang ditolak tidak dapat dimasukkan ke laporan."
 
-    return vendor_id, vendor.get("name"), None
+    display_name = queries.get_vendor_display_name(vendor)
+    return vendor_id, display_name, None
 
 
 def _resolve_school_report_vendors(vendor_id_values):
@@ -2192,7 +2193,8 @@ def sekolah_activities():
             return redirect(url_for("monev_bos.sekolah_activities", period_id=period_id, fund_source=fund_source))
 
         if action == "add_activity":
-            target_fund_source = request.form.get("fund_source", fund_source)
+            # Tambahan dari modal selalu masuk ke sumber dana halaman yang sedang dibuka.
+            target_fund_source = fund_source
             account_code_data = _activity_account_code_data(request.form)
             vendor_ids, vendor_names, vendor_error = _resolve_school_report_vendors(
                 request.form.getlist("vendor_id")
@@ -2217,6 +2219,23 @@ def sekolah_activities():
                 "item_specs": request.form.get("item_specs"),
                 "item_quantity": int(request.form.get("item_quantity", 0) or 0)
             }
+            duplicate_matches = queries.find_activity_duplicate_matches_for_data(
+                report["id"], target_fund_source, data
+            )
+            duplicate_confirmation = " ".join(
+                (request.form.get("duplicate_confirmation") or "").casefold().split()
+            )
+            if duplicate_matches and duplicate_confirmation != "kegiatan berbeda":
+                flash(
+                    "Kegiatan terindikasi ganda pada halaman ini. Periksa data pembanding lalu ketik tepat 'kegiatan berbeda' untuk melanjutkan.",
+                    "warning",
+                )
+                return redirect(url_for(
+                    "monev_bos.sekolah_activities",
+                    period_id=period_id,
+                    fund_source=fund_source,
+                ))
+
             field_photo_files, field_photo_data_items, story_post_ids = _requested_activity_photos()
             requested_photo_count = len(field_photo_files) + len(field_photo_data_items) + len(story_post_ids)
             if requested_photo_count > MAX_ACTIVITY_FIELD_PHOTOS:
@@ -2468,6 +2487,9 @@ def sekolah_activities():
 
     all_activities = queries.list_activities(report["id"])
     activities = [a for a in all_activities if a["fund_source"] == fund_source]
+    # Halaman sekolah pertama kali mengikuti urutan kegiatan ditambahkan.
+    # Pengurutan BKU diterapkan di browser hanya ketika dipilih pengguna.
+    activities.sort(key=lambda activity: int(activity.get("id") or 0))
 
     bop_claim = None
     bop_claim_supported = fund_source == "BOP" and is_bop_claim_period(
@@ -2796,7 +2818,7 @@ def sekolah_activities_export():
         ws.cell(row=current_row, column=3, value=act.get("activity_name") or "-")
         ws.cell(row=current_row, column=4, value=act.get("bku_number") or act.get("activity_code") or "-").alignment = Alignment(horizontal="center")
         ws.cell(row=current_row, column=5, value=act.get("account_code") or "-").alignment = Alignment(horizontal="center")
-        ws.cell(row=current_row, column=6, value=act.get("vendor_name") or "-")
+        ws.cell(row=current_row, column=6, value=act.get("vendor_display_name") or act.get("vendor_name") or "-")
         ws.cell(row=current_row, column=7, value=act.get("item_name") or act.get("item_specs") or "-")
 
         realized_cell = ws.cell(row=current_row, column=8, value=float(act.get("realized_amount") or 0))
@@ -3168,6 +3190,31 @@ def staff_audit_activity(activity_id):
     action = request.form.get("action")
     
     try:
+        if action == "check_vendor_status":
+            has_vendor = bool(
+                act.get("vendors")
+                or act.get("vendor_id")
+                or (act.get("vendor_name") or "").strip()
+            )
+            vendor_verified = has_vendor and not _activity_vendor_is_unverified(act)
+            unverified_names = (
+                act.get("unverified_vendor_names")
+                or act.get("vendor_display_name")
+                or act.get("vendor_name")
+                or "Vendor / narasumber terkait"
+            )
+            return jsonify({
+                "success": True,
+                "activity_id": activity_id,
+                "vendor_verified": vendor_verified,
+                "unverified_names": "" if vendor_verified else unverified_names,
+                "message": (
+                    "Vendor / narasumber sudah terverifikasi. Tombol Sesuai (Valid) kini aktif."
+                    if vendor_verified
+                    else f"{unverified_names} masih belum terverifikasi."
+                ),
+            })
+
         if action in {"annul_school_photo", "restore_school_photo"}:
             doc_id_raw = request.form.get("doc_id")
             try:
@@ -3254,7 +3301,14 @@ def staff_audit_activity(activity_id):
                 flash(msg, "warning")
                 return redirect(url_for("monev_bos.staff_audit_report", report_id=report_id))
 
-            notes = request.form.get("audit_notes") or ""
+            notes = (request.form.get("audit_notes") or "").strip()
+            if status == "invalid" and not notes:
+                message = "Catatan revisi wajib diisi sebelum kegiatan ditandai Perlu Revisi."
+                if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.headers.get("Accept") == "application/json":
+                    return jsonify({"success": False, "message": message}), 400
+                flash(message, "warning")
+                return redirect(url_for("monev_bos.staff_audit_report", report_id=report_id))
+
             queries.update_activity_audit(activity_id, status, notes)
             
             # Save active checklist fields submitted by the rendered form.
@@ -3333,7 +3387,7 @@ def staff_audit_activity(activity_id):
                     f.write(data)
                     
                 db_path = f"static/uploads/monev_bos/{report_id}/{activity_id}/live_photo/{filename}"
-                queries.add_activity_doc(activity_id, "live_photo", db_path, len(data), user["id"])
+                photo_id = queries.add_activity_doc(activity_id, "live_photo", db_path, len(data), user["id"])
                 queries.add_audit_log(report_id, activity_id, user["id"], "UPLOAD_PHOTO", "Mengambil foto live lapangan")
                 _record_monev_admin_action(
                     "UPLOAD_PHOTO",
@@ -3342,6 +3396,14 @@ def staff_audit_activity(activity_id):
                     target_name=act.get("activity_name"),
                     metadata={"report_id": report_id},
                 )
+                if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.headers.get("Accept") == "application/json":
+                    return jsonify({
+                        "success": True,
+                        "activity_id": activity_id,
+                        "photo_id": photo_id,
+                        "photo_url": f"/{db_path}",
+                        "message": "Foto live staff berhasil disimpan.",
+                    })
                 flash("Foto live berhasil disimpan.", "success")
 
     except Exception as e:
@@ -3461,6 +3523,7 @@ def admin_vendors():
             q=request.args.get("q", ""),
             vendor_type=request.args.get("vendor_type", "vendor"),
             school_id=request.args.get("school_id", ""),
+            scan=request.args.get("scan", ""),
         ))
 
     if request.method == "POST":
@@ -3479,12 +3542,28 @@ def admin_vendors():
                 )
                 return filtered_redirect()
 
+            checklist_keys = ("identity", "npwp", "phone", "address", "owner", "bank")
+            verification_checklist = {
+                key: request.form.get(f"check_{key}") == "sesuai"
+                for key in checklist_keys
+            }
+            missing_checks = [key for key, checked in verification_checklist.items() if not checked]
+            if missing_checks:
+                flash(
+                    "Semua kolom checklist pemeriksaan harus ditandai Sesuai sebelum vendor/narasumber dapat diverifikasi.",
+                    "warning",
+                )
+                return filtered_redirect()
+
             verification_notes = "vendor berbeda" if duplicate_matches else None
+            review_notes = (request.form.get("review_notes") or "").strip() or None
             if queries.update_vendor_status(
                 vendor_id,
                 "verified",
                 user["id"],
                 verification_notes=verification_notes,
+                verification_checklist=verification_checklist,
+                review_notes=review_notes,
             ):
                 v_obj = queries.get_vendor_by_id(vendor_id)
                 v_name = (
@@ -3504,6 +3583,8 @@ def admin_vendors():
                         }
                         for match in duplicate_matches
                     ],
+                    "verification_checklist": verification_checklist,
+                    "has_review_notes": bool(review_notes),
                 }
                 _record_monev_admin_action(
                     "VERIFY_APPROVE",
@@ -3573,7 +3654,12 @@ def admin_vendors():
             return filtered_redirect()
 
     search_query = request.args.get("q", "").strip()
-    status_filter = request.args.get("status", "")
+    scan_mode = request.args.get("scan", "")
+    if scan_mode not in {"verified_duplicates", "verified_incomplete"}:
+        scan_mode = ""
+    duplicate_scan = scan_mode == "verified_duplicates"
+    incomplete_scan = scan_mode == "verified_incomplete"
+    status_filter = "verified" if scan_mode else request.args.get("status", "")
     vendor_type_filter = request.args.get("vendor_type", "vendor")
     if vendor_type_filter not in ["vendor", "narsum"]:
         vendor_type_filter = "vendor"
@@ -3585,6 +3671,12 @@ def admin_vendors():
         school_id_filter=school_id_filter,
     )
     queries.attach_vendor_duplicate_matches(vendors)
+    if duplicate_scan:
+        vendors = queries.filter_verified_duplicate_vendors(vendors)
+    elif incomplete_scan:
+        vendors = queries.filter_verified_incomplete_vendors(vendors)
+    else:
+        queries.attach_vendor_missing_fields(vendors)
     vendor_schools = queries.list_vendor_schools_for_admin()
     master_banks = queries.get_master_banks()
     return render_template(
@@ -3596,4 +3688,7 @@ def admin_vendors():
         school_id_filter=school_id_filter,
         vendor_schools=vendor_schools,
         master_banks=master_banks,
+        scan_mode=scan_mode,
+        duplicate_scan=duplicate_scan,
+        incomplete_scan=incomplete_scan,
     )

@@ -942,6 +942,17 @@ def claim_bop_transactions(
     }
 
 # --- ACTIVITIES ---
+def get_vendor_display_name(vendor: Dict[str, Any]) -> str:
+    """Prefer a person's name when the vendor name column contains a KTP number."""
+    raw_name = str(vendor.get("name") or "").strip()
+    owner_name = str(vendor.get("owner_name") or "").strip()
+    compact_name = "".join(char for char in raw_name if char.isalnum())
+    looks_like_identity = compact_name.isdigit() and len(compact_name) >= 12
+    if owner_name and (vendor.get("vendor_type") == "narsum" or looks_like_identity):
+        return owner_name
+    return raw_name or owner_name
+
+
 def list_activities(report_id: int) -> List[Dict[str, Any]]:
     with get_cursor() as cur:
         cur.execute(
@@ -951,17 +962,35 @@ def list_activities(report_id: int) -> List[Dict[str, Any]]:
                    et.name AS expense_type_name,
                    v.status AS vendor_status,
                    v.vendor_type AS linked_vendor_type,
-                   COALESCE(v.name, a.vendor_name) AS vendor_display_name,
+                   COALESCE(
+                       CASE
+                           WHEN v.vendor_type = 'narsum'
+                             OR v.name ~ '^[[:space:]]*[0-9]{12,20}[[:space:]]*$'
+                           THEN NULLIF(TRIM(v.owner_name), '')
+                           ELSE v.name
+                       END,
+                       v.name,
+                       a.vendor_name
+                   ) AS vendor_display_name,
                    u.full_name AS auditor_name
             FROM monev_bos_activities a
             LEFT JOIN monev_bos_master_activities ma ON a.activity_type_id = ma.id
             LEFT JOIN monev_bos_expense_types et ON a.expense_type_id = et.id
             LEFT JOIN monev_bos_reports r ON a.report_id = r.id
             LEFT JOIN LATERAL (
-                SELECT v.id, v.name, v.status, v.vendor_type
+                SELECT v.id, v.name, v.owner_name, v.status, v.vendor_type
                 FROM monev_bos_vendors v
                 WHERE (a.vendor_id IS NOT NULL AND v.id = a.vendor_id)
-                   OR (a.vendor_id IS NULL AND a.vendor_name IS NOT NULL AND a.vendor_name != '' AND v.school_id = r.school_id AND LOWER(v.name) = LOWER(a.vendor_name))
+                   OR (
+                       a.vendor_id IS NULL
+                       AND a.vendor_name IS NOT NULL
+                       AND a.vendor_name != ''
+                       AND v.school_id = r.school_id
+                       AND (
+                           LOWER(v.name) = LOWER(a.vendor_name)
+                           OR (v.vendor_type = 'narsum' AND LOWER(v.owner_name) = LOWER(a.vendor_name))
+                       )
+                   )
                 ORDER BY v.id DESC
                 LIMIT 1
             ) v ON TRUE
@@ -981,6 +1010,56 @@ def list_activities(report_id: int) -> List[Dict[str, Any]]:
         activities = [dict(row) for row in cur.fetchall()]
     attach_activity_vendors(activities)
     return activities
+
+
+def find_activity_duplicate_matches_for_data(
+    report_id: int,
+    fund_source: str,
+    data: Dict[str, Any],
+    exclude_activity_id: Optional[int] = None,
+) -> List[Dict[str, Any]]:
+    """Find duplicate-like activities only in the currently opened report/fund page."""
+    def normalized_text(value: Any) -> str:
+        cleaned = "".join(
+            char if char.isalnum() else " "
+            for char in str(value or "").casefold()
+        )
+        return " ".join(cleaned.split())
+
+    def normalized_identifier(value: Any) -> str:
+        return "".join(char for char in str(value or "").casefold() if char.isalnum())
+
+    incoming_name = normalized_text(data.get("activity_name"))
+    incoming_bku = normalized_identifier(data.get("bku_number"))
+    if not incoming_name and not incoming_bku:
+        return []
+
+    query = """
+        SELECT id, activity_name, bku_number, account_code, realized_amount,
+               vendor_name, item_name, status
+        FROM monev_bos_activities
+        WHERE report_id = %s AND fund_source = %s
+    """
+    params: List[Any] = [report_id, fund_source]
+    if exclude_activity_id is not None:
+        query += " AND id <> %s"
+        params.append(exclude_activity_id)
+    query += " ORDER BY bku_number, id"
+
+    with get_cursor() as cur:
+        cur.execute(query, tuple(params))
+        candidates = [dict(row) for row in cur.fetchall()]
+
+    matches = []
+    for candidate in candidates:
+        duplicate_fields = []
+        if incoming_name and normalized_text(candidate.get("activity_name")) == incoming_name:
+            duplicate_fields.append("Nama kegiatan")
+        if incoming_bku and normalized_identifier(candidate.get("bku_number")) == incoming_bku:
+            duplicate_fields.append("No. BKU")
+        if duplicate_fields:
+            matches.append({**candidate, "duplicate_fields": duplicate_fields})
+    return matches
 
 
 def get_activity_vendors_by_activity_ids(activity_ids: List[int]) -> Dict[int, List[Dict[str, Any]]]:
@@ -1025,13 +1104,15 @@ def attach_activity_vendors(activities: List[Dict[str, Any]]) -> List[Dict[str, 
         ]
         activity["vendor_ids"] = [int(vendor["id"]) for vendor in vendors]
         if vendors:
-            names = [vendor.get("name") or "Vendor" for vendor in vendors]
+            names = [get_vendor_display_name(vendor) or "Vendor / Narasumber" for vendor in vendors]
             unverified = activity["unverified_vendors"]
             activity["vendor_name"] = ", ".join(names)
             activity["vendor_display_name"] = ", ".join(names)
+            activity["linked_vendor_type"] = vendors[0].get("vendor_type") or "vendor"
             activity["vendor_status"] = "pending" if unverified else "verified"
             activity["unverified_vendor_names"] = ", ".join(
-                vendor.get("name") or "Vendor" for vendor in unverified
+                get_vendor_display_name(vendor) or "Vendor / Narasumber"
+                for vendor in unverified
             )
             if unverified:
                 activity["linked_vendor_type"] = unverified[0].get("vendor_type")
@@ -1100,14 +1181,28 @@ def get_activity_by_id(activity_id: int) -> Optional[Dict[str, Any]]:
             """
             SELECT a.*, 
                    v.status AS vendor_status,
-                   COALESCE(v.name, a.vendor_name) AS vendor_display_name
+                   v.vendor_type AS linked_vendor_type,
+                   COALESCE(
+                       CASE WHEN v.vendor_type = 'narsum' THEN NULLIF(v.owner_name, '') ELSE v.name END,
+                       v.name,
+                       a.vendor_name
+                   ) AS vendor_display_name
             FROM monev_bos_activities a
             LEFT JOIN monev_bos_reports r ON a.report_id = r.id
             LEFT JOIN LATERAL (
-                SELECT v.id, v.name, v.status
+                SELECT v.id, v.name, v.owner_name, v.status, v.vendor_type
                 FROM monev_bos_vendors v
                 WHERE (a.vendor_id IS NOT NULL AND v.id = a.vendor_id)
-                   OR (a.vendor_id IS NULL AND a.vendor_name IS NOT NULL AND a.vendor_name != '' AND v.school_id = r.school_id AND LOWER(v.name) = LOWER(a.vendor_name))
+                   OR (
+                       a.vendor_id IS NULL
+                       AND a.vendor_name IS NOT NULL
+                       AND a.vendor_name != ''
+                       AND v.school_id = r.school_id
+                       AND (
+                           LOWER(v.name) = LOWER(a.vendor_name)
+                           OR (v.vendor_type = 'narsum' AND LOWER(v.owner_name) = LOWER(a.vendor_name))
+                       )
+                   )
                 ORDER BY v.id DESC
                 LIMIT 1
             ) v ON TRUE
@@ -1861,9 +1956,16 @@ def get_report_by_id(report_id: int) -> Optional[Dict[str, Any]]:
     with get_cursor() as cur:
         cur.execute(
             """
-            SELECT r.*, s.full_name as school_name
+            SELECT r.*,
+                   s.full_name AS school_name,
+                   p.year,
+                   p.tw,
+                   p.start_date AS period_start_date,
+                   p.end_date AS period_end_date,
+                   p.is_active AS period_is_active
             FROM monev_bos_reports r
             JOIN dashboard_users s ON r.school_id = s.id
+            JOIN monev_bos_periods p ON p.id = r.period_id
             WHERE r.id = %s
             """,
             (report_id,)
@@ -2191,6 +2293,56 @@ def attach_vendor_duplicate_matches(vendors: List[Dict[str, Any]]) -> List[Dict[
     return vendors
 
 
+def filter_verified_duplicate_vendors(vendors: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Keep verified registrations that also match another verified registration."""
+    results = []
+    for vendor in vendors:
+        verified_matches = [
+            match
+            for match in vendor.get("duplicate_matches", [])
+            if match.get("status") == "verified"
+        ]
+        vendor["duplicate_matches"] = verified_matches
+        if vendor.get("status") == "verified" and verified_matches:
+            results.append(vendor)
+    return results
+
+
+def attach_vendor_missing_fields(vendors: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Attach human-readable missing fields for verified-data completeness scans."""
+    for vendor in vendors:
+        missing_fields = []
+        vendor_type = vendor.get("vendor_type") or "vendor"
+
+        required_fields = [
+            ("name", "No. KTP" if vendor_type == "narsum" else "Nama vendor"),
+            ("npwp", "NPWP"),
+            ("phone", "No. telepon/WhatsApp"),
+            ("address", "Alamat"),
+            ("owner_name", "Nama narasumber/instruktur" if vendor_type == "narsum" else "Penanggung jawab/pemilik"),
+            ("bank_name", "Nama bank"),
+        ]
+        for field, label in required_fields:
+            if not str(vendor.get(field) or "").strip():
+                missing_fields.append(label)
+
+        account_type = str(vendor.get("bank_account_type") or "rekening").strip().lower()
+        if account_type != "va" and not str(vendor.get("bank_account") or "").strip():
+            missing_fields.append("No. rekening")
+
+        vendor["missing_fields"] = missing_fields
+    return vendors
+
+
+def filter_verified_incomplete_vendors(vendors: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Keep verified vendors that still have one or more empty required fields."""
+    attach_vendor_missing_fields(vendors)
+    return [
+        vendor for vendor in vendors
+        if vendor.get("status") == "verified" and vendor.get("missing_fields")
+    ]
+
+
 def find_vendor_duplicate_matches(vendor_id: int) -> List[Dict[str, Any]]:
     vendor = get_vendor_by_id(vendor_id)
     if not vendor:
@@ -2219,6 +2371,13 @@ def get_report_selectable_vendors(school_id: Optional[int] = None) -> List[Dict[
             """
             SELECT v.id, v.school_id, v.name, v.npwp, v.phone, v.address,
                    v.owner_name, v.bank_name, v.bank_account, v.status, v.vendor_type,
+                   CASE
+                       WHEN NULLIF(TRIM(v.owner_name), '') IS NOT NULL
+                        AND (v.vendor_type = 'narsum'
+                             OR v.name ~ '^[[:space:]]*[0-9]{12,20}[[:space:]]*$')
+                       THEN TRIM(v.owner_name)
+                       ELSE v.name
+                   END AS display_name,
                    (v.school_id = %s) AS is_own_school,
                    COALESCE(ps.name, u_school.full_name) AS registered_school_name
             FROM monev_bos_vendors v
@@ -2320,6 +2479,8 @@ def update_vendor_status(
     verifier_user_id: int,
     rejection_reason: Optional[str] = None,
     verification_notes: Optional[str] = None,
+    verification_checklist: Optional[Dict[str, bool]] = None,
+    review_notes: Optional[str] = None,
 ) -> bool:
     """Approve (verify) or Reject a vendor request."""
     if new_status not in ["verified", "rejected"]:
@@ -2333,6 +2494,14 @@ def update_vendor_status(
                 verified_at = NOW(),
                 rejection_reason = %s,
                 verification_notes = %s,
+                verification_checklist = CASE
+                    WHEN %s = 'verified' THEN %s::jsonb
+                    ELSE verification_checklist
+                END,
+                review_notes = CASE
+                    WHEN %s = 'verified' THEN %s
+                    ELSE review_notes
+                END,
                 updated_at = NOW()
             WHERE id = %s
             """,
@@ -2341,6 +2510,10 @@ def update_vendor_status(
                 verifier_user_id,
                 rejection_reason if new_status == "rejected" else None,
                 verification_notes if new_status == "verified" else None,
+                new_status,
+                json.dumps(verification_checklist or {}),
+                new_status,
+                review_notes,
                 vendor_id,
             )
         )

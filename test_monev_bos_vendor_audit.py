@@ -119,6 +119,156 @@ def test_activity_without_vendor_does_not_require_vendor_verification():
     ) is False
 
 
+def test_activity_uses_narasumber_name_instead_of_identity_number(monkeypatch):
+    activities = [{"id": 41, "vendor_id": 23, "vendor_name": "3175012345670001"}]
+    monkeypatch.setattr(
+        routes.queries,
+        "get_activity_vendors_by_activity_ids",
+        lambda activity_ids: {
+            41: [
+                {
+                    "id": 23,
+                    "vendor_type": "narsum",
+                    "name": "3175012345670001",
+                    "owner_name": "Budi Santoso",
+                    "status": "verified",
+                }
+            ]
+        },
+    )
+
+    routes.queries.attach_activity_vendors(activities)
+
+    assert activities[0]["vendor_display_name"] == "Budi Santoso"
+    assert activities[0]["vendor_name"] == "Budi Santoso"
+
+
+def test_legacy_person_entry_uses_owner_name_even_if_type_is_vendor():
+    assert routes.queries.get_vendor_display_name({
+        "vendor_type": "vendor",
+        "name": "3175012345670001",
+        "owner_name": "Budi Santoso",
+    }) == "Budi Santoso"
+
+
+def test_unverified_narasumber_warning_uses_person_name(monkeypatch):
+    activities = [{"id": 41, "vendor_id": 23, "vendor_name": "3175012345670001"}]
+    monkeypatch.setattr(
+        routes.queries,
+        "get_activity_vendors_by_activity_ids",
+        lambda activity_ids: {
+            41: [
+                {
+                    "id": 23,
+                    "vendor_type": "narsum",
+                    "name": "3175012345670001",
+                    "owner_name": "Budi Santoso",
+                    "status": "pending",
+                }
+            ]
+        },
+    )
+
+    routes.queries.attach_activity_vendors(activities)
+
+    assert activities[0]["unverified_vendor_names"] == "Budi Santoso"
+    assert activities[0]["linked_vendor_type"] == "narsum"
+
+
+def test_report_detail_includes_its_own_period(monkeypatch):
+    executed = {}
+
+    class FakeCursor:
+        def execute(self, query, params):
+            executed["query"] = " ".join(query.split())
+            executed["params"] = params
+
+        def fetchone(self):
+            return {
+                "id": 166,
+                "period_id": 68,
+                "year": 2025,
+                "tw": 4,
+                "school_name": "SDN Contoh",
+            }
+
+    class FakeCursorContext:
+        def __enter__(self):
+            return FakeCursor()
+
+        def __exit__(self, *_args):
+            return False
+
+    monkeypatch.setattr(routes.queries, "get_cursor", lambda **_kwargs: FakeCursorContext())
+
+    report = routes.queries.get_report_by_id(166)
+
+    assert "JOIN monev_bos_periods p ON p.id = r.period_id" in executed["query"]
+    assert executed["params"] == (166,)
+    assert report["year"] == 2025
+    assert report["tw"] == 4
+
+
+def test_staff_can_recheck_vendor_status_without_reloading(monkeypatch):
+    app = Flask(__name__)
+    activity = {
+        "id": 41,
+        "report_id": 7,
+        "vendor_id": 23,
+        "vendor_name": "Toko Maju",
+        "vendor_status": "verified",
+        "vendors": [{"id": 23, "name": "Toko Maju", "status": "verified"}],
+        "unverified_vendors": [],
+    }
+    monkeypatch.setattr(routes, "current_user", lambda: {"id": 5, "role": "staff"})
+    monkeypatch.setattr(routes.queries, "get_activity_by_id", lambda activity_id: activity)
+
+    with app.test_request_context(
+        "/staff/verifikasi/kegiatan/41",
+        method="POST",
+        data={"action": "check_vendor_status", "report_id": "7"},
+        headers={"Accept": "application/json"},
+    ):
+        response = routes.staff_audit_activity.__wrapped__(41)
+
+    payload = response.get_json()
+    assert payload["success"] is True
+    assert payload["vendor_verified"] is True
+    assert payload["activity_id"] == 41
+
+
+def test_staff_vendor_recheck_reports_remaining_unverified_vendor(monkeypatch):
+    app = Flask(__name__)
+    activity = {
+        "id": 41,
+        "report_id": 7,
+        "vendor_id": 23,
+        "vendor_name": "Toko Maju, Toko Belum",
+        "vendor_status": "pending",
+        "vendors": [
+            {"id": 23, "name": "Toko Maju", "status": "verified"},
+            {"id": 24, "name": "Toko Belum", "status": "pending"},
+        ],
+        "unverified_vendors": [{"id": 24, "name": "Toko Belum", "status": "pending"}],
+        "unverified_vendor_names": "Toko Belum",
+    }
+    monkeypatch.setattr(routes, "current_user", lambda: {"id": 5, "role": "staff"})
+    monkeypatch.setattr(routes.queries, "get_activity_by_id", lambda activity_id: activity)
+
+    with app.test_request_context(
+        "/staff/verifikasi/kegiatan/41",
+        method="POST",
+        data={"action": "check_vendor_status", "report_id": "7"},
+        headers={"Accept": "application/json"},
+    ):
+        response = routes.staff_audit_activity.__wrapped__(41)
+
+    payload = response.get_json()
+    assert payload["success"] is True
+    assert payload["vendor_verified"] is False
+    assert payload["unverified_names"] == "Toko Belum"
+
+
 def test_admin_vendor_filters_are_forwarded_to_query(monkeypatch):
     app = Flask(__name__)
     calls = []
@@ -147,6 +297,152 @@ def test_admin_vendor_filters_are_forwarded_to_query(monkeypatch):
     assert context["vendor_type_filter"] == "narsum"
     assert context["school_id_filter"] == 42
     assert context["vendor_schools"] == schools
+
+
+def test_admin_vendor_duplicate_scan_only_shows_verified_matches(monkeypatch):
+    app = Flask(__name__)
+    calls = []
+    vendors = [
+        {"id": 1, "status": "verified"},
+        {"id": 2, "status": "verified"},
+        {"id": 3, "status": "verified"},
+    ]
+
+    monkeypatch.setattr(routes, "current_user", lambda: {"id": 1, "role": "admin"})
+    monkeypatch.setattr(
+        routes.queries,
+        "list_all_vendors_for_admin",
+        lambda *args, **kwargs: calls.append((args, kwargs)) or vendors,
+    )
+
+    def attach_matches(rows):
+        rows[0]["duplicate_matches"] = [{"id": 11, "status": "verified"}]
+        rows[1]["duplicate_matches"] = [{"id": 12, "status": "pending"}]
+        rows[2]["duplicate_matches"] = []
+        return rows
+
+    monkeypatch.setattr(routes.queries, "attach_vendor_duplicate_matches", attach_matches)
+    monkeypatch.setattr(routes.queries, "list_vendor_schools_for_admin", lambda: [])
+    monkeypatch.setattr(routes.queries, "get_master_banks", lambda: [])
+    monkeypatch.setattr(routes, "render_template", lambda template, **context: (template, context))
+
+    with app.test_request_context(
+        "/monev-bos/admin/vendors?vendor_type=vendor&status=pending&scan=verified_duplicates"
+    ):
+        template, context = routes.admin_vendors.__wrapped__()
+
+    assert template == "monev_bos/admin/admin_vendors.html"
+    assert calls[0][0] == ("verified",)
+    assert [vendor["id"] for vendor in context["vendors"]] == [1]
+    assert context["duplicate_scan"] is True
+
+
+def test_verified_duplicate_filter_removes_unverified_matches():
+    vendors = [
+        {"id": 1, "status": "verified", "duplicate_matches": [{"id": 8, "status": "verified"}]},
+        {"id": 2, "status": "verified", "duplicate_matches": [{"id": 9, "status": "pending"}]},
+        {"id": 3, "status": "pending", "duplicate_matches": [{"id": 10, "status": "verified"}]},
+    ]
+
+    results = routes.queries.filter_verified_duplicate_vendors(vendors)
+
+    assert [vendor["id"] for vendor in results] == [1]
+    assert results[0]["duplicate_matches"] == [{"id": 8, "status": "verified"}]
+
+
+def test_admin_vendor_incomplete_scan_only_shows_verified_missing_data(monkeypatch):
+    app = Flask(__name__)
+    calls = []
+    vendors = [
+        {
+            "id": 1,
+            "status": "verified",
+            "vendor_type": "vendor",
+            "name": "Toko Lengkap",
+            "npwp": "01.234.567.8-901.000",
+            "phone": "081234567890",
+            "address": "Jakarta",
+            "owner_name": "Budi",
+            "bank_name": "Bank DKI",
+            "bank_account_type": "rekening",
+            "bank_account": "1234567890",
+        },
+        {
+            "id": 2,
+            "status": "verified",
+            "vendor_type": "vendor",
+            "name": "Toko Kurang",
+            "npwp": "",
+            "phone": "",
+            "address": "Jakarta",
+            "owner_name": "Budi",
+            "bank_name": "Bank DKI",
+            "bank_account_type": "va",
+            "bank_account": "",
+        },
+    ]
+    monkeypatch.setattr(routes, "current_user", lambda: {"id": 1, "role": "admin"})
+    monkeypatch.setattr(
+        routes.queries,
+        "list_all_vendors_for_admin",
+        lambda *args, **kwargs: calls.append((args, kwargs)) or vendors,
+    )
+    monkeypatch.setattr(
+        routes.queries,
+        "attach_vendor_duplicate_matches",
+        lambda rows: [row.update(duplicate_matches=[]) for row in rows] or rows,
+    )
+    monkeypatch.setattr(routes.queries, "list_vendor_schools_for_admin", lambda: [])
+    monkeypatch.setattr(routes.queries, "get_master_banks", lambda: [])
+    monkeypatch.setattr(routes, "render_template", lambda template, **context: (template, context))
+
+    with app.test_request_context(
+        "/monev-bos/admin/vendors?vendor_type=vendor&scan=verified_incomplete"
+    ):
+        template, context = routes.admin_vendors.__wrapped__()
+
+    assert template == "monev_bos/admin/admin_vendors.html"
+    assert calls[0][0] == ("verified",)
+    assert [vendor["id"] for vendor in context["vendors"]] == [2]
+    assert context["vendors"][0]["missing_fields"] == ["NPWP", "No. telepon/WhatsApp"]
+    assert context["incomplete_scan"] is True
+    assert context["scan_mode"] == "verified_incomplete"
+
+
+def test_incomplete_vendor_scan_requires_bank_account_except_for_va():
+    vendors = [
+        {
+            "id": 1,
+            "status": "verified",
+            "vendor_type": "narsum",
+            "name": "3175012345670001",
+            "npwp": "09.876.543.2-100.000",
+            "phone": "081234567890",
+            "address": "Jakarta",
+            "owner_name": "Budi Santoso",
+            "bank_name": "Bank DKI",
+            "bank_account_type": "rekening",
+            "bank_account": "",
+        },
+        {
+            "id": 2,
+            "status": "verified",
+            "vendor_type": "narsum",
+            "name": "3175012345670002",
+            "npwp": "09.876.543.2-100.001",
+            "phone": "081234567891",
+            "address": "Jakarta",
+            "owner_name": "Siti Aminah",
+            "bank_name": "Bank DKI",
+            "bank_account_type": "va",
+            "bank_account": "",
+        },
+    ]
+
+    results = routes.queries.filter_verified_incomplete_vendors(vendors)
+
+    assert [vendor["id"] for vendor in results] == [1]
+    assert results[0]["missing_fields"] == ["No. rekening"]
 
 
 def test_admin_dashboard_uses_live_period_metrics(monkeypatch):
@@ -611,11 +907,62 @@ def test_duplicate_vendor_confirmation_is_saved_and_logged(monkeypatch):
     with app.test_request_context(
         "/monev-bos/admin/vendors?vendor_type=vendor",
         method="POST",
-        data={"action": "verify_vendor", "vendor_id": "7", "duplicate_confirmation": "  Vendor   Berbeda  "},
+        data={
+            "action": "verify_vendor",
+            "vendor_id": "7",
+            "duplicate_confirmation": "  Vendor   Berbeda  ",
+            "check_identity": "sesuai",
+            "check_npwp": "sesuai",
+            "check_phone": "sesuai",
+            "check_address": "sesuai",
+            "check_owner": "sesuai",
+            "check_bank": "sesuai",
+            "review_notes": "Dokumen sudah dibandingkan dengan berkas pendukung.",
+        },
     ):
         response = routes.admin_vendors.__wrapped__()
 
     assert response == "/monev-bos/admin/vendors"
-    assert updates == [((7, "verified", 5), {"verification_notes": "vendor berbeda"})]
+    assert updates == [((7, "verified", 5), {
+        "verification_notes": "vendor berbeda",
+        "verification_checklist": {
+            "identity": True,
+            "npwp": True,
+            "phone": True,
+            "address": True,
+            "owner": True,
+            "bank": True,
+        },
+        "review_notes": "Dokumen sudah dibandingkan dengan berkas pendukung.",
+    })]
     assert logs[0]["action"] == "VERIFY_DUPLICATE_OVERRIDE"
     assert logs[0]["metadata"]["duplicate_matches"][0]["matching_fields"] == ["NPWP", "Kontak"]
+
+
+def test_vendor_verification_requires_all_review_checkboxes(monkeypatch):
+    app = Flask(__name__)
+    updates = []
+    flashes = []
+    monkeypatch.setattr(routes, "current_user", lambda: {"id": 5, "role": "staff"})
+    monkeypatch.setattr(routes.queries, "find_vendor_duplicate_matches", lambda vendor_id: [])
+    monkeypatch.setattr(routes.queries, "update_vendor_status", lambda *args, **kwargs: updates.append((args, kwargs)))
+    monkeypatch.setattr(routes, "flash", lambda message, category=None: flashes.append((message, category)))
+    monkeypatch.setattr(routes, "url_for", lambda *_args, **_kwargs: "/monev-bos/admin/vendors")
+    monkeypatch.setattr(routes, "redirect", lambda location: location)
+
+    with app.test_request_context(
+        "/monev-bos/admin/vendors?vendor_type=vendor",
+        method="POST",
+        data={
+            "action": "verify_vendor",
+            "vendor_id": "7",
+            "check_identity": "sesuai",
+            "check_npwp": "sesuai",
+        },
+    ):
+        response = routes.admin_vendors.__wrapped__()
+
+    assert response == "/monev-bos/admin/vendors"
+    assert updates == []
+    assert flashes[-1][1] == "warning"
+    assert "Semua kolom checklist" in flashes[-1][0]

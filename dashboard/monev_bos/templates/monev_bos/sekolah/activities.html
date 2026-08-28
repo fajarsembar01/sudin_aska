@@ -2,6 +2,59 @@
 
 {% block monev_bos_content %}
 {% set fund_source_label = 'BOSP' if fund_source == 'BOS' else fund_source %}
+<style>
+    .school-activity-filter-toolbar {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 230px;
+        align-items: center;
+        gap: 10px;
+    }
+    .school-activity-status-filter { min-width: 0; }
+    .school-activity-status-filter .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 32px;
+        padding: 5px 10px;
+        border-radius: 6px;
+        font-size: 0.7rem;
+        line-height: 1;
+        white-space: nowrap;
+    }
+    .school-status-filter-count {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 20px;
+        margin-left: 5px;
+        padding: 2px 5px;
+        border-radius: 999px;
+        background: rgba(127, 127, 127, 0.14);
+        font-size: 0.62rem;
+        font-weight: 800;
+        line-height: 1.2;
+    }
+    .school-activity-sort-control { width: 230px !important; min-width: 230px; }
+    .school-activity-sort-control .input-group-text { padding-right: 9px; padding-left: 9px; font-weight: 700; }
+    .school-activity-sort-control .form-select,
+    .school-activity-search .form-control { min-width: 0; }
+    @media (max-width: 767.98px) {
+        .school-activity-filter-toolbar { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+        .school-activity-status-filter {
+            display: grid !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            width: 100%;
+            gap: 5px !important;
+        }
+        .school-activity-status-filter .btn { min-width: 0; min-height: 34px; padding: 6px 5px; font-size: 0.65rem; }
+        .school-activity-sort-control { width: 100% !important; min-width: 0; }
+        .school-activity-sort-control .input-group-text,
+        .school-activity-sort-control .form-select { min-height: 34px; font-size: 0.65rem; }
+        .school-activity-search .input-group-text,
+        .school-activity-search .form-control { min-height: 36px; font-size: 0.72rem; }
+        .school-status-filter-count { min-width: 18px; margin-left: 4px; padding: 2px 4px; font-size: 0.58rem; }
+    }
+</style>
 <div class="container-fluid py-3 py-md-4">
     <!-- Header Title Bar & Back Link -->
     <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
@@ -200,9 +253,25 @@
                 {% endif %}
             </div>
             <!-- Search Bar Input -->
-            <div class="input-group input-group-sm mt-1">
+            <div class="input-group input-group-sm mt-1 school-activity-search">
                 <span class="input-group-text bg-body border-end-0 text-body-secondary"><i class="bi bi-search"></i></span>
                 <input type="text" id="sekolahActivitySearch" class="form-control border-start-0 bg-body" placeholder="Cari berdasarkan kode kegiatan, nama kegiatan, BKU, vendor, atau barang...">
+            </div>
+            <div class="school-activity-filter-toolbar mt-2">
+                <div class="d-flex flex-wrap gap-2 school-activity-status-filter" role="group" aria-label="Filter status kegiatan">
+                    <button type="button" class="btn btn-sm btn-primary active" data-school-status-filter="all" aria-pressed="true"><i class="bi bi-list-ul me-1"></i>Semua <span class="school-status-filter-count" data-school-status-count="all">{{ activities|length }}</span></button>
+                    <button type="button" class="btn btn-sm btn-outline-success" data-school-status-filter="valid" aria-pressed="false"><i class="bi bi-check-circle me-1"></i>Sesuai <span class="school-status-filter-count" data-school-status-count="valid">{{ activities|selectattr('status', 'equalto', 'valid')|list|length }}</span></button>
+                    <button type="button" class="btn btn-sm btn-outline-warning" data-school-status-filter="pending" aria-pressed="false"><i class="bi bi-hourglass-split me-1"></i>Pending <span class="school-status-filter-count" data-school-status-count="pending">{{ (activities|selectattr('status', 'equalto', 'pending')|list|length) + (activities|selectattr('status', 'equalto', 'in_review')|list|length) }}</span></button>
+                    <button type="button" class="btn btn-sm btn-outline-danger" data-school-status-filter="invalid" aria-pressed="false"><i class="bi bi-x-circle me-1"></i>Revisi <span class="school-status-filter-count" data-school-status-count="invalid">{{ activities|selectattr('status', 'equalto', 'invalid')|list|length }}</span></button>
+                </div>
+                <div class="input-group input-group-sm school-activity-sort-control">
+                    <label class="input-group-text bg-body" for="schoolActivitySort"><i class="bi bi-sort-down me-1"></i>Urutan</label>
+                    <select class="form-select" id="schoolActivitySort" aria-label="Urutkan daftar kegiatan">
+                        <option value="input_order" selected>Urutan ditambahkan</option>
+                        <option value="bku_asc">BKU terkecil → terbesar</option>
+                        <option value="bku_desc">BKU terbesar → terkecil</option>
+                    </select>
+                </div>
             </div>
         </div>
         <div class="card-body p-0">
@@ -230,11 +299,11 @@
                     </thead>
                     <tbody>
                         {% for act in activities %}
-                        <tr class="sekolah-act-row">
+                        <tr class="sekolah-act-row" data-status="{{ act.status }}" data-bku="{{ act.bku_number or '' }}" data-original-order="{{ loop.index0 }}" data-activity-id="{{ act.id }}" data-activity-name="{{ act.activity_name|e }}" data-account-code="{{ act.account_code or '' }}" data-realized-amount="{{ act.realized_amount or 0 }}" data-vendor-name="{{ act.vendor_display_name or act.vendor_name or '' }}" data-item-name="{{ act.item_name or '' }}">
                             <td class="ps-3 ps-md-4 print-col-activity">
                                 <strong class="text-body d-block">{{ act.activity_name }}</strong>
                                 <small class="text-body-secondary d-block mt-0.5">
-                                    <i class="bi bi-shop me-1"></i>{{ act.vendor_name or '-' }}
+                                    <i class="bi bi-shop me-1"></i>{{ act.vendor_display_name or act.vendor_name or '-' }}
                                     {% if act.item_name %}&bull; {{ act.item_name }}{% endif %}
                                 </small>
                             </td>
@@ -407,7 +476,7 @@
                         {% endfor %}
                         <tr id="sekolahSearchEmpty" style="display:none;">
                             <td colspan="7" class="text-center py-4 text-body-secondary">
-                                <i class="bi bi-search me-1"></i> Tidak ditemukan kegiatan yang sesuai dengan kata kunci pencarian.
+                                <i class="bi bi-search me-1"></i> Tidak ditemukan kegiatan yang sesuai dengan filter atau pencarian.
                             </td>
                         </tr>
                     </tbody>
@@ -418,7 +487,7 @@
             <div class="d-block d-md-none border-top">
                 <div class="list-group list-group-flush">
                     {% for act in activities %}
-                    <div class="list-group-item p-3 sekolah-act-card bg-body border-bottom">
+                    <div class="list-group-item p-3 sekolah-act-card bg-body border-bottom" data-status="{{ act.status }}" data-bku="{{ act.bku_number or '' }}" data-original-order="{{ loop.index0 }}">
                         <!-- Baris 1: Kode, Sumber Dana & Status Badge -->
                         <div class="d-flex justify-content-between align-items-center mb-1.5 gap-2">
                             <div class="d-flex align-items-center gap-1.5">
@@ -445,7 +514,7 @@
                         <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-1 text-xs">
                             <div class="text-body-secondary">
                                 <span class="badge bg-body-tertiary text-body border font-monospace text-xs me-1">{{ act.bku_number or '-' }}</span>
-                                {% if act.vendor_name %}<i class="bi bi-shop me-1"></i>{{ act.vendor_name }}{% endif %}
+                                {% if act.vendor_display_name or act.vendor_name %}<i class="bi bi-shop me-1"></i>{{ act.vendor_display_name or act.vendor_name }}{% endif %}
                                 {% if act.item_name %}&bull; {{ act.item_name }} ({{ act.item_quantity }}x){% endif %}
                             </div>
                             <strong class="text-success" style="font-size: 0.95rem;">Rp {{ "{:,.0f}".format(act.realized_amount).replace(',', '.') }}</strong>
@@ -566,7 +635,7 @@
                     </div>
                     {% endfor %}
                     <div id="sekolahMobileSearchEmpty" class="p-4 text-center text-body-secondary" style="display:none;">
-                        <i class="bi bi-search me-1"></i> Tidak ditemukan kegiatan yang sesuai.
+                        <i class="bi bi-search me-1"></i> Tidak ditemukan kegiatan yang sesuai dengan filter atau pencarian.
                     </div>
                 </div>
             </div>
@@ -641,7 +710,7 @@
                     </div>
                     <div class="col-md-4">
                         <p class="mb-1 text-body-secondary text-xs">Nama Toko/Vendor</p>
-                        <p class="fw-bold text-body">{{ act.vendor_name or '-' }}</p>
+                        <p class="fw-bold text-body">{{ act.vendor_display_name or act.vendor_name or '-' }}</p>
                     </div>
                     <div class="col-md-4">
                         <p class="mb-1 text-body-secondary text-xs">Detail Kegiatan</p>
@@ -833,7 +902,7 @@
                             <optgroup label="Vendor Sekolah Anda">
                             {% for v in own_vendor_options %}
                                 <option value="{{ v.id }}" data-priority="{% if v.status == 'verified' %}0{% else %}1{% endif %}" {% if v.id in act.vendor_ids %}selected{% endif %}>
-                                    {{ (v.owner_name or v.name) if v.vendor_type == 'narsum' else v.name }}{% if v.vendor_type == 'narsum' %} — Narasumber{% if v.name %} (KTP: {{ v.name }}){% endif %}{% else %} — Vendor{% endif %}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'verified' %} ✓ Verif{% else %} ⚠ Belum Verifikasi{% endif %}
+                                    {{ v.display_name or v.owner_name or v.name }}{% if v.vendor_type == 'narsum' %} — Narasumber{% else %} — Vendor{% endif %}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'verified' %} ✓ Verif{% else %} ⚠ Belum Verifikasi{% endif %}
                                 </option>
                             {% endfor %}
                             </optgroup>
@@ -842,7 +911,7 @@
                             <optgroup label="Vendor Lain">
                             {% for v in other_vendor_options %}
                                 <option value="{{ v.id }}" data-priority="{% if v.status == 'verified' %}2{% else %}3{% endif %}" {% if v.id in act.vendor_ids %}selected{% endif %}>
-                                    {{ (v.owner_name or v.name) if v.vendor_type == 'narsum' else v.name }}{% if v.vendor_type == 'narsum' %} — Narasumber{% if v.name %} (KTP: {{ v.name }}){% endif %}{% else %} — Vendor{% endif %}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'verified' %} ✓ Verif{% else %} ⚠ Belum Verifikasi{% endif %}
+                                    {{ v.display_name or v.owner_name or v.name }}{% if v.vendor_type == 'narsum' %} — Narasumber{% else %} — Vendor{% endif %}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'verified' %} ✓ Verif{% else %} ⚠ Belum Verifikasi{% endif %}
                                 </option>
                             {% endfor %}
                             </optgroup>
@@ -1009,7 +1078,7 @@
 <!-- Modal Tambah Kegiatan -->
 <div class="modal fade" id="addActivityModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
-        <form action="{{ url_for('monev_bos.sekolah_activities', period_id=active_period.id, fund_source=fund_source) }}" method="POST" enctype="multipart/form-data" class="modal-content activity-photo-form" data-valid-photo-count="0" data-linked-story-ids="">
+        <form action="{{ url_for('monev_bos.sekolah_activities', period_id=active_period.id, fund_source=fund_source) }}" method="POST" enctype="multipart/form-data" class="modal-content activity-photo-form" id="addActivityForm" data-valid-photo-count="0" data-linked-story-ids="">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="action" value="add_activity">
             <input type="hidden" name="fund_source" value="{{ fund_source }}">
@@ -1078,14 +1147,14 @@
                             {% if own_vendor_options_add %}
                             <optgroup label="Vendor Sekolah Anda">
                             {% for v in own_vendor_options_add %}
-                                <option value="{{ v.id }}" data-priority="{% if v.status == 'verified' %}0{% else %}1{% endif %}">{{ (v.owner_name or v.name) if v.vendor_type == 'narsum' else v.name }}{% if v.vendor_type == 'narsum' %} — Narasumber{% if v.name %} (KTP: {{ v.name }}){% endif %}{% else %} — Vendor{% endif %}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'verified' %} ✓ Verif{% else %} ⚠ Belum Verifikasi{% endif %}</option>
+                                <option value="{{ v.id }}" data-priority="{% if v.status == 'verified' %}0{% else %}1{% endif %}">{{ v.display_name or v.owner_name or v.name }}{% if v.vendor_type == 'narsum' %} — Narasumber{% else %} — Vendor{% endif %}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'verified' %} ✓ Verif{% else %} ⚠ Belum Verifikasi{% endif %}</option>
                             {% endfor %}
                             </optgroup>
                             {% endif %}
                             {% if other_vendor_options_add %}
                             <optgroup label="Vendor Lain">
                             {% for v in other_vendor_options_add %}
-                                <option value="{{ v.id }}" data-priority="{% if v.status == 'verified' %}2{% else %}3{% endif %}">{{ (v.owner_name or v.name) if v.vendor_type == 'narsum' else v.name }}{% if v.vendor_type == 'narsum' %} — Narasumber{% if v.name %} (KTP: {{ v.name }}){% endif %}{% else %} — Vendor{% endif %}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'verified' %} ✓ Verif{% else %} ⚠ Belum Verifikasi{% endif %}</option>
+                                <option value="{{ v.id }}" data-priority="{% if v.status == 'verified' %}2{% else %}3{% endif %}">{{ v.display_name or v.owner_name or v.name }}{% if v.vendor_type == 'narsum' %} — Narasumber{% else %} — Vendor{% endif %}{% if v.npwp %} (NPWP: {{ v.npwp }}){% endif %}{% if v.status == 'verified' %} ✓ Verif{% else %} ⚠ Belum Verifikasi{% endif %}</option>
                             {% endfor %}
                             </optgroup>
                             {% endif %}
@@ -1096,6 +1165,32 @@
                         <label class="form-label fw-bold">Detail Kegiatan</label>
                         <input type="text" class="form-control" name="item_name" placeholder="Contoh: Pembelian Tinta Printer HP / Bahan Kebersihan">
                     </div>
+                </div>
+
+                <div class="alert alert-warning border-warning d-none" id="activityDuplicateWarning" role="alert" aria-live="polite">
+                    <div class="d-flex align-items-start gap-2 mb-2">
+                        <i class="bi bi-exclamation-triangle-fill fs-5 flex-shrink-0"></i>
+                        <div>
+                            <div class="fw-bold">Kegiatan serupa sudah ada di halaman {{ fund_source }}</div>
+                            <div class="small">Periksa data pembanding berikut. Daftar ini hanya berasal dari periode dan sumber dana yang sedang dibuka.</div>
+                        </div>
+                    </div>
+                    <div class="table-responsive border border-warning-subtle rounded bg-body mb-3">
+                        <table class="table table-sm align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Nama kegiatan</th>
+                                    <th>BKU</th>
+                                    <th>Nominal</th>
+                                    <th>Data sama</th>
+                                </tr>
+                            </thead>
+                            <tbody id="activityDuplicateMatches"></tbody>
+                        </table>
+                    </div>
+                    <label class="form-label fw-bold" for="activityDuplicateConfirmation">Jika memang berbeda, ketik <code>kegiatan berbeda</code></label>
+                    <input type="text" class="form-control" name="duplicate_confirmation" id="activityDuplicateConfirmation" autocomplete="off" placeholder="kegiatan berbeda" pattern="[Kk][Ee][Gg][Ii][Aa][Tt][Aa][Nn] [Bb][Ee][Rr][Bb][Ee][Dd][Aa]" title="Ketik tepat: kegiatan berbeda">
+                    <div class="form-text">Konfirmasi ini menyatakan Anda telah memeriksa kegiatan pembanding dan memastikan transaksi tersebut memang berbeda.</div>
                 </div>
                 
                 <div class="row g-3 align-items-stretch">
@@ -1278,7 +1373,7 @@
                                 {% set claim_has_narsum = verified_vendors|rejectattr('is_own_school', 'equalto', true)|selectattr('vendor_type', 'equalto', 'narsum')|list|length > 0 %}
                                 {% if claim_own_vendors %}<optgroup label="Diinput Sekolah Anda">{% endif %}
                                 {% for v in claim_own_vendors %}
-                                <option value="{{ v.id }}" {% if tx.selected_vendor_id == v.id %}selected{% endif %}>{{ v.name }}{% if v.vendor_type == 'narsum' %} — Narasumber{% else %} — Vendor{% endif %}</option>
+                                <option value="{{ v.id }}" {% if tx.selected_vendor_id == v.id %}selected{% endif %}>{{ v.display_name or v.owner_name or v.name }}{% if v.vendor_type == 'narsum' %} — Narasumber{% else %} — Vendor{% endif %}</option>
                                 {% endfor %}
                                 {% if claim_own_vendors %}</optgroup>{% endif %}
                                 {% if claim_has_vendor %}<optgroup label="🏪 Vendor / Toko">{% endif %}
@@ -1288,7 +1383,7 @@
                                 {% if claim_has_vendor %}</optgroup>{% endif %}
                                 {% if claim_has_narsum %}<optgroup label="🎤 Narasumber / Instruktur">{% endif %}
                                 {% for v in verified_vendors if not v.is_own_school and v.vendor_type == 'narsum' %}
-                                <option value="{{ v.id }}" {% if tx.selected_vendor_id == v.id %}selected{% endif %}>{{ v.name }}{% if v.registered_school_name %} — {{ v.registered_school_name }}{% endif %}</option>
+                                <option value="{{ v.id }}" {% if tx.selected_vendor_id == v.id %}selected{% endif %}>{{ v.display_name or v.owner_name or v.name }}{% if v.registered_school_name %} — {{ v.registered_school_name }}{% endif %}</option>
                                 {% endfor %}
                                 {% if claim_has_narsum %}</optgroup>{% endif %}
                             </select>
@@ -2068,38 +2163,256 @@ function autofillDemoData(fundSource) {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-    const searchInput = document.getElementById('sekolahActivitySearch');
-    if (!searchInput) return;
+    const addForm = document.getElementById('addActivityForm');
+    const warning = document.getElementById('activityDuplicateWarning');
+    const matchesBody = document.getElementById('activityDuplicateMatches');
+    const confirmation = document.getElementById('activityDuplicateConfirmation');
+    if (!addForm || !warning || !matchesBody || !confirmation) return;
 
-    searchInput.addEventListener('input', function () {
-        const query = this.value.toLowerCase().trim();
-        const rows = document.querySelectorAll('tr.sekolah-act-row');
-        const cards = document.querySelectorAll('.sekolah-act-card');
-        let visibleCount = 0;
+    const currentPageActivities = Array.from(document.querySelectorAll('tr.sekolah-act-row')).map(row => ({
+        id: row.dataset.activityId || '',
+        activityName: row.dataset.activityName || '',
+        bkuNumber: row.dataset.bku || '',
+        accountCode: row.dataset.accountCode || '',
+        realizedAmount: Number(row.dataset.realizedAmount || 0),
+        vendorName: row.dataset.vendorName || '',
+        itemName: row.dataset.itemName || ''
+    }));
 
-        rows.forEach(row => {
-            const text = row.textContent.toLowerCase();
-            const show = text.includes(query);
-            row.style.display = show ? '' : 'none';
-            if (show) visibleCount++;
+    function normalizeText(value) {
+        return String(value || '')
+            .toLocaleLowerCase('id')
+            .replace(/[^\p{L}\p{N}]+/gu, ' ')
+            .trim()
+            .replace(/\s+/g, ' ');
+    }
+
+    function normalizeIdentifier(value) {
+        return String(value || '').toLocaleLowerCase('id').replace(/[^\p{L}\p{N}]+/gu, '');
+    }
+
+    function selectedActivityName() {
+        const field = addForm.querySelector('[name="activity_name"]');
+        return field ? field.value : '';
+    }
+
+    function duplicateMatches() {
+        const activityName = normalizeText(selectedActivityName());
+        const bkuField = addForm.querySelector('[name="bku_number"]');
+        const bkuNumber = normalizeIdentifier(bkuField ? bkuField.value : '');
+        return currentPageActivities.map(activity => {
+            const duplicateFields = [];
+            if (activityName && normalizeText(activity.activityName) === activityName) duplicateFields.push('Nama kegiatan');
+            if (bkuNumber && normalizeIdentifier(activity.bkuNumber) === bkuNumber) duplicateFields.push('No. BKU');
+            return { ...activity, duplicateFields };
+        }).filter(activity => activity.duplicateFields.length > 0);
+    }
+
+    function formatRupiah(value) {
+        return 'Rp ' + Number(value || 0).toLocaleString('id-ID');
+    }
+
+    function appendCell(row, value, className) {
+        const cell = document.createElement('td');
+        cell.textContent = value || '-';
+        if (className) cell.className = className;
+        row.appendChild(cell);
+    }
+
+    function showDuplicateWarning(matches) {
+        matchesBody.replaceChildren();
+        matches.forEach(match => {
+            const row = document.createElement('tr');
+            appendCell(row, match.activityName, 'fw-semibold');
+            appendCell(row, match.bkuNumber);
+            appendCell(row, formatRupiah(match.realizedAmount), 'text-nowrap');
+            const fieldsCell = document.createElement('td');
+            match.duplicateFields.forEach(field => {
+                const badge = document.createElement('span');
+                badge.className = 'badge text-bg-danger me-1';
+                badge.textContent = field;
+                fieldsCell.appendChild(badge);
+            });
+            row.appendChild(fieldsCell);
+            matchesBody.appendChild(row);
         });
+        warning.classList.remove('d-none');
+        confirmation.required = true;
+        warning.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
 
-        cards.forEach(card => {
-            const text = card.textContent.toLowerCase();
-            const show = text.includes(query);
-            card.style.display = show ? '' : 'none';
-            if (show) visibleCount++;
-        });
+    function normalizedConfirmation() {
+        return confirmation.value.toLocaleLowerCase('id').trim().replace(/\s+/g, ' ');
+    }
 
-        const emptyMsg = document.getElementById('sekolahSearchEmpty');
-        const mobileEmptyMsg = document.getElementById('sekolahMobileSearchEmpty');
-        if (emptyMsg) {
-            emptyMsg.style.display = (visibleCount === 0 && rows.length > 0) ? '' : 'none';
+    function validateConfirmation() {
+        const isValid = normalizedConfirmation() === 'kegiatan berbeda';
+        confirmation.setCustomValidity(isValid ? '' : "Ketik tepat 'kegiatan berbeda' untuk melanjutkan.");
+        return isValid;
+    }
+
+    function resetDuplicateConfirmation() {
+        warning.classList.add('d-none');
+        confirmation.required = false;
+        confirmation.value = '';
+        confirmation.setCustomValidity('');
+    }
+
+    confirmation.addEventListener('input', validateConfirmation);
+    const activityNameField = addForm.querySelector('[name="activity_name"]');
+    const bkuNumberField = addForm.querySelector('[name="bku_number"]');
+    if (activityNameField) activityNameField.addEventListener('change', resetDuplicateConfirmation);
+    if (bkuNumberField) bkuNumberField.addEventListener('input', resetDuplicateConfirmation);
+    addForm.addEventListener('submit', function (event) {
+        const matches = duplicateMatches();
+        if (!matches.length) {
+            warning.classList.add('d-none');
+            confirmation.required = false;
+            confirmation.setCustomValidity('');
+            return;
         }
-        if (mobileEmptyMsg) {
-            mobileEmptyMsg.style.display = (visibleCount === 0 && cards.length > 0) ? '' : 'none';
+
+        showDuplicateWarning(matches);
+        if (!validateConfirmation()) {
+            event.preventDefault();
+            confirmation.reportValidity();
+            confirmation.focus({ preventScroll: true });
         }
     });
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+    const searchInput = document.getElementById('sekolahActivitySearch');
+    if (!searchInput) return;
+    const rows = document.querySelectorAll('tr.sekolah-act-row');
+    const cards = document.querySelectorAll('.sekolah-act-card');
+    const statusButtons = document.querySelectorAll('[data-school-status-filter]');
+    const sortSelect = document.getElementById('schoolActivitySort');
+    const emptyMsg = document.getElementById('sekolahSearchEmpty');
+    const mobileEmptyMsg = document.getElementById('sekolahMobileSearchEmpty');
+    const countBadge = document.getElementById('activityCountBadge');
+    const bkuCollator = new Intl.Collator('id', { numeric: true, sensitivity: 'base' });
+    let activeStatusFilter = 'all';
+
+    function normalizedStatus(item) {
+        const status = item.getAttribute('data-status') || 'pending';
+        return status === 'in_review' ? 'pending' : status;
+    }
+
+    function matchesSearch(item, rawQuery) {
+        const query = (rawQuery || '').toLowerCase().trim();
+        if (!query) return true;
+        const text = (item.textContent || item.innerText || '').toLowerCase();
+        if (text.includes(query)) return true;
+
+        const compactQuery = query.replace(/[.,\s]/g, '');
+        if (!/^\d+$/.test(compactQuery)) return false;
+        const numericValues = text.match(/\d[\d.,]*/g) || [];
+        return numericValues.some(value => value.replace(/\D/g, '').includes(compactQuery));
+    }
+
+    function matchesFilters(item, query) {
+        const statusMatches = activeStatusFilter === 'all' || normalizedStatus(item) === activeStatusFilter;
+        return statusMatches && matchesSearch(item, query);
+    }
+
+    function syncStatusButtons() {
+        const variants = { all: 'primary', valid: 'success', pending: 'warning', invalid: 'danger' };
+        statusButtons.forEach(button => {
+            const status = button.getAttribute('data-school-status-filter') || 'all';
+            const variant = variants[status] || 'secondary';
+            const isActive = status === activeStatusFilter;
+            button.classList.toggle('active', isActive);
+            button.classList.toggle('btn-' + variant, isActive);
+            button.classList.toggle('btn-outline-' + variant, !isActive);
+            button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        });
+    }
+
+    function refreshStatusCounts() {
+        const sourceItems = rows.length ? rows : cards;
+        const counts = { all: sourceItems.length, valid: 0, pending: 0, invalid: 0 };
+        sourceItems.forEach(item => {
+            const status = normalizedStatus(item);
+            if (Object.prototype.hasOwnProperty.call(counts, status)) counts[status]++;
+        });
+        document.querySelectorAll('[data-school-status-count]').forEach(counter => {
+            counter.textContent = counts[counter.getAttribute('data-school-status-count')] || 0;
+        });
+    }
+
+    function filterActivities() {
+        const query = searchInput.value;
+        let visibleRows = 0;
+        let visibleCards = 0;
+
+        rows.forEach(row => {
+            const show = matchesFilters(row, query);
+            row.style.display = show ? '' : 'none';
+            if (show) visibleRows++;
+        });
+        cards.forEach(card => {
+            const show = matchesFilters(card, query);
+            card.style.display = show ? '' : 'none';
+            if (show) visibleCards++;
+        });
+
+        if (emptyMsg) emptyMsg.style.display = (visibleRows === 0 && rows.length > 0) ? '' : 'none';
+        if (mobileEmptyMsg) mobileEmptyMsg.style.display = (visibleCards === 0 && cards.length > 0) ? '' : 'none';
+        if (countBadge) {
+            const visible = rows.length ? visibleRows : visibleCards;
+            const total = rows.length || cards.length;
+            const isFiltered = activeStatusFilter !== 'all' || query.trim() !== '';
+            countBadge.textContent = (isFiltered ? visible + ' / ' + total : total) + ' Kegiatan';
+        }
+        syncStatusButtons();
+        refreshStatusCounts();
+    }
+
+    function sortCollection(collection, emptyElement) {
+        if (!collection.length) return;
+        const sortMode = sortSelect ? sortSelect.value : 'input_order';
+        const direction = sortMode === 'bku_desc' ? -1 : 1;
+        const sorted = Array.from(collection).sort((left, right) => {
+            const originalDifference = Number(left.dataset.originalOrder) - Number(right.dataset.originalOrder);
+            if (sortMode === 'input_order') return originalDifference;
+
+            const leftBku = (left.getAttribute('data-bku') || '').trim();
+            const rightBku = (right.getAttribute('data-bku') || '').trim();
+            if (!leftBku && !rightBku) return originalDifference;
+            if (!leftBku) return 1;
+            if (!rightBku) return -1;
+            const compared = bkuCollator.compare(leftBku, rightBku);
+            return compared !== 0 ? compared * direction : originalDifference;
+        });
+        const container = collection[0].parentElement;
+        sorted.forEach(item => {
+            if (emptyElement && emptyElement.parentElement === container) container.insertBefore(item, emptyElement);
+            else container.appendChild(item);
+        });
+    }
+
+    function sortActivities() {
+        sortCollection(rows, emptyMsg);
+        sortCollection(cards, mobileEmptyMsg);
+    }
+
+    searchInput.addEventListener('input', filterActivities);
+    statusButtons.forEach(button => {
+        button.addEventListener('click', function () {
+            activeStatusFilter = button.getAttribute('data-school-status-filter') || 'all';
+            filterActivities();
+        });
+    });
+    if (sortSelect) {
+        sortSelect.addEventListener('change', function () {
+            sortActivities();
+            filterActivities();
+        });
+    }
+
+    sortActivities();
+    filterActivities();
 });
 </script>
 
