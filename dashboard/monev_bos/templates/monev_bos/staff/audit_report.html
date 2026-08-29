@@ -161,6 +161,7 @@
         }
         .bulk-check-card {
             position: relative;
+            z-index: 2;
             display: flex;
             height: 100%;
             min-height: 0;
@@ -176,6 +177,29 @@
             transition: transform 0.22s ease, opacity 0.22s ease;
         }
         .bulk-check-card.is-dragging { transition: none; }
+        .bulk-check-card.is-resetting { transition: none !important; }
+        .bulk-check-card-back {
+            position: absolute;
+            inset: 18px 18px 4px;
+            z-index: 1;
+            height: auto;
+            pointer-events: none;
+            opacity: 0.72;
+            transform: translateY(8px) scale(0.96);
+            transform-origin: center bottom;
+            transition: transform 0.24s ease, opacity 0.24s ease;
+        }
+        .bulk-check-card-back.is-revealed { opacity: 1; transform: translateY(0) scale(1); }
+        .bulk-check-card-back-footer {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 49px;
+            border-top: 1px solid var(--bs-border-color);
+            color: var(--bs-secondary-color);
+            background: var(--bs-body-bg);
+            font-size: 0.67rem;
+        }
         .bulk-check-card-head { padding: 10px 12px 8px; border-bottom: 1px solid var(--bs-border-color); }
         .bulk-check-title { font-size: 0.82rem; line-height: 1.25; }
         .bulk-check-subtitle { font-size: 0.65rem; }
@@ -193,8 +217,8 @@
             letter-spacing: 0.06em;
             pointer-events: none;
         }
-        .bulk-verdict-revision { left: 14px; color: var(--bs-danger); transform: rotate(-8deg); }
-        .bulk-verdict-valid { right: 14px; color: var(--bs-success); transform: rotate(8deg); }
+        .bulk-verdict-revision { right: 14px; color: var(--bs-danger); transform: rotate(8deg); }
+        .bulk-verdict-valid { left: 14px; color: var(--bs-success); transform: rotate(-8deg); }
         .bulk-check-media {
             position: relative;
             flex: 1;
@@ -241,12 +265,21 @@
             pointer-events: none;
         }
         .bulk-check-media-meta .badge { max-width: 75%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .bulk-check-tap-zone { position: absolute; inset-block: 42px 0; z-index: 2; width: 50%; border: 0; background: transparent; }
+        .bulk-check-tap-zone {
+            position: absolute;
+            inset-block: 42px 0;
+            z-index: 4;
+            width: 50%;
+            border: 0;
+            background: transparent;
+            cursor: pointer;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
         .bulk-check-tap-prev { left: 0; }
         .bulk-check-tap-next { right: 0; }
         .bulk-check-media-nav { padding: 7px 10px; background: var(--bs-body-bg); border-top: 1px solid var(--bs-border-color); }
         .bulk-check-media-nav .btn { min-height: 34px; font-size: 0.68rem; }
-        .bulk-check-help { padding: 4px 10px 6px; color: var(--bs-secondary-color); background: var(--bs-body-bg); font-size: 0.61rem; text-align: center; }
         .bulk-check-actions {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -269,6 +302,18 @@
             box-shadow: 0 -10px 30px rgba(15, 23, 42, 0.22);
         }
         .bulk-revision-sheet.is-open { display: block; }
+        .bulk-status-confirm-sheet { padding-top: 20px; text-align: center; }
+        .bulk-status-confirm-icon {
+            display: inline-flex;
+            width: 48px;
+            height: 48px;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            color: var(--bs-success);
+            background: rgba(var(--bs-success-rgb), 0.12);
+            font-size: 1.35rem;
+        }
         .bulk-revision-backdrop { position: absolute; inset: 0; z-index: 7; display: none; background: rgba(15, 23, 42, 0.5); }
         .bulk-revision-backdrop.is-open { display: block; }
         .bulk-check-toast { position: absolute; top: 64px; right: 12px; left: 12px; z-index: 12; display: none; }
@@ -1171,6 +1216,25 @@
     <div class="bulk-revision-backdrop" id="bulkRevisionBackdrop"></div>
 
     <main class="bulk-check-deck" id="bulkCheckDeck">
+        <article class="bulk-check-card bulk-check-card-back" id="bulkCheckBackCard" aria-hidden="true">
+            <div class="bulk-check-card-head">
+                <div class="d-flex justify-content-between align-items-start gap-2">
+                    <div class="min-w-0">
+                        <div class="fw-bold text-body bulk-check-title" id="bulkBackActivityTitle">-</div>
+                        <div class="text-body-secondary bulk-check-subtitle mt-1" id="bulkBackActivityMeta">-</div>
+                    </div>
+                    <span class="badge flex-shrink-0" id="bulkBackActivityStatus">-</span>
+                </div>
+            </div>
+            <div class="bulk-check-media">
+                <div class="bulk-check-media-content" id="bulkBackMediaContent"></div>
+                <div class="bulk-check-media-meta">
+                    <span class="badge text-bg-dark" id="bulkBackMediaLabel">-</span>
+                    <span class="badge text-bg-dark">1</span>
+                </div>
+            </div>
+            <div class="bulk-check-card-back-footer"><i class="bi bi-layers me-1"></i>Kegiatan berikutnya</div>
+        </article>
         <article class="bulk-check-card" id="bulkCheckCard">
             <div class="bulk-verdict-stamp bulk-verdict-revision" id="bulkRevisionStamp">REVISI</div>
             <div class="bulk-verdict-stamp bulk-verdict-valid" id="bulkValidStamp">SESUAI</div>
@@ -1197,7 +1261,6 @@
                 <button type="button" class="btn btn-outline-primary px-3" id="bulkTakePhoto" title="Ambil Foto Lapangan Staff"><i class="bi bi-camera-fill"></i></button>
                 <button type="button" class="btn btn-outline-secondary" id="bulkMediaNext">Selanjutnya<i class="bi bi-chevron-right ms-1"></i></button>
             </div>
-            <div class="bulk-check-help"><i class="bi bi-hand-index-thumb me-1"></i>Tap foto atau gunakan tombol untuk berpindah media. Detail terakhir dapat di-scroll.</div>
         </article>
         <div class="bulk-check-complete" id="bulkCheckComplete">
             <div>
@@ -1222,6 +1285,16 @@
         <div class="d-grid gap-2 mt-3" style="grid-template-columns: 1fr 1fr;">
             <button type="button" class="btn btn-outline-secondary" id="bulkRevisionCancel">Batal</button>
             <button type="button" class="btn btn-danger fw-bold" id="bulkRevisionSave"><i class="bi bi-check2 me-1"></i>Simpan Revisi</button>
+        </div>
+    </div>
+
+    <div class="bulk-revision-sheet bulk-status-confirm-sheet" id="bulkStatusConfirmSheet" role="dialog" aria-modal="true" aria-labelledby="bulkStatusConfirmTitle">
+        <div class="bulk-status-confirm-icon mb-2"><i class="bi bi-arrow-repeat"></i></div>
+        <h6 class="fw-bold mb-1" id="bulkStatusConfirmTitle">Konfirmasi Perubahan Status</h6>
+        <p class="small text-body-secondary mb-3">Ubah status kegiatan dari <strong>Revisi</strong> menjadi <strong class="text-success">Sesuai</strong>?</p>
+        <div class="d-grid gap-2" style="grid-template-columns: 1fr 1fr;">
+            <button type="button" class="btn btn-outline-secondary py-2" id="bulkStatusConfirmCancel">Batal</button>
+            <button type="button" class="btn btn-success fw-bold py-2" id="bulkStatusConfirmSave"><i class="bi bi-check2-circle me-1"></i>Ubah Status</button>
         </div>
     </div>
 </section>
@@ -1648,6 +1721,12 @@
         });
 
         const card = document.getElementById('bulkCheckCard');
+        const backCard = document.getElementById('bulkCheckBackCard');
+        const backTitle = document.getElementById('bulkBackActivityTitle');
+        const backMeta = document.getElementById('bulkBackActivityMeta');
+        const backStatusBadge = document.getElementById('bulkBackActivityStatus');
+        const backMediaContent = document.getElementById('bulkBackMediaContent');
+        const backMediaLabel = document.getElementById('bulkBackMediaLabel');
         const complete = document.getElementById('bulkCheckComplete');
         const actions = document.getElementById('bulkCheckActions');
         const progress = document.getElementById('bulkCheckProgress');
@@ -1666,6 +1745,9 @@
         const revisionButton = document.getElementById('bulkRevisionButton');
         const validButton = document.getElementById('bulkValidButton');
         const revisionSheet = document.getElementById('bulkRevisionSheet');
+        const statusConfirmSheet = document.getElementById('bulkStatusConfirmSheet');
+        const statusConfirmCancel = document.getElementById('bulkStatusConfirmCancel');
+        const statusConfirmSave = document.getElementById('bulkStatusConfirmSave');
         const revisionBackdrop = document.getElementById('bulkRevisionBackdrop');
         const revisionNotes = document.getElementById('bulkRevisionNotes');
         const toast = document.getElementById('bulkCheckToast');
@@ -1675,7 +1757,10 @@
         let mediaIndex = 0;
         let saving = false;
         let pointerStart = null;
+        let zonePointerStart = null;
+        let suppressZoneClick = false;
         let suppressTap = false;
+        let pendingValidDirection = 'right';
         let previousBodyOverflow = '';
 
         function escapeHtml(value) {
@@ -1739,7 +1824,9 @@
             prevButton.disabled = mediaIndex === 0;
             nextButton.disabled = mediaIndex >= activity.media.length - 1;
 
-            const allowTapNavigation = media.kind === 'image';
+            const extension = (media.url || '').split('.').pop().toLowerCase().split('?')[0];
+            const isImageMedia = media.kind === 'image' || ['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp'].includes(extension);
+            const allowTapNavigation = Boolean(media.url) && isImageMedia;
             tapPrev.style.display = allowTapNavigation ? 'block' : 'none';
             tapNext.style.display = allowTapNavigation ? 'block' : 'none';
 
@@ -1756,8 +1843,7 @@
                 return;
             }
 
-            const extension = media.url.split('.').pop().toLowerCase().split('?')[0];
-            if (media.kind === 'image' || ['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp'].includes(extension)) {
+            if (isImageMedia) {
                 const image = document.createElement('img');
                 image.src = media.url;
                 image.alt = media.label;
@@ -1773,15 +1859,52 @@
             mediaContent.appendChild(frame);
         }
 
+        function renderBackCard() {
+            const nextActivity = activities[activityIndex + 1];
+            backCard.classList.remove('is-revealed');
+            backMediaContent.replaceChildren();
+            if (!nextActivity) {
+                backCard.style.display = 'none';
+                return;
+            }
+
+            backCard.style.display = 'flex';
+            backTitle.textContent = nextActivity.title;
+            backMeta.textContent = nextActivity.fund + ' · ' + nextActivity.amount + ' · BKU ' + nextActivity.bku;
+            const presentation = statusPresentation(nextActivity.status);
+            backStatusBadge.className = 'badge flex-shrink-0 ' + presentation.classes;
+            backStatusBadge.textContent = presentation.label;
+
+            const media = nextActivity.media[0];
+            backMediaLabel.textContent = media ? media.label : 'Detail Kegiatan';
+            const extension = media && media.url ? media.url.split('.').pop().toLowerCase().split('?')[0] : '';
+            const isImage = media && (media.kind === 'image' || ['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp'].includes(extension));
+            if (media && media.url && isImage) {
+                const image = document.createElement('img');
+                image.src = media.url;
+                image.alt = media.label;
+                image.draggable = false;
+                backMediaContent.appendChild(image);
+                return;
+            }
+
+            const placeholder = document.createElement('div');
+            placeholder.className = 'bulk-check-media-empty';
+            placeholder.innerHTML = '<i class="bi bi-file-earmark-text display-5 mb-2"></i><strong>' + escapeHtml(media ? media.label : 'Detail Kegiatan') + '</strong>';
+            backMediaContent.appendChild(placeholder);
+        }
+
         function renderActivity() {
             const activity = currentActivity();
             resetCardPosition();
             revisionSheet.classList.remove('is-open');
+            statusConfirmSheet.classList.remove('is-open');
             revisionBackdrop.classList.remove('is-open');
             revisionNotes.classList.remove('is-invalid');
             revisionNotes.value = '';
             if (!activity) {
                 card.style.display = 'none';
+                backCard.style.display = 'none';
                 actions.style.display = 'none';
                 complete.classList.add('is-visible');
                 progress.textContent = activities.length + '/' + activities.length;
@@ -1801,6 +1924,7 @@
             validButton.title = activity.canValid ? 'Tandai Sesuai' : 'Vendor/narasumber belum terverifikasi';
             mediaIndex = 0;
             renderMedia();
+            renderBackCard();
         }
 
         function changeMedia(delta) {
@@ -1825,6 +1949,9 @@
             mode.setAttribute('aria-hidden', 'true');
             fab.setAttribute('aria-expanded', 'false');
             document.body.style.overflow = previousBodyOverflow;
+            revisionSheet.classList.remove('is-open');
+            statusConfirmSheet.classList.remove('is-open');
+            revisionBackdrop.classList.remove('is-open');
             resetCardPosition();
         }
 
@@ -1833,6 +1960,7 @@
             revisionButton.disabled = isSaving;
             validButton.disabled = isSaving;
             document.getElementById('bulkRevisionSave').disabled = isSaving;
+            statusConfirmSave.disabled = isSaving;
         }
 
         function updateMainActivityStatus(activity, result) {
@@ -1886,12 +2014,20 @@
                 updateMainActivityStatus(activity, result);
                 revisionSheet.classList.remove('is-open');
                 revisionBackdrop.classList.remove('is-open');
+                backCard.classList.add('is-revealed');
                 card.style.transform = 'translateX(' + (direction === 'right' ? '125%' : '-125%') + ') rotate(' + (direction === 'right' ? '12deg' : '-12deg') + ')';
                 card.style.opacity = '0';
                 window.setTimeout(function () {
+                    // Elemen kartu depan digunakan kembali. Reset tanpa transisi agar
+                    // kegiatan berikutnya terasa naik dari kartu belakang, bukan masuk dari samping.
+                    card.classList.add('is-resetting');
                     activityIndex += 1;
                     setSavingState(false);
                     renderActivity();
+                    void card.offsetWidth;
+                    window.requestAnimationFrame(function () {
+                        card.classList.remove('is-resetting');
+                    });
                 }, 230);
             } catch (error) {
                 setSavingState(false);
@@ -1912,6 +2048,13 @@
                 window.setTimeout(function () { revisionNotes.focus(); }, 80);
                 return;
             }
+            if (activity.status === 'invalid') {
+                pendingValidDirection = direction || 'right';
+                revisionBackdrop.classList.add('is-open');
+                statusConfirmSheet.classList.add('is-open');
+                window.setTimeout(function () { statusConfirmCancel.focus(); }, 80);
+                return;
+            }
             saveDecision('valid', activity.auditNotes, direction || 'right');
         }
 
@@ -1920,8 +2063,56 @@
         document.getElementById('bulkCheckRestart').addEventListener('click', function () { activityIndex = 0; renderActivity(); });
         prevButton.addEventListener('click', function () { changeMedia(-1); });
         nextButton.addEventListener('click', function () { changeMedia(1); });
-        tapPrev.addEventListener('click', function () { if (!suppressTap) changeMedia(-1); suppressTap = false; });
-        tapNext.addEventListener('click', function () { if (!suppressTap) changeMedia(1); suppressTap = false; });
+        // Pisahkan tap navigasi foto dari pointer capture milik gestur swipe kartu.
+        // Tanpa ini, Chrome mobile dapat mengarahkan pointerup ke kartu sehingga click tombol hilang.
+        [tapPrev, tapNext].forEach(function (tapZone) {
+            tapZone.addEventListener('pointerdown', function (event) {
+                event.stopPropagation();
+                zonePointerStart = { x: event.clientX, y: event.clientY, pointerId: event.pointerId };
+                suppressZoneClick = false;
+                tapZone.setPointerCapture(event.pointerId);
+                card.classList.add('is-dragging');
+            });
+            tapZone.addEventListener('pointermove', function (event) {
+                event.stopPropagation();
+                if (!zonePointerStart || event.pointerId !== zonePointerStart.pointerId) return;
+                const dx = event.clientX - zonePointerStart.x;
+                const dy = event.clientY - zonePointerStart.y;
+                if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 12) return;
+                card.style.transform = 'translateX(' + dx + 'px) rotate(' + (dx / 24) + 'deg)';
+                validStamp.style.display = dx > 28 ? 'block' : 'none';
+                revisionStamp.style.display = dx < -28 ? 'block' : 'none';
+            });
+            tapZone.addEventListener('pointerup', function (event) {
+                event.stopPropagation();
+                if (!zonePointerStart || event.pointerId !== zonePointerStart.pointerId) return;
+                const dx = event.clientX - zonePointerStart.x;
+                const dy = event.clientY - zonePointerStart.y;
+                zonePointerStart = null;
+                card.classList.remove('is-dragging');
+                if (Math.abs(dx) >= 90 && Math.abs(dx) > Math.abs(dy)) {
+                    suppressZoneClick = true;
+                    requestDecision(dx > 0 ? 'valid' : 'invalid', dx > 0 ? 'right' : 'left');
+                } else {
+                    resetCardPosition();
+                }
+            });
+            tapZone.addEventListener('pointercancel', function (event) {
+                event.stopPropagation();
+                zonePointerStart = null;
+                resetCardPosition();
+            });
+        });
+        tapPrev.addEventListener('click', function (event) {
+            event.stopPropagation();
+            if (suppressZoneClick) { suppressZoneClick = false; return; }
+            changeMedia(-1);
+        });
+        tapNext.addEventListener('click', function (event) {
+            event.stopPropagation();
+            if (suppressZoneClick) { suppressZoneClick = false; return; }
+            changeMedia(1);
+        });
         revisionButton.addEventListener('click', function () { requestDecision('invalid', 'left'); });
         validButton.addEventListener('click', function () { requestDecision('valid', 'right'); });
         takePhotoButton.addEventListener('click', function () {
@@ -1930,12 +2121,26 @@
         });
         revisionBackdrop.addEventListener('click', function () {
             revisionSheet.classList.remove('is-open');
+            statusConfirmSheet.classList.remove('is-open');
             revisionBackdrop.classList.remove('is-open');
+            resetCardPosition();
         });
         document.getElementById('bulkRevisionCancel').addEventListener('click', function () {
             revisionSheet.classList.remove('is-open');
             revisionBackdrop.classList.remove('is-open');
             resetCardPosition();
+        });
+        statusConfirmCancel.addEventListener('click', function () {
+            statusConfirmSheet.classList.remove('is-open');
+            revisionBackdrop.classList.remove('is-open');
+            resetCardPosition();
+        });
+        statusConfirmSave.addEventListener('click', function () {
+            const activity = currentActivity();
+            if (!activity || saving) return;
+            statusConfirmSheet.classList.remove('is-open');
+            revisionBackdrop.classList.remove('is-open');
+            saveDecision('valid', activity.auditNotes, pendingValidDirection);
         });
         document.getElementById('bulkRevisionSave').addEventListener('click', function () {
             const notes = revisionNotes.value.trim();
@@ -1952,7 +2157,20 @@
         card.addEventListener('pointerdown', function (event) {
             const interactive = event.target.closest('button, a, textarea, input, iframe');
             if (interactive && !event.target.closest('.bulk-check-tap-zone')) return;
-            pointerStart = { x: event.clientX, y: event.clientY, pointerId: event.pointerId };
+            const activity = currentActivity();
+            const media = activity && activity.media[mediaIndex];
+            const mediaRect = mediaStage.getBoundingClientRect();
+            const isInsideMedia = event.clientX >= mediaRect.left && event.clientX <= mediaRect.right &&
+                event.clientY >= mediaRect.top && event.clientY <= mediaRect.bottom;
+            const tapDirection = media && media.kind === 'image' && isInsideMedia
+                ? (event.clientX < mediaRect.left + (mediaRect.width / 2) ? -1 : 1)
+                : 0;
+            pointerStart = {
+                x: event.clientX,
+                y: event.clientY,
+                pointerId: event.pointerId,
+                tapDirection: tapDirection
+            };
             suppressTap = false;
             card.setPointerCapture(event.pointerId);
             card.classList.add('is-dragging');
@@ -1971,18 +2189,32 @@
             if (!pointerStart || event.pointerId !== pointerStart.pointerId) return;
             const dx = event.clientX - pointerStart.x;
             const dy = event.clientY - pointerStart.y;
+            const tapDirection = pointerStart.tapDirection;
             pointerStart = null;
             card.classList.remove('is-dragging');
             if (Math.abs(dx) >= 90 && Math.abs(dx) > Math.abs(dy)) {
                 requestDecision(dx > 0 ? 'valid' : 'invalid', dx > 0 ? 'right' : 'left');
             } else {
                 resetCardPosition();
+                if (tapDirection && Math.abs(dx) < 24 && Math.abs(dy) < 24) {
+                    changeMedia(tapDirection);
+                    // Cegah event click lanjutan memindahkan media dua kali.
+                    suppressTap = true;
+                }
             }
         }
         card.addEventListener('pointerup', finishPointer);
         card.addEventListener('pointercancel', function () { pointerStart = null; resetCardPosition(); });
         document.addEventListener('keydown', function (event) {
-            if (event.key === 'Escape' && mode.classList.contains('is-open') && !revisionSheet.classList.contains('is-open')) closeMode();
+            if (event.key !== 'Escape' || !mode.classList.contains('is-open')) return;
+            if (revisionSheet.classList.contains('is-open') || statusConfirmSheet.classList.contains('is-open')) {
+                revisionSheet.classList.remove('is-open');
+                statusConfirmSheet.classList.remove('is-open');
+                revisionBackdrop.classList.remove('is-open');
+                resetCardPosition();
+                return;
+            }
+            closeMode();
         });
 
         window.bulkCheckAddStaffPhoto = function (activityId, photoUrl) {
@@ -2324,6 +2556,7 @@
 
         form.querySelectorAll('input[name^="checklist_notes_"], textarea[name="audit_notes"]').forEach(function (field) {
             field.addEventListener('input', function () {
+                field.classList.remove('is-invalid');
                 scheduleAuditAutosave(form, false);
             });
             field.addEventListener('change', function () {

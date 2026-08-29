@@ -269,6 +269,35 @@ def test_staff_vendor_recheck_reports_remaining_unverified_vendor(monkeypatch):
     assert payload["unverified_names"] == "Toko Belum"
 
 
+def test_staff_revision_status_requires_audit_note(monkeypatch):
+    app = Flask(__name__)
+    updates = []
+    activity = {
+        "id": 41,
+        "report_id": 7,
+        "activity_name": "Belanja kegiatan",
+        "vendor_id": None,
+        "vendor_name": None,
+        "vendor_status": None,
+    }
+    monkeypatch.setattr(routes, "current_user", lambda: {"id": 5, "role": "staff"})
+    monkeypatch.setattr(routes.queries, "get_activity_by_id", lambda activity_id: activity)
+    monkeypatch.setattr(routes.queries, "update_activity_audit", lambda *args: updates.append(args))
+
+    with app.test_request_context(
+        "/staff/verifikasi/kegiatan/41",
+        method="POST",
+        data={"action": "validate", "status": "invalid", "report_id": "7", "audit_notes": "  "},
+        headers={"Accept": "application/json"},
+    ):
+        response, status_code = routes.staff_audit_activity.__wrapped__(41)
+
+    assert status_code == 400
+    assert response.get_json()["success"] is False
+    assert "wajib" in response.get_json()["message"].lower()
+    assert updates == []
+
+
 def test_admin_vendor_filters_are_forwarded_to_query(monkeypatch):
     app = Flask(__name__)
     calls = []

@@ -463,39 +463,52 @@
             <form method="POST" action="{{ url_for('monev_bos.sekolah_vendors') }}" id="editVendorForm">
                 <input type="hidden" name="action" value="update_vendor">
                 <input type="hidden" name="vendor_id">
+                <input type="hidden" name="vendor_type" id="hiddenEditVendorType" value="vendor">
                 <div class="modal-header">
-                    <h5 class="modal-title fw-bold" id="editVendorModalLabel"><i class="bi bi-pencil-square text-primary me-2"></i>Edit Vendor / Narasumber</h5>
+                    <h5 class="modal-title fw-bold" id="editVendorModalLabel">
+                        <i class="bi bi-shop text-primary me-2" id="editModalTitleIcon"></i><span id="editModalTitleText">Edit Vendor / Toko</span>
+                    </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="alert alert-warning py-2 small"><i class="bi bi-clock-history me-1"></i>Data hanya dapat diedit selama masih menunggu verifikasi.</div>
+                    <div class="mb-4">
+                        <label class="form-label fw-bold mb-2">Tipe Pendaftaran</label>
+                        <div class="btn-group w-100" role="group" id="editVendorTypeToggle">
+                            <button type="button" class="btn btn-primary fw-bold" id="btnEditTypeVendor" onclick="setEditVendorType('vendor')">
+                                <i class="bi bi-shop me-2"></i>Vendor / Toko
+                            </button>
+                            <button type="button" class="btn btn-outline-info fw-bold" id="btnEditTypeNarsum" onclick="setEditVendorType('narsum')">
+                                <i class="bi bi-person-video3 me-2"></i>Narasumber / Instruktur
+                            </button>
+                        </div>
+                        <div class="form-text text-xs mt-1">Pilih <strong>Vendor/Toko</strong> untuk toko atau pemasok barang. Pilih <strong>Narasumber/Instruktur</strong> untuk perorangan sebagai pembicara, pelatih, atau instruktur.</div>
+                    </div>
+
+                    <div class="alert alert-warning py-2 small mb-3">
+                        <i class="bi bi-clock-history me-1"></i>
+                        Data hanya dapat diedit selama masih menunggu verifikasi. Perubahan akan diperiksa oleh Tim Admin/Staff Monev BOS.
+                    </div>
+
                     <div class="row g-3">
                         <div class="col-12 col-md-6">
-                            <label class="form-label fw-semibold">Tipe Pendaftaran</label>
-                            <select class="form-select" name="vendor_type">
-                                <option value="vendor">Vendor / Toko</option>
-                                <option value="narsum">Narasumber / Instruktur</option>
-                            </select>
-                        </div>
-                        <div class="col-12 col-md-6">
-                            <label class="form-label fw-semibold">Nama Vendor / No. KTP Narsum <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" name="name" required>
+                            <label class="form-label fw-semibold" id="editLabelName">Nama Toko / Vendor <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="name" id="editInputName" placeholder="Contoh: CV. Sukses Mandiri Jaya" required>
                         </div>
                         <div class="col-12 col-md-6">
                             <label class="form-label fw-semibold">NPWP Vendor</label>
-                            <input type="text" class="form-control" name="npwp">
+                            <input type="text" class="form-control" name="npwp" placeholder="Contoh: 01.234.567.8-901.000">
                         </div>
                         <div class="col-12 col-md-6">
                             <label class="form-label fw-semibold">No. Telepon / WhatsApp</label>
-                            <input type="text" class="form-control" name="phone">
+                            <input type="text" class="form-control" name="phone" placeholder="Contoh: 081234567890">
                         </div>
                         <div class="col-12 col-md-6">
-                            <label class="form-label fw-semibold">Penanggung Jawab / Nama Narsum</label>
-                            <input type="text" class="form-control" name="owner_name">
+                            <label class="form-label fw-semibold" id="editLabelOwnerName">Nama Penanggung Jawab / Pemilik</label>
+                            <input type="text" class="form-control" name="owner_name" id="editInputOwnerName" placeholder="Contoh: Ahmad Hidayat">
                         </div>
                         <div class="col-12">
-                            <label class="form-label fw-semibold">Alamat Lengkap</label>
-                            <textarea class="form-control" name="address" rows="2"></textarea>
+                            <label class="form-label fw-semibold">Alamat Lengkap Toko</label>
+                            <textarea class="form-control" name="address" rows="2" placeholder="Jl. Raya Yos Sudarso No. 12, Jakarta Utara"></textarea>
                         </div>
                         <div class="col-12 col-md-6">
                             <label class="form-label fw-semibold">Nama Bank</label>
@@ -519,13 +532,15 @@
                         </div>
                         <div class="col-12 col-md-6" data-bank-account-field>
                             <label class="form-label fw-semibold">No. Rekening Bank</label>
-                            <input type="text" class="form-control" name="bank_account">
+                            <input type="text" class="form-control" name="bank_account" placeholder="Contoh: 12345678901">
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary fw-bold"><i class="bi bi-save me-1"></i>Simpan Perubahan</button>
+                <div class="modal-footer flex-column flex-sm-row">
+                    <button type="button" class="btn btn-secondary w-100 w-sm-auto mb-2 mb-sm-0" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary fw-bold w-100 w-sm-auto px-4">
+                        <i class="bi bi-save me-1"></i>Simpan Perubahan
+                    </button>
                 </div>
             </form>
         </div>
@@ -553,6 +568,22 @@ function setVendorType(type) {
 
     // Submit button
     document.getElementById('submitBtnText').textContent = isNarsum ? 'Kirim Pendaftaran Narasumber' : 'Kirim Pendaftaran Vendor';
+}
+
+function setEditVendorType(type) {
+    const normalizedType = type === 'narsum' ? 'narsum' : 'vendor';
+    const isNarsum = normalizedType === 'narsum';
+    document.getElementById('hiddenEditVendorType').value = normalizedType;
+
+    document.getElementById('btnEditTypeVendor').className = isNarsum ? 'btn btn-outline-primary fw-bold' : 'btn btn-primary fw-bold';
+    document.getElementById('btnEditTypeNarsum').className = isNarsum ? 'btn btn-info fw-bold text-white' : 'btn btn-outline-info fw-bold';
+
+    document.getElementById('editModalTitleText').textContent = isNarsum ? 'Edit Narasumber / Instruktur' : 'Edit Vendor / Toko';
+    document.getElementById('editModalTitleIcon').className = isNarsum ? 'bi bi-person-video3 text-info me-2' : 'bi bi-shop text-primary me-2';
+    document.getElementById('editLabelName').innerHTML = (isNarsum ? 'Nomer KTP' : 'Nama Toko / Vendor') + ' <span class="text-danger">*</span>';
+    document.getElementById('editInputName').placeholder = isNarsum ? 'Contoh: 3175012345670001' : 'Contoh: CV. Sukses Mandiri Jaya';
+    document.getElementById('editLabelOwnerName').textContent = isNarsum ? 'Nama Narsum / Instruktur' : 'Nama Penanggung Jawab / Pemilik';
+    document.getElementById('editInputOwnerName').placeholder = isNarsum ? 'Contoh: Dr. Budi Santoso, M.Pd.' : 'Contoh: Ahmad Hidayat';
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -596,6 +627,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const input = form.elements.namedItem(entry[0]);
                 if (input) input.value = entry[1] || '';
             });
+            setEditVendorType(values.vendor_type);
             const accountType = button.dataset.bankAccountType === 'va' ? 'va' : 'rekening';
             const accountRadio = form.querySelector('input[name="bank_account_type"][value="' + accountType + '"]');
             if (accountRadio) accountRadio.checked = true;
