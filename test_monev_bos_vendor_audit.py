@@ -890,11 +890,15 @@ def test_duplicate_vendor_detection_does_not_match_phone_only(monkeypatch):
     assert target["duplicate_matches"] == []
 
 
-def test_duplicate_vendor_requires_exact_confirmation(monkeypatch):
+def test_duplicate_vendor_verification_is_blocked(monkeypatch):
     app = Flask(__name__)
     updates = []
     monkeypatch.setattr(routes, "current_user", lambda: {"id": 5, "role": "staff"})
-    monkeypatch.setattr(routes.queries, "find_vendor_duplicate_matches", lambda vendor_id: [{"id": 9}])
+    monkeypatch.setattr(
+        routes.queries,
+        "find_vendor_duplicate_matches",
+        lambda vendor_id: [{"id": 9, "status": "verified"}],
+    )
     monkeypatch.setattr(routes.queries, "update_vendor_status", lambda *args, **kwargs: updates.append((args, kwargs)))
     monkeypatch.setattr(routes, "flash", lambda *_args, **_kwargs: None)
     monkeypatch.setattr(routes, "url_for", lambda *_args, **_kwargs: "/monev-bos/admin/vendors")
@@ -911,11 +915,17 @@ def test_duplicate_vendor_requires_exact_confirmation(monkeypatch):
     assert updates == []
 
 
-def test_duplicate_vendor_confirmation_is_saved_and_logged(monkeypatch):
+def test_duplicate_vendor_cannot_be_verified_even_with_legacy_confirmation(monkeypatch):
     app = Flask(__name__)
     updates = []
     logs = []
-    duplicate = {"id": 9, "school_id": 42, "duplicate_fields": ["NPWP", "Kontak"]}
+    flashes = []
+    duplicate = {
+        "id": 9,
+        "school_id": 42,
+        "status": "verified",
+        "duplicate_fields": ["NPWP", "Kontak"],
+    }
     monkeypatch.setattr(routes, "current_user", lambda: {"id": 5, "role": "staff"})
     monkeypatch.setattr(routes.queries, "find_vendor_duplicate_matches", lambda vendor_id: [duplicate])
     monkeypatch.setattr(
@@ -929,7 +939,7 @@ def test_duplicate_vendor_confirmation_is_saved_and_logged(monkeypatch):
         "vendor_type": "vendor",
     })
     monkeypatch.setattr(routes, "record_admin_action", lambda **kwargs: logs.append(kwargs))
-    monkeypatch.setattr(routes, "flash", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(routes, "flash", lambda message, category=None: flashes.append((message, category)))
     monkeypatch.setattr(routes, "url_for", lambda *_args, **_kwargs: "/monev-bos/admin/vendors")
     monkeypatch.setattr(routes, "redirect", lambda location: location)
 
@@ -952,20 +962,54 @@ def test_duplicate_vendor_confirmation_is_saved_and_logged(monkeypatch):
         response = routes.admin_vendors.__wrapped__()
 
     assert response == "/monev-bos/admin/vendors"
-    assert updates == [((7, "verified", 5), {
-        "verification_notes": "vendor berbeda",
-        "verification_checklist": {
-            "identity": True,
-            "npwp": True,
-            "phone": True,
-            "address": True,
-            "owner": True,
-            "bank": True,
+    assert updates == []
+    assert logs == []
+    assert flashes[-1][1] == "danger"
+    assert "Verifikasi diblokir" in flashes[-1][0]
+
+
+def test_pending_duplicate_does_not_block_first_verification(monkeypatch):
+    app = Flask(__name__)
+    updates = []
+    monkeypatch.setattr(routes, "current_user", lambda: {"id": 5, "role": "staff"})
+    monkeypatch.setattr(
+        routes.queries,
+        "find_vendor_duplicate_matches",
+        lambda vendor_id: [{"id": 9, "status": "pending"}],
+    )
+    monkeypatch.setattr(
+        routes.queries,
+        "update_vendor_status",
+        lambda *args, **kwargs: updates.append((args, kwargs)) or True,
+    )
+    monkeypatch.setattr(routes.queries, "get_vendor_by_id", lambda vendor_id: {
+        "id": vendor_id,
+        "name": "CV Maju",
+        "vendor_type": "vendor",
+    })
+    monkeypatch.setattr(routes, "_record_monev_admin_action", lambda *args, **kwargs: None)
+    monkeypatch.setattr(routes, "flash", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(routes, "url_for", lambda *_args, **_kwargs: "/monev-bos/admin/vendors")
+    monkeypatch.setattr(routes, "redirect", lambda location: location)
+
+    with app.test_request_context(
+        "/monev-bos/admin/vendors?vendor_type=vendor",
+        method="POST",
+        data={
+            "action": "verify_vendor",
+            "vendor_id": "7",
+            "check_identity": "sesuai",
+            "check_npwp": "sesuai",
+            "check_phone": "sesuai",
+            "check_address": "sesuai",
+            "check_owner": "sesuai",
+            "check_bank": "sesuai",
         },
-        "review_notes": "Dokumen sudah dibandingkan dengan berkas pendukung.",
-    })]
-    assert logs[0]["action"] == "VERIFY_DUPLICATE_OVERRIDE"
-    assert logs[0]["metadata"]["duplicate_matches"][0]["matching_fields"] == ["NPWP", "Kontak"]
+    ):
+        response = routes.admin_vendors.__wrapped__()
+
+    assert response == "/monev-bos/admin/vendors"
+    assert updates[0][0] == (7, "verified", 5)
 
 
 def test_vendor_verification_requires_all_review_checkboxes(monkeypatch):

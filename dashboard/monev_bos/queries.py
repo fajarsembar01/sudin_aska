@@ -2253,6 +2253,7 @@ def attach_vendor_duplicate_matches(vendors: List[Dict[str, Any]]) -> List[Dict[
     """Attach registrations sharing a normalized name, identity number, or NPWP."""
     for vendor in vendors:
         vendor["duplicate_matches"] = []
+        vendor["verified_duplicate_matches"] = []
     if not vendors:
         return vendors
 
@@ -2292,6 +2293,10 @@ def attach_vendor_duplicate_matches(vendors: List[Dict[str, Any]]) -> List[Dict[
             matches.values(),
             key=lambda item: (item.get("status") != "verified", -int(item["id"])),
         )
+        vendor["verified_duplicate_matches"] = [
+            match for match in vendor["duplicate_matches"]
+            if match.get("status") == "verified"
+        ]
     return vendors
 
 

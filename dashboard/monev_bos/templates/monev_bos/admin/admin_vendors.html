@@ -419,16 +419,16 @@
                                 <td class="pe-4 text-end">
                                     {% if v.status == 'pending' %}
                                         <div class="btn-group" role="group">
-                                            <button type="button" class="btn btn-sm {{ 'btn-warning text-dark' if v.duplicate_matches else 'btn-success' }} fw-bold" data-bs-toggle="modal" data-bs-target="#reviewVendorModal{{ v.id }}">
-                                                <i class="bi bi-card-checklist me-1"></i>Periksa &amp; Verifikasi
+                                            <button type="button" class="btn btn-sm {{ 'btn-danger' if v.verified_duplicate_matches else 'btn-success' }} fw-bold" data-bs-toggle="modal" data-bs-target="#reviewVendorModal{{ v.id }}">
+                                                <i class="bi {{ 'bi-shield-lock-fill' if v.verified_duplicate_matches else 'bi-card-checklist' }} me-1"></i>{{ 'Verifikasi Diblokir' if v.verified_duplicate_matches else 'Periksa & Verifikasi' }}
                                             </button>
                                             <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#rejectVendorModal{{ v.id }}">
                                                 <i class="bi bi-x-lg"></i> Tolak
                                             </button>
                                         </div>
                                     {% elif v.status == 'rejected' %}
-                                        <button type="button" class="btn btn-sm {{ 'btn-warning text-dark' if v.duplicate_matches else 'btn-outline-success' }} fw-bold" data-bs-toggle="modal" data-bs-target="#reviewVendorModal{{ v.id }}">
-                                            <i class="bi bi-card-checklist me-1"></i>Periksa &amp; Setujui
+                                        <button type="button" class="btn btn-sm {{ 'btn-danger' if v.verified_duplicate_matches else 'btn-outline-success' }} fw-bold" data-bs-toggle="modal" data-bs-target="#reviewVendorModal{{ v.id }}">
+                                            <i class="bi {{ 'bi-shield-lock-fill' if v.verified_duplicate_matches else 'bi-card-checklist' }} me-1"></i>{{ 'Verifikasi Diblokir' if v.verified_duplicate_matches else 'Periksa & Setujui' }}
                                         </button>
                                     {% else %}
                                         <div class="btn-group" role="group">
@@ -446,7 +446,7 @@
                                                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
                                                 </div>
                                                 <div class="modal-body">
-                                                    <p class="mb-3">Data <strong>{{ (v.owner_name or v.name) if v.vendor_type == 'narsum' else v.name }}</strong> memiliki kesamaan dengan pendaftaran berikut. Pastikan bukan entri yang sama sebelum memverifikasi.</p>
+                                                    <p class="mb-3">Data <strong>{{ (v.owner_name or v.name) if v.vendor_type == 'narsum' else v.name }}</strong> memiliki kesamaan dengan pendaftaran berikut.</p>
                                                     <div class="table-responsive border rounded mb-3">
                                                         <table class="table table-sm align-middle mb-0">
                                                             <thead class="table-light"><tr><th>Sekolah</th><th>Data Pembanding</th><th>Kesamaan</th><th>Status</th></tr></thead>
@@ -465,7 +465,11 @@
                                                             </tbody>
                                                         </table>
                                                     </div>
-                                                    <div class="alert alert-danger small"><strong>Jangan verifikasi</strong> jika data tersebut merupakan vendor/narasumber yang sama.</div>
+                                                    {% if v.verified_duplicate_matches %}
+                                                    <div class="alert alert-danger small mb-0"><i class="bi bi-shield-lock-fill me-1"></i><strong>Verifikasi diblokir karena data pembanding sudah terverifikasi.</strong> Gunakan data yang sudah ada atau tolak pengajuan duplikat ini.</div>
+                                                    {% else %}
+                                                    <div class="alert alert-info small mb-0"><i class="bi bi-info-circle-fill me-1"></i>Semua data pembanding masih menunggu atau ditolak. Salah satu pengajuan masih dapat diperiksa dan diverifikasi.</div>
+                                                    {% endif %}
                                                 </div>
                                                 <div class="modal-footer">
                                                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
@@ -585,10 +589,10 @@
 
             <div class="vendor-mobile-actions">
                 {% if v.status == 'pending' %}
-                <button type="button" class="btn {{ 'btn-warning text-dark' if v.duplicate_matches else 'btn-success' }} fw-bold" data-bs-toggle="modal" data-bs-target="#reviewVendorModal{{ v.id }}"><i class="bi bi-card-checklist me-1"></i>Periksa &amp; Verifikasi</button>
+                <button type="button" class="btn {{ 'btn-danger' if v.verified_duplicate_matches else 'btn-success' }} fw-bold" data-bs-toggle="modal" data-bs-target="#reviewVendorModal{{ v.id }}"><i class="bi {{ 'bi-shield-lock-fill' if v.verified_duplicate_matches else 'bi-card-checklist' }} me-1"></i>{{ 'Verifikasi Diblokir' if v.verified_duplicate_matches else 'Periksa & Verifikasi' }}</button>
                 <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#rejectVendorMobileModal{{ v.id }}"><i class="bi bi-x-lg me-1"></i>Tolak</button>
                 {% elif v.status == 'rejected' %}
-                <button type="button" class="btn {{ 'btn-warning text-dark' if v.duplicate_matches else 'btn-outline-success' }} fw-bold" data-bs-toggle="modal" data-bs-target="#reviewVendorModal{{ v.id }}"><i class="bi bi-card-checklist me-1"></i>Periksa &amp; Setujui</button>
+                <button type="button" class="btn {{ 'btn-danger' if v.verified_duplicate_matches else 'btn-outline-success' }} fw-bold" data-bs-toggle="modal" data-bs-target="#reviewVendorModal{{ v.id }}"><i class="bi {{ 'bi-shield-lock-fill' if v.verified_duplicate_matches else 'bi-card-checklist' }} me-1"></i>{{ 'Verifikasi Diblokir' if v.verified_duplicate_matches else 'Periksa & Setujui' }}</button>
                 {% else %}
                 <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#reviewVendorModal{{ v.id }}"><i class="bi bi-card-checklist me-1"></i>Checklist</button>
                 <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#rejectVendorMobileModal{{ v.id }}"><i class="bi bi-x-lg me-1"></i>Batalkan</button>
@@ -657,27 +661,22 @@
 {% set review_checks = v.verification_checklist or {} %}
 <div class="modal fade vendor-review-modal" id="reviewVendorModal{{ v.id }}" tabindex="-1" aria-labelledby="reviewVendorModalLabel{{ v.id }}" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable vendor-review-dialog">
-        <form method="POST" action="{{ url_for('monev_bos.admin_vendors', vendor_type=vendor_type_filter, school_id=school_id_filter, status=status_filter, q=search_query, scan=scan_mode) }}" class="modal-content" id="vendorReviewForm{{ v.id }}" data-current-step="{{ 1 if v.duplicate_matches and v.status != 'verified' else 2 }}">
+        <form method="POST" action="{{ url_for('monev_bos.admin_vendors', vendor_type=vendor_type_filter, school_id=school_id_filter, status=status_filter, q=search_query, scan=scan_mode) }}" class="modal-content" id="vendorReviewForm{{ v.id }}">
             <input type="hidden" name="action" value="verify_vendor">
             <input type="hidden" name="vendor_id" value="{{ v.id }}">
-            <div class="modal-header bg-primary-subtle">
+            <div class="modal-header {{ 'bg-danger-subtle' if v.verified_duplicate_matches and v.status != 'verified' else 'bg-primary-subtle' }}">
                 <div>
-                    <h5 class="modal-title fw-bold" id="reviewVendorModalLabel{{ v.id }}"><i class="bi bi-card-checklist text-primary me-2"></i>Checklist Pemeriksaan {{ 'Narasumber' if v.vendor_type == 'narsum' else 'Vendor' }}</h5>
+                    <h5 class="modal-title fw-bold" id="reviewVendorModalLabel{{ v.id }}"><i class="bi {{ 'bi-shield-lock-fill text-danger' if v.verified_duplicate_matches and v.status != 'verified' else 'bi-card-checklist text-primary' }} me-2"></i>{{ 'Verifikasi Diblokir' if v.verified_duplicate_matches and v.status != 'verified' else 'Checklist Pemeriksaan' }} {{ 'Narasumber' if v.vendor_type == 'narsum' else 'Vendor' }}</h5>
                     <div class="small text-body-secondary mt-1">{{ v.school_name }}{% if v.npsn %} · NPSN {{ v.npsn }}{% endif %}</div>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
             </div>
             <div class="modal-body">
-                {% if v.duplicate_matches and v.status != 'verified' %}
-                <div class="d-flex align-items-center justify-content-center mb-4 vendor-review-stepper" id="vendorReviewStepper{{ v.id }}">
-                    <div class="text-center"><span class="badge rounded-pill bg-primary fs-6" id="vendorReviewStepBadge1{{ v.id }}">1</span><div class="small fw-bold text-primary mt-1" id="vendorReviewStepLabel1{{ v.id }}">Vendor Berbeda</div></div>
-                    <div class="border-top flex-grow-1 mx-3" style="max-width: 140px;"></div>
-                    <div class="text-center"><span class="badge rounded-pill bg-secondary fs-6" id="vendorReviewStepBadge2{{ v.id }}">2</span><div class="small text-body-secondary mt-1" id="vendorReviewStepLabel2{{ v.id }}">Checklist Kesesuaian</div></div>
-                </div>
-                <div id="vendorReviewDuplicateStep{{ v.id }}">
-                    <div class="alert alert-warning"><i class="bi bi-exclamation-triangle-fill me-1"></i><strong>Terdapat {{ v.duplicate_matches|length }} data mirip.</strong> Pastikan pendaftaran ini memang vendor/narasumber yang berbeda.</div>
+                {% if v.verified_duplicate_matches and v.status != 'verified' %}
+                <div class="alert alert-danger"><i class="bi bi-shield-lock-fill me-1"></i><strong>Vendor/narasumber yang sama sudah terverifikasi.</strong> Pengajuan ini tidak dapat diverifikasi, termasuk melalui pengiriman request langsung.</div>
+                <div>
                     <div class="vstack gap-2 mb-3">
-                        {% for duplicate in v.duplicate_matches %}
+                        {% for duplicate in v.verified_duplicate_matches %}
                         <div class="border rounded p-2 small vendor-review-duplicate-card">
                             <div class="d-flex justify-content-between align-items-start gap-2 vendor-review-duplicate-head">
                                 <div><strong>{{ (duplicate.owner_name or duplicate.name) if v.vendor_type == 'narsum' else duplicate.name }}</strong><div class="text-body-secondary">{{ duplicate.school_name }}{% if duplicate.npsn %} · NPSN {{ duplicate.npsn }}{% endif %}</div></div>
@@ -687,13 +686,13 @@
                         </div>
                         {% endfor %}
                     </div>
-                    <label class="form-label fw-bold" for="reviewDuplicateConfirmation{{ v.id }}">Jika dipastikan berbeda, ketik <code>vendor berbeda</code></label>
-                    <input id="reviewDuplicateConfirmation{{ v.id }}" name="duplicate_confirmation" class="form-control" autocomplete="off" placeholder="vendor berbeda" required>
-                    <div class="form-text">Setelah dikonfirmasi, lanjutkan ke checklist kesesuaian data.</div>
+                    <p class="text-danger fw-semibold mb-0">Gunakan data vendor/narasumber yang sudah ada atau tolak pengajuan duplikat ini.</p>
                 </div>
-                {% endif %}
-
-                <div id="vendorReviewChecklistStep{{ v.id }}" {% if v.duplicate_matches and v.status != 'verified' %}class="d-none"{% endif %}>
+                {% else %}
+                <div id="vendorReviewChecklistStep{{ v.id }}">
+                    {% if v.duplicate_matches and not v.verified_duplicate_matches and v.status != 'verified' %}
+                    <div class="alert alert-info small"><i class="bi bi-info-circle-fill me-1"></i>Ada data mirip, tetapi belum ada yang terverifikasi. Pengajuan ini tetap dapat diverifikasi setelah checklist dinyatakan sesuai.</div>
+                    {% endif %}
                     {% if v.status == 'verified' and not review_checks %}
                     <div class="alert alert-info small"><i class="bi bi-info-circle me-1"></i>Data ini diverifikasi sebelum fitur checklist tersedia, sehingga belum memiliki rincian pemeriksaan.</div>
                     {% else %}
@@ -703,27 +702,27 @@
                     <div class="vstack gap-2">
                         <div class="border rounded p-2 d-flex justify-content-between align-items-center gap-3 vendor-review-row">
                             <div><span class="small text-body-secondary d-block">{{ 'No. KTP' if v.vendor_type == 'narsum' else 'Nama Toko / Vendor' }}</span><strong>{{ v.name or '-' }}</strong></div>
-                            <div class="form-check flex-shrink-0"><input class="form-check-input vendor-review-check-input" type="checkbox" name="check_identity" value="sesuai" id="reviewIdentity{{ v.id }}" {% if review_checks.get('identity') %}checked{% endif %} {% if v.status == 'verified' or (v.duplicate_matches and v.status != 'verified') %}disabled{% endif %} {% if v.status != 'verified' %}required{% endif %}><label class="form-check-label text-success fw-bold" for="reviewIdentity{{ v.id }}">Sesuai</label></div>
+                            <div class="form-check flex-shrink-0"><input class="form-check-input vendor-review-check-input" type="checkbox" name="check_identity" value="sesuai" id="reviewIdentity{{ v.id }}" {% if review_checks.get('identity') %}checked{% endif %} {% if v.status == 'verified' or (v.verified_duplicate_matches and v.status != 'verified') %}disabled{% endif %} {% if v.status != 'verified' %}required{% endif %}><label class="form-check-label text-success fw-bold" for="reviewIdentity{{ v.id }}">Sesuai</label></div>
                         </div>
                         <div class="border rounded p-2 d-flex justify-content-between align-items-center gap-3 vendor-review-row">
                             <div><span class="small text-body-secondary d-block">NPWP</span><strong>{{ v.npwp or '-' }}</strong></div>
-                            <div class="form-check flex-shrink-0"><input class="form-check-input vendor-review-check-input" type="checkbox" name="check_npwp" value="sesuai" id="reviewNpwp{{ v.id }}" {% if review_checks.get('npwp') %}checked{% endif %} {% if v.status == 'verified' or (v.duplicate_matches and v.status != 'verified') %}disabled{% endif %} {% if v.status != 'verified' %}required{% endif %}><label class="form-check-label text-success fw-bold" for="reviewNpwp{{ v.id }}">Sesuai</label></div>
+                            <div class="form-check flex-shrink-0"><input class="form-check-input vendor-review-check-input" type="checkbox" name="check_npwp" value="sesuai" id="reviewNpwp{{ v.id }}" {% if review_checks.get('npwp') %}checked{% endif %} {% if v.status == 'verified' or (v.verified_duplicate_matches and v.status != 'verified') %}disabled{% endif %} {% if v.status != 'verified' %}required{% endif %}><label class="form-check-label text-success fw-bold" for="reviewNpwp{{ v.id }}">Sesuai</label></div>
                         </div>
                         <div class="border rounded p-2 d-flex justify-content-between align-items-center gap-3 vendor-review-row">
                             <div><span class="small text-body-secondary d-block">No. Telepon / WhatsApp</span><strong>{{ v.phone or '-' }}</strong></div>
-                            <div class="form-check flex-shrink-0"><input class="form-check-input vendor-review-check-input" type="checkbox" name="check_phone" value="sesuai" id="reviewPhone{{ v.id }}" {% if review_checks.get('phone') %}checked{% endif %} {% if v.status == 'verified' or (v.duplicate_matches and v.status != 'verified') %}disabled{% endif %} {% if v.status != 'verified' %}required{% endif %}><label class="form-check-label text-success fw-bold" for="reviewPhone{{ v.id }}">Sesuai</label></div>
+                            <div class="form-check flex-shrink-0"><input class="form-check-input vendor-review-check-input" type="checkbox" name="check_phone" value="sesuai" id="reviewPhone{{ v.id }}" {% if review_checks.get('phone') %}checked{% endif %} {% if v.status == 'verified' or (v.verified_duplicate_matches and v.status != 'verified') %}disabled{% endif %} {% if v.status != 'verified' %}required{% endif %}><label class="form-check-label text-success fw-bold" for="reviewPhone{{ v.id }}">Sesuai</label></div>
                         </div>
                         <div class="border rounded p-2 d-flex justify-content-between align-items-center gap-3 vendor-review-row">
                             <div class="min-w-0"><span class="small text-body-secondary d-block">Alamat</span><strong class="text-break">{{ v.address or '-' }}</strong></div>
-                            <div class="form-check flex-shrink-0"><input class="form-check-input vendor-review-check-input" type="checkbox" name="check_address" value="sesuai" id="reviewAddress{{ v.id }}" {% if review_checks.get('address') %}checked{% endif %} {% if v.status == 'verified' or (v.duplicate_matches and v.status != 'verified') %}disabled{% endif %} {% if v.status != 'verified' %}required{% endif %}><label class="form-check-label text-success fw-bold" for="reviewAddress{{ v.id }}">Sesuai</label></div>
+                            <div class="form-check flex-shrink-0"><input class="form-check-input vendor-review-check-input" type="checkbox" name="check_address" value="sesuai" id="reviewAddress{{ v.id }}" {% if review_checks.get('address') %}checked{% endif %} {% if v.status == 'verified' or (v.verified_duplicate_matches and v.status != 'verified') %}disabled{% endif %} {% if v.status != 'verified' %}required{% endif %}><label class="form-check-label text-success fw-bold" for="reviewAddress{{ v.id }}">Sesuai</label></div>
                         </div>
                         <div class="border rounded p-2 d-flex justify-content-between align-items-center gap-3 vendor-review-row">
                             <div><span class="small text-body-secondary d-block">{{ 'Nama Narasumber / Instruktur' if v.vendor_type == 'narsum' else 'Penanggung Jawab / Pemilik' }}</span><strong>{{ v.owner_name or '-' }}</strong></div>
-                            <div class="form-check flex-shrink-0"><input class="form-check-input vendor-review-check-input" type="checkbox" name="check_owner" value="sesuai" id="reviewOwner{{ v.id }}" {% if review_checks.get('owner') %}checked{% endif %} {% if v.status == 'verified' or (v.duplicate_matches and v.status != 'verified') %}disabled{% endif %} {% if v.status != 'verified' %}required{% endif %}><label class="form-check-label text-success fw-bold" for="reviewOwner{{ v.id }}">Sesuai</label></div>
+                            <div class="form-check flex-shrink-0"><input class="form-check-input vendor-review-check-input" type="checkbox" name="check_owner" value="sesuai" id="reviewOwner{{ v.id }}" {% if review_checks.get('owner') %}checked{% endif %} {% if v.status == 'verified' or (v.verified_duplicate_matches and v.status != 'verified') %}disabled{% endif %} {% if v.status != 'verified' %}required{% endif %}><label class="form-check-label text-success fw-bold" for="reviewOwner{{ v.id }}">Sesuai</label></div>
                         </div>
                         <div class="border rounded p-2 d-flex justify-content-between align-items-center gap-3 vendor-review-row">
                             <div><span class="small text-body-secondary d-block">Bank / Pembayaran</span><strong>{{ v.bank_name or '-' }} · {% if (v.bank_account_type or 'rekening') == 'va' %}Virtual Account (VA){% else %}{{ v.bank_account or '-' }}{% endif %}</strong></div>
-                            <div class="form-check flex-shrink-0"><input class="form-check-input vendor-review-check-input" type="checkbox" name="check_bank" value="sesuai" id="reviewBank{{ v.id }}" {% if review_checks.get('bank') %}checked{% endif %} {% if v.status == 'verified' or (v.duplicate_matches and v.status != 'verified') %}disabled{% endif %} {% if v.status != 'verified' %}required{% endif %}><label class="form-check-label text-success fw-bold" for="reviewBank{{ v.id }}">Sesuai</label></div>
+                            <div class="form-check flex-shrink-0"><input class="form-check-input vendor-review-check-input" type="checkbox" name="check_bank" value="sesuai" id="reviewBank{{ v.id }}" {% if review_checks.get('bank') %}checked{% endif %} {% if v.status == 'verified' or (v.verified_duplicate_matches and v.status != 'verified') %}disabled{% endif %} {% if v.status != 'verified' %}required{% endif %}><label class="form-check-label text-success fw-bold" for="reviewBank{{ v.id }}">Sesuai</label></div>
                         </div>
                     </div>
 
@@ -732,14 +731,11 @@
                         <textarea id="reviewNotes{{ v.id }}" name="review_notes" class="form-control" rows="3" placeholder="Tuliskan temuan atau keterangan hasil pemeriksaan..." {% if v.status == 'verified' %}readonly{% endif %}>{{ v.review_notes or '' }}</textarea>
                     </div>
                 </div>
+                {% endif %}
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
-                {% if v.duplicate_matches and v.status != 'verified' %}
-                <button type="button" class="btn btn-outline-secondary d-none" id="vendorReviewBack{{ v.id }}" onclick="setVendorReviewStep({{ v.id }}, 1)"><i class="bi bi-arrow-left me-1"></i>Kembali</button>
-                <button type="button" class="btn btn-primary fw-bold" id="vendorReviewNext{{ v.id }}" onclick="advanceVendorReview({{ v.id }})">Lanjut Checklist <i class="bi bi-arrow-right ms-1"></i></button>
-                {% endif %}
-                {% if v.status != 'verified' %}<button type="submit" class="btn btn-success fw-bold {% if v.duplicate_matches %}d-none{% endif %}" id="vendorReviewSubmit{{ v.id }}"><i class="bi bi-shield-check me-1"></i>Simpan &amp; Verifikasi</button>{% endif %}
+                {% if v.status != 'verified' and not v.verified_duplicate_matches %}<button type="submit" class="btn btn-success fw-bold" id="vendorReviewSubmit{{ v.id }}"><i class="bi bi-shield-check me-1"></i>Simpan &amp; Verifikasi</button>{% endif %}
             </div>
         </form>
     </div>
@@ -776,66 +772,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css">
 <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
 <script>
-function setVendorReviewStep(vendorId, step) {
-    const form = document.getElementById('vendorReviewForm' + vendorId);
-    const duplicateStep = document.getElementById('vendorReviewDuplicateStep' + vendorId);
-    const checklistStep = document.getElementById('vendorReviewChecklistStep' + vendorId);
-    if (!form || !duplicateStep || !checklistStep) return;
-
-    const onChecklist = step === 2;
-    form.dataset.currentStep = onChecklist ? '2' : '1';
-    duplicateStep.classList.toggle('d-none', onChecklist);
-    checklistStep.classList.toggle('d-none', !onChecklist);
-
-    const nextButton = document.getElementById('vendorReviewNext' + vendorId);
-    const backButton = document.getElementById('vendorReviewBack' + vendorId);
-    const submitButton = document.getElementById('vendorReviewSubmit' + vendorId);
-    if (nextButton) nextButton.classList.toggle('d-none', onChecklist);
-    if (backButton) backButton.classList.toggle('d-none', !onChecklist);
-    if (submitButton) submitButton.classList.toggle('d-none', !onChecklist);
-
-    form.querySelectorAll('.vendor-review-check-input').forEach(function (checkbox) {
-        checkbox.disabled = !onChecklist;
-    });
-
-    const badge1 = document.getElementById('vendorReviewStepBadge1' + vendorId);
-    const badge2 = document.getElementById('vendorReviewStepBadge2' + vendorId);
-    const label1 = document.getElementById('vendorReviewStepLabel1' + vendorId);
-    const label2 = document.getElementById('vendorReviewStepLabel2' + vendorId);
-    if (badge1) badge1.className = 'badge rounded-pill fs-6 ' + (onChecklist ? 'bg-success' : 'bg-primary');
-    if (badge2) badge2.className = 'badge rounded-pill fs-6 ' + (onChecklist ? 'bg-primary' : 'bg-secondary');
-    if (label1) label1.className = 'small mt-1 ' + (onChecklist ? 'text-success' : 'fw-bold text-primary');
-    if (label2) label2.className = 'small mt-1 ' + (onChecklist ? 'fw-bold text-primary' : 'text-body-secondary');
-}
-
-function advanceVendorReview(vendorId) {
-    const confirmation = document.getElementById('reviewDuplicateConfirmation' + vendorId);
-    if (!confirmation) return;
-    const normalized = confirmation.value.trim().toLowerCase().replace(/\s+/g, ' ');
-    confirmation.setCustomValidity(normalized === 'vendor berbeda' ? '' : "Ketik tepat 'vendor berbeda' untuk melanjutkan.");
-    if (!confirmation.reportValidity()) return;
-    setVendorReviewStep(vendorId, 2);
-}
-
 document.addEventListener('DOMContentLoaded', function () {
-    document.querySelectorAll('[id^="vendorReviewForm"]').forEach(function (form) {
-        form.addEventListener('submit', function (event) {
-            if (form.dataset.currentStep === '1') {
-                event.preventDefault();
-                advanceVendorReview(form.id.replace('vendorReviewForm', ''));
-            }
-        });
-    });
-
-    document.querySelectorAll('[id^="reviewVendorModal"]').forEach(function (modal) {
-        modal.addEventListener('hidden.bs.modal', function () {
-            const vendorId = modal.id.replace('reviewVendorModal', '');
-            if (document.getElementById('vendorReviewDuplicateStep' + vendorId)) {
-                setVendorReviewStep(vendorId, 1);
-            }
-        });
-    });
-
     const schoolSelect = document.getElementById('vendorSchoolFilter');
     if (!schoolSelect) return;
 

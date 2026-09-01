@@ -3531,13 +3531,13 @@ def admin_vendors():
         vendor_id = request.form.get("vendor_id", type=int)
 
         if action == "verify_vendor" and vendor_id:
-            duplicate_matches = queries.find_vendor_duplicate_matches(vendor_id)
-            duplicate_confirmation = " ".join(
-                (request.form.get("duplicate_confirmation") or "").casefold().split()
-            )
-            if duplicate_matches and duplicate_confirmation != "vendor berbeda":
+            verified_duplicate_matches = [
+                match for match in queries.find_vendor_duplicate_matches(vendor_id)
+                if match.get("status") == "verified"
+            ]
+            if verified_duplicate_matches:
                 flash(
-                    "Data terindikasi duplikat. Periksa data pembanding lalu ketik tepat 'vendor berbeda' untuk melanjutkan verifikasi.",
+                    "Verifikasi diblokir karena data vendor/narasumber yang sama sudah terverifikasi. Gunakan data yang sudah ada atau tolak pengajuan duplikat ini.",
                     "danger",
                 )
                 return filtered_redirect()
@@ -3555,13 +3555,12 @@ def admin_vendors():
                 )
                 return filtered_redirect()
 
-            verification_notes = "vendor berbeda" if duplicate_matches else None
             review_notes = (request.form.get("review_notes") or "").strip() or None
             if queries.update_vendor_status(
                 vendor_id,
                 "verified",
                 user["id"],
-                verification_notes=verification_notes,
+                verification_notes=None,
                 verification_checklist=verification_checklist,
                 review_notes=review_notes,
             ):
@@ -3572,17 +3571,7 @@ def admin_vendors():
                     else (v_obj.get("name") if v_obj else "Vendor")
                 )
                 type_label = "Narasumber" if v_obj and v_obj.get("vendor_type") == "narsum" else "Vendor"
-                duplicate_metadata = {
-                    "duplicate_override": bool(duplicate_matches),
-                    "duplicate_confirmation": verification_notes,
-                    "duplicate_matches": [
-                        {
-                            "vendor_id": match["id"],
-                            "school_id": match.get("school_id"),
-                            "matching_fields": match.get("duplicate_fields") or [],
-                        }
-                        for match in duplicate_matches
-                    ],
+                verification_metadata = {
                     "verification_checklist": verification_checklist,
                     "has_review_notes": bool(review_notes),
                 }
@@ -3591,24 +3580,8 @@ def admin_vendors():
                     "MONEV_VENDOR",
                     target_id=vendor_id,
                     target_name=v_name,
-                    metadata=duplicate_metadata,
+                    metadata=verification_metadata,
                 )
-                if duplicate_matches and user.get("role") != "admin":
-                    try:
-                        record_admin_action(
-                            user_id=user.get("id"),
-                            feature_key="monev_bos",
-                            action="VERIFY_DUPLICATE_OVERRIDE",
-                            target_type="MONEV_VENDOR",
-                            target_id=vendor_id,
-                            target_name=v_name,
-                            metadata=duplicate_metadata,
-                        )
-                    except Exception:
-                        current_app.logger.exception(
-                            "Failed to record duplicate vendor verification by user #%s",
-                            user.get("id"),
-                        )
                 flash(f"{type_label} '{v_name}' berhasil diverifikasi dan disetujui.", "success")
             else:
                 flash("Gagal memverifikasi data vendor/narasumber.", "danger")
