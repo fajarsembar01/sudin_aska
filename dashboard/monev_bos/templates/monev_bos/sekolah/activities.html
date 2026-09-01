@@ -2202,8 +2202,10 @@ document.addEventListener('DOMContentLoaded', function () {
         const bkuNumber = normalizeIdentifier(bkuField ? bkuField.value : '');
         return currentPageActivities.map(activity => {
             const duplicateFields = [];
+            const hasSameBku = bkuNumber && normalizeIdentifier(activity.bkuNumber) === bkuNumber;
+            if (!hasSameBku) return { ...activity, duplicateFields };
             if (activityName && normalizeText(activity.activityName) === activityName) duplicateFields.push('Nama kegiatan');
-            if (bkuNumber && normalizeIdentifier(activity.bkuNumber) === bkuNumber) duplicateFields.push('No. BKU');
+            duplicateFields.push('No. BKU');
             return { ...activity, duplicateFields };
         }).filter(activity => activity.duplicateFields.length > 0);
     }

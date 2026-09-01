@@ -164,6 +164,57 @@ def test_activity_duplicate_lookup_is_scoped_to_open_report_and_fund(monkeypatch
     assert matches[0]["duplicate_fields"] == ["Nama kegiatan", "No. BKU"]
 
 
+def test_activity_duplicate_lookup_allows_repeated_name_when_bku_is_different(monkeypatch):
+    class FakeCursor:
+        def execute(self, _query, _params):
+            pass
+
+        def fetchall(self):
+            return [
+                {
+                    "id": 23,
+                    "activity_name": "Pelaksanaan Ekstrakurikuler",
+                    "bku_number": "BKU/002/2026",
+                    "account_code": "5.1.02",
+                    "realized_amount": 1250000,
+                    "vendor_name": "Budi",
+                    "item_name": "Honor instruktur",
+                    "status": "pending",
+                },
+                {
+                    "id": 24,
+                    "activity_name": "Pembelian Alat Tulis",
+                    "bku_number": "BKU-001-2026",
+                    "account_code": "5.1.02",
+                    "realized_amount": 500000,
+                    "vendor_name": "Toko Maju",
+                    "item_name": "ATK",
+                    "status": "pending",
+                },
+            ]
+
+    class FakeCursorContext:
+        def __enter__(self):
+            return FakeCursor()
+
+        def __exit__(self, *_args):
+            return False
+
+    monkeypatch.setattr(routes.queries, "get_cursor", lambda **_kwargs: FakeCursorContext())
+
+    matches = routes.queries.find_activity_duplicate_matches_for_data(
+        7,
+        "BOS",
+        {
+            "activity_name": "Pelaksanaan Ekstrakurikuler",
+            "bku_number": "BKU/001/2026",
+        },
+    )
+
+    assert [match["id"] for match in matches] == [24]
+    assert matches[0]["duplicate_fields"] == ["No. BKU"]
+
+
 def test_school_duplicate_activity_requires_kegiatan_berbeda_confirmation(monkeypatch):
     app = Flask(__name__)
     created = []

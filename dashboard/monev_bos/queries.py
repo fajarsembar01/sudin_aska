@@ -1018,7 +1018,7 @@ def find_activity_duplicate_matches_for_data(
     data: Dict[str, Any],
     exclude_activity_id: Optional[int] = None,
 ) -> List[Dict[str, Any]]:
-    """Find duplicate-like activities only in the currently opened report/fund page."""
+    """Find reused BKU numbers only in the currently opened report/fund page."""
     def normalized_text(value: Any) -> str:
         cleaned = "".join(
             char if char.isalnum() else " "
@@ -1052,13 +1052,15 @@ def find_activity_duplicate_matches_for_data(
 
     matches = []
     for candidate in candidates:
+        candidate_bku = normalized_identifier(candidate.get("bku_number"))
+        if not incoming_bku or candidate_bku != incoming_bku:
+            continue
+
         duplicate_fields = []
         if incoming_name and normalized_text(candidate.get("activity_name")) == incoming_name:
             duplicate_fields.append("Nama kegiatan")
-        if incoming_bku and normalized_identifier(candidate.get("bku_number")) == incoming_bku:
-            duplicate_fields.append("No. BKU")
-        if duplicate_fields:
-            matches.append({**candidate, "duplicate_fields": duplicate_fields})
+        duplicate_fields.append("No. BKU")
+        matches.append({**candidate, "duplicate_fields": duplicate_fields})
     return matches
 
 
