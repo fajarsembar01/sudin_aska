@@ -113,10 +113,42 @@ def test_staff_can_validate_verified_vendor(monkeypatch, vendor_type):
     assert update_calls == [(41, "valid", "")]
 
 
-def test_activity_without_vendor_does_not_require_vendor_verification():
+def test_activity_without_vendor_is_blocked_from_verification():
     assert routes._activity_vendor_is_unverified(
         {"vendor_id": None, "vendor_name": None, "vendor_status": None}
-    ) is False
+    ) is True
+
+
+def test_staff_cannot_validate_activity_without_vendor(monkeypatch):
+    app = Flask(__name__)
+    activity = {
+        "id": 41,
+        "report_id": 7,
+        "activity_name": "Belanja kegiatan",
+        "vendor_id": None,
+        "vendor_name": None,
+        "vendor_status": None,
+        "vendors": [],
+    }
+    update_calls = []
+    monkeypatch.setattr(routes, "current_user", lambda: {"id": 5, "role": "staff"})
+    monkeypatch.setattr(routes.queries, "get_activity_by_id", lambda activity_id: activity)
+    monkeypatch.setattr(routes.queries, "update_activity_audit", lambda *args: update_calls.append(args))
+
+    with app.test_request_context(
+        "/staff/verifikasi/kegiatan/41",
+        method="POST",
+        data={"action": "validate", "status": "valid", "report_id": "7"},
+        headers={"Accept": "application/json"},
+    ):
+        response, status_code = routes.staff_audit_activity.__wrapped__(41)
+
+    payload = response.get_json()
+    assert status_code == 400
+    assert payload["success"] is False
+    assert "wajib diisi" in payload["message"]
+    assert "terverifikasi" in payload["message"]
+    assert update_calls == []
 
 
 def test_activity_uses_narasumber_name_instead_of_identity_number(monkeypatch):
@@ -267,6 +299,33 @@ def test_staff_vendor_recheck_reports_remaining_unverified_vendor(monkeypatch):
     assert payload["success"] is True
     assert payload["vendor_verified"] is False
     assert payload["unverified_names"] == "Toko Belum"
+
+
+def test_staff_vendor_recheck_reports_required_vendor_when_empty(monkeypatch):
+    app = Flask(__name__)
+    activity = {
+        "id": 41,
+        "report_id": 7,
+        "vendor_id": None,
+        "vendor_name": None,
+        "vendor_status": None,
+        "vendors": [],
+    }
+    monkeypatch.setattr(routes, "current_user", lambda: {"id": 5, "role": "staff"})
+    monkeypatch.setattr(routes.queries, "get_activity_by_id", lambda activity_id: activity)
+
+    with app.test_request_context(
+        "/staff/verifikasi/kegiatan/41",
+        method="POST",
+        data={"action": "check_vendor_status", "report_id": "7"},
+        headers={"Accept": "application/json"},
+    ):
+        response = routes.staff_audit_activity.__wrapped__(41)
+
+    payload = response.get_json()
+    assert payload["success"] is True
+    assert payload["vendor_verified"] is False
+    assert "wajib diisi" in payload["message"]
 
 
 def test_staff_revision_status_requires_audit_note(monkeypatch):

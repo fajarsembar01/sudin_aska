@@ -57,15 +57,22 @@ def _activity_account_code_data(form) -> dict:
     }
 
 
-def _activity_vendor_is_unverified(activity):
-    """Return True when an attached vendor exists but is not verified yet."""
-    if activity.get("vendors"):
-        return any(vendor.get("status") != "verified" for vendor in activity["vendors"])
-    has_vendor = bool(
-        activity.get("vendor_id")
+def _activity_has_vendor(activity):
+    """Return True when an activity has at least one vendor reference."""
+    return bool(
+        activity.get("vendors")
+        or activity.get("vendor_id")
         or (activity.get("vendor_name") or "").strip()
     )
-    return has_vendor and activity.get("vendor_status") != "verified"
+
+
+def _activity_vendor_is_unverified(activity):
+    """Return True when the required vendor is missing or not fully verified."""
+    if activity.get("vendors"):
+        return any(vendor.get("status") != "verified" for vendor in activity["vendors"])
+    if not _activity_has_vendor(activity):
+        return True
+    return activity.get("vendor_status") != "verified"
 
 
 def _requested_activity_photos():
@@ -3079,6 +3086,8 @@ def staff_audit_report(report_id):
     checklist_total = 0
     activities_with_school_photo = 0
     for act in activities:
+        act["vendor_required_missing"] = not _activity_has_vendor(act)
+        act["vendor_verification_blocked"] = _activity_vendor_is_unverified(act)
         docs = queries.get_activity_docs(act["id"])
         act["docs"] = {doc["doc_type"]: doc for doc in docs}
         act["school_photos"] = [doc for doc in docs if doc["doc_type"] == "field_photo"]
@@ -3191,11 +3200,7 @@ def staff_audit_activity(activity_id):
     
     try:
         if action == "check_vendor_status":
-            has_vendor = bool(
-                act.get("vendors")
-                or act.get("vendor_id")
-                or (act.get("vendor_name") or "").strip()
-            )
+            has_vendor = _activity_has_vendor(act)
             vendor_verified = has_vendor and not _activity_vendor_is_unverified(act)
             unverified_names = (
                 act.get("unverified_vendor_names")
@@ -3211,7 +3216,11 @@ def staff_audit_activity(activity_id):
                 "message": (
                     "Vendor / narasumber sudah terverifikasi. Tombol Sesuai (Valid) kini aktif."
                     if vendor_verified
-                    else f"{unverified_names} masih belum terverifikasi."
+                    else (
+                        "Vendor / narasumber wajib diisi sebelum kegiatan dapat dinyatakan Sesuai (Valid)."
+                        if not has_vendor
+                        else f"{unverified_names} masih belum terverifikasi."
+                    )
                 ),
             })
 
@@ -3294,8 +3303,11 @@ def staff_audit_activity(activity_id):
                 return redirect(url_for("monev_bos.staff_audit_report", report_id=report_id))
 
             if status == "valid" and _activity_vendor_is_unverified(act):
-                vendor_name_disp = act.get("unverified_vendor_names") or act.get("vendor_display_name") or act.get("vendor_name") or "terkait"
-                msg = f"Kegiatan tidak dapat dinyatakan Sesuai karena vendor / narasumber '{vendor_name_disp}' belum terverifikasi. Silakan verifikasi terlebih dahulu."
+                if not _activity_has_vendor(act):
+                    msg = "Kegiatan tidak dapat dinyatakan Sesuai karena vendor / narasumber wajib diisi dan harus sudah terverifikasi."
+                else:
+                    vendor_name_disp = act.get("unverified_vendor_names") or act.get("vendor_display_name") or act.get("vendor_name") or "terkait"
+                    msg = f"Kegiatan tidak dapat dinyatakan Sesuai karena vendor / narasumber '{vendor_name_disp}' belum terverifikasi. Silakan verifikasi terlebih dahulu."
                 if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.headers.get("Accept") == "application/json":
                     return jsonify({"success": False, "message": msg}), 400
                 flash(msg, "warning")
