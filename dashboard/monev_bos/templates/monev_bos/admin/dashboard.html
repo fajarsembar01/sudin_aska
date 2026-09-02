@@ -26,7 +26,12 @@
     .admin-status-dot { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; }
     .admin-team-card { padding: .85rem; border: 1px solid var(--bs-border-color); border-radius: 14px; background: var(--bs-body-bg); }
     .admin-team-card:hover { border-color: var(--bs-primary-border-subtle); }
-    .admin-team-meta { display: flex; flex-wrap: wrap; gap: .35rem; }
+    .admin-team-status-track { display: flex; height: 10px; border-radius: 999px; overflow: hidden; background: var(--bs-tertiary-bg); }
+    .admin-team-status-segment { min-width: 0; height: 100%; }
+    .admin-team-status-segment + .admin-team-status-segment { box-shadow: -1px 0 0 rgba(255,255,255,.7); }
+    .admin-team-status-legend { display: flex; flex-wrap: wrap; gap: .35rem .7rem; margin-top: .55rem; }
+    .admin-team-status-item { display: inline-flex; align-items: center; gap: .3rem; color: var(--bs-secondary-color); font-size: .67rem; }
+    .admin-team-status-item .admin-status-dot { width: 7px; height: 7px; }
     .admin-photo-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: .6rem; }
     .admin-photo-card { position: relative; width: 100%; aspect-ratio: 4 / 3; overflow: hidden; padding: 0; border: 0; border-radius: 13px; color: #fff; background: #0f172a; text-align: left; }
     .admin-photo-card img { width: 100%; height: 100%; object-fit: cover; transition: transform .25s ease; }
@@ -215,17 +220,28 @@
                                     <a href="{{ url_for('monev_bos.admin_analytics', metric='all', period_id=active_period.id, team_id=team.team_id) }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary admin-metric-view" title="Lihat aktivitas {{ team.team_name }}"><i class="bi bi-eye"></i></a>
                                 </div>
                                 <div class="mb-2">
-                                    <div class="d-flex justify-content-between text-xs mb-1"><span class="text-body-secondary">Sekolah melapor</span><strong>{{ team.total_reports }}/{{ team.assigned_schools }} · {{ team.reporting_rate }}%</strong></div>
-                                    <div class="admin-progress-track" style="height:5px"><div class="admin-progress-bar bg-primary" style="width:{{ team.reporting_rate }}%"></div></div>
+                                    <div class="d-flex justify-content-between text-xs mb-1"><span class="text-body-secondary">Status kegiatan</span><strong>{{ team.audited_activities }}/{{ team.total_activities }} · {{ team.verification_rate }}%</strong></div>
+                                    {% if team.total_activities %}
+                                    <div class="admin-team-status-track" role="img" aria-label="{{ team.valid_rate }}% terverifikasi, {{ team.invalid_rate }}% revisi, {{ team.pending_rate }}% pending{% if team.other_activities %}, {{ team.other_rate }}% lainnya{% endif %}">
+                                        {% if team.valid_activities %}<span class="admin-team-status-segment bg-success" style="flex: {{ team.valid_activities }} 0 0" title="Terverifikasi: {{ team.valid_activities }} ({{ team.valid_rate }}%)"></span>{% endif %}
+                                        {% if team.invalid_activities %}<span class="admin-team-status-segment bg-danger" style="flex: {{ team.invalid_activities }} 0 0" title="Revisi: {{ team.invalid_activities }} ({{ team.invalid_rate }}%)"></span>{% endif %}
+                                        {% if team.pending_activities %}<span class="admin-team-status-segment bg-warning" style="flex: {{ team.pending_activities }} 0 0" title="Pending: {{ team.pending_activities }} ({{ team.pending_rate }}%)"></span>{% endif %}
+                                        {% if team.other_activities %}<span class="admin-team-status-segment bg-secondary" style="flex: {{ team.other_activities }} 0 0" title="Status lainnya: {{ team.other_activities }} ({{ team.other_rate }}%)"></span>{% endif %}
+                                    </div>
+                                    <div class="admin-team-status-legend">
+                                        <span class="admin-team-status-item"><span class="admin-status-dot bg-success"></span>Verif {{ team.valid_activities }} · {{ team.valid_rate }}%</span>
+                                        <span class="admin-team-status-item"><span class="admin-status-dot bg-danger"></span>Revisi {{ team.invalid_activities }} · {{ team.invalid_rate }}%</span>
+                                        <span class="admin-team-status-item"><span class="admin-status-dot bg-warning"></span>Pending {{ team.pending_activities }} · {{ team.pending_rate }}%</span>
+                                        {% if team.other_activities %}<span class="admin-team-status-item"><span class="admin-status-dot bg-secondary"></span>Lainnya {{ team.other_activities }} · {{ team.other_rate }}%</span>{% endif %}
+                                    </div>
+                                    {% else %}
+                                    <div class="admin-team-status-track" title="Belum ada kegiatan"></div>
+                                    <div class="text-body-secondary text-xs mt-1">Belum ada kegiatan pada periode ini.</div>
+                                    {% endif %}
                                 </div>
                                 <div class="mb-3">
-                                    <div class="d-flex justify-content-between text-xs mb-1"><span class="text-body-secondary">Kegiatan diverifikasi</span><strong>{{ team.audited_activities }}/{{ team.total_activities }} · {{ team.verification_rate }}%</strong></div>
-                                    <div class="admin-progress-track" style="height:5px"><div class="admin-progress-bar bg-success" style="width:{{ team.verification_rate }}%"></div></div>
-                                </div>
-                                <div class="admin-team-meta">
-                                    <span class="badge bg-success-subtle text-success border border-success-subtle">{{ team.completed_reports }} selesai</span>
-                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">{{ team.review_queue }} antrean</span>
-                                    {% if team.revision_reports %}<span class="badge bg-danger-subtle text-danger border border-danger-subtle">{{ team.revision_reports }} revisi</span>{% endif %}
+                                    <div class="d-flex justify-content-between text-xs mb-1"><span class="text-body-secondary">Sekolah melapor</span><strong>{{ team.total_reports }}/{{ team.assigned_schools }} · {{ team.reporting_rate }}%</strong></div>
+                                    <div class="admin-progress-track" style="height:5px"><div class="admin-progress-bar bg-primary" style="width:{{ team.reporting_rate }}%"></div></div>
                                 </div>
                             </div>
                         </div>

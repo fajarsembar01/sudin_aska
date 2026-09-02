@@ -195,13 +195,17 @@
                             <div class="modal-dialog">
                                 <form action="{{ url_for('monev_bos.admin_teams') }}" method="POST" class="modal-content">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                    <input type="hidden" name="action" value="update_leader">
+                                    <input type="hidden" name="action" value="update_team">
                                     <input type="hidden" name="team_id" value="{{ team.id }}">
                                     <div class="modal-header">
-                                        <h5 class="modal-title">Edit Ketua Tim: {{ team.name }}</h5>
+                                        <h5 class="modal-title">Edit Tim: {{ team.name }}</h5>
                                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                     </div>
                                     <div class="modal-body">
+                                        <div class="mb-3">
+                                            <label class="form-label" for="editTeamName{{ team.id }}">Nama Tim</label>
+                                            <input type="text" class="form-control" id="editTeamName{{ team.id }}" name="name" value="{{ team.name }}" maxlength="150" required>
+                                        </div>
                                         <div class="mb-3">
                                             <label class="form-label">Pilih Ketua Tim (Staff)</label>
                                             <select class="form-select ts-select" name="leader_id" data-placeholder="Ketik untuk cari staff...">

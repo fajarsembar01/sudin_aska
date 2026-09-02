@@ -360,7 +360,16 @@ def list_admin_team_performance(period_id: int) -> List[Dict[str, Any]]:
                    COUNT(activity.id) AS total_activities,
                    COUNT(activity.id) FILTER (WHERE activity.status IN ('valid', 'invalid')) AS audited_activities,
                    COUNT(activity.id) FILTER (WHERE activity.status = 'valid') AS valid_activities,
-                   COUNT(activity.id) FILTER (WHERE activity.status = 'invalid') AS invalid_activities
+                   COUNT(activity.id) FILTER (WHERE activity.status = 'invalid') AS invalid_activities,
+                   COUNT(activity.id) FILTER (WHERE activity.status = 'pending') AS pending_activities,
+                   COUNT(activity.id) FILTER (WHERE activity.status = 'in_review') AS in_review_activities,
+                   COUNT(activity.id) FILTER (
+                       WHERE activity.id IS NOT NULL
+                         AND (
+                             activity.status IS NULL
+                             OR activity.status NOT IN ('valid', 'invalid', 'pending', 'in_review')
+                         )
+                   ) AS other_activities
             FROM monev_bos_teams team
             LEFT JOIN dashboard_users leader ON leader.id = team.leader_id
             LEFT JOIN monev_bos_assignments assignment
@@ -370,7 +379,7 @@ def list_admin_team_performance(period_id: int) -> List[Dict[str, Any]]:
             LEFT JOIN monev_bos_activities activity ON activity.report_id = report.id
             GROUP BY team.id, leader.full_name
             HAVING COUNT(DISTINCT assignment.school_id) > 0
-            ORDER BY completed_reports DESC, total_reports DESC, team.name ASC
+            ORDER BY LOWER(team.name) ASC, team.id ASC
             """,
             (period_id, period_id),
         )
@@ -657,6 +666,23 @@ def update_team_leader(team_id: int, leader_id: Optional[int]) -> None:
             cur.execute(
                 "INSERT INTO monev_bos_team_members (team_id, staff_id) VALUES (%s, %s) ON CONFLICT DO NOTHING",
                 (team_id, leader_id)
+            )
+
+def update_team(team_id: int, name: str, leader_id: Optional[int]) -> None:
+    """Update a team's name and leader in one transaction."""
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE monev_bos_teams
+            SET name = %s, leader_id = %s, updated_at = NOW()
+            WHERE id = %s
+            """,
+            (name, leader_id, team_id),
+        )
+        if leader_id:
+            cur.execute(
+                "INSERT INTO monev_bos_team_members (team_id, staff_id) VALUES (%s, %s) ON CONFLICT DO NOTHING",
+                (team_id, leader_id),
             )
 
 # --- ASSIGNMENTS ---

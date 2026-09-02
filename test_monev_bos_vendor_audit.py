@@ -573,6 +573,33 @@ def test_admin_dashboard_uses_live_period_metrics(monkeypatch):
     }
 
 
+def test_team_progress_uses_single_complete_activity_status_distribution():
+    team = {
+        "assigned_schools": 10,
+        "total_reports": 8,
+        "total_activities": 20,
+        "valid_activities": 4,
+        "invalid_activities": 2,
+        "pending_activities": 10,
+        "in_review_activities": 2,
+    }
+
+    routes._attach_team_progress_metrics(team)
+
+    assert team["audited_activities"] == 6
+    assert team["verification_rate"] == 30
+    assert team["valid_rate"] == 20.0
+    assert team["invalid_rate"] == 10.0
+    assert team["pending_activities"] == 12
+    assert team["pending_rate"] == 60.0
+    assert team["other_activities"] == 2
+    assert team["other_rate"] == 10.0
+    assert sum(
+        team[f"{status}_rate"]
+        for status in ("valid", "invalid", "pending", "other")
+    ) == 100.0
+
+
 def test_admin_dashboard_can_switch_to_requested_period(monkeypatch):
     app = Flask(__name__)
     periods = [
@@ -1098,3 +1125,57 @@ def test_vendor_verification_requires_all_review_checkboxes(monkeypatch):
     assert updates == []
     assert flashes[-1][1] == "warning"
     assert "Semua kolom checklist" in flashes[-1][0]
+
+
+def test_admin_can_update_team_name_and_leader(monkeypatch):
+    app = Flask(__name__)
+    updates = []
+    logs = []
+    flashes = []
+    monkeypatch.setattr(
+        routes.queries,
+        "update_team",
+        lambda team_id, name, leader_id: updates.append((team_id, name, leader_id)),
+    )
+    monkeypatch.setattr(routes, "_record_monev_admin_action", lambda *args, **kwargs: logs.append((args, kwargs)))
+    monkeypatch.setattr(routes, "flash", lambda message, category=None: flashes.append((message, category)))
+    monkeypatch.setattr(routes, "url_for", lambda *_args, **_kwargs: "/monev-bos/admin/teams")
+    monkeypatch.setattr(routes, "redirect", lambda location: location)
+
+    with app.test_request_context(
+        "/monev-bos/admin/teams",
+        method="POST",
+        data={
+            "action": "update_team",
+            "team_id": "7",
+            "name": "  Tim Monev Utara  ",
+            "leader_id": "12",
+        },
+    ):
+        response = routes.admin_teams.__wrapped__()
+
+    assert response == "/monev-bos/admin/teams"
+    assert updates == [(7, "Tim Monev Utara", 12)]
+    assert logs[0][1]["target_name"] == "Tim Monev Utara"
+    assert flashes[-1][1] == "success"
+
+
+def test_admin_cannot_clear_team_name(monkeypatch):
+    app = Flask(__name__)
+    updates = []
+    flashes = []
+    monkeypatch.setattr(routes.queries, "update_team", lambda *args: updates.append(args))
+    monkeypatch.setattr(routes, "flash", lambda message, category=None: flashes.append((message, category)))
+    monkeypatch.setattr(routes, "url_for", lambda *_args, **_kwargs: "/monev-bos/admin/teams")
+    monkeypatch.setattr(routes, "redirect", lambda location: location)
+
+    with app.test_request_context(
+        "/monev-bos/admin/teams",
+        method="POST",
+        data={"action": "update_team", "team_id": "7", "name": "   ", "leader_id": ""},
+    ):
+        response = routes.admin_teams.__wrapped__()
+
+    assert response == "/monev-bos/admin/teams"
+    assert updates == []
+    assert flashes[-1] == ("Nama tim wajib diisi.", "warning")

@@ -257,6 +257,38 @@ def _usable_activity_photos(photo_rows):
         usable.append(photo)
     return usable
 
+def _attach_team_progress_metrics(team):
+    """Attach reporting and activity-status rates used by admin team progress bars."""
+    assigned = int(team.get("assigned_schools") or 0)
+    reports = int(team.get("total_reports") or 0)
+    total = int(team.get("total_activities") or 0)
+    pending_count = int(team.get("pending_activities") or 0)
+    in_review_count = int(team.get("in_review_activities") or 0)
+    status_counts = {
+        "valid": int(team.get("valid_activities") or 0),
+        "invalid": int(team.get("invalid_activities") or 0),
+        "pending": pending_count + in_review_count,
+    }
+    status_counts["other"] = max(total - sum(status_counts.values()), 0)
+
+    team["audited_activities"] = status_counts["valid"] + status_counts["invalid"]
+    team["reporting_rate"] = min(round(reports / assigned * 100), 100) if assigned else 0
+    team["verification_rate"] = min(round(team["audited_activities"] / total * 100), 100) if total else 0
+    active_statuses = [status for status, count in status_counts.items() if count]
+    allocated_rate = 0.0
+    for status, count in status_counts.items():
+        team[f"{status}_activities"] = count
+        if not total or not count:
+            rate = 0
+        elif status == active_statuses[-1]:
+            rate = round(100.0 - allocated_rate, 1)
+        else:
+            rate = round(count / total * 100, 1)
+            allocated_rate += rate
+        team[f"{status}_rate"] = rate
+    return team
+
+
 @monev_bos_bp.route("/admin")
 @role_required("admin")
 def admin_dashboard():
@@ -280,12 +312,7 @@ def admin_dashboard():
         activity_photos = all_activity_photos[:12]
         activity_photo_total = len(all_activity_photos)
         for team in team_performance:
-            assigned = int(team.get("assigned_schools") or 0)
-            reports = int(team.get("total_reports") or 0)
-            total = int(team.get("total_activities") or 0)
-            audited = int(team.get("audited_activities") or 0)
-            team["reporting_rate"] = min(round(reports / assigned * 100), 100) if assigned else 0
-            team["verification_rate"] = min(round(audited / total * 100), 100) if total else 0
+            _attach_team_progress_metrics(team)
         end_date = active_period.get("end_date")
         if isinstance(end_date, datetime):
             end_date = end_date.date()
@@ -385,12 +412,7 @@ def admin_analytics(metric):
         row["verification_rate"] = min(round(audited / total * 100), 100) if total else 0
 
     for team in team_performance:
-        assigned = int(team.get("assigned_schools") or 0)
-        reports = int(team.get("total_reports") or 0)
-        total = int(team.get("total_activities") or 0)
-        audited = int(team.get("audited_activities") or 0)
-        team["reporting_rate"] = min(round(reports / assigned * 100), 100) if assigned else 0
-        team["verification_rate"] = min(round(audited / total * 100), 100) if total else 0
+        _attach_team_progress_metrics(team)
 
     metric_counts = {
         key: sum(1 for row in scoped_school_rows if (
@@ -852,6 +874,25 @@ def admin_teams():
                 metadata={"leader_id": leader_id},
             )
             flash("Tim berhasil dibuat", "success")
+        elif action == "update_team":
+            team_id = int(request.form.get("team_id"))
+            name = (request.form.get("name") or "").strip()
+            leader_id = request.form.get("leader_id")
+            leader_id = int(leader_id) if leader_id else None
+            if not name:
+                flash("Nama tim wajib diisi.", "warning")
+            elif len(name) > 150:
+                flash("Nama tim maksimal 150 karakter.", "warning")
+            else:
+                queries.update_team(team_id, name, leader_id)
+                _record_monev_admin_action(
+                    "UPDATE",
+                    "MONEV_TEAM",
+                    target_id=team_id,
+                    target_name=name,
+                    metadata={"leader_id": leader_id},
+                )
+                flash("Nama dan ketua tim berhasil diperbarui", "success")
         elif action == "update_leader":
             team_id = int(request.form.get("team_id"))
             leader_id = request.form.get("leader_id")
