@@ -2641,6 +2641,8 @@ def ensure_monev_bos_schema() -> None:
         _MONEV_BOS_ASSIGNMENTS_SQL,
         _MONEV_BOS_REPORTS_SQL,
         _MONEV_BOS_REPORTS_INDEX_SQL,
+        "ALTER TABLE monev_bos_reports DROP CONSTRAINT IF EXISTS monev_bos_reports_status_check;",
+        "ALTER TABLE monev_bos_reports ADD CONSTRAINT monev_bos_reports_status_check CHECK (status IN ('draft', 'submitted', 'in_review', 'completed', 'needs_revision', 'completed_with_notes'));",
         _MONEV_BOS_MASTER_ACTIVITIES_SQL,
         _MONEV_BOS_EXPENSE_TYPES_SQL,
         _MONEV_BOS_ACCOUNT_CODES_SQL,

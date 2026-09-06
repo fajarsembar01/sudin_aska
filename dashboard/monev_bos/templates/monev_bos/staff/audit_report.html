@@ -120,7 +120,23 @@
     .activity-summary-toggle[aria-expanded="true"] .activity-summary-show-label { display: none; }
     .activity-summary-toggle[aria-expanded="true"] .activity-summary-hide-label { display: inline; }
     .bulk-check-fab,
+    .bulk-check-desktop-fab,
     .bulk-check-mode { display: none; }
+    @media (min-width: 768px) {
+        .bulk-check-desktop-fab {
+            position: fixed;
+            right: 22px;
+            bottom: 22px;
+            z-index: 1035;
+            display: inline-flex;
+            align-items: center;
+            min-height: 48px;
+            padding: 10px 18px;
+            border: 0;
+            border-radius: 999px;
+            box-shadow: 0 8px 24px rgba(var(--bs-primary-rgb), 0.35);
+        }
+    }
     @media (max-width: 767.98px) {
         .bulk-check-fab {
             position: fixed;
@@ -809,7 +825,7 @@
                             <div class="p-2.5 p-sm-3 activity-header cursor-pointer bg-body" onclick="toggleActivity('{{ act.id }}')">
                                 <div class="d-flex justify-content-between align-items-center mb-1.5 gap-2 activity-header-top">
                                     <div class="d-flex align-items-center gap-1.5 flex-wrap activity-header-finance">
-                                        <span class="badge {% if act.fund_source == 'BOS' %}bg-success{% else %}bg-info{% endif %}" style="font-size: 0.68rem; padding: 3px 6px;">{{ act.fund_source }}</span>
+                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle" style="font-size: 0.68rem; padding: 3px 6px;">{{ act.bku_number or '-' }}</span>
                                         <span class="text-success fw-bold text-xs activity-header-amount">Rp {{ "{:,.0f}".format(act.realized_amount).replace(',', '.') }}</span>
                                     </div>
                                     <div class="d-flex align-items-center gap-1 flex-shrink-0 ms-auto activity-header-state">
@@ -946,6 +962,11 @@
                                                 {% endif %}
                                             {% else %}
                                             <span class="badge bg-success position-absolute bottom-0 start-0 m-1" style="font-size: 0.6rem;">Staff</span>
+                                            {% if photo.can_delete %}
+                                            <button type="button" class="btn btn-danger position-absolute top-0 end-0 m-1 p-0 rounded-circle" style="width: 22px; height: 22px; line-height: 18px;" title="Hapus foto staff" onclick="event.stopPropagation(); deleteStaffPhoto({{ act.id }}, {{ photo.id }})">
+                                                <i class="bi bi-trash3" style="font-size: 0.65rem;"></i>
+                                            </button>
+                                            {% endif %}
                                             {% endif %}
                                         </div>
                                         {% else %}
@@ -1184,6 +1205,13 @@
                     <button type="button" class="btn btn-lg btn-light rounded-circle" id="captureBtn" style="width: 55px; height: 55px;" onclick="capturePhoto()">
                         <i class="bi bi-camera-fill fs-4"></i>
                     </button>
+                    <div class="mt-2">
+                        <button type="button" class="btn btn-sm btn-outline-light" onclick="document.getElementById('nativeCameraInput').click()">
+                            <i class="bi bi-phone me-1"></i> Gunakan Kamera Perangkat
+                        </button>
+                    </div>
+                    <small class="d-block text-light-emphasis mt-2" id="cameraStatus">Menyiapkan kamera…</small>
+                    <input type="file" id="nativeCameraInput" class="d-none" accept="image/*" capture="environment" onchange="loadNativeCameraPhoto(this)">
                 </div>
                 
                 <div id="previewControls" class="p-3 bg-dark" style="display:none;">
@@ -1194,7 +1222,7 @@
                         <input type="hidden" name="live_photo_data" id="livePhotoData" value="">
                         
                         <div class="d-flex justify-content-between">
-                            <button type="button" class="btn btn-sm btn-outline-light" onclick="retakePhoto()">Ulangi</button>
+                            <button type="button" class="btn btn-sm btn-outline-light" onclick="startCamera()">Ulangi</button>
                             <button type="submit" class="btn btn-sm btn-primary" id="uploadBtn">Simpan Foto</button>
                         </div>
                     </form>
@@ -1203,6 +1231,29 @@
         </div>
     </div>
 </div>
+
+{% if activities %}
+<button type="button" class="btn btn-primary fw-bold bulk-check-desktop-fab" data-bs-toggle="modal" data-bs-target="#bulkCheckDesktopInfoModal">
+    <i class="bi bi-layers-fill me-2"></i>Mode Cek Barang
+</button>
+
+<div class="modal fade" id="bulkCheckDesktopInfoModal" tabindex="-1" aria-labelledby="bulkCheckDesktopInfoTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="bulkCheckDesktopInfoTitle"><i class="bi bi-phone text-primary me-2"></i>Mode Cek Barang</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0">Mode Cek Barang hanya tersedia pada browser perangkat seluler. Silakan buka halaman ini melalui ponsel untuk menggunakannya.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Mengerti</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 {% if activities %}
 <button type="button" class="btn btn-primary fw-bold bulk-check-fab" id="bulkCheckFab" aria-controls="bulkCheckMode" aria-expanded="false">
@@ -1343,6 +1394,10 @@
     const previewControls = document.getElementById('previewControls');
     const uploadForm = document.getElementById('uploadPhotoForm');
     const livePhotoDataInput = document.getElementById('livePhotoData');
+    const captureButton = document.getElementById('captureBtn');
+    const cameraStatus = document.getElementById('cameraStatus');
+    const nativeCameraInput = document.getElementById('nativeCameraInput');
+    let cameraActivityId = null;
     let bulkCameraActivityId = null;
     
     function closeActivity(otherId) {
@@ -1581,16 +1636,47 @@
         });
     }
 
+    function deleteStaffPhoto(activityId, docId) {
+        if (!window.confirm('Hapus foto lapangan yang diambil staff?')) return;
+
+        const formData = new FormData();
+        formData.append('csrf_token', '{{ csrf_token() }}');
+        formData.append('action', 'delete_staff_photo');
+        formData.append('doc_id', String(docId));
+
+        fetch('{{ url_for("monev_bos.staff_audit_activity", activity_id=0) }}'.replace('0', activityId), {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            },
+            body: formData
+        })
+        .then(async function (response) {
+            const data = await response.json().catch(function () { return {}; });
+            if (!response.ok || !data.success) throw new Error(data.message || 'Foto staff gagal dihapus.');
+            window.location.reload();
+        })
+        .catch(function (error) {
+            alert(error.message || 'Foto staff gagal dihapus.');
+        });
+    }
+
     function openCameraModal(activityId, fromBulkMode) {
+        cameraActivityId = String(activityId);
         bulkCameraActivityId = fromBulkMode ? String(activityId) : null;
         uploadForm.action = "{{ url_for('monev_bos.staff_audit_activity', activity_id=0) }}".replace('0', activityId);
-        const myModal = new bootstrap.Modal(document.getElementById('cameraModal'));
+        const myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('cameraModal'));
         myModal.show();
         startCamera();
     }
     
     function startCamera() {
+        stopCamera();
         retakePhoto();
+        captureButton.disabled = true;
+        cameraStatus.textContent = 'Menyiapkan kamera…';
         if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
             navigator.mediaDevices.getUserMedia({ 
                 video: { facingMode: 'environment' } 
@@ -1598,14 +1684,26 @@
             .then(function(stream) {
                 videoStream = stream;
                 video.srcObject = stream;
-                video.play();
+                return video.play();
+            })
+            .then(function () {
+                if (video.videoWidth > 0 && video.videoHeight > 0) {
+                    captureButton.disabled = false;
+                    cameraStatus.textContent = 'Kamera siap digunakan.';
+                } else {
+                    video.addEventListener('loadedmetadata', function enableCapture() {
+                        captureButton.disabled = false;
+                        cameraStatus.textContent = 'Kamera siap digunakan.';
+                    }, { once: true });
+                }
             })
             .catch(function(error) {
                 console.error("Camera error:", error);
-                alert("Gagal mengakses kamera. Pastikan browser memiliki izin akses kamera.");
+                captureButton.disabled = true;
+                cameraStatus.textContent = 'Kamera browser tidak tersedia. Gunakan Kamera Perangkat.';
             });
         } else {
-            alert("Browser Anda tidak mendukung fitur kamera HTML5.");
+            cameraStatus.textContent = 'Kamera browser tidak tersedia. Gunakan Kamera Perangkat.';
         }
     }
     
@@ -1620,6 +1718,10 @@
         const MAX_WIDTH = 800;
         let width = video.videoWidth;
         let height = video.videoHeight;
+        if (!width || !height) {
+            cameraStatus.textContent = 'Kamera belum siap. Tunggu sebentar atau gunakan Kamera Perangkat.';
+            return;
+        }
         
         if (width > MAX_WIDTH) {
             height = height * (MAX_WIDTH / width);
@@ -1647,6 +1749,32 @@
         preview.style.display = 'block';
         previewControls.style.display = 'block';
     }
+
+    function loadNativeCameraPhoto(input) {
+        const file = input.files && input.files[0];
+        if (!file) return;
+        if (!file.type.startsWith('image/')) {
+            alert('File yang dipilih harus berupa foto.');
+            input.value = '';
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function (event) {
+            const dataUrl = event.target.result;
+            preview.src = dataUrl;
+            livePhotoDataInput.value = dataUrl;
+            video.style.display = 'none';
+            cameraControls.style.display = 'none';
+            preview.style.display = 'block';
+            previewControls.style.display = 'block';
+            stopCamera();
+        };
+        reader.onerror = function () {
+            alert('Foto gagal dibaca. Silakan ambil ulang.');
+        };
+        reader.readAsDataURL(file);
+    }
     
     function retakePhoto() {
         video.style.display = 'block';
@@ -1654,17 +1782,23 @@
         preview.style.display = 'none';
         previewControls.style.display = 'none';
         livePhotoDataInput.value = '';
+        nativeCameraInput.value = '';
     }
     
     document.getElementById('cameraModal').addEventListener('hidden.bs.modal', function () {
         stopCamera();
+        cameraActivityId = null;
         bulkCameraActivityId = null;
     });
 
     uploadForm.addEventListener('submit', async function (event) {
-        if (!bulkCameraActivityId) return;
         event.preventDefault();
-        const activityId = bulkCameraActivityId;
+        const activityId = cameraActivityId;
+        const openedFromBulkMode = Boolean(bulkCameraActivityId);
+        if (!activityId || !livePhotoDataInput.value) {
+            alert('Ambil foto terlebih dahulu sebelum menyimpan.');
+            return;
+        }
         const uploadButton = document.getElementById('uploadBtn');
         const originalHtml = uploadButton.innerHTML;
         uploadButton.disabled = true;
@@ -1682,10 +1816,11 @@
             });
             const result = await response.json().catch(function () { return {}; });
             if (!response.ok || !result.success) throw new Error(result.message || 'Foto staff gagal disimpan.');
-            if (window.bulkCheckAddStaffPhoto) {
+            if (openedFromBulkMode && window.bulkCheckAddStaffPhoto) {
                 window.bulkCheckAddStaffPhoto(activityId, result.photo_url);
             }
             bootstrap.Modal.getOrCreateInstance(document.getElementById('cameraModal')).hide();
+            if (!openedFromBulkMode) window.location.reload();
         } catch (error) {
             alert(error.message || 'Foto staff gagal disimpan.');
         } finally {

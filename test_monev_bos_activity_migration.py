@@ -11,13 +11,20 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from dashboard.monev_bos import routes
 
 
-def _configure_activity_route(monkeypatch, activity):
+def test_school_bku_number_requires_exactly_three_digits():
+    assert routes._school_bku_number("001") == ("001", None)
+    assert routes._school_bku_number("01")[1] is not None
+    assert routes._school_bku_number("B01")[1] is not None
+    assert routes._school_bku_number("0001")[1] is not None
+
+
+def _configure_activity_route(monkeypatch, activity, report_status="draft"):
     monkeypatch.setattr(routes, "current_user", lambda: {"id": 10, "role": "sekolah"})
     monkeypatch.setattr(routes.queries, "get_active_periods", lambda: [{"id": 2}])
     monkeypatch.setattr(
         routes.queries,
         "get_school_report",
-        lambda school_id, period_id: {"id": 7, "school_id": school_id, "status": "draft"},
+        lambda school_id, period_id: {"id": 7, "school_id": school_id, "status": report_status},
     )
     monkeypatch.setattr(routes.queries, "get_activity_by_id", lambda activity_id: activity)
     monkeypatch.setattr(routes, "flash", lambda *_args, **_kwargs: None)
@@ -27,6 +34,111 @@ def _configure_activity_route(monkeypatch, activity):
         lambda _endpoint, **values: f"/activities?period_id={values['period_id']}&fund_source={values['fund_source']}",
     )
     monkeypatch.setattr(routes, "redirect", lambda location: location)
+
+
+def test_school_can_delete_pending_activity_while_report_is_in_review(monkeypatch):
+    app = Flask(__name__)
+    deleted = []
+    _configure_activity_route(
+        monkeypatch,
+        {"id": 23, "report_id": 7, "fund_source": "BOS", "status": "pending"},
+        report_status="in_review",
+    )
+    monkeypatch.setattr(routes.queries, "delete_activity", lambda activity_id: deleted.append(activity_id))
+
+    with app.test_request_context(
+        "/monev-bos/sekolah/activities?period_id=2&fund_source=BOS",
+        method="POST",
+        data={"action": "delete_activity", "activity_id": "23"},
+    ):
+        routes.sekolah_activities.__wrapped__()
+
+    assert deleted == [23]
+
+
+def test_school_can_edit_pending_activity_while_report_is_submitted(monkeypatch):
+    app = Flask(__name__)
+    updated = []
+    _configure_activity_route(
+        monkeypatch,
+        {"id": 23, "report_id": 7, "fund_source": "BOS", "status": "pending"},
+        report_status="submitted",
+    )
+    monkeypatch.setattr(routes.queries, "get_activity_post_links", lambda _activity_id: [])
+    monkeypatch.setattr(routes.queries, "count_valid_field_photos", lambda _activity_id: 0)
+    monkeypatch.setattr(routes.queries, "update_activity", lambda activity_id, data: updated.append((activity_id, data)))
+    monkeypatch.setattr(routes.queries, "set_activity_vendors", lambda *_args: None)
+    monkeypatch.setattr(routes.queries, "update_activity_audit", lambda *_args: None)
+
+    with app.test_request_context(
+        "/monev-bos/sekolah/activities?period_id=2&fund_source=BOS",
+        method="POST",
+        data={
+            "action": "edit_activity",
+            "activity_id": "23",
+            "activity_name": "Belanja ATK diperbarui",
+            "bku_number": "001",
+            "realized_amount": "100000",
+        },
+    ):
+        routes.sekolah_activities.__wrapped__()
+
+    assert updated[0][0] == 23
+    assert updated[0][1]["activity_name"] == "Belanja ATK diperbarui"
+
+
+def test_school_cannot_delete_activity_from_completed_report(monkeypatch):
+    app = Flask(__name__)
+    deleted = []
+    _configure_activity_route(
+        monkeypatch,
+        {"id": 23, "report_id": 7, "fund_source": "BOS", "status": "pending"},
+        report_status="completed",
+    )
+    monkeypatch.setattr(routes.queries, "delete_activity", lambda activity_id: deleted.append(activity_id))
+
+    with app.test_request_context(
+        "/monev-bos/sekolah/activities?period_id=2&fund_source=BOS",
+        method="POST",
+        data={"action": "delete_activity", "activity_id": "23"},
+    ):
+        routes.sekolah_activities.__wrapped__()
+
+    assert deleted == []
+
+
+def test_school_cannot_delete_valid_activity(monkeypatch):
+    app = Flask(__name__)
+    deleted = []
+    _configure_activity_route(
+        monkeypatch,
+        {"id": 23, "report_id": 7, "fund_source": "BOS", "status": "valid"},
+        report_status="submitted",
+    )
+    monkeypatch.setattr(routes.queries, "delete_activity", lambda activity_id: deleted.append(activity_id))
+
+    with app.test_request_context(
+        "/monev-bos/sekolah/activities?period_id=2&fund_source=BOS",
+        method="POST",
+        data={"action": "delete_activity", "activity_id": "23"},
+    ):
+        routes.sekolah_activities.__wrapped__()
+
+    assert deleted == []
+
+
+def test_school_cannot_mutate_activity_from_another_report():
+    report = {"id": 7, "status": "submitted"}
+    activity = {"id": 23, "report_id": 99, "status": "pending"}
+
+    assert routes._school_activity_mutation_error(report, activity) is not None
+
+
+def test_school_cannot_mutate_activity_from_completed_with_notes_report():
+    report = {"id": 7, "status": "completed_with_notes"}
+    activity = {"id": 23, "report_id": 7, "status": "pending"}
+
+    assert routes._school_activity_mutation_error(report, activity) is not None
 
 
 def test_school_can_move_activity_from_bos_to_bop(monkeypatch):
@@ -238,7 +350,7 @@ def test_school_duplicate_activity_requires_kegiatan_berbeda_confirmation(monkey
             "action": "add_activity",
             "fund_source": "BOS",
             "activity_name": "Pelaksanaan Ekstrakurikuler",
-            "bku_number": "BKU/001/2026",
+            "bku_number": "001",
             "realized_amount": "1.250.000",
         },
     ):
@@ -272,7 +384,7 @@ def test_school_can_confirm_duplicate_activity_is_different(monkeypatch):
             "action": "add_activity",
             "fund_source": "BOP",
             "activity_name": "Pelaksanaan Ekstrakurikuler",
-            "bku_number": "BKU/001/2026",
+            "bku_number": "001",
             "realized_amount": "1.250.000",
             "duplicate_confirmation": "kegiatan berbeda",
         },

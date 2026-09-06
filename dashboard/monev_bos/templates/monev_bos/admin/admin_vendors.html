@@ -427,13 +427,16 @@
                                             </button>
                                         </div>
                                     {% elif v.status == 'rejected' %}
-                                        <button type="button" class="btn btn-sm {{ 'btn-danger' if v.verified_duplicate_matches else 'btn-outline-success' }} fw-bold" data-bs-toggle="modal" data-bs-target="#reviewVendorModal{{ v.id }}">
-                                            <i class="bi {{ 'bi-shield-lock-fill' if v.verified_duplicate_matches else 'bi-card-checklist' }} me-1"></i>{{ 'Verifikasi Diblokir' if v.verified_duplicate_matches else 'Periksa & Setujui' }}
-                                        </button>
+                                        <div class="btn-group" role="group">
+                                            <button type="button" class="btn btn-sm {{ 'btn-danger' if v.verified_duplicate_matches else 'btn-outline-success' }} fw-bold" data-bs-toggle="modal" data-bs-target="#reviewVendorModal{{ v.id }}">
+                                                <i class="bi {{ 'bi-shield-lock-fill' if v.verified_duplicate_matches else 'bi-card-checklist' }} me-1"></i>{{ 'Verifikasi Diblokir' if v.verified_duplicate_matches else 'Periksa & Setujui' }}
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#vendorHistoryModal{{ v.id }}" title="Lihat riwayat tindakan" aria-label="Lihat riwayat tindakan {{ v.name }}"><i class="bi bi-eye"></i></button>
+                                        </div>
                                     {% else %}
                                         <div class="btn-group" role="group">
                                             <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#reviewVendorModal{{ v.id }}"><i class="bi bi-card-checklist me-1"></i>Checklist</button>
-                                            <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#rejectVendorModal{{ v.id }}"><i class="bi bi-x-lg me-1"></i> Batalkan</button>
+                                            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#vendorHistoryModal{{ v.id }}" title="Lihat riwayat tindakan" aria-label="Lihat riwayat tindakan {{ v.name }}"><i class="bi bi-eye"></i></button>
                                         </div>
                                     {% endif %}
 
@@ -593,9 +596,10 @@
                 <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#rejectVendorMobileModal{{ v.id }}"><i class="bi bi-x-lg me-1"></i>Tolak</button>
                 {% elif v.status == 'rejected' %}
                 <button type="button" class="btn {{ 'btn-danger' if v.verified_duplicate_matches else 'btn-outline-success' }} fw-bold" data-bs-toggle="modal" data-bs-target="#reviewVendorModal{{ v.id }}"><i class="bi {{ 'bi-shield-lock-fill' if v.verified_duplicate_matches else 'bi-card-checklist' }} me-1"></i>{{ 'Verifikasi Diblokir' if v.verified_duplicate_matches else 'Periksa & Setujui' }}</button>
+                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#vendorHistoryModal{{ v.id }}"><i class="bi bi-eye me-1"></i>Riwayat</button>
                 {% else %}
                 <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#reviewVendorModal{{ v.id }}"><i class="bi bi-card-checklist me-1"></i>Checklist</button>
-                <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#rejectVendorMobileModal{{ v.id }}"><i class="bi bi-x-lg me-1"></i>Batalkan</button>
+                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#vendorHistoryModal{{ v.id }}"><i class="bi bi-eye me-1"></i>Riwayat</button>
                 {% endif %}
             </div>
         </article>
@@ -740,6 +744,58 @@
         </form>
     </div>
 </div>
+
+{% if v.status in ['verified', 'rejected'] %}
+<div class="modal fade" id="vendorHistoryModal{{ v.id }}" tabindex="-1" aria-labelledby="vendorHistoryModalTitle{{ v.id }}" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-primary-subtle">
+                <div>
+                    <h5 class="modal-title fw-bold" id="vendorHistoryModalTitle{{ v.id }}"><i class="bi bi-clock-history text-primary me-2"></i>Riwayat Tindakan</h5>
+                    <div class="small text-body-secondary mt-1">{{ (v.owner_name or v.name) if v.vendor_type == 'narsum' else v.name }} · {{ v.school_name }}</div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+            </div>
+            <div class="modal-body">
+                {% if v.action_history %}
+                <div class="vstack gap-2">
+                    {% for entry in v.action_history %}
+                    {% set history_meta = entry.metadata or {} %}
+                    {% set is_approval = entry.action == 'VERIFY_APPROVE' %}
+                    <div class="border rounded p-3 {% if is_approval %}border-success-subtle bg-success-subtle{% else %}border-danger-subtle bg-danger-subtle{% endif %}">
+                        <div class="d-flex justify-content-between align-items-start gap-2">
+                            <div>
+                                <span class="badge {% if is_approval %}text-bg-success{% else %}text-bg-danger{% endif %}">
+                                    <i class="bi {% if is_approval %}bi-check-circle-fill{% else %}bi-x-circle-fill{% endif %} me-1"></i>{{ 'Diverifikasi' if is_approval else 'Ditolak' }}
+                                </span>
+                                {% if loop.first %}<span class="badge bg-primary-subtle text-primary border ms-1">Terbaru</span>{% endif %}
+                                <div class="fw-bold text-body mt-2">{{ entry.actor_name }}</div>
+                                <div class="small text-body-secondary">{{ entry.created_at|jakarta('%d %b %Y %H:%M') }}</div>
+                            </div>
+                            <span class="text-body-secondary small">#{{ entry.id }}</span>
+                        </div>
+                        {% if is_approval and history_meta.get('review_notes') %}
+                        <div class="small mt-2"><i class="bi bi-chat-left-text me-1"></i>{{ history_meta.get('review_notes') }}</div>
+                        {% elif not is_approval and history_meta.get('rejection_reason') %}
+                        <div class="small text-danger mt-2"><i class="bi bi-info-circle me-1"></i>{{ history_meta.get('rejection_reason') }}</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4 text-body-secondary">
+                    <i class="bi bi-clock-history fs-2 d-block mb-2 opacity-50"></i>
+                    Riwayat tindakan lama belum tersedia. Pelaku tindakan terakhir: <strong>{{ v.verified_by_name or 'Tidak diketahui' }}</strong>{% if v.verified_at %}, {{ v.verified_at|jakarta('%d %b %Y %H:%M') }}{% endif %}.
+                </div>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 {% endfor %}
 
 {% if current_user and current_user.role == 'admin' %}

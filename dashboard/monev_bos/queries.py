@@ -1681,6 +1681,30 @@ def add_activity_doc(activity_id: int, doc_type: str, file_path: str, file_size:
         return int(cur.fetchone()[0])
 
 
+def delete_staff_live_photo(
+    activity_id: int,
+    doc_id: int,
+    uploaded_by: Optional[int] = None,
+) -> Optional[Dict[str, Any]]:
+    """Delete a staff live photo, optionally limited to the staff member who uploaded it."""
+    query = """
+        DELETE FROM monev_bos_activity_docs
+        WHERE id = %s
+          AND activity_id = %s
+          AND doc_type = 'live_photo'
+    """
+    params: List[Any] = [doc_id, activity_id]
+    if uploaded_by is not None:
+        query += " AND uploaded_by = %s"
+        params.append(uploaded_by)
+    query += " RETURNING *"
+
+    with get_cursor(commit=True) as cur:
+        cur.execute(query, tuple(params))
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
 def set_field_photo_audit_validity(
     activity_id: int,
     doc_id: int,
@@ -2230,6 +2254,44 @@ def list_all_vendors_for_admin(
     with get_cursor() as cur:
         cur.execute(query, tuple(params))
         return [dict(row) for row in cur.fetchall()]
+
+
+def attach_vendor_action_history(vendors: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Attach chronological verification/rejection actions to vendor rows."""
+    for vendor in vendors:
+        vendor["action_history"] = []
+    vendor_ids = [int(vendor["id"]) for vendor in vendors if vendor.get("id") is not None]
+    if not vendor_ids:
+        return vendors
+
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT log.id,
+                   log.target_id AS vendor_id,
+                   log.action,
+                   log.metadata,
+                   log.created_at,
+                   COALESCE(actor.full_name, actor.email, 'Pengguna tidak tersedia') AS actor_name
+            FROM dashboard_admin_action_logs log
+            LEFT JOIN dashboard_users actor ON actor.id = log.user_id
+            WHERE log.feature_key = 'monev_bos'
+              AND log.target_type = 'MONEV_VENDOR'
+              AND log.target_id = ANY(%s)
+              AND log.action IN ('VERIFY_APPROVE', 'VERIFY_REJECT')
+            ORDER BY log.created_at DESC, log.id DESC
+            """,
+            (vendor_ids,),
+        )
+        history_by_vendor: Dict[int, List[Dict[str, Any]]] = {}
+        for row in cur.fetchall():
+            entry = dict(row)
+            history_by_vendor.setdefault(int(entry["vendor_id"]), []).append(entry)
+
+    for vendor in vendors:
+        if vendor.get("id") is not None:
+            vendor["action_history"] = history_by_vendor.get(int(vendor["id"]), [])
+    return vendors
 
 
 def list_vendor_schools_for_admin() -> List[Dict[str, Any]]:

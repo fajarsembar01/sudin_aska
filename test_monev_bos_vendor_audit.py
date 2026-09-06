@@ -1127,6 +1127,66 @@ def test_vendor_verification_requires_all_review_checkboxes(monkeypatch):
     assert "Semua kolom checklist" in flashes[-1][0]
 
 
+def test_vendor_action_history_keeps_all_verification_changes(monkeypatch):
+    vendors = [{"id": 7}, {"id": 8}]
+
+    class FakeCursor:
+        def execute(self, query, params):
+            assert "log.action IN ('VERIFY_APPROVE', 'VERIFY_REJECT')" in query
+            assert params == ([7, 8],)
+
+        def fetchall(self):
+            return [
+                {
+                    "id": 12,
+                    "vendor_id": 7,
+                    "action": "VERIFY_REJECT",
+                    "actor_name": "Penolak",
+                    "metadata": {"rejection_reason": "Dokumen tidak sesuai"},
+                },
+                {
+                    "id": 11,
+                    "vendor_id": 7,
+                    "action": "VERIFY_APPROVE",
+                    "actor_name": "Verifikator",
+                    "metadata": {},
+                },
+            ]
+
+    class FakeCursorContext:
+        def __enter__(self):
+            return FakeCursor()
+
+        def __exit__(self, *_args):
+            return False
+
+    monkeypatch.setattr(routes.queries, "get_cursor", lambda **_kwargs: FakeCursorContext())
+
+    routes.queries.attach_vendor_action_history(vendors)
+
+    assert [entry["action"] for entry in vendors[0]["action_history"]] == [
+        "VERIFY_REJECT",
+        "VERIFY_APPROVE",
+    ]
+    assert vendors[1]["action_history"] == []
+
+
+def test_staff_vendor_action_is_recorded_when_enabled(monkeypatch):
+    recorded = []
+    monkeypatch.setattr(routes, "current_user", lambda: {"id": 5, "role": "staff"})
+    monkeypatch.setattr(routes, "record_admin_action", lambda **kwargs: recorded.append(kwargs))
+
+    routes._record_monev_admin_action(
+        "VERIFY_REJECT",
+        "MONEV_VENDOR",
+        target_id=7,
+        allow_staff=True,
+    )
+
+    assert recorded[0]["user_id"] == 5
+    assert recorded[0]["action"] == "VERIFY_REJECT"
+
+
 def test_admin_can_update_team_name_and_leader(monkeypatch):
     app = Flask(__name__)
     updates = []

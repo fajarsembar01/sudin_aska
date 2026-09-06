@@ -401,7 +401,7 @@
                                         <i class="bi bi-eye"></i>
                                     </button>
 
-                                    {% if report.status in ['draft', 'needs_revision'] %}
+                                    {% if report.status not in ['completed', 'completed_with_notes'] %}
                                         {% if act.status == 'valid' %}
                                             {% if act.pending_edit_request %}
                                                 {% if act.wa_url %}
@@ -567,7 +567,7 @@
                                 <i class="bi bi-eye me-1"></i> Detail
                             </button>
 
-                            {% if report.status in ['draft', 'needs_revision'] %}
+                            {% if report.status not in ['completed', 'completed_with_notes'] %}
                                 {% if act.status == 'valid' %}
                                     {% if act.pending_edit_request %}
                                         {% if act.wa_url %}
@@ -861,7 +861,7 @@
                 <div class="row">
                     <div class="col-md-4 mb-3">
                         <label class="form-label fw-bold">No. BKU <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" name="bku_number" required value="{{ act.bku_number or '' }}" placeholder="Contoh: BKU/001/2026">
+                        <input type="text" class="form-control font-monospace" name="bku_number" required inputmode="numeric" pattern="[0-9]{3}" maxlength="3" value="{{ act.bku_number or '' }}" placeholder="Contoh: 001" title="Masukkan tepat 3 angka, misalnya 001">
                     </div>
                     <div class="col-md-4 mb-3">
                         <label class="form-label fw-bold">Kode Rekening</label>
@@ -1111,7 +1111,7 @@
                 <div class="row">
                     <div class="col-md-4 mb-3">
                         <label class="form-label fw-bold">No. BKU <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" name="bku_number" required placeholder="Contoh: BKU/001/2026">
+                        <input type="text" class="form-control font-monospace" name="bku_number" required inputmode="numeric" pattern="[0-9]{3}" maxlength="3" placeholder="Contoh: 001" title="Masukkan tepat 3 angka, misalnya 001">
                     </div>
                     <div class="col-md-4 mb-3">
                         <label class="form-label fw-bold">Kode Rekening</label>
@@ -2069,10 +2069,10 @@ function autofillDemoData(fundSource) {
     const form = document.querySelector('#addActivityModal form');
     if (!form) return;
 
-    const randNum = Math.floor(10 + Math.random() * 89);
+    const randNum = Math.floor(1 + Math.random() * 999);
     
     const bkuInput = form.querySelector('[name="bku_number"]');
-    if (bkuInput) bkuInput.value = 'BKU/' + (fundSource || 'BOS') + '/' + (100 + randNum) + '/2026';
+    if (bkuInput) bkuInput.value = String(randNum).padStart(3, '0');
 
     const accountCodeSelect = form.querySelector('[name="account_code"]');
     if (accountCodeSelect && accountCodeSelect.options.length > 1) {
