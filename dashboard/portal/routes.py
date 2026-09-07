@@ -1860,6 +1860,19 @@ def _build_coordinator_contacts(
 # ===== Staff Portal Routes =====
 
 
+def _staff_can_view_laporan_answers(user: Optional[dict]) -> bool:
+    """Expose the Laporan answer shortcut only to explicitly granted staff."""
+    if not user or user.get("role") != "staff" or not user.get("id"):
+        return False
+    try:
+        from dashboard.laporan.queries import has_laporan_answer_access
+
+        return has_laporan_answer_access(int(user["id"]))
+    except Exception:
+        current_app.logger.exception("Failed to check staff laporan answer access")
+        return False
+
+
 @portal_bp.route("/")
 @_portal_access_required
 def home() -> Response:
@@ -1933,6 +1946,17 @@ def home() -> Response:
                 "col_class": "col-lg-4 col-md-6 col-12",
             },
         ]
+        if _staff_can_view_laporan_answers(user):
+            cards.insert(
+                -1,
+                {
+                    "title": "Jawaban Laporan",
+                    "description": "Cek dan unduh jawaban laporan yang diizinkan admin.",
+                    "icon": "bi-file-earmark-spreadsheet",
+                    "href": url_for("laporan.admin_laporan_list"),
+                    "col_class": "col-lg-4 col-md-6 col-12",
+                },
+            )
         return render_template(
             "role_selection.html",
             page_title="ASKA Portal - Pilih Layanan Staff ",
@@ -9020,6 +9044,7 @@ def inject_permissions():
     user = current_user()
     if not user:
         return {}
+    can_view_laporan_answers = _staff_can_view_laporan_answers(user)
 
     # Keep session photo state in sync with DB so modal rules reflect latest admin changes.
     session_photo_path = user.get("profile_photo_path")
@@ -9197,6 +9222,7 @@ def inject_permissions():
         "permissions": get_permission_summary(user),
         "is_superadmin": is_superadmin(user),
         "can_access_aska": can_access_aska(user),
+        "can_view_laporan_answers": can_view_laporan_answers,
         "user_school": user_school,
         "area_contacts": area_contacts,
         "admin_pending": admin_pending,

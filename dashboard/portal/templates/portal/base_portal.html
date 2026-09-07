@@ -994,6 +994,14 @@
                             <i class="bi bi-megaphone nav-icon"></i>Supporter
                         </a>
                     </li>
+                    {% if can_view_laporan_answers %}
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint in ['laporan.admin_laporan_list', 'laporan.admin_laporan_answers'] %}active{% endif %}"
+                            href="{{ url_for('laporan.admin_laporan_list') }}">
+                            <i class="bi bi-file-earmark-spreadsheet nav-icon"></i>Jawaban Laporan
+                        </a>
+                    </li>
+                    {% endif %}
                     {% endif %}
 
                     <!-- Buku Tamu untuk Koordinator, Staff, dan Sekolah tidak diperlukan di halaman PANBERSS supaya fokus user tidak terbagi -->

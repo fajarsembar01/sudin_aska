@@ -36,10 +36,10 @@
                         <i class="bi bi-list-ol"></i>
                         <span>Pilih Antrian</span>
                     </a>
-                    <a href="{{ url_for('laporan.staff_laporan_list') }}"
+                    <a href="{{ url_for('laporan.admin_laporan_list') if can_view_laporan_answers else url_for('laporan.staff_laporan_list') }}"
                         class="btn btn-outline-primary d-inline-flex align-items-center gap-2">
                         <i class="bi bi-file-earmark-text"></i>
-                        <span>Laporan</span>
+                        <span>{{ 'Jawaban Laporan' if can_view_laporan_answers else 'Laporan' }}</span>
                     </a>
                 </div>
             </div>
