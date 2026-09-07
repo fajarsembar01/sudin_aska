@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
+
 from dashboard.photo_stamp import stamp_live_photo
 
 UPLOAD_ROOT = Path(__file__).parent.parent.parent / "uploads" / "portal" / "daftar_tamu"

@@ -1,24 +1,25 @@
 from __future__ import annotations
 
-from typing import Iterable, Optional
 import logging
 import urllib.parse
+from typing import Iterable, Optional
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
 
-from db import save_chat
-from utils import current_jakarta_time, to_jakarta
+from dashboard.daftar_tamu.queries import (
+    get_transaction_detail,
+    update_transaction_status,
+)
 from dashboard.db_access import get_cursor
 from dashboard.queries import (
+    delete_telegram_notification_group_by_chat_id,
     fetch_dashboard_user_basic,
     fetch_pending_dashboard_users,
     get_telegram_admin_by_username,
     update_dashboard_user_verification,
     upsert_telegram_notification_group,
-    delete_telegram_notification_group_by_chat_id,
 )
-from dashboard.daftar_tamu.queries import get_transaction_detail, update_transaction_status
 from dashboard.telegram_notifications import (
     _build_guestbook_detail_url,
     delete_guestbook_delivery_message,
@@ -26,6 +27,8 @@ from dashboard.telegram_notifications import (
     notify_guestbook_status_update,
     notify_verification_status_update,
 )
+from db import save_chat
+from utils import current_jakarta_time, to_jakarta
 
 
 def _normalize_username(username: Optional[str]) -> Optional[str]:
@@ -82,9 +85,14 @@ def _status_label_with_icon(status_label: Optional[str]) -> str:
             break
 
     lowered = label.lower()
-    if any(keyword in lowered for keyword in ("disetujui", "terverifikasi", "verified", "approved", "acc")):
+    if any(
+        keyword in lowered
+        for keyword in ("disetujui", "terverifikasi", "verified", "approved", "acc")
+    ):
         return "✅ Terverifikasi"
-    if any(keyword in lowered for keyword in ("ditolak", "tolak", "rejected", "invalid")):
+    if any(
+        keyword in lowered for keyword in ("ditolak", "tolak", "rejected", "invalid")
+    ):
         return "❌ Ditolak"
     if any(keyword in lowered for keyword in ("pending", "menunggu", "review")):
         return "⏳ Menunggu Verifikasi"
@@ -118,7 +126,9 @@ def _log_command(update: Update, text: str) -> None:
     save_chat(user.id, username, text, role="user", topic="notif")
 
 
-def _log_bot_message(user_id: Optional[int], username: Optional[str], text: Optional[str]) -> None:
+def _log_bot_message(
+    user_id: Optional[int], username: Optional[str], text: Optional[str]
+) -> None:
     if user_id is None:
         return
     message_text = (text or "").strip()
@@ -212,7 +222,11 @@ async def _finalize_callback(
         clean = (raw or "").strip()
         if clean:
             lines.append(clean)
-    default_text = f"Status: {status_label}{suffix_actor}" if include_status_line else "Status diperbarui."
+    default_text = (
+        f"Status: {status_label}{suffix_actor}"
+        if include_status_line
+        else "Status diperbarui."
+    )
     final_text = "\n".join(lines).strip() or default_text
 
     if message:
@@ -271,7 +285,9 @@ def _extract_guestbook_photo_links(
     return links
 
 
-def _extract_guestbook_detail_url(existing_markup: Optional[InlineKeyboardMarkup]) -> Optional[str]:
+def _extract_guestbook_detail_url(
+    existing_markup: Optional[InlineKeyboardMarkup],
+) -> Optional[str]:
     if not existing_markup:
         return None
     for row in existing_markup.inline_keyboard or []:
@@ -311,7 +327,9 @@ def _infer_detail_url_from_photo_links(
         parsed = urllib.parse.urlsplit(raw_url)
         if parsed.scheme not in {"http", "https"} or not parsed.netloc:
             continue
-        base_url = urllib.parse.urlunsplit((parsed.scheme, parsed.netloc, "", "", "")).rstrip("/")
+        base_url = urllib.parse.urlunsplit(
+            (parsed.scheme, parsed.netloc, "", "", "")
+        ).rstrip("/")
         if not base_url:
             continue
         return f"{base_url}/daftar-tamu/public/detail/{int(transaction_id)}"
@@ -401,7 +419,11 @@ def _build_guestbook_callback_message(
         guest_names.append(guest_name)
 
     guest_preview = _build_guest_preview(guest_names)
-    reviewer_name = str(actor_name or "").strip() or str(detail.get("reviewer_name") or "").strip() or "-"
+    reviewer_name = (
+        str(actor_name or "").strip()
+        or str(detail.get("reviewer_name") or "").strip()
+        or "-"
+    )
     lines = [
         f"📘 Buku Tamu • {_status_label_with_icon(status_label)}",
         f"#{transaction_id} • {_compact_text(detail.get('school_name') or '-', 72)}",
@@ -419,7 +441,9 @@ def _build_guestbook_callback_message(
         lines.append(f"Catatan: {_compact_note_text(notes, 55)}")
 
     reviewed_at = detail.get("reviewed_at")
-    timestamp = to_jakarta(reviewed_at) if reviewed_at else to_jakarta(current_jakarta_time())
+    timestamp = (
+        to_jakarta(reviewed_at) if reviewed_at else to_jakarta(current_jakarta_time())
+    )
     if timestamp:
         lines.append(f"🕒 {timestamp.strftime('%d %b %Y, %H:%M')}")
     return "\n".join(lines)
@@ -469,10 +493,14 @@ def _find_guestbook_same_day_approved_guest_names(transaction_id: int) -> list[s
     return names
 
 
-def _build_guestbook_duplicate_warning_text(*, school_name: Optional[str], guest_names: list[str]) -> str:
+def _build_guestbook_duplicate_warning_text(
+    *, school_name: Optional[str], guest_names: list[str]
+) -> str:
     clean_names = [name.strip() for name in guest_names if str(name or "").strip()]
     if len(clean_names) > 2:
-        guest_text = f"{clean_names[0]}, {clean_names[1]} (+{len(clean_names) - 2} lainnya)"
+        guest_text = (
+            f"{clean_names[0]}, {clean_names[1]} (+{len(clean_names) - 2} lainnya)"
+        )
     elif clean_names:
         guest_text = ", ".join(clean_names)
     else:
@@ -488,8 +516,12 @@ def _build_guestbook_decision_markup(
 ) -> InlineKeyboardMarkup:
     rows: list[list[InlineKeyboardButton]] = [
         [
-            InlineKeyboardButton(text="✅ Setujui", callback_data=f"guestbook:approve:{transaction_id}"),
-            InlineKeyboardButton(text="❌ Tolak", callback_data=f"guestbook:reject:{transaction_id}"),
+            InlineKeyboardButton(
+                text="✅ Setujui", callback_data=f"guestbook:approve:{transaction_id}"
+            ),
+            InlineKeyboardButton(
+                text="❌ Tolak", callback_data=f"guestbook:reject:{transaction_id}"
+            ),
         ]
     ]
     for item in _extract_guestbook_photo_links(existing_markup):
@@ -508,8 +540,14 @@ def _build_guestbook_duplicate_confirm_markup(
 ) -> InlineKeyboardMarkup:
     rows: list[list[InlineKeyboardButton]] = [
         [
-            InlineKeyboardButton(text="✅ Tetap Setujui", callback_data=f"guestbook:approve_force:{transaction_id}"),
-            InlineKeyboardButton(text="↩️ Batal", callback_data=f"guestbook:approve_cancel:{transaction_id}"),
+            InlineKeyboardButton(
+                text="✅ Tetap Setujui",
+                callback_data=f"guestbook:approve_force:{transaction_id}",
+            ),
+            InlineKeyboardButton(
+                text="↩️ Batal",
+                callback_data=f"guestbook:approve_cancel:{transaction_id}",
+            ),
         ]
     ]
     for item in _extract_guestbook_photo_links(existing_markup):
@@ -547,7 +585,9 @@ async def _sync_guestbook_resolution_to_other_chats(
 
         if source_chat is not None and chat_id == source_chat:
             try:
-                delete_guestbook_delivery_message(transaction_id=transaction_id, chat_id=chat_id)
+                delete_guestbook_delivery_message(
+                    transaction_id=transaction_id, chat_id=chat_id
+                )
             except Exception:
                 logger.exception("Gagal membersihkan jejak pesan sumber buku tamu.")
             continue
@@ -583,9 +623,13 @@ async def _sync_guestbook_resolution_to_other_chats(
 
         if sent_new or deleted_old:
             try:
-                delete_guestbook_delivery_message(transaction_id=transaction_id, chat_id=chat_id)
+                delete_guestbook_delivery_message(
+                    transaction_id=transaction_id, chat_id=chat_id
+                )
             except Exception:
-                logger.exception("Gagal membersihkan jejak notifikasi buku tamu Telegram.")
+                logger.exception(
+                    "Gagal membersihkan jejak notifikasi buku tamu Telegram."
+                )
 
     return synced_chat_ids
 
@@ -656,7 +700,9 @@ async def admin_approve(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 
     current_status = (user.get("account_status") or "").strip().lower()
     if current_status in {"approved", "rejected"}:
-        await _reply(update, f"User sudah diproses sebelumnya ({_status_label(current_status)}).")
+        await _reply(
+            update, f"User sudah diproses sebelumnya ({_status_label(current_status)})."
+        )
         return
     if current_status and current_status != "pending":
         await _reply(update, f"Status user saat ini {_status_label(current_status)}.")
@@ -675,7 +721,9 @@ async def admin_approve(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         return
 
     if updated:
-        actor_username = _normalize_username(getattr(update.effective_user, "username", None))
+        actor_username = _normalize_username(
+            getattr(update.effective_user, "username", None)
+        )
         actor_name = admin.get("admin_name") or admin.get("admin_email")
         source_chat = update.effective_chat
         exclude_chat_ids = (
@@ -701,7 +749,9 @@ async def admin_approve(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
             status="approved",
             reviewer_note=note,
         )
-        await _reply(update, f"✅ User {user.get('full_name') or user_id} telah disetujui.")
+        await _reply(
+            update, f"✅ User {user.get('full_name') or user_id} telah disetujui."
+        )
     else:
         await _reply(update, "Status user tidak berubah.")
 
@@ -734,7 +784,9 @@ async def admin_reject(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
     current_status = (user.get("account_status") or "").strip().lower()
     if current_status in {"approved", "rejected"}:
-        await _reply(update, f"User sudah diproses sebelumnya ({_status_label(current_status)}).")
+        await _reply(
+            update, f"User sudah diproses sebelumnya ({_status_label(current_status)})."
+        )
         return
     if current_status and current_status != "pending":
         await _reply(update, f"Status user saat ini {_status_label(current_status)}.")
@@ -753,7 +805,9 @@ async def admin_reject(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         return
 
     if updated:
-        actor_username = _normalize_username(getattr(update.effective_user, "username", None))
+        actor_username = _normalize_username(
+            getattr(update.effective_user, "username", None)
+        )
         actor_name = admin.get("admin_name") or admin.get("admin_email")
         source_chat = update.effective_chat
         exclude_chat_ids = (
@@ -779,12 +833,16 @@ async def admin_reject(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
             status="rejected",
             reviewer_note=note,
         )
-        await _reply(update, f"❌ User {user.get('full_name') or user_id} telah ditolak.")
+        await _reply(
+            update, f"❌ User {user.get('full_name') or user_id} telah ditolak."
+        )
     else:
         await _reply(update, "Status user tidak berubah.")
 
 
-async def admin_register_group(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def admin_register_group(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> None:
     logger = logging.getLogger("telegram.admin")
     admin = _authorize_admin(update)
     if not admin:
@@ -813,7 +871,9 @@ async def admin_register_group(update: Update, context: ContextTypes.DEFAULT_TYP
     await _reply(update, "Grup ini berhasil didaftarkan untuk notifikasi.")
 
 
-async def admin_unregister_group(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def admin_unregister_group(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> None:
     logger = logging.getLogger("telegram.admin")
     admin = _authorize_admin(update)
     if not admin:
@@ -841,7 +901,9 @@ async def admin_unregister_group(update: Update, context: ContextTypes.DEFAULT_T
         await _reply(update, "Grup ini belum terdaftar.")
 
 
-async def handle_verification_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def handle_verification_callback(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> None:
     logger = logging.getLogger("telegram.admin")
     query = update.callback_query
     if not query or not query.data:
@@ -856,7 +918,9 @@ async def handle_verification_callback(update: Update, context: ContextTypes.DEF
 
         admin = _authorize_admin(update)
         if not admin:
-            await query.answer("Akun ini belum terdaftar sebagai admin.", show_alert=True)
+            await query.answer(
+                "Akun ini belum terdaftar sebagai admin.", show_alert=True
+            )
             return
 
         parts = query.data.split(":")
@@ -954,7 +1018,9 @@ async def handle_verification_callback(update: Update, context: ContextTypes.DEF
                 status_label=status_label,
                 actor_name=actor_name,
                 actor_username=actor_username,
-                exclude_chat_ids={int(source_chat_id)} if source_chat_id is not None else None,
+                exclude_chat_ids=(
+                    {int(source_chat_id)} if source_chat_id is not None else None
+                ),
             )
         except Exception:
             logger.exception("Gagal mengirim broadcast update verifikasi akun.")
@@ -974,7 +1040,9 @@ async def handle_verification_callback(update: Update, context: ContextTypes.DEF
             logger.exception("Gagal mengirim answer callback.")
 
 
-async def handle_guestbook_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def handle_guestbook_callback(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> None:
     logger = logging.getLogger("telegram.admin")
     query = update.callback_query
     if not query or not query.data:
@@ -990,7 +1058,9 @@ async def handle_guestbook_callback(update: Update, context: ContextTypes.DEFAUL
 
         admin = _authorize_admin(update)
         if not admin:
-            await query.answer("Akun ini belum terdaftar sebagai admin.", show_alert=True)
+            await query.answer(
+                "Akun ini belum terdaftar sebagai admin.", show_alert=True
+            )
             return
 
         parts = query.data.split(":")
@@ -1078,7 +1148,9 @@ async def handle_guestbook_callback(update: Update, context: ContextTypes.DEFAUL
                     logger.exception("Gagal menampilkan konfirmasi duplikat buku tamu.")
                 return
 
-        effective_action = "approve" if action in {"approve", "approve_force"} else action
+        effective_action = (
+            "approve" if action in {"approve", "approve_force"} else action
+        )
         note = None
         if effective_action == "reject":
             note = "Ditolak via Telegram."

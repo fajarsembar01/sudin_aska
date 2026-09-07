@@ -1,7 +1,7 @@
 # bot_sekolah.py
+import json
 import logging
 import os
-import json
 import threading
 import urllib.parse as urlparse
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -18,7 +18,7 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 from dotenv import load_dotenv
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters
 
-from handlers import handle_message, handle_voice, start, reload_qa_chain
+from handlers import handle_message, handle_voice, reload_qa_chain, start
 
 
 def _start_refresh_server() -> None:
@@ -61,7 +61,9 @@ def _start_refresh_server() -> None:
 
             self._send(200, {"status": "ok"})
 
-        def log_message(self, format, *args):  # noqa: A003 - match BaseHTTPRequestHandler signature
+        def log_message(
+            self, format, *args
+        ):  # noqa: A003 - match BaseHTTPRequestHandler signature
             return
 
     try:
@@ -72,7 +74,10 @@ def _start_refresh_server() -> None:
 
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
-    logging.info("Refresh server active at http://%s:%s/api/admin/refresh-knowledge", host, port)
+    logging.info(
+        "Refresh server active at http://%s:%s/api/admin/refresh-knowledge", host, port
+    )
+
 
 load_dotenv()
 TOKEN = (os.getenv("TELEGRAM_BOT_TOKEN") or "").strip()

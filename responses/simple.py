@@ -8,7 +8,6 @@ from datetime import datetime
 from decimal import Decimal, InvalidOperation
 from zoneinfo import ZoneInfo
 
-
 _WHY_FALLBACK_PATTERNS = (
     "kenapa gk bisa jawab",
     "kenapa ga bisa jawab",
@@ -252,7 +251,9 @@ def _prepare_math_text(text: str) -> str:
     return lowered.replace(",", ".")
 
 
-def _clean_math_expression(raw_text: str, *, require_operator: bool = True) -> str | None:
+def _clean_math_expression(
+    raw_text: str, *, require_operator: bool = True
+) -> str | None:
     cleaned = re.sub(r"[^0-9+\-*/().\s]", " ", raw_text)
     expression = re.sub(r"\s+", "", cleaned)
 

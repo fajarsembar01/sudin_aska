@@ -1,0 +1,138 @@
+{% extends "portal/base_portal.html" %}
+{% set page_title = "Admin Adiwiyata – Per Sekolah" %}
+
+{% block portal_nav %}
+    {% include "adiwiyata/admin/_nav.html" %}
+{% endblock %}
+
+{% block head_extra %}
+<style>
+/* ─── Schools table card ─── */
+.school-avatar {
+    width: 38px; height: 38px; border-radius: 10px;
+    background: var(--bs-success);
+    color: white; font-weight: 900; font-size: 0.9rem;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+}
+.school-name { font-size: 0.85rem; font-weight: 800; }
+.school-npsn { font-size: 0.68rem; color: var(--text-muted); font-weight: 600; }
+
+/* Category pills mini */
+.cat-pills { display: flex; flex-wrap: wrap; gap: 4px; }
+.cat-pill {
+    font-size: 0.62rem; font-weight: 800;
+    padding: 2px 7px; border-radius: 999px;
+    white-space: nowrap;
+}
+.cat-pill.zero { opacity: .35; }
+.cp-sampah { background: rgba(209,250,229,0.9); color: #065f46; }
+.cp-energi { background: rgba(254,243,199,0.9); color: #92400e; }
+.cp-air { background: rgba(219,234,254,0.9); color: #1e40af; }
+.cp-sanitasi { background: rgba(243,232,255,0.9); color: #6b21a8; }
+.cp-kompos { background: rgba(252,231,243,0.9); color: #9d174d; }
+.cp-tanaman { background: rgba(236,253,245,0.9); color: #047857; }
+
+[data-theme="dark"] .school-jenjang { background: #064e3b; color: #6ee7b7; }
+[data-theme="dark"] .total-badge { background: #064e3b; color: #6ee7b7; }
+</style>
+{% endblock %}
+
+{% block portal_content %}
+<!-- Header -->
+<div class="mb-4">
+    <h1 class="h4 fw-bold mb-1">Rekapitulasi Per Sekolah</h1>
+    <p class="text-muted small">Melihat jumlah post adiwiyata dari setiap sekolah.</p>
+</div>
+
+<!-- Search Bar -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form class="d-flex flex-wrap gap-2" method="get">
+            <div class="input-group" style="max-width: 400px;">
+                <span class="input-group-text bg-transparent"><i class="bi bi-search"></i></span>
+                <input type="text" name="q" value="{{ search }}" class="form-control" placeholder="Cari nama sekolah atau NPSN...">
+            </div>
+            <button type="submit" class="btn btn-success fw-bold px-4">Cari</button>
+            {% if search %}
+            <a href="{{ url_for('adiwiyata.admin_adiwiyata_schools') }}" class="btn btn-light border text-muted">Reset</a>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<div class="text-muted small fw-semibold mb-3">
+    <strong>{{ schools | length }}</strong> sekolah aktif mengunggah konten Adiwiyata
+    {% if search %} — "<em>{{ search }}</em>"{% endif %}
+</div>
+
+<!-- Table Card -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="table-responsive">
+        {% if schools %}
+        <table class="table table-hover align-middle mb-0" style="font-size: 0.85rem;">
+            <thead class="table-light">
+                <tr>
+                    <th class="text-muted small fw-bold text-uppercase" style="width: 50px;">#</th>
+                    <th class="text-muted small fw-bold text-uppercase">Sekolah</th>
+                    <th class="text-muted small fw-bold text-uppercase">Jenjang</th>
+                    <th class="text-muted small fw-bold text-uppercase">Total Post</th>
+                    <th class="text-muted small fw-bold text-uppercase">Distribusi Kategori</th>
+                    <th class="text-muted small fw-bold text-uppercase">❤ Likes</th>
+                    <th class="text-muted small fw-bold text-uppercase">Post Terakhir</th>
+                    <th class="text-muted small fw-bold text-uppercase">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in schools %}
+                <tr>
+                    <td class="text-muted fw-bold">{{ loop.index }}</td>
+                    <td>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="school-avatar">{{ (s.name or 'S')[:1] }}</div>
+                            <div>
+                                <div class="school-name">{{ s.name }}</div>
+                                <div class="school-npsn">NPSN {{ s.npsn }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td><span class="badge bg-success-subtle text-success">{{ s.jenjang }}</span></td>
+                    <td><span class="badge bg-success-subtle text-success fs-6">{{ s.total_posts }} post</span></td>
+                    <td>
+                        <div class="cat-pills">
+                            {% set cat_map = [
+                                ('pengelolaan-sampah', 'Sampah', 'cp-sampah'),
+                                ('konservasi-energi', 'Energi', 'cp-energi'),
+                                ('konservasi-air', 'Air', 'cp-air'),
+                                ('kebersihan-sanitasi-drainase', 'Sanitasi', 'cp-sanitasi'),
+                                ('kompos', 'Kompos', 'cp-kompos'),
+                                ('tanaman', 'Tanaman', 'cp-tanaman'),
+                            ] %}
+                            {% for cat_key, cat_label, cat_cls in cat_map %}
+                            {% set cnt = s.category_counts.get(cat_key, 0) %}
+                            <span class="cat-pill {{ cat_cls }} {{ 'zero' if cnt == 0 }}" title="{{ category_titles.get(cat_key, cat_label) }}: {{ cnt }} post">
+                                {{ cat_label }} {% if cnt > 0 %}<strong>{{ cnt }}</strong>{% else %}0{% endif %}
+                            </span>
+                            {% endfor %}
+                        </div>
+                    </td>
+                    <td class="fw-bold text-muted"><i class="bi bi-heart-fill text-danger me-1"></i>{{ s.total_likes }}</td>
+                    <td class="text-muted small">{{ s.last_post_str or '-' }}</td>
+                    <td>
+                        <a href="{{ url_for('adiwiyata.admin_adiwiyata_school_detail', school_id=s.id) }}" class="btn btn-sm btn-outline-success fw-bold py-1">
+                            <i class="bi bi-eye"></i> Detail
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-buildings text-muted" style="font-size: 3rem;"></i>
+            <p class="text-muted mt-3 mb-0">Belum ada sekolah yang mengunggah konten Adiwiyata{% if search %} dengan kata kunci "{{ search }}"{% endif %}.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

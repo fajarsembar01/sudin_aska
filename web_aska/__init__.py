@@ -4,43 +4,67 @@ import asyncio
 import concurrent.futures
 import json
 import os
-import secrets
 import re
-from pathlib import Path
+import secrets
 from datetime import datetime, timezone
+from pathlib import Path
 from urllib.parse import parse_qs, quote, urlparse
-from flask import Flask, request, jsonify, render_template, session, redirect, url_for, flash, send_from_directory, abort, make_response
+
 from authlib.integrations.flask_client import OAuth
 from dotenv import dotenv_values
+from flask import (
+    Flask,
+    abort,
+    flash,
+    jsonify,
+    make_response,
+    redirect,
+    render_template,
+    request,
+    send_from_directory,
+    session,
+    url_for,
+)
 
-from .handlers import process_channel_request, process_web_request, web_sessions, reload_qa_chain
-from .feedback_routes import feedback_bp
+from account_status import ACCOUNT_STATUS_ACTIVE, BLOCKING_STATUSES, build_status_notice
 from db import (
-    save_chat,
-    get_or_create_web_user,
-    get_chat_history,
-    get_corruption_report,
-    get_chat_quota_status,
-    consume_chat_quota,
-    get_web_user_status,
     DEFAULT_LIMITED_QUOTA,
     DEFAULT_LIMITED_REASON,
-    get_whatsapp_user_status,
-    get_portal_school_by_npsn,
+    consume_chat_quota,
     create_public_guestbook_transaction,
-    get_public_guestbook_review_by_token,
-    list_public_guestbook_extra_questions,
-    submit_public_guestbook_review,
     find_general_guest_by_phone,
-    list_guestbook_purpose_keywords,
-    list_guestbook_contact_priorities,
-    list_public_guest_chat_bubbles,
+    get_chat_history,
+    get_chat_quota_status,
+    get_corruption_report,
+    get_or_create_web_user,
+    get_portal_school_by_npsn,
     get_public_guest_chat_settings,
+    get_public_guestbook_review_by_token,
+    get_web_user_status,
+    get_whatsapp_user_status,
+    list_guestbook_contact_priorities,
+    list_guestbook_purpose_keywords,
+    list_public_guest_chat_bubbles,
+    list_public_guestbook_extra_questions,
+    save_chat,
+    submit_public_guestbook_review,
 )
-from account_status import BLOCKING_STATUSES, build_status_notice, ACCOUNT_STATUS_ACTIVE
-from responses import detect_bullying_category, is_corruption_report_intent
 from reporting_flags import reporting_enabled
-from utils import current_jakarta_time, normalize_input, replace_bot_mentions, to_jakarta
+from responses import detect_bullying_category, is_corruption_report_intent
+from utils import (
+    current_jakarta_time,
+    normalize_input,
+    replace_bot_mentions,
+    to_jakarta,
+)
+
+from .feedback_routes import feedback_bp
+from .handlers import (
+    process_channel_request,
+    process_web_request,
+    reload_qa_chain,
+    web_sessions,
+)
 
 try:
     from dashboard.call_center.queries import (
@@ -100,14 +124,12 @@ def _run_async(coro):
 
 def create_app() -> Flask:
     """Create and configure an instance of the Flask application."""
-    app = Flask(
-        __name__,
-        template_folder="templates",
-        static_folder="static"
-    )
+    app = Flask(__name__, template_folder="templates", static_folder="static")
 
     # Secret key for session management
-    app.config["SECRET_KEY"] = os.getenv("APP_SECRET_KEY", "a-very-secret-key-that-you-should-change")
+    app.config["SECRET_KEY"] = os.getenv(
+        "APP_SECRET_KEY", "a-very-secret-key-that-you-should-change"
+    )
 
     # Initialize OAuth
     oauth = OAuth(app)
@@ -132,7 +154,9 @@ def create_app() -> Flask:
             return ""
 
     def _add_no_cache_headers(response):
-        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        response.headers["Cache-Control"] = (
+            "no-store, no-cache, must-revalidate, max-age=0"
+        )
         response.headers["Pragma"] = "no-cache"
         response.headers["Expires"] = "0"
         return response
@@ -178,9 +202,15 @@ def create_app() -> Flask:
             host = (parsed.netloc or "").lower()
             if "api.whatsapp.com" in host:
                 phone_values = parse_qs(parsed.query).get("phone") or []
-                digits = "".join(ch for ch in (phone_values[0] if phone_values else "") if ch.isdigit())
+                digits = "".join(
+                    ch
+                    for ch in (phone_values[0] if phone_values else "")
+                    if ch.isdigit()
+                )
             elif "wa.me" in host:
-                digits = "".join(ch for ch in parsed.path.strip("/").split("/")[0] if ch.isdigit())
+                digits = "".join(
+                    ch for ch in parsed.path.strip("/").split("/")[0] if ch.isdigit()
+                )
             if not digits:
                 digits = "".join(ch for ch in clean if ch.isdigit())
         if not digits:
@@ -270,17 +300,35 @@ def create_app() -> Flask:
         contacts = {
             "website": _normalize_url(meta.get("website") or ""),
             "email": (meta.get("cs_email") or meta.get("email") or "").strip(),
-            "phone": _normalize_phone(meta.get("school_phone") or meta.get("phone") or ""),
+            "phone": _normalize_phone(
+                meta.get("school_phone") or meta.get("phone") or ""
+            ),
             "instagram": _normalize_instagram(meta.get("instagram") or ""),
             "wa_channel": _normalize_wa_channel(meta.get("wa_channel") or ""),
         }
 
         icon_map = {
-            "website": {"icon": "bi-globe2", "label": "Website sekolah", "target": "_blank"},
+            "website": {
+                "icon": "bi-globe2",
+                "label": "Website sekolah",
+                "target": "_blank",
+            },
             "email": {"icon": "bi-envelope", "label": "Email sekolah", "target": None},
-            "phone": {"icon": "bi-telephone", "label": "Telepon sekolah", "target": None},
-            "instagram": {"icon": "bi-instagram", "label": "Instagram sekolah", "target": "_blank"},
-            "wa_channel": {"icon": "bi-whatsapp", "label": "WhatsApp Channel sekolah", "target": "_blank"},
+            "phone": {
+                "icon": "bi-telephone",
+                "label": "Telepon sekolah",
+                "target": None,
+            },
+            "instagram": {
+                "icon": "bi-instagram",
+                "label": "Instagram sekolah",
+                "target": "_blank",
+            },
+            "wa_channel": {
+                "icon": "bi-whatsapp",
+                "label": "WhatsApp Channel sekolah",
+                "target": "_blank",
+            },
         }
 
         ordered_keys = list_guestbook_contact_priorities(active_only=True)
@@ -369,7 +417,9 @@ def create_app() -> Flask:
             return ""
         return url_for("portal_daftar_tamu_uploaded_file", filename=normalized)
 
-    def _build_guest_chat_bubbles_for_render(*, school: dict | None, summary: dict | None) -> list[dict]:
+    def _build_guest_chat_bubbles_for_render(
+        *, school: dict | None, summary: dict | None
+    ) -> list[dict]:
         rows = list_public_guest_chat_bubbles(active_only=True)
         bubbles: list[dict] = []
         for row in rows:
@@ -417,7 +467,12 @@ def create_app() -> Flask:
                 )
                 if len(links) >= 12:
                     break
-            links.sort(key=lambda x: (int(x.get("sort_order") or 0), str(x.get("label") or "").lower()))
+            links.sort(
+                key=lambda x: (
+                    int(x.get("sort_order") or 0),
+                    str(x.get("label") or "").lower(),
+                )
+            )
 
             bubbles.append(
                 {
@@ -446,14 +501,24 @@ def create_app() -> Flask:
         chat_limit = int(settings.get("chat_limit") or 2)
         chat_limit = max(1, min(chat_limit, 50))
         settings["chat_limit"] = chat_limit
-        settings["limit_reached_message"] = str(settings.get("limit_reached_message") or "").strip()
-        media_type = str(settings.get("limit_reached_media_type") or "none").strip().lower()
+        settings["limit_reached_message"] = str(
+            settings.get("limit_reached_message") or ""
+        ).strip()
+        media_type = (
+            str(settings.get("limit_reached_media_type") or "none").strip().lower()
+        )
         if media_type not in {"image", "video", "audio"}:
             media_type = "none"
         settings["limit_reached_media_type"] = media_type
-        settings["limit_reached_media_loop"] = bool(settings.get("limit_reached_media_loop"))
-        settings["limit_reached_media_autoplay"] = bool(settings.get("limit_reached_media_autoplay"))
-        settings["limit_reached_video_muted"] = bool(settings.get("limit_reached_video_muted"))
+        settings["limit_reached_media_loop"] = bool(
+            settings.get("limit_reached_media_loop")
+        )
+        settings["limit_reached_media_autoplay"] = bool(
+            settings.get("limit_reached_media_autoplay")
+        )
+        settings["limit_reached_video_muted"] = bool(
+            settings.get("limit_reached_video_muted")
+        )
         raw_links = settings.get("limit_reached_links")
         if not isinstance(raw_links, list):
             raw_links = []
@@ -474,13 +539,20 @@ def create_app() -> Flask:
             )
             if len(links) >= 12:
                 break
-        links.sort(key=lambda x: (int(x.get("sort_order") or 0), str(x.get("label") or "").lower()))
+        links.sort(
+            key=lambda x: (
+                int(x.get("sort_order") or 0),
+                str(x.get("label") or "").lower(),
+            )
+        )
         settings["limit_reached_links"] = links
         if media_type != "video":
             settings["limit_reached_video_muted"] = False
         return settings
 
-    def _build_guest_chat_limit_bubble_for_render(*, school: dict | None, summary: dict | None, settings: dict | None) -> dict:
+    def _build_guest_chat_limit_bubble_for_render(
+        *, school: dict | None, summary: dict | None, settings: dict | None
+    ) -> dict:
         data = settings or _get_guest_chat_settings()
         media_type = str(data.get("limit_reached_media_type") or "none").strip().lower()
         media_url = str(data.get("limit_reached_media_url") or "").strip()
@@ -502,7 +574,11 @@ def create_app() -> Flask:
             "links": data.get("limit_reached_links") or [],
             "media_loop": bool(data.get("limit_reached_media_loop")),
             "media_autoplay": bool(data.get("limit_reached_media_autoplay")),
-            "video_muted": bool(data.get("limit_reached_video_muted")) if media_type == "video" else False,
+            "video_muted": (
+                bool(data.get("limit_reached_video_muted"))
+                if media_type == "video"
+                else False
+            ),
         }
 
     def _guestbook_grade_options(jenjang: str | None) -> list[str]:
@@ -520,7 +596,9 @@ def create_app() -> Flask:
     def _guestbook_class_letters() -> list[str]:
         return [chr(code) for code in range(ord("A"), ord("Z") + 1)]
 
-    def _guestbook_review_summary(review: dict | None, fallback_summary: dict | None = None) -> dict:
+    def _guestbook_review_summary(
+        review: dict | None, fallback_summary: dict | None = None
+    ) -> dict:
         if not review:
             return fallback_summary or {"names": [], "count": 0}
         names_raw = review.get("guest_names") or ""
@@ -568,7 +646,9 @@ def create_app() -> Flask:
         pending_npsn = (session.get("guest_review_npsn") or "").strip()
         if not pending_npsn:
             return None
-        return url_for("buku_tamu_review", npsn=pending_npsn, review_token=pending_token)
+        return url_for(
+            "buku_tamu_review", npsn=pending_npsn, review_token=pending_token
+        )
 
     def _sync_session_quota(quota_state: dict | None) -> None:
         if "user" not in session or not quota_state:
@@ -674,48 +754,48 @@ def create_app() -> Flask:
         )
         return _add_no_cache_headers(response)
 
-    @app.route('/login')
+    @app.route("/login")
     def login_belajar():
-        session['login_mode'] = 'belajar'
-        redirect_uri = url_for('authorize', _external=True)
+        session["login_mode"] = "belajar"
+        redirect_uri = url_for("authorize", _external=True)
         return oauth.google.authorize_redirect(redirect_uri)
 
-    @app.route('/login/gmail')
+    @app.route("/login/gmail")
     def login_gmail():
-        session['login_mode'] = 'gmail'
-        redirect_uri = url_for('authorize', _external=True)
+        session["login_mode"] = "gmail"
+        redirect_uri = url_for("authorize", _external=True)
         return oauth.google.authorize_redirect(redirect_uri)
 
-    @app.route('/authorize')
+    @app.route("/authorize")
     def authorize():
         token = oauth.google.authorize_access_token()
-        userinfo = oauth.google.parse_id_token(token, nonce=session.get('nonce'))
+        userinfo = oauth.google.parse_id_token(token, nonce=session.get("nonce"))
 
         # Validate email domain
-        email = userinfo.get('email')
+        email = userinfo.get("email")
         if not email:
             flash("Gagal mendapatkan informasi email dari Google.", "error")
-            return redirect(url_for('login_page'))
+            return redirect(url_for("login_page"))
 
-        login_mode = session.pop('login_mode', 'belajar')
-        domain = email.split('@')[-1].lower()
-        is_belajar_domain = domain == 'belajar.id' or domain.endswith('.belajar.id')
+        login_mode = session.pop("login_mode", "belajar")
+        domain = email.split("@")[-1].lower()
+        is_belajar_domain = domain == "belajar.id" or domain.endswith(".belajar.id")
         is_gmail_domain = domain in GMAIL_ALLOWED_DOMAINS
 
-        if login_mode != 'belajar' and is_belajar_domain:
+        if login_mode != "belajar" and is_belajar_domain:
             # User clicked Gmail but actually has belajar.id, promote to full access.
-            login_mode = 'belajar'
+            login_mode = "belajar"
 
-        if login_mode == 'belajar':
+        if login_mode == "belajar":
             if not is_belajar_domain:
                 flash(
                     "Login harus menggunakan email dengan domain @belajar.id atau subdomainnya.",
                     "error",
                 )
-                return redirect(url_for('login_page'))
-            access_tier = 'full'
+                return redirect(url_for("login_page"))
+            access_tier = "full"
             quota_limit = None
-            auth_provider = 'google_oauth_belajar'
+            auth_provider = "google_oauth_belajar"
             limited_reason = None
         else:
             if not is_gmail_domain:
@@ -724,17 +804,17 @@ def create_app() -> Flask:
                     "Kalau kamu punya akun belajar.id silakan pilih opsi itu biar tanpa limit ya!",
                     "error",
                 )
-                return redirect(url_for('login_page'))
-            access_tier = 'limited'
+                return redirect(url_for("login_page"))
+            access_tier = "limited"
             quota_limit = DEFAULT_LIMITED_QUOTA
-            auth_provider = 'google_oauth_gmail'
+            auth_provider = "google_oauth_gmail"
             limited_reason = DEFAULT_LIMITED_REASON
 
         # Get or create user in the database, update photo URL and last login timestamp
         user = get_or_create_web_user(
             email=email,
-            full_name=userinfo.get('name'),
-            photo_url=userinfo.get('picture'),
+            full_name=userinfo.get("name"),
+            photo_url=userinfo.get("picture"),
             access_tier=access_tier,
             auth_provider=auth_provider,
             quota_limit=quota_limit,
@@ -744,32 +824,32 @@ def create_app() -> Flask:
         user_dict = dict(user) if user else {}
         if user:
             # Ensure datetime is serializable in the session
-            last_login = user_dict.get('last_login')
-            if hasattr(last_login, 'isoformat'):
-                user_dict['last_login'] = last_login.isoformat()
-            reset_at = user_dict.get('quota_reset_at')
-            if hasattr(reset_at, 'isoformat'):
-                user_dict['quota_reset_at'] = reset_at.isoformat()
+            last_login = user_dict.get("last_login")
+            if hasattr(last_login, "isoformat"):
+                user_dict["last_login"] = last_login.isoformat()
+            reset_at = user_dict.get("quota_reset_at")
+            if hasattr(reset_at, "isoformat"):
+                user_dict["quota_reset_at"] = reset_at.isoformat()
             # Maintain compatibility with templates expecting `user.picture`
-            user_dict['picture'] = user_dict.get('photo_url') or userinfo.get('picture')
-            status_changed_at = user_dict.get('status_changed_at')
-            if hasattr(status_changed_at, 'isoformat'):
-                user_dict['status_changed_at'] = status_changed_at.isoformat()
+            user_dict["picture"] = user_dict.get("photo_url") or userinfo.get("picture")
+            status_changed_at = user_dict.get("status_changed_at")
+            if hasattr(status_changed_at, "isoformat"):
+                user_dict["status_changed_at"] = status_changed_at.isoformat()
 
         # Save user in session
-        session['user'] = user_dict
+        session["user"] = user_dict
         quota_status = None
-        if user_dict.get('id'):
-            quota_status = get_chat_quota_status(user_dict['id'])
+        if user_dict.get("id"):
+            quota_status = get_chat_quota_status(user_dict["id"])
             _sync_session_quota(quota_status)
 
-        return redirect(url_for('index'))
+        return redirect(url_for("index"))
 
-    @app.route('/logout')
+    @app.route("/logout")
     def logout():
-        session.pop('user', None)
+        session.pop("user", None)
         flash("You have been logged out.", "info")
-        return redirect(url_for('login_page'))
+        return redirect(url_for("login_page"))
 
     @app.route("/portal/uploads/logos/<path:filename>")
     def portal_school_logo(filename: str):
@@ -777,7 +857,9 @@ def create_app() -> Flask:
         if requested_path.is_absolute() or ".." in requested_path.parts:
             abort(404)
 
-        logos_dir = Path(__file__).resolve().parent.parent / "uploads" / "portal" / "logos"
+        logos_dir = (
+            Path(__file__).resolve().parent.parent / "uploads" / "portal" / "logos"
+        )
         return send_from_directory(logos_dir, str(requested_path))
 
     @app.route("/portal/uploads/daftar_tamu/<path:filename>")
@@ -786,28 +868,37 @@ def create_app() -> Flask:
         if requested_path.is_absolute() or ".." in requested_path.parts:
             abort(404)
 
-        media_dir = Path(__file__).resolve().parent.parent / "uploads" / "portal" / "daftar_tamu"
+        media_dir = (
+            Path(__file__).resolve().parent.parent
+            / "uploads"
+            / "portal"
+            / "daftar_tamu"
+        )
         return send_from_directory(media_dir, str(requested_path))
 
     @app.route("/buku-tamu/<npsn>", methods=["GET", "POST"])
     def buku_tamu(npsn: str):
         school = get_portal_school_by_npsn(npsn)
         if not school or not school.get("active"):
-            return render_template(
-                "buku_tamu.html",
-                school=None,
-                error="Sekolah tidak ditemukan atau nonaktif.",
-                purpose_keywords=[],
-                contact_buttons=[],
-                grade_options=[],
-                class_letters=[],
-            ), 404
+            return (
+                render_template(
+                    "buku_tamu.html",
+                    school=None,
+                    error="Sekolah tidak ditemukan atau nonaktif.",
+                    purpose_keywords=[],
+                    contact_buttons=[],
+                    grade_options=[],
+                    class_letters=[],
+                ),
+                404,
+            )
 
         grade_options = _guestbook_grade_options(school.get("jenjang"))
         class_letters = _guestbook_class_letters()
         allowed_grades = set(grade_options)
         allowed_letters = {letter.upper() for letter in class_letters}
         error = None
+
         def _is_truthy(value: object) -> bool:
             if isinstance(value, bool):
                 return value
@@ -846,10 +937,20 @@ def create_app() -> Flask:
                         guests.append(
                             {
                                 "full_name": clean_name,
-                                "instansi": instansi_list[idx] if idx < len(instansi_list) else "",
-                                "jabatan": jabatan_list[idx] if idx < len(jabatan_list) else "",
-                                "phone": phone_list[idx] if idx < len(phone_list) else "",
-                                "email": email_list[idx] if idx < len(email_list) else "",
+                                "instansi": (
+                                    instansi_list[idx]
+                                    if idx < len(instansi_list)
+                                    else ""
+                                ),
+                                "jabatan": (
+                                    jabatan_list[idx] if idx < len(jabatan_list) else ""
+                                ),
+                                "phone": (
+                                    phone_list[idx] if idx < len(phone_list) else ""
+                                ),
+                                "email": (
+                                    email_list[idx] if idx < len(email_list) else ""
+                                ),
                             }
                         )
 
@@ -876,7 +977,9 @@ def create_app() -> Flask:
                     student_class = (guest.get("student_class") or "").strip()
                     student_name = (guest.get("student_name") or "").strip()
                     if is_parent:
-                        if not student_class or not _is_valid_student_class(student_class):
+                        if not student_class or not _is_valid_student_class(
+                            student_class
+                        ):
                             error = "Kelas siswa wajib diisi."
                             break
                         if not student_name:
@@ -918,25 +1021,35 @@ def create_app() -> Flask:
                         notes = (request.form.get("notes") or "").strip()
                         metadata = {
                             "user_agent": request.headers.get("User-Agent"),
-                            "ip": request.headers.get("X-Forwarded-For", request.remote_addr),
+                            "ip": request.headers.get(
+                                "X-Forwarded-For", request.remote_addr
+                            ),
                             "source": "web_aska",
                             "visit_date_input": None,
                         }
                         if not error:
                             try:
-                                transaction_result = create_public_guestbook_transaction(
-                                    school_id=school["id"],
-                                    visit_at=visit_at,
-                                    purpose=purpose or None,
-                                    notes=notes or None,
-                                    guests=guests,
-                                    metadata=metadata,
+                                transaction_result = (
+                                    create_public_guestbook_transaction(
+                                        school_id=school["id"],
+                                        visit_at=visit_at,
+                                        purpose=purpose or None,
+                                        notes=notes or None,
+                                        guests=guests,
+                                        metadata=metadata,
+                                    )
                                 )
                             except Exception as exc:
                                 error = f"Gagal mengirim buku tamu: {exc}"
                             else:
-                                guest_names = [g.get("full_name") for g in guests if g.get("full_name")]
-                                transaction_id = transaction_result.get("transaction_id")
+                                guest_names = [
+                                    g.get("full_name")
+                                    for g in guests
+                                    if g.get("full_name")
+                                ]
+                                transaction_id = transaction_result.get(
+                                    "transaction_id"
+                                )
                                 review_token = transaction_result.get("review_token")
                                 session.pop("guest_chat_tx_id", None)
                                 session.pop("guest_chat_remaining", None)
@@ -953,7 +1066,13 @@ def create_app() -> Flask:
                                     "count": len(guest_names),
                                 }
                                 session.modified = True
-                                return redirect(url_for("buku_tamu_review", npsn=school.get("npsn"), review_token=review_token))
+                                return redirect(
+                                    url_for(
+                                        "buku_tamu_review",
+                                        npsn=school.get("npsn"),
+                                        review_token=review_token,
+                                    )
+                                )
 
         return render_template(
             "buku_tamu.html",
@@ -969,11 +1088,13 @@ def create_app() -> Flask:
     def guestbook_lookup():
         phone = (request.args.get("phone") or "").strip()
         guest = find_general_guest_by_phone(phone)
-        return jsonify({
-            "success": True,
-            "found": bool(guest),
-            "guest": guest,
-        })
+        return jsonify(
+            {
+                "success": True,
+                "found": bool(guest),
+                "guest": guest,
+            }
+        )
 
     @app.route("/buku-tamu/<npsn>/review/<review_token>", methods=["GET", "POST"])
     def buku_tamu_review(npsn: str, review_token: str):
@@ -990,23 +1111,32 @@ def create_app() -> Flask:
             error = "Link review tidak sesuai dengan sekolah yang dipilih."
 
         if error:
-            return render_template(
-                "buku_tamu_review.html",
-                school=school,
-                review=None,
-                extra_questions=[],
-                summary={"names": [], "count": 0},
-                review_url=None,
-                review_completed=False,
-                can_chat=False,
-                error=error,
-            ), 404
+            return (
+                render_template(
+                    "buku_tamu_review.html",
+                    school=school,
+                    review=None,
+                    extra_questions=[],
+                    summary={"names": [], "count": 0},
+                    review_url=None,
+                    review_completed=False,
+                    can_chat=False,
+                    error=error,
+                ),
+                404,
+            )
 
-        review_status = (review.get("review_status") or review.get("status") or "").strip().lower()
+        review_status = (
+            (review.get("review_status") or review.get("status") or "").strip().lower()
+        )
         summary = _guestbook_review_summary(review, session.get("guest_review_summary"))
         review_url = url_for("buku_tamu_review", npsn=npsn, review_token=review_token)
-        chat_url = url_for("buku_tamu_selesai", npsn=npsn, tx=review.get("transaction_id"))
-        can_chat = int(session.get("guest_chat_tx_id") or 0) == int(review.get("transaction_id") or 0)
+        chat_url = url_for(
+            "buku_tamu_selesai", npsn=npsn, tx=review.get("transaction_id")
+        )
+        can_chat = int(session.get("guest_chat_tx_id") or 0) == int(
+            review.get("transaction_id") or 0
+        )
 
         if request.method == "POST" and review_status != "completed":
             rating_raw = (request.form.get("rating") or "").strip()
@@ -1035,7 +1165,9 @@ def create_app() -> Flask:
                 except Exception as exc:
                     error = f"Gagal menyimpan review: {exc}"
                 else:
-                    fresh_review = get_public_guestbook_review_by_token(review_token) or review
+                    fresh_review = (
+                        get_public_guestbook_review_by_token(review_token) or review
+                    )
                     summary = _guestbook_review_summary(fresh_review, summary)
                     _activate_guest_chat_session(fresh_review, summary)
                     return redirect(chat_url)
@@ -1096,7 +1228,9 @@ def create_app() -> Flask:
             guest_chat_settings=chat_settings,
             guest_chat_limit_bubble=guest_chat_limit_bubble,
             preview_mode=False,
-            review_pending=bool(session.get("guest_review_tx_id") and session.get("guest_review_token")),
+            review_pending=bool(
+                session.get("guest_review_tx_id") and session.get("guest_review_token")
+            ),
             review_url=review_redirect,
         )
 
@@ -1120,7 +1254,9 @@ def create_app() -> Flask:
                 remaining = int(remaining_raw)
             except (TypeError, ValueError):
                 pass
-            remaining = max(0, min(remaining, int(chat_settings.get("chat_limit") or 2)))
+            remaining = max(
+                0, min(remaining, int(chat_settings.get("chat_limit") or 2))
+            )
         guest_chat_bubbles = _build_guest_chat_bubbles_for_render(
             school=school,
             summary=summary,
@@ -1164,7 +1300,9 @@ def create_app() -> Flask:
             session["guest_chat_user_id"] = guest_user_id
 
         guest_name = session.get("guest_chat_name") or "Tamu Umum"
-        response, _ = _run_async(process_web_request(guest_user_id, message, username=guest_name))
+        response, _ = _run_async(
+            process_web_request(guest_user_id, message, username=guest_name)
+        )
         remaining -= 1
         session["guest_chat_remaining"] = remaining
         session.modified = True
@@ -1174,7 +1312,10 @@ def create_app() -> Flask:
     def whatsapp_inbound():
         token_expected = (os.getenv("ASKA_WHATSAPP_INTERNAL_TOKEN") or "").strip()
         if not token_expected:
-            return jsonify({"error": "ASKA_WHATSAPP_INTERNAL_TOKEN belum dikonfigurasi"}), 501
+            return (
+                jsonify({"error": "ASKA_WHATSAPP_INTERNAL_TOKEN belum dikonfigurasi"}),
+                501,
+            )
 
         provided_token = (
             request.headers.get("X-ASKA-WHATSAPP-TOKEN")
@@ -1189,7 +1330,9 @@ def create_app() -> Flask:
         if not user_id:
             return jsonify({"error": "Nomor WhatsApp tidak valid"}), 400
 
-        username = (data.get("username") or data.get("name") or "WhatsApp User").strip()[:120]
+        username = (
+            data.get("username") or data.get("name") or "WhatsApp User"
+        ).strip()[:120]
         message_type = (data.get("message_type") or "text").strip().lower()
         message = (data.get("message") or "").strip()
 
@@ -1214,7 +1357,11 @@ def create_app() -> Flask:
                 channel="whatsapp",
             )
             save_chat(user_id, username, message, role="user", topic="whatsapp")
-            response_text = notice.message if notice else "Akses WhatsApp kamu sedang dibatasi oleh sekolah."
+            response_text = (
+                notice.message
+                if notice
+                else "Akses WhatsApp kamu sedang dibatasi oleh sekolah."
+            )
             save_chat(user_id, "ASKA", response_text, role="aska", topic="whatsapp")
             return jsonify(
                 {
@@ -1252,12 +1399,15 @@ def create_app() -> Flask:
         """
         token_expected = (_env_value("ASKA_CC_WHATSAPP_INTERNAL_TOKEN") or "").strip()
         if not token_expected:
-            return jsonify({"error": "ASKA_CC_WHATSAPP_INTERNAL_TOKEN belum dikonfigurasi"}), 501
+            return (
+                jsonify(
+                    {"error": "ASKA_CC_WHATSAPP_INTERNAL_TOKEN belum dikonfigurasi"}
+                ),
+                501,
+            )
 
         provided_token = (
-            request.headers.get("X-ASKA-CC-TOKEN")
-            or request.args.get("token")
-            or ""
+            request.headers.get("X-ASKA-CC-TOKEN") or request.args.get("token") or ""
         ).strip()
         if provided_token != token_expected:
             return jsonify({"error": "Unauthorized"}), 403
@@ -1272,14 +1422,14 @@ def create_app() -> Flask:
         message_id = data.get("message_id") or None
 
         try:
-            from dashboard.call_center.queries import (
-                upsert_cc_conversation,
-                save_cc_message,
-                send_cc_telegram_notification,
-            )
             from dashboard.call_center.media import (
                 call_center_media_label,
                 save_call_center_media,
+            )
+            from dashboard.call_center.queries import (
+                save_cc_message,
+                send_cc_telegram_notification,
+                upsert_cc_conversation,
             )
 
             media_payload = data.get("media") or {}
@@ -1299,7 +1449,11 @@ def create_app() -> Flask:
             if not message and (media_payload or media_meta):
                 message = call_center_media_label(
                     media_meta.get("media_mime_type")
-                    or (media_payload.get("mimetype") if isinstance(media_payload, dict) else None)
+                    or (
+                        media_payload.get("mimetype")
+                        if isinstance(media_payload, dict)
+                        else None
+                    )
                 )
             if not message:
                 return jsonify({"error": "message required"}), 400
@@ -1337,12 +1491,15 @@ def create_app() -> Flask:
         """Import WhatsApp history pushed by the Call Center bridge."""
         token_expected = (_env_value("ASKA_CC_WHATSAPP_INTERNAL_TOKEN") or "").strip()
         if not token_expected:
-            return jsonify({"error": "ASKA_CC_WHATSAPP_INTERNAL_TOKEN belum dikonfigurasi"}), 501
+            return (
+                jsonify(
+                    {"error": "ASKA_CC_WHATSAPP_INTERNAL_TOKEN belum dikonfigurasi"}
+                ),
+                501,
+            )
 
         provided_token = (
-            request.headers.get("X-ASKA-CC-TOKEN")
-            or request.args.get("token")
-            or ""
+            request.headers.get("X-ASKA-CC-TOKEN") or request.args.get("token") or ""
         ).strip()
         if provided_token != token_expected:
             return jsonify({"error": "Unauthorized"}), 403
@@ -1355,13 +1512,13 @@ def create_app() -> Flask:
             return jsonify({"error": "messages limit exceeded"}), 413
 
         try:
-            from dashboard.call_center.queries import (
-                upsert_cc_conversation,
-                save_cc_message,
-            )
             from dashboard.call_center.media import (
                 call_center_media_label,
                 save_call_center_media,
+            )
+            from dashboard.call_center.queries import (
+                save_cc_message,
+                upsert_cc_conversation,
             )
 
             saved = 0
@@ -1398,7 +1555,11 @@ def create_app() -> Flask:
                 if not message and (media_payload or media_meta):
                     message = call_center_media_label(
                         media_meta.get("media_mime_type")
-                        or (media_payload.get("mimetype") if isinstance(media_payload, dict) else None)
+                        or (
+                            media_payload.get("mimetype")
+                            if isinstance(media_payload, dict)
+                            else None
+                        )
                     )
                 if not message:
                     skipped += 1
@@ -1421,7 +1582,9 @@ def create_app() -> Flask:
                     conversation_id=conv["id"],
                     direction=direction,
                     message_text=message,
-                    admin_display_name="WhatsApp Import" if direction == "outbound" else None,
+                    admin_display_name=(
+                        "WhatsApp Import" if direction == "outbound" else None
+                    ),
                     wa_message_id=message_id,
                     created_at=created_at,
                     increment_unread=False,
@@ -1448,12 +1611,12 @@ def create_app() -> Flask:
 
     @app.route("/api/chat", methods=["POST"])
     def chat():
-        if 'user' not in session:
+        if "user" not in session:
             return jsonify({"error": "Unauthorized"}), 401
 
         data = request.json
-        user_id = session['user'].get("id")
-        full_name = session['user'].get("full_name", "WebUser")
+        user_id = session["user"].get("id")
+        full_name = session["user"].get("full_name", "WebUser")
         message = data.get("message")
 
         if not message:
@@ -1465,15 +1628,17 @@ def create_app() -> Flask:
             quota_state = get_chat_quota_status(user_id)
             _sync_session_quota(quota_state)
             server_now = datetime.now(timezone.utc).isoformat()
-            return jsonify({
-                "response": status_notice.message,
-                "blocked": True,
-                "blockType": "status",
-                "statusBlock": status_payload,
-                "exempt": False,
-                "quota": _serialize_quota_payload(quota_state),
-                "serverTime": server_now,
-            })
+            return jsonify(
+                {
+                    "response": status_notice.message,
+                    "blocked": True,
+                    "blockType": "status",
+                    "statusBlock": status_payload,
+                    "exempt": False,
+                    "quota": _serialize_quota_payload(quota_state),
+                    "serverTime": server_now,
+                }
+            )
 
         is_exempt = _is_quota_exempt_message(user_id, message)
         if is_exempt:
@@ -1484,64 +1649,72 @@ def create_app() -> Flask:
         _sync_session_quota(quota_state)
 
         if quota_state.get("error") == "user_not_found":
-            session.pop('user', None)
+            session.pop("user", None)
             return jsonify({"error": "Unauthorized"}), 401
 
         quota_payload = _serialize_quota_payload(quota_state)
         if not is_exempt and not quota_state.get("allowed", False):
             server_now = datetime.now(timezone.utc).isoformat()
-            return jsonify({
-                "response": LIMIT_BLOCK_MESSAGE,
-                "blocked": True,
-                "blockType": "quota",
-                "exempt": False,
-                "quota": quota_payload,
-                "statusBlock": None,
-                "serverTime": server_now,
-            })
+            return jsonify(
+                {
+                    "response": LIMIT_BLOCK_MESSAGE,
+                    "blocked": True,
+                    "blockType": "quota",
+                    "exempt": False,
+                    "quota": quota_payload,
+                    "statusBlock": None,
+                    "serverTime": server_now,
+                }
+            )
 
-        response, chat_log_id = _run_async(process_web_request(user_id, message, username=full_name))
+        response, chat_log_id = _run_async(
+            process_web_request(user_id, message, username=full_name)
+        )
         server_now = datetime.now(timezone.utc).isoformat()
-        return jsonify({
-            "response": response,
-            "chat_log_id": chat_log_id,
-            "blocked": False,
-            "exempt": is_exempt,
-            "blockType": None,
-            "statusBlock": status_payload,
-            "quota": quota_payload,
-            "serverTime": server_now,
-        })
+        return jsonify(
+            {
+                "response": response,
+                "chat_log_id": chat_log_id,
+                "blocked": False,
+                "exempt": is_exempt,
+                "blockType": None,
+                "statusBlock": status_payload,
+                "quota": quota_payload,
+                "serverTime": server_now,
+            }
+        )
 
     @app.route("/api/history")
     def chat_history():
-        if 'user' not in session:
+        if "user" not in session:
             return jsonify({"error": "Unauthorized"}), 401
-        
-        user_id = session['user'].get('id')
-        offset = request.args.get('offset', 0, type=int)
-        
+
+        user_id = session["user"].get("id")
+        offset = request.args.get("offset", 0, type=int)
+
         history = get_chat_history(user_id, limit=10, offset=offset)
-        
+
         # Convert datetime objects to string representation
         for item in history:
-            if 'created_at' in item and hasattr(item['created_at'], 'isoformat'):
-                item['created_at'] = item['created_at'].isoformat()
+            if "created_at" in item and hasattr(item["created_at"], "isoformat"):
+                item["created_at"] = item["created_at"].isoformat()
 
         return jsonify(history)
 
     @app.route("/api/quota")
     def quota_status_api():
-        if 'user' not in session:
+        if "user" not in session:
             return jsonify({"error": "Unauthorized"}), 401
 
-        user_id = session['user'].get('id')
+        user_id = session["user"].get("id")
         quota_status = get_chat_quota_status(user_id)
         _sync_session_quota(quota_status)
-        return jsonify({
-            "quota": _serialize_quota_payload(quota_status),
-            "serverTime": datetime.now(timezone.utc).isoformat(),
-        })
+        return jsonify(
+            {
+                "quota": _serialize_quota_payload(quota_status),
+                "serverTime": datetime.now(timezone.utc).isoformat(),
+            }
+        )
 
     @app.route("/api/admin/refresh-knowledge", methods=["POST"])
     def refresh_knowledge_api():
@@ -1576,7 +1749,9 @@ def create_app() -> Flask:
             if not report:
                 error = "Nomor tiketnya belum ketemu nih. Coba pastiin lagi atau cek huruf kapitalnya ya!"
 
-        return render_template("cek_laporan.html", ticket=ticket, report=report, error=error)
+        return render_template(
+            "cek_laporan.html", ticket=ticket, report=report, error=error
+        )
 
     @app.route("/cek-laporan/<ticket_id>")
     def cek_laporan_detail(ticket_id: str):

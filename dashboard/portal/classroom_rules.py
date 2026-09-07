@@ -2,20 +2,35 @@
 
 from __future__ import annotations
 
-from typing import Any
 import re
-
+from typing import Any
 
 PAUD_GROUP_JENJANGS = {"SPS", "TPA", "KB"}
 PAKET_JENJANGS = {"SKB", "PKBM"}
 SLB_TYPE_OPTIONS = (
     {"code": "A", "label": "A", "description": "Tunanetra (hambatan penglihatan)."},
     {"code": "B", "label": "B", "description": "Tunarungu (hambatan pendengaran)."},
-    {"code": "C", "label": "C", "description": "Tunagrahita Ringan (hambatan intelektual ringan)."},
-    {"code": "C1", "label": "C1", "description": "Tunagrahita Sedang (hambatan intelektual sedang)."},
+    {
+        "code": "C",
+        "label": "C",
+        "description": "Tunagrahita Ringan (hambatan intelektual ringan).",
+    },
+    {
+        "code": "C1",
+        "label": "C1",
+        "description": "Tunagrahita Sedang (hambatan intelektual sedang).",
+    },
     {"code": "D", "label": "D", "description": "Tunadaksa (hambatan fisik/motorik)."},
-    {"code": "E", "label": "E", "description": "Tunalaras (hambatan emosi dan perilaku)."},
-    {"code": "G", "label": "G", "description": "Tunaganda (kombinasi dua atau lebih ketunaan)."},
+    {
+        "code": "E",
+        "label": "E",
+        "description": "Tunalaras (hambatan emosi dan perilaku).",
+    },
+    {
+        "code": "G",
+        "label": "G",
+        "description": "Tunaganda (kombinasi dua atau lebih ketunaan).",
+    },
 )
 SLB_TYPE_CODES = tuple(item["code"] for item in SLB_TYPE_OPTIONS)
 
@@ -69,14 +84,26 @@ def _slb_encoded_levels() -> list[dict[str, Any]]:
     return levels
 
 
-def get_classroom_levels(jenjang: str | None, for_profile: bool = False) -> list[dict[str, Any]]:
+def get_classroom_levels(
+    jenjang: str | None, for_profile: bool = False
+) -> list[dict[str, Any]]:
     upper = normalize_jenjang(jenjang)
 
     if upper == "PAUD":
         return [
             {"code": -2, "label": "KB", "variant_style": "numeric", "bucket": "paud"},
-            {"code": -1, "label": "Kelompok A", "variant_style": "numeric", "bucket": "paud"},
-            {"code": 0, "label": "Kelompok B", "variant_style": "numeric", "bucket": "paud"},
+            {
+                "code": -1,
+                "label": "Kelompok A",
+                "variant_style": "numeric",
+                "bucket": "paud",
+            },
+            {
+                "code": 0,
+                "label": "Kelompok B",
+                "variant_style": "numeric",
+                "bucket": "paud",
+            },
         ]
     if upper == "TK":
         return [
@@ -85,29 +112,69 @@ def get_classroom_levels(jenjang: str | None, for_profile: bool = False) -> list
         ]
     if upper in PAUD_GROUP_JENJANGS:
         return [
-            {"code": -1, "label": "Kelompok A", "variant_style": "numeric", "bucket": "paud"},
-            {"code": 0, "label": "Kelompok B", "variant_style": "numeric", "bucket": "paud"},
+            {
+                "code": -1,
+                "label": "Kelompok A",
+                "variant_style": "numeric",
+                "bucket": "paud",
+            },
+            {
+                "code": 0,
+                "label": "Kelompok B",
+                "variant_style": "numeric",
+                "bucket": "paud",
+            },
         ]
     if upper == "SD":
         return [
-            {"code": grade, "label": f"Kelas {grade}", "variant_style": "alpha", "bucket": "sd"}
+            {
+                "code": grade,
+                "label": f"Kelas {grade}",
+                "variant_style": "alpha",
+                "bucket": "sd",
+            }
             for grade in range(1, 7)
         ]
     if upper == "SMP":
         return [
-            {"code": grade, "label": f"Kelas {grade}", "variant_style": "alpha", "bucket": "smp"}
+            {
+                "code": grade,
+                "label": f"Kelas {grade}",
+                "variant_style": "alpha",
+                "bucket": "smp",
+            }
             for grade in range(7, 10)
         ]
     if upper in {"SMA", "SMK"}:
         return [
-            {"code": grade, "label": f"Kelas {grade}", "variant_style": "alpha", "bucket": "sma"}
+            {
+                "code": grade,
+                "label": f"Kelas {grade}",
+                "variant_style": "alpha",
+                "bucket": "sma",
+            }
             for grade in range(10, 13)
         ]
     if upper in PAKET_JENJANGS:
         return [
-            {"code": -21, "label": "Paket A", "variant_style": "numeric", "bucket": "paket"},
-            {"code": -22, "label": "Paket B", "variant_style": "numeric", "bucket": "paket"},
-            {"code": -23, "label": "Paket C", "variant_style": "numeric", "bucket": "paket"},
+            {
+                "code": -21,
+                "label": "Paket A",
+                "variant_style": "numeric",
+                "bucket": "paket",
+            },
+            {
+                "code": -22,
+                "label": "Paket B",
+                "variant_style": "numeric",
+                "bucket": "paket",
+            },
+            {
+                "code": -23,
+                "label": "Paket C",
+                "variant_style": "numeric",
+                "bucket": "paket",
+            },
         ]
     if upper == "SLB":
         if for_profile:
@@ -127,16 +194,22 @@ def get_classroom_levels(jenjang: str | None, for_profile: bool = False) -> list
 
 
 def expected_grade_levels(jenjang: str | None) -> list[int]:
-    return [int(level["code"]) for level in get_classroom_levels(jenjang, for_profile=True)]
+    return [
+        int(level["code"]) for level in get_classroom_levels(jenjang, for_profile=True)
+    ]
 
 
 def classroom_grade_levels(jenjang: str | None) -> list[int]:
     if normalize_jenjang(jenjang) == "SLB":
         return [int(level["code"]) for level in _slb_encoded_levels()]
-    return [int(level["code"]) for level in get_classroom_levels(jenjang, for_profile=False)]
+    return [
+        int(level["code"]) for level in get_classroom_levels(jenjang, for_profile=False)
+    ]
 
 
-def _level_config(jenjang: str | None, grade: int, for_profile: bool = False) -> dict[str, Any] | None:
+def _level_config(
+    jenjang: str | None, grade: int, for_profile: bool = False
+) -> dict[str, Any] | None:
     for level in get_classroom_levels(jenjang, for_profile=for_profile):
         if int(level["code"]) == int(grade):
             return level
@@ -144,7 +217,9 @@ def _level_config(jenjang: str | None, grade: int, for_profile: bool = False) ->
 
 
 def grade_label(jenjang: str | None, grade: int) -> str:
-    config = _level_config(jenjang, grade, for_profile=False) or _level_config(jenjang, grade, for_profile=True)
+    config = _level_config(jenjang, grade, for_profile=False) or _level_config(
+        jenjang, grade, for_profile=True
+    )
     if config:
         return str(config["label"])
     decoded = decode_slb_grade(int(grade))
@@ -155,14 +230,21 @@ def grade_label(jenjang: str | None, grade: int) -> str:
 
 def grade_label_map(jenjang: str | None, for_profile: bool = False) -> dict[str, str]:
     if normalize_jenjang(jenjang) == "SLB" and not for_profile:
-        return {str(level["code"]): str(level["label"]) for level in _slb_encoded_levels()}
-    return {str(level["code"]): str(level["label"]) for level in get_classroom_levels(jenjang, for_profile=for_profile)}
+        return {
+            str(level["code"]): str(level["label"]) for level in _slb_encoded_levels()
+        }
+    return {
+        str(level["code"]): str(level["label"])
+        for level in get_classroom_levels(jenjang, for_profile=for_profile)
+    }
 
 
 def variant_style(jenjang: str | None, grade: int) -> str:
     if normalize_jenjang(jenjang) == "SLB" and decode_slb_grade(int(grade)):
         return "numeric"
-    config = _level_config(jenjang, grade, for_profile=False) or _level_config(jenjang, grade, for_profile=True)
+    config = _level_config(jenjang, grade, for_profile=False) or _level_config(
+        jenjang, grade, for_profile=True
+    )
     if config:
         return str(config.get("variant_style") or "alpha")
     return "alpha"
@@ -188,7 +270,11 @@ def build_classroom_name(jenjang: str | None, grade: int, variant: Any) -> str:
 
     if upper == "TK":
         return f"Kelas {label}{normalized}".strip()
-    if upper in PAUD_GROUP_JENJANGS or upper in PAKET_JENJANGS or (upper == "PAUD" and grade in (-2, -1, 0)):
+    if (
+        upper in PAUD_GROUP_JENJANGS
+        or upper in PAKET_JENJANGS
+        or (upper == "PAUD" and grade in (-2, -1, 0))
+    ):
         return f"{label}{normalized}".strip()
     if upper == "SLB":
         return f"{label} - {normalized}".strip()
@@ -228,22 +314,53 @@ def _parse_room_for_jenjang(name: str, jenjang: str) -> dict[str, Any] | None:
     upper = normalize_jenjang(jenjang)
 
     if upper == "TK":
-        match = re.match(r"^\s*(?:Ruang\s+)?Kelas\s+TK\s+A(\d+)\s*$", name, flags=re.IGNORECASE)
+        match = re.match(
+            r"^\s*(?:Ruang\s+)?Kelas\s+TK\s+A(\d+)\s*$", name, flags=re.IGNORECASE
+        )
         if match:
-            return {"grade_level": -1, "variant": match.group(1), "is_variant": True, "bucket": "tk"}
-        match = re.match(r"^\s*(?:Ruang\s+)?Kelas\s+TK\s+B(\d+)\s*$", name, flags=re.IGNORECASE)
+            return {
+                "grade_level": -1,
+                "variant": match.group(1),
+                "is_variant": True,
+                "bucket": "tk",
+            }
+        match = re.match(
+            r"^\s*(?:Ruang\s+)?Kelas\s+TK\s+B(\d+)\s*$", name, flags=re.IGNORECASE
+        )
         if match:
-            return {"grade_level": 0, "variant": match.group(1), "is_variant": True, "bucket": "tk"}
+            return {
+                "grade_level": 0,
+                "variant": match.group(1),
+                "is_variant": True,
+                "bucket": "tk",
+            }
         if re.match(r"^\s*(?:Ruang\s+)?Kelas\s+TK\s*$", name, flags=re.IGNORECASE):
-            return {"grade_level": -1, "variant": "", "is_variant": False, "bucket": "tk"}
+            return {
+                "grade_level": -1,
+                "variant": "",
+                "is_variant": False,
+                "bucket": "tk",
+            }
         if re.match(r"^\s*(?:Ruang\s+)?Kelas\s+-1\s*$", name, flags=re.IGNORECASE):
-            return {"grade_level": -1, "variant": "", "is_variant": False, "bucket": "tk"}
+            return {
+                "grade_level": -1,
+                "variant": "",
+                "is_variant": False,
+                "bucket": "tk",
+            }
 
     if upper == "PAUD":
         match = re.match(r"^\s*(?:Ruang\s+)?KB(\d+)\s*$", name, flags=re.IGNORECASE)
         if match:
-            return {"grade_level": -2, "variant": match.group(1), "is_variant": True, "bucket": "paud"}
-        match = re.match(r"^\s*(?:Ruang\s+)?Kelompok\s+([AB])(\d+)\s*$", name, flags=re.IGNORECASE)
+            return {
+                "grade_level": -2,
+                "variant": match.group(1),
+                "is_variant": True,
+                "bucket": "paud",
+            }
+        match = re.match(
+            r"^\s*(?:Ruang\s+)?Kelompok\s+([AB])(\d+)\s*$", name, flags=re.IGNORECASE
+        )
         if match:
             return {
                 "grade_level": -1 if match.group(1).upper() == "A" else 0,
@@ -252,10 +369,17 @@ def _parse_room_for_jenjang(name: str, jenjang: str) -> dict[str, Any] | None:
                 "bucket": "paud",
             }
         if re.match(r"^\s*(?:Ruang\s+)?Kelas\s+PAUD\s*$", name, flags=re.IGNORECASE):
-            return {"grade_level": -2, "variant": "", "is_variant": False, "bucket": "paud"}
+            return {
+                "grade_level": -2,
+                "variant": "",
+                "is_variant": False,
+                "bucket": "paud",
+            }
 
     if upper in PAUD_GROUP_JENJANGS:
-        match = re.match(r"^\s*(?:Ruang\s+)?Kelompok\s+([AB])(\d+)\s*$", name, flags=re.IGNORECASE)
+        match = re.match(
+            r"^\s*(?:Ruang\s+)?Kelompok\s+([AB])(\d+)\s*$", name, flags=re.IGNORECASE
+        )
         if match:
             return {
                 "grade_level": -1 if match.group(1).upper() == "A" else 0,
@@ -264,7 +388,9 @@ def _parse_room_for_jenjang(name: str, jenjang: str) -> dict[str, Any] | None:
                 "bucket": "paud",
             }
         if re.match(r"^\s*Kelompok\s+([AB])(\d+)\s*$", name, flags=re.IGNORECASE):
-            match = re.match(r"^\s*Kelompok\s+([AB])(\d+)\s*$", name, flags=re.IGNORECASE)
+            match = re.match(
+                r"^\s*Kelompok\s+([AB])(\d+)\s*$", name, flags=re.IGNORECASE
+            )
             return {
                 "grade_level": -1 if match.group(1).upper() == "A" else 0,
                 "variant": match.group(2),
@@ -273,7 +399,9 @@ def _parse_room_for_jenjang(name: str, jenjang: str) -> dict[str, Any] | None:
             }
 
     if upper in PAKET_JENJANGS:
-        match = re.match(r"^\s*(?:Ruang\s+)?Paket\s+([ABC])(\d+)\s*$", name, flags=re.IGNORECASE)
+        match = re.match(
+            r"^\s*(?:Ruang\s+)?Paket\s+([ABC])(\d+)\s*$", name, flags=re.IGNORECASE
+        )
         if match:
             grade_map = {"A": -21, "B": -22, "C": -23}
             return {
@@ -293,7 +421,11 @@ def _parse_room_for_jenjang(name: str, jenjang: str) -> dict[str, Any] | None:
             }
 
     if upper == "SLB":
-        match = re.match(r"^\s*(?:Ruang\s+Kelas\s+)?(\d+)([A-Z](?:1)?)\s*-\s*(\d+)\s*$", name, flags=re.IGNORECASE)
+        match = re.match(
+            r"^\s*(?:Ruang\s+Kelas\s+)?(\d+)([A-Z](?:1)?)\s*-\s*(\d+)\s*$",
+            name,
+            flags=re.IGNORECASE,
+        )
         if match:
             type_code = match.group(2).upper()
             if type_code not in SLB_TYPE_CODES:
@@ -305,12 +437,25 @@ def _parse_room_for_jenjang(name: str, jenjang: str) -> dict[str, Any] | None:
                 "bucket": "slb",
             }
         if re.match(r"^\s*Ruang\s+Kelas\s+SLB\s*$", name, flags=re.IGNORECASE):
-            return {"grade_level": 0, "variant": "", "is_variant": False, "bucket": "slb"}
+            return {
+                "grade_level": 0,
+                "variant": "",
+                "is_variant": False,
+                "bucket": "slb",
+            }
 
     if upper in {"SD", "SMP", "SMA", "SMK", ""}:
-        match = re.match(r"^\s*(?:Ruang\s+)?Kelas\s+(-?\d+)\s*([A-Za-z])\s*$", name, flags=re.IGNORECASE)
+        match = re.match(
+            r"^\s*(?:Ruang\s+)?Kelas\s+(-?\d+)\s*([A-Za-z])\s*$",
+            name,
+            flags=re.IGNORECASE,
+        )
         if match:
-            bucket = "sd" if 1 <= int(match.group(1)) <= 6 else "smp" if 7 <= int(match.group(1)) <= 9 else "sma"
+            bucket = (
+                "sd"
+                if 1 <= int(match.group(1)) <= 6
+                else "smp" if 7 <= int(match.group(1)) <= 9 else "sma"
+            )
             return {
                 "grade_level": int(match.group(1)),
                 "variant": match.group(2).upper(),
@@ -320,13 +465,26 @@ def _parse_room_for_jenjang(name: str, jenjang: str) -> dict[str, Any] | None:
         match = re.search(r"\bKelas\s+(-?\d+)\b", name, flags=re.IGNORECASE)
         if match:
             grade = int(match.group(1))
-            bucket = "sd" if 1 <= grade <= 6 else "smp" if 7 <= grade <= 9 else "sma" if 10 <= grade <= 12 else "umum"
-            return {"grade_level": grade, "variant": "", "is_variant": False, "bucket": bucket}
+            bucket = (
+                "sd"
+                if 1 <= grade <= 6
+                else (
+                    "smp" if 7 <= grade <= 9 else "sma" if 10 <= grade <= 12 else "umum"
+                )
+            )
+            return {
+                "grade_level": grade,
+                "variant": "",
+                "is_variant": False,
+                "bucket": bucket,
+            }
 
     return None
 
 
-def parse_room_info(name: str | None, jenjang: str | None = None) -> dict[str, Any] | None:
+def parse_room_info(
+    name: str | None, jenjang: str | None = None
+) -> dict[str, Any] | None:
     value = re.sub(r"\s+", " ", (name or "").strip())
     if not value:
         return None
@@ -335,14 +493,25 @@ def parse_room_info(name: str | None, jenjang: str | None = None) -> dict[str, A
     if upper:
         return _parse_room_for_jenjang(value, upper)
 
-    for candidate in ["TK", "PAUD", *sorted(PAUD_GROUP_JENJANGS), *sorted(PAKET_JENJANGS), "SLB", "SD", "SMP", "SMA"]:
+    for candidate in [
+        "TK",
+        "PAUD",
+        *sorted(PAUD_GROUP_JENJANGS),
+        *sorted(PAKET_JENJANGS),
+        "SLB",
+        "SD",
+        "SMP",
+        "SMA",
+    ]:
         parsed = _parse_room_for_jenjang(value, candidate)
         if parsed:
             return parsed
     return None
 
 
-def sanitize_submitted_classrooms(jenjang: str | None, classrooms: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def sanitize_submitted_classrooms(
+    jenjang: str | None, classrooms: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
     allowed_grades = set(classroom_grade_levels(jenjang))
     sanitized: list[dict[str, Any]] = []
     seen: set[tuple[int, str]] = set()

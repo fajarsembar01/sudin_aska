@@ -6,11 +6,11 @@ import argparse
 import importlib.util
 import re
 import sys
+import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Iterable, Optional
 from zipfile import ZipFile
-import xml.etree.ElementTree as ET
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
@@ -64,7 +64,11 @@ def column_index(cell_ref: str) -> int:
 def iter_sheet_rows(path: Path, sheet_name: str | None = None) -> Iterable[list[str]]:
     with ZipFile(path) as zf:
         shared = load_shared_strings(zf)
-        sheet_path = "xl/worksheets/sheet1.xml" if not sheet_name else f"xl/worksheets/{sheet_name}.xml"
+        sheet_path = (
+            "xl/worksheets/sheet1.xml"
+            if not sheet_name
+            else f"xl/worksheets/{sheet_name}.xml"
+        )
         sheet_data = zf.read(sheet_path)
     root = ET.fromstring(sheet_data)
     for row in root.findall(".//main:row", NS):
@@ -105,7 +109,9 @@ def extract_records(path: Path) -> Dict[str, DukRecord]:
     except ValueError as exc:
         raise RuntimeError("Kolom 'NAMA TANPA GELAR' tidak ditemukan.") from exc
     prefix_idx = headers.index("GELAR DEPAN") if "GELAR DEPAN" in headers else None
-    suffix_idx = headers.index("GELAR BELAKANG") if "GELAR BELAKANG" in headers else None
+    suffix_idx = (
+        headers.index("GELAR BELAKANG") if "GELAR BELAKANG" in headers else None
+    )
 
     result: Dict[str, DukRecord] = {}
     for row in rows[header_idx + 1 :]:
@@ -114,13 +120,23 @@ def extract_records(path: Path) -> Dict[str, DukRecord]:
         name = (row[name_idx] or "").strip()
         if not name:
             continue
-        prefix = row[prefix_idx].strip() if prefix_idx is not None and prefix_idx < len(row) else ""
-        suffix = row[suffix_idx].strip() if suffix_idx is not None and suffix_idx < len(row) else ""
+        prefix = (
+            row[prefix_idx].strip()
+            if prefix_idx is not None and prefix_idx < len(row)
+            else ""
+        )
+        suffix = (
+            row[suffix_idx].strip()
+            if suffix_idx is not None and suffix_idx < len(row)
+            else ""
+        )
+
         def clean(value: str) -> Optional[str]:
             trimmed = (value or "").strip()
             if not trimmed or trimmed == "-":
                 return None
             return trimmed
+
         record = DukRecord(
             name=name,
             degree_prefix=clean(prefix),
@@ -130,14 +146,14 @@ def extract_records(path: Path) -> Dict[str, DukRecord]:
     return result
 
 
-def update_dashboard_users(records: Dict[str, DukRecord], dry_run: bool = False) -> None:
+def update_dashboard_users(
+    records: Dict[str, DukRecord], dry_run: bool = False
+) -> None:
     with get_cursor() as cur:
-        cur.execute(
-            """
+        cur.execute("""
             SELECT id, full_name
             FROM dashboard_users
-            """
-        )
+            """)
         users = cur.fetchall()
     updates = []
     missing: list[str] = []
@@ -152,7 +168,9 @@ def update_dashboard_users(records: Dict[str, DukRecord], dry_run: bool = False)
         )
 
     if dry_run:
-        print(f"[DRY-RUN] Akan memperbarui {len(updates)} akun. {len(missing)} akun tidak ditemukan di DUK.")
+        print(
+            f"[DRY-RUN] Akan memperbarui {len(updates)} akun. {len(missing)} akun tidak ditemukan di DUK."
+        )
         if missing:
             print("Nama tidak ditemukan:", ", ".join(sorted(missing)))
         return
@@ -176,9 +194,15 @@ def update_dashboard_users(records: Dict[str, DukRecord], dry_run: bool = False)
 
 
 def main(argv: Optional[Iterable[str]] = None) -> int:
-    parser = argparse.ArgumentParser(description="Perbarui gelar dashboard_users dari file DUK.")
+    parser = argparse.ArgumentParser(
+        description="Perbarui gelar dashboard_users dari file DUK."
+    )
     parser.add_argument("duk_path", type=Path, help="Path ke file DUK (XLSX).")
-    parser.add_argument("--dry-run", action="store_true", help="Tampilkan rencana update tanpa menulis ke database.")
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Tampilkan rencana update tanpa menulis ke database.",
+    )
     args = parser.parse_args(list(argv) if argv is not None else None)
 
     if not args.duk_path.exists():

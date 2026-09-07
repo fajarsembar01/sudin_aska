@@ -1,0 +1,50 @@
+<div class="card border-0 shadow-sm mt-4 mb-4">
+    <div class="card-header bg-body py-3 d-flex justify-content-between align-items-center">
+        <div>
+            <h6 class="mb-1 fw-bold"><i class="bi bi-clock-history text-primary me-2"></i>Riwayat Aktivitas Admin</h6>
+            <div class="text-body-secondary small">Mencatat perubahan data yang dilakukan admin sejak fitur logging diaktifkan.</div>
+        </div>
+        <span class="badge text-bg-light">{{ activity_logs|length }} log</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Waktu</th>
+                        <th>Nama Admin</th>
+                        <th>Aksi</th>
+                        <th>Target</th>
+                        <th class="pe-4">Detail</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in activity_logs %}
+                    <tr>
+                        <td class="ps-4 text-nowrap small text-body-secondary">{{ log.created_at|jakarta if log.created_at else '-' }}</td>
+                        <td class="fw-semibold">{{ log.admin_name or 'Tidak ada' }}</td>
+                        <td><span class="badge text-bg-primary">{{ log.action }}</span></td>
+                        <td>
+                            <div class="fw-semibold">{{ log.target_name or (log.target_type ~ ' #' ~ (log.target_id or '-')) }}</div>
+                            <div class="small text-body-secondary">{{ log.target_type }}</div>
+                        </td>
+                        <td class="pe-4 small text-body-secondary">
+                            {% if log.metadata %}
+                                <code class="small text-wrap">{{ log.metadata|tojson }}</code>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-body-secondary">
+                            Belum ada riwayat aktivitas admin.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

@@ -1,6 +1,7 @@
-
 from typing import Optional
+
 from dashboard.db_access import get_cursor
+
 
 def create_pending_user(
     email: str,
@@ -11,7 +12,7 @@ def create_pending_user(
     nip: Optional[str] = None,
     nrk: Optional[str] = None,
     jabatan: Optional[str] = None,
-    kecamatan_id: Optional[int] = None
+    kecamatan_id: Optional[int] = None,
 ) -> int:
     """Create a new user with pending status."""
     with get_cursor(commit=True) as cur:
@@ -25,11 +26,21 @@ def create_pending_user(
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'pending')
             RETURNING id
             """,
-            (email, full_name, password_hash, role, whatsapp, nip, nrk, jabatan, kecamatan_id)
+            (
+                email,
+                full_name,
+                password_hash,
+                role,
+                whatsapp,
+                nip,
+                nrk,
+                jabatan,
+                kecamatan_id,
+            ),
         )
         new_id = cur.fetchone()[0]
-        
+
         # Determine admin user for assignment based on kecamatan if possible
         # For now, just leave user_kecamatan empty until approved
-        
+
     return int(new_id)

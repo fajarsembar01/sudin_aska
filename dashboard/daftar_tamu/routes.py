@@ -10,13 +10,15 @@ import math
 import os
 import re
 import time
-from uuid import uuid4
-from io import BytesIO, StringIO
-import requests
-from pathlib import Path
 from datetime import date, datetime
+from io import BytesIO, StringIO
+from pathlib import Path
 from typing import Optional
+from urllib.parse import quote_plus
+from uuid import uuid4
 
+import qrcode
+import requests
 from flask import (
     Blueprint,
     Response,
@@ -26,22 +28,26 @@ from flask import (
     redirect,
     render_template,
     request,
-    session,
     send_file,
+    session,
     stream_with_context,
     url_for,
 )
-from psycopg2.extras import Json
-from urllib.parse import quote_plus
 from PIL import Image, ImageDraw, ImageFont
-import qrcode
+from psycopg2.extras import Json
 from werkzeug.utils import secure_filename
 
 from dashboard.auth import current_user, role_required
 from dashboard.db_access import get_cursor
-from dashboard.queries import record_admin_action
-from dashboard.portal.permissions import can_access_aska, get_permission_summary, is_superadmin
+from dashboard.portal.permissions import (
+    can_access_aska,
+    get_permission_summary,
+    is_superadmin,
+)
 from dashboard.portal.queries import (
+    PORTAL_UNDO_WINDOW_DEFAULT_SECONDS,
+    PORTAL_UNDO_WINDOW_MAX_SECONDS,
+    PORTAL_UNDO_WINDOW_MIN_SECONDS,
     fetch_admin_pending_summary,
     fetch_portal_undo_window_seconds,
     get_staff_assigned_schools,
@@ -49,78 +55,76 @@ from dashboard.portal.queries import (
     get_user_kecamatan_ids,
     list_portal_kontak,
     list_schools_by_kecamatan,
-    PORTAL_UNDO_WINDOW_DEFAULT_SECONDS,
-    PORTAL_UNDO_WINDOW_MIN_SECONDS,
-    PORTAL_UNDO_WINDOW_MAX_SECONDS,
 )
+from dashboard.queries import record_admin_action
 from utils import current_jakarta_time, to_jakarta
 
 from .media import stamp_guestbook_photo
 from .queries import (
-    DEFAULT_USER_SORT,
     DEFAULT_SORT,
+    DEFAULT_USER_SORT,
     SORT_OPTIONS,
+    USER_APP_NOTIFICATION_CATEGORIES,
     USER_SORT_OPTIONS,
+    count_guest_chat_quick_questions_by_bubble,
+    create_guest_chat_bubble,
+    create_guest_chat_quick_question,
+    create_guestbook_status_notifications,
+    create_screen_recapture_log,
+    delete_guest_chat_bubble,
+    delete_guest_chat_quick_question,
     ensure_daftar_tamu_seed_data,
     fetch_dashboard_summary,
-    fetch_guestbook_gallery_photos,
     fetch_guest_history,
+    fetch_guestbook_gallery_photos,
+    fetch_guestbook_ux_metric_rows,
     fetch_map_data,
     fetch_recent_visits,
+    fetch_school_pending_counts,
     fetch_school_rankings,
     fetch_school_visit_bucket_rows,
     fetch_school_visit_day_guests,
     fetch_school_visit_days,
     fetch_school_visit_histogram,
     fetch_school_visit_history,
+    fetch_unvisited_schools,
     fetch_user_guestbook_history,
+    fetch_user_notification_summary,
     fetch_user_rankings,
     fetch_user_visit_history,
-    fetch_unvisited_schools,
-    fetch_school_pending_counts,
+    get_guest_chat_bubble,
+    get_guest_chat_settings,
     get_transaction_detail,
     list_admin_public_school_summary,
     list_admin_public_transactions,
     list_admin_transactions,
-    list_transaction_previous_single_guest_photos,
-    list_guest_candidates,
+    list_contact_priority_rows,
     list_general_guest_candidates,
     list_general_guests_admin,
-    list_user_transactions,
-    list_user_visited_school_ids,
+    list_guest_candidates,
+    list_guest_chat_bubbles,
+    list_guest_chat_quick_questions,
     list_purpose_keyword_rows,
     list_purpose_keywords_by_usage,
-    list_contact_priority_rows,
     list_school_public_transactions,
     list_school_transactions,
-    update_contact_priority,
-    set_purpose_keyword_active,
-    fetch_guestbook_ux_metric_rows,
-    create_screen_recapture_log,
     list_screen_recapture_logs,
-    USER_APP_NOTIFICATION_CATEGORIES,
-    fetch_user_notification_summary,
-    upsert_guestbook_ux_metrics,
+    list_transaction_previous_single_guest_photos,
     list_user_notifications,
+    list_user_transactions,
+    list_user_visited_school_ids,
     mark_user_notifications_read,
-    create_guestbook_status_notifications,
     sanitize_guestbook_notification_message_for_non_admin,
-    upsert_transaction_staff_note,
-    upsert_purpose_keyword,
+    set_purpose_keyword_active,
+    update_contact_priority,
+    update_guest_chat_bubble,
+    update_guest_chat_quick_question,
+    update_guest_chat_settings,
     update_public_transaction_status,
     update_transaction_status,
-    list_guest_chat_bubbles,
-    get_guest_chat_bubble,
-    create_guest_chat_bubble,
-    update_guest_chat_bubble,
-    delete_guest_chat_bubble,
-    count_guest_chat_quick_questions_by_bubble,
-    list_guest_chat_quick_questions,
-    create_guest_chat_quick_question,
-    update_guest_chat_quick_question,
-    delete_guest_chat_quick_question,
-    get_guest_chat_settings,
-    update_guest_chat_settings,
+    upsert_guestbook_ux_metrics,
+    upsert_purpose_keyword,
+    upsert_transaction_staff_note,
 )
 
 DAFTAR_TAMU_URL_PREFIX = "/daftar-tamu"
@@ -157,30 +161,54 @@ _VISIT_FREQUENCY_BUCKETS = [
     {"key": "f10_plus", "label": "10+", "min_visits": 10, "max_visits": None},
 ]
 
+
 def _generate_dynamic_dist_buckets(dist_bb: int, dist_ba: int) -> list:
     if dist_ba <= dist_bb:
         dist_ba = dist_bb + 7
 
     buckets = []
-    buckets.append({"key": "d_0", "label": f"{dist_bb}x", "min_visits": dist_bb, "max_visits": dist_bb})
-    
+    buckets.append(
+        {
+            "key": "d_0",
+            "label": f"{dist_bb}x",
+            "min_visits": dist_bb,
+            "max_visits": dist_bb,
+        }
+    )
+
     current_min = dist_bb + 1
     for i in range(1, 7):
         fraction = i / 6.0
         target_max = dist_bb + int(round(fraction * (dist_ba - dist_bb - 1)))
-        
+
         if current_min >= dist_ba:
-            buckets.append({"key": f"d_{i}", "label": "-", "min_visits": -1, "max_visits": -2})
+            buckets.append(
+                {"key": f"d_{i}", "label": "-", "min_visits": -1, "max_visits": -2}
+            )
         else:
             current_max = max(current_min, min(target_max, dist_ba - 1))
             if current_min == current_max:
                 label = f"{current_min}x"
             else:
                 label = f"{current_min}-{current_max}x"
-            buckets.append({"key": f"d_{i}", "label": label, "min_visits": current_min, "max_visits": current_max})
+            buckets.append(
+                {
+                    "key": f"d_{i}",
+                    "label": label,
+                    "min_visits": current_min,
+                    "max_visits": current_max,
+                }
+            )
             current_min = current_max + 1
-            
-    buckets.append({"key": "d_7", "label": f"{dist_ba}+", "min_visits": dist_ba, "max_visits": None})
+
+    buckets.append(
+        {
+            "key": "d_7",
+            "label": f"{dist_ba}+",
+            "min_visits": dist_ba,
+            "max_visits": None,
+        }
+    )
     return buckets
 
 
@@ -220,7 +248,10 @@ def _preview_read_only_block_response(*, fallback_url: str) -> Response:
         or "application/json" in content_type
     )
     if wants_json:
-        return jsonify({"success": False, "message": message, "preview_read_only": True}), 403
+        return (
+            jsonify({"success": False, "message": message, "preview_read_only": True}),
+            403,
+        )
 
     flash(message, "warning")
     target_url = (request.referrer or "").strip() or fallback_url
@@ -233,7 +264,9 @@ def _enforce_preview_read_only_mode() -> Response | None:
         return None
     if not _is_preview_read_only_session():
         return None
-    return _preview_read_only_block_response(fallback_url=url_for("portal.preview_accounts"))
+    return _preview_read_only_block_response(
+        fallback_url=url_for("pengaturan.preview_accounts")
+    )
 
 
 def _parse_iso_date(value: Optional[str]) -> Optional[date]:
@@ -262,7 +295,9 @@ _GUEST_CHAT_ALLOWED_EXTENSIONS = {
     "video": {".mp4", ".webm", ".ogg", ".mov"},
     "audio": {".mp3", ".wav", ".ogg", ".m4a", ".aac", ".opus"},
 }
-_GUEST_CHAT_MEDIA_UPLOAD_ROOT = Path(__file__).resolve().parents[2] / "uploads" / "portal"
+_GUEST_CHAT_MEDIA_UPLOAD_ROOT = (
+    Path(__file__).resolve().parents[2] / "uploads" / "portal"
+)
 _GUEST_CHAT_MEDIA_RELATIVE_PREFIX = "daftar_tamu/guest_chat_media"
 
 
@@ -309,7 +344,9 @@ def _guest_chat_media_absolute_path(media_path: str) -> Optional[Path]:
     return candidate
 
 
-def _guest_chat_save_uploaded_media(file_storage, *, expected_media_type: str) -> tuple[str, str]:
+def _guest_chat_save_uploaded_media(
+    file_storage, *, expected_media_type: str
+) -> tuple[str, str]:
     filename = secure_filename(file_storage.filename or "")
     if not filename:
         raise ValueError("File media tidak valid.")
@@ -319,7 +356,9 @@ def _guest_chat_save_uploaded_media(file_storage, *, expected_media_type: str) -
     if expected_media_type != "none" and detected_type != expected_media_type:
         raise ValueError(f"File tidak sesuai tipe media {expected_media_type}.")
 
-    target_type = expected_media_type if expected_media_type != "none" else detected_type
+    target_type = (
+        expected_media_type if expected_media_type != "none" else detected_type
+    )
     extension = _guest_chat_media_ext(filename)
     safe_name = f"bubble_{uuid4().hex}{extension}"
     relative_path = f"{_GUEST_CHAT_MEDIA_RELATIVE_PREFIX}/{safe_name}"
@@ -357,7 +396,9 @@ def _guest_chat_media_preview_url(media_path: str) -> str:
     return url_for("portal.uploaded_file", filename=normalized)
 
 
-def _guest_chat_parse_direct_links_from_form(*, label_field: str, url_field: str) -> list[dict]:
+def _guest_chat_parse_direct_links_from_form(
+    *, label_field: str, url_field: str
+) -> list[dict]:
     raw_labels = request.form.getlist(label_field)
     raw_urls = request.form.getlist(url_field)
     max_rows = max(len(raw_labels), len(raw_urls))
@@ -368,7 +409,9 @@ def _guest_chat_parse_direct_links_from_form(*, label_field: str, url_field: str
         if not label and not url:
             continue
         if not label or not url:
-            raise ValueError("Label dan URL tombol direct link harus diisi berpasangan.")
+            raise ValueError(
+                "Label dan URL tombol direct link harus diisi berpasangan."
+            )
         if not url.startswith(("http://", "https://")):
             url = f"https://{url}"
         direct_links.append(
@@ -392,8 +435,7 @@ def _has_dashboard_user_ui_settings_column() -> bool:
     exists = False
     try:
         with get_cursor() as cur:
-            cur.execute(
-                """
+            cur.execute("""
                 SELECT EXISTS (
                     SELECT 1
                     FROM information_schema.columns
@@ -401,8 +443,7 @@ def _has_dashboard_user_ui_settings_column() -> bool:
                       AND table_name = 'dashboard_users'
                       AND column_name = 'ui_settings'
                 ) AS exists
-                """
-            )
+                """)
             row = cur.fetchone() or {}
             exists = bool(dict(row).get("exists"))
     except Exception:
@@ -419,7 +460,9 @@ def _load_dashboard_ui_settings(user_id: Optional[int]) -> dict:
 
     try:
         with get_cursor() as cur:
-            cur.execute("SELECT ui_settings FROM dashboard_users WHERE id = %s", (user_id,))
+            cur.execute(
+                "SELECT ui_settings FROM dashboard_users WHERE id = %s", (user_id,)
+            )
             row = cur.fetchone()
     except Exception:
         return {}
@@ -440,7 +483,9 @@ def _load_dashboard_ui_settings(user_id: Optional[int]) -> dict:
     return {}
 
 
-def _save_dashboard_ui_setting(user_id: Optional[int], setting_key: str, setting_value: dict) -> bool:
+def _save_dashboard_ui_setting(
+    user_id: Optional[int], setting_key: str, setting_value: dict
+) -> bool:
     if not user_id or not _has_dashboard_user_ui_settings_column():
         return False
 
@@ -486,7 +531,9 @@ def _detect_likely_screen_recapture(photo_file) -> tuple[bool, float]:
     def _avg_abs_diff(series):
         if len(series) < 2:
             return 0.0
-        return sum(abs(series[i] - series[i - 1]) for i in range(1, len(series))) / float(len(series) - 1)
+        return sum(
+            abs(series[i] - series[i - 1]) for i in range(1, len(series))
+        ) / float(len(series) - 1)
 
     def _periodicity_score(series, max_lag=14):
         n = len(series)
@@ -502,7 +549,9 @@ def _detect_likely_screen_recapture(photo_file) -> tuple[bool, float]:
             count = n - lag
             if count < 20:
                 break
-            corr = sum(centered[i] * centered[i + lag] for i in range(count)) / float(count)
+            corr = sum(centered[i] * centered[i + lag] for i in range(count)) / float(
+                count
+            )
             corr /= denom
             if corr > best:
                 best = corr
@@ -568,6 +617,42 @@ def _is_coordinator_dashboard_user(user: Optional[dict]) -> bool:
     return (user.get("role") or "").strip().lower() == "coordinator"
 
 
+# ID kecamatan virtual 'SUDIN' yang mencakup seluruh wilayah (Cilincing, Koja, Kelapa Gading)
+_SUDIN_VIRTUAL_KECAMATAN_ID = 4
+# ID kecamatan nyata yang tercakup dalam wilayah sudin
+_SUDIN_REAL_KECAMATAN_IDS = [1, 2, 3]  # CILINCING, KOJA, KELAPA GADING
+
+
+def _is_sudin_coordinator(user: Optional[dict]) -> bool:
+    """Return True jika coordinator memiliki unit kerja sudin (kecamatan virtual ID=4 / nama 'SUDIN')."""
+    if not _is_coordinator_dashboard_user(user):
+        return False
+    # Cek dari session user
+    try:
+        req_kec = int((user or {}).get("requested_kecamatan") or 0)
+        if req_kec == _SUDIN_VIRTUAL_KECAMATAN_ID:
+            return True
+    except (TypeError, ValueError):
+        pass
+    # Cek dari database
+    try:
+        user_id = int((user or {}).get("id") or 0)
+        if user_id > 0:
+            db_profile = _fetch_dashboard_user(user_id) or {}
+            req_kec_db = int(db_profile.get("requested_kecamatan") or 0)
+            if req_kec_db == _SUDIN_VIRTUAL_KECAMATAN_ID:
+                return True
+            # Cek berdasarkan nama kecamatan
+            kec_name = (
+                (db_profile.get("requested_kecamatan_name") or "").strip().upper()
+            )
+            if kec_name == "SUDIN":
+                return True
+    except (TypeError, ValueError, Exception):
+        pass
+    return False
+
+
 def _resolve_dashboard_owner_user_id(user: Optional[dict]) -> Optional[int]:
     if not _is_coordinator_dashboard_user(user):
         return None
@@ -578,12 +663,18 @@ def _resolve_dashboard_owner_user_id(user: Optional[dict]) -> Optional[int]:
     return user_id if user_id > 0 else None
 
 
-def _resolve_dashboard_school_status(user: Optional[dict], raw_value: Optional[str]) -> str:
-    default_status = "negeri" if _is_coordinator_dashboard_user(user) else "all"
-    status = _parse_school_status(raw_value, default=default_status)
-    if _is_coordinator_dashboard_user(user):
-        return "negeri"
-    return status
+def _resolve_dashboard_school_status(
+    user: Optional[dict], raw_value: Optional[str]
+) -> str:
+    """Resolve school_status filter for dashboard.
+
+    Coordinator (baik sudin maupun kecamatan) sekarang menampilkan semua sekolah
+    (negeri + swasta) agar data lebih lengkap sesuai unit kerja masing-masing.
+    """
+    if not _is_coordinator_dashboard_user(user):
+        return _parse_school_status(raw_value, default="all")
+    # Coordinator selalu melihat semua sekolah (negeri + swasta)
+    return "all"
 
 
 def _parse_gallery_photo_order(value: Optional[str], default: str = "random") -> str:
@@ -597,13 +688,32 @@ def _parse_gallery_photo_order(value: Optional[str], default: str = "random") ->
 
 def _normalize_staff_note_level(value: Optional[str], default: str = "") -> str:
     level = (value or "").strip().lower()
-    if level in {"mendesak", "urgent", "critical", "sangat_mendesak", "sangat mendesak"}:
+    if level in {
+        "mendesak",
+        "urgent",
+        "critical",
+        "sangat_mendesak",
+        "sangat mendesak",
+    }:
         level = "mendesak"
-    elif level in {"tindak_lanjut", "tindak lanjut", "normal", "follow_up", "perlu_tindakan"}:
+    elif level in {
+        "tindak_lanjut",
+        "tindak lanjut",
+        "normal",
+        "follow_up",
+        "perlu_tindakan",
+    }:
         level = "tindak_lanjut"
     elif level in {"pantau", "monitor", "other", "lainnya", "lainnya/pantau"}:
         level = "pantau"
-    elif level in {"tidak_perlu", "tidak perlu", "info", "informasi", "arsip", "no_action"}:
+    elif level in {
+        "tidak_perlu",
+        "tidak perlu",
+        "info",
+        "informasi",
+        "arsip",
+        "no_action",
+    }:
         level = "tidak_perlu"
     if level not in {"tidak_perlu", "pantau", "tindak_lanjut", "mendesak"}:
         level = default
@@ -665,7 +775,9 @@ def _notify_guestbook_status_change(
     detail = get_transaction_detail(transaction_id)
     if detail:
         school_name = detail.get("school_name")
-        photo_links = _build_guestbook_photo_links(transaction_id=transaction_id, detail=detail)
+        photo_links = _build_guestbook_photo_links(
+            transaction_id=transaction_id, detail=detail
+        )
         guest_names = _extract_guest_names_from_detail(detail)
 
     from dashboard.telegram_notifications import notify_guestbook_status_update
@@ -734,6 +846,7 @@ def _parse_guest_payload(raw: Optional[str]) -> tuple[list[int], list[int]]:
             umum_ids.append(guest_id)
         else:
             sudin_ids.append(guest_id)
+
     # Deduplicate while preserving order
     def _dedupe(values: list[int]) -> list[int]:
         seen = set()
@@ -792,7 +905,9 @@ def _find_sudin_same_day_approved_duplicates(
     return [dict(row) for row in rows]
 
 
-def _build_sudin_duplicate_warning_message(*, school_name: Optional[str], duplicate_rows: list[dict]) -> str:
+def _build_sudin_duplicate_warning_message(
+    *, school_name: Optional[str], duplicate_rows: list[dict]
+) -> str:
     guest_names = [
         str(row.get("guest_name") or "").strip()
         for row in duplicate_rows
@@ -812,6 +927,25 @@ def _build_sudin_duplicate_warning_message(*, school_name: Optional[str], duplic
     return (
         f"{guest_text} sudah terverifikasi di {school_text} pada hari ini. "
         "Yakin ingin menambahkan kunjungan lagi?"
+    )
+
+
+def _attach_sudin_duplicate_warning(transaction: dict) -> None:
+    duplicate_rows = transaction.get("same_day_approved_duplicates") or []
+    repeat_count = int(transaction.get("duplicate_repeat_count") or 0)
+    if not duplicate_rows or repeat_count < 2:
+        transaction["same_day_duplicate_warning"] = ""
+        return
+    guest_names = ", ".join(
+        str(row.get("guest_name") or "").strip()
+        for row in duplicate_rows
+        if str(row.get("guest_name") or "").strip()
+    )
+    guest_text = guest_names or "Tamu terpilih"
+    school_text = str(transaction.get("school_name") or "sekolah ini").strip()
+    transaction["same_day_duplicate_warning"] = (
+        f"{guest_text} memiliki kunjungan lain yang sudah disetujui di "
+        f"{school_text} pada tanggal yang sama. Periksa sebelum memvalidasi transaksi ini."
     )
 
 
@@ -870,7 +1004,9 @@ def _store_guestbook_qr_payload(school_id: int, payload: dict) -> None:
         )
 
 
-def _build_guestbook_qr(target_url: str, size: int = 1024, logo_path: Optional[Path] = None) -> Image.Image:
+def _build_guestbook_qr(
+    target_url: str, size: int = 1024, logo_path: Optional[Path] = None
+) -> Image.Image:
     qr = qrcode.QRCode(
         version=None,
         error_correction=qrcode.constants.ERROR_CORRECT_H,
@@ -882,15 +1018,16 @@ def _build_guestbook_qr(target_url: str, size: int = 1024, logo_path: Optional[P
     qr_img = qr.make_image(fill_color="black", back_color="white").convert("RGBA")
     qr_img = qr_img.resize((size, size), Image.LANCZOS)
 
-
     base_dir = Path(__file__).resolve().parents[2]
     logo_candidates = []
     if logo_path:
         logo_candidates.append(logo_path)
-    logo_candidates.extend([
-        base_dir / "web_aska" / "static" / "favicon.ico",
-        base_dir / "web_aska" / "static" / "logo.png",
-    ])
+    logo_candidates.extend(
+        [
+            base_dir / "web_aska" / "static" / "favicon.ico",
+            base_dir / "web_aska" / "static" / "logo.png",
+        ]
+    )
     logo = None
     for logo_path in logo_candidates:
         if not logo_path.exists():
@@ -931,43 +1068,44 @@ def _load_school_logo(school: dict) -> Optional[Image.Image]:
             resp = requests.get(logo_url, timeout=5)
             resp.raise_for_status()
             return Image.open(BytesIO(resp.content))
-            
+
         # Clean path: remove leading slash to prevent absolute path issues
         clean_path = str(logo_url).lstrip("/")
-        
+
         # Define base root directory
         root_dir = Path(__file__).resolve().parent.parent.parent
-        
+
         # Logic to try multiple potential paths
         candidates = []
-        
+
         # 1. Try as is (relative to root)
         candidates.append(root_dir / clean_path)
-        
+
         # 2. Handle known mismatch: DB 'portal/uploads' -> FS 'uploads/portal'
         if clean_path.startswith("portal/uploads/"):
             swapped_path = clean_path.replace("portal/uploads/", "uploads/portal/", 1)
             candidates.append(root_dir / swapped_path)
-            
+
         # 3. Try forcing 'uploads/portal/' + filename
         filename = Path(clean_path).name
         candidates.append(root_dir / "uploads" / "portal" / "logos" / filename)
-        
+
         # 4. Try just 'uploads/' + clean_path (if portal prefix is extra)
         if clean_path.startswith("portal/"):
-             candidates.append(root_dir / "uploads" / clean_path[7:]) # remove 'portal/'
-             
+            candidates.append(root_dir / "uploads" / clean_path[7:])  # remove 'portal/'
+
         for candidate in candidates:
             if candidate.exists():
                 return Image.open(candidate)
-                
+
         return None
     except Exception:
         return None
 
 
-
-def _measure_multiline(draw: ImageDraw.ImageDraw, text: str, font: ImageFont.ImageFont, spacing: int = 4) -> tuple[int, int]:
+def _measure_multiline(
+    draw: ImageDraw.ImageDraw, text: str, font: ImageFont.ImageFont, spacing: int = 4
+) -> tuple[int, int]:
     if hasattr(draw, "multiline_textbbox"):
         bbox = draw.multiline_textbbox((0, 0), text, font=font, spacing=spacing)
         return bbox[2] - bbox[0], bbox[3] - bbox[1]
@@ -975,7 +1113,14 @@ def _measure_multiline(draw: ImageDraw.ImageDraw, text: str, font: ImageFont.Ima
         return draw.multiline_textsize(text, font=font, spacing=spacing)
     # Fallback
     lines = text.splitlines() or [text]
-    widths = [draw.textlength(line, font=font) if hasattr(draw, "textlength") else len(line) * 6 for line in lines]
+    widths = [
+        (
+            draw.textlength(line, font=font)
+            if hasattr(draw, "textlength")
+            else len(line) * 6
+        )
+        for line in lines
+    ]
     return int(max(widths) if widths else 0), int(len(lines) * 12)
 
 
@@ -1050,10 +1195,21 @@ def _fetch_dashboard_user(user_id: int) -> Optional[dict]:
 
 
 def _resolve_dashboard_kecamatan_ids(user: Optional[dict]) -> Optional[list[int]]:
+    """Resolve kecamatan IDs filter untuk coordinator dashboard.
+
+    - Coordinator SUDIN (requested_kecamatan = 4 / 'SUDIN'): return None
+      (tidak ada filter kecamatan = tampilkan semua kecamatan: Cilincing, Koja, Kelapa Gading)
+    - Coordinator kecamatan (requested_kecamatan = 1/2/3): return [kec_id]
+      (filter ke kecamatan yang bersangkutan saja)
+    """
     if not isinstance(user, dict):
         return None
     role_value = (user.get("role") or "").strip().lower()
     if role_value != "coordinator":
+        return None
+
+    # Coordinator SUDIN: tidak ada filter kecamatan (semua kecamatan)
+    if _is_sudin_coordinator(user):
         return None
 
     user_id = int(user.get("id") or 0)
@@ -1065,7 +1221,12 @@ def _resolve_dashboard_kecamatan_ids(user: Optional[dict]) -> Optional[list[int]
             kecamatan_id = int(raw_value or 0)
         except (TypeError, ValueError):
             return
-        if kecamatan_id <= 0 or kecamatan_id in seen_ids:
+        # Lewati ID virtual SUDIN agar tidak dijadikan filter kecamatan nyata
+        if (
+            kecamatan_id <= 0
+            or kecamatan_id == _SUDIN_VIRTUAL_KECAMATAN_ID
+            or kecamatan_id in seen_ids
+        ):
             return
         seen_ids.add(kecamatan_id)
         resolved_ids.append(kecamatan_id)
@@ -1095,12 +1256,12 @@ def _can_access_school_for_dashboard(
     if role_value != "coordinator":
         return True
 
-    school_status = (school.get("status") or "").strip().lower()
-    if school_status not in {"negeri", "state"}:
-        return False
+    # Coordinator sekarang bisa akses semua jenis sekolah (negeri + swasta)
+    # Tidak ada pembatasan berdasarkan school_status
 
     allowed_ids = kecamatan_ids or _resolve_dashboard_kecamatan_ids(user)
     if not allowed_ids:
+        # Coordinator SUDIN: akses ke semua kecamatan
         return True
     try:
         school_kecamatan_id = int(school.get("kecamatan_id") or 0)
@@ -1157,7 +1318,9 @@ def _list_unvisited_schools_for_user(
             guest_scope=guest_scope,
         )
     )
-    return [school for school in candidates if school.get("school_id") not in visited_ids]
+    return [
+        school for school in candidates if school.get("school_id") not in visited_ids
+    ]
 
 
 def _sanitize_phone(phone: str) -> str:
@@ -1198,7 +1361,9 @@ def _resolve_portal_upload_path(filename: str) -> Optional[Path]:
     return candidate
 
 
-def _build_photo_url(photo_path: Optional[str], *, external: bool = False) -> Optional[str]:
+def _build_photo_url(
+    photo_path: Optional[str], *, external: bool = False
+) -> Optional[str]:
     filename = _photo_filename_from_path(photo_path)
     if not filename:
         return None
@@ -1224,6 +1389,123 @@ def _build_photo_thumb_url(
         q=safe_quality,
         _external=external,
     )
+
+
+def _serialize_public_guestbook_photo(row: dict) -> dict:
+    captured_at = row.get("captured_at")
+    return {
+        "transaction_id": int(row.get("transaction_id") or 0),
+        "school_id": int(row.get("school_id") or 0),
+        "school_name": row.get("school_name") or "Sekolah",
+        "school_jenjang": row.get("school_jenjang") or "",
+        "guest_names": row.get("guest_names") or "Staff Sudin Pendidikan",
+        "guest_count": int(row.get("guest_count") or 0),
+        "purpose": row.get("purpose") or "Kunjungan ke sekolah",
+        "captured_at": captured_at.isoformat() if captured_at else None,
+        "photo_url": _build_photo_url(row.get("photo_path"), external=True),
+    }
+
+
+@daftar_tamu_bp.route("/api/public/staff-visit-photos", methods=["GET"])
+def public_staff_visit_photos() -> Response:
+    limit = min(12, max(4, request.args.get("limit", 12, type=int)))
+    newest_rows = fetch_guestbook_gallery_photos(
+        limit=limit,
+        guest_scope="sudin",
+        order="newest",
+    )
+    newest_ids = {int(row.get("transaction_id") or 0) for row in newest_rows}
+    random_candidates = fetch_guestbook_gallery_photos(
+        limit=min(100, limit * 5),
+        guest_scope="sudin",
+        order="random",
+    )
+    random_rows = [
+        row
+        for row in random_candidates
+        if int(row.get("transaction_id") or 0) not in newest_ids
+    ][:limit]
+    if len(random_rows) < limit:
+        selected_ids = {int(row.get("transaction_id") or 0) for row in random_rows}
+        random_rows.extend(
+            row
+            for row in random_candidates
+            if int(row.get("transaction_id") or 0) not in selected_ids
+        )
+        random_rows = random_rows[:limit]
+
+    response = jsonify(
+        {
+            "success": True,
+            "data": {
+                "random": [_serialize_public_guestbook_photo(row) for row in random_rows],
+                "newest": [_serialize_public_guestbook_photo(row) for row in newest_rows],
+            },
+        }
+    )
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
+@daftar_tamu_bp.route("/api/public/service-usage-stats", methods=["GET"])
+def public_service_usage_stats() -> Response:
+    """Return live unique-user totals for public-facing service cards."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT COUNT(DISTINCT user_id) AS total
+            FROM chat_logs
+            WHERE role = 'user' AND user_id IS NOT NULL
+            """
+        )
+        aska_unique_users = int((cur.fetchone() or {}).get("total") or 0)
+
+        cur.execute(
+            """
+            WITH guest_usage AS (
+                SELECT general_guest_id, full_name, email, phone
+                FROM daftar_tamu_general_transaction_guests
+                UNION ALL
+                SELECT tg.general_guest_id, g.full_name, g.email, g.phone
+                FROM daftar_tamu_transaction_guests tg
+                LEFT JOIN daftar_tamu_general_guests g
+                    ON g.id = tg.general_guest_id
+                WHERE tg.guest_type = 'umum'
+            )
+            SELECT COUNT(DISTINCT COALESCE(
+                'id:' || general_guest_id::text,
+                CASE
+                    WHEN NULLIF(LOWER(TRIM(email)), '') IS NOT NULL
+                    THEN 'email:' || LOWER(TRIM(email))
+                END,
+                CASE
+                    WHEN NULLIF(REGEXP_REPLACE(COALESCE(phone, ''), '\\D', '', 'g'), '') IS NOT NULL
+                    THEN 'phone:' || REGEXP_REPLACE(phone, '\\D', '', 'g')
+                END,
+                CASE
+                    WHEN NULLIF(LOWER(TRIM(full_name)), '') IS NOT NULL
+                    THEN 'name:' || LOWER(TRIM(full_name))
+                END
+            )) AS total
+            FROM guest_usage
+            """
+        )
+        guestbook_unique_users = int((cur.fetchone() or {}).get("total") or 0)
+
+    response = jsonify(
+        {
+            "success": True,
+            "data": {
+                "aska_unique_users": aska_unique_users,
+                "guestbook_unique_users": guestbook_unique_users,
+                "updated_at": current_jakarta_time().isoformat(),
+            },
+        }
+    )
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Cache-Control"] = "no-store"
+    return response
 
 
 def _format_guest_reference_button_label(
@@ -1264,7 +1546,9 @@ def _build_guestbook_photo_links(
         current_photo_url = _build_photo_url(detail.get("photo_path"), external=True)
     else:
         current_detail = get_transaction_detail(transaction_id)
-        current_photo_url = _build_photo_url((current_detail or {}).get("photo_path"), external=True)
+        current_photo_url = _build_photo_url(
+            (current_detail or {}).get("photo_path"), external=True
+        )
 
     if current_photo_url:
         key = ("Foto Transaksi", current_photo_url)
@@ -1273,8 +1557,12 @@ def _build_guestbook_photo_links(
 
     preferred_refs: list[dict] = []
     for row in list_transaction_previous_single_guest_photos(transaction_id):
-        profile_photo_url = _build_photo_url(row.get("profile_photo_path"), external=True)
-        previous_photo_url = _build_photo_url(row.get("previous_photo_path"), external=True)
+        profile_photo_url = _build_photo_url(
+            row.get("profile_photo_path"), external=True
+        )
+        previous_photo_url = _build_photo_url(
+            row.get("previous_photo_path"), external=True
+        )
         selected_url: Optional[str] = None
         selected_kind: Optional[str] = None
         if profile_photo_url:
@@ -1337,9 +1625,13 @@ def _format_date_dmy(value: Optional[datetime | date]) -> str:
     return value.strftime("%d/%m/%Y")
 
 
-def _build_csv_response(headers: list[str], rows: list[list[object]], filename: str) -> Response:
+def _build_csv_response(
+    headers: list[str], rows: list[list[object]], filename: str
+) -> Response:
     buffer = StringIO()
-    writer = csv.writer(buffer, delimiter=";", quoting=csv.QUOTE_MINIMAL, lineterminator="\n")
+    writer = csv.writer(
+        buffer, delimiter=";", quoting=csv.QUOTE_MINIMAL, lineterminator="\n"
+    )
     writer.writerow(headers)
     for row in rows:
         writer.writerow(row)
@@ -1394,18 +1686,26 @@ def guestbook_photo_thumb(filename: str) -> Response:
 
     stat = image_path.stat()
     etag_token = hashlib.sha1(
-        f"{image_path.as_posix()}:{stat.st_mtime_ns}:{stat.st_size}:{safe_width}:{safe_quality}".encode("utf-8")
+        f"{image_path.as_posix()}:{stat.st_mtime_ns}:{stat.st_size}:{safe_width}:{safe_quality}".encode(
+            "utf-8"
+        )
     ).hexdigest()
     etag_value = f'W/"{etag_token}"'
     if request.headers.get("If-None-Match") == etag_value:
         response = Response(status=304)
         response.headers["ETag"] = etag_value
-        response.headers["Cache-Control"] = "public, max-age=2592000, stale-while-revalidate=604800"
+        response.headers["Cache-Control"] = (
+            "public, max-age=2592000, stale-while-revalidate=604800"
+        )
         return response
 
     try:
         with Image.open(image_path) as original:
-            source = original.convert("RGBA") if original.mode not in {"RGB", "RGBA"} else original.copy()
+            source = (
+                original.convert("RGBA")
+                if original.mode not in {"RGB", "RGBA"}
+                else original.copy()
+            )
             if source.width > safe_width:
                 target_height = max(1, int((safe_width / source.width) * source.height))
                 source = source.resize((safe_width, target_height), Image.LANCZOS)
@@ -1418,12 +1718,16 @@ def guestbook_photo_thumb(filename: str) -> Response:
 
     response = send_file(output, mimetype="image/webp")
     response.headers["ETag"] = etag_value
-    response.headers["Cache-Control"] = "public, max-age=2592000, stale-while-revalidate=604800"
+    response.headers["Cache-Control"] = (
+        "public, max-age=2592000, stale-while-revalidate=604800"
+    )
     response.headers["Content-Disposition"] = "inline"
     return response
 
 
-def _build_area_contacts(school: Optional[dict], message: Optional[str] = None) -> list[dict]:
+def _build_area_contacts(
+    school: Optional[dict], message: Optional[str] = None
+) -> list[dict]:
     if not school:
         return []
     area_name = (school.get("kecamatan_name") or "").strip()
@@ -1530,7 +1834,9 @@ def inject_daftar_tamu_context() -> dict:
         context["school_pending"] = {"pending_sudin": 0, "pending_public": 0}
         if school:
             try:
-                context["school_pending"] = fetch_school_pending_counts(school_id=school.get("id"))
+                context["school_pending"] = fetch_school_pending_counts(
+                    school_id=school.get("id")
+                )
             except Exception:
                 context["school_pending"] = {"pending_sudin": 0, "pending_public": 0}
     return context
@@ -1539,6 +1845,7 @@ def inject_daftar_tamu_context() -> dict:
 # ===============================
 # Admin Dashboard
 # ===============================
+
 
 @daftar_tamu_bp.route("/coordinator/dashboard")
 @role_required("coordinator")
@@ -1555,7 +1862,9 @@ def admin_dashboard() -> Response:
     user = current_user() or {}
     role_value = (user.get("role") or "").strip().lower()
     is_coordinator_dashboard = role_value == "coordinator"
-    dashboard_kecamatan_ids = _resolve_dashboard_kecamatan_ids(user) if is_coordinator_dashboard else None
+    dashboard_kecamatan_ids = (
+        _resolve_dashboard_kecamatan_ids(user) if is_coordinator_dashboard else None
+    )
     dashboard_owner_user_id = _resolve_dashboard_owner_user_id(user)
 
     date_from = _parse_iso_date(request.args.get("date_from"))
@@ -1575,8 +1884,12 @@ def admin_dashboard() -> Response:
     page = max(1, page)
 
     guest_scope = _parse_guest_scope(request.args.get("guest_scope"))
-    school_status = _resolve_dashboard_school_status(user, request.args.get("school_status"))
-    photo_order = _parse_gallery_photo_order(request.args.get("photo_order"), default="random")
+    school_status = _resolve_dashboard_school_status(
+        user, request.args.get("school_status")
+    )
+    photo_order = _parse_gallery_photo_order(
+        request.args.get("photo_order"), default="random"
+    )
     show_user_rankings = (guest_scope != "umum") and not is_coordinator_dashboard
     user_rank_guest_scope = "sudin" if guest_scope == "all" else guest_scope
     user_rank_scope_label = "SUDIN" if user_rank_guest_scope == "sudin" else "Umum"
@@ -1628,19 +1941,33 @@ def admin_dashboard() -> Response:
         for bucket in visit_dist_buckets
     ]
 
-    pie_chart_batas = ui_settings.get("pie_chart_batas") or {"bawah": 0, "tengah": 5, "atas": 10}
-    
+    pie_chart_batas = ui_settings.get("pie_chart_batas") or {
+        "bawah": 0,
+        "tengah": 5,
+        "atas": 10,
+    }
+
     try:
         bb = int(pie_chart_batas.get("bawah", 0))
         bt = int(pie_chart_batas.get("tengah", 5))
         ba = int(pie_chart_batas.get("atas", 10))
     except (TypeError, ValueError):
         bb, bt, ba = 0, 5, 10
-        
+
     visit_freq_buckets = [
         {"key": "f_0", "label": f"{bb}x", "min_visits": bb, "max_visits": bb},
-        {"key": "f_1", "label": f"{bb+1}-{bt-1}x" if bt - 1 > bb + 1 else f"{bb+1}x", "min_visits": bb + 1, "max_visits": bt - 1},
-        {"key": "f_2", "label": f"{bt}-{ba-1}x" if ba - 1 > bt else f"{bt}x", "min_visits": bt, "max_visits": ba - 1},
+        {
+            "key": "f_1",
+            "label": f"{bb+1}-{bt-1}x" if bt - 1 > bb + 1 else f"{bb+1}x",
+            "min_visits": bb + 1,
+            "max_visits": bt - 1,
+        },
+        {
+            "key": "f_2",
+            "label": f"{bt}-{ba-1}x" if ba - 1 > bt else f"{bt}x",
+            "min_visits": bt,
+            "max_visits": ba - 1,
+        },
         {"key": "f_3", "label": f"{ba}+", "min_visits": ba, "max_visits": None},
     ]
 
@@ -1650,7 +1977,11 @@ def admin_dashboard() -> Response:
             "label": bucket["label"],
             "school_count": _count_histogram_bucket(
                 int(bucket.get("min_visits") or 0),
-                int(bucket["max_visits"]) if bucket.get("max_visits") is not None else None,
+                (
+                    int(bucket["max_visits"])
+                    if bucket.get("max_visits") is not None
+                    else None
+                ),
             ),
         }
         for bucket in visit_freq_buckets
@@ -1714,7 +2045,9 @@ def admin_dashboard() -> Response:
             guest_scope=user_rank_guest_scope,
             school_status=school_status,
         )
-        user_total_pages = max(1, math.ceil(user_total_rows / user_per_page)) if user_total_rows else 1
+        user_total_pages = (
+            max(1, math.ceil(user_total_rows / user_per_page)) if user_total_rows else 1
+        )
         if user_page > user_total_pages:
             user_page = user_total_pages
             user_rankings, user_total_rows = fetch_user_rankings(
@@ -1810,30 +2143,46 @@ def admin_dashboard() -> Response:
         pie_chart_batas=pie_chart_batas,
         dist_chart_batas=dist_chart_batas,
         dashboard_scope_role="coordinator" if is_coordinator_dashboard else "admin",
-        dashboard_home_endpoint="daftar_tamu.coordinator_dashboard"
-        if is_coordinator_dashboard
-        else "daftar_tamu.admin_dashboard",
-        visit_bucket_detail_endpoint="daftar_tamu.coordinator_visit_bucket_detail"
-        if is_coordinator_dashboard
-        else "daftar_tamu.admin_visit_bucket_detail",
-        rankings_more_endpoint="daftar_tamu.coordinator_rankings_more"
-        if is_coordinator_dashboard
-        else "daftar_tamu.admin_rankings_more",
-        export_rankings_endpoint="daftar_tamu.coordinator_export_rankings"
-        if is_coordinator_dashboard
-        else "daftar_tamu.export_rankings",
-        school_visits_endpoint="daftar_tamu.coordinator_school_visits"
-        if is_coordinator_dashboard
-        else "daftar_tamu.admin_school_visits",
-        school_visits_export_endpoint="daftar_tamu.coordinator_school_visits_export"
-        if is_coordinator_dashboard
-        else "daftar_tamu.admin_school_visits_export",
-        school_visit_days_endpoint="daftar_tamu.coordinator_school_visit_days"
-        if is_coordinator_dashboard
-        else "daftar_tamu.admin_school_visit_days",
-        school_visit_day_guests_endpoint="daftar_tamu.coordinator_school_visit_day_guests"
-        if is_coordinator_dashboard
-        else "daftar_tamu.admin_school_visit_day_guests",
+        dashboard_home_endpoint=(
+            "daftar_tamu.coordinator_dashboard"
+            if is_coordinator_dashboard
+            else "daftar_tamu.admin_dashboard"
+        ),
+        visit_bucket_detail_endpoint=(
+            "daftar_tamu.coordinator_visit_bucket_detail"
+            if is_coordinator_dashboard
+            else "daftar_tamu.admin_visit_bucket_detail"
+        ),
+        rankings_more_endpoint=(
+            "daftar_tamu.coordinator_rankings_more"
+            if is_coordinator_dashboard
+            else "daftar_tamu.admin_rankings_more"
+        ),
+        export_rankings_endpoint=(
+            "daftar_tamu.coordinator_export_rankings"
+            if is_coordinator_dashboard
+            else "daftar_tamu.export_rankings"
+        ),
+        school_visits_endpoint=(
+            "daftar_tamu.coordinator_school_visits"
+            if is_coordinator_dashboard
+            else "daftar_tamu.admin_school_visits"
+        ),
+        school_visits_export_endpoint=(
+            "daftar_tamu.coordinator_school_visits_export"
+            if is_coordinator_dashboard
+            else "daftar_tamu.admin_school_visits_export"
+        ),
+        school_visit_days_endpoint=(
+            "daftar_tamu.coordinator_school_visit_days"
+            if is_coordinator_dashboard
+            else "daftar_tamu.admin_school_visit_days"
+        ),
+        school_visit_day_guests_endpoint=(
+            "daftar_tamu.coordinator_school_visit_day_guests"
+            if is_coordinator_dashboard
+            else "daftar_tamu.admin_school_visit_day_guests"
+        ),
         map_data_endpoint="daftar_tamu.admin_map_data",
         gallery_photos=gallery_photos,
         photo_order=photo_order,
@@ -1852,8 +2201,12 @@ def admin_gallery() -> Response:
         date_from, date_to = date_to, date_from
 
     guest_scope = _parse_guest_scope(request.args.get("guest_scope"))
-    school_status = _parse_school_status(request.args.get("school_status"), default="all")
-    photo_order = _parse_gallery_photo_order(request.args.get("photo_order"), default="newest")
+    school_status = _parse_school_status(
+        request.args.get("school_status"), default="all"
+    )
+    photo_order = _parse_gallery_photo_order(
+        request.args.get("photo_order"), default="newest"
+    )
 
     photos = fetch_guestbook_gallery_photos(
         limit=None,
@@ -1899,12 +2252,21 @@ def admin_gallery() -> Response:
         dashboard_page=_to_int(request.args.get("page"), 1),
     )
 
+
 @daftar_tamu_bp.route("/admin/dashboard/settings", methods=["POST"])
 @role_required("admin")
 def save_dashboard_settings() -> Response:
     """Save admin UI settings for the dashboard."""
     if _is_preview_read_only_session():
-        return jsonify({"success": False, "message": "Mode preview aktif. Aksi edit dinonaktifkan."}), 403
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "Mode preview aktif. Aksi edit dinonaktifkan.",
+                }
+            ),
+            403,
+        )
 
     payload = request.get_json() or {}
     batas_bawah = payload.get("batas_bawah")
@@ -1919,10 +2281,21 @@ def save_dashboard_settings() -> Response:
         return jsonify({"success": False, "message": "Harus diisi angka"}), 400
 
     if bb < 0:
-        return jsonify({"success": False, "message": "Batas Bawah tidak boleh negatif"}), 400
+        return (
+            jsonify({"success": False, "message": "Batas Bawah tidak boleh negatif"}),
+            400,
+        )
 
     if not (bb < bt < ba):
-        return jsonify({"success": False, "message": "Besaran angka harus Batas Bawah < Batas Tengah < Batas Atas"}), 400
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "Besaran angka harus Batas Bawah < Batas Tengah < Batas Atas",
+                }
+            ),
+            400,
+        )
 
     updated = _save_dashboard_ui_setting(
         user_id=(session.get("user") or {}).get("id"),
@@ -1930,12 +2303,15 @@ def save_dashboard_settings() -> Response:
         setting_value={"bawah": bb, "tengah": bt, "atas": ba},
     )
     if not updated:
-        return jsonify(
-            {
-                "success": False,
-                "message": "Schema database belum update (dashboard_users.ui_settings belum tersedia).",
-            }
-        ), 503
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "Schema database belum update (dashboard_users.ui_settings belum tersedia).",
+                }
+            ),
+            503,
+        )
 
     return jsonify({"success": True})
 
@@ -1945,7 +2321,15 @@ def save_dashboard_settings() -> Response:
 def save_dashboard_dist_settings() -> Response:
     """Save admin UI settings for the distribution bar chart."""
     if _is_preview_read_only_session():
-        return jsonify({"success": False, "message": "Mode preview aktif. Aksi edit dinonaktifkan."}), 403
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "Mode preview aktif. Aksi edit dinonaktifkan.",
+                }
+            ),
+            403,
+        )
 
     payload = request.get_json() or {}
     batas_bawah = payload.get("batas_bawah")
@@ -1958,10 +2342,21 @@ def save_dashboard_dist_settings() -> Response:
         return jsonify({"success": False, "message": "Harus diisi angka"}), 400
 
     if bb < 0:
-        return jsonify({"success": False, "message": "Batas Bawah tidak boleh negatif"}), 400
+        return (
+            jsonify({"success": False, "message": "Batas Bawah tidak boleh negatif"}),
+            400,
+        )
 
     if not (bb < ba):
-        return jsonify({"success": False, "message": "Batas Bawah harus lebih kecil dari Batas Atas"}), 400
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "Batas Bawah harus lebih kecil dari Batas Atas",
+                }
+            ),
+            400,
+        )
 
     updated = _save_dashboard_ui_setting(
         user_id=(session.get("user") or {}).get("id"),
@@ -1969,12 +2364,15 @@ def save_dashboard_dist_settings() -> Response:
         setting_value={"bawah": bb, "atas": ba},
     )
     if not updated:
-        return jsonify(
-            {
-                "success": False,
-                "message": "Schema database belum update (dashboard_users.ui_settings belum tersedia).",
-            }
-        ), 503
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "Schema database belum update (dashboard_users.ui_settings belum tersedia).",
+                }
+            ),
+            503,
+        )
 
     return jsonify({"success": True})
 
@@ -1984,31 +2382,36 @@ def save_dashboard_dist_settings() -> Response:
 def admin_user_history(user_id: int) -> Response:
     user_profile = _fetch_dashboard_user(user_id)
     if not user_profile:
-        return render_template(
-            "daftar_tamu/admin_user_history.html",
-            user_profile=None,
-            rows=[],
-            total_rows=0,
-            total_pages=1,
-            page=1,
-            per_page=10,
-            date_from_str="",
-            date_to_str="",
-            guest_scope="all",
-            school_status="all",
-            today_str=_today_jakarta().isoformat(),
-            assigned_schools=[],
-            assigned_kecamatan=[],
-            unvisited_schools=[],
-            error_message="User tidak ditemukan.",
-        ), 404
+        return (
+            render_template(
+                "daftar_tamu/admin_user_history.html",
+                user_profile=None,
+                rows=[],
+                total_rows=0,
+                total_pages=1,
+                page=1,
+                per_page=10,
+                date_from_str="",
+                date_to_str="",
+                guest_scope="all",
+                school_status="all",
+                today_str=_today_jakarta().isoformat(),
+                assigned_schools=[],
+                assigned_kecamatan=[],
+                unvisited_schools=[],
+                error_message="User tidak ditemukan.",
+            ),
+            404,
+        )
 
     date_from = _parse_iso_date(request.args.get("date_from"))
     date_to = _parse_iso_date(request.args.get("date_to"))
     if date_from and date_to and date_from > date_to:
         date_from, date_to = date_to, date_from
     guest_scope = _parse_guest_scope(request.args.get("guest_scope"))
-    school_status = _parse_school_status(request.args.get("school_status"), default="all")
+    school_status = _parse_school_status(
+        request.args.get("school_status"), default="all"
+    )
 
     per_page = _to_int(request.args.get("per_page"), 10)
     per_page = max(5, min(per_page, 100))
@@ -2132,7 +2535,9 @@ def admin_user_visits(user_id: int) -> Response:
 
 
 @daftar_tamu_bp.route("/admin/sekolah/<int:school_id>/visits")
-@daftar_tamu_bp.route("/coordinator/sekolah/<int:school_id>/visits", endpoint="coordinator_school_visits")
+@daftar_tamu_bp.route(
+    "/coordinator/sekolah/<int:school_id>/visits", endpoint="coordinator_school_visits"
+)
 @role_required("admin", "coordinator")
 def admin_school_visits(school_id: int) -> Response:
     """Return visit history rows for school modal on admin dashboard."""
@@ -2147,7 +2552,12 @@ def admin_school_visits(school_id: int) -> Response:
         school=school,
         kecamatan_ids=dashboard_kecamatan_ids,
     ):
-        return jsonify({"success": False, "message": "Sekolah di luar lokasi unit kerja."}), 403
+        return (
+            jsonify(
+                {"success": False, "message": "Sekolah di luar lokasi unit kerja."}
+            ),
+            403,
+        )
 
     date_from = _parse_iso_date(request.args.get("date_from"))
     date_to = _parse_iso_date(request.args.get("date_to"))
@@ -2210,7 +2620,10 @@ def admin_school_visits(school_id: int) -> Response:
 
 
 @daftar_tamu_bp.route("/admin/sekolah/<int:school_id>/visit-days")
-@daftar_tamu_bp.route("/coordinator/sekolah/<int:school_id>/visit-days", endpoint="coordinator_school_visit_days")
+@daftar_tamu_bp.route(
+    "/coordinator/sekolah/<int:school_id>/visit-days",
+    endpoint="coordinator_school_visit_days",
+)
 @role_required("admin", "coordinator")
 def admin_school_visit_days(school_id: int) -> Response:
     """Return distinct visit dates for the school day drill-down modal."""
@@ -2225,7 +2638,12 @@ def admin_school_visit_days(school_id: int) -> Response:
         school=school,
         kecamatan_ids=dashboard_kecamatan_ids,
     ):
-        return jsonify({"success": False, "message": "Sekolah di luar lokasi unit kerja."}), 403
+        return (
+            jsonify(
+                {"success": False, "message": "Sekolah di luar lokasi unit kerja."}
+            ),
+            403,
+        )
 
     date_from = _parse_iso_date(request.args.get("date_from"))
     date_to = _parse_iso_date(request.args.get("date_to"))
@@ -2299,11 +2717,19 @@ def admin_school_visit_day_guests(school_id: int, visit_date: str) -> Response:
         school=school,
         kecamatan_ids=dashboard_kecamatan_ids,
     ):
-        return jsonify({"success": False, "message": "Sekolah di luar lokasi unit kerja."}), 403
+        return (
+            jsonify(
+                {"success": False, "message": "Sekolah di luar lokasi unit kerja."}
+            ),
+            403,
+        )
 
     parsed_visit_date = _parse_iso_date(visit_date)
     if not parsed_visit_date:
-        return jsonify({"success": False, "message": "Tanggal kunjungan tidak valid."}), 400
+        return (
+            jsonify({"success": False, "message": "Tanggal kunjungan tidak valid."}),
+            400,
+        )
 
     page = _to_int(request.args.get("page"), 1)
     page = max(1, page)
@@ -2420,7 +2846,9 @@ def admin_user_visits_export(user_id: int) -> Response:
 
     file_format = (request.args.get("format") or "excel").strip().lower()
     if file_format in {"excel", "xlsx"}:
-        filename = f"riwayat_kunjungan_user_{user_id}_{_today_jakarta().isoformat()}.xlsx"
+        filename = (
+            f"riwayat_kunjungan_user_{user_id}_{_today_jakarta().isoformat()}.xlsx"
+        )
         return _build_xlsx_response(headers, data_rows, filename)
 
     filename = f"riwayat_kunjungan_user_{user_id}_{_today_jakarta().isoformat()}.csv"
@@ -2507,10 +2935,14 @@ def admin_school_visits_export(school_id: int) -> Response:
 
     file_format = (request.args.get("format") or "excel").strip().lower()
     if file_format in {"excel", "xlsx"}:
-        filename = f"riwayat_kunjungan_sekolah_{school_id}_{_today_jakarta().isoformat()}.xlsx"
+        filename = (
+            f"riwayat_kunjungan_sekolah_{school_id}_{_today_jakarta().isoformat()}.xlsx"
+        )
         return _build_xlsx_response(headers, data_rows, filename)
 
-    filename = f"riwayat_kunjungan_sekolah_{school_id}_{_today_jakarta().isoformat()}.csv"
+    filename = (
+        f"riwayat_kunjungan_sekolah_{school_id}_{_today_jakarta().isoformat()}.csv"
+    )
     return _build_csv_response(headers, data_rows, filename)
 
 
@@ -2536,7 +2968,9 @@ def admin_map_data() -> Response:
 
 
 @daftar_tamu_bp.route("/admin/rankings/more")
-@daftar_tamu_bp.route("/coordinator/rankings/more", endpoint="coordinator_rankings_more")
+@daftar_tamu_bp.route(
+    "/coordinator/rankings/more", endpoint="coordinator_rankings_more"
+)
 @role_required("admin", "coordinator")
 def admin_rankings_more() -> Response:
     """Load more school rankings for dashboard card."""
@@ -2551,7 +2985,9 @@ def admin_rankings_more() -> Response:
         date_from, date_to = date_to, date_from
 
     guest_scope = _parse_guest_scope(request.args.get("guest_scope"))
-    school_status = _resolve_dashboard_school_status(user, request.args.get("school_status"))
+    school_status = _resolve_dashboard_school_status(
+        user, request.args.get("school_status")
+    )
     ranking_type = (request.args.get("type") or "best").strip().lower()
     if ranking_type not in {"best", "worst"}:
         ranking_type = "best"
@@ -2594,7 +3030,9 @@ def admin_rankings_more() -> Response:
 
 
 @daftar_tamu_bp.route("/admin/stats/visit-buckets")
-@daftar_tamu_bp.route("/coordinator/stats/visit-buckets", endpoint="coordinator_visit_bucket_detail")
+@daftar_tamu_bp.route(
+    "/coordinator/stats/visit-buckets", endpoint="coordinator_visit_bucket_detail"
+)
 @role_required("admin", "coordinator")
 def admin_visit_bucket_detail() -> Response:
     """Detailed school list for selected visit-count bucket."""
@@ -2609,7 +3047,9 @@ def admin_visit_bucket_detail() -> Response:
         date_from, date_to = date_to, date_from
 
     guest_scope = _parse_guest_scope(request.args.get("guest_scope"))
-    school_status = _resolve_dashboard_school_status(user, request.args.get("school_status"))
+    school_status = _resolve_dashboard_school_status(
+        user, request.args.get("school_status")
+    )
 
     source = (request.args.get("source") or "distribution").strip().lower()
     if source not in {"distribution", "frequency"}:
@@ -2617,37 +3057,65 @@ def admin_visit_bucket_detail() -> Response:
 
     ui_settings = _load_dashboard_ui_settings((session.get("user") or {}).get("id"))
     if source == "distribution":
-        dist_chart_batas = ui_settings.get("dist_chart_batas") or {"bawah": 0, "atas": 7}
+        dist_chart_batas = ui_settings.get("dist_chart_batas") or {
+            "bawah": 0,
+            "atas": 7,
+        }
         try:
             dist_bb = int(dist_chart_batas.get("bawah", 0))
             dist_ba = int(dist_chart_batas.get("atas", 7))
         except (TypeError, ValueError):
             dist_bb, dist_ba = 0, 7
-            
+
         bucket_options = _generate_dynamic_dist_buckets(dist_bb, dist_ba)
     else:
-        pie_chart_batas = ui_settings.get("pie_chart_batas") or {"bawah": 0, "tengah": 5, "atas": 10}
+        pie_chart_batas = ui_settings.get("pie_chart_batas") or {
+            "bawah": 0,
+            "tengah": 5,
+            "atas": 10,
+        }
         try:
             bb = int(pie_chart_batas.get("bawah", 0))
             bt = int(pie_chart_batas.get("tengah", 5))
             ba = int(pie_chart_batas.get("atas", 10))
         except (TypeError, ValueError):
             bb, bt, ba = 0, 5, 10
-            
+
         bucket_options = [
             {"key": "f_0", "label": f"{bb}x", "min_visits": bb, "max_visits": bb},
-            {"key": "f_1", "label": f"{bb+1}-{bt-1}x" if bt - 1 > bb + 1 else f"{bb+1}x", "min_visits": bb + 1, "max_visits": bt - 1},
-            {"key": "f_2", "label": f"{bt}-{ba-1}x" if ba - 1 > bt else f"{bt}x", "min_visits": bt, "max_visits": ba - 1},
+            {
+                "key": "f_1",
+                "label": f"{bb+1}-{bt-1}x" if bt - 1 > bb + 1 else f"{bb+1}x",
+                "min_visits": bb + 1,
+                "max_visits": bt - 1,
+            },
+            {
+                "key": "f_2",
+                "label": f"{bt}-{ba-1}x" if ba - 1 > bt else f"{bt}x",
+                "min_visits": bt,
+                "max_visits": ba - 1,
+            },
             {"key": "f_3", "label": f"{ba}+", "min_visits": ba, "max_visits": None},
         ]
 
     selected_bucket_key = (request.args.get("bucket") or "").strip().lower()
-    selected_bucket = next((row for row in bucket_options if row.get("key") == selected_bucket_key), None)
+    selected_bucket = next(
+        (row for row in bucket_options if row.get("key") == selected_bucket_key), None
+    )
     if not selected_bucket:
         selected_bucket = bucket_options[0]
 
     sort = (request.args.get("sort") or "visits_desc").strip().lower()
-    if sort not in {"visits_desc", "visits_asc", "days_desc", "days_asc", "name_asc", "name_desc", "last_visit_desc", "last_visit_asc"}:
+    if sort not in {
+        "visits_desc",
+        "visits_asc",
+        "days_desc",
+        "days_asc",
+        "name_asc",
+        "name_desc",
+        "last_visit_desc",
+        "last_visit_asc",
+    }:
         sort = DEFAULT_SORT
 
     per_page = _to_int(request.args.get("per_page"), 25)
@@ -2709,12 +3177,16 @@ def admin_visit_bucket_detail() -> Response:
         guest_scope=guest_scope,
         school_status=school_status,
         today_str=_today_jakarta().isoformat(),
-        dashboard_home_endpoint="daftar_tamu.coordinator_dashboard"
-        if _is_coordinator_dashboard_user(user)
-        else "daftar_tamu.admin_dashboard",
-        visit_bucket_detail_endpoint="daftar_tamu.coordinator_visit_bucket_detail"
-        if _is_coordinator_dashboard_user(user)
-        else "daftar_tamu.admin_visit_bucket_detail",
+        dashboard_home_endpoint=(
+            "daftar_tamu.coordinator_dashboard"
+            if _is_coordinator_dashboard_user(user)
+            else "daftar_tamu.admin_dashboard"
+        ),
+        visit_bucket_detail_endpoint=(
+            "daftar_tamu.coordinator_visit_bucket_detail"
+            if _is_coordinator_dashboard_user(user)
+            else "daftar_tamu.admin_visit_bucket_detail"
+        ),
     )
 
 
@@ -2739,7 +3211,9 @@ def export_rankings() -> Response:
         sort = DEFAULT_SORT
 
     guest_scope = _parse_guest_scope(request.args.get("guest_scope"))
-    school_status = _resolve_dashboard_school_status(user, request.args.get("school_status"))
+    school_status = _resolve_dashboard_school_status(
+        user, request.args.get("school_status")
+    )
 
     rows, _ = fetch_school_rankings(
         page=1,
@@ -2846,7 +3320,11 @@ def export_rankings() -> Response:
                 date_to=date_to,
                 guest_scope=guest_scope,
             )
-            visit_total_pages = max(1, math.ceil(visit_total_rows / visit_page_size)) if visit_total_rows else 1
+            visit_total_pages = (
+                max(1, math.ceil(visit_total_rows / visit_page_size))
+                if visit_total_rows
+                else 1
+            )
             if visit_total_pages > 1:
                 for visit_page in range(2, visit_total_pages + 1):
                     page_rows, _ = fetch_school_visit_history(
@@ -2862,7 +3340,9 @@ def export_rankings() -> Response:
                     visit_rows.extend(page_rows)
 
             for visit_index, visit in enumerate(visit_rows, start=1):
-                photo_url = _build_photo_url(visit.get("photo_path"), external=True) or ""
+                photo_url = (
+                    _build_photo_url(visit.get("photo_path"), external=True) or ""
+                )
                 detail_rows.append(
                     [
                         school_rank,
@@ -2910,7 +3390,9 @@ def export_user_rankings() -> Response:
     if date_from and date_to and date_from > date_to:
         date_from, date_to = date_to, date_from
 
-    user_search_query = (request.args.get("user_q") or request.args.get("q") or "").strip()
+    user_search_query = (
+        request.args.get("user_q") or request.args.get("q") or ""
+    ).strip()
     user_sort = (request.args.get("user_sort") or DEFAULT_USER_SORT).strip().lower()
     if user_sort not in USER_SORT_OPTIONS:
         user_sort = DEFAULT_USER_SORT
@@ -2981,7 +3463,11 @@ def export_user_rankings() -> Response:
             guest_scope=user_rank_guest_scope,
             school_status=school_status,
         )
-        visit_total_pages = max(1, math.ceil(visit_total_rows / visit_page_size)) if visit_total_rows else 1
+        visit_total_pages = (
+            max(1, math.ceil(visit_total_rows / visit_page_size))
+            if visit_total_rows
+            else 1
+        )
         if visit_total_pages > 1:
             for visit_page in range(2, visit_total_pages + 1):
                 page_rows, _ = fetch_user_visit_history(
@@ -3040,13 +3526,16 @@ def export_user_rankings() -> Response:
 # Admin Validation
 # ===============================
 
+
 @daftar_tamu_bp.route("/admin/validasi")
 @role_required("admin")
 def admin_validation() -> Response:
     status = (request.args.get("status") or "pending").strip().lower()
     if status not in ("pending", "approved", "rejected", "history"):
         status = "pending"
-    staff_note_level = _normalize_staff_note_level(request.args.get("staff_note_level"), default="")
+    staff_note_level = _normalize_staff_note_level(
+        request.args.get("staff_note_level"), default=""
+    )
 
     date_from = _parse_iso_date(request.args.get("date_from"))
     date_to = _parse_iso_date(request.args.get("date_to"))
@@ -3086,6 +3575,9 @@ def admin_validation() -> Response:
             per_page=per_page,
         )
 
+    for row in rows:
+        _attach_sudin_duplicate_warning(row)
+
     date_from_str = date_from.isoformat() if date_from else ""
     date_to_str = date_to.isoformat() if date_to else ""
 
@@ -3109,9 +3601,11 @@ def admin_validation() -> Response:
 @daftar_tamu_bp.route("/admin/transactions/<int:transaction_id>")
 @role_required("admin")
 def admin_transaction_detail(transaction_id: int) -> Response:
-    detail = get_transaction_detail(transaction_id)
+    detail = get_transaction_detail(transaction_id, include_duplicate_summary=True)
     if not detail:
         return jsonify({"success": False, "message": "Transaksi tidak ditemukan"}), 404
+
+    _attach_sudin_duplicate_warning(detail)
 
     return jsonify({"success": True, "transaction": detail})
 
@@ -3135,7 +3629,10 @@ def sekolah_transaction_detail(transaction_id: int) -> Response:
     user = current_user()
     school = _fetch_school_for_user(user.get("id"))
     if not school:
-        return jsonify({"success": False, "message": "Akun sekolah belum terhubung."}), 400
+        return (
+            jsonify({"success": False, "message": "Akun sekolah belum terhubung."}),
+            400,
+        )
 
     detail, err = _get_school_umum_transaction_detail(
         transaction_id=transaction_id,
@@ -3144,18 +3641,22 @@ def sekolah_transaction_detail(transaction_id: int) -> Response:
     if err == "not_found":
         return jsonify({"success": False, "message": "Transaksi tidak ditemukan."}), 404
     if err == "forbidden":
-        return jsonify({"success": False, "message": "Transaksi hanya untuk tamu Sudin."}), 403
+        return (
+            jsonify({"success": False, "message": "Transaksi hanya untuk tamu Sudin."}),
+            403,
+        )
 
     return jsonify({"success": True, "transaction": detail})
 
 
-def _sekolah_update_transaction_status(
-    *, transaction_id: int, status: str
-) -> Response:
+def _sekolah_update_transaction_status(*, transaction_id: int, status: str) -> Response:
     user = current_user()
     school = _fetch_school_for_user(user.get("id"))
     if not school:
-        return jsonify({"success": False, "message": "Akun sekolah belum terhubung."}), 400
+        return (
+            jsonify({"success": False, "message": "Akun sekolah belum terhubung."}),
+            400,
+        )
 
     _, err = _get_school_umum_transaction_detail(
         transaction_id=transaction_id,
@@ -3164,11 +3665,17 @@ def _sekolah_update_transaction_status(
     if err == "not_found":
         return jsonify({"success": False, "message": "Transaksi tidak ditemukan."}), 404
     if err == "forbidden":
-        return jsonify({"success": False, "message": "Transaksi hanya untuk tamu Sudin."}), 403
+        return (
+            jsonify({"success": False, "message": "Transaksi hanya untuk tamu Sudin."}),
+            403,
+        )
 
     note = (request.form.get("reviewer_note") or "").strip()
     if status == "rejected" and not note:
-        return jsonify({"success": False, "message": "Catatan penolakan wajib diisi."}), 400
+        return (
+            jsonify({"success": False, "message": "Catatan penolakan wajib diisi."}),
+            400,
+        )
 
     try:
         ok = update_transaction_status(
@@ -3180,7 +3687,10 @@ def _sekolah_update_transaction_status(
     except ValueError:
         ok = False
     if not ok:
-        return jsonify({"success": False, "message": "Gagal memperbarui transaksi."}), 400
+        return (
+            jsonify({"success": False, "message": "Gagal memperbarui transaksi."}),
+            400,
+        )
 
     try:
         _notify_user_app_status_change(
@@ -3190,7 +3700,9 @@ def _sekolah_update_transaction_status(
             reviewer_notes=note or None,
         )
     except Exception:
-        current_app.logger.exception("Gagal menyimpan notifikasi status buku tamu aplikasi.")
+        current_app.logger.exception(
+            "Gagal menyimpan notifikasi status buku tamu aplikasi."
+        )
 
     try:
         _notify_guestbook_status_change(
@@ -3200,27 +3712,41 @@ def _sekolah_update_transaction_status(
             is_public=False,
         )
     except Exception:
-        current_app.logger.exception("Gagal mengirim notifikasi Telegram status buku tamu.")
+        current_app.logger.exception(
+            "Gagal mengirim notifikasi Telegram status buku tamu."
+        )
 
     return jsonify({"success": True})
 
 
-@daftar_tamu_bp.route("/sekolah/transactions/<int:transaction_id>/approve", methods=["POST"])
+@daftar_tamu_bp.route(
+    "/sekolah/transactions/<int:transaction_id>/approve", methods=["POST"]
+)
 @role_required("sekolah")
 def sekolah_transaction_approve(transaction_id: int) -> Response:
-    return _sekolah_update_transaction_status(transaction_id=transaction_id, status="approved")
+    return _sekolah_update_transaction_status(
+        transaction_id=transaction_id, status="approved"
+    )
 
 
-@daftar_tamu_bp.route("/sekolah/transactions/<int:transaction_id>/reject", methods=["POST"])
+@daftar_tamu_bp.route(
+    "/sekolah/transactions/<int:transaction_id>/reject", methods=["POST"]
+)
 @role_required("sekolah")
 def sekolah_transaction_reject(transaction_id: int) -> Response:
-    return _sekolah_update_transaction_status(transaction_id=transaction_id, status="rejected")
+    return _sekolah_update_transaction_status(
+        transaction_id=transaction_id, status="rejected"
+    )
 
 
-@daftar_tamu_bp.route("/sekolah/transactions/<int:transaction_id>/pending", methods=["POST"])
+@daftar_tamu_bp.route(
+    "/sekolah/transactions/<int:transaction_id>/pending", methods=["POST"]
+)
 @role_required("sekolah")
 def sekolah_transaction_pending(transaction_id: int) -> Response:
-    return _sekolah_update_transaction_status(transaction_id=transaction_id, status="pending")
+    return _sekolah_update_transaction_status(
+        transaction_id=transaction_id, status="pending"
+    )
 
 
 def _guestbook_status_label(status: Optional[str]) -> str:
@@ -3243,8 +3769,12 @@ def public_transaction_detail(transaction_id: int) -> Response:
     photo_url = _build_photo_url(detail.get("photo_path"), external=False)
 
     reviewer_name = (detail.get("reviewer_name") or "").strip() or "-"
-    reviewer_telegram_username = (detail.get("reviewer_telegram_username") or "").strip().lstrip("@")
-    reviewer_telegram_user_id = str(detail.get("reviewer_telegram_user_id") or "").strip()
+    reviewer_telegram_username = (
+        (detail.get("reviewer_telegram_username") or "").strip().lstrip("@")
+    )
+    reviewer_telegram_user_id = str(
+        detail.get("reviewer_telegram_user_id") or ""
+    ).strip()
     reviewer_telegram_parts: list[str] = []
     if reviewer_telegram_username:
         reviewer_telegram_parts.append(f"@{reviewer_telegram_username}")
@@ -3263,7 +3793,9 @@ def public_transaction_detail(transaction_id: int) -> Response:
     guests = []
     for row in detail.get("guests") or []:
         guest_item = dict(row)
-        guest_item["profile_photo_url"] = _build_photo_url(guest_item.get("profile_photo_path"), external=False)
+        guest_item["profile_photo_url"] = _build_photo_url(
+            guest_item.get("profile_photo_path"), external=False
+        )
         guests.append(guest_item)
     return render_template(
         "daftar_tamu/public_transaction_detail.html",
@@ -3279,8 +3811,12 @@ def public_transaction_detail(transaction_id: int) -> Response:
         status_label=_guestbook_status_label(detail.get("status")),
         created_by_name=detail.get("created_by_name") or "-",
         reviewer_name=reviewer_name,
-        reviewer_telegram_label=" • ".join(reviewer_telegram_parts) if reviewer_telegram_parts else "-",
-        reviewed_at_label=reviewed_at.strftime("%d %b %Y, %H:%M") if reviewed_at else "-",
+        reviewer_telegram_label=(
+            " • ".join(reviewer_telegram_parts) if reviewer_telegram_parts else "-"
+        ),
+        reviewed_at_label=(
+            reviewed_at.strftime("%d %b %Y, %H:%M") if reviewed_at else "-"
+        ),
         reviewer_notes=detail.get("reviewer_notes") or "-",
         gps_label=gps_label,
         photo_url=photo_url,
@@ -3288,7 +3824,9 @@ def public_transaction_detail(transaction_id: int) -> Response:
     )
 
 
-@daftar_tamu_bp.route("/admin/transactions/<int:transaction_id>/approve", methods=["POST"])
+@daftar_tamu_bp.route(
+    "/admin/transactions/<int:transaction_id>/approve", methods=["POST"]
+)
 @role_required("admin")
 def admin_transaction_approve(transaction_id: int) -> Response:
     user = current_user()
@@ -3303,7 +3841,10 @@ def admin_transaction_approve(transaction_id: int) -> Response:
     except ValueError:
         ok = False
     if not ok:
-        return jsonify({"success": False, "message": "Gagal memperbarui transaksi."}), 400
+        return (
+            jsonify({"success": False, "message": "Gagal memperbarui transaksi."}),
+            400,
+        )
     try:
         _notify_user_app_status_change(
             transaction_id=transaction_id,
@@ -3312,7 +3853,9 @@ def admin_transaction_approve(transaction_id: int) -> Response:
             reviewer_notes=note or None,
         )
     except Exception:
-        current_app.logger.exception("Gagal menyimpan notifikasi status buku tamu aplikasi.")
+        current_app.logger.exception(
+            "Gagal menyimpan notifikasi status buku tamu aplikasi."
+        )
     try:
         _notify_guestbook_status_change(
             transaction_id=transaction_id,
@@ -3321,7 +3864,9 @@ def admin_transaction_approve(transaction_id: int) -> Response:
             is_public=False,
         )
     except Exception:
-        current_app.logger.exception("Gagal mengirim notifikasi Telegram status buku tamu.")
+        current_app.logger.exception(
+            "Gagal mengirim notifikasi Telegram status buku tamu."
+        )
     try:
         record_admin_action(
             user_id=user.get("id"),
@@ -3337,13 +3882,18 @@ def admin_transaction_approve(transaction_id: int) -> Response:
     return jsonify({"success": True})
 
 
-@daftar_tamu_bp.route("/admin/transactions/<int:transaction_id>/reject", methods=["POST"])
+@daftar_tamu_bp.route(
+    "/admin/transactions/<int:transaction_id>/reject", methods=["POST"]
+)
 @role_required("admin")
 def admin_transaction_reject(transaction_id: int) -> Response:
     user = current_user()
     note = (request.form.get("reviewer_note") or "").strip()
     if not note:
-        return jsonify({"success": False, "message": "Catatan penolakan wajib diisi."}), 400
+        return (
+            jsonify({"success": False, "message": "Catatan penolakan wajib diisi."}),
+            400,
+        )
     try:
         ok = update_transaction_status(
             transaction_id=transaction_id,
@@ -3354,7 +3904,10 @@ def admin_transaction_reject(transaction_id: int) -> Response:
     except ValueError:
         ok = False
     if not ok:
-        return jsonify({"success": False, "message": "Gagal memperbarui transaksi."}), 400
+        return (
+            jsonify({"success": False, "message": "Gagal memperbarui transaksi."}),
+            400,
+        )
     try:
         _notify_user_app_status_change(
             transaction_id=transaction_id,
@@ -3363,7 +3916,9 @@ def admin_transaction_reject(transaction_id: int) -> Response:
             reviewer_notes=note,
         )
     except Exception:
-        current_app.logger.exception("Gagal menyimpan notifikasi status buku tamu aplikasi.")
+        current_app.logger.exception(
+            "Gagal menyimpan notifikasi status buku tamu aplikasi."
+        )
     try:
         _notify_guestbook_status_change(
             transaction_id=transaction_id,
@@ -3372,7 +3927,9 @@ def admin_transaction_reject(transaction_id: int) -> Response:
             is_public=False,
         )
     except Exception:
-        current_app.logger.exception("Gagal mengirim notifikasi Telegram status buku tamu.")
+        current_app.logger.exception(
+            "Gagal mengirim notifikasi Telegram status buku tamu."
+        )
     try:
         record_admin_action(
             user_id=user.get("id"),
@@ -3388,7 +3945,9 @@ def admin_transaction_reject(transaction_id: int) -> Response:
     return jsonify({"success": True})
 
 
-@daftar_tamu_bp.route("/admin/transactions/<int:transaction_id>/pending", methods=["POST"])
+@daftar_tamu_bp.route(
+    "/admin/transactions/<int:transaction_id>/pending", methods=["POST"]
+)
 @role_required("admin")
 def admin_transaction_pending(transaction_id: int) -> Response:
     user = current_user()
@@ -3403,7 +3962,10 @@ def admin_transaction_pending(transaction_id: int) -> Response:
     except ValueError:
         ok = False
     if not ok:
-        return jsonify({"success": False, "message": "Gagal memperbarui transaksi."}), 400
+        return (
+            jsonify({"success": False, "message": "Gagal memperbarui transaksi."}),
+            400,
+        )
     try:
         _notify_user_app_status_change(
             transaction_id=transaction_id,
@@ -3412,7 +3974,9 @@ def admin_transaction_pending(transaction_id: int) -> Response:
             reviewer_notes=note or None,
         )
     except Exception:
-        current_app.logger.exception("Gagal menyimpan notifikasi status buku tamu aplikasi.")
+        current_app.logger.exception(
+            "Gagal menyimpan notifikasi status buku tamu aplikasi."
+        )
     try:
         record_admin_action(
             user_id=user.get("id"),
@@ -3465,7 +4029,11 @@ def admin_bulk_approve_transactions() -> Response:
                     target_type="GUESTBOOK_TRANSACTION",
                     target_id=tx_id,
                     target_name=f"Transaksi #{tx_id}",
-                    metadata={"status": "approved", "reviewer_note": note or None, "mode": "bulk"},
+                    metadata={
+                        "status": "approved",
+                        "reviewer_note": note or None,
+                        "mode": "bulk",
+                    },
                 )
             except Exception:
                 current_app.logger.exception("Gagal mencatat bulk approve buku tamu.")
@@ -3477,7 +4045,9 @@ def admin_bulk_approve_transactions() -> Response:
                     reviewer_notes=note or None,
                 )
             except Exception:
-                current_app.logger.exception("Gagal menyimpan notifikasi status buku tamu aplikasi.")
+                current_app.logger.exception(
+                    "Gagal menyimpan notifikasi status buku tamu aplikasi."
+                )
             try:
                 _notify_guestbook_status_change(
                     transaction_id=tx_id,
@@ -3486,7 +4056,9 @@ def admin_bulk_approve_transactions() -> Response:
                     is_public=False,
                 )
             except Exception:
-                current_app.logger.exception("Gagal mengirim notifikasi Telegram status buku tamu.")
+                current_app.logger.exception(
+                    "Gagal mengirim notifikasi Telegram status buku tamu."
+                )
 
     if success_count:
         flash(f"{success_count} transaksi berhasil disetujui.", "success")
@@ -3537,7 +4109,11 @@ def admin_bulk_reject_transactions() -> Response:
                     target_type="GUESTBOOK_TRANSACTION",
                     target_id=tx_id,
                     target_name=f"Transaksi #{tx_id}",
-                    metadata={"status": "rejected", "reviewer_note": note, "mode": "bulk"},
+                    metadata={
+                        "status": "rejected",
+                        "reviewer_note": note,
+                        "mode": "bulk",
+                    },
                 )
             except Exception:
                 current_app.logger.exception("Gagal mencatat bulk reject buku tamu.")
@@ -3549,7 +4125,9 @@ def admin_bulk_reject_transactions() -> Response:
                     reviewer_notes=note,
                 )
             except Exception:
-                current_app.logger.exception("Gagal menyimpan notifikasi status buku tamu aplikasi.")
+                current_app.logger.exception(
+                    "Gagal menyimpan notifikasi status buku tamu aplikasi."
+                )
             try:
                 _notify_guestbook_status_change(
                     transaction_id=tx_id,
@@ -3558,7 +4136,9 @@ def admin_bulk_reject_transactions() -> Response:
                     is_public=False,
                 )
             except Exception:
-                current_app.logger.exception("Gagal mengirim notifikasi Telegram status buku tamu.")
+                current_app.logger.exception(
+                    "Gagal mengirim notifikasi Telegram status buku tamu."
+                )
 
     if success_count:
         flash(f"{success_count} transaksi berhasil ditolak.", "success")
@@ -3605,7 +4185,9 @@ def admin_bulk_pending_transactions() -> Response:
                     reviewer_notes=note or None,
                 )
             except Exception:
-                current_app.logger.exception("Gagal menyimpan notifikasi status buku tamu aplikasi.")
+                current_app.logger.exception(
+                    "Gagal menyimpan notifikasi status buku tamu aplikasi."
+                )
 
     if success_count:
         flash(f"{success_count} transaksi berhasil dikembalikan ke pending.", "success")
@@ -3617,7 +4199,9 @@ def admin_bulk_pending_transactions() -> Response:
 
 def _build_admin_validation_redirect(form) -> str:
     status = (form.get("status") or "").strip() or "pending"
-    staff_note_level = _normalize_staff_note_level(form.get("staff_note_level"), default="")
+    staff_note_level = _normalize_staff_note_level(
+        form.get("staff_note_level"), default=""
+    )
     search = (form.get("q") or "").strip()
     date_from = (form.get("date_from") or "").strip()
     date_to = (form.get("date_to") or "").strip()
@@ -3853,7 +4437,9 @@ def admin_contact_priority() -> Response:
         if keyword_id <= 0 or sort_order <= 0:
             flash("Data prioritas tidak valid.", "danger")
         else:
-            ok = update_contact_priority(keyword_id=keyword_id, sort_order=sort_order, active=active)
+            ok = update_contact_priority(
+                keyword_id=keyword_id, sort_order=sort_order, active=active
+            )
             if ok:
                 flash("Prioritas kontak diperbarui.", "success")
             else:
@@ -3881,10 +4467,16 @@ def _guest_chat_admin_tab(raw_tab: Optional[str], *, default: str = "intro") -> 
 
 
 def _guest_chat_preview_context() -> dict:
-    preview_npsn = (request.args.get("preview_npsn") or os.getenv("GUEST_CHAT_PREVIEW_NPSN") or "20100682").strip()
+    preview_npsn = (
+        request.args.get("preview_npsn")
+        or os.getenv("GUEST_CHAT_PREVIEW_NPSN")
+        or "20100682"
+    ).strip()
     if not preview_npsn:
         preview_npsn = "20100682"
-    guest_chat_preview_url = f"{_web_aska_base_url()}/buku-tamu/{preview_npsn}/preview-chat"
+    guest_chat_preview_url = (
+        f"{_web_aska_base_url()}/buku-tamu/{preview_npsn}/preview-chat"
+    )
     guest_chat_preview_limit_url = f"{guest_chat_preview_url}?remaining=0"
     return {
         "preview_npsn": preview_npsn,
@@ -3893,7 +4485,9 @@ def _guest_chat_preview_context() -> dict:
     }
 
 
-def _admin_guest_chat_bubbles_redirect(*, bubble_id: Optional[int] = None, tab: str = "intro") -> str:
+def _admin_guest_chat_bubbles_redirect(
+    *, bubble_id: Optional[int] = None, tab: str = "intro"
+) -> str:
     safe_tab = _guest_chat_admin_tab(tab, default="intro")
     if safe_tab == "limit":
         return url_for("daftar_tamu.admin_guest_chat_bubbles_limit")
@@ -3928,9 +4522,13 @@ def admin_guest_chat_bubbles_intro() -> Response:
     quick_counts = count_guest_chat_quick_questions_by_bubble(bubble_ids=bubble_ids)
 
     for row in rows:
-        row["message_preview"] = _guest_chat_render_text_preview(row.get("message_text") or "")
+        row["message_preview"] = _guest_chat_render_text_preview(
+            row.get("message_text") or ""
+        )
         media_path = (row.get("media_path") or "").strip()
-        row["media_preview_url"] = _guest_chat_media_preview_url(media_path) if media_path else ""
+        row["media_preview_url"] = (
+            _guest_chat_media_preview_url(media_path) if media_path else ""
+        )
         direct_link_rows = row.get("direct_links") or []
         if not direct_link_rows:
             direct_link_rows = [{"label": "", "url": "", "sort_order": 10}]
@@ -3954,7 +4552,9 @@ def admin_guest_chat_bubbles_limit() -> Response:
     settings = get_guest_chat_settings()
     settings_media_path = (settings.get("limit_reached_media_path") or "").strip()
     settings["limit_reached_media_preview_url"] = (
-        _guest_chat_media_preview_url(settings_media_path) if settings_media_path else ""
+        _guest_chat_media_preview_url(settings_media_path)
+        if settings_media_path
+        else ""
     )
     settings["limit_reached_message_preview"] = _guest_chat_render_text_preview(
         settings.get("limit_reached_message") or ""
@@ -3980,14 +4580,21 @@ def admin_update_guest_chat_settings() -> Response:
     current_settings = get_guest_chat_settings()
     old_media_path = (current_settings.get("limit_reached_media_path") or "").strip()
 
-    chat_limit = _to_int(request.form.get("chat_limit"), int(current_settings.get("chat_limit") or 2))
+    chat_limit = _to_int(
+        request.form.get("chat_limit"), int(current_settings.get("chat_limit") or 2)
+    )
     limit_reached_message = (request.form.get("limit_reached_message") or "").strip()
-    media_source = (request.form.get("limit_reached_media_source") or "keep").strip().lower()
+    media_source = (
+        (request.form.get("limit_reached_media_source") or "keep").strip().lower()
+    )
     media_type = _guest_chat_normalize_media_type(
-        request.form.get("limit_reached_media_type") or current_settings.get("limit_reached_media_type")
+        request.form.get("limit_reached_media_type")
+        or current_settings.get("limit_reached_media_type")
     )
     media_loop = _guest_chat_is_truthy(request.form.get("limit_reached_media_loop"))
-    media_autoplay = _guest_chat_is_truthy(request.form.get("limit_reached_media_autoplay"))
+    media_autoplay = _guest_chat_is_truthy(
+        request.form.get("limit_reached_media_autoplay")
+    )
     video_muted = _guest_chat_is_truthy(request.form.get("limit_reached_video_muted"))
 
     media_url = (current_settings.get("limit_reached_media_url") or "").strip() or None
@@ -3999,8 +4606,12 @@ def admin_update_guest_chat_settings() -> Response:
             url_field="limit_link_url[]",
         )
         if media_source == "keep":
-            media_type = _guest_chat_normalize_media_type(current_settings.get("limit_reached_media_type"))
-            media_url = (current_settings.get("limit_reached_media_url") or "").strip() or None
+            media_type = _guest_chat_normalize_media_type(
+                current_settings.get("limit_reached_media_type")
+            )
+            media_url = (
+                current_settings.get("limit_reached_media_url") or ""
+            ).strip() or None
             media_path = old_media_path or None
         elif media_source == "none":
             media_type = "none"
@@ -4056,7 +4667,9 @@ def admin_update_guest_chat_settings() -> Response:
             try:
                 old_file.unlink()
             except Exception:
-                current_app.logger.exception("Gagal menghapus file media limit bubble lama: %s", old_media_path)
+                current_app.logger.exception(
+                    "Gagal menghapus file media limit bubble lama: %s", old_media_path
+                )
 
     flash("Pengaturan limit chat buku tamu berhasil diperbarui.", "success")
     return redirect(url_for("daftar_tamu.admin_guest_chat_bubbles_limit"))
@@ -4131,7 +4744,9 @@ def admin_create_guest_chat_bubble() -> Response:
         return redirect(url_for("daftar_tamu.admin_guest_chat_bubbles_intro"))
 
     flash("Bubble chat berhasil ditambahkan.", "success")
-    return redirect(_admin_guest_chat_bubbles_redirect(bubble_id=int(created.get("id") or 0)))
+    return redirect(
+        _admin_guest_chat_bubbles_redirect(bubble_id=int(created.get("id") or 0))
+    )
 
 
 @daftar_tamu_bp.route("/admin/chat-bubbles/<int:bubble_id>/update", methods=["POST"])
@@ -4143,10 +4758,14 @@ def admin_update_guest_chat_bubble(bubble_id: int) -> Response:
         return redirect(url_for("daftar_tamu.admin_guest_chat_bubbles_intro"))
 
     message_text = (request.form.get("message_text") or "").strip()
-    sort_order = _to_int(request.form.get("sort_order"), int(existing.get("sort_order") or 0))
+    sort_order = _to_int(
+        request.form.get("sort_order"), int(existing.get("sort_order") or 0)
+    )
     active = _guest_chat_is_truthy(request.form.get("active"))
     media_source = (request.form.get("media_source") or "keep").strip().lower()
-    media_type = _guest_chat_normalize_media_type(request.form.get("media_type") or existing.get("media_type"))
+    media_type = _guest_chat_normalize_media_type(
+        request.form.get("media_type") or existing.get("media_type")
+    )
     media_loop = _guest_chat_is_truthy(request.form.get("media_loop"))
     media_autoplay = _guest_chat_is_truthy(request.form.get("media_autoplay"))
     video_muted = _guest_chat_is_truthy(request.form.get("video_muted"))
@@ -4222,7 +4841,9 @@ def admin_update_guest_chat_bubble(bubble_id: int) -> Response:
             try:
                 old_file.unlink()
             except Exception:
-                current_app.logger.exception("Gagal menghapus file media bubble lama: %s", old_media_path)
+                current_app.logger.exception(
+                    "Gagal menghapus file media bubble lama: %s", old_media_path
+                )
 
     flash("Bubble chat berhasil diperbarui.", "success")
     return redirect(_admin_guest_chat_bubbles_redirect(bubble_id=bubble_id))
@@ -4248,13 +4869,17 @@ def admin_delete_guest_chat_bubble(bubble_id: int) -> Response:
             try:
                 media_file.unlink()
             except Exception:
-                current_app.logger.exception("Gagal menghapus file media bubble: %s", media_path)
+                current_app.logger.exception(
+                    "Gagal menghapus file media bubble: %s", media_path
+                )
 
     flash("Bubble chat berhasil dihapus.", "success")
     return redirect(url_for("daftar_tamu.admin_guest_chat_bubbles_intro"))
 
 
-@daftar_tamu_bp.route("/admin/chat-bubbles/<int:bubble_id>/quick-questions", methods=["GET"])
+@daftar_tamu_bp.route(
+    "/admin/chat-bubbles/<int:bubble_id>/quick-questions", methods=["GET"]
+)
 @role_required("admin")
 def admin_list_guest_chat_quick_questions(bubble_id: int) -> Response:
     # Memastikan schema guest chat sudah siap sebelum query langsung.
@@ -4266,7 +4891,17 @@ def admin_list_guest_chat_quick_questions(bubble_id: int) -> Response:
         )
         exists = bool(cur.fetchone())
     if not exists:
-        return jsonify({"success": False, "message": "Bubble chat tidak ditemukan.", "bubble_id": bubble_id, "items": []}), 404
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "Bubble chat tidak ditemukan.",
+                    "bubble_id": bubble_id,
+                    "items": [],
+                }
+            ),
+            404,
+        )
 
     items = list_guest_chat_quick_questions(bubble_id=bubble_id)
     return jsonify(
@@ -4279,7 +4914,9 @@ def admin_list_guest_chat_quick_questions(bubble_id: int) -> Response:
     )
 
 
-@daftar_tamu_bp.route("/admin/chat-bubbles/<int:bubble_id>/quick-questions", methods=["POST"])
+@daftar_tamu_bp.route(
+    "/admin/chat-bubbles/<int:bubble_id>/quick-questions", methods=["POST"]
+)
 @role_required("admin")
 def admin_create_guest_chat_quick_question(bubble_id: int) -> Response:
     if not get_guest_chat_bubble(bubble_id=bubble_id, with_questions=False):
@@ -4306,9 +4943,14 @@ def admin_create_guest_chat_quick_question(bubble_id: int) -> Response:
     return redirect(_admin_guest_chat_bubbles_redirect(bubble_id=bubble_id))
 
 
-@daftar_tamu_bp.route("/admin/chat-bubbles/<int:bubble_id>/quick-questions/<int:question_id>/update", methods=["POST"])
+@daftar_tamu_bp.route(
+    "/admin/chat-bubbles/<int:bubble_id>/quick-questions/<int:question_id>/update",
+    methods=["POST"],
+)
 @role_required("admin")
-def admin_update_guest_chat_quick_question(bubble_id: int, question_id: int) -> Response:
+def admin_update_guest_chat_quick_question(
+    bubble_id: int, question_id: int
+) -> Response:
     question_text = (request.form.get("question_text") or "").strip()
     sort_order = _to_int(request.form.get("sort_order"), 0)
     active = _guest_chat_is_truthy(request.form.get("active"))
@@ -4334,9 +4976,14 @@ def admin_update_guest_chat_quick_question(bubble_id: int, question_id: int) -> 
     return redirect(_admin_guest_chat_bubbles_redirect(bubble_id=bubble_id))
 
 
-@daftar_tamu_bp.route("/admin/chat-bubbles/<int:bubble_id>/quick-questions/<int:question_id>/delete", methods=["POST"])
+@daftar_tamu_bp.route(
+    "/admin/chat-bubbles/<int:bubble_id>/quick-questions/<int:question_id>/delete",
+    methods=["POST"],
+)
 @role_required("admin")
-def admin_delete_guest_chat_quick_question(bubble_id: int, question_id: int) -> Response:
+def admin_delete_guest_chat_quick_question(
+    bubble_id: int, question_id: int
+) -> Response:
     ok = False
     try:
         ok = delete_guest_chat_quick_question(question_id=question_id)
@@ -4352,7 +4999,9 @@ def admin_delete_guest_chat_quick_question(bubble_id: int, question_id: int) -> 
     return redirect(_admin_guest_chat_bubbles_redirect(bubble_id=bubble_id))
 
 
-@daftar_tamu_bp.route("/admin/umum-transactions/<int:transaction_id>/approve", methods=["POST"])
+@daftar_tamu_bp.route(
+    "/admin/umum-transactions/<int:transaction_id>/approve", methods=["POST"]
+)
 @role_required("admin")
 def admin_public_transaction_approve(transaction_id: int) -> Response:
     user = current_user()
@@ -4368,7 +5017,9 @@ def admin_public_transaction_approve(transaction_id: int) -> Response:
         ok = False
     if not ok:
         flash("Transaksi tidak ditemukan.", "danger")
-        return redirect(request.referrer or url_for("daftar_tamu.admin_public_transactions"))
+        return redirect(
+            request.referrer or url_for("daftar_tamu.admin_public_transactions")
+        )
     try:
         record_admin_action(
             user_id=user.get("id"),
@@ -4382,10 +5033,14 @@ def admin_public_transaction_approve(transaction_id: int) -> Response:
     except Exception:
         current_app.logger.exception("Gagal mencatat action admin transaksi tamu umum.")
     flash("Transaksi tamu umum disetujui.", "success")
-    return redirect(request.referrer or url_for("daftar_tamu.admin_public_transactions"))
+    return redirect(
+        request.referrer or url_for("daftar_tamu.admin_public_transactions")
+    )
 
 
-@daftar_tamu_bp.route("/admin/umum-transactions/<int:transaction_id>/reject", methods=["POST"])
+@daftar_tamu_bp.route(
+    "/admin/umum-transactions/<int:transaction_id>/reject", methods=["POST"]
+)
 @role_required("admin")
 def admin_public_transaction_reject(transaction_id: int) -> Response:
     user = current_user()
@@ -4401,7 +5056,9 @@ def admin_public_transaction_reject(transaction_id: int) -> Response:
         ok = False
     if not ok:
         flash("Transaksi tidak ditemukan.", "danger")
-        return redirect(request.referrer or url_for("daftar_tamu.admin_public_transactions"))
+        return redirect(
+            request.referrer or url_for("daftar_tamu.admin_public_transactions")
+        )
     try:
         record_admin_action(
             user_id=user.get("id"),
@@ -4415,10 +5072,14 @@ def admin_public_transaction_reject(transaction_id: int) -> Response:
     except Exception:
         current_app.logger.exception("Gagal mencatat action admin transaksi tamu umum.")
     flash("Transaksi tamu umum ditolak.", "success")
-    return redirect(request.referrer or url_for("daftar_tamu.admin_public_transactions"))
+    return redirect(
+        request.referrer or url_for("daftar_tamu.admin_public_transactions")
+    )
 
 
-@daftar_tamu_bp.route("/admin/umum-transactions/<int:transaction_id>/reopen", methods=["POST"])
+@daftar_tamu_bp.route(
+    "/admin/umum-transactions/<int:transaction_id>/reopen", methods=["POST"]
+)
 @role_required("admin")
 def admin_public_transaction_reopen(transaction_id: int) -> Response:
     user = current_user()
@@ -4433,7 +5094,9 @@ def admin_public_transaction_reopen(transaction_id: int) -> Response:
         ok = False
     if not ok:
         flash("Transaksi tidak ditemukan.", "danger")
-        return redirect(request.referrer or url_for("daftar_tamu.admin_public_transactions"))
+        return redirect(
+            request.referrer or url_for("daftar_tamu.admin_public_transactions")
+        )
     try:
         record_admin_action(
             user_id=user.get("id"),
@@ -4445,9 +5108,13 @@ def admin_public_transaction_reopen(transaction_id: int) -> Response:
             metadata={"status": "pending"},
         )
     except Exception:
-        current_app.logger.exception("Gagal mencatat action reopen transaksi tamu umum.")
+        current_app.logger.exception(
+            "Gagal mencatat action reopen transaksi tamu umum."
+        )
     flash("Transaksi dibuka kembali untuk diverifikasi.", "success")
-    return redirect(request.referrer or url_for("daftar_tamu.admin_public_transactions"))
+    return redirect(
+        request.referrer or url_for("daftar_tamu.admin_public_transactions")
+    )
 
 
 @daftar_tamu_bp.route("/admin/umum/<int:guest_id>/verify", methods=["POST"])
@@ -4470,7 +5137,15 @@ def admin_verify_general_guest(guest_id: int) -> Response:
             (is_verified, user.get("id"), is_verified, guest_id),
         )
         if cur.rowcount == 0:
-            return jsonify({"success": False, "message": "Tamu umum tidak ditemukan atau sudah dihapus."}), 404
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "message": "Tamu umum tidak ditemukan atau sudah dihapus.",
+                    }
+                ),
+                404,
+            )
     try:
         record_admin_action(
             user_id=user.get("id"),
@@ -4505,7 +5180,10 @@ def admin_delete_general_guest(guest_id: int) -> Response:
             (is_deleted, is_deleted, user.get("id"), is_deleted, guest_id),
         )
         if cur.rowcount == 0:
-            return jsonify({"success": False, "message": "Tamu umum tidak ditemukan."}), 404
+            return (
+                jsonify({"success": False, "message": "Tamu umum tidak ditemukan."}),
+                404,
+            )
     try:
         record_admin_action(
             user_id=user.get("id"),
@@ -4524,6 +5202,7 @@ def admin_delete_general_guest(guest_id: int) -> Response:
 # ===============================
 # Sekolah Guestbook
 # ===============================
+
 
 @daftar_tamu_bp.route("/sekolah")
 @role_required("sekolah")
@@ -4571,7 +5250,11 @@ def sekolah_public_web() -> Response:
         page=public_page,
         per_page=public_per_page,
     )
-    public_total_pages = max(1, math.ceil(public_total_rows / public_per_page)) if public_total_rows else 1
+    public_total_pages = (
+        max(1, math.ceil(public_total_rows / public_per_page))
+        if public_total_rows
+        else 1
+    )
     if public_page > public_total_pages:
         public_page = public_total_pages
         public_rows, public_total_rows = list_school_public_transactions(
@@ -4796,11 +5479,17 @@ def sekolah_riwayat_harian_guests(visit_date: str) -> Response:
     user = current_user()
     school = _fetch_school_for_user(user["id"])
     if not school:
-        return jsonify({"success": False, "message": "Akun sekolah belum terhubung."}), 400
+        return (
+            jsonify({"success": False, "message": "Akun sekolah belum terhubung."}),
+            400,
+        )
 
     parsed_visit_date = _parse_iso_date(visit_date)
     if not parsed_visit_date:
-        return jsonify({"success": False, "message": "Tanggal kunjungan tidak valid."}), 400
+        return (
+            jsonify({"success": False, "message": "Tanggal kunjungan tidak valid."}),
+            400,
+        )
 
     page = _to_int(request.args.get("page"), 1)
     page = max(1, page)
@@ -4882,7 +5571,15 @@ def sekolah_riwayat_harian_export() -> Response:
             break
         export_page += 1
 
-    headers = ["Hari", "Tanggal", "Jumlah Kunjungan", "Jumlah Orang", "Nama Pengunjung", "Instansi", "Tujuan"]
+    headers = [
+        "Hari",
+        "Tanggal",
+        "Jumlah Kunjungan",
+        "Jumlah Orang",
+        "Nama Pengunjung",
+        "Instansi",
+        "Tujuan",
+    ]
     weekday_labels = {
         0: "Senin",
         1: "Selasa",
@@ -4953,7 +5650,9 @@ def sekolah_riwayat_harian_export() -> Response:
     today_label = _today_jakarta().isoformat()
     if export_format == "excel":
         filename = f"data_harian_tamu_kedinasan_{school_npsn}_{today_label}.xlsx"
-        return _build_xlsx_response(headers, data_rows, filename, fill_ranges=summary_fill_ranges)
+        return _build_xlsx_response(
+            headers, data_rows, filename, fill_ranges=summary_fill_ranges
+        )
 
     filename = f"data_harian_tamu_kedinasan_{school_npsn}_{today_label}.csv"
     return _build_csv_response(headers, data_rows, filename)
@@ -5025,10 +5724,14 @@ def sekolah_riwayat_export() -> Response:
         photo_path = (row.get("photo_path") or "").strip()
         if photo_path:
             photo_name = photo_path.split("uploads/portal/")[-1]
-            photo_link = url_for("portal.uploaded_file", filename=photo_name, _external=True)
+            photo_link = url_for(
+                "portal.uploaded_file", filename=photo_name, _external=True
+            )
 
         guest_type = (row.get("guest_type") or "").strip().lower()
-        guest_type_label = "Sudindik JU 2" if guest_type == "sudin" else "Instansi Pemerintah Lainnya"
+        guest_type_label = (
+            "Sudindik JU 2" if guest_type == "sudin" else "Instansi Pemerintah Lainnya"
+        )
 
         data_rows.append(
             [
@@ -5047,14 +5750,20 @@ def sekolah_riwayat_export() -> Response:
     file_format = (request.args.get("format") or "excel").strip().lower()
     school_npsn = (school.get("npsn") or "sekolah").strip()
     if file_format in {"excel", "xlsx"}:
-        filename = f"riwayat_tamu_kedinasan_{school_npsn}_{_today_jakarta().isoformat()}.xlsx"
+        filename = (
+            f"riwayat_tamu_kedinasan_{school_npsn}_{_today_jakarta().isoformat()}.xlsx"
+        )
         return _build_xlsx_response(headers, data_rows, filename)
 
-    filename = f"riwayat_tamu_kedinasan_{school_npsn}_{_today_jakarta().isoformat()}.csv"
+    filename = (
+        f"riwayat_tamu_kedinasan_{school_npsn}_{_today_jakarta().isoformat()}.csv"
+    )
     return _build_csv_response(headers, data_rows, filename)
 
 
-def _extract_user_staff_note(metadata_value: object, user_id: int) -> tuple[str, str, str]:
+def _extract_user_staff_note(
+    metadata_value: object, user_id: int
+) -> tuple[str, str, str]:
     metadata = metadata_value
     if isinstance(metadata, str):
         try:
@@ -5072,7 +5781,10 @@ def _extract_user_staff_note(metadata_value: object, user_id: int) -> tuple[str,
     if isinstance(entry, dict):
         note = (entry.get("note") or "").strip()
         updated_at = (entry.get("updated_at") or "").strip()
-        level = _normalize_staff_note_level(entry.get("level"), default="tindak_lanjut") or "tindak_lanjut"
+        level = (
+            _normalize_staff_note_level(entry.get("level"), default="tindak_lanjut")
+            or "tindak_lanjut"
+        )
         return note, updated_at, level
     if isinstance(entry, str):
         return entry.strip(), "", "tindak_lanjut"
@@ -5181,7 +5893,9 @@ def _decorate_user_history_rows(rows: list[dict], user_id: int) -> None:
     for row in rows:
         status_value = (row.get("status") or "").strip().lower()
         row["photo_url"] = _build_photo_url(row.get("photo_path"))
-        row["photo_thumb_url"] = _build_photo_thumb_url(row.get("photo_path"), width=420, quality=72)
+        row["photo_thumb_url"] = _build_photo_thumb_url(
+            row.get("photo_path"), width=420, quality=72
+        )
         row["status_label"] = {
             "approved": "Terverifikasi",
             "rejected": "Ditolak",
@@ -5204,14 +5918,24 @@ def _decorate_user_history_rows(rows: list[dict], user_id: int) -> None:
             row["visit_at_iso"] = ""
             row["visit_at_label"] = ""
 
-        staff_note, staff_note_updated_at, staff_note_level = _extract_user_staff_note(row.get("metadata"), user_id)
+        staff_note, staff_note_updated_at, staff_note_level = _extract_user_staff_note(
+            row.get("metadata"), user_id
+        )
         row["staff_note"] = staff_note
         row["staff_note_updated_at_raw"] = staff_note_updated_at
-        row["staff_note_updated_at"] = _format_staff_note_updated_label(staff_note_updated_at)
+        row["staff_note_updated_at"] = _format_staff_note_updated_label(
+            staff_note_updated_at
+        )
         row["staff_note_level"] = staff_note_level
-        row["staff_note_level_label"] = _STAFF_NOTE_LEVEL_LABEL_MAP.get(staff_note_level, "")
-        row["staff_note_level_tone"] = _STAFF_NOTE_LEVEL_TONE_MAP.get(staff_note_level, "secondary")
-        row["can_add_staff_note"] = status_value == "approved" and bool(row.get("photo_path"))
+        row["staff_note_level_label"] = _STAFF_NOTE_LEVEL_LABEL_MAP.get(
+            staff_note_level, ""
+        )
+        row["staff_note_level_tone"] = _STAFF_NOTE_LEVEL_TONE_MAP.get(
+            staff_note_level, "secondary"
+        )
+        row["can_add_staff_note"] = status_value == "approved" and bool(
+            row.get("photo_path")
+        )
         row["signature"] = _build_user_history_signature(row)
 
 
@@ -5311,7 +6035,11 @@ def _serialize_user_guestbook_notification(row: dict, fallback_link: str) -> dic
         tone = "warning"
 
     created_at = row.get("created_at")
-    created_at_iso = created_at.isoformat(timespec="seconds") if isinstance(created_at, datetime) else ""
+    created_at_iso = (
+        created_at.isoformat(timespec="seconds")
+        if isinstance(created_at, datetime)
+        else ""
+    )
 
     fallback_title = "Notifikasi buku tamu"
     if category == "panbers_reopen_status":
@@ -5365,7 +6093,11 @@ def _build_user_guestbook_history_context(user: dict, source) -> dict:
             date_to=params["date_to"],
             guest_scope=params["guest_scope"],
         )
-        detail_total_pages = max(1, math.ceil(detail_total_rows / params["per_page"])) if detail_total_rows else 1
+        detail_total_pages = (
+            max(1, math.ceil(detail_total_rows / params["per_page"]))
+            if detail_total_rows
+            else 1
+        )
         if params["page"] > detail_total_pages:
             params["page"] = detail_total_pages
             detail_rows, detail_total_rows = fetch_user_guestbook_history(
@@ -5391,7 +6123,10 @@ def _build_user_guestbook_history_context(user: dict, source) -> dict:
             date_to=params["date_to"],
             guest_scope=params["guest_scope"],
         )
-        home_has_more = home_total_rows > len(home_rows) and params["home_limit"] < params["home_limit_max"]
+        home_has_more = (
+            home_total_rows > len(home_rows)
+            and params["home_limit"] < params["home_limit_max"]
+        )
 
     _decorate_user_history_rows(home_rows, user_id)
     _decorate_user_history_rows(detail_rows, user_id)
@@ -5482,10 +6217,16 @@ def user_guestbook_notifications() -> Response:
     categories = list(USER_APP_NOTIFICATION_CATEGORIES)
 
     try:
-        summary = fetch_user_notification_summary(user_id=user_id, categories=categories)
-        rows = list_user_notifications(user_id=user_id, limit=limit, categories=categories)
+        summary = fetch_user_notification_summary(
+            user_id=user_id, categories=categories
+        )
+        rows = list_user_notifications(
+            user_id=user_id, limit=limit, categories=categories
+        )
     except Exception:
-        current_app.logger.exception("Gagal mengambil notifikasi buku tamu pengguna aplikasi.")
+        current_app.logger.exception(
+            "Gagal mengambil notifikasi buku tamu pengguna aplikasi."
+        )
         return jsonify(
             {
                 "success": False,
@@ -5499,7 +6240,10 @@ def user_guestbook_notifications() -> Response:
     return jsonify(
         {
             "success": True,
-            "items": [_serialize_user_guestbook_notification(row, fallback_link) for row in rows],
+            "items": [
+                _serialize_user_guestbook_notification(row, fallback_link)
+                for row in rows
+            ],
             "unread_count": int(summary.get("unread_count") or 0),
             "total_count": int(summary.get("total_count") or 0),
             "generated_at": current_jakarta_time().isoformat(timespec="seconds"),
@@ -5522,7 +6266,9 @@ def user_guestbook_notifications_mark_read() -> Response:
 
     raw_ids = payload.get("ids")
     if not isinstance(raw_ids, list):
-        raw_ids = request.form.getlist("ids") or request.form.getlist("notification_ids")
+        raw_ids = request.form.getlist("ids") or request.form.getlist(
+            "notification_ids"
+        )
     if not raw_ids and request.form.get("id"):
         raw_ids = [request.form.get("id")]
 
@@ -5541,10 +6287,17 @@ def user_guestbook_notifications_mark_read() -> Response:
             mark_all=mark_all,
             categories=categories,
         )
-        summary = fetch_user_notification_summary(user_id=user_id, categories=categories)
+        summary = fetch_user_notification_summary(
+            user_id=user_id, categories=categories
+        )
     except Exception:
-        current_app.logger.exception("Gagal memperbarui notifikasi buku tamu pengguna aplikasi.")
-        return jsonify({"success": False, "message": "Gagal memperbarui notifikasi."}), 500
+        current_app.logger.exception(
+            "Gagal memperbarui notifikasi buku tamu pengguna aplikasi."
+        )
+        return (
+            jsonify({"success": False, "message": "Gagal memperbarui notifikasi."}),
+            500,
+        )
 
     return jsonify(
         {
@@ -5589,7 +6342,11 @@ def user_guestbook_history_feed() -> Response:
         date_to=params["date_to"],
         guest_scope=params["guest_scope"],
     )
-    total_pages = max(1, math.ceil(home_total_rows / params["home_chunk_size"])) if home_total_rows else 1
+    total_pages = (
+        max(1, math.ceil(home_total_rows / params["home_chunk_size"]))
+        if home_total_rows
+        else 1
+    )
     has_more = params["home_page"] < total_pages
 
     items_html = render_template(
@@ -5644,11 +6401,17 @@ def user_guestbook_history_stream() -> Response:
             date_to=params["date_to"],
             guest_scope=params["guest_scope"],
         )
-        signatures = {int(row.get("transaction_id") or 0): _build_user_history_signature(row) for row in rows if row.get("transaction_id")}
+        signatures = {
+            int(row.get("transaction_id") or 0): _build_user_history_signature(row)
+            for row in rows
+            if row.get("transaction_id")
+        }
         return rows, signatures
 
     def _event_payload(event_name: str, payload: dict) -> str:
-        return f"event: {event_name}\ndata: {json.dumps(payload, ensure_ascii=False)}\n\n"
+        return (
+            f"event: {event_name}\ndata: {json.dumps(payload, ensure_ascii=False)}\n\n"
+        )
 
     @stream_with_context
     def _generate():
@@ -5666,12 +6429,18 @@ def user_guestbook_history_stream() -> Response:
                     continue
                 if last_signatures.get(tx_id) != next_signatures.get(tx_id):
                     changed_rows.append(_serialize_user_history_row(row))
-            removed_ids = [tx_id for tx_id in last_signatures.keys() if tx_id not in next_signatures]
+            removed_ids = [
+                tx_id
+                for tx_id in last_signatures.keys()
+                if tx_id not in next_signatures
+            ]
             if changed_rows or removed_ids:
                 payload = {
                     "rows": changed_rows,
                     "removed_ids": removed_ids,
-                    "generated_at": current_jakarta_time().isoformat(timespec="seconds"),
+                    "generated_at": current_jakarta_time().isoformat(
+                        timespec="seconds"
+                    ),
                 }
                 yield _event_payload("history_update", payload)
                 last_signatures = next_signatures
@@ -5735,7 +6504,9 @@ def _build_guestbook_ux_summary(rows: list[dict]) -> dict:
                 str(user_id),
                 {
                     "user_id": user_id,
-                    "full_name": row.get("full_name") or row.get("email") or f"User {user_id}",
+                    "full_name": row.get("full_name")
+                    or row.get("email")
+                    or f"User {user_id}",
                     "role": row.get("role") or "",
                     "events": 0,
                 },
@@ -5761,8 +6532,12 @@ def _build_guestbook_ux_summary(rows: list[dict]) -> dict:
             }
         )
 
-    top_events = sorted(event_totals.items(), key=lambda item: item[1], reverse=True)[:12]
-    top_users = sorted(user_totals.values(), key=lambda item: item.get("events", 0), reverse=True)[:10]
+    top_events = sorted(event_totals.items(), key=lambda item: item[1], reverse=True)[
+        :12
+    ]
+    top_users = sorted(
+        user_totals.values(), key=lambda item: item.get("events", 0), reverse=True
+    )[:10]
     sessions.sort(key=lambda item: item.get("updated_at") or datetime.min, reverse=True)
     recent_sessions = sessions[:25]
     total_events = sum(event_totals.values())
@@ -5770,7 +6545,10 @@ def _build_guestbook_ux_summary(rows: list[dict]) -> dict:
     active_24h = 0
     for row in rows:
         updated_at = row.get("updated_at")
-        if isinstance(updated_at, datetime) and (now_jakarta - to_jakarta(updated_at)).total_seconds() <= 86400:
+        if (
+            isinstance(updated_at, datetime)
+            and (now_jakarta - to_jakarta(updated_at)).total_seconds() <= 86400
+        ):
             active_24h += 1
 
     return {
@@ -5793,7 +6571,10 @@ def user_guestbook_ux_metrics_ingest() -> Response:
     if not payload:
         payload = request.form.to_dict()
     if not isinstance(payload, dict):
-        return jsonify({"success": False, "message": "Payload metrik tidak valid."}), 400
+        return (
+            jsonify({"success": False, "message": "Payload metrik tidak valid."}),
+            400,
+        )
 
     metrics_raw = payload.get("metrics")
     if isinstance(metrics_raw, str):
@@ -5815,12 +6596,28 @@ def user_guestbook_ux_metrics_ingest() -> Response:
     if not session_key:
         return jsonify({"success": False, "message": "session_key wajib diisi."}), 400
 
-    events = _normalize_metric_events(metrics_raw.get("events") if isinstance(metrics_raw, dict) else payload.get("events"))
+    events = _normalize_metric_events(
+        metrics_raw.get("events")
+        if isinstance(metrics_raw, dict)
+        else payload.get("events")
+    )
     metric_payload = {
         "events": events,
-        "updated_at": metrics_raw.get("updated_at") if isinstance(metrics_raw, dict) else payload.get("updated_at"),
-        "last_event": metrics_raw.get("last_event") if isinstance(metrics_raw, dict) else payload.get("last_event"),
-        "last_payload": metrics_raw.get("last_payload") if isinstance(metrics_raw, dict) else payload.get("last_payload"),
+        "updated_at": (
+            metrics_raw.get("updated_at")
+            if isinstance(metrics_raw, dict)
+            else payload.get("updated_at")
+        ),
+        "last_event": (
+            metrics_raw.get("last_event")
+            if isinstance(metrics_raw, dict)
+            else payload.get("last_event")
+        ),
+        "last_payload": (
+            metrics_raw.get("last_payload")
+            if isinstance(metrics_raw, dict)
+            else payload.get("last_payload")
+        ),
         "tab": (payload.get("tab") or "").strip(),
     }
 
@@ -5861,17 +6658,25 @@ def admin_screen_recapture_logs() -> Response:
     days = max(1, min(_to_int(request.args.get("days"), 14), 90))
     page = max(1, _to_int(request.args.get("page"), 1))
     per_page = max(10, min(_to_int(request.args.get("per_page"), 50), 200))
-    rows, total_rows = list_screen_recapture_logs(days=days, page=page, per_page=per_page)
+    rows, total_rows = list_screen_recapture_logs(
+        days=days, page=page, per_page=per_page
+    )
     total_pages = max(1, math.ceil(total_rows / per_page)) if total_rows else 1
     if page > total_pages:
         page = total_pages
-        rows, total_rows = list_screen_recapture_logs(days=days, page=page, per_page=per_page)
+        rows, total_rows = list_screen_recapture_logs(
+            days=days, page=page, per_page=per_page
+        )
 
     for row in rows:
         created_at = row.get("created_at")
-        row["created_at_label"] = to_jakarta(created_at, "%d %b %Y, %H:%M WIB") if created_at else "-"
+        row["created_at_label"] = (
+            to_jakarta(created_at, "%d %b %Y, %H:%M WIB") if created_at else "-"
+        )
         try:
-            row["risk_score_percent"] = round(float(row.get("risk_score") or 0) * 100, 1)
+            row["risk_score_percent"] = round(
+                float(row.get("risk_score") or 0) * 100, 1
+            )
         except Exception:
             row["risk_score_percent"] = 0.0
 
@@ -5887,19 +6692,31 @@ def admin_screen_recapture_logs() -> Response:
     )
 
 
-@daftar_tamu_bp.route("/saya/riwayat/<int:transaction_id>/catatan-staf", methods=["POST"])
+@daftar_tamu_bp.route(
+    "/saya/riwayat/<int:transaction_id>/catatan-staf", methods=["POST"]
+)
 @role_required("staff", "coordinator")
 def user_guestbook_staff_note(transaction_id: int) -> Response:
     user = current_user()
     note = (request.form.get("staff_note") or "").strip()
-    staff_note_level = _normalize_staff_note_level(request.form.get("staff_note_level"), default="tindak_lanjut") or "tindak_lanjut"
+    staff_note_level = (
+        _normalize_staff_note_level(
+            request.form.get("staff_note_level"), default="tindak_lanjut"
+        )
+        or "tindak_lanjut"
+    )
     is_ajax = (
         request.headers.get("X-Requested-With") == "XMLHttpRequest"
         or "application/json" in (request.headers.get("Accept") or "").lower()
     )
     if len(note) > 500:
         if is_ajax:
-            return jsonify({"success": False, "message": "Catatan staf maksimal 500 karakter."}), 400
+            return (
+                jsonify(
+                    {"success": False, "message": "Catatan staf maksimal 500 karakter."}
+                ),
+                400,
+            )
         flash("Catatan staf maksimal 500 karakter.", "warning")
         return redirect(_build_user_guestbook_history_redirect(request.form))
 
@@ -5912,7 +6729,9 @@ def user_guestbook_staff_note(transaction_id: int) -> Response:
     if ok:
         message = "Catatan staf berhasil disimpan." if note else "Catatan staf dihapus."
         if is_ajax:
-            updated_label = current_jakarta_time().strftime("%d %b %Y, %H:%M WIB") if note else ""
+            updated_label = (
+                current_jakarta_time().strftime("%d %b %Y, %H:%M WIB") if note else ""
+            )
             signature = "|".join(
                 [
                     str(transaction_id),
@@ -5932,8 +6751,16 @@ def user_guestbook_staff_note(transaction_id: int) -> Response:
                     "status": "approved",
                     "staff_note": note,
                     "staff_note_level": staff_note_level if note else "",
-                    "staff_note_level_label": _STAFF_NOTE_LEVEL_LABEL_MAP.get(staff_note_level, "") if note else "",
-                    "staff_note_level_tone": _STAFF_NOTE_LEVEL_TONE_MAP.get(staff_note_level, "secondary") if note else "secondary",
+                    "staff_note_level_label": (
+                        _STAFF_NOTE_LEVEL_LABEL_MAP.get(staff_note_level, "")
+                        if note
+                        else ""
+                    ),
+                    "staff_note_level_tone": (
+                        _STAFF_NOTE_LEVEL_TONE_MAP.get(staff_note_level, "secondary")
+                        if note
+                        else "secondary"
+                    ),
                     "staff_note_updated_at": updated_label,
                     "signature": signature,
                 }
@@ -5941,13 +6768,19 @@ def user_guestbook_staff_note(transaction_id: int) -> Response:
         flash(message, "success")
     else:
         if is_ajax:
-            return jsonify(
-                {
-                    "success": False,
-                    "message": "Catatan hanya bisa diisi jika foto transaksi sudah diverifikasi.",
-                }
-            ), 400
-        flash("Catatan hanya bisa diisi jika foto transaksi sudah diverifikasi.", "warning")
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "message": "Catatan hanya bisa diisi jika foto transaksi sudah diverifikasi.",
+                    }
+                ),
+                400,
+            )
+        flash(
+            "Catatan hanya bisa diisi jika foto transaksi sudah diverifikasi.",
+            "warning",
+        )
     return redirect(_build_user_guestbook_history_redirect(request.form))
 
 
@@ -5958,7 +6791,9 @@ def sekolah_guest_search() -> Response:
     limit = _to_int(request.args.get("limit"), 20)
     results = list_guest_candidates(query, limit=limit)
     for item in results:
-        item["profile_photo_url"] = _build_photo_url(item.get("profile_photo_path"), external=False)
+        item["profile_photo_url"] = _build_photo_url(
+            item.get("profile_photo_path"), external=False
+        )
     return jsonify({"success": True, "results": results})
 
 
@@ -6071,7 +6906,10 @@ def admin_update_general_guest(guest_id: int) -> Response:
             ),
         )
         if cur.rowcount == 0:
-            return jsonify({"success": False, "message": "Tamu umum tidak ditemukan."}), 404
+            return (
+                jsonify({"success": False, "message": "Tamu umum tidak ditemukan."}),
+                404,
+            )
     return jsonify({"success": True})
 
 
@@ -6082,7 +6920,10 @@ def sekolah_area_contacts() -> Response:
     user = current_user()
     school = _fetch_school_for_user(user.get("id"))
     if not school:
-        return jsonify({"success": False, "message": "Akun sekolah belum terhubung."}), 400
+        return (
+            jsonify({"success": False, "message": "Akun sekolah belum terhubung."}),
+            400,
+        )
     message = None
     transaction_id_raw = request.args.get("transaction_id")
     if transaction_id_raw:
@@ -6103,7 +6944,9 @@ def sekolah_area_contacts() -> Response:
                 photo_path = detail.get("photo_path")
                 if photo_path:
                     photo_name = photo_path.split("uploads/portal/")[-1]
-                    photo_url = url_for("portal.uploaded_file", filename=photo_name, _external=True)
+                    photo_url = url_for(
+                        "portal.uploaded_file", filename=photo_name, _external=True
+                    )
                 message_lines = [
                     f"Halo, kami dari {school.get('name')} (NPSN {school.get('npsn')}) baru mengisi buku tamu.",
                     f"Tamu: {guest_text}",
@@ -6116,13 +6959,18 @@ def sekolah_area_contacts() -> Response:
     return jsonify({"success": True, "contacts": contacts, "user_school": school})
 
 
-@daftar_tamu_bp.route("/sekolah/umum-transactions/<int:transaction_id>/approve", methods=["POST"])
+@daftar_tamu_bp.route(
+    "/sekolah/umum-transactions/<int:transaction_id>/approve", methods=["POST"]
+)
 @role_required("sekolah")
 def sekolah_approve_public_transaction(transaction_id: int) -> Response:
     user = current_user()
     school = _fetch_school_for_user(user.get("id"))
     if not school:
-        return jsonify({"success": False, "message": "Akun sekolah belum terhubung."}), 400
+        return (
+            jsonify({"success": False, "message": "Akun sekolah belum terhubung."}),
+            400,
+        )
     reviewer_notes = (request.form.get("reviewer_notes") or "").strip()
     success = update_public_transaction_status(
         transaction_id=transaction_id,
@@ -6141,17 +6989,26 @@ def sekolah_approve_public_transaction(transaction_id: int) -> Response:
             is_public=True,
         )
     except Exception:
-        current_app.logger.exception("Gagal mengirim notifikasi Telegram status buku tamu umum.")
-    return redirect(url_for("daftar_tamu.sekolah_public_web", _anchor="publicGuestbook"))
+        current_app.logger.exception(
+            "Gagal mengirim notifikasi Telegram status buku tamu umum."
+        )
+    return redirect(
+        url_for("daftar_tamu.sekolah_public_web", _anchor="publicGuestbook")
+    )
 
 
-@daftar_tamu_bp.route("/sekolah/umum-transactions/<int:transaction_id>/reject", methods=["POST"])
+@daftar_tamu_bp.route(
+    "/sekolah/umum-transactions/<int:transaction_id>/reject", methods=["POST"]
+)
 @role_required("sekolah")
 def sekolah_reject_public_transaction(transaction_id: int) -> Response:
     user = current_user()
     school = _fetch_school_for_user(user.get("id"))
     if not school:
-        return jsonify({"success": False, "message": "Akun sekolah belum terhubung."}), 400
+        return (
+            jsonify({"success": False, "message": "Akun sekolah belum terhubung."}),
+            400,
+        )
     reviewer_notes = (request.form.get("reviewer_notes") or "").strip()
     success = update_public_transaction_status(
         transaction_id=transaction_id,
@@ -6170,8 +7027,12 @@ def sekolah_reject_public_transaction(transaction_id: int) -> Response:
             is_public=True,
         )
     except Exception:
-        current_app.logger.exception("Gagal mengirim notifikasi Telegram status buku tamu umum.")
-    return redirect(url_for("daftar_tamu.sekolah_public_web", _anchor="publicGuestbook"))
+        current_app.logger.exception(
+            "Gagal mengirim notifikasi Telegram status buku tamu umum."
+        )
+    return redirect(
+        url_for("daftar_tamu.sekolah_public_web", _anchor="publicGuestbook")
+    )
 
 
 @daftar_tamu_bp.route("/sekolah/umum-transactions/bulk-approve", methods=["POST"])
@@ -6217,7 +7078,9 @@ def sekolah_bulk_approve_public_transactions() -> Response:
                     is_public=True,
                 )
             except Exception:
-                current_app.logger.exception("Gagal mengirim notifikasi Telegram status buku tamu umum.")
+                current_app.logger.exception(
+                    "Gagal mengirim notifikasi Telegram status buku tamu umum."
+                )
 
     if success_count:
         flash(f"{success_count} pengajuan berhasil disetujui.", "success")
@@ -6270,7 +7133,9 @@ def sekolah_bulk_reject_public_transactions() -> Response:
                     is_public=True,
                 )
             except Exception:
-                current_app.logger.exception("Gagal mengirim notifikasi Telegram status buku tamu umum.")
+                current_app.logger.exception(
+                    "Gagal mengirim notifikasi Telegram status buku tamu umum."
+                )
 
     if success_count:
         flash(f"{success_count} pengajuan berhasil ditolak.", "success")
@@ -6286,7 +7151,10 @@ def sekolah_guestbook_qr() -> Response:
     user = current_user()
     school = _fetch_school_for_user(user.get("id"))
     if not school:
-        return jsonify({"success": False, "message": "Akun sekolah belum terhubung."}), 400
+        return (
+            jsonify({"success": False, "message": "Akun sekolah belum terhubung."}),
+            400,
+        )
 
     fmt = (request.args.get("format") or "png").strip().lower()
     paper = (request.args.get("paper") or "a4").strip().lower()
@@ -6298,29 +7166,52 @@ def sekolah_guestbook_qr() -> Response:
     target_url = f"{_web_aska_base_url()}/buku-tamu/{school.get('npsn')}"
     qr_payload = _get_guestbook_qr_payload(school.get("id"))
     qr_base64 = None
-    if qr_payload and qr_payload.get("png_base64") and qr_payload.get("url") == target_url:
+    if (
+        qr_payload
+        and qr_payload.get("png_base64")
+        and qr_payload.get("url") == target_url
+    ):
         qr_base64 = qr_payload.get("png_base64")
     if not qr_base64:
-        return jsonify({"success": False, "message": "QR belum dibuat. Silakan generate terlebih dahulu."}), 400
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "QR belum dibuat. Silakan generate terlebih dahulu.",
+                }
+            ),
+            400,
+        )
     try:
         qr_bytes = base64.b64decode(qr_base64)
         qr_img = Image.open(BytesIO(qr_bytes)).convert("RGBA")
     except Exception as exc:
-        return jsonify({"success": False, "message": f"QR tersimpan tidak valid: {exc}"}), 500
+        return (
+            jsonify({"success": False, "message": f"QR tersimpan tidak valid: {exc}"}),
+            500,
+        )
 
     if fmt == "pdf":
-        template_path = Path(__file__).resolve().parent.parent / "static" / "qr" / "new_template.png"
+        template_path = (
+            Path(__file__).resolve().parent.parent
+            / "static"
+            / "qr"
+            / "new_template.png"
+        )
         if not template_path.exists():
-            return jsonify({"success": False, "message": "Template QR tidak ditemukan."}), 500
+            return (
+                jsonify({"success": False, "message": "Template QR tidak ditemukan."}),
+                500,
+            )
 
         canvas = Image.open(template_path).convert("RGBA")
         base_w, base_h = 4419, 6250  # target high resolution
-        
+
         # Upscale template if it's smaller than target base resolution
         # This ensures text, logos, and QR are rendered at high definition
         if canvas.width < base_w:
-             canvas = canvas.resize((base_w, base_h), Image.LANCZOS)
-             
+            canvas = canvas.resize((base_w, base_h), Image.LANCZOS)
+
         scale = canvas.width / base_w
 
         # Posisi & ukuran elemen (berdasarkan contoh.svg, diskalakan)
@@ -6347,11 +7238,14 @@ def sekolah_guestbook_qr() -> Response:
         canvas.alpha_composite(qr_resized, (qr_x, qr_y))
 
         draw = ImageDraw.Draw(canvas)
+
         def _font(path: str, size: int):
             # Try finding bundled font first for server compatibility
             root_dir = Path(__file__).resolve().parent.parent.parent
-            bundled_font = root_dir / "dashboard" / "static" / "fonts" / "Roboto-Bold.ttf"
-            
+            bundled_font = (
+                root_dir / "dashboard" / "static" / "fonts" / "Roboto-Bold.ttf"
+            )
+
             # List of potential font paths to try
             font_candidates = [
                 bundled_font,
@@ -6359,17 +7253,17 @@ def sekolah_guestbook_qr() -> Response:
                 f"/System/Library/Fonts/Supplemental/{path}",
                 f"/System/Library/Fonts/{path}",
                 f"/Library/Fonts/{path}",
-                "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", # Linux typical
-                "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf" # Linux typical
+                "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",  # Linux typical
+                "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",  # Linux typical
             ]
-            
+
             for font_path in font_candidates:
                 try:
                     if os.path.exists(str(font_path)):
                         return ImageFont.truetype(str(font_path), int(size * scale))
                 except Exception:
                     continue
-            
+
             # Fallback if nothing works
             print("WARNING: All font paths failed, using default font (tiny)")
             return ImageFont.load_default()
@@ -6379,8 +7273,13 @@ def sekolah_guestbook_qr() -> Response:
         font_small_value = _font("Arial Bold.ttf", 80)
 
         cx = canvas.width // 2
-        draw.text((cx, int(name_y_base * scale)), (school.get("name") or "Nama Sekolah").upper(),
-                  fill=(60, 70, 180, 255), font=font_name, anchor="mm")
+        draw.text(
+            (cx, int(name_y_base * scale)),
+            (school.get("name") or "Nama Sekolah").upper(),
+            fill=(60, 70, 180, 255),
+            font=font_name,
+            anchor="mm",
+        )
 
         meta = school.get("metadata") or {}
         if isinstance(meta, str):
@@ -6388,6 +7287,7 @@ def sekolah_guestbook_qr() -> Response:
                 meta = json.loads(meta)
             except json.JSONDecodeError:
                 meta = {}
+
         def _shorten(text: str, max_len: int = 40) -> str:
             text = text or "-"
             return text if len(text) <= max_len else text[: max_len - 3] + "..."
@@ -6395,14 +7295,14 @@ def sekolah_guestbook_qr() -> Response:
         website_text = _shorten(meta.get("website") or "-")
         # Remove protocol and www
         for prefix in ["https://", "http://", "www."]:
-             if website_text.lower().startswith(prefix):
-                 website_text = website_text[len(prefix):]
+            if website_text.lower().startswith(prefix):
+                website_text = website_text[len(prefix) :]
         # Remove trailing slash
         website_text = website_text.rstrip("/")
 
         instagram_text = _shorten(meta.get("instagram") or meta.get("ig") or "-")
         if instagram_text != "-" and not instagram_text.startswith("@"):
-             instagram_text = f"@{instagram_text}"
+            instagram_text = f"@{instagram_text}"
 
         web_value_y_base = 5190
         ig_value_y_base = 5190
@@ -6413,46 +7313,57 @@ def sekolah_guestbook_qr() -> Response:
         web_x_base = 1200
         ig_x_base = 2600
 
-        draw.text((int(web_x_base * scale), int(web_value_y_base * scale)), website_text,
-                  fill=(0, 0, 0, 255), font=font_small_value, anchor="lm")
-        draw.text((int(ig_x_base * scale), int(ig_value_y_base * scale)), instagram_text,
-                  fill=(0, 0, 0, 255), font=font_small_value, anchor="lm")
+        draw.text(
+            (int(web_x_base * scale), int(web_value_y_base * scale)),
+            website_text,
+            fill=(0, 0, 0, 255),
+            font=font_small_value,
+            anchor="lm",
+        )
+        draw.text(
+            (int(ig_x_base * scale), int(ig_value_y_base * scale)),
+            instagram_text,
+            fill=(0, 0, 0, 255),
+            font=font_small_value,
+            anchor="lm",
+        )
 
         logo_img = _load_school_logo(school)
         if logo_img:
             # Logo dimensions
             logo_size = int(logo_diameter_base * scale)
-            
+
             # Process logo
             logo_img = logo_img.convert("RGBA")
-            
+
             # Create ultra high quality circular mask
             # Render at 4x size then downscale for maximum anti-aliasing
             mask_scale_factor = 4
             mask_size = logo_size * mask_scale_factor
-            
+
             mask = Image.new("L", (mask_size, mask_size), 0)
             mask_draw = ImageDraw.Draw(mask)
             mask_draw.ellipse((0, 0, mask_size, mask_size), fill=255)
-            
+
             # Downscale mask perfectly
             mask = mask.resize((logo_size, logo_size), Image.LANCZOS)
-            
+
             # Resize logo to fit
             # First resize to mask_size (upscale if needed) then downscale with LANCZOS
             logo_img = logo_img.resize((mask_size, mask_size), Image.LANCZOS)
             logo_img = logo_img.resize((logo_size, logo_size), Image.LANCZOS)
-            
+
             # Enhance sharpness slightly after downscaling to prevent blur
             from PIL import ImageFilter
+
             logo_img = logo_img.filter(ImageFilter.SHARPEN)
-            
+
             # Calculate position to center in the circle
             logo_pos = (
                 int(logo_center_base[0] * scale - logo_size / 2),
-                int(logo_center_base[1] * scale - logo_size / 2)
+                int(logo_center_base[1] * scale - logo_size / 2),
             )
-            
+
             # Paste logo with mask
             canvas.paste(logo_img, logo_pos, mask)
 
@@ -6489,7 +7400,7 @@ def sekolah_generate_guestbook_qr() -> Response:
         return redirect(url_for("daftar_tamu.sekolah_public_web"))
 
     target_url = f"{_web_aska_base_url()}/buku-tamu/{school.get('npsn')}"
-    
+
     # Resolve logo path
     logo_path = None
     logo_url = school.get("logo_url")
@@ -6528,7 +7439,10 @@ def sekolah_create_transaction() -> Response:
     user = current_user()
     school = _fetch_school_for_user(user["id"])
     if not school:
-        return jsonify({"success": False, "message": "Akun sekolah belum terhubung."}), 400
+        return (
+            jsonify({"success": False, "message": "Akun sekolah belum terhubung."}),
+            400,
+        )
 
     sudin_ids, umum_ids = _parse_guest_payload(request.form.get("guest_payload"))
     if not sudin_ids and not umum_ids:
@@ -6550,7 +7464,10 @@ def sekolah_create_transaction() -> Response:
         return jsonify({"success": False, "message": "Lokasi GPS tidak valid."}), 400
 
     if not (-90 <= latitude <= 90 and -180 <= longitude <= 180):
-        return jsonify({"success": False, "message": "Lokasi GPS di luar jangkauan."}), 400
+        return (
+            jsonify({"success": False, "message": "Lokasi GPS di luar jangkauan."}),
+            400,
+        )
 
     if "photo" not in request.files:
         return jsonify({"success": False, "message": "Foto wajib diunggah."}), 400
@@ -6570,8 +7487,7 @@ def sekolah_create_transaction() -> Response:
     if duplicate_rows:
         try:
             duplicate_repeat_count = max(
-                int(row.get("approved_count") or 0) + 1
-                for row in duplicate_rows
+                int(row.get("approved_count") or 0) + 1 for row in duplicate_rows
             )
         except Exception:
             duplicate_repeat_count = 0
@@ -6580,14 +7496,17 @@ def sekolah_create_transaction() -> Response:
             school_name=school.get("name"),
             duplicate_rows=duplicate_rows,
         )
-        return jsonify(
-            {
-                "success": False,
-                "requires_confirmation": True,
-                "message": warning_message,
-                "duplicate_guest_count": len(duplicate_rows),
-            }
-        ), 409
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "requires_confirmation": True,
+                    "message": warning_message,
+                    "duplicate_guest_count": len(duplicate_rows),
+                }
+            ),
+            409,
+        )
 
     try:
         stamp_result = stamp_guestbook_photo(
@@ -6598,7 +7517,10 @@ def sekolah_create_transaction() -> Response:
             school_label=school.get("name"),
         )
     except Exception as exc:
-        return jsonify({"success": False, "message": f"Gagal memproses foto: {exc}"}), 500
+        return (
+            jsonify({"success": False, "message": f"Gagal memproses foto: {exc}"}),
+            500,
+        )
 
     metadata = {
         "accuracy": float(accuracy_raw) if accuracy_raw else None,
@@ -6714,8 +7636,9 @@ def sekolah_create_transaction() -> Response:
 
     if pending_transaction_id:
         try:
-            from dashboard.telegram_notifications import notify_guestbook_request
             import threading
+
+            from dashboard.telegram_notifications import notify_guestbook_request
 
             detail = get_transaction_detail(pending_transaction_id)
             photo_links = _build_guestbook_photo_links(
@@ -6723,7 +7646,7 @@ def sekolah_create_transaction() -> Response:
                 detail=detail,
             )
             guest_names = _extract_guest_names_from_detail(detail)
-            
+
             # Use current_app.app_context() inside the thread
             app = current_app._get_current_object()
 
@@ -6744,7 +7667,9 @@ def sekolah_create_transaction() -> Response:
                             photo_file_path=(detail or {}).get("photo_path"),
                         )
                     except Exception:
-                        app.logger.exception("Gagal mengirim notifikasi buku tamu di background thread.")
+                        app.logger.exception(
+                            "Gagal mengirim notifikasi buku tamu di background thread."
+                        )
 
             threading.Thread(target=_send_notification, daemon=True).start()
 

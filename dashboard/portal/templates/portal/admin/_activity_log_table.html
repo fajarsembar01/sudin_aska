@@ -154,7 +154,7 @@
             } else if (targetType === 'SCHOOL') {
                 push('Setup Data Sekolah', '/portal/admin/setup');
             } else if (targetType === 'USER') {
-                push('Manajemen User', '/portal/settings/users');
+                push('Manajemen User', '{{ url_for("pengaturan.manage_users") }}');
             } else if (targetType === 'MONEV_TEAM' || targetType === 'MONEV_TEAM_MEMBER' || targetType === 'MONEV_MEMBER_REQUEST') {
                 push('Tim Monev', '/portal/settings/monev-teams');
             } else if (targetType === 'STAFF_ASSIGNMENT' || targetType === 'ASSIGNMENT_REQUEST') {

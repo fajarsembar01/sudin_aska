@@ -1,0 +1,45 @@
+{% extends "supporter/base_supporter.html" %}
+
+{% block portal_content %}
+<section class="supporter-hero mb-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+    <div>
+      <h1 class="h3 fw-bold mb-1">Leaderboard Supporter</h1>
+      <p class="text-muted mb-0">Peringkat global staff berdasarkan poin submission yang sudah terverifikasi.</p>
+    </div>
+    <a class="btn btn-outline-secondary" href="{{ url_for('supporter.landing') }}"><i class="bi bi-arrow-left me-1"></i>Dashboard</a>
+  </div>
+</section>
+
+<section class="supporter-panel p-3">
+  <div class="table-responsive">
+    <table class="table supporter-table align-middle mb-0">
+      <thead>
+        <tr>
+          <th>Peringkat</th>
+          <th>Staff</th>
+          <th>Task Verified</th>
+          <th>Total Poin</th>
+          <th>Terakhir Verified</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in leaderboard %}
+        <tr>
+          <td><span class="supporter-rank">{{ row.rank }}</span></td>
+          <td>
+            <div class="fw-semibold">{{ row.staff_name }}</div>
+            <div class="text-muted small">{{ row.staff_email }}{% if row.staff_nip %} · NIP {{ row.staff_nip }}{% endif %}</div>
+          </td>
+          <td>{{ row.verified_count }}</td>
+          <td><span class="badge text-bg-success">{{ row.total_points }} poin</span></td>
+          <td class="text-muted small">{{ row.last_verified_at|jakarta('%d %b %Y %H:%M') if row.last_verified_at else '-' }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="text-center text-muted py-4">Belum ada staff dengan poin terverifikasi.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

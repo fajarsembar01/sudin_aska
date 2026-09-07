@@ -476,6 +476,7 @@
             </div>
             <div class="modal-body">
                 <p class="mb-2">Persyaratan submit belum terpenuhi:</p>
+                <p class="small text-muted mb-2">Klik nama aspek untuk langsung menuju lokasi aspek yang belum dinilai.</p>
                 <ul class="mb-0 ps-3 small" id="submitRequirementList"></ul>
             </div>
             <div class="modal-footer">
@@ -512,6 +513,17 @@
         display: flex;
         align-items: center;
         gap: 0.35rem;
+    }
+
+    .aspect-item {
+        scroll-margin-top: 88px;
+    }
+
+    .aspect-item.aspect-item-highlight {
+        background: rgba(13, 110, 253, 0.08);
+        border-radius: 12px;
+        box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.15);
+        transition: background-color 0.2s ease, box-shadow 0.2s ease;
     }
 
     .room-score-badge {
@@ -1407,14 +1419,78 @@
     }
 
 
-    function hasUnscoredAspect() {
+    function getUnscoredAspectItems() {
         var groups = document.querySelectorAll('.score-group');
+        var missing = [];
         for (var i = 0; i < groups.length; i++) {
             if (!groups[i].querySelector('.score-btn.selected')) {
-                return true;
+                var roomItem = groups[i].closest('.room-item');
+                var aspectItem = groups[i].closest('.aspect-item');
+                var roomTitle = roomItem ? roomItem.querySelector('.room-header h5') : null;
+                var aspectNameEl = aspectItem ? aspectItem.querySelector('.aspect-name') : null;
+                missing.push({
+                    roomId: groups[i].dataset.schoolRoomId || '',
+                    roomName: roomTitle ? roomTitle.textContent.trim() : '',
+                    aspectId: groups[i].dataset.aspectId || '',
+                    aspectName: aspectNameEl ? aspectNameEl.textContent.trim() : ''
+                });
             }
         }
-        return false;
+        return missing;
+    }
+
+    function clearRoomSearchFilter() {
+        var searchInput = document.getElementById('roomSearchAssessment');
+        if (searchInput && searchInput.value) {
+            searchInput.value = '';
+            searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+    }
+
+    function highlightAspectItem(aspectEl) {
+        if (!aspectEl) return;
+        aspectEl.classList.add('aspect-item-highlight');
+        window.setTimeout(function () {
+            aspectEl.classList.remove('aspect-item-highlight');
+        }, 2200);
+    }
+
+    function openAssessmentAspect(roomId, aspectId) {
+        if (!roomId || !aspectId) return;
+
+        clearRoomSearchFilter();
+
+        var roomCollapse = document.getElementById('room' + roomId);
+        var aspectEl = document.getElementById('aspect-room-' + roomId + '-' + aspectId);
+        var roomHeader = roomCollapse ? roomCollapse.previousElementSibling : null;
+
+        var scrollToAspect = function () {
+            if (!aspectEl) return;
+            highlightAspectItem(aspectEl);
+            aspectEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        };
+
+        if (roomCollapse && window.bootstrap && window.bootstrap.Collapse) {
+            if (roomCollapse.classList.contains('show')) {
+                scrollToAspect();
+                return;
+            }
+
+            roomCollapse.addEventListener('shown.bs.collapse', function onShown() {
+                roomCollapse.removeEventListener('shown.bs.collapse', onShown);
+                window.setTimeout(scrollToAspect, 50);
+            });
+            bootstrap.Collapse.getOrCreateInstance(roomCollapse, { toggle: false }).show();
+            if (roomHeader && typeof roomHeader.scrollIntoView === 'function') {
+                roomHeader.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+            return;
+        }
+
+        if (roomCollapse) {
+            roomCollapse.classList.add('show');
+        }
+        scrollToAspect();
     }
 
     updatePhotoRequirementUI();
@@ -1455,7 +1531,8 @@
                 }
 
                 var missingPhoto = requiredPhotoCount > 0 && photoRoomSet.size < requiredPhotoCount;
-                var missingScore = hasUnscoredAspect();
+                var missingScoreItems = getUnscoredAspectItems();
+                var missingScore = missingScoreItems.length > 0;
                 if (missingPhoto || missingScore) {
                     event.preventDefault();
                     var listEl = document.getElementById('submitRequirementList');
@@ -1468,9 +1545,37 @@
                             listEl.appendChild(liPhoto);
                         }
                         if (missingScore) {
-                            var liScore = document.createElement('li');
-                            liScore.textContent = 'Terdapat aspek yang masih belum dinilai.';
-                            listEl.appendChild(liScore);
+                            var liScoreSummary = document.createElement('li');
+                            liScoreSummary.textContent =
+                                'Terdapat ' + missingScoreItems.length + ' aspek yang masih belum dinilai.';
+                            listEl.appendChild(liScoreSummary);
+
+                            missingScoreItems.forEach(function (item) {
+                                var liScore = document.createElement('li');
+                                liScore.className = 'mt-1';
+
+                                var link = document.createElement('a');
+                                link.href = '#aspect-room-' + item.roomId + '-' + item.aspectId;
+                                link.className = 'link-primary text-decoration-underline';
+                                link.textContent = (item.roomName ? item.roomName + ' - ' : '') + item.aspectName;
+                                link.addEventListener('click', function (linkEvent) {
+                                    linkEvent.preventDefault();
+                                    var modalEl = document.getElementById('photoRequirementModal');
+                                    if (modalEl && window.bootstrap && window.bootstrap.Modal) {
+                                        var modalInstance = bootstrap.Modal.getInstance(modalEl);
+                                        if (modalInstance) {
+                                            modalInstance.hide();
+                                        }
+                                    }
+                                    window.setTimeout(function () {
+                                        openAssessmentAspect(item.roomId, item.aspectId);
+                                    }, 150);
+                                });
+
+                                liScore.appendChild(document.createTextNode('Aspek belum dinilai: '));
+                                liScore.appendChild(link);
+                                listEl.appendChild(liScore);
+                            });
                         }
                     }
                     if (window.bootstrap) {
@@ -1488,7 +1593,7 @@
                         );
                     }
                     if (missingScore) {
-                        fallbackMessages.push('Terdapat ruangan yang masih belum dinilai.');
+                        fallbackMessages.push('Terdapat ' + missingScoreItems.length + ' aspek yang masih belum dinilai.');
                     }
                     showToast(fallbackMessages.join(' '));
                     return;

@@ -1,0 +1,130 @@
+{% extends "supporter/base_supporter.html" %}
+
+{% block portal_content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <a href="{{ url_for('supporter.admin_tasks') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Kembali</a>
+  <div class="d-flex flex-wrap gap-2">
+    {% for status_key in ['active', 'paused', 'archived'] %}
+    <form method="post" action="{{ url_for('supporter.admin_task_status', task_id=task.id) }}">
+      <input type="hidden" name="status" value="{{ status_key }}">
+      <button class="btn btn-sm {% if task.status == status_key %}btn-primary{% else %}btn-outline-primary{% endif %}" type="submit">
+        {{ supporter_task_status_labels.get(status_key, status_key) }}
+      </button>
+    </form>
+    {% endfor %}
+  </div>
+</div>
+
+<section class="supporter-panel p-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
+    <div>
+      <h1 class="h3 fw-bold mb-1">Edit Task</h1>
+      <p class="text-muted mb-0">{{ task.title }}</p>
+    </div>
+    <span class="badge text-bg-secondary">{{ supporter_task_status_labels.get(task.status, task.status) }}</span>
+  </div>
+
+  <form method="post" class="row g-3 supporter-task-form">
+    <div class="col-md-8">
+      <label class="form-label">Judul</label>
+      <input class="form-control" name="title" required value="{{ task.title or '' }}">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Nama Kampanye</label>
+      <input class="form-control" name="campaign_name" value="{{ task.campaign_name or '' }}">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Platform</label>
+      <select class="form-select" name="platform">
+        {% for key, label in platform_options %}
+        <option value="{{ key }}" {% if task.platform == key %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Poin per Aksi</label>
+      <input class="form-control js-supporter-points" name="base_points" type="number" min="0" value="{{ task.base_points or 0 }}">
+      <div class="form-text">Total mengikuti jumlah aksi.</div>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Total Poin</label>
+      <input class="form-control js-supporter-total-points" type="text" value="{{ task.total_task_points }}" readonly tabindex="-1">
+      <div class="form-text">Otomatis dari poin per aksi x aksi.</div>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Penalty Telat (%)</label>
+      <input class="form-control" name="late_penalty_percent" type="number" min="0" max="100" step="0.01" value="{{ task.late_penalty_percent or 0 }}">
+    </div>
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
+        <label class="form-label mb-0">Aksi</label>
+        <span class="form-text m-0">Centang semua aksi yang harus diselesaikan dalam task ini</span>
+      </div>
+      <div class="supporter-action-grid">
+        {% for key, label in action_options %}
+        <label class="supporter-check-pill">
+          <input class="form-check-input" type="checkbox" name="action_types" value="{{ key }}" {% if key in selected_action_types %}checked{% endif %}>
+          <span>{{ label }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">URL Target</label>
+      <input class="form-control" name="target_url" type="url" value="{{ task.target_url or '' }}">
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Akun Target</label>
+      <input class="form-control" name="target_account" value="{{ task.target_account or '' }}">
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Mulai</label>
+      <input class="form-control" name="start_at" type="datetime-local" value="{{ datetime_local_value(task.start_at) }}">
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Deadline Poin Penuh</label>
+      <input class="form-control" name="deadline_at" type="datetime-local" value="{{ datetime_local_value(task.deadline_at) }}">
+      <div class="form-text">Lewat waktu ini poin dikurangi sesuai penalty.</div>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Waktu Berakhir</label>
+      <input class="form-control" name="end_at" type="datetime-local" value="{{ datetime_local_value(task.end_at) }}">
+      <div class="form-text">Opsional. Lewat waktu ini staff tidak bisa submit. Kosongkan jika tidak ada batas waktu.</div>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Status</label>
+      <select class="form-select" name="status">
+        {% for item in task_statuses %}
+        <option value="{{ item }}" {% if task.status == item %}selected{% endif %}>{{ supporter_task_status_labels.get(item, item) }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-8">
+      <label class="form-label">Verifikasi</label>
+      <select class="form-select" name="verification_mode">
+        <option value="manual_telegram" {% if task.verification_mode == 'manual_telegram' %}selected{% endif %}>Manual via Telegram Supporter</option>
+        <option value="platform_api_planned" {% if task.verification_mode == 'platform_api_planned' %}selected{% endif %}>Otomatis API platform (rencana)</option>
+      </select>
+    </div>
+    <div class="col-12">
+      <label class="form-label">Deskripsi</label>
+      <textarea class="form-control" name="description" rows="3">{{ task.description or '' }}</textarea>
+    </div>
+    <div class="col-12">
+      <label class="form-label">Instruksi Staff</label>
+      <textarea class="form-control" name="instructions" rows="4">{{ task.instructions or '' }}</textarea>
+    </div>
+    <div class="col-12">
+      <div class="d-flex flex-wrap gap-3">
+        <label class="form-check"><input class="form-check-input" type="checkbox" name="allow_late_submission" {% if task.allow_late_submission %}checked{% endif %}> Boleh submit setelah deadline sampai waktu berakhir</label>
+        <label class="form-check"><input class="form-check-input" type="checkbox" name="requires_proof_url" {% if task.requires_proof_url %}checked{% endif %}> Wajib link bukti</label>
+        <label class="form-check"><input class="form-check-input" type="checkbox" name="requires_proof_text" {% if task.requires_proof_text %}checked{% endif %}> Wajib catatan</label>
+        <label class="form-check"><input class="form-check-input" type="checkbox" name="requires_screenshot" {% if task.requires_screenshot %}checked{% endif %}> Wajib screenshot/file</label>
+      </div>
+    </div>
+    <div class="col-12">
+      <button class="btn btn-primary" type="submit"><i class="bi bi-save me-1"></i>Simpan Perubahan</button>
+    </div>
+  </form>
+</section>
+{% endblock %}

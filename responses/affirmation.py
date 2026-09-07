@@ -8,8 +8,9 @@ AFFIRMATION_MESSAGES = [
     "Anda sudah berada di jalur yang benar, {user_name}. Fokus pada kemajuan, bukan kesempurnaan. Setiap kesalahan adalah pelajaran berharga.",
     "Pasti bisa, {user_name}! Potensi dalam diri Anda tidak terbatas. Terus asah kemampuan Anda dan jangan takut untuk mencoba hal-hal baru.",
     "Saya setuju, {user_name}. Pola pikir positif adalah kunci. Anggap setiap hari sebagai lembaran baru untuk diisi dengan pengetahuan dan pengalaman positif.",
-    "Ingatlah ini, {user_name}: Anda memiliki semua yang diperlukan untuk berhasil. Teruslah percaya pada diri sendiri dan kemampuan Anda untuk belajar dan beradaptasi."
+    "Ingatlah ini, {user_name}: Anda memiliki semua yang diperlukan untuk berhasil. Teruslah percaya pada diri sendiri dan kemampuan Anda untuk belajar dan beradaptasi.",
 ]
+
 
 def get_affirmation_response(user_name: str = "Anda") -> str:
     """
@@ -25,10 +26,11 @@ def get_affirmation_response(user_name: str = "Anda") -> str:
     message = random.choice(AFFIRMATION_MESSAGES)
     return message.format(user_name=user_name)
 
+
 # Contoh penggunaan
-if __name__ == '__main__':
+if __name__ == "__main__":
     print("Contoh respon untuk pertanyaan negatif ('Apakah saya cukup baik?'):")
     print(get_affirmation_response("Siswa"))
-    
+
     print("\nContoh respon untuk pertanyaan positif ('Saya pasti bisa!'):")
     print(get_affirmation_response("Pelajar"))

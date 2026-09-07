@@ -100,7 +100,7 @@ _CRITICAL_KEYWORDS: tuple[str, ...] = (
     "potong tangan",
     "minum obat banyak",
     "gantung diri",
-     # --- Penambahan Gaya Gen Z & Variasi ---
+    # --- Penambahan Gaya Gen Z & Variasi ---
     "gamau hidup lagi",
     "gak mau hidup lagi",
     "ga mau hidup lagi",
@@ -108,14 +108,15 @@ _CRITICAL_KEYWORDS: tuple[str, ...] = (
     "mending mati",
     "pengen hilang",
     "pengen udahan aja",
-    "silet", # Sering digunakan sebagai kata benda untuk self-harm
-    "cutter", "cuter",
+    "silet",  # Sering digunakan sebagai kata benda untuk self-harm
+    "cutter",
+    "cuter",
     "sayat tangan",
     "sayat nadi",
-    "loncat dari", # Frasa pemicu untuk loncat dari ketinggian
+    "loncat dari",  # Frasa pemicu untuk loncat dari ketinggian
     "terjun dari",
     "tabrakin diri",
-    "sh", # Singkatan umum untuk self-harm
+    "sh",  # Singkatan umum untuk self-harm
 )
 
 _STOP_KEYWORDS: tuple[str, ...] = (
@@ -140,7 +141,9 @@ _STOP_KEYWORDS: tuple[str, ...] = (
     "stop",
 )
 
-_LLM_MODEL = os.getenv("ASKA_PSYCH_MODEL") or os.getenv("ASKA_QA_MODEL") or "-3.1-8b-instant"
+_LLM_MODEL = (
+    os.getenv("ASKA_PSYCH_MODEL") or os.getenv("ASKA_QA_MODEL") or "-3.1-8b-instant"
+)
 _LLM_TEMPERATURE = float(os.getenv("ASKA_PSYCH_TEMPERATURE", "0.5"))
 _LLM_MAX_OUTPUT_TOKENS = int(os.getenv("ASKA_PSYCH_MAX_TOKENS", "320"))
 _llm_client: Optional[OpenAI] = None
@@ -168,7 +171,9 @@ def _get_llm_client() -> Optional[OpenAI]:
             or os.getenv("OPENAI_API_KEY")
         )
         if not api_key:
-            print("[PSYCH] GROQ_API_KEY atau OPENAI_API_KEY belum di-set; fitur psikologis dimatikan.")
+            print(
+                "[PSYCH] GROQ_API_KEY atau OPENAI_API_KEY belum di-set; fitur psikologis dimatikan."
+            )
             _llm_client_failed = True
             return None
         try:
@@ -180,7 +185,9 @@ def _get_llm_client() -> Optional[OpenAI]:
     return _llm_client
 
 
-def _sanitize_text(text: Optional[str], *, default: str = "pengguna belum menjelaskan detailnya.") -> str:
+def _sanitize_text(
+    text: Optional[str], *, default: str = "pengguna belum menjelaskan detailnya."
+) -> str:
     if not text:
         return default
     cleaned = re.sub(r"\s+", " ", text.strip())
@@ -214,8 +221,12 @@ def _generate_psych_live_response_via_llm(
     if client is None:
         return None
 
-    conversation_excerpt = _sanitize_text(aggregated_text, default="belum ada cerita detail.")
-    latest_excerpt = _sanitize_text(latest_message, default="pengguna belum menambahkan pesan baru.")
+    conversation_excerpt = _sanitize_text(
+        aggregated_text, default="belum ada cerita detail."
+    )
+    latest_excerpt = _sanitize_text(
+        latest_message, default="pengguna belum menambahkan pesan baru."
+    )
     stage_hint = stage or "tidak diketahui"
 
     system_message = (
@@ -270,13 +281,19 @@ def _generate_psych_conversation_via_llm(
     if client is None:
         return None
 
-    conversation_excerpt = _sanitize_text(aggregated_text, default="belum ada cerita detail.")
-    latest_excerpt = _sanitize_text(latest_message, default="pengguna belum menambahkan pesan baru.")
+    conversation_excerpt = _sanitize_text(
+        aggregated_text, default="belum ada cerita detail."
+    )
+    latest_excerpt = _sanitize_text(
+        latest_message, default="pengguna belum menambahkan pesan baru."
+    )
     stage_objective = _STAGE_OBJECTIVES.get(
         stage or "",
         "tetap jadi pendengar suportif, validasi emosi mereka, dan kasih ide langkah kecil yang aman.",
     )
-    next_stage_objective = _STAGE_OBJECTIVES.get(next_stage or "", "") if next_stage else ""
+    next_stage_objective = (
+        _STAGE_OBJECTIVES.get(next_stage or "", "") if next_stage else ""
+    )
 
     severity_hint = ""
     if severity == SEVERITY_CRITICAL:
@@ -285,9 +302,7 @@ def _generate_psych_conversation_via_llm(
             "dan jangan menghadapi sendirian."
         )
     elif severity == SEVERITY_ELEVATED:
-        severity_hint = (
-            "Situasi elevated. Ingatkan buat cari dukungan orang dewasa tepercaya (guru BK/orang tua) secepatnya."
-        )
+        severity_hint = "Situasi elevated. Ingatkan buat cari dukungan orang dewasa tepercaya (guru BK/orang tua) secepatnya."
 
     transition_hint = (
         f"Setelah merespon, ajak pelan-pelan menuju tahap berikutnya ({next_stage}) dengan fokus: {next_stage_objective}"
@@ -345,7 +360,9 @@ def _generate_psych_closing_via_llm(
     if client is None:
         return None
 
-    conversation_excerpt = _sanitize_text(aggregated_text, default="pengguna belum membagikan detail tambahan.")
+    conversation_excerpt = _sanitize_text(
+        aggregated_text, default="pengguna belum membagikan detail tambahan."
+    )
 
     system_message = (
         "Kamu ASKA, teman digital yang penuh empati untuk siswa SD. "
@@ -381,8 +398,12 @@ def _generate_psych_closing_via_llm(
     cleaned = content.strip()
     return cleaned or None
 
+
 _CONFIRM_YES: tuple[str, ...] = (
-    "iya", "ya", "yaa", "yaaa",
+    "iya",
+    "ya",
+    "yaa",
+    "yaaa",
     "iya mau",
     "iya dong",
     "lanjut",
@@ -394,7 +415,7 @@ _CONFIRM_YES: tuple[str, ...] = (
     "ok",
     "oke",
     "yoi",
-     # --- Penambahan Gaya Gen Z ---
+    # --- Penambahan Gaya Gen Z ---
     "kuy",
     "lanjutin",
     "bener",
@@ -421,8 +442,8 @@ _CONFIRM_NO: tuple[str, ...] = (
     "ga dulu",
     "ngga",
     "ga",
-    "nope", "no"
-    "jangan dulu",
+    "nope",
+    "no" "jangan dulu",
     "lain kali aja",
     "kayaknya engga deh",
 )
@@ -483,8 +504,14 @@ _SUPPORT_RULES: tuple[tuple[str, tuple[str, ...], tuple[str, ...]], ...] = (
     (
         "lonely",
         (
-            "kesepian", "sendiri", "ga ada teman", "gak punya temen", "merasa sendiri",
-            "ditinggalin", "ngerasa ditinggalin", "ga punya circle",
+            "kesepian",
+            "sendiri",
+            "ga ada teman",
+            "gak punya temen",
+            "merasa sendiri",
+            "ditinggalin",
+            "ngerasa ditinggalin",
+            "ga punya circle",
         ),
         (
             "Ngerasa sepi itu emang ga enak banget 😔. Tapi inget, kamu ga sendirian kok. Coba deh reach out ke temen deket atau guru BK. ASKA juga di sini nemenin kamu! 🤝",
@@ -494,8 +521,17 @@ _SUPPORT_RULES: tuple[tuple[str, tuple[str, ...], tuple[str, ...]], ...] = (
     (
         "family",
         (
-            "keluarga", "orang tua", "ortu", "ayah", "ibu", "papa", "mama", "rumah",
-            "berantem sama ortu", "broken home", "suasana rumah",
+            "keluarga",
+            "orang tua",
+            "ortu",
+            "ayah",
+            "ibu",
+            "papa",
+            "mama",
+            "rumah",
+            "berantem sama ortu",
+            "broken home",
+            "suasana rumah",
         ),
         (
             "Duh, masalah keluarga emang complicated 💔. Coba omongin pelan-pelan sama orang dewasa di rumah yang kamu percaya, atau curhat ke guru BK bisa ngebantu banget loh.",
@@ -505,8 +541,18 @@ _SUPPORT_RULES: tuple[tuple[str, tuple[str, ...], tuple[str, ...]], ...] = (
     (
         "school_pressure",
         (
-            "nilai", "ujian", "ulangan", "pr", "tugas", "ranking", "rapor", "sekolah",
-            "pelajaran susah", "remedial", "tugas numpuk", "dimarahin guru",
+            "nilai",
+            "ujian",
+            "ulangan",
+            "pr",
+            "tugas",
+            "ranking",
+            "rapor",
+            "sekolah",
+            "pelajaran susah",
+            "remedial",
+            "tugas numpuk",
+            "dimarahin guru",
         ),
         (
             "Pressure sekolah emang suka bikin puyeng 🤯. It's okay to not be okay. Coba deh kerjain tugasnya dikit-dikit, jangan lupa istirahat juga. Semangat! 🔥",
@@ -516,8 +562,20 @@ _SUPPORT_RULES: tuple[tuple[str, tuple[str, ...], tuple[str, ...]], ...] = (
     (
         "relationship",
         (
-            "teman", "bestie", "sahabat", "dibenci", "dimusuhi", "cekcok", "berantem",
-            "toxic", "circle", "dighosting", "musuhan", "pacar", "mantan", "gebetan",
+            "teman",
+            "bestie",
+            "sahabat",
+            "dibenci",
+            "dimusuhi",
+            "cekcok",
+            "berantem",
+            "toxic",
+            "circle",
+            "dighosting",
+            "musuhan",
+            "pacar",
+            "mantan",
+            "gebetan",
         ),
         (
             "Friendship drama tuh emang nguras energi banget 😮‍💨. Coba ambil jarak dulu bentar. Kalo udah adem, baru deh diobrolin baik-baik. Kamu pantes dapet circle yang positif! ✨",
@@ -527,8 +585,17 @@ _SUPPORT_RULES: tuple[tuple[str, tuple[str, ...], tuple[str, ...]], ...] = (
     (
         "self_worth",
         (
-            "gak berharga", "gak berguna", "insecure", "benci diri", "jelek", "bodoh",
-            "gagal", "ga berguna", "aku beban", "nyusahin", "minder",
+            "gak berharga",
+            "gak berguna",
+            "insecure",
+            "benci diri",
+            "jelek",
+            "bodoh",
+            "gagal",
+            "ga berguna",
+            "aku beban",
+            "nyusahin",
+            "minder",
         ),
         (
             "Hey, you are enough and you matter! 💖 Coba deh list 3 hal kecil yang kamu suka dari diri kamu. Kalo lagi down, ngobrol sama orang yang bisa naikin mood kamu ya!",
@@ -538,8 +605,16 @@ _SUPPORT_RULES: tuple[tuple[str, tuple[str, ...], tuple[str, ...]], ...] = (
     (
         "stress",
         (
-            "stress", "stres", "overthinking", "burnout", "capek banget", "pusing banget",
-            "cemas parah", "panik", "anxious", "khawatir",
+            "stress",
+            "stres",
+            "overthinking",
+            "burnout",
+            "capek banget",
+            "pusing banget",
+            "cemas parah",
+            "panik",
+            "anxious",
+            "khawatir",
         ),
         (
             "Stres & overthinking emang nyebelin banget 😫. Coba deh lakuin hal yang kamu suka buat ngalihin pikiran sejenak. Nulis jurnal juga bisa bantu ngeluarin unek-unek, lho! 📝",
@@ -589,29 +664,29 @@ def classify_message_severity(message: str, default: str = SEVERITY_GENERAL) -> 
 
 
 def get_confirmation_prompt(severity: str = SEVERITY_GENERAL) -> str:
-    base = (
-        "ASKA here! Siap jadi kuping buat semua cerita kamu. Mau spill the tea sekarang? Bilang 'kuy' atau 'skip dulu' aja 😉"
-    )
+    base = "ASKA here! Siap jadi kuping buat semua cerita kamu. Mau spill the tea sekarang? Bilang 'kuy' atau 'skip dulu' aja 😉"
     if severity == SEVERITY_CRITICAL:
         base = (
-             # Prompt yang lebih serius dan mendesak untuk situasi kritis
+            # Prompt yang lebih serius dan mendesak untuk situasi kritis
             "Hey, ASKA ngerasa ini penting banget. Please, jangan dipendem sendiri. Kamu mau cerita lebih dalem sekarang? Aku di sini buat kamu. 🙏"
         )
     elif severity == SEVERITY_ELEVATED:
-        base = (
-             "Kayaknya lagi berat banget ya? 🥺 ASKA siap dengerin kok, no judgement. Mau cerita sekarang?"
-        )
+        base = "Kayaknya lagi berat banget ya? 🥺 ASKA siap dengerin kok, no judgement. Mau cerita sekarang?"
     return f"{base} 😊"
 
 
 def is_positive_confirmation(message: str) -> bool:
     lowered = _normalize(message)
-    return lowered in _CONFIRM_YES or lowered.startswith(("iya", "ya", "boleh", "lanjut"))
+    return lowered in _CONFIRM_YES or lowered.startswith(
+        ("iya", "ya", "boleh", "lanjut")
+    )
 
 
 def is_negative_confirmation(message: str) -> bool:
     lowered = _normalize(message)
-    return lowered in _CONFIRM_NO or lowered.startswith(("enggak", "gak", "ga", "nggak", "tidak"))
+    return lowered in _CONFIRM_NO or lowered.startswith(
+        ("enggak", "gak", "ga", "nggak", "tidak")
+    )
 
 
 def is_stop_request(message: str) -> bool:
@@ -654,7 +729,9 @@ def pick_closing_message(
             f"{base}\n\nSeneng banget kamu mau spill soal '{snippet}'. "
             "Please lanjut cari dukungan offline juga ya biar hati kamu makin adem 🤍"
         )
-    return f"{base} Kapan pun kamu butuh kuping lagi, tinggal panggil ASKA ya bestie! 🌟"
+    return (
+        f"{base} Kapan pun kamu butuh kuping lagi, tinggal panggil ASKA ya bestie! 🌟"
+    )
 
 
 def get_psych_conversation_reply(
@@ -724,14 +801,10 @@ def generate_support_message(
             "atau layanan darurat biar kamu nggak sendirian ya 🙏🚨"
         )
     elif severity == SEVERITY_ELEVATED:
-        support_text = (
-            f"{support_text}\n\nKalau rasanya makin berat, coba kontak guru BK atau keluarga yang kamu percaya biar bebannya kebagi 💛"
-        )
+        support_text = f"{support_text}\n\nKalau rasanya makin berat, coba kontak guru BK atau keluarga yang kamu percaya biar bebannya kebagi 💛"
 
     if stage == "support" and message_index <= 3:
-        support_text = (
-            f"{support_text}\n\nBy the way, siapa sih orang yang paling bikin kamu feel safe buat diajak ngobrol irl? 👀"
-        )
+        support_text = f"{support_text}\n\nBy the way, siapa sih orang yang paling bikin kamu feel safe buat diajak ngobrol irl? 👀"
 
     return support_text
 

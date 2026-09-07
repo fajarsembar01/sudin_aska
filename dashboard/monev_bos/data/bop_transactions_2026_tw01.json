@@ -1,0 +1,4522 @@
+{
+  "schema_version": 1,
+  "dataset_id": "bop-2026-tw01-jakut-wilayah-2",
+  "fund_source": "BOP",
+  "year": 2026,
+  "tw": 1,
+  "organization": "SUKU DINAS PENDIDIKAN WILAYAH 2 KOTA - JAKUT",
+  "accounts": [
+    {
+      "code": "5.1.02.01.001.00058",
+      "source_code": "5.1.02.01.001.00058",
+      "name": "Belanja Makanan dan Minuman Aktivitas Lapangan"
+    },
+    {
+      "code": "5.1.02.02.001.00003",
+      "source_code": "5.1.02.02.001.00003",
+      "name": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia"
+    },
+    {
+      "code": "5.1.02.02.001.00060",
+      "source_code": "5.1.02.02.001.00060",
+      "name": "Belanja Tagihan Air"
+    },
+    {
+      "code": "5.1.02.02.001.00061",
+      "source_code": "5.1.02.02.001.00061",
+      "name": "Belanja Tagihan Listrik"
+    },
+    {
+      "code": "5.1.02.02.001.00063",
+      "source_code": "5.1.02.02.001.00063",
+      "name": "Belanja Kawat/Faksimili/Internet/TV Berlangganan"
+    }
+  ],
+  "schools": [
+    {
+      "npsn": "20100565",
+      "name": "SEKOLAH DASAR NEGERI TUGU SELATAN 03 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 27236000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 1951585
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 5541843
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 6560842
+        }
+      ],
+      "total_amount": 41290270
+    },
+    {
+      "npsn": "20100568",
+      "name": "SEKOLAH DASAR NEGERI TUGU SELATAN 01 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 9240000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 3115085
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 11781786
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 6990729
+        }
+      ],
+      "total_amount": 31127600
+    },
+    {
+      "npsn": "20100575",
+      "name": "SEKOLAH DASAR NEGERI TUGU UTARA 09 JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 3150000
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 14850000
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 19752450
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 7654200
+        }
+      ],
+      "total_amount": 45406650
+    },
+    {
+      "npsn": "20100577",
+      "name": "SEKOLAH DASAR NEGERI TUGU UTARA 11 JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 1584000
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 17840000
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 9370465
+        }
+      ],
+      "total_amount": 28794465
+    },
+    {
+      "npsn": "20100582",
+      "name": "SEKOLAH DASAR NEGERI SEMPER BARAT 09 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 46860000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 3115207
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 13642603
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 15289050
+        }
+      ],
+      "total_amount": 78906860
+    },
+    {
+      "npsn": "20100584",
+      "name": "SEKOLAH DASAR NEGERI SEMPER BARAT 11 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 2376000
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 27360000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 3188707
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 10862340
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 20830781
+        }
+      ],
+      "total_amount": 64617828
+    },
+    {
+      "npsn": "20100586",
+      "name": "SEKOLAH DASAR NEGERI SEMPER BARAT 13 JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 52560000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 264075
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 8345205
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 27507011
+        }
+      ],
+      "total_amount": 88676291
+    },
+    {
+      "npsn": "20100591",
+      "name": "SEKOLAH DASAR NEGERI SEMPER TIMUR 05 JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 1188000
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 23100000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 1557707
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 11083686
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 5882700
+        }
+      ],
+      "total_amount": 42812093
+    },
+    {
+      "npsn": "20100593",
+      "name": "SEKOLAH DASAR NEGERI SUKAPURA 01 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 1306800
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 48620000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 20578643
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 10843830
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 12891817
+        }
+      ],
+      "total_amount": 94241090
+    },
+    {
+      "npsn": "20100596",
+      "name": "SEKOLAH DASAR NEGERI SUKAPURA 04 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 3285000
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 23760000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 849625
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 4585828
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 5570350
+        }
+      ],
+      "total_amount": 38050803
+    },
+    {
+      "npsn": "20100598",
+      "name": "SEKOLAH DASAR NEGERI TUGU UTARA 13 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 2661120
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 43098000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 1379207
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 5016000
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 2112402
+        }
+      ],
+      "total_amount": 54266729
+    },
+    {
+      "npsn": "20100618",
+      "name": "SEKOLAH DASAR NEGERI TUGU UTARA 14 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 3296700
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 22300000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 1274207
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 10471995
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 6300000
+        }
+      ],
+      "total_amount": 43642902
+    },
+    {
+      "npsn": "20100619",
+      "name": "SEKOLAH DASAR NEGERI TUGU UTARA 15 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 4237800
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 32771200
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 634569
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 8761024
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 9283050
+        }
+      ],
+      "total_amount": 55687643
+    },
+    {
+      "npsn": "20100622",
+      "name": "SEKOLAH DASAR NEGERI TUGU UTARA 19 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 3244086
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 4400000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 5167670
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 5374800
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 7654200
+        }
+      ],
+      "total_amount": 25840756
+    },
+    {
+      "npsn": "20100624",
+      "name": "SEKOLAH DASAR NEGERI TUGU UTARA 21 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 1995840
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 26400000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 1552914
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 6550257
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 3502170
+        }
+      ],
+      "total_amount": 40001181
+    },
+    {
+      "npsn": "20100625",
+      "name": "SEKOLAH DASAR NEGERI TUGU UTARA 22 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 2197800
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 29040000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 2717466
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 12711600
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 10267326
+        }
+      ],
+      "total_amount": 56934192
+    },
+    {
+      "npsn": "20100633",
+      "name": "SEKOLAH DASAR NEGERI SEMPER BARAT 07 JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 5338000
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 12500000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 7249104
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 10862340
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 7027200
+        }
+      ],
+      "total_amount": 42976644
+    },
+    {
+      "npsn": "20100645",
+      "name": "SEKOLAH DASAR NEGERI RAWA BADAK SELATAN 01 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 1960200
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 28710000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 1385125
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 7198200
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 8228470
+        }
+      ],
+      "total_amount": 47481995
+    },
+    {
+      "npsn": "20100647",
+      "name": "SEKOLAH DASAR NEGERI RAWA BADAK SELATAN 03 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 4047360
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 3600000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 2676625
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 8690499
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 8382663
+        }
+      ],
+      "total_amount": 27397147
+    },
+    {
+      "npsn": "20100648",
+      "name": "SEKOLAH DASAR NEGERI RAWA BADAK SELATAN 05 JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 2494800
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 22320000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 360000
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 5000000
+        }
+      ],
+      "total_amount": 30174800
+    },
+    {
+      "npsn": "20100669",
+      "name": "SEKOLAH DASAR NEGERI RAWA BADAK SELATAN 07 JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 2376000
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 26656000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 1119170
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 7080589
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 2740365
+        }
+      ],
+      "total_amount": 39972124
+    },
+    {
+      "npsn": "20100671",
+      "name": "SEKOLAH DASAR NEGERI RAWA BADAK UTARA 19 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 2521600
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 31680000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 1120207
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 10858251
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 9983340
+        }
+      ],
+      "total_amount": 56163398
+    },
+    {
+      "npsn": "20100673",
+      "name": "SEKOLAH DASAR NEGERI RAWA BADAK UTARA 21 JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 2376000
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 23920000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 371207
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 3482600
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 3448200
+        }
+      ],
+      "total_amount": 33598007
+    },
+    {
+      "npsn": "20100677",
+      "name": "SEKOLAH DASAR NEGERI ROROTAN 01 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 2764800
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 749607
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 18772496
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 4191914
+        }
+      ],
+      "total_amount": 26478817
+    },
+    {
+      "npsn": "20100679",
+      "name": "SEKOLAH DASAR NEGERI ROROTAN 02 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 1124200
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 10890000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 2940000
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 6340281
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 6514412
+        }
+      ],
+      "total_amount": 27808893
+    },
+    {
+      "npsn": "20100682",
+      "name": "SEKOLAH DASAR NEGERI SEMPER BARAT 01 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 2079141
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 24000000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 2149207
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 13095000
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 7558857
+        }
+      ],
+      "total_amount": 48882205
+    },
+    {
+      "npsn": "20100684",
+      "name": "SEKOLAH DASAR NEGERI SEMPER BARAT 03 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 2637360
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 29040000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 3980695
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 15686498
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 10422300
+        }
+      ],
+      "total_amount": 61766853
+    },
+    {
+      "npsn": "20100686",
+      "name": "SEKOLAH DASAR NEGERI SEMPER BARAT 05 JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 2500000
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 37510000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 261252
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 11241700
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 8600400
+        }
+      ],
+      "total_amount": 60113352
+    },
+    {
+      "npsn": "20100689",
+      "name": "SEKOLAH DASAR NEGERI RAWA BADAK UTARA 15 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 2079000
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 35420000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 5253585
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 11340000
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 8843572
+        }
+      ],
+      "total_amount": 62936157
+    },
+    {
+      "npsn": "20100690",
+      "name": "SEKOLAH DASAR NEGERI RAWA BADAK SELATAN 09 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 1980000
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 26400000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 3234000
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 10689981
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 3323847
+        }
+      ],
+      "total_amount": 45627828
+    },
+    {
+      "npsn": "20100691",
+      "name": "SEKOLAH DASAR NEGERI RAWA BADAK SELATAN 11 JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 3751800
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 44220000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 2155125
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 13538489
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 6946641
+        }
+      ],
+      "total_amount": 70612055
+    },
+    {
+      "npsn": "20100693",
+      "name": "SEKOLAH DASAR NEGERI RAWA BADAK UTARA 01 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 3170160
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 2500000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 3507414
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 8100000
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 4925408
+        }
+      ],
+      "total_amount": 22202982
+    },
+    {
+      "npsn": "20100695",
+      "name": "SEKOLAH DASAR NEGERI RAWA BADAK UTARA 03 PETANG JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 20872500
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 1174585
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 5712123
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 3388820
+        }
+      ],
+      "total_amount": 31148028
+    },
+    {
+      "npsn": "20100697",
+      "name": "SEKOLAH DASAR NEGERI RAWA BADAK UTARA 05 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 29450000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 2464207
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 5341700
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 2467200
+        }
+      ],
+      "total_amount": 39723107
+    },
+    {
+      "npsn": "20100699",
+      "name": "SEKOLAH DASAR NEGERI RAWA BADAK UTARA 07 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 4395600
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 38400000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 3113576
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 9895500
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 6811454
+        }
+      ],
+      "total_amount": 62616130
+    },
+    {
+      "npsn": "20100702",
+      "name": "SEKOLAH DASAR NEGERI RAWA BADAK UTARA 11 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 1584000
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 36960000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 5574845
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 18664043
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 16894800
+        }
+      ],
+      "total_amount": 79677688
+    },
+    {
+      "npsn": "20100997",
+      "name": "SEKOLAH DASAR NEGERI KALIBARU 03 JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 2661120
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 35640000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 905085
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 5541843
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 4110570
+        }
+      ],
+      "total_amount": 48858618
+    },
+    {
+      "npsn": "20101001",
+      "name": "SEKOLAH DASAR NEGERI KALIBARU 05 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 1267200
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 38438400
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 1730276
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 8081988
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 14637378
+        }
+      ],
+      "total_amount": 64155242
+    },
+    {
+      "npsn": "20101003",
+      "name": "SEKOLAH DASAR NEGERI KALIBARU 07 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 3168000
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 56440000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 3857000
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 20727863
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 7291260
+        }
+      ],
+      "total_amount": 91484123
+    },
+    {
+      "npsn": "20101005",
+      "name": "SEKOLAH DASAR NEGERI KALIBARU 09 JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 2661120
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 31680000
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 2160000
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 2010000
+        }
+      ],
+      "total_amount": 38511120
+    },
+    {
+      "npsn": "20101010",
+      "name": "SEKOLAH DASAR NEGERI CILINCING 09 JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 3956040
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 36190000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 2941354
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 12354634
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 10905328
+        }
+      ],
+      "total_amount": 66347356
+    },
+    {
+      "npsn": "20101026",
+      "name": "SEKOLAH DASAR NEGERI CILINCING 03 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 2937060
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 47520000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 2237414
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 20166509
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 25836800
+        }
+      ],
+      "total_amount": 98697783
+    },
+    {
+      "npsn": "20101028",
+      "name": "SEKOLAH DASAR NEGERI CILINCING 05 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 3049200
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 29040000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 2634170
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 17571323
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 10554300
+        }
+      ],
+      "total_amount": 62848993
+    },
+    {
+      "npsn": "20101054",
+      "name": "SEKOLAH DASAR NEGERI LAGOA 02 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 49800000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 2982745
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 10206460
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 14225000
+        }
+      ],
+      "total_amount": 77214205
+    },
+    {
+      "npsn": "20101057",
+      "name": "SEKOLAH DASAR NEGERI LAGOA 05 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 3772890
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 26400000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 2335029
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 9101080
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 3215886
+        }
+      ],
+      "total_amount": 44824885
+    },
+    {
+      "npsn": "20101059",
+      "name": "SEKOLAH DASAR NEGERI LAGOA 07 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 2186700
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 29040000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 1757525
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 12328961
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 6159918
+        }
+      ],
+      "total_amount": 51473104
+    },
+    {
+      "npsn": "20101061",
+      "name": "SEKOLAH DASAR NEGERI LAGOA 09 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 3193344
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 30440000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 1748665
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 9180000
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 6589250
+        }
+      ],
+      "total_amount": 51151259
+    },
+    {
+      "npsn": "20101062",
+      "name": "SEKOLAH DASAR NEGERI LAGOA 11 JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 3920964
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 42100000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 2019707
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 5845074
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 9944956
+        }
+      ],
+      "total_amount": 63830701
+    },
+    {
+      "npsn": "20104844",
+      "name": "SEKOLAH DASAR NEGERI CILINCING 01 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 495000
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 15840000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 1700000
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 15291000
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 16894800
+        }
+      ],
+      "total_amount": 50220800
+    },
+    {
+      "npsn": "20104845",
+      "name": "SEKOLAH DASAR NEGERI CILINCING 02 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 1182000
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 31680000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 499438
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 10253300
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 7756353
+        }
+      ],
+      "total_amount": 51371091
+    },
+    {
+      "npsn": "20104846",
+      "name": "SEKOLAH DASAR NEGERI CILINCING 07 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 2217600
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 23100000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 2549825
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 7804749
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 5946574
+        }
+      ],
+      "total_amount": 41618748
+    },
+    {
+      "npsn": "20104847",
+      "name": "SEKOLAH DASAR NEGERI CILINCING 08 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 1584000
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 22440000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 1638085
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 5541843
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 17470600
+        }
+      ],
+      "total_amount": 48674528
+    },
+    {
+      "npsn": "20104848",
+      "name": "SEKOLAH DASAR NEGERI KALIBARU 01 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 1306800
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 21450000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 500707
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 19680407
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 10310200
+        }
+      ],
+      "total_amount": 53248114
+    },
+    {
+      "npsn": "20104861",
+      "name": "SEKOLAH DASAR NEGERI KELAPA GADING BARAT 01 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 25080000
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 11078000
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 6829830
+        }
+      ],
+      "total_amount": 42987830
+    },
+    {
+      "npsn": "20104863",
+      "name": "SEKOLAH DASAR NEGERI KELAPA GADING TIMUR 01 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 1318680
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 24310000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 58107
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 7234406
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 4738200
+        }
+      ],
+      "total_amount": 37659393
+    },
+    {
+      "npsn": "20104865",
+      "name": "SEKOLAH DASAR NEGERI KELAPA GADING TIMUR 03 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 2175822
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 34320000
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 4866327
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 9220770
+        }
+      ],
+      "total_amount": 50582919
+    },
+    {
+      "npsn": "20104869",
+      "name": "SEKOLAH DASAR NEGERI LAGOA 01 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 4497696
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 60000000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 2035028
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 14585398
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 13322400
+        }
+      ],
+      "total_amount": 94440522
+    },
+    {
+      "npsn": "20104871",
+      "name": "SEKOLAH DASAR NEGERI CILINCING 10 JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 39200000
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 23346377
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 18126600
+        }
+      ],
+      "total_amount": 80672977
+    },
+    {
+      "npsn": "20104872",
+      "name": "SEKOLAH DASAR NEGERI MARUNDA 02 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 3880000
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 55600000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 4481125
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 11083686
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 15278100
+        }
+      ],
+      "total_amount": 90322911
+    },
+    {
+      "npsn": "20104873",
+      "name": "SEKOLAH DASAR NEGERI MARUNDA 03 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 3596400
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 25900000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 2170414
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 8378047
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 17307860
+        }
+      ],
+      "total_amount": 57352721
+    },
+    {
+      "npsn": "20104880",
+      "name": "SEKOLAH DASAR NEGERI PEGANGSAAN DUA 01 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 1782000
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 7920000
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 8033050
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 7236404
+        }
+      ],
+      "total_amount": 24971454
+    },
+    {
+      "npsn": "20104882",
+      "name": "SEKOLAH DASAR NEGERI PEGANGSAAN DUA 03 JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 495000
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 13200000
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 5084430
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 4898365
+        }
+      ],
+      "total_amount": 23677795
+    },
+    {
+      "npsn": "20104884",
+      "name": "SEKOLAH DASAR NEGERI PEGANGSAAN DUA 05 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 1603800
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 21120000
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 15120000
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 7322115
+        }
+      ],
+      "total_amount": 45165915
+    },
+    {
+      "npsn": "20104885",
+      "name": "SEKOLAH DASAR NEGERI PEGANGSAAN DUA 06 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 24420000
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 18877100
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 7654200
+        }
+      ],
+      "total_amount": 50951300
+    },
+    {
+      "npsn": "20104886",
+      "name": "SEKOLAH DASAR NEGERI PEGANGSAAN DUA 07 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 1125000
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 14520000
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 11976804
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 10669168
+        }
+      ],
+      "total_amount": 38290972
+    },
+    {
+      "npsn": "20104906",
+      "name": "SEKOLAH DASAR NEGERI RAWA BADAK UTARA 23 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 39160000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 1141085
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 8689872
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 4882923
+        }
+      ],
+      "total_amount": 53873880
+    },
+    {
+      "npsn": "20104907",
+      "name": "SEKOLAH DASAR NEGERI ROROTAN 03 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 6921960
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 53900000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 2644259
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 10568871
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 16019702
+        }
+      ],
+      "total_amount": 90054792
+    },
+    {
+      "npsn": "20104911",
+      "name": "SEKOLAH DASAR NEGERI SEMPER BARAT 15 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 1900800
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 14520000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 2221207
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 10862340
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 6717546
+        }
+      ],
+      "total_amount": 36221893
+    },
+    {
+      "npsn": "20104912",
+      "name": "SEKOLAH DASAR NEGERI SEMPER TIMUR 01 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 2849370
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 31680000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 1477085
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 19089640
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 12570500
+        }
+      ],
+      "total_amount": 67666595
+    },
+    {
+      "npsn": "20104914",
+      "name": "SEKOLAH DASAR NEGERI SEMPER TIMUR 03 JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 2725800
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 36960000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 1158585
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 11455736
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 16894800
+        }
+      ],
+      "total_amount": 69194921
+    },
+    {
+      "npsn": "20104915",
+      "name": "SEKOLAH DASAR NEGERI SEMPER TIMUR 07 JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 1782000
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 15840000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 2397407
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 6299958
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 5882700
+        }
+      ],
+      "total_amount": 32202065
+    },
+    {
+      "npsn": "20104916",
+      "name": "SEKOLAH DASAR NEGERI SUKAPURA 02 JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 1188000
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 25410000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 808707
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 8075199
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 7227604
+        }
+      ],
+      "total_amount": 42709510
+    },
+    {
+      "npsn": "20104917",
+      "name": "SEKOLAH DASAR NEGERI SUKAPURA 05 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 1188000
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 39600000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 6600460
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 6506847
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 3148720
+        }
+      ],
+      "total_amount": 57044027
+    },
+    {
+      "npsn": "20104952",
+      "name": "SEKOLAH DASAR NEGERI TUGU UTARA 01 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 1810188
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 32010000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 102407
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 7538279
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 7514640
+        }
+      ],
+      "total_amount": 48975514
+    },
+    {
+      "npsn": "20104954",
+      "name": "SEKOLAH DASAR NEGERI TUGU UTARA 03 JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 736288
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 11166400
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 269707
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 7770283
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 4455540
+        }
+      ],
+      "total_amount": 24398218
+    },
+    {
+      "npsn": "20104956",
+      "name": "SEKOLAH DASAR NEGERI TUGU UTARA 05 JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 2164500
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 16170000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 226875
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 4542220
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 3667537
+        }
+      ],
+      "total_amount": 26771132
+    },
+    {
+      "npsn": "20104958",
+      "name": "SEKOLAH DASAR NEGERI TUGU UTARA 07 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 594000
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 14880000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 1319707
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 9653648
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 6432645
+        }
+      ],
+      "total_amount": 32880000
+    },
+    {
+      "npsn": "20104963",
+      "name": "SEKOLAH DASAR NEGERI TUGU UTARA 17 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 2574000
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 16500000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 3258707
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 6225107
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 3906685
+        }
+      ],
+      "total_amount": 32464499
+    },
+    {
+      "npsn": "20109047",
+      "name": "SEKOLAH DASAR NEGERI ROROTAN 07 PAGI JAKARTA",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 1346400
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 28800000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 822207
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 4669998
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 10305700
+        }
+      ],
+      "total_amount": 45944305
+    },
+    {
+      "npsn": "69980873",
+      "name": "SDN Marunda 05",
+      "education_level": "SD",
+      "transactions": [
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 35970000
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 23284800
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 11185440
+        }
+      ],
+      "total_amount": 70440240
+    },
+    {
+      "npsn": "P2966171",
+      "name": "SANGGAR KEGIATAN BELAJAR 03",
+      "education_level": "SKB",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 1274724
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 1074291
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 9248319
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 5469140
+        }
+      ],
+      "total_amount": 17066474
+    },
+    {
+      "npsn": "20110821",
+      "name": "SEKOLAH LUAR BIASA NEGERI 4 JAKARTA",
+      "education_level": "SLB",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 2922186
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 23100000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 3281250
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 21424356
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 25599886
+        }
+      ],
+      "total_amount": 76327678
+    },
+    {
+      "npsn": "69980881",
+      "name": "SLBN 8",
+      "education_level": "SLB",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 1782000
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 71444000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 5113575
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 27814784
+        }
+      ],
+      "total_amount": 106154359
+    },
+    {
+      "npsn": "20100779",
+      "name": "SEKOLAH MENENGAH ATAS NEGERI 75 JAKARTA",
+      "education_level": "SMA",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 2245308
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 5500000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 3517832
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 29707975
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 94830500
+        }
+      ],
+      "total_amount": 135801615
+    },
+    {
+      "npsn": "20100781",
+      "name": "SEKOLAH MENENGAH ATAS NEGERI 83 JAKARTA",
+      "education_level": "SMA",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 3736260
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 2008707
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 27693599
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 85498046
+        }
+      ],
+      "total_amount": 118936612
+    },
+    {
+      "npsn": "20100782",
+      "name": "SEKOLAH MENENGAH ATAS NEGERI 92 JAKARTA",
+      "education_level": "SMA",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 5522250
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 24700000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 5306207
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 48777000
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 70500000
+        }
+      ],
+      "total_amount": 154805457
+    },
+    {
+      "npsn": "20100795",
+      "name": "SEKOLAH MENENGAH ATAS NEGERI 73 JAKARTA",
+      "education_level": "SMA",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 3736260
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 2833407
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 39710036
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 69015508
+        }
+      ],
+      "total_amount": 115295211
+    },
+    {
+      "npsn": "20100796",
+      "name": "SEKOLAH MENENGAH ATAS NEGERI 72 JAKARTA",
+      "education_level": "SMA",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 5934060
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 447707
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 64174738
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 45362840
+        }
+      ],
+      "total_amount": 115919345
+    },
+    {
+      "npsn": "20100797",
+      "name": "SEKOLAH MENENGAH ATAS NEGERI 52 JAKARTA",
+      "education_level": "SMA",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 2730000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 2767170
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 46682932
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 44102086
+        }
+      ],
+      "total_amount": 96282188
+    },
+    {
+      "npsn": "20100802",
+      "name": "SEKOLAH MENENGAH ATAS NEGERI 110 JAKARTA",
+      "education_level": "SMA",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 2747250
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 1392307
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 30467296
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 70114900
+        }
+      ],
+      "total_amount": 104721753
+    },
+    {
+      "npsn": "20100804",
+      "name": "SEKOLAH MENENGAH ATAS NEGERI 114 JAKARTA",
+      "education_level": "SMA",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 3846150
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 25900000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 1609707
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 18865516
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 36000000
+        }
+      ],
+      "total_amount": 86221373
+    },
+    {
+      "npsn": "20100805",
+      "name": "SEKOLAH MENENGAH ATAS NEGERI 115 JAKARTA",
+      "education_level": "SMA",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 2597400
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 3009607
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 21206770
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 88891020
+        }
+      ],
+      "total_amount": 115704797
+    },
+    {
+      "npsn": "20100806",
+      "name": "SEKOLAH MENENGAH ATAS NEGERI 13 JAKARTA",
+      "education_level": "SMA",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 4395600
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 69020000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 16956766
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 92158813
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 77193239
+        }
+      ],
+      "total_amount": 259724418
+    },
+    {
+      "npsn": "20100812",
+      "name": "SEKOLAH MENENGAH ATAS NEGERI 45 JAKARTA",
+      "education_level": "SMA",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 4755906
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 7000000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 2264707
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 73283714
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 36148000
+        }
+      ],
+      "total_amount": 123452327
+    },
+    {
+      "npsn": "20107436",
+      "name": "SEKOLAH MENENGAH KEJURUAN NEGERI 4 JAKARTA",
+      "education_level": "SMK",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 6560100
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 66670000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 12054000
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 108000000
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 60615000
+        }
+      ],
+      "total_amount": 253899100
+    },
+    {
+      "npsn": "20107437",
+      "name": "SEKOLAH MENENGAH KEJURUAN NEGERI 49 JAKARTA",
+      "education_level": "SMK",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 1998000
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 1400000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 4531207
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 60775100
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 29068346
+        }
+      ],
+      "total_amount": 97772653
+    },
+    {
+      "npsn": "20100719",
+      "name": "SEKOLAH MENENGAH PERTAMA NEGERI 114 JAKARTA",
+      "education_level": "SMP",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 7399260
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 2003750
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 27558000
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 14616750
+        }
+      ],
+      "total_amount": 51577760
+    },
+    {
+      "npsn": "20100740",
+      "name": "SEKOLAH MENENGAH PERTAMA NEGERI 121 JAKARTA",
+      "education_level": "SMP",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 1428570
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 1836207
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 15426483
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 14462220
+        }
+      ],
+      "total_amount": 33153480
+    },
+    {
+      "npsn": "20100742",
+      "name": "SEKOLAH MENENGAH PERTAMA NEGERI 270 JAKARTA",
+      "education_level": "SMP",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 2464200
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 742276
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 24591092
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 13925700
+        }
+      ],
+      "total_amount": 41723268
+    },
+    {
+      "npsn": "20100743",
+      "name": "SEKOLAH MENENGAH PERTAMA NEGERI 277 JAKARTA",
+      "education_level": "SMP",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 2637360
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 25740000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 4680207
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 25257549
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 21978010
+        }
+      ],
+      "total_amount": 80293126
+    },
+    {
+      "npsn": "20100744",
+      "name": "SEKOLAH MENENGAH PERTAMA NEGERI 279 JAKARTA",
+      "education_level": "SMP",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 4672200
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 2060766
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 23666204
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 63879620
+        }
+      ],
+      "total_amount": 94278790
+    },
+    {
+      "npsn": "20100746",
+      "name": "SEKOLAH MENENGAH PERTAMA NEGERI 30 JAKARTA",
+      "education_level": "SMP",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 2376000
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 44880000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 3159975
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 31404451
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 18103731
+        }
+      ],
+      "total_amount": 99924157
+    },
+    {
+      "npsn": "20100749",
+      "name": "SEKOLAH MENENGAH PERTAMA NEGERI 53 JAKARTA",
+      "education_level": "SMP",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 4483512
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 3400000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 2871572
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 35255382
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 13136490
+        }
+      ],
+      "total_amount": 59146956
+    },
+    {
+      "npsn": "20100752",
+      "name": "SEKOLAH MENENGAH PERTAMA NEGERI 84 JAKARTA",
+      "education_level": "SMP",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 5274720
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 5100000
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 22049282
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 23313120
+        }
+      ],
+      "total_amount": 55737122
+    },
+    {
+      "npsn": "20100757",
+      "name": "SEKOLAH MENENGAH PERTAMA NEGERI 266 JAKARTA",
+      "education_level": "SMP",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 2517480
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 5082176
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 20178177
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 14468490
+        }
+      ],
+      "total_amount": 42246323
+    },
+    {
+      "npsn": "20100759",
+      "name": "SEKOLAH MENENGAH PERTAMA NEGERI 244 JAKARTA",
+      "education_level": "SMP",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 2376000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 2331085
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 20847451
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 20454610
+        }
+      ],
+      "total_amount": 46009146
+    },
+    {
+      "npsn": "20100760",
+      "name": "SEKOLAH MENENGAH PERTAMA NEGERI 123 JAKARTA",
+      "education_level": "SMP",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 2272725
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 682707
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 31580122
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 23260050
+        }
+      ],
+      "total_amount": 57795604
+    },
+    {
+      "npsn": "20100763",
+      "name": "SEKOLAH MENENGAH PERTAMA NEGERI 143 JAKARTA",
+      "education_level": "SMP",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 1576000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 7397014
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 28350000
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 34497040
+        }
+      ],
+      "total_amount": 71820054
+    },
+    {
+      "npsn": "20100764",
+      "name": "SEKOLAH MENENGAH PERTAMA NEGERI 151 JAKARTA",
+      "education_level": "SMP",
+      "transactions": [
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 59400000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 2809014
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 26730000
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 19301235
+        }
+      ],
+      "total_amount": 108240249
+    },
+    {
+      "npsn": "20100766",
+      "name": "SEKOLAH MENENGAH PERTAMA NEGERI 162 JAKARTA",
+      "education_level": "SMP",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 5194800
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 3012625
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 15974030
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 38273850
+        }
+      ],
+      "total_amount": 62455305
+    },
+    {
+      "npsn": "20100767",
+      "name": "SEKOLAH MENENGAH PERTAMA NEGERI 170 JAKARTA",
+      "education_level": "SMP",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 3809520
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 88407
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 26133110
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 20000000
+        }
+      ],
+      "total_amount": 50031037
+    },
+    {
+      "npsn": "20100768",
+      "name": "SEKOLAH MENENGAH PERTAMA NEGERI 173 JAKARTA",
+      "education_level": "SMP",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 3168000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 4323582
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 23546713
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 18030663
+        }
+      ],
+      "total_amount": 49068958
+    },
+    {
+      "npsn": "20100769",
+      "name": "SEKOLAH MENENGAH PERTAMA NEGERI 200 JAKARTA",
+      "education_level": "SMP",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 6342120
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 4526182
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 25973237
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 12483733
+        }
+      ],
+      "total_amount": 49325272
+    },
+    {
+      "npsn": "20100773",
+      "name": "SEKOLAH MENENGAH PERTAMA NEGERI 231 JAKARTA",
+      "education_level": "SMP",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 4068150
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 49150000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 4788500
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 27569784
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 32563550
+        }
+      ],
+      "total_amount": 118139984
+    },
+    {
+      "npsn": "20106716",
+      "name": "SEKOLAH MENENGAH PERTAMA NEGERI 136 JAKARTA",
+      "education_level": "SMP",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 3163500
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 880000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 13526700
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 29010144
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 25111329
+        }
+      ],
+      "total_amount": 71691673
+    },
+    {
+      "npsn": "69800097",
+      "name": "SEKOLAH MENENGAH PERTAMA NEGERI 289 JAKARTA",
+      "education_level": "SMP",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 5641020
+        },
+        {
+          "account_code": "5.1.02.02.001.00003",
+          "source_account_code": "5.1.02.02.001.00003",
+          "description": "Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia",
+          "amount": 6000000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 3454707
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 17761778
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 24773538
+        }
+      ],
+      "total_amount": 57631043
+    },
+    {
+      "npsn": "69980874",
+      "name": "SMPN 290",
+      "education_level": "SMP",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 2340000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 1668585
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 6576050
+        }
+      ],
+      "total_amount": 10584635
+    },
+    {
+      "npsn": "69857065",
+      "name": "TK Negeri Koja 01",
+      "education_level": "TK",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 237600
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 2004132
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 1689600
+        }
+      ],
+      "total_amount": 3931332
+    },
+    {
+      "npsn": "69857113",
+      "name": "TK NEGERI ROROTAN",
+      "education_level": "TK",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 1178400
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 650648
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 2659754
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 2619350
+        }
+      ],
+      "total_amount": 7108152
+    },
+    {
+      "npsn": "69857136",
+      "name": "TK NEGERI SEMPER",
+      "education_level": "TK",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 879120
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 1494707
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 2974590
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 1603070
+        }
+      ],
+      "total_amount": 6951487
+    },
+    {
+      "npsn": "69922070",
+      "name": "TK Negeri Cilincing 01",
+      "education_level": "TK",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 594000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 157757
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 2683728
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 2278070
+        }
+      ],
+      "total_amount": 5713555
+    },
+    {
+      "npsn": "69980385",
+      "name": "TK Negeri Koja 02",
+      "education_level": "TK",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 765000
+        },
+        {
+          "account_code": "5.1.02.02.001.00060",
+          "source_account_code": "5.1.02.02.001.00060",
+          "description": "Belanja Tagihan Air",
+          "amount": 113657
+        },
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 2840700
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 1374300
+        }
+      ],
+      "total_amount": 5093657
+    },
+    {
+      "npsn": "69981918",
+      "name": "TK Negeri Cilincing 02",
+      "education_level": "TK",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 1030300
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 956550
+        }
+      ],
+      "total_amount": 1986850
+    },
+    {
+      "npsn": "69987715",
+      "name": "TK Negeri Kelapa Gading 01",
+      "education_level": "TK",
+      "transactions": [
+        {
+          "account_code": "5.1.02.02.001.00061",
+          "source_account_code": "5.1.02.02.001.00061",
+          "description": "Belanja Tagihan Listrik",
+          "amount": 1380300
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 1289550
+        }
+      ],
+      "total_amount": 2669850
+    },
+    {
+      "npsn": "69990708",
+      "name": "SPS Negeri Bale Bermain Gading Kuncup Harmoni",
+      "education_level": "TK",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 527472
+        }
+      ],
+      "total_amount": 527472
+    },
+    {
+      "npsn": "69990758",
+      "name": "SPS Negeri Bale Bermain Abdi Praja",
+      "education_level": "TK",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 123099
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 1172700
+        }
+      ],
+      "total_amount": 1295799
+    },
+    {
+      "npsn": "70000265",
+      "name": "TPA NEGERI BINA TUNAS JAYA XVI",
+      "education_level": "TK",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 198000
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 811200
+        }
+      ],
+      "total_amount": 1009200
+    },
+    {
+      "npsn": "70001759",
+      "name": "TPA NEGERI BINA TUNAS JAYA XV",
+      "education_level": "TK",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 965034
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 1020990
+        }
+      ],
+      "total_amount": 1986024
+    },
+    {
+      "npsn": "70002388",
+      "name": "SPS NEGERI BALE BERMAIN SUKAPURA CERDAS",
+      "education_level": "TK",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 39600
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 2369100
+        }
+      ],
+      "total_amount": 2408700
+    },
+    {
+      "npsn": "70002389",
+      "name": "SPS NEGERI BALE BERMAIN SAKINAH",
+      "education_level": "TK",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 297000
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 889950
+        }
+      ],
+      "total_amount": 1186950
+    },
+    {
+      "npsn": "70010637",
+      "name": "KB Negeri 03 Cilincing",
+      "education_level": "TK",
+      "transactions": [
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 939700
+        }
+      ],
+      "total_amount": 939700
+    },
+    {
+      "npsn": "70012409",
+      "name": "TK Negeri Satu Atap Cilincing 08",
+      "education_level": "TK",
+      "transactions": [
+        {
+          "account_code": "5.1.02.01.001.00058",
+          "source_account_code": "5.1.02.01.001.00058",
+          "description": "Belanja Makanan dan Minuman Aktivitas Lapangan",
+          "amount": 469000
+        },
+        {
+          "account_code": "5.1.02.02.001.00063",
+          "source_account_code": "5.1.02.02.001.00063",
+          "description": "Belanja Kawat/Faksimili/Internet/TV Berlangganan",
+          "amount": 1296210
+        }
+      ],
+      "total_amount": 1765210
+    }
+  ],
+  "school_count": 132,
+  "transaction_count": 571,
+  "total_amount": 7453637773
+}

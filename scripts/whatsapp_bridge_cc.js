@@ -13,6 +13,8 @@
  *   ASKA_CC_WHATSAPP_SESSION_PATH    — local auth persistence
  *   ASKA_CC_WHATSAPP_CLIENT_ID       — whatsapp-web.js clientId
  *   ASKA_CC_WHATSAPP_STATUS_PATH     — runtime status JSON
+ *   ASKA_CC_WHATSAPP_WEB_VERSION     — optional pinned WhatsApp Web version
+ *   ASKA_CC_WHATSAPP_WEB_CACHE_TYPE  — optional cache type: local|remote|none
  *   ASKA_CC_HTTP_PORT                — Express port (default 3100)
  */
 
@@ -96,6 +98,12 @@ const INIT_RECOVERY_RETRY_DELAY_MS = (() => {
     if (!Number.isFinite(parsed)) return 2500;
     return Math.max(500, Math.min(parsed, 60000));
 })();
+const WEB_VERSION = (process.env.ASKA_CC_WHATSAPP_WEB_VERSION || "").trim();
+const WEB_CACHE_TYPE = (process.env.ASKA_CC_WHATSAPP_WEB_CACHE_TYPE || "").trim().toLowerCase();
+const WEB_CACHE_REMOTE_PATH = (process.env.ASKA_CC_WHATSAPP_WEB_CACHE_REMOTE_PATH || "").trim();
+const WEB_CACHE_STRICT = String(process.env.ASKA_CC_WHATSAPP_WEB_CACHE_STRICT || "")
+    .trim()
+    .toLowerCase();
 
 if (!INTERNAL_TOKEN) {
     console.error("[CC] ASKA_CC_WHATSAPP_INTERNAL_TOKEN belum diset. Worker dihentikan.");
@@ -258,6 +266,43 @@ let lastHeartbeat = Date.now(); // untuk watchdog deteksi Chromium crash
 let initRecoveryTimer = null;
 let initRecoveryAttempts = 0;
 
+function envFlag(value) {
+    return ["1", "true", "yes", "on"].includes(String(value || "").trim().toLowerCase());
+}
+
+function buildWebVersionOptions() {
+    const options = {};
+    if (WEB_VERSION) options.webVersion = WEB_VERSION;
+
+    if (!WEB_CACHE_TYPE) return options;
+    if (WEB_CACHE_TYPE === "none") {
+        options.webVersionCache = { type: "none" };
+        return options;
+    }
+    if (WEB_CACHE_TYPE === "remote") {
+        if (!WEB_CACHE_REMOTE_PATH) {
+            console.warn("[CC] ASKA_CC_WHATSAPP_WEB_CACHE_TYPE=remote diabaikan: remote path kosong.");
+            return options;
+        }
+        options.webVersionCache = {
+            type: "remote",
+            remotePath: WEB_CACHE_REMOTE_PATH,
+            strict: envFlag(WEB_CACHE_STRICT),
+        };
+        return options;
+    }
+    if (WEB_CACHE_TYPE === "local") {
+        options.webVersionCache = {
+            type: "local",
+            strict: envFlag(WEB_CACHE_STRICT),
+        };
+        return options;
+    }
+
+    console.warn(`[CC] ASKA_CC_WHATSAPP_WEB_CACHE_TYPE tidak dikenal: ${WEB_CACHE_TYPE}`);
+    return options;
+}
+
 function isInitInProgressState() {
     return !clientReady && (currentBridgeState === "starting" || currentBridgeState === "authenticated");
 }
@@ -373,7 +418,7 @@ const client = new Client({
         protocolTimeout: 300000,
         args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-gpu", "--disable-dev-shm-usage"],
     },
-    webVersionCache: { type: "remote", remotePath: "https://raw.githubusercontent.com/nicholasdai/nicholasdai/refs/heads/master/nicholasdai" },
+    ...buildWebVersionOptions(),
 });
 
 client.on("qr", (qrText) => {

@@ -544,3 +544,5 @@ Silakan buka _issue_ atau _pull request_ bila ada saran perbaikan. Semoga memban
 ## restart wa aska
 systemctl restart aska-wa-cc@aska.service
 sleep 20
+systemctl restart aska-wa-cc@main.service
+sleep 20   

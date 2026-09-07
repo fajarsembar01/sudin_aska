@@ -1,31 +1,31 @@
+import hashlib
 import json
 import logging
 import os
 import time
-import hashlib
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-import tweepy
 import requests
+import tweepy
 from dotenv import load_dotenv
 
 from ai_core import build_qa_chain
-from db import save_chat, get_chat_history, record_twitter_log
+from db import get_chat_history, record_twitter_log, save_chat
 from responses import ASKA_NO_DATA_RESPONSE, ASKA_TECHNICAL_ISSUE_RESPONSE
 from utils import (
+    INDONESIAN_DAY_NAMES,
     coerce_to_text,
+    current_jakarta_time,
     format_history_for_chain,
+    format_indonesian_date,
+    is_substantive_text,
     normalize_input,
     remove_trailing_signature,
     replace_bot_mentions,
     rewrite_schedule_query,
     strip_markdown,
-    is_substantive_text,
-    current_jakarta_time,
-    format_indonesian_date,
-    INDONESIAN_DAY_NAMES,
 )
 
 LOGGER = logging.getLogger("aska.twitter")
@@ -43,7 +43,9 @@ class _TwitterDBLogHandler(logging.Handler):
                 return
 
             tweet_id = getattr(record, "tweet_id", None)
-            twitter_user_id = getattr(record, "twitter_user_id", None) or getattr(record, "user_id", None)
+            twitter_user_id = getattr(record, "twitter_user_id", None) or getattr(
+                record, "user_id", None
+            )
 
             context: Dict[str, Any] = {
                 "logger": record.name,
@@ -78,17 +80,28 @@ class _TwitterDBLogHandler(logging.Handler):
             # Hindari recursive logging di handler
             pass
 
+
 DEFAULT_SPAM_KEYWORDS = {
-    "follow back", "folback", "promo", "promote", "dm for collab",
-    "shoutout", "boost me", "subscribe", "retweet this",
-    "please follow", "follow me",
+    "follow back",
+    "folback",
+    "promo",
+    "promote",
+    "dm for collab",
+    "shoutout",
+    "boost me",
+    "subscribe",
+    "retweet this",
+    "please follow",
+    "follow me",
 }
 
 
 def _load_required_env(key: str) -> str:
     v = os.getenv(key)
     if not v:
-        raise RuntimeError(f"Environment variable '{key}' is required for Twitter integration.")
+        raise RuntimeError(
+            f"Environment variable '{key}' is required for Twitter integration."
+        )
     return v
 
 
@@ -134,18 +147,30 @@ class TwitterAskaBot:
         self.state_path = Path(os.getenv("TWITTER_STATE_PATH", "twitter_state.json"))
 
         # Autopost config
-        self.autopost_enabled = os.getenv("TWITTER_AUTOPOST_ENABLED", "false").strip().lower() in {"1", "true", "yes", "on"}
+        self.autopost_enabled = os.getenv(
+            "TWITTER_AUTOPOST_ENABLED", "false"
+        ).strip().lower() in {"1", "true", "yes", "on"}
         self.autopost_interval = int(os.getenv("TWITTER_AUTOPOST_INTERVAL", "3600"))
-        self.autopost_recent_limit = max(1, int(os.getenv("TWITTER_AUTOPOST_RECENT_LIMIT", "8")))
-        self.autopost_entries_path = Path(os.getenv("TWITTER_AUTOPOST_MESSAGES_PATH", "twitter_posts.txt"))
-        self.autopost_force_on_start = os.getenv("TWITTER_AUTOPOST_FORCE_ON_START", "false").strip().lower() in {"1", "true", "yes", "on"}
+        self.autopost_recent_limit = max(
+            1, int(os.getenv("TWITTER_AUTOPOST_RECENT_LIMIT", "8"))
+        )
+        self.autopost_entries_path = Path(
+            os.getenv("TWITTER_AUTOPOST_MESSAGES_PATH", "twitter_posts.txt")
+        )
+        self.autopost_force_on_start = os.getenv(
+            "TWITTER_AUTOPOST_FORCE_ON_START", "false"
+        ).strip().lower() in {"1", "true", "yes", "on"}
         self._autopost_log_state = None
 
         # Mentions control
-        self.mentions_enabled = os.getenv("TWITTER_MENTIONS_ENABLED", "true").strip().lower() in {"1", "true", "yes", "on"}
+        self.mentions_enabled = os.getenv(
+            "TWITTER_MENTIONS_ENABLED", "true"
+        ).strip().lower() in {"1", "true", "yes", "on"}
         self.mentions_cooldown = int(os.getenv("TWITTER_MENTIONS_COOLDOWN", "180"))
         self.mentions_max_results = int(os.getenv("TWITTER_MENTIONS_MAX_RESULTS", "5"))
-        self.mentions_latest_only = os.getenv("TWITTER_MENTIONS_LATEST_ONLY", "false").strip().lower() in {"1", "true", "yes", "on"}
+        self.mentions_latest_only = os.getenv(
+            "TWITTER_MENTIONS_LATEST_ONLY", "false"
+        ).strip().lower() in {"1", "true", "yes", "on"}
         self._mentions_backoff_until = 0.0
         self._mentions_backoff_last = self.mentions_cooldown
 
@@ -175,9 +200,13 @@ class TwitterAskaBot:
                     legacy = getattr(schema, "schema", None)
                     if callable(legacy):
                         props = legacy().get("properties", {})
-            LOGGER.info("QA chain input vars detected: %s", list(props.keys()) or ["<unknown>"])
+            LOGGER.info(
+                "QA chain input vars detected: %s", list(props.keys()) or ["<unknown>"]
+            )
         except Exception:
-            LOGGER.info("QA chain input vars could not be introspected; using heuristics.")
+            LOGGER.info(
+                "QA chain input vars could not be introspected; using heuristics."
+            )
 
         # Load autopost entries
         self.autopost_entries = self._load_autopost_entries()
@@ -187,7 +216,10 @@ class TwitterAskaBot:
             resolved_path = str(self.autopost_entries_path)
         LOGGER.info(
             "Autopost status: enabled=%s interval=%ss entries=%d path=%s",
-            self.autopost_enabled, self.autopost_interval, len(self.autopost_entries), resolved_path
+            self.autopost_enabled,
+            self.autopost_interval,
+            len(self.autopost_entries),
+            resolved_path,
         )
 
         # Persisted state
@@ -212,7 +244,12 @@ class TwitterAskaBot:
         api_secret = _load_required_env("TWITTER_API_SECRET")
         access_token = _load_required_env("TWITTER_ACCESS_TOKEN")
         access_secret = _load_required_env("TWITTER_ACCESS_SECRET")
-        wait_on = os.getenv("TWITTER_WAIT_ON_RATE_LIMIT", "false").strip().lower() in {"1", "true", "yes", "on"}
+        wait_on = os.getenv("TWITTER_WAIT_ON_RATE_LIMIT", "false").strip().lower() in {
+            "1",
+            "true",
+            "yes",
+            "on",
+        }
         return tweepy.Client(
             bearer_token=bearer,
             consumer_key=api_key,
@@ -241,7 +278,9 @@ class TwitterAskaBot:
             try:
                 payload["last_seen_id"] = int(raw_last_seen)
             except (TypeError, ValueError):
-                LOGGER.warning("Invalid last_seen_id '%s' in state file, ignoring.", raw_last_seen)
+                LOGGER.warning(
+                    "Invalid last_seen_id '%s' in state file, ignoring.", raw_last_seen
+                )
                 payload.pop("last_seen_id", None)
 
         autopost_state = payload.get("autopost")
@@ -253,19 +292,28 @@ class TwitterAskaBot:
                     autopost_state.pop("next_index", None)
             if "last_timestamp" in autopost_state:
                 try:
-                    autopost_state["last_timestamp"] = float(autopost_state["last_timestamp"])
+                    autopost_state["last_timestamp"] = float(
+                        autopost_state["last_timestamp"]
+                    )
                 except (TypeError, ValueError):
                     autopost_state.pop("last_timestamp", None)
             hashes = autopost_state.get("recent_hashes")
             if isinstance(hashes, list):
-                autopost_state["recent_hashes"] = [str(h) for h in hashes if isinstance(h, (str, int)) and str(h).strip()]
+                autopost_state["recent_hashes"] = [
+                    str(h)
+                    for h in hashes
+                    if isinstance(h, (str, int)) and str(h).strip()
+                ]
             else:
                 autopost_state["recent_hashes"] = []
         return payload
 
     def _persist_state(self) -> None:
         try:
-            payload = {"last_seen_id": self.last_seen_id, "autopost": self.autopost_state}
+            payload = {
+                "last_seen_id": self.last_seen_id,
+                "autopost": self.autopost_state,
+            }
             with self.state_path.open("w", encoding="utf-8") as f:
                 json.dump(payload, f)
         except Exception as exc:
@@ -278,14 +326,20 @@ class TwitterAskaBot:
             self._maybe_autopost(ignore_interval=False)
         while True:
             try:
-                if self.mentions_enabled and time.time() >= self._mentions_backoff_until:
+                if (
+                    self.mentions_enabled
+                    and time.time() >= self._mentions_backoff_until
+                ):
                     self.process_mentions()
                 elif not self.mentions_enabled:
                     LOGGER.debug("Mentions disabled by env; skipping.")
                 else:
                     remain = int(self._mentions_backoff_until - time.time())
                     if remain > 0:
-                        LOGGER.info("Mentions backoff active (%ss remaining); skipping this cycle.", remain)
+                        LOGGER.info(
+                            "Mentions backoff active (%ss remaining); skipping this cycle.",
+                            remain,
+                        )
 
                 if self.autopost_enabled:
                     self._maybe_autopost(ignore_interval=False)
@@ -320,7 +374,10 @@ class TwitterAskaBot:
         except tweepy.TooManyRequests as exc:
             base = self.mentions_cooldown
             last = getattr(self, "_mentions_backoff_last", base)
-            cool = min(max(base, last * 2), int(os.getenv("TWITTER_MENTIONS_MAX_COOLDOWN", "900")))
+            cool = min(
+                max(base, last * 2),
+                int(os.getenv("TWITTER_MENTIONS_MAX_COOLDOWN", "900")),
+            )
             try:
                 reset_at = int(exc.response.headers.get("x-rate-limit-reset", "0"))
                 now = int(time.time())
@@ -329,13 +386,18 @@ class TwitterAskaBot:
             except Exception:
                 pass
             import random
+
             cool += int(cool * random.uniform(0, 0.1))  # jitter
             self._mentions_backoff_last = cool
             self._mentions_backoff_until = time.time() + cool
-            LOGGER.warning("Mentions rate-limited (429). Backing off for %ss (jittered).", cool)
+            LOGGER.warning(
+                "Mentions rate-limited (429). Backing off for %ss (jittered).", cool
+            )
             return
         except tweepy.BadRequest as exc:
-            LOGGER.warning("Mentions 400 Bad Request: %s. Retrying once with max_results=5.", exc)
+            LOGGER.warning(
+                "Mentions 400 Bad Request: %s. Retrying once with max_results=5.", exc
+            )
             params["max_results"] = 5
             try:
                 response = self._client.get_users_mentions(self.bot_user_id, **params)
@@ -367,7 +429,9 @@ class TwitterAskaBot:
 
         if self.mentions_latest_only:
             try:
-                latest = max(tweets, key=lambda t: getattr(t, "created_at", None) or datetime.min)
+                latest = max(
+                    tweets, key=lambda t: getattr(t, "created_at", None) or datetime.min
+                )
             except Exception:
                 latest = max(tweets, key=lambda t: int(t.id))
             tweets_to_process = [latest]
@@ -389,7 +453,9 @@ class TwitterAskaBot:
             self.last_seen_id = int(newest_id)
             self._persist_state()
 
-    def _handle_tweet(self, tweet: tweepy.Tweet, user_map: Optional[Dict[int, str]] = None) -> None:
+    def _handle_tweet(
+        self, tweet: tweepy.Tweet, user_map: Optional[Dict[int, str]] = None
+    ) -> None:
         if int(tweet.author_id) == self.bot_user_id:
             LOGGER.debug("Skipping self mention tweet %s", tweet.id)
             return
@@ -420,7 +486,9 @@ class TwitterAskaBot:
         try:
             save_chat(user_id, username, raw_text, role="user", topic="twitter")
         except Exception:
-            LOGGER.exception("Failed to persist incoming tweet %s to chat history", tweet.id)
+            LOGGER.exception(
+                "Failed to persist incoming tweet %s to chat history", tweet.id
+            )
 
         reply_text = self._generate_reply(user_id, cleaned)
         prefix = f"@{username} " if username else ""
@@ -433,7 +501,10 @@ class TwitterAskaBot:
             info = _parse_tweepy_error(exc)
             LOGGER.warning(
                 "Reply forbidden for tweet %s (status=%s, codes=%s). Raw=%s",
-                tweet.id, info["status"], info["codes"], info["text"]
+                tweet.id,
+                info["status"],
+                info["codes"],
+                info["text"],
             )
             codes = set(info["codes"] or [])
             if 385 in codes:
@@ -454,12 +525,15 @@ class TwitterAskaBot:
                 # Duplicate content
                 try:
                     from datetime import datetime as _dt
+
                     suffix = " · " + _dt.now().strftime("%H:%M:%S")
-                    dedup = (status[: (280 - len(suffix))] + suffix)
+                    dedup = status[: (280 - len(suffix))] + suffix
                     self._client.create_tweet(text=dedup, in_reply_to_tweet_id=tweet.id)
                     LOGGER.info("Replied after de-duplicating content for %s", tweet.id)
                 except Exception:
-                    LOGGER.exception("Failed to resend non-duplicate reply for %s", tweet.id)
+                    LOGGER.exception(
+                        "Failed to resend non-duplicate reply for %s", tweet.id
+                    )
                     return
             else:
                 # Generic fallback
@@ -471,9 +545,13 @@ class TwitterAskaBot:
                     try:
                         nt = (prefix + reply_text)[:280]
                         self._client.create_tweet(text=nt)
-                        LOGGER.info("Posted normal mention (generic fallback) for %s", tweet.id)
+                        LOGGER.info(
+                            "Posted normal mention (generic fallback) for %s", tweet.id
+                        )
                     except Exception:
-                        LOGGER.exception("Failed generic fallbacks for tweet %s", tweet.id)
+                        LOGGER.exception(
+                            "Failed generic fallbacks for tweet %s", tweet.id
+                        )
                         return
         except Exception:
             LOGGER.exception("Failed to send reply for tweet %s", tweet.id)
@@ -540,9 +618,8 @@ class TwitterAskaBot:
         # kalau tidak ada titik, coba spasi
         end = cut.rfind(" ")
         if end >= int(0.6 * limit):
-            return cut[: end].rstrip() + " ..."
+            return cut[:end].rstrip() + " ..."
         return cut.rstrip() + "..."
-
 
     # --- GANTI fungsi ini dengan versi di bawah ----------------------------------
     def _generate_reply(self, user_id: int, message: str) -> str:
@@ -550,7 +627,11 @@ class TwitterAskaBot:
         normalized = rewrite_schedule_query(normalized)
 
         # ⬇️ Suntikkan instruksi "jawab ringkas" khusus Twitter
-        if os.getenv("ASKA_TWITTER_MODE", "true").strip().lower() in {"1", "true", "on"}:
+        if os.getenv("ASKA_TWITTER_MODE", "true").strip().lower() in {
+            "1",
+            "true",
+            "on",
+        }:
             target = self._twitter_target_len()
             normalized = (
                 "Jawablah SANGAT RINGKAS (maksimal "
@@ -591,13 +672,16 @@ class TwitterAskaBot:
         except Exception:
             LOGGER.exception("Failed to generate ASKA reply for user %s", user_id)
             return ASKA_TECHNICAL_ISSUE_RESPONSE
-                
+
     # ── Autopost ───────────────────────────────────────────
     def _load_autopost_entries(self) -> List[Dict[str, Any]]:
         if not self.autopost_enabled:
             return []
         if not self.autopost_entries_path.exists():
-            LOGGER.warning("Auto-post enabled but messages file %s not found.", self.autopost_entries_path)
+            LOGGER.warning(
+                "Auto-post enabled but messages file %s not found.",
+                self.autopost_entries_path,
+            )
             return []
         try:
             content = self.autopost_entries_path.read_text(encoding="utf-8")
@@ -615,11 +699,16 @@ class TwitterAskaBot:
                 if prompt:
                     entries.append({"mode": "rag", "prompt": prompt, "raw": raw_line})
                 else:
-                    LOGGER.warning("Ignoring RAG auto-post entry with empty prompt: %s", raw_line)
+                    LOGGER.warning(
+                        "Ignoring RAG auto-post entry with empty prompt: %s", raw_line
+                    )
             else:
                 entries.append({"mode": "static", "text": raw_line, "raw": raw_line})
         if not entries:
-            LOGGER.warning("Auto-post messages file %s is empty after filtering.", self.autopost_entries_path)
+            LOGGER.warning(
+                "Auto-post messages file %s is empty after filtering.",
+                self.autopost_entries_path,
+            )
         return entries
 
     def _maybe_autopost(self, *, ignore_interval: bool = False) -> None:
@@ -638,7 +727,9 @@ class TwitterAskaBot:
                 LOGGER.info("Auto-post skipped: interval gate (%ss remaining).", remain)
                 return
         else:
-            LOGGER.info("Auto-post running with ignore_interval=True (forced on start).")
+            LOGGER.info(
+                "Auto-post running with ignore_interval=True (forced on start)."
+            )
 
         total_entries = len(self.autopost_entries)
         if total_entries == 0:
@@ -650,7 +741,9 @@ class TwitterAskaBot:
         message = self._render_autopost_entry(entry)
 
         if not message:
-            LOGGER.warning("Auto-post entry at index %s produced no content; skipping.", next_index)
+            LOGGER.warning(
+                "Auto-post entry at index %s produced no content; skipping.", next_index
+            )
             self.autopost_state["next_index"] = (next_index + 1) % total_entries
             self.autopost_state["last_timestamp"] = now_ts
             self._autopost_log_state = "empty"
@@ -659,28 +752,48 @@ class TwitterAskaBot:
 
         message = self._apply_placeholders(" ".join(message.split()))
         if len(message) > 280:
-            LOGGER.warning("Auto-post message at index %s exceeds 280 chars, truncating.", next_index)
+            LOGGER.warning(
+                "Auto-post message at index %s exceeds 280 chars, truncating.",
+                next_index,
+            )
             message = message[:280]
 
         message_hash = self._hash_message(message)
         recent_hashes = list(self.autopost_state.get("recent_hashes") or [])
         if message_hash in recent_hashes:
-            LOGGER.warning("Auto-post duplicate detected at index %s (mode=%s); skipping.", next_index, entry.get("mode", "static"))
+            LOGGER.warning(
+                "Auto-post duplicate detected at index %s (mode=%s); skipping.",
+                next_index,
+                entry.get("mode", "static"),
+            )
             self.autopost_state["next_index"] = (next_index + 1) % total_entries
             self.autopost_state["last_timestamp"] = now_ts
             self._autopost_log_state = "duplicate"
             self._persist_state()
             return
 
-        LOGGER.debug("Auto-post candidate ready (index=%s, mode=%s, length=%s): %s",
-                     next_index, entry.get("mode", "static"), len(message), message)
+        LOGGER.debug(
+            "Auto-post candidate ready (index=%s, mode=%s, length=%s): %s",
+            next_index,
+            entry.get("mode", "static"),
+            len(message),
+            message,
+        )
 
         try:
             self._client.create_tweet(text=message)
-            LOGGER.info("Auto-posted tweet (index=%s, mode=%s).", next_index, entry.get("mode", "static"))
+            LOGGER.info(
+                "Auto-posted tweet (index=%s, mode=%s).",
+                next_index,
+                entry.get("mode", "static"),
+            )
         except Exception:
-            LOGGER.exception("Failed to auto-post tweet at index %s (mode=%s, preview=%r)",
-                             next_index, entry.get("mode", "static"), message[:160])
+            LOGGER.exception(
+                "Failed to auto-post tweet at index %s (mode=%s, preview=%r)",
+                next_index,
+                entry.get("mode", "static"),
+                message[:160],
+            )
             return
 
         try:
@@ -696,7 +809,7 @@ class TwitterAskaBot:
 
         recent_hashes.append(message_hash)
         if len(recent_hashes) > self.autopost_recent_limit:
-            recent_hashes = recent_hashes[-self.autopost_recent_limit:]
+            recent_hashes = recent_hashes[-self.autopost_recent_limit :]
         self.autopost_state["recent_hashes"] = recent_hashes
         self.autopost_state["next_index"] = (next_index + 1) % total_entries
         self.autopost_state["last_timestamp"] = now_ts
@@ -779,7 +892,9 @@ class TwitterAskaBot:
         return {item.strip().lower() for item in raw.split(",") if item.strip()}
 
     # ── Spam filter PERMISIF (tanpa whitelist) ─────────────
-    def _is_spam_content(self, username: Optional[str], raw_text: str, cleaned_text: str) -> bool:
+    def _is_spam_content(
+        self, username: Optional[str], raw_text: str, cleaned_text: str
+    ) -> bool:
         """
         - TWITTER_SPAM_DISABLE=true  -> semua lolos.
         - Ada tanda tanya (?)        -> lolos (indikasi pertanyaan).
@@ -787,12 +902,22 @@ class TwitterAskaBot:
         - Tetap blokir keyword spam (default/env).
         - Strict mode hanya blokir jika sangat pendek & tanpa '?'.
         """
-        if os.getenv("TWITTER_SPAM_DISABLE", "false").strip().lower() in {"1", "true", "yes", "on"}:
+        if os.getenv("TWITTER_SPAM_DISABLE", "false").strip().lower() in {
+            "1",
+            "true",
+            "yes",
+            "on",
+        }:
             return False
 
-        raw = (raw_text or "")
+        raw = raw_text or ""
         cleaned = (cleaned_text or "").strip()
-        strict = os.getenv("TWITTER_SPAM_FILTER_STRICT", "false").strip().lower() in {"1", "true", "yes", "on"}
+        strict = os.getenv("TWITTER_SPAM_FILTER_STRICT", "false").strip().lower() in {
+            "1",
+            "true",
+            "yes",
+            "on",
+        }
 
         try:
             min_chars = max(1, int(os.getenv("TWITTER_SPAM_MIN_CHARS", "2")))
@@ -812,10 +937,18 @@ class TwitterAskaBot:
         has_alnum = any(ch.isalnum() for ch in cleaned)
 
         if (len(cleaned) >= min_chars and has_alnum) or (len(words) >= min_words):
-            LOGGER.debug("Spam check: content-length ok (len=%d, words=%d), allow.", len(cleaned), len(words))
+            LOGGER.debug(
+                "Spam check: content-length ok (len=%d, words=%d), allow.",
+                len(cleaned),
+                len(words),
+            )
         else:
             if strict:
-                LOGGER.info("Spam check: too short (len=%d, words=%d) in strict mode -> block.", len(cleaned), len(words))
+                LOGGER.info(
+                    "Spam check: too short (len=%d, words=%d) in strict mode -> block.",
+                    len(cleaned),
+                    len(words),
+                )
                 return True
             else:
                 if has_alnum:
@@ -827,11 +960,15 @@ class TwitterAskaBot:
         haystack = f"{raw} {cleaned}".lower()
         for token in DEFAULT_SPAM_KEYWORDS:
             if token and token in haystack:
-                LOGGER.info("Spam check: matched default spam keyword '%s' -> block.", token)
+                LOGGER.info(
+                    "Spam check: matched default spam keyword '%s' -> block.", token
+                )
                 return True
         for token in self.spam_keywords:
             if token and token in haystack:
-                LOGGER.info("Spam check: matched custom spam keyword '%s' -> block.", token)
+                LOGGER.info(
+                    "Spam check: matched custom spam keyword '%s' -> block.", token
+                )
                 return True
 
         LOGGER.debug("Spam check: accepted.")

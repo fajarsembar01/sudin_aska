@@ -32,7 +32,9 @@ SHEET_KECAMATAN_MAP = {
 }
 
 BASE_DIR = Path(__file__).resolve().parents[2]
-EXCEL_PATH = BASE_DIR / "contoh" / "DAFTAR SEKOLAH NEGERI & SWASTA DI JAKARTA UTARA II.xlsx"
+EXCEL_PATH = (
+    BASE_DIR / "contoh" / "DAFTAR SEKOLAH NEGERI & SWASTA DI JAKARTA UTARA II.xlsx"
+)
 OUTPUT_PATH = BASE_DIR / "contoh" / "portal_school_import.sql"
 
 # Optional short codes for kecamatan (used only for metadata)
@@ -100,7 +102,9 @@ def load_master_data() -> Tuple[Dict[str, List[str]], List[Dict[str, str]]]:
     if not EXCEL_PATH.exists():
         raise FileNotFoundError(f"Excel source not found at {EXCEL_PATH}")
 
-    kelurahan_map: Dict[str, set] = {kecamatan: set() for kecamatan in SHEET_KECAMATAN_MAP.values()}
+    kelurahan_map: Dict[str, set] = {
+        kecamatan: set() for kecamatan in SHEET_KECAMATAN_MAP.values()
+    }
     schools_by_npsn: Dict[str, Dict[str, str]] = {}
 
     for sheet_name, kecamatan_name in SHEET_KECAMATAN_MAP.items():
@@ -215,7 +219,9 @@ def build_kelurahan_sql(kelurahan_map: Dict[str, List[str]]) -> Iterable[str]:
 
 def build_school_sql(school_rows: List[Dict[str, str]]) -> Iterable[str]:
     """Yield INSERT ... SELECT statements for portal_schools."""
-    for row in sorted(school_rows, key=lambda r: (r["kecamatan"], r["kelurahan"], r["name"])):
+    for row in sorted(
+        school_rows, key=lambda r: (r["kecamatan"], r["kelurahan"], r["name"])
+    ):
         yield (
             "INSERT INTO portal_schools (npsn, name, jenjang, alamat, kelurahan_id, status, active, updated_at)\n"
             f"SELECT {sql_literal(row['npsn'])}, {sql_literal(row['name'])}, "
@@ -235,7 +241,9 @@ def build_school_sql(school_rows: List[Dict[str, str]]) -> Iterable[str]:
         )
 
 
-def build_sql_file(kelurahan_map: Dict[str, List[str]], school_rows: List[Dict[str, str]]) -> str:
+def build_sql_file(
+    kelurahan_map: Dict[str, List[str]], school_rows: List[Dict[str, str]]
+) -> str:
     """Assemble the final SQL script."""
     now = datetime.now(_JAKARTA_TZ).strftime("%Y-%m-%d %H:%M:%S WIB")
     header = [

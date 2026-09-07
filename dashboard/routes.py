@@ -5,73 +5,100 @@ import os
 import re
 from datetime import datetime, timedelta, timezone
 from math import ceil
-from typing import Iterable, Optional, Dict, List
 from pathlib import Path
-
-from knowledge_loader import GENERATED_DIR, KECERDASAN_DIR, build_kecerdasan_file, generate_clean_file, load_file_order, load_kecerdasan, save_file_order
+from typing import Dict, Iterable, List, Optional
 
 from flask import (
     Blueprint,
     Response,
+    abort,
+    current_app,
     flash,
     jsonify,
     redirect,
     render_template,
     request,
-    url_for,
-    session,
-    current_app,
-    abort,
     send_from_directory,
+    session,
+    url_for,
 )
+from psycopg2 import IntegrityError
 from werkzeug.datastructures import MultiDict
 
-from .auth import current_user, role_required
+from knowledge_loader import (
+    GENERATED_DIR,
+    KECERDASAN_DIR,
+    build_kecerdasan_file,
+    generate_clean_file,
+    load_file_order,
+    load_kecerdasan,
+    save_file_order,
+)
 from reporting_flags import qa_only_mode_enabled
 from utils import current_jakarta_time, to_jakarta
+
+from .auth import current_user, role_required
 from .queries import (
     BULLYING_STATUSES,
-    PSYCH_STATUSES,
     CORRUPTION_STATUSES,
+    PSYCH_STATUSES,
     ChatFilters,
+    bulk_update_bullying_report_status,
+    bulk_update_corruption_report_status,
+    bulk_update_psych_report_status,
+    chat_topic_available,
+    claim_spmb_table_assignment,
+    create_spmb_evaluation,
+    create_spmb_service_type,
+    delete_spmb_evaluation,
+    delete_spmb_service_type,
+    fetch_admin_activity_page,
+    fetch_admin_performance_data,
     fetch_all_chat_users,
+    fetch_aska_knowledge_history,
+    fetch_bullying_report_basic,
+    fetch_bullying_report_detail,
     fetch_bullying_reports,
     fetch_bullying_summary,
-    fetch_bullying_report_detail,
-    fetch_bullying_report_basic,
     fetch_chat_logs,
     fetch_conversation_thread,
+    fetch_corruption_report_detail,
+    fetch_corruption_reports,
+    fetch_corruption_summary,
     fetch_daily_activity,
+    fetch_feedback_list,
+    fetch_feedback_summary,
+    fetch_feedback_trend,
     fetch_overview_metrics,
+    fetch_psych_group_reports,
+    fetch_psych_reports,
+    fetch_psych_summary,
     fetch_recent_questions,
     fetch_top_keywords,
     fetch_top_users,
-    fetch_feedback_summary,
-    fetch_feedback_list,
-    fetch_feedback_trend,
-    fetch_admin_performance_data,
-    fetch_admin_activity_page,
-    update_bullying_report_status,
-    bulk_update_bullying_report_status,
-    fetch_psych_reports,
-    fetch_psych_summary,
-    fetch_psych_group_reports,
-    update_psych_report_status,
-    bulk_update_psych_report_status,
-    fetch_corruption_reports,
-    fetch_corruption_summary,
-    fetch_corruption_report_detail,
-    bulk_update_corruption_report_status,
-    update_corruption_report_status,
-    fetch_twitter_overview,
     fetch_twitter_activity,
+    fetch_twitter_overview,
     fetch_twitter_top_users,
-    chat_topic_available,
     fetch_twitter_worker_logs,
-    update_no_tester_preference,
     fetch_whatsapp_link_settings,
+    get_latest_spmb_queue_call,
+    get_spmb_evaluation_counts,
+    get_spmb_queue_counter,
+    list_spmb_evaluations,
+    list_spmb_service_types,
+    list_spmb_table_assignments,
+    list_spmb_table_officers,
     record_admin_action,
-    fetch_aska_knowledge_history,
+    release_spmb_table_assignment,
+    save_spmb_table_assignments,
+    toggle_spmb_service_type,
+    update_bullying_report_status,
+    update_corruption_report_status,
+    update_no_tester_preference,
+    update_psych_report_status,
+    update_spmb_evaluation,
+    update_spmb_queue_counter,
+    update_spmb_service_type,
 )
 
 main_bp = Blueprint("main", __name__)
@@ -120,7 +147,9 @@ def _reporting_enabled(kind: Optional[str] = None) -> bool:
     return global_enabled and bool(current_app.config.get(key, True))
 
 
-def _reporting_disabled_response(message: str = "Fitur pelaporan ASKA sedang dinonaktifkan.") -> Response:
+def _reporting_disabled_response(
+    message: str = "Fitur pelaporan ASKA sedang dinonaktifkan.",
+) -> Response:
     wants_json = request.is_json or request.accept_mimetypes.best == "application/json"
     is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
     if request.method == "POST" and (wants_json or is_ajax):
@@ -143,6 +172,23 @@ def _normalize_whatsapp_link(raw_value: str) -> str:
     return f"https://wa.me/{digits}"
 
 
+def _parse_sort_order(value: Optional[str], default: int = 0) -> int:
+    try:
+        return int(str(value or "").strip())
+    except (TypeError, ValueError):
+        return default
+
+
+def _parse_date_only(value: Optional[str]):
+    clean = (value or "").strip()
+    if not clean:
+        return current_jakarta_time().date()
+    try:
+        return datetime.strptime(clean, "%Y-%m-%d").date()
+    except ValueError:
+        return current_jakarta_time().date()
+
+
 def _resolve_runtime_path(value: Optional[str], default: str) -> Path:
     path = Path(value or default)
     if not path.is_absolute():
@@ -154,7 +200,9 @@ _MD_SANITIZE_RE = re.compile(r"[^A-Za-z0-9._-]+")
 _FOLDER_SANITIZE_RE = re.compile(r"[^A-Za-z0-9 _.-]+")
 
 
-def _normalize_relative_path(raw: Optional[str], default: str = "markdown/umum.md") -> str:
+def _normalize_relative_path(
+    raw: Optional[str], default: str = "markdown/umum.md"
+) -> str:
     value = (raw or "").strip()
     if not value:
         return default
@@ -344,8 +392,12 @@ def _try_reload_qa_chain() -> tuple[bool, Optional[str]]:
 
 def _load_twitter_runtime() -> dict:
     """Kumpulkan info real-time worker Twitter dari env, state file, dan autopost list."""
-    state_path = _resolve_runtime_path(os.getenv("TWITTER_STATE_PATH"), "twitter_state.json")
-    autopost_path = _resolve_runtime_path(os.getenv("TWITTER_AUTOPOST_MESSAGES_PATH"), "twitter_posts.txt")
+    state_path = _resolve_runtime_path(
+        os.getenv("TWITTER_STATE_PATH"), "twitter_state.json"
+    )
+    autopost_path = _resolve_runtime_path(
+        os.getenv("TWITTER_AUTOPOST_MESSAGES_PATH"), "twitter_posts.txt"
+    )
     raw_bot_user_id = os.getenv("TWITTER_USER_ID")
     bot_user_id: Optional[int]
     if raw_bot_user_id:
@@ -381,10 +433,18 @@ def _load_twitter_runtime() -> dict:
             "mentions_enabled": _env_flag("TWITTER_MENTIONS_ENABLED", "true"),
             "autopost_enabled": _env_flag("TWITTER_AUTOPOST_ENABLED", "false"),
             "poll_interval": int(os.getenv("TWITTER_POLL_INTERVAL", "180") or 180),
-            "mentions_cooldown": int(os.getenv("TWITTER_MENTIONS_COOLDOWN", "180") or 180),
-            "mentions_max_results": int(os.getenv("TWITTER_MENTIONS_MAX_RESULTS", "5") or 5),
-            "autopost_interval": int(os.getenv("TWITTER_AUTOPOST_INTERVAL", "3600") or 3600),
-            "autopost_recent_limit": int(os.getenv("TWITTER_AUTOPOST_RECENT_LIMIT", "8") or 8),
+            "mentions_cooldown": int(
+                os.getenv("TWITTER_MENTIONS_COOLDOWN", "180") or 180
+            ),
+            "mentions_max_results": int(
+                os.getenv("TWITTER_MENTIONS_MAX_RESULTS", "5") or 5
+            ),
+            "autopost_interval": int(
+                os.getenv("TWITTER_AUTOPOST_INTERVAL", "3600") or 3600
+            ),
+            "autopost_recent_limit": int(
+                os.getenv("TWITTER_AUTOPOST_RECENT_LIMIT", "8") or 8
+            ),
             "max_tweet_len": int(os.getenv("TWITTER_MAX_TWEET_LEN", "280") or 280),
         },
     }
@@ -401,7 +461,9 @@ def _load_twitter_runtime() -> dict:
                     runtime["autopost_state"] = autopost_state
                     last_ts = autopost_state.get("last_timestamp")
                     if isinstance(last_ts, (int, float)) and last_ts > 0:
-                        runtime["last_autopost"] = datetime.fromtimestamp(last_ts, tz=timezone.utc)
+                        runtime["last_autopost"] = datetime.fromtimestamp(
+                            last_ts, tz=timezone.utc
+                        )
             else:
                 runtime["state_error"] = "Format state file tidak dikenal."
         except Exception as exc:
@@ -463,12 +525,14 @@ def toggle_no_tester() -> Response:
         return jsonify({"success": False, "message": str(exc)}), 500
 
     if not success:
-        return jsonify({"success": False, "message": "User preference not updated"}), 400
+        return (
+            jsonify({"success": False, "message": "User preference not updated"}),
+            400,
+        )
 
     session_user = session.get("user") or {}
     session_user["no_tester_enabled"] = enabled
     session["user"] = session_user
-
 
     return jsonify({"success": True, "enabled": enabled})
 
@@ -485,7 +549,7 @@ def admin_select_role() -> Response:
     if not user:
         flash("Silakan login terlebih dahulu.", "warning")
         return redirect(url_for("auth.login"))
-    
+
     role = user.get("role", "")
     # Allow admin role only
     if role != "admin":
@@ -527,30 +591,50 @@ def admin_select_role() -> Response:
             "href": url_for("call_center.inbox"),
         },
         {
-            "title": "Content Management",
-            "description": "Kelola berita dan informasi Sudin.",
-            "icon": "bi-newspaper",
-            "href": url_for("cms.dashboard"),
-        },
-        {
             "title": "Adiwiyata",
-            "description": "Pantau laporan progres atau kondisi pelestarian lingkungan sekolah.",
+            "description": "Pantau progres pelestarian lingkungan sekolah.",
             "icon": "bi-buildings",
             "icon_secondary": "bi-tree-fill",
-            "href": "/portal/admin/adiwiyata",
-            "col_class": "col-lg-6 col-md-8 col-12",
+            "href": url_for("adiwiyata.admin_adiwiyata_dashboard"),
+        },
+        {
+            "title": "Supporter",
+            "description": "Kelola task sosial media dan poin staff.",
+            "icon": "bi-megaphone",
+            "href": url_for("supporter.admin_dashboard"),
+        },
+        {
+            "title": "Laporan",
+            "description": "Kelola form laporan dari sekolah.",
+            "icon": "bi-file-earmark-text",
+            "href": url_for("laporan.admin_laporan_list"),
+        },
+        {
+            "title": "CMS",
+            "description": "Kelola konten dan informasi publik Sudin.",
+            "icon": "bi-newspaper",
+            "href": url_for("cms.layanan_publik"),
+        },
+        {
+            "title": "MONEV BOS/BOP",
+            "description": "Kelola tim dan laporan MONEV keuangan sekolah.",
+            "icon": "bi-cash-coin",
+            "href": url_for("monev_bos.index"),
+        },
+        {
+            "title": "Pengaturan",
+            "description": "Kelola notifikasi, API, dan pengaturan umum aplikasi.",
+            "icon": "bi-gear-fill",
+            "href": url_for("pengaturan.admin_settings"),
+        },
+        {
+            "title": "Coming Soon",
+            "description": "Menu sedang disiapkan.",
+            "icon": "bi-hourglass-split",
+            "disabled": True,
         },
     ]
-    # Layout fleksibel: desktop 3 kolom, tablet 2 kolom, mobile 1 kolom
-    n = len(cards)
-    if n >= 4:
-        default_col_class = "col-lg-4 col-md-6 col-12"
-    elif n == 3:
-        default_col_class = "col-lg-4 col-md-6 col-12"
-    elif n == 2:
-        default_col_class = "col-lg-6 col-md-6 col-12"
-    else:
-        default_col_class = "col-12"
+    default_col_class = "col-lg-3 col-md-4 col-sm-6 col-12"
     return render_template(
         "role_selection.html",
         page_title="Pilih Mode Akses - ASKA Portal",
@@ -559,9 +643,494 @@ def admin_select_role() -> Response:
         header_subtitle="Silakan pilih layanan yang ingin Anda akses",
         cards=cards,
         default_col_class=default_col_class,
-        enable_odd_center=True,
+        enable_odd_center=False,
+        container_class="role-selection-wide admin-role-selection",
+        mobile_compact=True,
         show_logout=True,
     )
+
+
+@main_bp.route("/api/spmb-service-types")
+def api_spmb_service_types() -> Response:
+    service_types = list_spmb_service_types(include_inactive=False)
+    return jsonify(
+        {
+            "data": [
+                {
+                    "id": item.get("id"),
+                    "name": item.get("name"),
+                    "description": item.get("description"),
+                    "sort_order": item.get("sort_order"),
+                }
+                for item in service_types
+            ]
+        }
+    )
+
+
+def _serialize_spmb_evaluation(item: dict) -> dict:
+    created_at = item.get("created_at")
+    created_at_value = (
+        created_at.isoformat()
+        if hasattr(created_at, "isoformat")
+        else str(created_at or "")
+    )
+    return {
+        "id": item.get("id"),
+        "pelayanan": item.get("service_type"),
+        "nomorMeja": str(item.get("table_number") or ""),
+        "indikator": item.get("indicator"),
+        "catatan": item.get("note") or "",
+        "createdAt": created_at_value,
+    }
+
+
+def _serialize_spmb_queue_counter(item: dict) -> dict:
+    service_date = item.get("service_date")
+    updated_at = item.get("updated_at")
+    return {
+        "id": item.get("id"),
+        "serviceDate": (
+            service_date.isoformat()
+            if hasattr(service_date, "isoformat")
+            else str(service_date or "")
+        ),
+        "currentNumber": int(item.get("current_number") or 0),
+        "updatedAt": (
+            updated_at.isoformat()
+            if hasattr(updated_at, "isoformat")
+            else str(updated_at or "")
+        ),
+    }
+
+
+def _serialize_spmb_queue_call(item: Optional[dict]) -> Optional[dict]:
+    if not item:
+        return None
+    service_date = item.get("service_date")
+    called_at = item.get("called_at")
+    updated_at = item.get("updated_at")
+    return {
+        "id": item.get("id"),
+        "serviceDate": (
+            service_date.isoformat()
+            if hasattr(service_date, "isoformat")
+            else str(service_date or "")
+        ),
+        "queueNumber": int(item.get("queue_number") or 0),
+        "tableNumber": int(item.get("table_number") or 0),
+        "status": item.get("status") or "",
+        "officerName": item.get("officer_name") or item.get("officer_email") or "",
+        "calledAt": (
+            called_at.isoformat()
+            if hasattr(called_at, "isoformat")
+            else str(called_at or "")
+        ),
+        "updatedAt": (
+            updated_at.isoformat()
+            if hasattr(updated_at, "isoformat")
+            else str(updated_at or "")
+        ),
+        "announcement": (
+            f"Nomor antrian {int(item.get('queue_number') or 0)}, "
+            f"silakan menuju meja nomor {int(item.get('table_number') or 0)}."
+        ),
+    }
+
+
+@main_bp.route("/api/spmb-evaluations", methods=["GET", "POST"])
+def api_spmb_evaluations() -> Response:
+    if request.method == "POST":
+        payload = request.get_json(silent=True) or {}
+        try:
+            item = create_spmb_evaluation(
+                service_type=str(
+                    payload.get("pelayanan")
+                    or payload.get("service_type")
+                    or "Informasi SPMB"
+                ),
+                table_number=int(
+                    payload.get("nomorMeja") or payload.get("table_number") or 0
+                ),
+                indicator=str(
+                    payload.get("indikator") or payload.get("indicator") or ""
+                ),
+                note=str(payload.get("catatan") or payload.get("note") or ""),
+                client_ip=request.headers.get(
+                    "X-Forwarded-For", request.remote_addr or ""
+                )
+                .split(",")[0]
+                .strip(),
+                user_agent=request.headers.get("User-Agent"),
+            )
+        except ValueError as exc:
+            return jsonify({"success": False, "message": str(exc)}), 400
+        except Exception as exc:
+            current_app.logger.exception("Failed to save SPMB evaluation")
+            return (
+                jsonify(
+                    {"success": False, "message": f"Gagal menyimpan evaluasi: {exc}"}
+                ),
+                500,
+            )
+
+        return jsonify({"success": True, "item": _serialize_spmb_evaluation(item)})
+
+    try:
+        limit = int(request.args.get("limit") or 100)
+    except ValueError:
+        limit = 100
+    try:
+        jakarta_now = current_jakarta_time()
+        day_start = jakarta_now.replace(hour=0, minute=0, second=0, microsecond=0)
+        day_end = day_start + timedelta(days=1)
+        items = list_spmb_evaluations(limit=limit)
+        counts = get_spmb_evaluation_counts(day_start=day_start, day_end=day_end)
+    except Exception as exc:
+        current_app.logger.exception("Failed to fetch SPMB evaluations")
+        return (
+            jsonify({"data": [], "error": f"Gagal mengambil riwayat evaluasi: {exc}"}),
+            500,
+        )
+    return jsonify(
+        {
+            "data": [_serialize_spmb_evaluation(item) for item in items],
+            "summary": {
+                "today": counts["today_count"],
+                "total": counts["total_count"],
+                "date": day_start.date().isoformat(),
+            },
+        }
+    )
+
+
+@main_bp.route("/api/spmb-evaluations/<int:evaluation_id>", methods=["PUT", "DELETE"])
+def api_spmb_evaluation_item(evaluation_id: int) -> Response:
+    if request.method == "PUT":
+        payload = request.get_json(silent=True) or {}
+        try:
+            item = update_spmb_evaluation(
+                evaluation_id,
+                service_type=str(
+                    payload.get("pelayanan")
+                    or payload.get("service_type")
+                    or "Informasi SPMB"
+                ),
+                table_number=int(
+                    payload.get("nomorMeja") or payload.get("table_number") or 0
+                ),
+                indicator=str(
+                    payload.get("indikator") or payload.get("indicator") or ""
+                ),
+                note=str(payload.get("catatan") or payload.get("note") or ""),
+            )
+        except ValueError as exc:
+            return jsonify({"success": False, "message": str(exc)}), 400
+        except Exception as exc:
+            current_app.logger.exception("Failed to update SPMB evaluation")
+            return (
+                jsonify(
+                    {"success": False, "message": f"Gagal memperbarui evaluasi: {exc}"}
+                ),
+                500,
+            )
+
+        if not item:
+            return (
+                jsonify(
+                    {"success": False, "message": "Data evaluasi tidak ditemukan."}
+                ),
+                404,
+            )
+
+        return jsonify({"success": True, "item": _serialize_spmb_evaluation(item)})
+
+    try:
+        item = delete_spmb_evaluation(evaluation_id)
+    except Exception as exc:
+        current_app.logger.exception("Failed to delete SPMB evaluation")
+        return (
+            jsonify({"success": False, "message": f"Gagal menghapus evaluasi: {exc}"}),
+            500,
+        )
+
+    if not item:
+        return (
+            jsonify({"success": False, "message": "Data evaluasi tidak ditemukan."}),
+            404,
+        )
+
+    return jsonify({"success": True, "item": _serialize_spmb_evaluation(item)})
+
+
+@main_bp.route("/api/spmb-queue", methods=["GET", "POST"])
+def api_spmb_queue() -> Response:
+    service_date = current_jakarta_time().date()
+
+    if request.method == "POST":
+        payload = request.get_json(silent=True) or {}
+        action = str(payload.get("action") or "").strip().lower()
+        delta = (
+            1
+            if action in {"increment", "plus", "tambah"}
+            else -1 if action in {"decrement", "minus", "kurang"} else 0
+        )
+        if delta == 0:
+            return (
+                jsonify(
+                    {"success": False, "message": "Aksi nomor antrian tidak valid."}
+                ),
+                400,
+            )
+
+        try:
+            item = update_spmb_queue_counter(service_date=service_date, delta=delta)
+        except ValueError as exc:
+            return jsonify({"success": False, "message": str(exc)}), 400
+        except Exception as exc:
+            current_app.logger.exception("Failed to update SPMB queue counter")
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "message": f"Gagal memperbarui nomor antrian: {exc}",
+                    }
+                ),
+                500,
+            )
+
+        last_call = get_latest_spmb_queue_call(service_date)
+        return jsonify(
+            {
+                "success": True,
+                "item": _serialize_spmb_queue_counter(item),
+                "lastCall": _serialize_spmb_queue_call(last_call),
+            }
+        )
+
+    try:
+        item = get_spmb_queue_counter(service_date)
+        last_call = get_latest_spmb_queue_call(service_date)
+    except Exception as exc:
+        current_app.logger.exception("Failed to fetch SPMB queue counter")
+        return (
+            jsonify(
+                {"success": False, "message": f"Gagal mengambil nomor antrian: {exc}"}
+            ),
+            500,
+        )
+    return jsonify(
+        {
+            "success": True,
+            "item": _serialize_spmb_queue_counter(item),
+            "lastCall": _serialize_spmb_queue_call(last_call),
+        }
+    )
+
+
+@main_bp.route("/spmb-service-types", methods=["GET", "POST"])
+@role_required("admin")
+def spmb_service_types() -> Response:
+    user = current_user() or {}
+    if request.method == "POST":
+        name = request.form.get("name", "")
+        description = request.form.get("description", "")
+        sort_order = _parse_sort_order(request.form.get("sort_order"))
+        active = request.form.get("active") == "1"
+
+        try:
+            item = create_spmb_service_type(
+                name=name,
+                description=description,
+                sort_order=sort_order,
+                active=active,
+                user_id=user.get("id"),
+            )
+            record_admin_action(
+                user_id=user.get("id"),
+                feature_key="aska_insight",
+                action="CREATE",
+                target_type="SPMB_SERVICE_TYPE",
+                target_id=item.get("id"),
+                target_name=item.get("name"),
+                metadata={
+                    "description": item.get("description"),
+                    "sort_order": item.get("sort_order"),
+                    "active": item.get("active"),
+                },
+            )
+            flash("Jenis pelayanan berhasil ditambahkan.", "success")
+        except IntegrityError:
+            flash("Nama jenis pelayanan sudah terdaftar.", "warning")
+        except ValueError as exc:
+            flash(str(exc), "warning")
+        except Exception as exc:
+            current_app.logger.exception("Failed to create SPMB service type")
+            flash(f"Gagal menambahkan jenis pelayanan: {exc}", "danger")
+        return redirect(url_for("main.spmb_service_types"))
+
+    service_types = list_spmb_service_types(include_inactive=True)
+    active_count = sum(1 for item in service_types if item.get("active"))
+    return render_template(
+        "spmb_service_types.html",
+        service_types=service_types,
+        active_count=active_count,
+    )
+
+
+@main_bp.route("/spmb-service-types/<int:service_type_id>/update", methods=["POST"])
+@role_required("admin")
+def update_spmb_service_type_route(service_type_id: int) -> Response:
+    user = current_user() or {}
+    name = request.form.get("name", "")
+    description = request.form.get("description", "")
+    sort_order = _parse_sort_order(request.form.get("sort_order"))
+    active = request.form.get("active") == "1"
+
+    try:
+        item = update_spmb_service_type(
+            service_type_id=service_type_id,
+            name=name,
+            description=description,
+            sort_order=sort_order,
+            active=active,
+            user_id=user.get("id"),
+        )
+        if not item:
+            flash("Jenis pelayanan tidak ditemukan.", "warning")
+        else:
+            record_admin_action(
+                user_id=user.get("id"),
+                feature_key="aska_insight",
+                action="UPDATE",
+                target_type="SPMB_SERVICE_TYPE",
+                target_id=item.get("id"),
+                target_name=item.get("name"),
+                metadata={
+                    "description": item.get("description"),
+                    "sort_order": item.get("sort_order"),
+                    "active": item.get("active"),
+                },
+            )
+            flash("Jenis pelayanan berhasil diperbarui.", "success")
+    except IntegrityError:
+        flash("Nama jenis pelayanan sudah terdaftar.", "warning")
+    except ValueError as exc:
+        flash(str(exc), "warning")
+    except Exception as exc:
+        current_app.logger.exception("Failed to update SPMB service type")
+        flash(f"Gagal memperbarui jenis pelayanan: {exc}", "danger")
+    return redirect(url_for("main.spmb_service_types"))
+
+
+@main_bp.route("/spmb-service-types/<int:service_type_id>/toggle", methods=["POST"])
+@role_required("admin")
+def toggle_spmb_service_type_route(service_type_id: int) -> Response:
+    user = current_user() or {}
+    try:
+        item = toggle_spmb_service_type(service_type_id, user_id=user.get("id"))
+        if not item:
+            flash("Jenis pelayanan tidak ditemukan.", "warning")
+        else:
+            record_admin_action(
+                user_id=user.get("id"),
+                feature_key="aska_insight",
+                action="TOGGLE",
+                target_type="SPMB_SERVICE_TYPE",
+                target_id=item.get("id"),
+                target_name=item.get("name"),
+                metadata={"active": item.get("active")},
+            )
+            flash("Status jenis pelayanan berhasil diperbarui.", "success")
+    except Exception as exc:
+        current_app.logger.exception("Failed to toggle SPMB service type")
+        flash(f"Gagal mengubah status jenis pelayanan: {exc}", "danger")
+    return redirect(url_for("main.spmb_service_types"))
+
+
+@main_bp.route("/spmb-service-types/<int:service_type_id>/delete", methods=["POST"])
+@role_required("admin")
+def delete_spmb_service_type_route(service_type_id: int) -> Response:
+    user = current_user() or {}
+    try:
+        item = delete_spmb_service_type(service_type_id)
+        if not item:
+            flash("Jenis pelayanan tidak ditemukan.", "warning")
+        else:
+            record_admin_action(
+                user_id=user.get("id"),
+                feature_key="aska_insight",
+                action="DELETE",
+                target_type="SPMB_SERVICE_TYPE",
+                target_id=item.get("id"),
+                target_name=item.get("name"),
+            )
+            flash("Jenis pelayanan berhasil dihapus.", "success")
+    except Exception as exc:
+        current_app.logger.exception("Failed to delete SPMB service type")
+        flash(f"Gagal menghapus jenis pelayanan: {exc}", "danger")
+    return redirect(url_for("main.spmb_service_types"))
+
+
+@main_bp.route("/spmb-table-assignments", methods=["GET", "POST"])
+@role_required("admin")
+def spmb_table_assignments() -> Response:
+    user = current_user() or {}
+
+    if request.method == "POST":
+        selected_date = _parse_date_only(request.form.get("assignment_date"))
+        assignments: dict[int, Optional[int]] = {}
+        for table_number in range(1, 13):
+            raw_user_id = (request.form.get(f"officer_{table_number}") or "").strip()
+            try:
+                assignments[table_number] = int(raw_user_id) if raw_user_id else None
+            except ValueError:
+                assignments[table_number] = None
+
+        try:
+            save_spmb_table_assignments(
+                assignment_date=selected_date,
+                assignments=assignments,
+                updated_by=user.get("id"),
+            )
+            assigned_count = sum(1 for value in assignments.values() if value)
+            record_admin_action(
+                user_id=user.get("id"),
+                feature_key="aska_insight",
+                action="UPDATE",
+                target_type="SPMB_TABLE_ASSIGNMENT",
+                target_name=selected_date.isoformat(),
+                metadata={
+                    "assignment_date": selected_date.isoformat(),
+                    "assigned_count": assigned_count,
+                },
+            )
+            flash("Petugas meja SPMB berhasil disimpan.", "success")
+        except Exception as exc:
+            current_app.logger.exception("Failed to save SPMB table assignments")
+            flash(f"Gagal menyimpan petugas meja: {exc}", "danger")
+        return redirect(
+            url_for("main.spmb_table_assignments", date=selected_date.isoformat())
+        )
+
+    selected_date = _parse_date_only(request.args.get("date"))
+    assignments = list_spmb_table_assignments(selected_date)
+    officers = list_spmb_table_officers()
+    return render_template(
+        "spmb_table_assignments.html",
+        selected_date=selected_date,
+        assignments=assignments,
+        officers=officers,
+    )
+
+
+@main_bp.route("/spmb-table-claim", methods=["GET", "POST"])
+@role_required("admin", "coordinator", "staff")
+def spmb_table_claim() -> Response:
+    date_value = request.form.get("assignment_date") or request.args.get("date")
+    if request.method == "POST":
+        flash("Halaman klaim meja sudah dipindahkan ke menu Penugasan.", "info")
+    return redirect(url_for("penugasan.spmb_table_claim", date=date_value))
 
 
 @main_bp.route("/overview")
@@ -626,9 +1195,8 @@ def dashboard() -> Response:
     }
 
     whatsapp_settings = fetch_whatsapp_link_settings()
-    whatsapp_link_value = (
-        whatsapp_settings.get("wa_link")
-        or os.getenv("ASKA_WHATSAPP_URL", "082143646463")
+    whatsapp_link_value = whatsapp_settings.get("wa_link") or os.getenv(
+        "ASKA_WHATSAPP_URL", "082143646463"
     )
 
     aska_links = {
@@ -761,7 +1329,9 @@ def twitter_logs() -> Response:
 
     offset = (page - 1) * TWITTER_PAGE_SIZE
     if topic_supported:
-        records, total = fetch_chat_logs(filters=filters, limit=TWITTER_PAGE_SIZE, offset=offset)
+        records, total = fetch_chat_logs(
+            filters=filters, limit=TWITTER_PAGE_SIZE, offset=offset
+        )
     else:
         records, total = [], 0
     total_pages = max(1, ceil(total / TWITTER_PAGE_SIZE)) if total else 1
@@ -790,7 +1360,11 @@ def twitter_logs() -> Response:
 
     autopost_page_total = 0
     for row in records:
-        is_autopost = bool(bot_user_id and row.get("role") == "aska" and row.get("user_id") == bot_user_id)
+        is_autopost = bool(
+            bot_user_id
+            and row.get("role") == "aska"
+            and row.get("user_id") == bot_user_id
+        )
         row["is_autopost"] = is_autopost
         row["is_reply"] = row.get("role") == "aska" and not is_autopost
         row["is_mention"] = row.get("role") == "user"
@@ -840,7 +1414,6 @@ def twitter_logs() -> Response:
         worker_logs=worker_logs,
         page_autopost_total=autopost_page_total,
     )
-
 
 
 @main_bp.route("/notif-logs")
@@ -985,7 +1558,7 @@ def chat_thread(user_id: str) -> Response:
     if not messages and users_list:
         flash("Pengguna ini belum memiliki riwayat percakapan.", "info")
         return redirect(url_for("main.chat_thread", user_id=users_list[0]["user_id"]))
-    
+
     # If no messages and no other users, redirect to chat list
     if not messages:
         return redirect(url_for("main.chats"))
@@ -997,7 +1570,6 @@ def chat_thread(user_id: str) -> Response:
     return render_template(
         "chat_thread.html", messages=messages, user=user, users_list=users_list
     )
-
 
 
 @main_bp.route("/bullying-reports")
@@ -1025,7 +1597,9 @@ def bullying_reports() -> Response:
     offset = (page - 1) * limit
 
     try:
-        records, total = fetch_bullying_reports(status=raw_status, limit=limit, offset=offset)
+        records, total = fetch_bullying_reports(
+            status=raw_status, limit=limit, offset=offset
+        )
     except ValueError as exc:
         flash(str(exc), "danger")
         return redirect(url_for("main.bullying_reports"))
@@ -1169,7 +1743,9 @@ def corruption_reports() -> Response:
     offset = (page - 1) * limit
 
     try:
-        records, total = fetch_corruption_reports(status=raw_status, limit=limit, offset=offset)
+        records, total = fetch_corruption_reports(
+            status=raw_status, limit=limit, offset=offset
+        )
     except ValueError as exc:
         flash(str(exc), "danger")
         return redirect(url_for("main.corruption_reports"))
@@ -1239,7 +1815,9 @@ def bulk_update_corruption_status() -> Response:
                         metadata={"status": normalized_status, "mode": "bulk"},
                     )
                 except Exception:
-                    current_app.logger.exception("Failed to log bulk corruption admin action")
+                    current_app.logger.exception(
+                        "Failed to log bulk corruption admin action"
+                    )
         return jsonify({"success": True})
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
@@ -1260,7 +1838,7 @@ def update_corruption_status(report_id: int) -> Response:
 
     if action == "reopen":
         status_value = "open"
-    
+
     if not status_value:
         flash("Tidak ada status yang dipilih.", "warning")
         return redirect(next_url)
@@ -1310,7 +1888,7 @@ def psych_reports() -> Response:
         flash("Status filter tidak dikenal.", "warning")
         return redirect(url_for("main.psych_reports"))
 
-    if raw_severity and raw_severity not in ('general', 'elevated', 'critical'):
+    if raw_severity and raw_severity not in ("general", "elevated", "critical"):
         flash("Severity filter tidak dikenal.", "warning")
         return redirect(url_for("main.psych_reports"))
 
@@ -1430,7 +2008,9 @@ def bulk_update_psych_status() -> Response:
                         metadata={"status": normalized_status, "mode": "bulk"},
                     )
                 except Exception:
-                    current_app.logger.exception("Failed to log bulk psych admin action")
+                    current_app.logger.exception(
+                        "Failed to log bulk psych admin action"
+                    )
         return jsonify({"success": True})
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
@@ -1492,7 +2072,11 @@ def activity_api() -> Response:
     activity = fetch_daily_activity(days=days)
     payload = [
         {
-            "day": (row["day"].isoformat() if hasattr(row.get("day"), "isoformat") else str(row.get("day"))),
+            "day": (
+                row["day"].isoformat()
+                if hasattr(row.get("day"), "isoformat")
+                else str(row.get("day"))
+            ),
             "messages": int(row.get("messages") or 0),
         }
         for row in activity
@@ -1599,12 +2183,24 @@ def export_chats() -> Response:
 
     records, _ = fetch_chat_logs(filters=filters, limit=5000, offset=0)
 
-    from io import StringIO
     import csv
+    from io import StringIO
 
     buffer = StringIO()
     writer = csv.writer(buffer)
-    writer.writerow(["id", "created_at", "user_id", "username", "role", "channel", "topic", "response_time_ms", "text"])
+    writer.writerow(
+        [
+            "id",
+            "created_at",
+            "user_id",
+            "username",
+            "role",
+            "channel",
+            "topic",
+            "response_time_ms",
+            "text",
+        ]
+    )
     for row in records:
         created_at = row.get("created_at")
         if created_at:
@@ -1705,7 +2301,9 @@ def manage_knowledge() -> Response:
             return redirect(url_for("main.manage_knowledge"))
 
         if action == "append_snippet":
-            raw_name = request.form.get("new_filename") or selected_basename or default_file
+            raw_name = (
+                request.form.get("new_filename") or selected_basename or default_file
+            )
             content = (request.form.get("append_content") or "").rstrip()
             page_from_raw = (request.form.get("page_from") or "").strip()
             page_to_raw = (request.form.get("page_to") or "").strip()
@@ -1719,7 +2317,9 @@ def manage_knowledge() -> Response:
                     raise ValueError("Lokasi berkas tidak valid.")
                 existed_before = target_path.exists()
                 if not existed_before:
-                    raise ValueError("Berkas belum ada. Simpan dulu berkasnya sebelum menambah potongan halaman.")
+                    raise ValueError(
+                        "Berkas belum ada. Simpan dulu berkasnya sebelum menambah potongan halaman."
+                    )
 
                 page_from: Optional[int] = None
                 page_to: Optional[int] = None
@@ -1727,24 +2327,37 @@ def manage_knowledge() -> Response:
                     page_from = int(page_from_raw)
                 if page_to_raw:
                     page_to = int(page_to_raw)
-                if page_from is not None and page_to is not None and page_from > page_to:
+                if (
+                    page_from is not None
+                    and page_to is not None
+                    and page_from > page_to
+                ):
                     raise ValueError("Range halaman tidak valid (dari > sampai).")
 
                 existing_text = target_path.read_text(encoding="utf-8")
                 snippet = content.strip()
                 if snippet and snippet in existing_text:
-                    flash("Konten yang sama sudah ada di berkas (anti duplikat aktif).", "warning")
+                    flash(
+                        "Konten yang sama sudah ada di berkas (anti duplikat aktif).",
+                        "warning",
+                    )
                     return redirect(
                         url_for(
                             "main.manage_knowledge",
-                            file=str(target_path.relative_to(KECERDASAN_DIR)).replace("\\", "/"),
+                            file=str(target_path.relative_to(KECERDASAN_DIR)).replace(
+                                "\\", "/"
+                            ),
                         )
                     )
 
                 # Build the new block with a page marker
                 new_page_num = page_from  # use page_from as sort key
                 if new_page_num is not None:
-                    page_label = f"{page_from}" if page_to is None or page_from == page_to else f"{page_from}-{page_to}"
+                    page_label = (
+                        f"{page_from}"
+                        if page_to is None or page_from == page_to
+                        else f"{page_from}-{page_to}"
+                    )
                     new_block = f"<!-- halaman:{page_label} -->\n{content.rstrip()}\n"
                 else:
                     new_block = content.rstrip() + "\n"
@@ -1753,7 +2366,10 @@ def manage_knowledge() -> Response:
                     # Split existing text into blocks by page markers and
                     # insert the new block in sorted order.
                     import re as _re
-                    marker_pattern = _re.compile(r"^<!-- halaman:(\d+)(?:-(\d+))? -->", _re.MULTILINE)
+
+                    marker_pattern = _re.compile(
+                        r"^<!-- halaman:(\d+)(?:-(\d+))? -->", _re.MULTILINE
+                    )
                     markers = list(marker_pattern.finditer(existing_text))
 
                     # Check for duplicate/overlapping page numbers
@@ -1764,12 +2380,21 @@ def manage_knowledge() -> Response:
                         existing_to = int(m.group(2)) if m.group(2) else existing_from
                         # Check overlap: two ranges overlap if start1 <= end2 AND start2 <= end1
                         if req_from <= existing_to and existing_from <= req_to:
-                            existing_label = f"{existing_from}" if existing_from == existing_to else f"{existing_from}-{existing_to}"
-                            flash(f"Halaman {page_label} tumpang tindih dengan halaman {existing_label} yang sudah ada.", "warning")
+                            existing_label = (
+                                f"{existing_from}"
+                                if existing_from == existing_to
+                                else f"{existing_from}-{existing_to}"
+                            )
+                            flash(
+                                f"Halaman {page_label} tumpang tindih dengan halaman {existing_label} yang sudah ada.",
+                                "warning",
+                            )
                             return redirect(
                                 url_for(
                                     "main.manage_knowledge",
-                                    file=str(target_path.relative_to(KECERDASAN_DIR)).replace("\\", "/"),
+                                    file=str(
+                                        target_path.relative_to(KECERDASAN_DIR)
+                                    ).replace("\\", "/"),
                                 )
                             )
 
@@ -1799,7 +2424,9 @@ def manage_knowledge() -> Response:
 
                 generate_clean_file(target_path)
                 build_kecerdasan_file()
-                relative_path = str(target_path.relative_to(KECERDASAN_DIR)).replace("\\", "/")
+                relative_path = str(target_path.relative_to(KECERDASAN_DIR)).replace(
+                    "\\", "/"
+                )
                 metadata = {
                     "path": relative_path,
                     "folder": "",
@@ -1819,7 +2446,9 @@ def manage_knowledge() -> Response:
                         metadata=metadata,
                     )
                 except Exception:
-                    current_app.logger.exception("Failed to log knowledge snippet append")
+                    current_app.logger.exception(
+                        "Failed to log knowledge snippet append"
+                    )
                 flash("Potongan halaman berhasil ditambahkan ke berkas.", "success")
                 return redirect(url_for("main.manage_knowledge", file=relative_path))
             except Exception as exc:
@@ -1840,7 +2469,9 @@ def manage_knowledge() -> Response:
 
             generate_clean_file(target_path)
             build_kecerdasan_file()
-            relative_path = str(target_path.relative_to(KECERDASAN_DIR)).replace("\\", "/")
+            relative_path = str(target_path.relative_to(KECERDASAN_DIR)).replace(
+                "\\", "/"
+            )
             metadata = {
                 "path": relative_path,
                 "folder": "",
@@ -1867,7 +2498,10 @@ def manage_knowledge() -> Response:
                 if ok:
                     flash("Knowledge base berhasil direfresh untuk ASKA.", "success")
                 else:
-                    flash(f"Berkas tersimpan, tetapi gagal refresh otomatis: {message}", "warning")
+                    flash(
+                        f"Berkas tersimpan, tetapi gagal refresh otomatis: {message}",
+                        "warning",
+                    )
             return redirect(url_for("main.manage_knowledge", file=relative_path))
         except Exception as exc:
             flash(str(exc), "danger")
@@ -1940,7 +2574,9 @@ GUIDE_BOOK_FILES = {
 def doc_guide_book(filename: str) -> Response:
     if filename not in GUIDE_BOOK_FILES:
         abort(404)
-    guide_book_dir = Path(__file__).resolve().parent / "templates" / "documentation" / "Guide_Book"
+    guide_book_dir = (
+        Path(__file__).resolve().parent / "templates" / "documentation" / "Guide_Book"
+    )
     return send_from_directory(guide_book_dir, filename)
 
 

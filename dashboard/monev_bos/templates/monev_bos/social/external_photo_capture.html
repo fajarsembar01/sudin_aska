@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="id">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Foto Live Eksternal · {{ link.school_name }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        body { background: #f4f7fb; min-height: 100dvh; }
+        .capture-shell { max-width: 720px; }
+        .school-logo { width: 58px; height: 58px; object-fit: cover; }
+        .camera-box { aspect-ratio: 4 / 3; background: #111827; overflow: hidden; }
+        .camera-box video, .camera-box img { width: 100%; height: 100%; object-fit: cover; }
+        .camera-box video { transform: scaleX(1); }
+        .token-input { letter-spacing: .35em; font-size: 1.3rem; font-weight: 700; }
+        .step-number { width: 34px; height: 34px; display: inline-grid; place-items: center; }
+        .step-line { height: 2px; background: #dbe3ef; flex: 1; }
+        .safe-bottom { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
+    </style>
+</head>
+<body>
+<main class="container capture-shell py-3 py-md-4 safe-bottom">
+    <header class="card border-0 shadow-sm mb-3">
+        <div class="card-body d-flex align-items-center gap-3">
+            {% if link.school_logo_url %}
+            <img src="{{ link.school_logo_url }}" class="rounded-circle border school-logo" alt="Logo sekolah">
+            {% else %}
+            <div class="rounded-circle bg-primary-subtle text-primary d-grid school-logo"><i class="bi bi-building fs-3 m-auto"></i></div>
+            {% endif %}
+            <div>
+                <div class="small text-body-secondary">Foto Live Eksternal</div>
+                <h1 class="h5 fw-bold mb-1">{{ link.school_name }}</h1>
+                <div class="small">Link berakhir {{ link.expires_at|jakarta('%d %b %Y %H:%M') }} WIB</div>
+            </div>
+        </div>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+    <div class="alert alert-{{ category }} shadow-sm" role="alert">{{ message }}</div>
+    {% endfor %}
+    {% endwith %}
+
+    {% if not link.is_active %}
+    <div class="card border-0 shadow-sm">
+        <div class="card-body text-center py-5">
+            <i class="bi bi-link-45deg display-4 text-danger"></i>
+            <h2 class="h4 fw-bold mt-3">Link Tidak Aktif</h2>
+            <p class="text-body-secondary mb-0">Link sudah kedaluwarsa atau telah dicabut. Minta sekolah membuat link baru.</p>
+        </div>
+    </div>
+    {% elif submission_success %}
+    <div class="card border-0 shadow-sm">
+        <div class="card-body text-center py-5">
+            <i class="bi bi-check-circle-fill display-4 text-success"></i>
+            <h2 class="h4 fw-bold mt-3">Foto Sudah Terkirim</h2>
+            <p class="text-body-secondary">Foto dan identitas Anda sudah masuk ke profil sekolah.</p>
+            <a href="{{ url_for('monev_bos.external_photo_capture', public_id=link.public_id) }}" class="btn btn-primary"><i class="bi bi-camera me-1"></i>Ambil Foto Lagi</a>
+        </div>
+    </div>
+    {% else %}
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body py-3 d-flex align-items-center gap-2">
+            <div class="d-flex align-items-center gap-2 {{ 'text-primary' if current_step == 'identity' else 'text-success' }}">
+                <span class="step-number rounded-circle {{ 'bg-primary text-white' if current_step == 'identity' else 'bg-success text-white' }}">{{ '✓' if current_step == 'photo' else '1' }}</span>
+                <span class="small fw-bold">Verifikasi</span>
+            </div>
+            <div class="step-line"></div>
+            <div class="d-flex align-items-center gap-2 {{ 'text-primary' if current_step == 'photo' else 'text-body-secondary' }}">
+                <span class="step-number rounded-circle {{ 'bg-primary text-white' if current_step == 'photo' else 'bg-body-secondary-subtle' }}">2</span>
+                <span class="small fw-bold">Ambil Foto</span>
+            </div>
+        </div>
+    </div>
+
+    {% if current_step == 'identity' %}
+    <form method="POST" class="card border-0 shadow-sm">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="verify_identity">
+        <div class="card-body p-3 p-md-4">
+            <h2 class="h5 fw-bold mb-1">Langkah 1 · Verifikasi Identitas</h2>
+            <p class="text-body-secondary small mb-4">Masukkan NIP yang sudah didaftarkan sekolah dan token untuk membuka kamera. Nama akan terisi otomatis dari data sekolah.</p>
+            <div class="mb-3">
+                <label for="teacherNip" class="form-label fw-semibold">NIP <span class="text-danger">*</span></label>
+                <input id="teacherNip" name="teacher_nip" class="form-control" inputmode="numeric" pattern="[0-9]{18}" maxlength="18" value="{{ request.form.get('teacher_nip', '') }}" placeholder="18 digit" required autofocus>
+            </div>
+            <div class="mb-4">
+                <label for="accessToken" class="form-label fw-semibold">Token 6 Digit <span class="text-danger">*</span></label>
+                <input id="accessToken" name="access_token" class="form-control token-input" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="••••••" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold">Verifikasi & Lanjutkan <i class="bi bi-arrow-right ms-1"></i></button>
+        </div>
+    </form>
+    {% else %}
+    <form method="POST" class="card border-0 shadow-sm" id="externalPhotoForm">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="submit_photo">
+        <input type="hidden" name="photo_data" id="photoData">
+        <input type="hidden" name="latitude" id="latitude">
+        <input type="hidden" name="longitude" id="longitude">
+        <input type="hidden" name="location_accuracy" id="locationAccuracy">
+        <div class="card-body p-3 p-md-4">
+            <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                <div>
+                    <h2 class="h5 fw-bold mb-1">Langkah 2 · Ambil Foto</h2>
+                    <div class="small text-body-secondary"><i class="bi bi-person-check-fill text-success me-1"></i>{{ verified_identity.teacher_name }} · NIP {{ verified_identity.teacher_nip }}</div>
+                </div>
+                <a href="{{ url_for('monev_bos.external_photo_capture', public_id=link.public_id, reset=1) }}" class="btn btn-sm btn-outline-secondary">Ganti Identitas</a>
+            </div>
+
+            <div class="mb-3">
+                <label for="photoTitle" class="form-label fw-semibold">Judul Foto <span class="text-danger">*</span></label>
+                <input id="photoTitle" name="title" class="form-control" maxlength="200" value="{{ request.form.get('title', '') }}" placeholder="Contoh: Kegiatan pembelajaran kelas XI" required>
+            </div>
+
+            <label class="form-label fw-semibold">Foto Kamera Live <span class="text-danger">*</span></label>
+            <div class="camera-box rounded-3 position-relative mb-2">
+                <video id="cameraVideo" autoplay playsinline muted></video>
+                <img id="photoPreview" class="d-none" alt="Hasil foto">
+                <div id="cameraMessage" class="position-absolute top-50 start-50 translate-middle text-white text-center w-75">Meminta akses kamera...</div>
+            </div>
+            <canvas id="cameraCanvas" class="d-none"></canvas>
+            <div class="d-grid d-sm-flex gap-2 mb-3">
+                <button type="button" class="btn btn-primary flex-grow-1" id="captureButton" disabled><i class="bi bi-camera-fill me-1"></i>Ambil Foto</button>
+                <button type="button" class="btn btn-outline-secondary d-none" id="retakeButton"><i class="bi bi-arrow-counterclockwise me-1"></i>Ambil Ulang</button>
+            </div>
+            <div id="locationStatus" class="small text-body-secondary mb-3"><span class="spinner-border spinner-border-sm me-1"></span>Mengambil lokasi GPS...</div>
+            <button type="submit" class="btn btn-success btn-lg w-100 fw-bold" id="submitButton" disabled><i class="bi bi-send-fill me-1"></i>Kirim ke Sekolah</button>
+        </div>
+    </form>
+    {% endif %}
+    {% endif %}
+</main>
+
+{% if link.is_active and not submission_success and current_step == 'photo' %}
+<script>
+(function () {
+    const video = document.getElementById('cameraVideo');
+    const preview = document.getElementById('photoPreview');
+    const canvas = document.getElementById('cameraCanvas');
+    const message = document.getElementById('cameraMessage');
+    const captureButton = document.getElementById('captureButton');
+    const retakeButton = document.getElementById('retakeButton');
+    const submitButton = document.getElementById('submitButton');
+    const photoData = document.getElementById('photoData');
+    const locationStatus = document.getElementById('locationStatus');
+    let stream = null;
+    let hasLocation = false;
+
+    function refreshSubmit() { submitButton.disabled = !(photoData.value && hasLocation); }
+
+    async function startCamera() {
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false });
+            video.srcObject = stream;
+            await video.play();
+            message.classList.add('d-none');
+            captureButton.disabled = false;
+        } catch (error) {
+            message.textContent = 'Kamera tidak dapat dibuka. Izinkan akses kamera pada browser lalu muat ulang halaman.';
+        }
+    }
+
+    function requestLocation() {
+        if (!navigator.geolocation) {
+            locationStatus.innerHTML = '<span class="text-danger"><i class="bi bi-exclamation-circle me-1"></i>Perangkat tidak mendukung GPS.</span>';
+            return;
+        }
+        navigator.geolocation.getCurrentPosition(function (position) {
+            document.getElementById('latitude').value = position.coords.latitude;
+            document.getElementById('longitude').value = position.coords.longitude;
+            document.getElementById('locationAccuracy').value = position.coords.accuracy || '';
+            hasLocation = true;
+            locationStatus.innerHTML = '<span class="text-success"><i class="bi bi-geo-alt-fill me-1"></i>Lokasi GPS siap (akurasi ±' + Math.round(position.coords.accuracy || 0) + ' m).</span>';
+            refreshSubmit();
+        }, function () {
+            locationStatus.innerHTML = '<span class="text-danger"><i class="bi bi-exclamation-circle me-1"></i>GPS wajib diizinkan. Aktifkan lokasi lalu muat ulang halaman.</span>';
+        }, { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
+    }
+
+    captureButton.addEventListener('click', function () {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+        photoData.value = canvas.toDataURL('image/jpeg', 0.82);
+        preview.src = photoData.value;
+        preview.classList.remove('d-none');
+        video.classList.add('d-none');
+        captureButton.classList.add('d-none');
+        retakeButton.classList.remove('d-none');
+        refreshSubmit();
+    });
+
+    retakeButton.addEventListener('click', function () {
+        photoData.value = '';
+        preview.src = '';
+        preview.classList.add('d-none');
+        video.classList.remove('d-none');
+        captureButton.classList.remove('d-none');
+        retakeButton.classList.add('d-none');
+        refreshSubmit();
+    });
+
+    document.getElementById('externalPhotoForm').addEventListener('submit', function () {
+        submitButton.disabled = true;
+        submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Mengirim...';
+    });
+    window.addEventListener('pagehide', function () { if (stream) stream.getTracks().forEach(function (track) { track.stop(); }); });
+    startCamera();
+    requestLocation();
+})();
+</script>
+{% endif %}
+</body>
+</html>

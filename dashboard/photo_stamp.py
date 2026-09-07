@@ -29,7 +29,9 @@ def decode_data_url_image(photo_data_url: str) -> bytes:
         raise ValueError("Format foto live tidak valid.") from exc
 
 
-def _get_text_bbox(draw: ImageDraw.ImageDraw, text: str, font: ImageFont.ImageFont, spacing: int) -> tuple[int, int, int, int]:
+def _get_text_bbox(
+    draw: ImageDraw.ImageDraw, text: str, font: ImageFont.ImageFont, spacing: int
+) -> tuple[int, int, int, int]:
     if hasattr(draw, "multiline_textbbox"):
         return draw.multiline_textbbox((0, 0), text, font=font, spacing=spacing)
     width, height = draw.multiline_textsize(text, font=font, spacing=spacing)
@@ -95,7 +97,9 @@ def stamp_live_photo(
 
     overlay = Image.new("RGBA", base_rgba.size, (0, 0, 0, 0))
     overlay_draw = ImageDraw.Draw(overlay)
-    overlay_draw.rectangle([box_left, box_top, box_right, box_bottom], fill=(0, 0, 0, int(255 * 0.5)))
+    overlay_draw.rectangle(
+        [box_left, box_top, box_right, box_bottom], fill=(0, 0, 0, int(255 * 0.5))
+    )
     base_rgba = Image.alpha_composite(base_rgba, overlay)
     draw = ImageDraw.Draw(base_rgba)
     draw.multiline_text(
@@ -106,7 +110,9 @@ def stamp_live_photo(
         spacing=spacing,
     )
 
-    base_rgba.convert("RGB").save(stamped_path, format="JPEG", quality=88, optimize=True)
+    base_rgba.convert("RGB").save(
+        stamped_path, format="JPEG", quality=88, optimize=True
+    )
     relative_root_norm = relative_root.strip("/").replace("\\", "/")
     return {
         "raw_path": f"{relative_root_norm}/{raw_filename}",
@@ -114,4 +120,3 @@ def stamp_live_photo(
         "map_provider": "none",
         "map_error": None,
     }
-

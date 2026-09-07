@@ -7,23 +7,73 @@ import unicodedata
 # All entries are lowercase; detection runs on lowercased text.
 INAPPROPRIATE_KEYWORDS = {
     # Indonesian slang and insults
-    "anjing", "anjir", "anjay", "anjrit", "anjrr", "anj",
-    "bangsat", "brengsek", "bajingan", "keparat", "laknat",
-    "goblok", "tolol", "bodoh", "bego", "dungu", "idiot",
-    "kampret", "tai", "taik", "babi", "asu",
-    "bacot", "bacott",
-    "kontol", "k0nt0l", "memek", "m3m3k", "titit", "peler", "pler",
-    "ngewe", "ewe", "entot", "ngentot", "entod",
-    "coly", "coli", "colmek",
-    "perek", "lonte", "pelacur",
-    "jancuk", "jancok", "cuk", "cukimay",
-    "bangke", "bangkai",
-    "pantek", "matamu",
+    "anjing",
+    "anjir",
+    "anjay",
+    "anjrit",
+    "anjrr",
+    "anj",
+    "bangsat",
+    "brengsek",
+    "bajingan",
+    "keparat",
+    "laknat",
+    "goblok",
+    "tolol",
+    "bodoh",
+    "bego",
+    "dungu",
+    "idiot",
+    "kampret",
+    "tai",
+    "taik",
+    "babi",
+    "asu",
+    "bacot",
+    "bacott",
+    "kontol",
+    "k0nt0l",
+    "memek",
+    "m3m3k",
+    "titit",
+    "peler",
+    "pler",
+    "ngewe",
+    "ewe",
+    "entot",
+    "ngentot",
+    "entod",
+    "coly",
+    "coli",
+    "colmek",
+    "perek",
+    "lonte",
+    "pelacur",
+    "jancuk",
+    "jancok",
+    "cuk",
+    "cukimay",
+    "bangke",
+    "bangkai",
+    "pantek",
+    "matamu",
     # English profanity
-    "fuck", "fck", "fak", "wtf", "stfu",
-    "shit", "bullshit", "bs",
-    "bitch", "btch", "slut",
-    "asshole", "ass", "dick", "d1ck", "pussy",
+    "fuck",
+    "fck",
+    "fak",
+    "wtf",
+    "stfu",
+    "shit",
+    "bullshit",
+    "bs",
+    "bitch",
+    "btch",
+    "slut",
+    "asshole",
+    "ass",
+    "dick",
+    "d1ck",
+    "pussy",
     "jerk",
 }
 
@@ -61,15 +111,28 @@ ADVICE_RESPONSES = (
     "Kita gas produktif bareng ASKA. Bahasa santun = otak jernih = masalah kelar tanpa drama 🧋✅.",
 )
 
-_LEET = str.maketrans({
-    "0": "o", "1": "i", "!": "i", "|": "i",
-    "3": "e", "4": "a", "5": "s", "$": "s",
-    "7": "t", "@": "a",
-})
+_LEET = str.maketrans(
+    {
+        "0": "o",
+        "1": "i",
+        "!": "i",
+        "|": "i",
+        "3": "e",
+        "4": "a",
+        "5": "s",
+        "$": "s",
+        "7": "t",
+        "@": "a",
+    }
+)
 
 
 def _strip_accents(text: str) -> str:
-    return "".join(ch for ch in unicodedata.normalize("NFKD", text) if not unicodedata.combining(ch))
+    return "".join(
+        ch
+        for ch in unicodedata.normalize("NFKD", text)
+        if not unicodedata.combining(ch)
+    )
 
 
 def _normalize_text(text: str) -> str:
@@ -98,7 +161,9 @@ def _spaced_regex_from_word(word: str) -> re.Pattern:
     return re.compile(pattern, flags=re.IGNORECASE)
 
 
-INAPPROPRIATE_REGEXES = tuple(_spaced_regex_from_word(keyword) for keyword in INAPPROPRIATE_KEYWORDS)
+INAPPROPRIATE_REGEXES = tuple(
+    _spaced_regex_from_word(keyword) for keyword in INAPPROPRIATE_KEYWORDS
+)
 
 
 def contains_inappropriate(text: str) -> bool:
@@ -112,7 +177,7 @@ def contains_inappropriate(text: str) -> bool:
 
     tokens = set(normalized.split())
     # Hapus 'ga' dari token yang akan diperiksa untuk menghindari positif palsu
- 
+
     if tokens & INAPPROPRIATE_KEYWORDS:
         return True
 

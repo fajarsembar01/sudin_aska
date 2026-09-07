@@ -9,6 +9,7 @@ Default filters:
 Usage:
   python scripts/generate_detail_sekolah_md.py
 """
+
 from __future__ import annotations
 
 import argparse
@@ -111,7 +112,9 @@ def _format_empty_seats(meta: Dict[str, Any]) -> str:
                 non_numeric.append((str(k), v))
         items.sort(key=lambda x: x[0])
         non_numeric.sort(key=lambda x: x[0])
-        formatted = [f"{k}: {v}" for k, v in items] + [f"{k}: {v}" for k, v in non_numeric]
+        formatted = [f"{k}: {v}" for k, v in items] + [
+            f"{k}: {v}" for k, v in non_numeric
+        ]
         per_grade = ", ".join(formatted)
 
     if empty_total is None and not per_grade:
@@ -184,7 +187,9 @@ def build_markdown(schools: List[Dict[str, Any]]) -> str:
             lines.append(f"- **Website**: {_clean_value(meta.get('website'))}")
             lines.append(f"- **Sosial Media**: {_format_social(meta)}")
             lines.append(f"- **Nomor Telepon**: {_format_phone(meta)}")
-            lines.append(f"- **Email**: {_clean_value(meta.get('cs_email') or meta.get('email'))}")
+            lines.append(
+                f"- **Email**: {_clean_value(meta.get('cs_email') or meta.get('email'))}"
+            )
             lines.append(f"- **Bangku Kosong**: {_format_empty_seats(meta)}")
 
     lines.append("")
@@ -192,7 +197,9 @@ def build_markdown(schools: List[Dict[str, Any]]) -> str:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Generate Detail_Sekolah.md from portal_schools")
+    parser = argparse.ArgumentParser(
+        description="Generate Detail_Sekolah.md from portal_schools"
+    )
     parser.add_argument(
         "--output",
         default="kecerdasan/markdown/Detail_Sekolah.md",

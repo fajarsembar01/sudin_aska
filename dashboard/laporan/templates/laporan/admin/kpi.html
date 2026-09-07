@@ -1,0 +1,109 @@
+{% extends "laporan/base_laporan.html" %}
+{% set page_title = "KPI Kepatuhan Laporan Sekolah" %}
+
+{% block head_extra %}
+<style>
+    .kpi-card {
+        border: 1.5px solid var(--border-soft);
+        border-radius: 16px;
+        background: var(--bg-surface);
+        padding: 1.25rem 1.5rem;
+        height: 100%;
+    }
+    .kpi-table th {
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-muted);
+        font-weight: 700;
+        border-bottom: 2px solid var(--border-soft);
+    }
+    .kpi-table td {
+        vertical-align: middle;
+        padding: 1rem 0.5rem;
+    }
+    .stat-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 0.9rem;
+    }
+</style>
+{% endblock %}
+
+{% block portal_content %}
+<section class="mb-4">
+    <div class="card portal-hero border-0 shadow-sm">
+        <div class="card-body">
+            <h1 class="h3 fw-bold page-title mb-1">KPI Kepatuhan Laporan</h1>
+            <p class="page-subtitle mb-0">Pantau tingkat kecepatan pengisian form dari setiap sekolah</p>
+        </div>
+    </div>
+</section>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover kpi-table mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-4">Sekolah</th>
+                        <th class="text-center">Total Form</th>
+                        <th class="text-center">Tepat Waktu</th>
+                        <th class="text-center" title="Mengikuti konfigurasi sangat terlambat pada masing-masing form">Terlambat</th>
+                        <th class="text-center" title="Mengikuti konfigurasi sangat terlambat pada masing-masing form">Sangat Terlambat</th>
+                        <th class="pe-4 text-center">Tingkat Kepatuhan</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in kpi_data %}
+                    <tr>
+                        <td class="ps-4">
+                            <div class="fw-bold">{{ row.school_name }}</div>
+                            <div class="text-muted small">{{ row.jenjang }} &bull; NPSN {{ row.npsn }}</div>
+                        </td>
+                        <td class="text-center">
+                            <span class="stat-badge bg-secondary-subtle text-secondary">{{ row.total_submissions }}</span>
+                        </td>
+                        <td class="text-center">
+                            <span class="stat-badge bg-success-subtle text-success" title="{{ row.on_time_count }} Tepat Waktu">{{ row.on_time_count }}</span>
+                        </td>
+                        <td class="text-center">
+                            <span class="stat-badge bg-warning-subtle text-warning" title="{{ row.late_count }} Terlambat">{{ row.late_count }}</span>
+                        </td>
+                        <td class="text-center">
+                            <span class="stat-badge bg-danger-subtle text-danger" title="{{ row.very_late_count }} Sangat Terlambat">{{ row.very_late_count }}</span>
+                        </td>
+                        <td class="pe-4 text-center">
+                            {% set total = row.total_submissions %}
+                            {% if total > 0 %}
+                                {% set score = (row.on_time_count / total * 100) | round(1) %}
+                                {% if score >= 80 %}
+                                    <span class="badge bg-success text-white py-2 px-3 fs-6">{{ score }}%</span>
+                                {% elif score >= 50 %}
+                                    <span class="badge bg-warning text-dark py-2 px-3 fs-6">{{ score }}%</span>
+                                {% else %}
+                                    <span class="badge bg-danger text-white py-2 px-3 fs-6">{{ score }}%</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            Belum ada data pengisian form.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

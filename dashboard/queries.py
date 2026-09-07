@@ -11,8 +11,9 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 from flask import has_request_context, session
 from psycopg2.extras import DictRow, Json
 
-from .db_access import get_cursor
 from account_status import ACCOUNT_STATUS_CHOICES
+
+from .db_access import get_cursor
 
 _UNSET = object()
 
@@ -76,6 +77,8 @@ ADMIN_PERFORMANCE_FEATURE_LABELS: Dict[str, str] = {
     "hospitality": "Hospitality",
     "daftar_tamu": "Daftar Tamu",
     "call_center": "Call Center",
+    "monev_bos": "Monev BOS/BOP",
+    "laporan": "Laporan",
 }
 
 
@@ -126,16 +129,14 @@ def chat_topic_available() -> bool:
     if _CHAT_TOPIC_AVAILABLE is not None:
         return _CHAT_TOPIC_AVAILABLE
     with get_cursor() as cur:
-        cur.execute(
-            """
+        cur.execute("""
             SELECT 1
             FROM information_schema.columns
             WHERE table_schema = current_schema()
               AND table_name = 'chat_logs'
               AND column_name = 'topic'
             LIMIT 1
-            """
-        )
+            """)
         _CHAT_TOPIC_AVAILABLE = cur.fetchone() is not None
     return _CHAT_TOPIC_AVAILABLE
 
@@ -146,16 +147,14 @@ def chat_channel_available() -> bool:
     if _CHAT_CHANNEL_AVAILABLE is not None:
         return _CHAT_CHANNEL_AVAILABLE
     with get_cursor() as cur:
-        cur.execute(
-            """
+        cur.execute("""
             SELECT 1
             FROM information_schema.columns
             WHERE table_schema = current_schema()
               AND table_name = 'chat_logs'
               AND column_name = 'channel'
             LIMIT 1
-            """
-        )
+            """)
         _CHAT_CHANNEL_AVAILABLE = cur.fetchone() is not None
     return _CHAT_CHANNEL_AVAILABLE
 
@@ -181,31 +180,32 @@ def _chat_channel_expression_sql() -> str:
 
 
 BULLYING_STATUSES = (
-    'pending',
-    'in_progress',
-    'resolved',
-    'spam',
+    "pending",
+    "in_progress",
+    "resolved",
+    "spam",
 )
 
 CORRUPTION_STATUSES = (
-    'open',
-    'in_progress',
-    'resolved',
-    'archived',
+    "open",
+    "in_progress",
+    "resolved",
+    "archived",
 )
 
 PSYCH_STATUSES = (
-    'open',
-    'in_progress',
-    'resolved',
-    'archived',
+    "open",
+    "in_progress",
+    "resolved",
+    "archived",
 )
 
 PSYCH_SEVERITIES = (
-    'general',
-    'elevated',
-    'critical',
+    "general",
+    "elevated",
+    "critical",
 )
+
 
 @dataclass
 class ChatFilters:
@@ -218,7 +218,10 @@ class ChatFilters:
     exclude_topic: Optional[str] = None
     channel: Optional[str] = None
 
-def _apply_filters(conditions: List[str], params: List[Any], filters: ChatFilters) -> None:
+
+def _apply_filters(
+    conditions: List[str], params: List[Any], filters: ChatFilters
+) -> None:
     if filters.start:
         conditions.append("created_at >= %s")
         params.append(filters.start)
@@ -245,6 +248,7 @@ def _apply_filters(conditions: List[str], params: List[Any], filters: ChatFilter
         if normalized_channel in {"telegram", "web", "twitter", "whatsapp"}:
             conditions.append(f"{_chat_channel_expression_sql()} = %s")
             params.append(normalized_channel)
+
 
 def fetch_overview_metrics(window_days: int = 7) -> Dict[str, Any]:
     """Aggregate key performance indicators for the dashboard landing page."""
@@ -332,21 +336,17 @@ def fetch_overview_metrics(window_days: int = 7) -> Dict[str, Any]:
         cur.execute(channel_query, tuple(channel_params))
         channel_row = cur.fetchone() or {}
 
-        cur.execute(
-            """
+        cur.execute("""
             SELECT status, COUNT(*) AS total
             FROM bullying_reports
             GROUP BY status
-            """
-        )
+            """)
         bullying_rows = cur.fetchall()
-        cur.execute(
-            """
+        cur.execute("""
             SELECT COUNT(*) AS escalated_total
             FROM bullying_reports
             WHERE escalated = TRUE
-            """
-        )
+            """)
         escalated_total = cur.fetchone()["escalated_total"] or 0
 
     avg_response = response_stats["avg_response"] or 0.0
@@ -400,10 +400,10 @@ def fetch_overview_metrics(window_days: int = 7) -> Dict[str, Any]:
         "p90_response_ms": round(p90_response, 2),
         "active_today": int(active_today or 0),
         "bullying_total": bullying_total,
-        "bullying_pending": bullying_summary['pending'],
-        "bullying_in_progress": bullying_summary['in_progress'],
-        "bullying_resolved": bullying_summary['resolved'],
-        "bullying_spam": bullying_summary['spam'],
+        "bullying_pending": bullying_summary["pending"],
+        "bullying_in_progress": bullying_summary["in_progress"],
+        "bullying_resolved": bullying_summary["resolved"],
+        "bullying_spam": bullying_summary["spam"],
         "bullying_summary": bullying_summary,
         "bullying_active_total": bullying_active_total,
         "corruption_summary": corruption_summary,
@@ -414,7 +414,10 @@ def fetch_overview_metrics(window_days: int = 7) -> Dict[str, Any]:
         "channel_user_totals": channel_user_totals,
     }
 
-def fetch_daily_activity(days: int = 14, role: Optional[str] = None) -> List[Dict[str, Any]]:
+
+def fetch_daily_activity(
+    days: int = 14, role: Optional[str] = None
+) -> List[Dict[str, Any]]:
     days = max(1, days)
     params: List[Any] = [f"{days} days"]
     query = [
@@ -446,6 +449,7 @@ def fetch_daily_activity(days: int = 14, role: Optional[str] = None) -> List[Dic
         result.append({"day": row.get("day"), "messages": count})
     return result
 
+
 def fetch_recent_questions(limit: int = 10) -> List[Dict[str, Any]]:
     with get_cursor() as cur:
         clause, clause_params = _tester_condition("user_id")
@@ -466,6 +470,7 @@ def fetch_recent_questions(limit: int = 10) -> List[Dict[str, Any]]:
         cur.execute("\n".join(query_parts), tuple(params))
         rows = cur.fetchall()
     return [dict(row) for row in rows]
+
 
 def fetch_top_users(limit: int = 5) -> List[Dict[str, Any]]:
     with get_cursor() as cur:
@@ -489,7 +494,10 @@ def fetch_top_users(limit: int = 5) -> List[Dict[str, Any]]:
         rows = cur.fetchall()
     return [dict(row) for row in rows]
 
-def fetch_top_keywords(limit: int = 10, days: int = 14, min_length: int = 3) -> List[Dict[str, Any]]:
+
+def fetch_top_keywords(
+    limit: int = 10, days: int = 14, min_length: int = 3
+) -> List[Dict[str, Any]]:
     """Return most frequent keywords from user messages within the given time window."""
     days = max(1, days)
     limit = max(1, limit)
@@ -523,6 +531,7 @@ def fetch_top_keywords(limit: int = 10, days: int = 14, min_length: int = 3) -> 
         {"keyword": keyword, "count": count}
         for keyword, count in counter.most_common(limit)
     ]
+
 
 def fetch_chat_logs(
     filters: ChatFilters,
@@ -564,6 +573,7 @@ def fetch_chat_logs(
         total = cur.fetchone()[0]
 
     return [dict(row) for row in rows], int(total or 0)
+
 
 def fetch_conversation_thread(user_id: int, limit: int = 200) -> List[Dict[str, Any]]:
     if _no_tester_active() and user_id in set(_load_tester_ids()):
@@ -611,7 +621,9 @@ def fetch_all_chat_users() -> List[Dict[str, Any]]:
     return [dict(row) for row in rows]
 
 
-def fetch_twitter_overview(window_days: int = 7, bot_user_id: Optional[int] = None) -> Dict[str, Any]:
+def fetch_twitter_overview(
+    window_days: int = 7, bot_user_id: Optional[int] = None
+) -> Dict[str, Any]:
     """Aggregate metrik penting untuk operasional Twitter/X."""
     if not chat_topic_available():
         return {
@@ -883,7 +895,6 @@ def fetch_twitter_worker_logs(limit: int = 100) -> List[Dict[str, Any]]:
     return result
 
 
-
 def fetch_bullying_summary() -> Dict[str, int]:
     """Return aggregated counts of bullying reports by status."""
     summary = {status: 0 for status in BULLYING_STATUSES}
@@ -908,19 +919,19 @@ def fetch_bullying_summary() -> Dict[str, int]:
         cur.execute(esc_query, tuple(esc_params))
         escalated_total = cur.fetchone()[0]
     for row in rows:
-        status = (row.get('status') or '').lower()
-        count = int(row.get('total') or 0)
+        status = (row.get("status") or "").lower()
+        count = int(row.get("total") or 0)
         if status in summary:
             summary[status] = count
             total += count
-    summary['total'] = total
-    summary['escalated'] = int(escalated_total or 0)
+    summary["total"] = total
+    summary["escalated"] = int(escalated_total or 0)
     return summary
 
 
 def fetch_pending_bullying_count() -> int:
     """Shortcut to obtain the number of pending bullying reports."""
-    return fetch_bullying_summary().get('pending', 0)
+    return fetch_bullying_summary().get("pending", 0)
 
 
 def fetch_psych_summary() -> Dict[str, Any]:
@@ -955,24 +966,24 @@ def fetch_psych_summary() -> Dict[str, Any]:
         severity_rows = cur.fetchall()
 
     for row in status_rows:
-        status = (row.get('status') or '').lower()
-        count = int(row.get('total') or 0)
+        status = (row.get("status") or "").lower()
+        count = int(row.get("total") or 0)
         if status in summary:
             summary[status] = count
             if status != "archived":
                 total += count
 
     for row in severity_rows:
-        severity = (row.get('severity') or '').lower()
-        count = int(row.get('total') or 0)
+        severity = (row.get("severity") or "").lower()
+        count = int(row.get("total") or 0)
         if severity in severity_counts:
             severity_counts[severity] = count
 
-    summary['total'] = total
-    summary['severity'] = severity_counts
-    summary['critical'] = severity_counts.get('critical', 0)
-    summary['elevated'] = severity_counts.get('elevated', 0)
-    summary['general'] = severity_counts.get('general', 0)
+    summary["total"] = total
+    summary["severity"] = severity_counts
+    summary["critical"] = severity_counts.get("critical", 0)
+    summary["elevated"] = severity_counts.get("elevated", 0)
+    summary["general"] = severity_counts.get("general", 0)
     return summary
 
 
@@ -1006,16 +1017,16 @@ def fetch_bullying_reports(
     conditions: List[str] = []
     params: List[Any] = []
     if status_filter:
-        conditions.append('br.status = %s')
+        conditions.append("br.status = %s")
         params.append(status_filter)
     tester_clause, tester_params = _tester_condition("br.user_id")
     if tester_clause:
         conditions.append(tester_clause)
         params.extend(tester_params)
 
-    where_clause = ''
+    where_clause = ""
     if conditions:
-        where_clause = ' WHERE ' + ' AND '.join(conditions)
+        where_clause = " WHERE " + " AND ".join(conditions)
 
     query = (
         """
@@ -1103,8 +1114,7 @@ def fetch_psych_reports(
     if conditions:
         where_clause = " WHERE " + " AND ".join(conditions)
 
-    filtered_cte = (
-        """
+    filtered_cte = ("""
         WITH filtered AS (
             SELECT
                 pr.*,
@@ -1118,12 +1128,9 @@ def fetch_psych_reports(
             LEFT JOIN chat_logs cl ON cl.id = pr.chat_log_id
             {where_clause}
         )
-        """
-    ).format(group_expr=group_expr, where_clause=where_clause)
+        """).format(group_expr=group_expr, where_clause=where_clause)
 
-    query = (
-        filtered_cte
-        + """
+    query = filtered_cte + """
         SELECT
             id,
             chat_log_id,
@@ -1143,15 +1150,11 @@ def fetch_psych_reports(
         ORDER BY CASE WHEN severity = 'critical' THEN 2 WHEN severity = 'elevated' THEN 1 ELSE 0 END DESC, created_at DESC
         LIMIT %s OFFSET %s
         """
-    )
 
     with get_cursor() as cur:
         cur.execute(query, (*params, limit, offset))
         rows = cur.fetchall()
-        count_query = (
-            filtered_cte
-            + "SELECT COUNT(DISTINCT group_key) FROM filtered"
-        )
+        count_query = filtered_cte + "SELECT COUNT(DISTINCT group_key) FROM filtered"
         cur.execute(count_query, params)
         total = cur.fetchone()[0] if cur.rowcount else 0
 
@@ -1263,8 +1266,8 @@ def fetch_psych_group_reports(
         else:
             message_text = record.get("message")
             if isinstance(message_text, str) and message_text:
-                record["message"] = (
-                    message_text.replace("\r\n", "\n").replace("\r", "\n")
+                record["message"] = message_text.replace("\r\n", "\n").replace(
+                    "\r", "\n"
                 )
         summary_text = record.get("summary")
         if isinstance(summary_text, str) and summary_text:
@@ -1313,6 +1316,7 @@ def update_psych_report_status(
             (normalized, metadata_param, report_id),
         )
         return cur.rowcount > 0
+
 
 def bulk_update_psych_report_status(
     report_ids: List[int],
@@ -1416,11 +1420,14 @@ def update_bullying_report_status(
                 params.append(trimmed_notes)
                 changes["notes"] = {"from": current.get("notes"), "to": trimmed_notes}
 
-        assigned_clean = (assigned_to or '').strip() or None
+        assigned_clean = (assigned_to or "").strip() or None
         if assigned_to is not None and assigned_clean != current.get("assigned_to"):
             updates.append("assigned_to = %s")
             params.append(assigned_clean)
-            changes["assigned_to"] = {"from": current.get("assigned_to"), "to": assigned_clean}
+            changes["assigned_to"] = {
+                "from": current.get("assigned_to"),
+                "to": assigned_clean,
+            }
 
         due_value = None
         if due_at is not None:
@@ -1432,7 +1439,11 @@ def update_bullying_report_status(
                 updates.append("due_at = %s")
                 params.append(due_value)
                 changes["due_at"] = {
-                    "from": current.get("due_at").isoformat() if current.get("due_at") else None,
+                    "from": (
+                        current.get("due_at").isoformat()
+                        if current.get("due_at")
+                        else None
+                    ),
                     "to": due_value.isoformat() if due_value else None,
                 }
 
@@ -1483,6 +1494,7 @@ def update_bullying_report_status(
         """
         cur.execute(_insert_event, (report_id, event_type, updated_by, Json(payload)))
     return True
+
 
 def bulk_update_bullying_report_status(
     report_ids: List[int],
@@ -1559,7 +1571,7 @@ def fetch_bullying_report_detail(report_id: int) -> Optional[Dict[str, Any]]:
             WHERE report_id = %s
             ORDER BY created_at ASC
             """,
-            (report_id,)
+            (report_id,),
         )
         events = [dict(evt) for evt in cur.fetchall()]
         report["events"] = events
@@ -1600,18 +1612,18 @@ def fetch_corruption_summary() -> Dict[str, int]:
         cur.execute("\n".join(query_parts), tuple(clause_params))
         rows = cur.fetchall()
     for row in rows:
-        status = (row.get('status') or '').lower()
-        count = int(row.get('total') or 0)
+        status = (row.get("status") or "").lower()
+        count = int(row.get("total") or 0)
         if status in summary:
             summary[status] = count
             total += count
-    summary['total'] = total
+    summary["total"] = total
     return summary
 
 
 def fetch_pending_corruption_count() -> int:
     """Shortcut to obtain the number of open corruption reports."""
-    return fetch_corruption_summary().get('open', 0)
+    return fetch_corruption_summary().get("open", 0)
 
 
 def fetch_corruption_reports(
@@ -1630,19 +1642,18 @@ def fetch_corruption_reports(
     conditions: List[str] = []
     params: List[Any] = []
     if status_filter:
-        conditions.append('status = %s')
+        conditions.append("status = %s")
         params.append(status_filter)
     tester_clause, tester_params = _tester_condition("user_id")
     if tester_clause:
         conditions.append(tester_clause)
         params.extend(tester_params)
 
-    where_clause = ''
+    where_clause = ""
     if conditions:
-        where_clause = ' WHERE ' + ' AND '.join(conditions)
+        where_clause = " WHERE " + " AND ".join(conditions)
 
-    query = (
-        """
+    query = """
         SELECT
             id,
             ticket_id,
@@ -1655,10 +1666,7 @@ def fetch_corruption_reports(
             created_at,
             updated_at
         FROM corruption_reports
-        """
-        + where_clause
-        + " ORDER BY created_at DESC LIMIT %s OFFSET %s"
-    )
+        """ + where_clause + " ORDER BY created_at DESC LIMIT %s OFFSET %s"
 
     with get_cursor() as cur:
         cur.execute(query, (*params, limit, offset))
@@ -1700,27 +1708,27 @@ def fetch_corruption_report_detail(report_id: int) -> Optional[Dict[str, Any]]:
         row = cur.fetchone()
         if not row:
             return None
-        
+
         report = dict(row)
         username = None
 
-        if report.get('user_id'):
+        if report.get("user_id"):
             cur.execute(
                 "SELECT username FROM chat_logs WHERE user_id = %s ORDER BY created_at DESC LIMIT 1",
-                (report['user_id'],)
+                (report["user_id"],),
             )
             user_row = cur.fetchone()
             if user_row:
-                username = user_row['username']
-        
-        report['username'] = username
-        report['notes'] = None
-        report['assigned_to'] = None
-        report['due_at'] = None
-        report['resolved_at'] = None
-        report['escalated'] = False
-        report['last_updated_by'] = None
-        report['events'] = []
+                username = user_row["username"]
+
+        report["username"] = username
+        report["notes"] = None
+        report["assigned_to"] = None
+        report["due_at"] = None
+        report["resolved_at"] = None
+        report["escalated"] = False
+        report["last_updated_by"] = None
+        report["events"] = []
 
     return report
 
@@ -1762,7 +1770,7 @@ def update_corruption_report_status(
     """Update corruption report status."""
     if status is None:
         return False
-        
+
     normalized = status.lower()
     if normalized not in CORRUPTION_STATUSES:
         raise ValueError(f"Status korupsi tidak dikenal: {status}")
@@ -1774,7 +1782,7 @@ def update_corruption_report_status(
             SET status = %s, updated_at = NOW()
             WHERE id = %s
             """,
-            (normalized, report_id)
+            (normalized, report_id),
         )
         return cur.rowcount > 0
 
@@ -1798,20 +1806,21 @@ def get_user_by_email(email: str) -> Optional[DictRow]:
                 no_tester_enabled,
                 assigned_class_id,
                 last_login_at,
+                social_username,
                 COALESCE(account_status, 'approved') AS account_status
             FROM dashboard_users
             WHERE email = %s
             LIMIT 1
             """,
-            (email,)
+            (email,),
         )
         row = cur.fetchone()
     return row
 
+
 def list_dashboard_users() -> List[Dict[str, Any]]:
     with get_cursor() as cur:
-        cur.execute(
-            """
+        cur.execute("""
             SELECT
                 u.id,
                 u.email,
@@ -1832,6 +1841,7 @@ def list_dashboard_users() -> List[Dict[str, Any]]:
                 u.merged_to,
                 u.merged_at,
                 u.whatsapp_number,
+                u.social_username,
                 u.requested_kecamatan,
                 u.verification_notes,
                 k.name as kecamatan_name,
@@ -1849,8 +1859,7 @@ def list_dashboard_users() -> List[Dict[str, Any]]:
             LEFT JOIN portal_kelurahan sl ON s.kelurahan_id = sl.id
             LEFT JOIN portal_kecamatan sk ON sl.kecamatan_id = sk.id
             ORDER BY u.created_at DESC
-            """
-        )
+            """)
         rows = cur.fetchall()
     return [dict(row) for row in rows]
 
@@ -1875,18 +1884,18 @@ def update_dashboard_user(
     updates = [
         "full_name = %s",
         "role = %s",
-        "updated_at = NOW()"  # Assuming updated_at exists or handled by DB trigger? If not, ignore
+        "updated_at = NOW()",  # Assuming updated_at exists or handled by DB trigger? If not, ignore
     ]
     params = [full_name, role]
-    
+
     if email:
         updates.append("email = %s")
         params.append(email)
-        
+
     if password_hash:
         updates.append("password_hash = %s")
         params.append(password_hash)
-        
+
     if account_status:
         updates.append("account_status = %s")
         params.append(account_status)
@@ -1922,15 +1931,15 @@ def update_dashboard_user(
     if requested_kecamatan is not _UNSET:
         updates.append("requested_kecamatan = %s")
         params.append(requested_kecamatan)
-        
+
     # check for updated_at column or just ignore it for now if unsure
     # Safer to check schema first? Or just try basic updates
     # Let's remove updated_at from list to be safe as it wasn't in original schema view
     updates = [u for u in updates if "updated_at" not in u]
-        
+
     query = f"UPDATE dashboard_users SET {', '.join(updates)} WHERE id = %s"
     params.append(user_id)
-    
+
     with get_cursor(commit=True) as cur:
         cur.execute(query, params)
         return cur.rowcount > 0
@@ -1993,14 +2002,12 @@ def create_dashboard_user(
 def list_admin_users() -> List[Dict[str, Any]]:
     """List dashboard users with admin role."""
     with get_cursor() as cur:
-        cur.execute(
-            """
+        cur.execute("""
             SELECT id, full_name, email, role
             FROM dashboard_users
             WHERE role = 'admin'
             ORDER BY full_name ASC
-            """
-        )
+            """)
         rows = cur.fetchall()
     return [dict(row) for row in rows]
 
@@ -2009,8 +2016,7 @@ def fetch_telegram_notification_settings() -> Dict[str, Any]:
     """Fetch stored Telegram bot token configuration."""
     try:
         with get_cursor() as cur:
-            cur.execute(
-                """
+            cur.execute("""
                 SELECT
                     s.bot_token,
                     s.updated_at,
@@ -2021,15 +2027,16 @@ def fetch_telegram_notification_settings() -> Dict[str, Any]:
                 LEFT JOIN dashboard_users u ON u.id = s.updated_by
                 WHERE s.id = 1
                 LIMIT 1
-                """
-            )
+                """)
             row = cur.fetchone()
     except Exception:
         return {}
     return dict(row) if row else {}
 
 
-def upsert_telegram_notification_settings(bot_token: Optional[str], updated_by: Optional[int]) -> bool:
+def upsert_telegram_notification_settings(
+    bot_token: Optional[str], updated_by: Optional[int]
+) -> bool:
     """Insert/update Telegram bot token configuration."""
     clean_token = (bot_token or "").strip() or None
     with get_cursor(commit=True) as cur:
@@ -2051,8 +2058,7 @@ def fetch_whatsapp_link_settings() -> Dict[str, Any]:
     """Fetch stored WhatsApp entry link configuration."""
     try:
         with get_cursor() as cur:
-            cur.execute(
-                """
+            cur.execute("""
                 SELECT
                     s.wa_link,
                     s.updated_at,
@@ -2063,15 +2069,16 @@ def fetch_whatsapp_link_settings() -> Dict[str, Any]:
                 LEFT JOIN dashboard_users u ON u.id = s.updated_by
                 WHERE s.id = 1
                 LIMIT 1
-                """
-            )
+                """)
             row = cur.fetchone()
     except Exception:
         return {}
     return dict(row) if row else {}
 
 
-def upsert_whatsapp_link_settings(wa_link: Optional[str], updated_by: Optional[int]) -> bool:
+def upsert_whatsapp_link_settings(
+    wa_link: Optional[str], updated_by: Optional[int]
+) -> bool:
     """Insert/update WhatsApp entry link configuration."""
     clean_link = (wa_link or "").strip() or None
     with get_cursor(commit=True) as cur:
@@ -2087,6 +2094,878 @@ def upsert_whatsapp_link_settings(wa_link: Optional[str], updated_by: Optional[i
             (clean_link, updated_by),
         )
         return True
+
+
+DEFAULT_SPMB_SERVICE_TYPES: Tuple[Tuple[str, str, int], ...] = (
+    ("Informasi SPMB", "Pertanyaan umum alur dan informasi SPMB.", 10),
+    ("Verifikasi Berkas", "Pemeriksaan atau validasi berkas pendaftaran.", 20),
+    ("Bantuan Akun", "Bantuan login, akun, atau akses aplikasi.", 30),
+    ("Perubahan Data", "Bantuan koreksi atau penyesuaian data.", 40),
+    ("Pengaduan", "Keluhan atau kendala selama layanan SPMB.", 50),
+    ("Lainnya", "Jenis pelayanan lain di luar kategori utama.", 60),
+)
+
+
+def ensure_spmb_service_types_schema() -> None:
+    """Create and seed SPMB service type options used by the evaluation page."""
+    with get_cursor(commit=True) as cur:
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS spmb_service_types (
+                id SERIAL PRIMARY KEY,
+                name TEXT NOT NULL UNIQUE,
+                description TEXT,
+                sort_order INTEGER NOT NULL DEFAULT 0,
+                active BOOLEAN NOT NULL DEFAULT TRUE,
+                created_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+                updated_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+            """)
+        cur.execute("""
+            CREATE INDEX IF NOT EXISTS idx_spmb_service_types_active_order
+            ON spmb_service_types (active, sort_order, id)
+            """)
+        for name, description, sort_order in DEFAULT_SPMB_SERVICE_TYPES:
+            cur.execute(
+                """
+                INSERT INTO spmb_service_types (name, description, sort_order, active)
+                VALUES (%s, %s, %s, TRUE)
+                ON CONFLICT (name) DO NOTHING
+                """,
+                (name, description, sort_order),
+            )
+
+
+def list_spmb_service_types(*, include_inactive: bool = True) -> List[Dict[str, Any]]:
+    ensure_spmb_service_types_schema()
+    where_sql = "" if include_inactive else "WHERE active = TRUE"
+    with get_cursor() as cur:
+        cur.execute(f"""
+            SELECT
+                s.id,
+                s.name,
+                s.description,
+                s.sort_order,
+                s.active,
+                s.created_at,
+                s.updated_at,
+                s.created_by,
+                s.updated_by,
+                cu.full_name AS created_by_name,
+                uu.full_name AS updated_by_name
+            FROM spmb_service_types s
+            LEFT JOIN dashboard_users cu ON cu.id = s.created_by
+            LEFT JOIN dashboard_users uu ON uu.id = s.updated_by
+            {where_sql}
+            ORDER BY s.sort_order ASC, LOWER(s.name) ASC, s.id ASC
+            """)
+        rows = cur.fetchall()
+    return [dict(row) for row in rows]
+
+
+def create_spmb_service_type(
+    *,
+    name: str,
+    description: Optional[str],
+    sort_order: int,
+    active: bool,
+    user_id: Optional[int],
+) -> Dict[str, Any]:
+    ensure_spmb_service_types_schema()
+    clean_name = (name or "").strip()
+    clean_description = (description or "").strip() or None
+    if not clean_name:
+        raise ValueError("Nama jenis pelayanan wajib diisi.")
+
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            INSERT INTO spmb_service_types
+                (name, description, sort_order, active, created_by, updated_by, updated_at)
+            VALUES (%s, %s, %s, %s, %s, %s, NOW())
+            RETURNING id, name, description, sort_order, active
+            """,
+            (clean_name, clean_description, sort_order, active, user_id, user_id),
+        )
+        row = cur.fetchone()
+    return dict(row)
+
+
+def update_spmb_service_type(
+    *,
+    service_type_id: int,
+    name: str,
+    description: Optional[str],
+    sort_order: int,
+    active: bool,
+    user_id: Optional[int],
+) -> Optional[Dict[str, Any]]:
+    ensure_spmb_service_types_schema()
+    clean_name = (name or "").strip()
+    clean_description = (description or "").strip() or None
+    if not clean_name:
+        raise ValueError("Nama jenis pelayanan wajib diisi.")
+
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE spmb_service_types
+            SET name = %s,
+                description = %s,
+                sort_order = %s,
+                active = %s,
+                updated_by = %s,
+                updated_at = NOW()
+            WHERE id = %s
+            RETURNING id, name, description, sort_order, active
+            """,
+            (
+                clean_name,
+                clean_description,
+                sort_order,
+                active,
+                user_id,
+                service_type_id,
+            ),
+        )
+        row = cur.fetchone()
+    return dict(row) if row else None
+
+
+def toggle_spmb_service_type(
+    service_type_id: int, *, user_id: Optional[int]
+) -> Optional[Dict[str, Any]]:
+    ensure_spmb_service_types_schema()
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE spmb_service_types
+            SET active = NOT active,
+                updated_by = %s,
+                updated_at = NOW()
+            WHERE id = %s
+            RETURNING id, name, active
+            """,
+            (user_id, service_type_id),
+        )
+        row = cur.fetchone()
+    return dict(row) if row else None
+
+
+def delete_spmb_service_type(service_type_id: int) -> Optional[Dict[str, Any]]:
+    ensure_spmb_service_types_schema()
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            DELETE FROM spmb_service_types
+            WHERE id = %s
+            RETURNING id, name
+            """,
+            (service_type_id,),
+        )
+        row = cur.fetchone()
+    return dict(row) if row else None
+
+
+def ensure_spmb_table_assignments_schema() -> None:
+    """Create table assignment storage for daily SPMB service desks."""
+    with get_cursor(commit=True) as cur:
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS spmb_table_assignments (
+                id SERIAL PRIMARY KEY,
+                assignment_date DATE NOT NULL,
+                table_number INTEGER NOT NULL CHECK (table_number BETWEEN 1 AND 12),
+                officer_user_id INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+                note TEXT,
+                updated_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                UNIQUE (assignment_date, table_number)
+            )
+            """)
+        cur.execute("""
+            CREATE INDEX IF NOT EXISTS idx_spmb_table_assignments_date
+            ON spmb_table_assignments (assignment_date, table_number)
+            """)
+        cur.execute("""
+            CREATE INDEX IF NOT EXISTS idx_spmb_table_assignments_officer
+            ON spmb_table_assignments (officer_user_id)
+            """)
+
+
+def list_spmb_table_officers() -> List[Dict[str, Any]]:
+    ensure_spmb_table_assignments_schema()
+    with get_cursor() as cur:
+        cur.execute("""
+            SELECT
+                id,
+                full_name,
+                email,
+                role,
+                jabatan,
+                COALESCE(account_status, 'approved') AS account_status
+            FROM dashboard_users
+            WHERE COALESCE(account_status, 'approved') = 'approved'
+            ORDER BY
+                CASE role
+                    WHEN 'admin' THEN 1
+                    WHEN 'coordinator' THEN 2
+                    WHEN 'staff' THEN 3
+                    WHEN 'sekolah' THEN 4
+                    ELSE 5
+                END,
+                LOWER(full_name) ASC,
+                LOWER(email) ASC
+            """)
+        rows = cur.fetchall()
+    return [dict(row) for row in rows]
+
+
+def list_spmb_table_assignments(assignment_date: Any) -> List[Dict[str, Any]]:
+    ensure_spmb_table_assignments_schema()
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            WITH tables AS (
+                SELECT generate_series(1, 12) AS table_number
+            )
+            SELECT
+                t.table_number,
+                a.id,
+                a.assignment_date,
+                a.officer_user_id,
+                a.note,
+                a.updated_at,
+                a.updated_by,
+                officer.full_name AS officer_name,
+                officer.email AS officer_email,
+                officer.role AS officer_role,
+                updater.full_name AS updated_by_name
+            FROM tables t
+            LEFT JOIN spmb_table_assignments a
+                ON a.table_number = t.table_number
+               AND a.assignment_date = %s
+            LEFT JOIN dashboard_users officer ON officer.id = a.officer_user_id
+            LEFT JOIN dashboard_users updater ON updater.id = a.updated_by
+            ORDER BY t.table_number ASC
+            """,
+            (assignment_date,),
+        )
+        rows = cur.fetchall()
+    return [dict(row) for row in rows]
+
+
+def save_spmb_table_assignments(
+    *,
+    assignment_date: Any,
+    assignments: Dict[int, Optional[int]],
+    updated_by: Optional[int],
+) -> None:
+    ensure_spmb_table_assignments_schema()
+    with get_cursor(commit=True) as cur:
+        for table_number in range(1, 13):
+            officer_user_id = assignments.get(table_number)
+            if officer_user_id:
+                cur.execute(
+                    """
+                    INSERT INTO spmb_table_assignments
+                        (assignment_date, table_number, officer_user_id, updated_by, updated_at)
+                    VALUES (%s, %s, %s, %s, NOW())
+                    ON CONFLICT (assignment_date, table_number) DO UPDATE
+                    SET officer_user_id = EXCLUDED.officer_user_id,
+                        updated_by = EXCLUDED.updated_by,
+                        updated_at = NOW()
+                    """,
+                    (assignment_date, table_number, officer_user_id, updated_by),
+                )
+            else:
+                cur.execute(
+                    """
+                    DELETE FROM spmb_table_assignments
+                    WHERE assignment_date = %s AND table_number = %s
+                    """,
+                    (assignment_date, table_number),
+                )
+
+
+def claim_spmb_table_assignment(
+    *,
+    assignment_date: Any,
+    table_number: int,
+    user_id: int,
+) -> Dict[str, Any]:
+    ensure_spmb_table_assignments_schema()
+    if table_number < 1 or table_number > 12:
+        return {"success": False, "message": "Nomor meja tidak valid."}
+
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            SELECT
+                a.officer_user_id,
+                u.full_name AS officer_name,
+                u.email AS officer_email
+            FROM spmb_table_assignments a
+            LEFT JOIN dashboard_users u ON u.id = a.officer_user_id
+            WHERE a.assignment_date = %s AND a.table_number = %s
+            FOR UPDATE OF a
+            """,
+            (assignment_date, table_number),
+        )
+        existing = cur.fetchone()
+        if (
+            existing
+            and existing["officer_user_id"]
+            and int(existing["officer_user_id"]) != int(user_id)
+        ):
+            officer_label = (
+                existing["officer_name"] or existing["officer_email"] or "petugas lain"
+            )
+            return {
+                "success": False,
+                "message": f"Meja {table_number} sudah diklaim oleh {officer_label}.",
+            }
+
+        cur.execute(
+            """
+            DELETE FROM spmb_table_assignments
+            WHERE assignment_date = %s
+              AND officer_user_id = %s
+              AND table_number <> %s
+            """,
+            (assignment_date, user_id, table_number),
+        )
+        cur.execute(
+            """
+            INSERT INTO spmb_table_assignments
+                (assignment_date, table_number, officer_user_id, updated_by, updated_at)
+            VALUES (%s, %s, %s, %s, NOW())
+            ON CONFLICT (assignment_date, table_number) DO UPDATE
+            SET officer_user_id = EXCLUDED.officer_user_id,
+                updated_by = EXCLUDED.updated_by,
+                updated_at = NOW()
+            """,
+            (assignment_date, table_number, user_id, user_id),
+        )
+
+    return {"success": True, "message": f"Meja {table_number} berhasil diklaim."}
+
+
+def release_spmb_table_assignment(
+    *,
+    assignment_date: Any,
+    user_id: int,
+) -> int:
+    ensure_spmb_table_assignments_schema()
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            DELETE FROM spmb_table_assignments
+            WHERE assignment_date = %s AND officer_user_id = %s
+            """,
+            (assignment_date, user_id),
+        )
+        return cur.rowcount or 0
+
+
+def ensure_spmb_evaluations_schema() -> None:
+    """Create public SPMB evaluation storage."""
+    with get_cursor(commit=True) as cur:
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS spmb_evaluations (
+                id SERIAL PRIMARY KEY,
+                service_type TEXT NOT NULL,
+                table_number INTEGER NOT NULL CHECK (table_number BETWEEN 1 AND 12),
+                indicator TEXT NOT NULL CHECK (indicator IN ('baik', 'sedang', 'buruk')),
+                note TEXT,
+                client_ip TEXT,
+                user_agent TEXT,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+            """)
+        cur.execute("""
+            CREATE INDEX IF NOT EXISTS idx_spmb_evaluations_created
+            ON spmb_evaluations (created_at DESC)
+            """)
+        cur.execute("""
+            CREATE INDEX IF NOT EXISTS idx_spmb_evaluations_indicator
+            ON spmb_evaluations (indicator)
+            """)
+        cur.execute("""
+            CREATE INDEX IF NOT EXISTS idx_spmb_evaluations_table_created
+            ON spmb_evaluations (table_number, created_at DESC)
+            """)
+
+
+def create_spmb_evaluation(
+    *,
+    service_type: str,
+    table_number: int,
+    indicator: str,
+    note: Optional[str],
+    client_ip: Optional[str],
+    user_agent: Optional[str],
+) -> Dict[str, Any]:
+    ensure_spmb_evaluations_schema()
+    clean_service_type = (service_type or "").strip() or "Informasi SPMB"
+    clean_indicator = (indicator or "").strip().lower()
+    if table_number < 1 or table_number > 12:
+        raise ValueError("Nomor operator harus 1 sampai 12.")
+    if clean_indicator not in {"baik", "sedang", "buruk"}:
+        raise ValueError("Indikator tidak valid.")
+
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            INSERT INTO spmb_evaluations
+                (service_type, table_number, indicator, note, client_ip, user_agent)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            RETURNING id, service_type, table_number, indicator, note, created_at
+            """,
+            (
+                clean_service_type,
+                table_number,
+                clean_indicator,
+                (note or "").strip() or None,
+                (client_ip or "").strip() or None,
+                (user_agent or "").strip()[:500] or None,
+            ),
+        )
+        row = cur.fetchone()
+    return dict(row)
+
+
+def list_spmb_evaluations(*, limit: int = 100) -> List[Dict[str, Any]]:
+    ensure_spmb_evaluations_schema()
+    safe_limit = max(1, min(int(limit or 100), 300))
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT id, service_type, table_number, indicator, note, created_at
+            FROM spmb_evaluations
+            ORDER BY created_at DESC, id DESC
+            LIMIT %s
+            """,
+            (safe_limit,),
+        )
+        rows = cur.fetchall()
+    return [dict(row) for row in rows]
+
+
+def get_spmb_evaluation_counts(
+    *, day_start: datetime, day_end: datetime
+) -> Dict[str, int]:
+    ensure_spmb_evaluations_schema()
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT
+                COUNT(*)::int AS total_count,
+                COUNT(*) FILTER (
+                    WHERE created_at >= %s AND created_at < %s
+                )::int AS today_count
+            FROM spmb_evaluations
+            """,
+            (day_start, day_end),
+        )
+        row = cur.fetchone()
+    row_data = dict(row or {})
+    return {
+        "today_count": int(row_data.get("today_count") or 0),
+        "total_count": int(row_data.get("total_count") or 0),
+    }
+
+
+def update_spmb_evaluation(
+    evaluation_id: int,
+    *,
+    service_type: str,
+    table_number: int,
+    indicator: str,
+    note: Optional[str],
+) -> Optional[Dict[str, Any]]:
+    ensure_spmb_evaluations_schema()
+    clean_service_type = (service_type or "").strip() or "Informasi SPMB"
+    clean_indicator = (indicator or "").strip().lower()
+    if table_number < 1 or table_number > 12:
+        raise ValueError("Nomor operator harus 1 sampai 12.")
+    if clean_indicator not in {"baik", "sedang", "buruk"}:
+        raise ValueError("Indikator tidak valid.")
+
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE spmb_evaluations
+            SET service_type = %s,
+                table_number = %s,
+                indicator = %s,
+                note = %s
+            WHERE id = %s
+            RETURNING id, service_type, table_number, indicator, note, created_at
+            """,
+            (
+                clean_service_type,
+                table_number,
+                clean_indicator,
+                (note or "").strip() or None,
+                int(evaluation_id),
+            ),
+        )
+        row = cur.fetchone()
+    return dict(row) if row else None
+
+
+def delete_spmb_evaluation(evaluation_id: int) -> Optional[Dict[str, Any]]:
+    ensure_spmb_evaluations_schema()
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            DELETE FROM spmb_evaluations
+            WHERE id = %s
+            RETURNING id, service_type, table_number, indicator, note, created_at
+            """,
+            (int(evaluation_id),),
+        )
+        row = cur.fetchone()
+    return dict(row) if row else None
+
+
+def ensure_spmb_queue_counters_schema() -> None:
+    """Create daily SPMB queue counter storage."""
+    with get_cursor(commit=True) as cur:
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS spmb_queue_counters (
+                id SERIAL PRIMARY KEY,
+                service_date DATE NOT NULL UNIQUE,
+                current_number INTEGER NOT NULL DEFAULT 0 CHECK (current_number >= 0),
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+            """)
+        cur.execute("""
+            CREATE INDEX IF NOT EXISTS idx_spmb_queue_counters_date
+            ON spmb_queue_counters (service_date DESC)
+            """)
+
+
+def get_spmb_queue_counter(service_date: Any) -> Dict[str, Any]:
+    ensure_spmb_queue_counters_schema()
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            INSERT INTO spmb_queue_counters (service_date, current_number)
+            VALUES (%s, 0)
+            ON CONFLICT (service_date) DO NOTHING
+            """,
+            (service_date,),
+        )
+        cur.execute(
+            """
+            SELECT id, service_date, current_number, created_at, updated_at
+            FROM spmb_queue_counters
+            WHERE service_date = %s
+            """,
+            (service_date,),
+        )
+        row = cur.fetchone()
+    return dict(row)
+
+
+def update_spmb_queue_counter(*, service_date: Any, delta: int) -> Dict[str, Any]:
+    ensure_spmb_queue_counters_schema()
+    clean_delta = int(delta or 0)
+    if clean_delta == 0:
+        return get_spmb_queue_counter(service_date)
+    if clean_delta not in {-1, 1}:
+        raise ValueError("Perubahan nomor antrian tidak valid.")
+
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            INSERT INTO spmb_queue_counters (service_date, current_number)
+            VALUES (%s, 0)
+            ON CONFLICT (service_date) DO NOTHING
+            """,
+            (service_date,),
+        )
+        cur.execute(
+            """
+            UPDATE spmb_queue_counters
+            SET current_number = GREATEST(0, current_number + %s),
+                updated_at = NOW()
+            WHERE service_date = %s
+            RETURNING id, service_date, current_number, created_at, updated_at
+            """,
+            (clean_delta, service_date),
+        )
+        row = cur.fetchone()
+    return dict(row)
+
+
+def ensure_spmb_queue_calls_schema() -> None:
+    """Create daily SPMB queue call storage."""
+    with get_cursor(commit=True) as cur:
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS spmb_queue_calls (
+                id SERIAL PRIMARY KEY,
+                service_date DATE NOT NULL,
+                queue_number INTEGER NOT NULL CHECK (queue_number > 0),
+                table_number INTEGER NOT NULL CHECK (table_number BETWEEN 1 AND 12),
+                status TEXT NOT NULL DEFAULT 'sedang_dilayani',
+                officer_user_id INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+                called_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                UNIQUE (service_date, queue_number)
+            )
+            """)
+        cur.execute("""
+            CREATE INDEX IF NOT EXISTS idx_spmb_queue_calls_date_status
+            ON spmb_queue_calls (service_date, status, queue_number)
+            """)
+        cur.execute("""
+            CREATE INDEX IF NOT EXISTS idx_spmb_queue_calls_called
+            ON spmb_queue_calls (service_date, called_at DESC, id DESC)
+            """)
+
+
+def get_spmb_table_claim_for_user(
+    *, assignment_date: Any, user_id: int
+) -> Optional[Dict[str, Any]]:
+    ensure_spmb_table_assignments_schema()
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT
+                a.id,
+                a.assignment_date,
+                a.table_number,
+                a.officer_user_id,
+                u.full_name AS officer_name,
+                u.email AS officer_email
+            FROM spmb_table_assignments a
+            LEFT JOIN dashboard_users u ON u.id = a.officer_user_id
+            WHERE a.assignment_date = %s
+              AND a.officer_user_id = %s
+            ORDER BY a.table_number ASC
+            LIMIT 1
+            """,
+            (assignment_date, int(user_id)),
+        )
+        row = cur.fetchone()
+    return dict(row) if row else None
+
+
+def list_spmb_queue_numbers(*, service_date: Any) -> List[Dict[str, Any]]:
+    counter = get_spmb_queue_counter(service_date)
+    ensure_spmb_queue_calls_schema()
+    current_number = int(counter.get("current_number") or 0)
+    max_number = max(1, current_number + 1)
+
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            WITH numbers AS (
+                SELECT generate_series(1, %s) AS queue_number
+            ),
+            latest_calls AS (
+                SELECT DISTINCT ON (queue_number)
+                    id,
+                    queue_number,
+                    table_number,
+                    status,
+                    officer_user_id,
+                    called_at,
+                    updated_at
+                FROM spmb_queue_calls
+                WHERE service_date = %s
+                ORDER BY queue_number, called_at DESC, id DESC
+            )
+            SELECT
+                n.queue_number,
+                c.id AS call_id,
+                c.table_number,
+                c.status,
+                c.officer_user_id,
+                c.called_at,
+                c.updated_at,
+                u.full_name AS officer_name,
+                u.email AS officer_email
+            FROM numbers n
+            LEFT JOIN latest_calls c ON c.queue_number = n.queue_number
+            LEFT JOIN dashboard_users u ON u.id = c.officer_user_id
+            ORDER BY n.queue_number DESC
+            """,
+            (max_number, service_date),
+        )
+        rows = cur.fetchall()
+    return [dict(row) for row in rows]
+
+
+def list_spmb_staff_queue_status(*, service_date: Any) -> List[Dict[str, Any]]:
+    ensure_spmb_table_assignments_schema()
+    ensure_spmb_queue_calls_schema()
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            WITH tables AS (
+                SELECT generate_series(1, 12) AS table_number
+            ),
+            latest_officer_calls AS (
+                SELECT DISTINCT ON (officer_user_id)
+                    id,
+                    queue_number,
+                    table_number,
+                    status,
+                    officer_user_id,
+                    called_at,
+                    updated_at
+                FROM spmb_queue_calls
+                WHERE service_date = %s
+                  AND officer_user_id IS NOT NULL
+                  AND status = 'sedang_dilayani'
+                ORDER BY officer_user_id, called_at DESC, id DESC
+            )
+            SELECT
+                t.table_number,
+                a.officer_user_id,
+                officer.full_name AS officer_name,
+                officer.email AS officer_email,
+                officer.role AS officer_role,
+                c.id AS call_id,
+                c.queue_number,
+                c.status,
+                c.called_at,
+                c.updated_at
+            FROM tables t
+            LEFT JOIN spmb_table_assignments a
+                ON a.table_number = t.table_number
+               AND a.assignment_date = %s
+            LEFT JOIN dashboard_users officer ON officer.id = a.officer_user_id
+            LEFT JOIN latest_officer_calls c ON c.officer_user_id = a.officer_user_id
+            ORDER BY t.table_number ASC
+            """,
+            (service_date, service_date),
+        )
+        rows = cur.fetchall()
+    return [dict(row) for row in rows]
+
+
+def call_spmb_queue_number(
+    *,
+    service_date: Any,
+    queue_number: int,
+    table_number: int,
+    officer_user_id: int,
+) -> Dict[str, Any]:
+    get_spmb_queue_counter(service_date)
+    ensure_spmb_queue_calls_schema()
+    clean_queue_number = int(queue_number or 0)
+    clean_table_number = int(table_number or 0)
+    if clean_queue_number < 1 or clean_queue_number > 9999:
+        raise ValueError("Nomor antrian harus 1 sampai 9999.")
+    if clean_table_number < 1 or clean_table_number > 12:
+        raise ValueError("Nomor meja tidak valid.")
+
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE spmb_queue_counters
+            SET current_number = GREATEST(current_number, %s),
+                updated_at = NOW()
+            WHERE service_date = %s
+            """,
+            (clean_queue_number, service_date),
+        )
+        cur.execute(
+            """
+            INSERT INTO spmb_queue_calls
+                (service_date, queue_number, table_number, status, officer_user_id, called_at, updated_at)
+            VALUES (%s, %s, %s, 'sedang_dilayani', %s, NOW(), NOW())
+            ON CONFLICT (service_date, queue_number) DO UPDATE
+            SET table_number = EXCLUDED.table_number,
+                status = 'sedang_dilayani',
+                officer_user_id = EXCLUDED.officer_user_id,
+                called_at = NOW(),
+                updated_at = NOW()
+            RETURNING id, service_date, queue_number, table_number, status, officer_user_id, called_at, updated_at
+            """,
+            (
+                service_date,
+                clean_queue_number,
+                clean_table_number,
+                int(officer_user_id),
+            ),
+        )
+        row = cur.fetchone()
+    return dict(row)
+
+
+def cancel_spmb_queue_call(
+    *,
+    service_date: Any,
+    queue_number: int,
+) -> Optional[Dict[str, Any]]:
+    ensure_spmb_queue_calls_schema()
+    clean_queue_number = int(queue_number or 0)
+    if clean_queue_number < 1:
+        raise ValueError("Nomor antrian tidak valid.")
+
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE spmb_queue_calls
+            SET status = 'batal',
+                updated_at = NOW()
+            WHERE service_date = %s
+              AND queue_number = %s
+              AND status = 'sedang_dilayani'
+            RETURNING id, service_date, queue_number, table_number, status, officer_user_id, called_at, updated_at
+            """,
+            (service_date, clean_queue_number),
+        )
+        row = cur.fetchone()
+        if row:
+            cur.execute(
+                """
+                UPDATE spmb_queue_counters
+                SET current_number = GREATEST(0, current_number - 1),
+                    updated_at = NOW()
+                WHERE service_date = %s
+                  AND current_number = %s
+                """,
+                (service_date, clean_queue_number),
+            )
+    return dict(row) if row else None
+
+
+def get_latest_spmb_queue_call(service_date: Any) -> Optional[Dict[str, Any]]:
+    ensure_spmb_queue_calls_schema()
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT
+                c.id,
+                c.service_date,
+                c.queue_number,
+                c.table_number,
+                c.status,
+                c.officer_user_id,
+                c.called_at,
+                c.updated_at,
+                u.full_name AS officer_name,
+                u.email AS officer_email
+            FROM spmb_queue_calls c
+            LEFT JOIN dashboard_users u ON u.id = c.officer_user_id
+            WHERE c.service_date = %s
+              AND c.status = 'sedang_dilayani'
+            ORDER BY c.called_at DESC, c.id DESC
+            LIMIT 1
+            """,
+            (service_date,),
+        )
+        row = cur.fetchone()
+    return dict(row) if row else None
 
 
 def list_telegram_admin_accounts(scope: str = "default") -> List[Dict[str, Any]]:
@@ -2117,8 +2996,7 @@ def list_telegram_admin_accounts(scope: str = "default") -> List[Dict[str, Any]]
 def list_telegram_notification_groups() -> List[Dict[str, Any]]:
     """List Telegram group chat IDs for notifications."""
     with get_cursor() as cur:
-        cur.execute(
-            """
+        cur.execute("""
             SELECT
                 tg.id,
                 tg.chat_id,
@@ -2131,13 +3009,14 @@ def list_telegram_notification_groups() -> List[Dict[str, Any]]:
             FROM telegram_notification_groups tg
             LEFT JOIN dashboard_users u ON u.id = tg.created_by
             ORDER BY tg.updated_at DESC
-            """
-        )
+            """)
         rows = cur.fetchall()
     return [dict(row) for row in rows]
 
 
-def upsert_telegram_notification_group(chat_id: int, title: Optional[str], created_by: Optional[int]) -> bool:
+def upsert_telegram_notification_group(
+    chat_id: int, title: Optional[str], created_by: Optional[int]
+) -> bool:
     """Insert or update a Telegram notification group."""
     with get_cursor(commit=True) as cur:
         cur.execute(
@@ -2157,14 +3036,18 @@ def upsert_telegram_notification_group(chat_id: int, title: Optional[str], creat
 def delete_telegram_notification_group(group_id: int) -> bool:
     """Delete Telegram notification group by id."""
     with get_cursor(commit=True) as cur:
-        cur.execute("DELETE FROM telegram_notification_groups WHERE id = %s", (group_id,))
+        cur.execute(
+            "DELETE FROM telegram_notification_groups WHERE id = %s", (group_id,)
+        )
         return cur.rowcount > 0
 
 
 def delete_telegram_notification_group_by_chat_id(chat_id: int) -> bool:
     """Delete Telegram notification group by chat id."""
     with get_cursor(commit=True) as cur:
-        cur.execute("DELETE FROM telegram_notification_groups WHERE chat_id = %s", (chat_id,))
+        cur.execute(
+            "DELETE FROM telegram_notification_groups WHERE chat_id = %s", (chat_id,)
+        )
         return cur.rowcount > 0
 
 
@@ -2176,7 +3059,9 @@ def upsert_telegram_admin_accounts(
         return 0
     with get_cursor(commit=True) as cur:
         for entry in entries:
-            username = (entry.get("telegram_username") or "").strip().lstrip("@").lower()
+            username = (
+                (entry.get("telegram_username") or "").strip().lstrip("@").lower()
+            )
             if not username:
                 continue
             cur.execute(
@@ -2204,7 +3089,9 @@ def delete_telegram_admin_account(mapping_id: int) -> bool:
         return cur.rowcount > 0
 
 
-def get_telegram_admin_by_username(username: str, scope: str = "default") -> Optional[Dict[str, Any]]:
+def get_telegram_admin_by_username(
+    username: str, scope: str = "default"
+) -> Optional[Dict[str, Any]]:
     """Return admin mapping if username is authorized and linked to admin user."""
     if not username:
         return None
@@ -2311,8 +3198,7 @@ def _quote_ident(name: str) -> str:
 
 
 def _list_user_fk_columns(cur) -> List[Tuple[str, str]]:
-    cur.execute(
-        """
+    cur.execute("""
         SELECT
             tc.table_name,
             kcu.column_name
@@ -2328,8 +3214,7 @@ def _list_user_fk_columns(cur) -> List[Tuple[str, str]]:
           AND ccu.table_name = 'dashboard_users'
           AND ccu.column_name = 'id'
         ORDER BY tc.table_name, kcu.column_name
-        """
-    )
+        """)
     return [(row["table_name"], row["column_name"]) for row in cur.fetchall()]
 
 
@@ -2353,7 +3238,9 @@ def _list_unique_constraints(cur, table_name: str) -> List[List[str]]:
     return [list(row["columns"]) for row in cur.fetchall()]
 
 
-def merge_dashboard_users(old_user_id: int, new_user_id: int, merged_by: Optional[int] = None) -> Dict[str, Any]:
+def merge_dashboard_users(
+    old_user_id: int, new_user_id: int, merged_by: Optional[int] = None
+) -> Dict[str, Any]:
     """Merge two dashboard user accounts by moving all references to new_user_id."""
     if old_user_id == new_user_id:
         raise ValueError("User lama dan baru tidak boleh sama.")
@@ -2417,16 +3304,21 @@ def merge_dashboard_users(old_user_id: int, new_user_id: int, merged_by: Optiona
             (new_user_id, old_user_id),
         )
 
-    return {"old_user": rows.get(old_user_id), "new_user": rows.get(new_user_id), "merged_by": merged_by}
+    return {
+        "old_user": rows.get(old_user_id),
+        "new_user": rows.get(new_user_id),
+        "merged_by": merged_by,
+    }
 
 
 # =====================================================
 # Monev Team Management
 # =====================================================
 
+
 def get_monev_teams(team_type: str = None) -> List[Dict[str, Any]]:
     """Get all monev teams with kecamatan and coordinator info.
-    
+
     Args:
         team_type: Optional filter - 'kasi' or 'kecamatan'. None returns all.
     """
@@ -2458,33 +3350,38 @@ def get_monev_teams(team_type: str = None) -> List[Dict[str, Any]]:
         return [dict(row) for row in cur.fetchall()]
 
 
-def create_monev_team(name: str, team_type: str, kecamatan_id: int = None) -> Optional[int]:
+def create_monev_team(
+    name: str, team_type: str, kecamatan_id: int = None
+) -> Optional[int]:
     """Create a new monev team.
-    
+
     Args:
         name: Team name
         team_type: Type - 'kasi', 'kecamatan', or 'custom'
         kecamatan_id: Optional kecamatan ID (for kecamatan type teams)
-    
+
     Returns:
         New team ID if successful, None otherwise
     """
     with get_cursor(commit=True) as cur:
-        cur.execute("""
+        cur.execute(
+            """
             INSERT INTO monev_teams (name, team_type, kecamatan_id, created_at, updated_at)
             VALUES (%s, %s, %s, NOW(), NOW())
             RETURNING id
-        """, (name, team_type, kecamatan_id))
+        """,
+            (name, team_type, kecamatan_id),
+        )
         row = cur.fetchone()
-        return row['id'] if row else None
+        return row["id"] if row else None
 
 
 def delete_monev_team(team_id: int) -> bool:
     """Delete a monev team and its members.
-    
+
     Args:
         team_id: ID of team to delete
-    
+
     Returns:
         True if deleted, False otherwise
     """
@@ -2499,7 +3396,8 @@ def delete_monev_team(team_id: int) -> bool:
 def get_monev_team_by_kecamatan(kecamatan_id: int) -> Optional[Dict[str, Any]]:
     """Get monev team for a specific kecamatan."""
     with get_cursor() as cur:
-        cur.execute("""
+        cur.execute(
+            """
             SELECT 
                 mt.id,
                 mt.kecamatan_id,
@@ -2515,7 +3413,9 @@ def get_monev_team_by_kecamatan(kecamatan_id: int) -> Optional[Dict[str, Any]]:
             JOIN portal_kecamatan k ON mt.kecamatan_id = k.id
             LEFT JOIN dashboard_users u ON mt.coordinator_id = u.id
             WHERE mt.kecamatan_id = %s
-        """, (kecamatan_id,))
+        """,
+            (kecamatan_id,),
+        )
         row = cur.fetchone()
         return dict(row) if row else None
 
@@ -2523,7 +3423,8 @@ def get_monev_team_by_kecamatan(kecamatan_id: int) -> Optional[Dict[str, Any]]:
 def get_team_members(team_id: int) -> List[Dict[str, Any]]:
     """Get all members of a monev team."""
     with get_cursor() as cur:
-        cur.execute("""
+        cur.execute(
+            """
             SELECT 
                 mtm.id,
                 mtm.team_id,
@@ -2538,30 +3439,40 @@ def get_team_members(team_id: int) -> List[Dict[str, Any]]:
             JOIN dashboard_users u ON mtm.staff_id = u.id
             WHERE mtm.team_id = %s
             ORDER BY mtm.added_at
-        """, (team_id,))
+        """,
+            (team_id,),
+        )
         return [dict(row) for row in cur.fetchall()]
 
 
 def update_team_coordinator(team_id: int, coordinator_id: Optional[int]) -> bool:
     """Update the coordinator for a monev team."""
     with get_cursor(commit=True) as cur:
-        cur.execute("""
+        cur.execute(
+            """
             UPDATE monev_teams 
             SET coordinator_id = %s, updated_at = NOW()
             WHERE id = %s
-        """, (coordinator_id, team_id))
+        """,
+            (coordinator_id, team_id),
+        )
         return cur.rowcount > 0
 
 
-def add_team_member(team_id: int, staff_id: int, added_by: Optional[int] = None) -> bool:
+def add_team_member(
+    team_id: int, staff_id: int, added_by: Optional[int] = None
+) -> bool:
     """Add a member to a monev team."""
     try:
         with get_cursor(commit=True) as cur:
-            cur.execute("""
+            cur.execute(
+                """
                 INSERT INTO monev_team_members (team_id, staff_id, added_by)
                 VALUES (%s, %s, %s)
                 ON CONFLICT (team_id, staff_id) DO NOTHING
-            """, (team_id, staff_id, added_by))
+            """,
+                (team_id, staff_id, added_by),
+            )
             return cur.rowcount > 0
     except Exception:
         return False
@@ -2592,6 +3503,7 @@ def get_available_staff() -> List[Dict[str, Any]]:
         """)
         return [dict(row) for row in cur.fetchall()]
 
+
 def create_team_member_request(
     team_id: int,
     staff_id: int,
@@ -2599,7 +3511,7 @@ def create_team_member_request(
     note: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Create a join request for adding a staff to a team.
-    
+
     Returns dict with 'status' = created|pending|already_member and optional request data.
     """
     with get_cursor(commit=True) as cur:
@@ -2610,7 +3522,7 @@ def create_team_member_request(
         )
         if cur.fetchone():
             return {"status": "already_member"}
-        
+
         # Existing pending request?
         cur.execute(
             """
@@ -2623,7 +3535,7 @@ def create_team_member_request(
         pending = cur.fetchone()
         if pending:
             return {"status": "pending", "request": dict(pending)}
-        
+
         # Insert new request
         cur.execute(
             """
@@ -2645,7 +3557,7 @@ def list_team_member_requests(status: Optional[str] = None) -> List[Dict[str, An
         conditions.append("r.status = %s")
         params.append(status)
     where_clause = "WHERE " + " AND ".join(conditions) if conditions else ""
-    
+
     query = f"""
         SELECT 
             r.*,
@@ -2679,7 +3591,7 @@ def list_team_member_requests_for_team(
         conditions.append("r.status = %s")
         params.append(status)
     where_clause = "WHERE " + " AND ".join(conditions)
-    
+
     query = f"""
         SELECT 
             r.*,
@@ -2774,10 +3686,21 @@ def upsert_dashboard_user(
                     last_login_at = dashboard_users.last_login_at
             RETURNING id
             """,
-            (email, full_name, password_hash, role, nrk, nip, jabatan, degree_prefix, degree_suffix),
+            (
+                email,
+                full_name,
+                password_hash,
+                role,
+                nrk,
+                nip,
+                jabatan,
+                degree_prefix,
+                degree_suffix,
+            ),
         )
         row = cur.fetchone()
     return int(row[0])
+
 
 def update_last_login(user_id: int) -> None:
     with get_cursor(commit=True) as cur:
@@ -2803,7 +3726,9 @@ def _normalize_status_filter(value: Optional[str]) -> Optional[str]:
     return normalized if normalized in ACCOUNT_STATUS_CHOICES else None
 
 
-def fetch_aska_users(source: str, status: Optional[str], search: Optional[str], *, limit: int = 200) -> List[Dict[str, Any]]:
+def fetch_aska_users(
+    source: str, status: Optional[str], search: Optional[str], *, limit: int = 200
+) -> List[Dict[str, Any]]:
     """Gabungkan daftar user web, Telegram, dan WhatsApp sesuai filter."""
     normalized_source = (source or "all").strip().lower()
     normalized_status = _normalize_status_filter(status)
@@ -2869,7 +3794,9 @@ def fetch_aska_users(source: str, status: Optional[str], search: Optional[str], 
             conditions.append("status = %s")
             params.append(normalized_status)
         if normalized_search:
-            conditions.append("(username ILIKE %s OR CAST(telegram_user_id AS TEXT) ILIKE %s)")
+            conditions.append(
+                "(username ILIKE %s OR CAST(telegram_user_id AS TEXT) ILIKE %s)"
+            )
             term = f"%{normalized_search}%"
             params.extend([term, term])
         where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
@@ -2897,8 +3824,13 @@ def fetch_aska_users(source: str, status: Optional[str], search: Optional[str], 
                     {
                         "channel": "telegram",
                         "id": row["telegram_user_id"],
-                        "display_name": row["username"] or f"ID {row['telegram_user_id']}",
-                        "identifier": f"@{row['username']}" if row["username"] else row["telegram_user_id"],
+                        "display_name": row["username"]
+                        or f"ID {row['telegram_user_id']}",
+                        "identifier": (
+                            f"@{row['username']}"
+                            if row["username"]
+                            else row["telegram_user_id"]
+                        ),
                         "status": row["status"],
                         "status_reason": row["status_reason"],
                         "status_changed_at": row["status_changed_at"],
@@ -2916,7 +3848,9 @@ def fetch_aska_users(source: str, status: Optional[str], search: Optional[str], 
             conditions.append("status = %s")
             params.append(normalized_status)
         if normalized_search:
-            conditions.append("(display_name ILIKE %s OR CAST(whatsapp_user_id AS TEXT) ILIKE %s)")
+            conditions.append(
+                "(display_name ILIKE %s OR CAST(whatsapp_user_id AS TEXT) ILIKE %s)"
+            )
             term = f"%{normalized_search}%"
             params.extend([term, term])
         where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
@@ -2944,7 +3878,8 @@ def fetch_aska_users(source: str, status: Optional[str], search: Optional[str], 
                     {
                         "channel": "whatsapp",
                         "id": row["whatsapp_user_id"],
-                        "display_name": row["display_name"] or f"ID {row['whatsapp_user_id']}",
+                        "display_name": row["display_name"]
+                        or f"ID {row['whatsapp_user_id']}",
                         "identifier": f"+{row['whatsapp_user_id']}",
                         "status": row["status"],
                         "status_reason": row["status_reason"],
@@ -2956,7 +3891,12 @@ def fetch_aska_users(source: str, status: Optional[str], search: Optional[str], 
                     }
                 )
 
-    rows.sort(key=lambda item: item.get("last_activity") or item.get("created_at") or datetime.min, reverse=True)
+    rows.sort(
+        key=lambda item: item.get("last_activity")
+        or item.get("created_at")
+        or datetime.min,
+        reverse=True,
+    )
     return rows[:limit]
 
 
@@ -2995,7 +3935,9 @@ def summarize_aska_users() -> Dict[str, Dict[str, int]]:
     return summary
 
 
-def update_web_user_status(user_id: int, status: str, reason: Optional[str], *, changed_by: str) -> bool:
+def update_web_user_status(
+    user_id: int, status: str, reason: Optional[str], *, changed_by: str
+) -> bool:
     normalized = _normalize_status_filter(status)
     if normalized is None:
         raise ValueError("Status tidak valid.")
@@ -3017,7 +3959,9 @@ def update_web_user_status(user_id: int, status: str, reason: Optional[str], *, 
         return cur.rowcount > 0
 
 
-def update_telegram_user_status(user_id: int, status: str, reason: Optional[str], *, changed_by: str) -> bool:
+def update_telegram_user_status(
+    user_id: int, status: str, reason: Optional[str], *, changed_by: str
+) -> bool:
     normalized = _normalize_status_filter(status)
     if normalized is None:
         raise ValueError("Status tidak valid.")
@@ -3039,7 +3983,9 @@ def update_telegram_user_status(user_id: int, status: str, reason: Optional[str]
         return cur.rowcount > 0
 
 
-def update_whatsapp_user_status(user_id: int, status: str, reason: Optional[str], *, changed_by: str) -> bool:
+def update_whatsapp_user_status(
+    user_id: int, status: str, reason: Optional[str], *, changed_by: str
+) -> bool:
     normalized = _normalize_status_filter(status)
     if normalized is None:
         raise ValueError("Status tidak valid.")
@@ -3063,7 +4009,10 @@ def update_whatsapp_user_status(user_id: int, status: str, reason: Optional[str]
 
 # --- Chat Feedback queries --------------------------------------------------
 
-def fetch_feedback_summary(start_date: Optional[datetime] = None, end_date: Optional[datetime] = None) -> Dict[str, Any]:
+
+def fetch_feedback_summary(
+    start_date: Optional[datetime] = None, end_date: Optional[datetime] = None
+) -> Dict[str, Any]:
     """Aggregate feedback summary statistics for a given date range."""
     conditions: List[str] = []
     params: List[Any] = []
@@ -3364,7 +4313,9 @@ def _normalize_admin_performance_event(row: Dict[str, Any]) -> Dict[str, Any]:
     event = {
         "source": row.get("source") or feature_key,
         "feature_key": feature_key,
-        "feature_label": ADMIN_PERFORMANCE_FEATURE_LABELS.get(feature_key, feature_key.replace("_", " ").title()),
+        "feature_label": ADMIN_PERFORMANCE_FEATURE_LABELS.get(
+            feature_key, feature_key.replace("_", " ").title()
+        ),
         "created_at": created_at,
         "actor_user_id": row.get("actor_user_id"),
         "actor_name": actor_name,
@@ -3394,8 +4345,7 @@ def fetch_admin_activity_events() -> List[Dict[str, Any]]:
     """Collect admin activity events across all dashboard apps."""
     events: List[Dict[str, Any]] = []
     with get_cursor() as cur:
-        cur.execute(
-            """
+        cur.execute("""
             SELECT
                 'portal_activity_logs' AS source,
                 'panbers' AS feature_key,
@@ -3413,6 +4363,116 @@ def fetch_admin_activity_events() -> List[Dict[str, Any]]:
             JOIN dashboard_users u ON u.id = l.user_id
             WHERE l.user_id IS NOT NULL
               AND u.role = 'admin'
+            """)
+        events.extend(
+            _normalize_admin_performance_event(dict(row)) for row in cur.fetchall()
+        )
+
+        cur.execute("""
+            SELECT
+                'monev_bos_audit_logs' AS source,
+                'monev_bos' AS feature_key,
+                l.created_at,
+                l.user_id AS actor_user_id,
+                u.full_name AS actor_name,
+                u.email AS actor_email,
+                COALESCE(u.full_name, u.email, 'Admin') AS actor_label,
+                UPPER(l.action) AS action,
+                CASE WHEN l.activity_id IS NULL THEN 'MONEV_REPORT' ELSE 'MONEV_ACTIVITY' END AS target_type,
+                COALESCE(l.activity_id, l.report_id) AS target_id,
+                COALESCE(a.activity_name, school.full_name, 'Laporan Monev #' || l.report_id::text) AS target_name,
+                COALESCE(l.details, '') AS detail_text
+            FROM monev_bos_audit_logs l
+            JOIN dashboard_users u ON u.id = l.user_id
+            JOIN monev_bos_reports r ON r.id = l.report_id
+            LEFT JOIN dashboard_users school ON school.id = r.school_id
+            LEFT JOIN monev_bos_activities a ON a.id = l.activity_id
+            WHERE u.role = 'admin'
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM dashboard_admin_action_logs logged
+                  WHERE logged.feature_key = 'monev_bos'
+                    AND logged.user_id = l.user_id
+                    AND logged.target_type = CASE
+                        WHEN l.activity_id IS NULL THEN 'MONEV_REPORT'
+                        ELSE 'MONEV_ACTIVITY'
+                    END
+                    AND logged.target_id = COALESCE(l.activity_id, l.report_id)
+                    AND logged.action = UPPER(l.action)
+                    AND logged.created_at BETWEEN l.created_at - INTERVAL '5 minutes'
+                                              AND l.created_at + INTERVAL '5 minutes'
+              )
+            """
+        )
+        events.extend(_normalize_admin_performance_event(dict(row)) for row in cur.fetchall())
+
+        cur.execute(
+            """
+            SELECT
+                'laporan_forms_created' AS source,
+                'laporan' AS feature_key,
+                f.created_at,
+                f.created_by AS actor_user_id,
+                creator.full_name AS actor_name,
+                creator.email AS actor_email,
+                COALESCE(creator.full_name, creator.email, 'Admin') AS actor_label,
+                'CREATE' AS action,
+                'LAPORAN_FORM' AS target_type,
+                f.id AS target_id,
+                f.title AS target_name,
+                jsonb_build_object('status', f.status, 'target_scope', f.target_scope)::text AS detail_text
+            FROM laporan_forms f
+            JOIN dashboard_users creator ON creator.id = f.created_by
+            WHERE creator.role = 'admin'
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM dashboard_admin_action_logs logged
+                  WHERE logged.feature_key = 'laporan'
+                    AND logged.user_id = f.created_by
+                    AND logged.target_type = 'LAPORAN_FORM'
+                    AND logged.target_id = f.id
+                    AND logged.created_at BETWEEN f.created_at - INTERVAL '5 minutes'
+                                              AND f.created_at + INTERVAL '5 minutes'
+              )
+            """
+        )
+        events.extend(_normalize_admin_performance_event(dict(row)) for row in cur.fetchall())
+
+        cur.execute(
+            """
+            SELECT
+                'laporan_forms_updated' AS source,
+                'laporan' AS feature_key,
+                f.updated_at AS created_at,
+                f.updated_by AS actor_user_id,
+                updater.full_name AS actor_name,
+                updater.email AS actor_email,
+                COALESCE(updater.full_name, updater.email, 'Admin') AS actor_label,
+                'UPDATE_SNAPSHOT' AS action,
+                'LAPORAN_FORM' AS target_type,
+                f.id AS target_id,
+                f.title AS target_name,
+                jsonb_build_object(
+                    'status', f.status,
+                    'is_active', f.is_active,
+                    'is_paused', f.is_paused,
+                    'target_scope', f.target_scope
+                )::text AS detail_text
+            FROM laporan_forms f
+            JOIN dashboard_users updater ON updater.id = f.updated_by
+            WHERE updater.role = 'admin'
+              AND f.status <> 'draft'
+              AND f.updated_at > f.created_at + INTERVAL '1 second'
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM dashboard_admin_action_logs logged
+                  WHERE logged.feature_key = 'laporan'
+                    AND logged.user_id = f.updated_by
+                    AND logged.target_type = 'LAPORAN_FORM'
+                    AND logged.target_id = f.id
+                    AND logged.created_at BETWEEN f.updated_at - INTERVAL '5 minutes'
+                                              AND f.updated_at + INTERVAL '5 minutes'
+              )
             """
         )
         events.extend(_normalize_admin_performance_event(dict(row)) for row in cur.fetchall())
@@ -3452,12 +4512,12 @@ def fetch_admin_activity_events() -> List[Dict[str, Any]]:
             ) actor_match ON TRUE
             WHERE COALESCE(TRIM(e.actor), '') <> ''
               AND actor_match.id IS NOT NULL
-            """
+            """)
+        events.extend(
+            _normalize_admin_performance_event(dict(row)) for row in cur.fetchall()
         )
-        events.extend(_normalize_admin_performance_event(dict(row)) for row in cur.fetchall())
 
-        cur.execute(
-            """
+        cur.execute("""
             SELECT
                 'psych_report_snapshot' AS source,
                 'aska_insight' AS feature_key,
@@ -3496,12 +4556,12 @@ def fetch_admin_activity_events() -> List[Dict[str, Any]]:
                   WHERE a.target_type = 'PSYCH_REPORT'
                     AND a.target_id = p.id
               )
-            """
+            """)
+        events.extend(
+            _normalize_admin_performance_event(dict(row)) for row in cur.fetchall()
         )
-        events.extend(_normalize_admin_performance_event(dict(row)) for row in cur.fetchall())
 
-        cur.execute(
-            """
+        cur.execute("""
             SELECT
                 'guestbook_transactions' AS source,
                 'daftar_tamu' AS feature_key,
@@ -3535,12 +4595,12 @@ def fetch_admin_activity_events() -> List[Dict[str, Any]]:
                   WHERE a.target_type = 'GUESTBOOK_TRANSACTION'
                     AND a.target_id = t.id
               )
-            """
+            """)
+        events.extend(
+            _normalize_admin_performance_event(dict(row)) for row in cur.fetchall()
         )
-        events.extend(_normalize_admin_performance_event(dict(row)) for row in cur.fetchall())
 
-        cur.execute(
-            """
+        cur.execute("""
             SELECT
                 'general_guest_verification' AS source,
                 'daftar_tamu' AS feature_key,
@@ -3565,12 +4625,12 @@ def fetch_admin_activity_events() -> List[Dict[str, Any]]:
                   WHERE a.target_type = 'GENERAL_GUEST'
                     AND a.target_id = g.id
               )
-            """
+            """)
+        events.extend(
+            _normalize_admin_performance_event(dict(row)) for row in cur.fetchall()
         )
-        events.extend(_normalize_admin_performance_event(dict(row)) for row in cur.fetchall())
 
-        cur.execute(
-            """
+        cur.execute("""
             SELECT
                 'general_guest_delete' AS source,
                 'daftar_tamu' AS feature_key,
@@ -3595,12 +4655,12 @@ def fetch_admin_activity_events() -> List[Dict[str, Any]]:
                   WHERE a.target_type = 'GENERAL_GUEST'
                     AND a.target_id = g.id
               )
-            """
+            """)
+        events.extend(
+            _normalize_admin_performance_event(dict(row)) for row in cur.fetchall()
         )
-        events.extend(_normalize_admin_performance_event(dict(row)) for row in cur.fetchall())
 
-        cur.execute(
-            """
+        cur.execute("""
             SELECT
                 'call_center_messages' AS source,
                 'call_center' AS feature_key,
@@ -3620,12 +4680,12 @@ def fetch_admin_activity_events() -> List[Dict[str, Any]]:
             WHERE m.direction = 'outbound'
               AND m.admin_user_id IS NOT NULL
               AND u.role = 'admin'
-            """
+            """)
+        events.extend(
+            _normalize_admin_performance_event(dict(row)) for row in cur.fetchall()
         )
-        events.extend(_normalize_admin_performance_event(dict(row)) for row in cur.fetchall())
 
-        cur.execute(
-            """
+        cur.execute("""
             SELECT
                 'dashboard_admin_action_logs' AS source,
                 a.feature_key,
@@ -3642,12 +4702,30 @@ def fetch_admin_activity_events() -> List[Dict[str, Any]]:
             FROM dashboard_admin_action_logs a
             JOIN dashboard_users u ON u.id = a.user_id
             WHERE u.role = 'admin'
-            """
+              AND NOT (
+                  a.feature_key = 'laporan'
+                  AND UPPER(TRIM(a.action)) = 'AUTOSAVE'
+              )
+            """)
+        events.extend(
+            _normalize_admin_performance_event(dict(row)) for row in cur.fetchall()
         )
-        events.extend(_normalize_admin_performance_event(dict(row)) for row in cur.fetchall())
 
+    # Autosave is a technical persistence event, not an admin performance action.
+    # Keep this defensive filter in addition to the SQL predicate in case another
+    # activity source starts exposing Laporan autosaves in the future.
+    events = [
+        event
+        for event in events
+        if not (
+            event.get("feature_key") == "laporan"
+            and event.get("action") == "AUTOSAVE"
+        )
+    ]
     events.sort(
-        key=lambda item: item["created_at"].timestamp() if item.get("created_at") else 0,
+        key=lambda item: (
+            item["created_at"].timestamp() if item.get("created_at") else 0
+        ),
         reverse=True,
     )
     return events
@@ -3689,11 +4767,17 @@ def fetch_admin_performance_data(
 
     base_events = [event for event in raw_events if _match_base(event)]
     if selected_feature != "all":
-        filtered_events = [event for event in base_events if event.get("feature_key") == selected_feature]
+        filtered_events = [
+            event
+            for event in base_events
+            if event.get("feature_key") == selected_feature
+        ]
     else:
         filtered_events = list(base_events)
 
-    feature_counts = {key: 0 for key in ADMIN_PERFORMANCE_FEATURE_LABELS if key != "all"}
+    feature_counts = {
+        key: 0 for key in ADMIN_PERFORMANCE_FEATURE_LABELS if key != "all"
+    }
     for event in base_events:
         key = event.get("feature_key")
         if key in feature_counts:
@@ -3714,10 +4798,16 @@ def fetch_admin_performance_data(
             "name": event.get("actor_name"),
             "email": event.get("actor_email"),
         }
-    admin_options = sorted(admin_lookup.values(), key=lambda item: (item["label"] or "").lower())
+    admin_options = sorted(
+        admin_lookup.values(), key=lambda item: (item["label"] or "").lower()
+    )
 
-    action_options = sorted({event.get("action") for event in raw_events if event.get("action")})
-    target_options = sorted({event.get("target_type") for event in raw_events if event.get("target_type")})
+    action_options = sorted(
+        {event.get("action") for event in raw_events if event.get("action")}
+    )
+    target_options = sorted(
+        {event.get("target_type") for event in raw_events if event.get("target_type")}
+    )
 
     leaderboard_map: Dict[str, Dict[str, Any]] = {}
     action_totals: Dict[str, int] = {}
@@ -3725,7 +4815,9 @@ def fetch_admin_performance_data(
     daily_totals: Dict[str, int] = {}
     feature_totals: Dict[str, int] = {}
     for event in filtered_events:
-        actor_key = str(event.get("actor_user_id") or event.get("actor_label") or "unknown")
+        actor_key = str(
+            event.get("actor_user_id") or event.get("actor_label") or "unknown"
+        )
         bucket = leaderboard_map.setdefault(
             actor_key,
             {
@@ -3741,17 +4833,24 @@ def fetch_admin_performance_data(
         )
         bucket["total_actions"] += 1
         if event.get("created_at") and (
-            not bucket.get("last_action_at") or event["created_at"] > bucket["last_action_at"]
+            not bucket.get("last_action_at")
+            or event["created_at"] > bucket["last_action_at"]
         ):
             bucket["last_action_at"] = event["created_at"]
         feature_bucket = bucket["feature_counts"]
-        feature_bucket[event["feature_key"]] = feature_bucket.get(event["feature_key"], 0) + 1
+        feature_bucket[event["feature_key"]] = (
+            feature_bucket.get(event["feature_key"], 0) + 1
+        )
         action_bucket = bucket["action_counts"]
         action_bucket[event["action"]] = action_bucket.get(event["action"], 0) + 1
 
         action_totals[event["action"]] = action_totals.get(event["action"], 0) + 1
-        target_totals[event["target_type"]] = target_totals.get(event["target_type"], 0) + 1
-        feature_totals[event["feature_key"]] = feature_totals.get(event["feature_key"], 0) + 1
+        target_totals[event["target_type"]] = (
+            target_totals.get(event["target_type"], 0) + 1
+        )
+        feature_totals[event["feature_key"]] = (
+            feature_totals.get(event["feature_key"], 0) + 1
+        )
         created_at = event.get("created_at")
         if created_at:
             day_key = created_at.date().isoformat()
@@ -3773,7 +4872,9 @@ def fetch_admin_performance_data(
         [
             {
                 "feature_key": key,
-                "feature_label": ADMIN_PERFORMANCE_FEATURE_LABELS.get(key, key.replace("_", " ").title()),
+                "feature_label": ADMIN_PERFORMANCE_FEATURE_LABELS.get(
+                    key, key.replace("_", " ").title()
+                ),
                 "count": value,
             }
             for key, value in feature_totals.items()
@@ -3781,14 +4882,17 @@ def fetch_admin_performance_data(
         key=lambda item: (-item["count"], item["feature_label"]),
     )
     daily_series = [
-        {"day": key, "count": daily_totals[key]}
-        for key in sorted(daily_totals.keys())
+        {"day": key, "count": daily_totals[key]} for key in sorted(daily_totals.keys())
     ]
     detail_rows: List[Dict[str, Any]] = []
     for event in filtered_events[: max(50, min(detail_limit, 1000))]:
         row = dict(event)
         created_at = row.get("created_at")
-        row["created_at_iso"] = created_at.isoformat() if created_at and hasattr(created_at, "isoformat") else None
+        row["created_at_iso"] = (
+            created_at.isoformat()
+            if created_at and hasattr(created_at, "isoformat")
+            else None
+        )
         detail_rows.append(row)
 
     return {
@@ -3807,9 +4911,18 @@ def fetch_admin_performance_data(
         "target_options": target_options,
         "summary": {
             "total_actions": len(filtered_events),
-            "unique_admins": len({event.get("actor_user_id") or event.get("actor_label") for event in filtered_events}),
-            "total_features": len({event.get("feature_key") for event in filtered_events}),
-            "latest_action_at": filtered_events[0]["created_at"] if filtered_events else None,
+            "unique_admins": len(
+                {
+                    event.get("actor_user_id") or event.get("actor_label")
+                    for event in filtered_events
+                }
+            ),
+            "total_features": len(
+                {event.get("feature_key") for event in filtered_events}
+            ),
+            "latest_action_at": (
+                filtered_events[0]["created_at"] if filtered_events else None
+            ),
         },
         "leaderboard": leaderboard,
         "top_actions": top_actions,
@@ -3872,7 +4985,11 @@ def fetch_admin_activity_page(
     for event in matched[start_idx:end_idx]:
         row = dict(event)
         created_at = row.get("created_at")
-        row["created_at_iso"] = created_at.isoformat() if created_at and hasattr(created_at, "isoformat") else None
+        row["created_at_iso"] = (
+            created_at.isoformat()
+            if created_at and hasattr(created_at, "isoformat")
+            else None
+        )
         rows.append(row)
 
     actor_label = rows[0].get("actor_label") if rows else None
@@ -3890,3 +5007,311 @@ def fetch_admin_activity_page(
         "total_pages": total_pages,
         "actor_label": actor_label or "Admin",
     }
+
+
+# ===== SYSTEM SETTINGS QUERIES =====
+
+DEFAULT_SYSTEM_SETTINGS = [
+    # General Settings
+    {
+        "setting_key": "app_name",
+        "setting_value": "Dashboard SUDIN ASKA",
+        "category": "general",
+        "description": "Nama utama aplikasi dashboard",
+        "is_secret": False,
+    },
+    {
+        "setting_key": "app_subtitle",
+        "setting_value": "Sistem Informasi & Layanan Terpadu Suku Dinas Pendidikan",
+        "category": "general",
+        "description": "Sub-judul / tagline portal",
+        "is_secret": False,
+    },
+    {
+        "setting_key": "organization_name",
+        "setting_value": "Suku Dinas Pendidikan Wilayah 1 Jakarta Utara",
+        "category": "general",
+        "description": "Nama instansi / organisasi pengelola",
+        "is_secret": False,
+    },
+    {
+        "setting_key": "support_email",
+        "setting_value": "support@sudinaska.id",
+        "category": "general",
+        "description": "Email kontak bantuan teknis",
+        "is_secret": False,
+    },
+    {
+        "setting_key": "support_phone",
+        "setting_value": "021-43930000",
+        "category": "general",
+        "description": "Nomor telepon / WhatsApp hotline",
+        "is_secret": False,
+    },
+    {
+        "setting_key": "maintenance_mode",
+        "setting_value": "false",
+        "category": "general",
+        "description": "Mode pemeliharaan sistem (true/false)",
+        "is_secret": False,
+    },
+    {
+        "setting_key": "maintenance_message",
+        "setting_value": "Sistem sedang dalam pemeliharaan berkala. Silakan kembali beberapa saat lagi.",
+        "category": "general",
+        "description": "Pesan yang ditampilkan saat mode pemeliharaan aktif",
+        "is_secret": False,
+    },
+    {
+        "setting_key": "session_timeout_minutes",
+        "setting_value": "120",
+        "category": "general",
+        "description": "Durasi batas waktu sesi inaktif (dalam menit)",
+        "is_secret": False,
+    },
+    {
+        "setting_key": "allow_user_registration",
+        "setting_value": "false",
+        "category": "general",
+        "description": "Izinkan registrasi pengguna baru secara mandiri",
+        "is_secret": False,
+    },
+    # Notification Settings
+    {
+        "setting_key": "telegram_notifications_enabled",
+        "setting_value": "true",
+        "category": "notification",
+        "description": "Status pengiriman notifikasi Telegram",
+        "is_secret": False,
+    },
+    {
+        "setting_key": "telegram_bot_token",
+        "setting_value": "",
+        "category": "notification",
+        "description": "Token Bot Telegram untuk notifikasi sistem",
+        "is_secret": True,
+    },
+    {
+        "setting_key": "telegram_chat_id",
+        "setting_value": "",
+        "category": "notification",
+        "description": "ID Chat / Grup Telegram penerima notifikasi",
+        "is_secret": False,
+    },
+    {
+        "setting_key": "whatsapp_notifications_enabled",
+        "setting_value": "true",
+        "category": "notification",
+        "description": "Status notifikasi via WhatsApp Gateway",
+        "is_secret": False,
+    },
+    {
+        "setting_key": "email_notifications_enabled",
+        "setting_value": "false",
+        "category": "notification",
+        "description": "Status pengiriman email notifikasi",
+        "is_secret": False,
+    },
+    {
+        "setting_key": "notify_on_new_login",
+        "setting_value": "true",
+        "category": "notification",
+        "description": "Kirim notifikasi saat ada login admin baru",
+        "is_secret": False,
+    },
+    {
+        "setting_key": "notify_on_system_error",
+        "setting_value": "true",
+        "category": "notification",
+        "description": "Kirim alert notifikasi jika terjadi error kritis sistem",
+        "is_secret": False,
+    },
+    {
+        "setting_key": "notify_daily_summary",
+        "setting_value": "true",
+        "category": "notification",
+        "description": "Kirim ringkasan statistik harian",
+        "is_secret": False,
+    },
+    # API Settings
+    {
+        "setting_key": "openai_api_key",
+        "setting_value": "",
+        "category": "api",
+        "description": "API Key OpenAI untuk fitur kecerdasan/AI",
+        "is_secret": True,
+    },
+    {
+        "setting_key": "gemini_api_key",
+        "setting_value": "",
+        "category": "api",
+        "description": "API Key Google Gemini AI",
+        "is_secret": True,
+    },
+    {
+        "setting_key": "whatsapp_api_endpoint",
+        "setting_value": "",
+        "category": "api",
+        "description": "URL Endpoint WhatsApp Gateway API",
+        "is_secret": False,
+    },
+    {
+        "setting_key": "whatsapp_api_key",
+        "setting_value": "",
+        "category": "api",
+        "description": "API Key WhatsApp Gateway",
+        "is_secret": True,
+    },
+    {
+        "setting_key": "telegram_webhook_url",
+        "setting_value": "",
+        "category": "api",
+        "description": "URL Webhook Telegram Bot",
+        "is_secret": False,
+    },
+    {
+        "setting_key": "api_rate_limit_per_min",
+        "setting_value": "60",
+        "category": "api",
+        "description": "Batas maksimum panggilan API per menit",
+        "is_secret": False,
+    },
+    {
+        "setting_key": "api_access_enabled",
+        "setting_value": "true",
+        "category": "api",
+        "description": "Status akses API eksternal",
+        "is_secret": False,
+    },
+]
+
+
+def ensure_default_system_settings() -> None:
+    """Ensure system_settings table has default settings populated."""
+    try:
+        with get_cursor(commit=True) as cur:
+            for item in DEFAULT_SYSTEM_SETTINGS:
+                cur.execute(
+                    """
+                    INSERT INTO system_settings (setting_key, setting_value, category, description, is_secret)
+                    VALUES (%s, %s, %s, %s, %s)
+                    ON CONFLICT (setting_key) DO NOTHING;
+                    """,
+                    (
+                        item["setting_key"],
+                        item["setting_value"],
+                        item["category"],
+                        item["description"],
+                        item["is_secret"],
+                    ),
+                )
+    except Exception as exc:
+        import logging
+        logging.warning("Error ensuring default system settings: %s", exc)
+
+
+def get_all_system_settings() -> Dict[str, Dict[str, Any]]:
+    """Retrieve all system settings mapped by setting_key."""
+    ensure_default_system_settings()
+    results: Dict[str, Dict[str, Any]] = {}
+    try:
+        with get_cursor() as cur:
+            cur.execute(
+                """
+                SELECT setting_key, setting_value, category, description, is_secret, updated_at, updated_by
+                FROM system_settings
+                ORDER BY category, setting_key;
+                """
+            )
+            rows = cur.fetchall()
+            for row in rows:
+                key = row["setting_key"]
+                results[key] = {
+                    "setting_key": key,
+                    "setting_value": row["setting_value"] or "",
+                    "category": row["category"],
+                    "description": row["description"] or "",
+                    "is_secret": bool(row["is_secret"]),
+                    "updated_at": row["updated_at"],
+                    "updated_by": row["updated_by"],
+                }
+    except Exception as exc:
+        import logging
+        logging.warning("Error fetching system settings: %s", exc)
+        for item in DEFAULT_SYSTEM_SETTINGS:
+            results[item["setting_key"]] = {
+                "setting_key": item["setting_key"],
+                "setting_value": item["setting_value"],
+                "category": item["category"],
+                "description": item["description"],
+                "is_secret": item["is_secret"],
+                "updated_at": None,
+                "updated_by": None,
+            }
+    return results
+
+
+def get_system_settings_dict() -> Dict[str, str]:
+    """Get key -> string value mapping of all system settings."""
+    settings = get_all_system_settings()
+    return {k: v["setting_value"] for k, v in settings.items()}
+
+
+def get_system_setting(key: str, default: str = "") -> str:
+    """Get single system setting value by key."""
+    settings = get_system_settings_dict()
+    return settings.get(key, default)
+
+
+def update_system_settings(settings_data: Dict[str, str], user_id: Optional[int] = None) -> bool:
+    """Batch update system settings from key-value dictionary."""
+    ensure_default_system_settings()
+    if not settings_data:
+        return True
+    try:
+        with get_cursor(commit=True) as cur:
+            for key, val in settings_data.items():
+                cur.execute(
+                    """
+                    INSERT INTO system_settings (setting_key, setting_value, updated_at, updated_by)
+                    VALUES (%s, %s, NOW(), %s)
+                    ON CONFLICT (setting_key) DO UPDATE
+                    SET setting_value = EXCLUDED.setting_value,
+                        updated_at = NOW(),
+                        updated_by = EXCLUDED.updated_by;
+                    """,
+                    (key, str(val), user_id),
+                )
+        return True
+    except Exception as exc:
+        import logging
+        logging.error("Error updating system settings: %s", exc)
+        return False
+
+
+def get_system_diagnostic_info() -> Dict[str, Any]:
+    """Get system health and diagnostic information for settings page."""
+    import sys
+    import platform
+    info = {
+        "db_connected": False,
+        "python_version": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
+        "platform": platform.platform(),
+        "total_users": 0,
+        "admin_users": 0,
+        "server_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S WIB"),
+    }
+    try:
+        with get_cursor() as cur:
+            cur.execute("SELECT COUNT(*) AS total FROM dashboard_users;")
+            res = cur.fetchone()
+            info["total_users"] = res["total"] if res else 0
+
+            cur.execute("SELECT COUNT(*) AS total FROM dashboard_users WHERE role = 'admin';")
+            res_admin = cur.fetchone()
+            info["admin_users"] = res_admin["total"] if res_admin else 0
+            info["db_connected"] = True
+    except Exception:
+        info["db_connected"] = False
+
+    return info

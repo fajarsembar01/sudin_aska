@@ -34,6 +34,7 @@ _BUILT_IN_PATHS = {
     STRUKTUR_ORG_FILE.resolve(),
 }
 
+
 def _read(path: Path) -> str:
     if not path.exists():
         return ""
@@ -168,7 +169,9 @@ def load_kecerdasan(*, ensure_output_file: bool = False) -> str:
 
     # Tambahkan struktur organisasi
     if struktur_org_text:
-        combined = f"{combined.rstrip()}\n\n# Struktur Organisasi\n{struktur_org_text}\n"
+        combined = (
+            f"{combined.rstrip()}\n\n# Struktur Organisasi\n{struktur_org_text}\n"
+        )
 
     # Tambahkan data sekolah di akhir
     if schools_text:

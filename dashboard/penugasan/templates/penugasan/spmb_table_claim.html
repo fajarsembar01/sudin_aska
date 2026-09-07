@@ -1,0 +1,117 @@
+{% extends 'penugasan_base.html' %}
+{% block title %}Penugasan Operator SPMB - ASKA Insights{% endblock %}
+
+{% block portal_content %}
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+    <div>
+        <div class="text-muted small fw-semibold text-uppercase mb-1">Penugasan</div>
+        <h1 class="h4 fw-bold mb-1">Klaim Operator Evaluasi SPMB</h1>
+        <p class="text-muted mb-0">Pilih tanggal layanan, lalu klaim nomor operator 1 sampai 12.</p>
+    </div>
+    <form method="get" action="{{ url_for('penugasan.spmb_table_claim') }}" class="d-flex gap-2">
+        <input type="date" name="date" class="form-control" value="{{ selected_date.isoformat() }}">
+        <button type="submit" class="btn btn-outline-primary text-nowrap">
+            <i class="bi bi-calendar3 me-1"></i>Lihat
+        </button>
+    </form>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center gap-3">
+                    <span class="icon-badge section-icon text-primary">
+                        <i class="bi bi-person-check"></i>
+                    </span>
+                    <div>
+                        <div class="text-muted small">Klaim Anda</div>
+                        {% if my_assignment %}
+                        <div class="h5 fw-bold mb-0">Operator {{ my_assignment.table_number }}</div>
+                        {% else %}
+                        <div class="h5 fw-bold mb-0">Belum klaim</div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="text-muted small mt-3">Tanggal {{ selected_date.strftime('%d %b %Y') }}</div>
+                {% if my_assignment %}
+                <form method="post" action="{{ url_for('penugasan.spmb_table_claim') }}" class="mt-3">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="assignment_date" value="{{ selected_date.isoformat() }}">
+                    <input type="hidden" name="action" value="release">
+                    <button type="submit" class="btn btn-outline-danger w-100">
+                        <i class="bi bi-x-circle me-1"></i>Lepas Klaim
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-8">
+        <div class="alert alert-info border-0 shadow-sm mb-0 h-100 d-flex align-items-center">
+            <div>
+                <div class="fw-semibold mb-1">Aturan klaim</div>
+                <div>Satu staff hanya dapat memegang satu operator pada tanggal yang sama. Jika memilih operator lain,
+                    klaim sebelumnya akan otomatis pindah.</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+            <div>
+                <h2 class="h6 fw-bold mb-0">Nomor Operator</h2>
+                <div class="text-muted small">Meja yang sudah terisi tidak bisa diklaim oleh staff lain.</div>
+            </div>
+            <span class="badge text-bg-light border text-muted">{{ selected_date.isoformat() }}</span>
+        </div>
+
+        <div class="row g-3">
+            {% for item in assignments %}
+            {% set is_mine = item.officer_user_id and my_assignment and item.table_number == my_assignment.table_number %}
+            {% set is_taken = item.officer_user_id and not is_mine %}
+            <div class="col-xl-3 col-md-4 col-6">
+                <div class="border rounded-3 p-3 h-100 {% if is_mine %}border-success bg-success-subtle{% elif is_taken %}bg-light{% else %}bg-body{% endif %}">
+                    <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                        <div class="fw-bold fs-5">Operator {{ item.table_number }}</div>
+                        {% if is_mine %}
+                        <span class="badge text-bg-success">Saya</span>
+                        {% elif is_taken %}
+                        <span class="badge text-bg-secondary">Terisi</span>
+                        {% else %}
+                        <span class="badge text-bg-primary">Kosong</span>
+                        {% endif %}
+                    </div>
+                    <div class="small text-muted mb-3">
+                        {% if is_mine %}
+                        Sudah Anda klaim.
+                        {% elif is_taken %}
+                        Sudah diklaim.
+                        {% else %}
+                        Siap diklaim.
+                        {% endif %}
+                    </div>
+                    {% if not is_taken %}
+                    <form method="post" action="{{ url_for('penugasan.spmb_table_claim') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="assignment_date" value="{{ selected_date.isoformat() }}">
+                        <input type="hidden" name="action" value="claim">
+                        <input type="hidden" name="table_number" value="{{ item.table_number }}">
+                        <button type="submit" class="btn {% if is_mine %}btn-success{% else %}btn-outline-primary{% endif %} w-100">
+                            <i class="bi bi-check2-circle me-1"></i>{{ 'Tetap Operator Ini' if is_mine else 'Klaim' }}
+                        </button>
+                    </form>
+                    {% else %}
+                    <button type="button" class="btn btn-outline-secondary w-100" disabled>
+                        <i class="bi bi-lock me-1"></i>Tidak Tersedia
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

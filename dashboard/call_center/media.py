@@ -94,11 +94,15 @@ _MIME_ALLOWED_SUFFIXES = {
     "image/tiff": {".tif", ".tiff"},
     "application/pdf": {".pdf"},
     "application/msword": {".doc"},
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": {".docx"},
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": {
+        ".docx"
+    },
     "application/vnd.ms-excel": {".xls"},
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {".xlsx"},
     "application/vnd.ms-powerpoint": {".ppt"},
-    "application/vnd.openxmlformats-officedocument.presentationml.presentation": {".pptx"},
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation": {
+        ".pptx"
+    },
     "text/plain": {".txt"},
     "text/csv": {".csv"},
 }
@@ -196,12 +200,15 @@ def _save_call_center_media(
 
     raw_data = str(media_payload.get("data") or "").strip()
     filename = _clean_client_filename(media_payload.get("filename"))
-    mime_type = _normalize_mime_type(str(
-        media_payload.get("mimetype")
-        or media_payload.get("mime_type")
-        or media_payload.get("media_mime_type")
-        or ""
-    ), filename)
+    mime_type = _normalize_mime_type(
+        str(
+            media_payload.get("mimetype")
+            or media_payload.get("mime_type")
+            or media_payload.get("media_mime_type")
+            or ""
+        ),
+        filename,
+    )
     if not raw_data:
         return {}, None
     if not mime_type or not _is_allowed_mime(mime_type):
@@ -217,7 +224,10 @@ def _save_call_center_media(
         return {}, "Lampiran kosong."
     raw_limit = _max_media_bytes()
     if raw_limit > 0 and len(content) > raw_limit:
-        return {}, f"Ukuran lampiran maksimal {_format_bytes(raw_limit)} sebelum kompresi."
+        return (
+            {},
+            f"Ukuran lampiran maksimal {_format_bytes(raw_limit)} sebelum kompresi.",
+        )
 
     if mime_type.startswith("image/"):
         # LIMIT DINONAKTIFKAN — aktifkan kembali jika diperlukan:
@@ -231,7 +241,10 @@ def _save_call_center_media(
                 target_bytes=image_limit,
             )
             if not compressed or len(compressed) > image_limit:
-                return {}, f"Gambar tidak bisa dikompres di bawah {_format_bytes(image_limit)}."
+                return (
+                    {},
+                    f"Gambar tidak bisa dikompres di bawah {_format_bytes(image_limit)}.",
+                )
             content = compressed
             mime_type = "image/webp"
             media_payload = {
@@ -240,7 +253,9 @@ def _save_call_center_media(
             }
         elif image_limit is None and needs_conversion:
             # Konversi format non-web-safe tanpa limit ukuran
-            compressed = _compress_image_for_storage(content, force=True, target_bytes=None)
+            compressed = _compress_image_for_storage(
+                content, force=True, target_bytes=None
+            )
             if compressed:
                 content = compressed
                 mime_type = "image/webp"
@@ -255,14 +270,20 @@ def _save_call_center_media(
         if pdf_limit is not None and len(content) > pdf_limit:
             compressed = _compress_pdf_for_storage(content, target_bytes=pdf_limit)
             if not compressed or len(compressed) > pdf_limit:
-                return {}, f"PDF tidak bisa dikompres di bawah {_format_bytes(pdf_limit)}."
+                return (
+                    {},
+                    f"PDF tidak bisa dikompres di bawah {_format_bytes(pdf_limit)}.",
+                )
             content = compressed
     else:
         # LIMIT DINONAKTIFKAN — aktifkan kembali jika diperlukan:
         # file_limit = _coerce_limit(max_file_bytes, _max_file_bytes())
         file_limit = max_file_bytes  # None = tanpa limit ukuran
         if file_limit is not None and len(content) > file_limit:
-            return {}, f"Dokumen selain gambar/PDF maksimal {_format_bytes(file_limit)}."
+            return (
+                {},
+                f"Dokumen selain gambar/PDF maksimal {_format_bytes(file_limit)}.",
+            )
 
     ext = _extension_for_payload(media_payload, mime_type)
     stem_seed = (message_id or "").strip()
@@ -350,7 +371,11 @@ def _extension_for_payload(media_payload: Mapping[str, Any], mime_type: str) -> 
         suffix = Path(raw_filename).suffix.lower()
         if suffix and suffix in _MIME_ALLOWED_SUFFIXES.get(mime_type, set()):
             return suffix
-    return _MIME_EXTENSIONS.get(mime_type) or mimetypes.guess_extension(mime_type) or ".bin"
+    return (
+        _MIME_EXTENSIONS.get(mime_type)
+        or mimetypes.guess_extension(mime_type)
+        or ".bin"
+    )
 
 
 def _clean_client_filename(raw_name: Any) -> str:
@@ -429,7 +454,9 @@ def _resize_to_max_side(image: Image.Image, max_side: int) -> Image.Image:
     return image.resize(new_size, Image.Resampling.LANCZOS)
 
 
-def _compress_pdf_for_storage(content: bytes, *, target_bytes: Optional[int] = None) -> Optional[bytes]:
+def _compress_pdf_for_storage(
+    content: bytes, *, target_bytes: Optional[int] = None
+) -> Optional[bytes]:
     target_bytes = target_bytes or _max_pdf_bytes()
     best = _rewrite_pdf_for_storage(content)
     if best and len(best) <= target_bytes:
@@ -457,7 +484,9 @@ def _rewrite_pdf_for_storage(content: bytes) -> Optional[bytes]:
             writer.add_page(page)
         writer.add_metadata({})
         try:
-            writer.compress_identical_objects(remove_identicals=True, remove_orphans=True)
+            writer.compress_identical_objects(
+                remove_identicals=True, remove_orphans=True
+            )
         except Exception:
             pass
 
@@ -472,7 +501,9 @@ def _rewrite_pdf_for_storage(content: bytes) -> Optional[bytes]:
     return candidate
 
 
-def _compress_pdf_images_for_storage(content: bytes, *, target_bytes: int) -> Optional[bytes]:
+def _compress_pdf_images_for_storage(
+    content: bytes, *, target_bytes: int
+) -> Optional[bytes]:
     if PdfReader is None or PdfWriter is None:
         return None
 
@@ -537,7 +568,9 @@ def _rewrite_pdf_with_image_options(
             return None
         writer.add_metadata({})
         try:
-            writer.compress_identical_objects(remove_identicals=True, remove_orphans=True)
+            writer.compress_identical_objects(
+                remove_identicals=True, remove_orphans=True
+            )
         except Exception:
             pass
 

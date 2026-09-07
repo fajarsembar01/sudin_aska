@@ -1,0 +1,701 @@
+{% extends "pengaturan/base_pengaturan.html" %}
+
+{% block title %}Pengaturan Aplikasi Dashboard - SUDIN ASKA{% endblock %}
+
+{% block head_extra %}
+<style>
+    .settings-card {
+        border: 1px solid var(--border-soft);
+        border-radius: 14px;
+        background: var(--bg-surface);
+        box-shadow: var(--shadow-soft);
+        transition: all 0.2s ease;
+    }
+    .settings-header {
+        background: linear-gradient(135deg, rgba(13,110,253,0.08) 0%, rgba(13,110,253,0.02) 100%);
+        border-bottom: 1px solid var(--border-soft);
+        padding: 20px 24px;
+        border-top-left-radius: 14px;
+        border-top-right-radius: 14px;
+    }
+    html[data-theme="dark"] .settings-header {
+        background: linear-gradient(135deg, rgba(79,139,255,0.15) 0%, rgba(79,139,255,0.03) 100%);
+    }
+    .nav-tabs-settings {
+        border-bottom: 2px solid var(--border-soft);
+        gap: 8px;
+    }
+    .nav-tabs-settings .nav-link {
+        color: var(--text-secondary);
+        font-weight: 600;
+        border: none;
+        border-bottom: 3px solid transparent;
+        padding: 12px 20px;
+        border-radius: 8px 8px 0 0;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .nav-tabs-settings .nav-link:hover {
+        color: var(--accent);
+        background: rgba(13, 110, 253, 0.05);
+    }
+    .nav-tabs-settings .nav-link.active {
+        color: var(--accent);
+        background: transparent;
+        border-bottom-color: var(--accent);
+    }
+    .form-section-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .form-label {
+        font-weight: 600;
+        color: var(--text-primary);
+        font-size: 0.9rem;
+    }
+    .form-text {
+        color: var(--text-muted);
+        font-size: 0.82rem;
+    }
+    .setting-box {
+        border: 1px solid var(--border-soft);
+        border-radius: 10px;
+        padding: 20px;
+        background: var(--bg-subtle);
+        margin-bottom: 16px;
+    }
+    .secret-toggle-btn {
+        cursor: pointer;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 px-lg-4">
+    <!-- Breadcrumb & Header -->
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                    <li class="breadcrumb-item">
+                        <a href="{{ url_for('main.admin_select_role') }}" class="text-decoration-none">
+                            <i class="bi bi-grid-fill me-1"></i>Menu Admin
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">Pengaturan Aplikasi</li>
+                </ol>
+            </nav>
+            <h2 class="fw-bold mb-1 d-flex align-items-center gap-2">
+                <i class="bi bi-gear-fill text-primary"></i> Pengaturan Dashboard
+            </h2>
+            <p class="text-muted mb-0">Kelola notifikasi Telegram & sistem, integrasi API, dan konfigurasi umum aplikasi.</p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <a href="{{ url_for('main.admin_select_role') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i> Kembali ke Menu Admin
+            </a>
+            <button type="submit" form="settingsForm" class="btn btn-primary px-4 fw-semibold shadow-sm">
+                <i class="bi bi-check-circle-fill me-1"></i> Simpan Semua Pengaturan
+            </button>
+        </div>
+    </div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm mb-4" role="alert">
+                    {% if category == 'success' %}
+                        <i class="bi bi-check-circle-fill me-2"></i>
+                    {% elif category == 'danger' %}
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    {% else %}
+                        <i class="bi bi-info-circle-fill me-2"></i>
+                    {% endif %}
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="settings-card mt-3">
+
+        <form id="settingsForm" method="POST" action="{{ url_for('pengaturan.admin_settings') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <input type="hidden" name="action" value="save_settings">
+            <input type="hidden" name="active_tab" id="activeTabInput" value="{{ active_tab or 'general' }}">
+
+            <div class="card-body p-4">
+                <div class="tab-content" id="settingsTabContent">
+                    
+                    <!-- TAB 1: PENGATURAN UMUM -->
+                    <div class="tab-pane fade {% if active_tab == 'general' or not active_tab %}show active{% endif %}" 
+                         id="general-pane" role="tabpanel" aria-labelledby="general-tab">
+                        
+                        <div class="row g-4">
+                            <!-- Section: Branding Aplikasi -->
+                            <div class="col-lg-6">
+                                <div class="setting-box shadow-sm">
+                                    <div class="form-section-title">
+                                        <i class="bi bi-bookmark-star-fill text-primary"></i> Identitas & Branding Aplikasi
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="app_name" class="form-label">Nama Aplikasi Dashboard</label>
+                                        <input type="text" class="form-control" id="app_name" name="app_name" 
+                                               value="{{ settings.get('app_name', 'Dashboard SUDIN ASKA') }}" required>
+                                        <div class="form-text">Nama utama yang ditampilkan pada judul halaman dan header.</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="app_subtitle" class="form-label">Sub-Judul / Tagline Dashboard</label>
+                                        <input type="text" class="form-control" id="app_subtitle" name="app_subtitle" 
+                                               value="{{ settings.get('app_subtitle', 'Sistem Informasi & Layanan Terpadu Suku Dinas Pendidikan') }}">
+                                        <div class="form-text">Keterangan singkat di bawah nama aplikasi.</div>
+                                    </div>
+                                    <div class="mb-0">
+                                        <label for="organization_name" class="form-label">Nama Instansi / Pengelola</label>
+                                        <input type="text" class="form-control" id="organization_name" name="organization_name" 
+                                               value="{{ settings.get('organization_name', 'Suku Dinas Pendidikan Wilayah 1 Jakarta Utara') }}">
+                                        <div class="form-text">Nama instansi pemilik sistem dashboard.</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Section: Kontak & Dukungan -->
+                            <div class="col-lg-6">
+                                <div class="setting-box shadow-sm">
+                                    <div class="form-section-title">
+                                        <i class="bi bi-headset text-primary"></i> Kontak Bantuan & Dukungan
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="support_email" class="form-label">Email Bantuan Teknis</label>
+                                        <input type="email" class="form-control" id="support_email" name="support_email" 
+                                               value="{{ settings.get('support_email', 'support@sudinaska.id') }}">
+                                        <div class="form-text">Email resmi bantuan pengguna dashboard.</div>
+                                    </div>
+                                    <div class="mb-0">
+                                        <label for="support_phone" class="form-label">Nomor Hotline / WA Support</label>
+                                        <input type="text" class="form-control" id="support_phone" name="support_phone" 
+                                               value="{{ settings.get('support_phone', '021-43930000') }}">
+                                        <div class="form-text">Nomor telepon kontak darurat atau layanan bantuan.</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Section: Sesi & Keamanan -->
+                            <div class="col-lg-6">
+                                <div class="setting-box shadow-sm">
+                                    <div class="form-section-title">
+                                        <i class="bi bi-shield-lock-fill text-primary"></i> Sesi & Akses Pengguna
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="session_timeout_minutes" class="form-label">Batas Waktu Sesi Inaktif (Menit)</label>
+                                        <input type="number" class="form-control" id="session_timeout_minutes" name="session_timeout_minutes" 
+                                               min="15" max="1440" value="{{ settings.get('session_timeout_minutes', '120') }}">
+                                        <div class="form-text">Durasi otomatis logout jika tidak ada aktivitas (15-1440 menit).</div>
+                                    </div>
+                                    <div class="form-check form-switch mb-0">
+                                        <input class="form-check-input" type="checkbox" role="switch" id="allow_user_registration" 
+                                               name="allow_user_registration" {% if settings.get('allow_user_registration') == 'true' %}checked{% endif %}>
+                                        <label class="form-check-label fw-semibold" for="allow_user_registration">
+                                            Izinkan Registrasi Pengguna Baru Mandiri
+                                        </label>
+                                        <div class="form-text">Jika aktif, pengguna luar dapat mendaftar tanpa dibuatkan oleh admin.</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Section: Mode Pemeliharaan (Maintenance Mode) -->
+                            <div class="col-lg-6">
+                                <div class="setting-box border-warning bg-warning-subtle shadow-sm">
+                                    <div class="form-section-title text-warning-emphasis">
+                                        <i class="bi bi-tools text-warning"></i> Mode Pemeliharaan Sistem (Maintenance)
+                                    </div>
+                                    <div class="form-check form-switch mb-3">
+                                        <input class="form-check-input" type="checkbox" role="switch" id="maintenance_mode" 
+                                               name="maintenance_mode" {% if settings.get('maintenance_mode') == 'true' %}checked{% endif %}>
+                                        <label class="form-check-label fw-bold text-danger" for="maintenance_mode">
+                                            Aktifkan Mode Pemeliharaan (Maintenance Mode)
+                                        </label>
+                                        <div class="form-text">Saat aktif, hanya akun Admin yang dapat mengakses dashboard. Pengguna lain akan melihat halaman pemeliharaan.</div>
+                                    </div>
+                                    <div class="mb-0">
+                                        <label for="maintenance_message" class="form-label">Pesan Pemeliharaan Sistem</label>
+                                        <textarea class="form-control" id="maintenance_message" name="maintenance_message" rows="2">{{ settings.get('maintenance_message', 'Sistem sedang dalam pemeliharaan berkala. Silakan kembali beberapa saat lagi.') }}</textarea>
+                                        <div class="form-text">Pesan yang ditampilkan kepada pengguna non-admin saat sistem di-maintenance.</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 2: SETTING NOTIFIKASI TELEGRAM -->
+                    <div class="tab-pane fade {% if active_tab == 'notification' %}show active{% endif %}" 
+                         id="notification-pane" role="tabpanel" aria-labelledby="notification-tab">
+                        
+                        <div class="row g-4">
+                            <!-- Section 1: Token Bot Telegram & Tes Notifikasi -->
+                            <div class="col-lg-5">
+                                <div class="setting-box shadow-sm mb-4">
+                                    <div class="form-section-title">
+                                        <i class="bi bi-telegram text-primary"></i> Token Bot Telegram
+                                    </div>
+                                    <p class="text-muted small mb-3">
+                                        Token ini dipakai untuk push notifikasi verifikasi akun dan perintah admin via Telegram.
+                                    </p>
+                                    <div class="mb-3">
+                                        <label class="form-label">Token Bot Notifikasi</label>
+                                        <div class="input-group">
+                                            <input type="password" class="form-control" id="telegram_bot_token_field" name="bot_token"
+                                                value="{{ (telegram_settings.get('bot_token') or settings.get('telegram_bot_token') or '') }}" 
+                                                placeholder="123456:ABC-DEF1234..." autocomplete="off">
+                                            <button class="btn btn-outline-secondary secret-toggle-btn" type="button" onclick="toggleSecret('telegram_bot_token_field', this)">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                        </div>
+                                        <div class="form-text">
+                                            Gunakan token bot khusus notifikasi/admin. Opsional bisa diisi lewat env <code>TELEGRAM_NOTIF_BOT_TOKEN</code>.
+                                        </div>
+                                    </div>
+                                    <button type="button" onclick="submitFormAction('save_token')" class="btn btn-primary fw-semibold">
+                                        <i class="bi bi-check-lg me-1"></i>Simpan Token Bot
+                                    </button>
+
+                                    <hr class="my-4">
+
+                                    <div class="form-section-title">
+                                        <i class="bi bi-broadcast text-primary"></i> Uji Coba Pengiriman Notifikasi
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Pesan Tes (opsional)</label>
+                                        <input type="text" class="form-control" id="test_message_input" name="test_message"
+                                            placeholder="Tes notifikasi Telegram dari Dashboard ASKA.">
+                                    </div>
+                                    <button type="button" onclick="submitFormAction('test_notification')" class="btn btn-outline-primary fw-semibold">
+                                        <i class="bi bi-send-fill me-1"></i>Kirim Test Notifikasi
+                                    </button>
+
+                                    {% if telegram_settings.get('updated_at') %}
+                                    <div class="small text-muted mt-3">
+                                        <i class="bi bi-clock me-1"></i>Terakhir diperbarui: {{ telegram_settings.get('updated_at') }}
+                                        {% if telegram_settings.get('updated_by_name') %}
+                                        oleh {{ telegram_settings.get('updated_by_name') }}
+                                        {% endif %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Channel Notifikasi Tambahan -->
+                                <div class="setting-box shadow-sm">
+                                    <div class="form-section-title">
+                                        <i class="bi bi-broadcast-pin text-primary"></i> Channel Notifikasi Tambahan
+                                    </div>
+                                    <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+                                        <div>
+                                            <div class="fw-semibold text-dark"><i class="bi bi-whatsapp text-success me-1"></i> WhatsApp Gateway</div>
+                                            <div class="form-text">Notifikasi laporan ke pengawas via WA</div>
+                                        </div>
+                                        <div class="form-check form-switch m-0">
+                                            <input class="form-check-input" type="checkbox" role="switch" id="whatsapp_notifications_enabled" 
+                                                   name="whatsapp_notifications_enabled" {% if settings.get('whatsapp_notifications_enabled') == 'true' %}checked{% endif %}>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex align-items-center justify-content-between mb-0">
+                                        <div>
+                                            <div class="fw-semibold text-dark"><i class="bi bi-envelope-check-fill text-danger me-1"></i> Email Sistem</div>
+                                            <div class="form-text">Notifikasi email tugas dan penugasan</div>
+                                        </div>
+                                        <div class="form-check form-switch m-0">
+                                            <input class="form-check-input" type="checkbox" role="switch" id="email_notifications_enabled" 
+                                                   name="email_notifications_enabled" {% if settings.get('email_notifications_enabled') == 'true' %}checked{% endif %}>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Section 2: Admin Telegram & Grup Notifikasi -->
+                            <div class="col-lg-7">
+                                <div class="setting-box shadow-sm mb-4">
+                                    <div class="form-section-title">
+                                        <i class="bi bi-people-fill text-primary"></i> Admin Telegram Berwenang
+                                    </div>
+                                    <p class="text-muted small mb-3">
+                                        Username Telegram di bawah akan diizinkan untuk menyetujui atau menolak verifikasi akun melalui bot Telegram.
+                                    </p>
+
+                                    <div id="adminRows">
+                                        <div class="row g-2 align-items-end admin-row mb-2">
+                                            <div class="col-md-6">
+                                                <label class="form-label small fw-semibold">Username Telegram</label>
+                                                <input type="text" name="telegram_username[]" class="form-control"
+                                                    placeholder="@username">
+                                            </div>
+                                            <div class="col-md-5">
+                                                <label class="form-label small fw-semibold">Admin Dashboard</label>
+                                                <select name="dashboard_user_id[]" class="form-select">
+                                                    <option value="">Pilih admin</option>
+                                                    {% for admin in admin_users %}
+                                                    <option value="{{ admin.id }}">{{ admin.full_name or admin.email }} ({{ admin.email }})</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                            <div class="col-md-1 d-grid">
+                                                <button type="button" class="btn btn-outline-danger remove-admin-row"
+                                                    title="Hapus baris">
+                                                    <i class="bi bi-x-lg"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="d-flex flex-wrap gap-2 mt-3">
+                                        <button type="button" class="btn btn-outline-secondary btn-sm fw-semibold" id="addAdminRow">
+                                            <i class="bi bi-plus-lg me-1"></i>Tambah Baris
+                                        </button>
+                                        <button type="button" onclick="submitFormAction('add_admins')" class="btn btn-primary btn-sm fw-semibold">
+                                            <i class="bi bi-check-lg me-1"></i>Simpan Admin Telegram
+                                        </button>
+                                    </div>
+
+                                    <div class="alert alert-info mt-4 mb-3 small">
+                                        <i class="bi bi-info-circle-fill me-1"></i> <strong>Perintah Bot Telegram:</strong><br>
+                                        <span class="fw-semibold">/pending</span> untuk melihat daftar akun menanti verifikasi,<br>
+                                        <span class="fw-semibold">/approve ID</span> untuk menyetujui akun,<br>
+                                        <span class="fw-semibold">/reject ID alasan</span> untuk menolak akun,<br>
+                                        <span class="fw-semibold">/register_group</span> untuk pendaftaran grup notifikasi, dan<br>
+                                        <span class="fw-semibold">/unregister_group</span> untuk menghapus grup dari pendaftaran.
+                                    </div>
+
+                                    <div class="table-responsive">
+                                        <table class="table align-middle table-hover">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Username Telegram</th>
+                                                    <th>Admin Dashboard</th>
+                                                    <th class="text-end">Aksi</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for item in telegram_admins %}
+                                                <tr>
+                                                    <td class="fw-semibold text-primary">@{{ item.telegram_username }}</td>
+                                                    <td>
+                                                        <div class="fw-semibold text-dark">{{ item.admin_name or '-' }}</div>
+                                                        <div class="text-muted small">{{ item.admin_email or '-' }}</div>
+                                                        {% if item.admin_role and item.admin_role != 'admin' %}
+                                                        <span class="badge text-bg-warning">Bukan admin</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td class="text-end">
+                                                        <button type="button" class="btn btn-sm btn-outline-danger"
+                                                            onclick="deleteAdminMapping('{{ item.id }}', '{{ item.telegram_username }}')">
+                                                            <i class="bi bi-trash me-1"></i>Hapus
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                                {% else %}
+                                                <tr>
+                                                    <td colspan="3" class="text-center text-muted py-3">Belum ada admin Telegram yang terdaftar.</td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div class="text-muted small">
+                                        <i class="bi bi-exclamation-circle me-1"></i> Pastikan admin yang didaftarkan sudah pernah mengirim pesan ke bot agar <code>chat_id</code> tercatat secara otomatis.
+                                    </div>
+                                </div>
+
+                                <!-- Section 3: Grup Notifikasi Telegram -->
+                                <div class="setting-box shadow-sm mb-0">
+                                    <div class="form-section-title">
+                                        <i class="bi bi-people text-primary"></i> Grup Notifikasi Telegram Terdaftar
+                                    </div>
+                                    <p class="text-muted small mb-3">
+                                        Tambahkan bot ke grup Telegram, lalu jalankan perintah <span class="fw-semibold">/register_group</span> di dalam grup tersebut oleh admin Telegram terdaftar.
+                                    </p>
+                                    <div class="table-responsive">
+                                        <table class="table align-middle table-hover">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Nama Grup</th>
+                                                    <th>Chat ID</th>
+                                                    <th>Terdaftar</th>
+                                                    <th class="text-end">Aksi</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for group in telegram_groups %}
+                                                <tr>
+                                                    <td class="fw-semibold text-dark">{{ group.title or '-' }}</td>
+                                                    <td><code>{{ group.chat_id }}</code></td>
+                                                    <td class="small text-muted">
+                                                        {{ group.updated_at }}
+                                                        {% if group.created_by_name %}
+                                                        <div>oleh {{ group.created_by_name }}</div>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td class="text-end">
+                                                        <button type="button" class="btn btn-sm btn-outline-danger"
+                                                            onclick="deleteGroupMapping('{{ group.id }}')">
+                                                            <i class="bi bi-trash me-1"></i>Hapus
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                                {% else %}
+                                                <tr>
+                                                    <td colspan="4" class="text-center text-muted py-3">Belum ada grup Telegram yang terdaftar.</td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 3: SETTING API & INTEGRASI -->
+                    <div class="tab-pane fade {% if active_tab == 'api' %}show active{% endif %}" 
+                         id="api-pane" role="tabpanel" aria-labelledby="api-tab">
+                        
+                        <div class="row g-4">
+                            <!-- Section: WhatsApp & Webhooks -->
+                            <div class="col-lg-6">
+                                <div class="setting-box shadow-sm">
+                                    <div class="form-section-title">
+                                        <i class="bi bi-diagram-3-fill text-primary"></i> Integration Gateways & Webhooks
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="whatsapp_api_endpoint" class="form-label">WhatsApp Gateway Endpoint URL</label>
+                                        <input type="url" class="form-control" id="whatsapp_api_endpoint" name="whatsapp_api_endpoint" 
+                                               value="{{ settings.get('whatsapp_api_endpoint', '') }}" placeholder="https://api.wa-gateway.com/send">
+                                        <div class="form-text">URL endpoint pengiriman pesan WhatsApp.</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="whatsapp_api_key" class="form-label">WhatsApp Gateway Secret Key</label>
+                                        <div class="input-group">
+                                            <input type="password" class="form-control" id="whatsapp_api_key" name="whatsapp_api_key" 
+                                                   value="{{ settings.get('whatsapp_api_key', '') }}" placeholder="Secret API key">
+                                            <button class="btn btn-outline-secondary secret-toggle-btn" type="button" onclick="toggleSecret('whatsapp_api_key', this)">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="mb-0">
+                                        <label for="telegram_webhook_url" class="form-label">Telegram Webhook URL</label>
+                                        <input type="url" class="form-control" id="telegram_webhook_url" name="telegram_webhook_url" 
+                                               value="{{ settings.get('telegram_webhook_url', '') }}" placeholder="https://domain.id/api/telegram/webhook">
+                                        <div class="form-text">URL webhook callback Telegram Bot.</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Section: Security & Rate Limiting -->
+                            <div class="col-lg-6">
+                                <div class="setting-box shadow-sm">
+                                    <div class="form-section-title">
+                                        <i class="bi bi-speedometer2 text-primary"></i> Quota & Rate Limiting API
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="api_rate_limit_per_min" class="form-label">Batas Panggilan API per Menit</label>
+                                        <input type="number" class="form-control" id="api_rate_limit_per_min" name="api_rate_limit_per_min" 
+                                               min="10" max="1000" value="{{ settings.get('api_rate_limit_per_min', '60') }}">
+                                        <div class="form-text">Maksimum request per IP / client token per menit.</div>
+                                    </div>
+                                    <div class="form-check form-switch mb-0">
+                                        <input class="form-check-input" type="checkbox" role="switch" id="api_access_enabled" 
+                                               name="api_access_enabled" {% if settings.get('api_access_enabled') == 'true' %}checked{% endif %}>
+                                        <label class="form-check-label fw-semibold" for="api_access_enabled">
+                                            Aktifkan Akses API Eksternal
+                                        </label>
+                                        <div class="form-text">Matikan untuk memblokir seluruh akses REST API dari luar.</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 4: STATUS & DIAGNOSIS SISTEM -->
+                    <div class="tab-pane fade {% if active_tab == 'system' %}show active{% endif %}" 
+                         id="system-pane" role="tabpanel" aria-labelledby="system-tab">
+                        
+                        <div class="row g-4">
+                            <div class="col-lg-6">
+                                <div class="setting-box shadow-sm">
+                                    <div class="form-section-title">
+                                        <i class="bi bi-server text-primary"></i> Status Infrastruktur & Runtime
+                                    </div>
+                                    <ul class="list-group list-group-flush bg-transparent">
+                                        <li class="list-group-item bg-transparent d-flex justify-content-between align-items-center px-0 py-2">
+                                            <span class="text-muted"><i class="bi bi-database me-2"></i>Koneksi Database PostgreSQL:</span>
+                                            {% if system_info.db_connected %}
+                                                <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1">
+                                                    <i class="bi bi-check-circle-fill me-1"></i> Terhubung
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-1">
+                                                    <i class="bi bi-x-circle-fill me-1"></i> Terputus
+                                                </span>
+                                            {% endif %}
+                                        </li>
+                                        <li class="list-group-item bg-transparent d-flex justify-content-between align-items-center px-0 py-2">
+                                            <span class="text-muted"><i class="bi bi-code-square me-2"></i>Versi Python Runtime:</span>
+                                            <span class="fw-semibold text-primary">Python {{ system_info.python_version }}</span>
+                                        </li>
+                                        <li class="list-group-item bg-transparent d-flex justify-content-between align-items-center px-0 py-2">
+                                            <span class="text-muted"><i class="bi bi-clock-history me-2"></i>Waktu Server & Timezone:</span>
+                                            <span class="fw-semibold text-dark">{{ system_info.server_time }}</span>
+                                        </li>
+                                        <li class="list-group-item bg-transparent d-flex justify-content-between align-items-center px-0 py-2">
+                                            <span class="text-muted"><i class="bi bi-laptop me-2"></i>Sistem Operasi Host:</span>
+                                            <span class="small text-secondary">{{ system_info.platform }}</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-6">
+                                <div class="setting-box shadow-sm">
+                                    <div class="form-section-title">
+                                        <i class="bi bi-people-fill text-primary"></i> Statistik Pengguna Aplikasi
+                                    </div>
+                                    <div class="row text-center g-3 mt-1 mb-2">
+                                        <div class="col-6">
+                                            <div class="p-3 border rounded bg-body-tertiary">
+                                                <div class="h3 fw-bold text-primary mb-0">{{ system_info.total_users }}</div>
+                                                <div class="small text-muted">Total Pengguna Terdaftar</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="p-3 border rounded bg-body-tertiary">
+                                                <div class="h3 fw-bold text-success mb-0">{{ system_info.admin_users }}</div>
+                                                <div class="small text-muted">Akun Administrator</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="alert alert-info py-2 px-3 small mb-0">
+                                        <i class="bi bi-info-circle me-1"></i> Data statistik ini diperbarui secara real-time dari database utama.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            
+            <div class="card-footer p-3 bg-light border-top d-flex justify-content-end gap-2">
+                <a href="{{ url_for('main.admin_select_role') }}" class="btn btn-outline-secondary">
+                    Batal
+                </a>
+                <button type="submit" class="btn btn-primary px-4 fw-semibold shadow-sm">
+                    <i class="bi bi-check-circle-fill me-1"></i> Simpan Semua Pengaturan
+                </button>
+            </div>
+
+            <!-- Hidden input for dynamic single item deletion -->
+            <input type="hidden" name="mapping_id" id="deleteMappingId" value="">
+            <input type="hidden" name="group_id" id="deleteGroupId" value="">
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Sync active tab state
+        var tabEls = document.querySelectorAll('#settingsTab button[data-bs-toggle="tab"]');
+        tabEls.forEach(function (tabEl) {
+            tabEl.addEventListener('shown.bs.tab', function (event) {
+                var targetId = event.target.getAttribute('id');
+                var tabName = 'general';
+                if (targetId === 'notification-tab') tabName = 'notification';
+                else if (targetId === 'api-tab') tabName = 'api';
+                else if (targetId === 'system-tab') tabName = 'system';
+                document.getElementById('activeTabInput').value = tabName;
+            });
+        });
+
+        // Admin Rows dynamic handler
+        const adminRows = document.getElementById('adminRows');
+        const addBtn = document.getElementById('addAdminRow');
+
+        function clearRow(row) {
+            const inputs = row.querySelectorAll('input');
+            inputs.forEach(input => input.value = '');
+            const select = row.querySelector('select');
+            if (select) {
+                select.selectedIndex = 0;
+            }
+        }
+
+        function bindRemove(row) {
+            const btn = row.querySelector('.remove-admin-row');
+            if (!btn) return;
+            btn.addEventListener('click', () => {
+                const rows = adminRows.querySelectorAll('.admin-row');
+                if (rows.length > 1) {
+                    row.remove();
+                } else {
+                    clearRow(row);
+                }
+            });
+        }
+
+        if (addBtn && adminRows) {
+            addBtn.addEventListener('click', () => {
+                const template = adminRows.querySelector('.admin-row');
+                if (!template) return;
+                const clone = template.cloneNode(true);
+                clearRow(clone);
+                adminRows.appendChild(clone);
+                bindRemove(clone);
+            });
+        }
+
+        if (adminRows) {
+            adminRows.querySelectorAll('.admin-row').forEach(row => bindRemove(row));
+        }
+    });
+
+    function toggleSecret(inputId, btn) {
+        var input = document.getElementById(inputId);
+        var icon = btn.querySelector('i');
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.className = 'bi bi-eye-slash';
+        } else {
+            input.type = 'password';
+            icon.className = 'bi bi-eye';
+        }
+    }
+
+    function submitFormAction(actionName) {
+        var form = document.getElementById('settingsForm');
+        var actionInput = form.querySelector('input[name="action"]');
+        actionInput.value = actionName;
+        form.submit();
+    }
+
+    function deleteAdminMapping(id, username) {
+        if (confirm('Hapus admin Telegram @' + username + '?')) {
+            document.getElementById('deleteMappingId').value = id;
+            submitFormAction('delete_admin');
+        }
+    }
+
+    function deleteGroupMapping(id) {
+        if (confirm('Hapus grup notifikasi Telegram ini?')) {
+            document.getElementById('deleteGroupId').value = id;
+            submitFormAction('delete_group');
+        }
+    }
+</script>
+{% endblock %}

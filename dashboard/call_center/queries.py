@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
+import calendar
 import os
 import re
 import traceback
-import calendar
 from datetime import datetime
-from typing import Optional, List, Dict, Any
+from typing import Any, Dict, List, Optional
 
 from ..db_access import get_cursor
 
@@ -33,8 +33,7 @@ def _ensure_cc_messages_media_schema() -> None:
 
     try:
         with get_cursor(commit=True) as cur:
-            cur.execute(
-                """
+            cur.execute("""
                 ALTER TABLE cc_messages
                 ADD COLUMN IF NOT EXISTS media_path TEXT,
                 ADD COLUMN IF NOT EXISTS media_mime_type TEXT,
@@ -43,13 +42,15 @@ def _ensure_cc_messages_media_schema() -> None:
                 ADD COLUMN IF NOT EXISTS original_message_text TEXT,
                 ADD COLUMN IF NOT EXISTS edited_at TIMESTAMPTZ,
                 ADD COLUMN IF NOT EXISTS edited_by_admin_user_id INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL
-                """
-            )
+                """)
     except Exception as exc:
         msg = str(exc).lower()
         # Legacy databases may have cc_messages owned by another role.
         # In that case, skip ALTER and continue with existing schema.
-        if "must be owner of table cc_messages" not in msg and "permission denied for table cc_messages" not in msg:
+        if (
+            "must be owner of table cc_messages" not in msg
+            and "permission denied for table cc_messages" not in msg
+        ):
             raise
     _CC_MESSAGES_MEDIA_SCHEMA_READY = True
 
@@ -83,8 +84,7 @@ def _ensure_cc_wa_routing_schema() -> None:
         return
 
     with get_cursor(commit=True) as cur:
-        cur.execute(
-            """
+        cur.execute("""
             CREATE TABLE IF NOT EXISTS cc_wa_routing (
                 id SERIAL PRIMARY KEY,
                 bridge_key TEXT NOT NULL DEFAULT 'main',
@@ -97,10 +97,8 @@ def _ensure_cc_wa_routing_schema() -> None:
                 updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 updated_by INTEGER
             )
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             ALTER TABLE cc_wa_routing
             ADD COLUMN IF NOT EXISTS bridge_key TEXT NOT NULL DEFAULT 'main',
             ADD COLUMN IF NOT EXISTS route_mode TEXT NOT NULL DEFAULT 'manual',
@@ -108,17 +106,13 @@ def _ensure_cc_wa_routing_schema() -> None:
             ADD COLUMN IF NOT EXISTS notes TEXT,
             ADD COLUMN IF NOT EXISTS updated_by INTEGER,
             ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             UPDATE cc_wa_routing
             SET bridge_key = 'main'
             WHERE bridge_key IS NULL OR bridge_key = ''
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             DO $$
             DECLARE
                 legacy_unique_name TEXT;
@@ -150,10 +144,8 @@ def _ensure_cc_wa_routing_schema() -> None:
                     );
                 END IF;
             END $$;
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             DO $$
             BEGIN
                 IF NOT EXISTS (
@@ -166,26 +158,19 @@ def _ensure_cc_wa_routing_schema() -> None:
                     CHECK (route_mode IN ('manual','ai'));
                 END IF;
             END $$;
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE UNIQUE INDEX IF NOT EXISTS idx_cc_wa_routing_bridge_user_unique
             ON cc_wa_routing (bridge_key, wa_user_id)
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE INDEX IF NOT EXISTS idx_cc_wa_routing_mode_active
             ON cc_wa_routing (bridge_key, route_mode, is_active)
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE INDEX IF NOT EXISTS idx_cc_wa_routing_updated_at
             ON cc_wa_routing (updated_at DESC)
-            """
-        )
+            """)
     _CC_WA_ROUTING_SCHEMA_READY = True
 
 
@@ -233,7 +218,9 @@ def ensure_cc_wa_routing_contact(
     return dict(row) if row else None
 
 
-def get_cc_wa_routing(wa_user_id: str, *, bridge_key: Optional[str] = None) -> Optional[dict]:
+def get_cc_wa_routing(
+    wa_user_id: str, *, bridge_key: Optional[str] = None
+) -> Optional[dict]:
     _ensure_cc_wa_routing_schema()
     key = normalize_cc_bridge_key(bridge_key)
     clean_wa = _normalize_wa_user_id(wa_user_id)
@@ -273,7 +260,9 @@ def list_cc_wa_routing(
         params["bridge_key"] = key
     clean_search = str(search or "").strip()
     if clean_search:
-        where_parts.append("(r.wa_user_id ILIKE %(search)s OR r.display_name ILIKE %(search)s)")
+        where_parts.append(
+            "(r.wa_user_id ILIKE %(search)s OR r.display_name ILIKE %(search)s)"
+        )
         params["search"] = f"%{clean_search}%"
     where = f"WHERE {' AND '.join(where_parts)}" if where_parts else ""
     with get_cursor() as cur:
@@ -342,8 +331,7 @@ def summarize_cc_wa_routing(*, bridge_key: Optional[str] = None) -> dict:
                 {"bridge_key": key},
             )
         else:
-            cur.execute(
-                """
+            cur.execute("""
                 SELECT
                     COUNT(*)::int AS total,
                     COUNT(*) FILTER (WHERE is_active)::int AS active,
@@ -351,8 +339,7 @@ def summarize_cc_wa_routing(*, bridge_key: Optional[str] = None) -> dict:
                     COUNT(*) FILTER (WHERE route_mode = 'manual')::int AS manual,
                     COUNT(*) FILTER (WHERE route_mode = 'ai')::int AS ai
                 FROM cc_wa_routing
-                """
-            )
+                """)
         row = cur.fetchone() or {}
     summary.update(
         {
@@ -452,7 +439,9 @@ def normalize_cc_bridge_key(raw_key: Optional[str]) -> str:
     return clean or _CC_BRIDGE_DEFAULT_KEY
 
 
-def compose_cc_conversation_user_key(raw_wa_user_id: str, bridge_key: Optional[str]) -> str:
+def compose_cc_conversation_user_key(
+    raw_wa_user_id: str, bridge_key: Optional[str]
+) -> str:
     clean_wa = _normalize_wa_user_id(raw_wa_user_id)
     key = normalize_cc_bridge_key(bridge_key)
     if not clean_wa:
@@ -508,7 +497,8 @@ def _bridge_defaults_for_key(bridge_key: str) -> dict:
             "status_path": "runtime/whatsapp_cc_status.json",
             "pid_path": "runtime/whatsapp_cc.pid",
             "log_path": "runtime/whatsapp_cc.log",
-            "internal_url": os.getenv("ASKA_CC_WHATSAPP_INTERNAL_URL") or "http://127.0.0.1:5002/api/callcenter/inbound",
+            "internal_url": os.getenv("ASKA_CC_WHATSAPP_INTERNAL_URL")
+            or "http://127.0.0.1:5002/api/callcenter/inbound",
             "is_active": True,
             "default_route_mode": "manual",
         }
@@ -520,7 +510,8 @@ def _bridge_defaults_for_key(bridge_key: str) -> dict:
         "status_path": f"runtime/whatsapp_cc_status_{key}.json",
         "pid_path": f"runtime/whatsapp_cc_{key}.pid",
         "log_path": f"runtime/whatsapp_cc_{key}.log",
-        "internal_url": os.getenv("ASKA_CC_WHATSAPP_INTERNAL_URL") or "http://127.0.0.1:5002/api/callcenter/inbound",
+        "internal_url": os.getenv("ASKA_CC_WHATSAPP_INTERNAL_URL")
+        or "http://127.0.0.1:5002/api/callcenter/inbound",
         "is_active": True,
         "default_route_mode": "manual",
     }
@@ -532,8 +523,7 @@ def _ensure_cc_wa_bridge_accounts_schema() -> None:
         return
 
     with get_cursor(commit=True) as cur:
-        cur.execute(
-            """
+        cur.execute("""
             CREATE TABLE IF NOT EXISTS cc_wa_bridge_accounts (
                 id SERIAL PRIMARY KEY,
                 bridge_key TEXT UNIQUE NOT NULL,
@@ -552,17 +542,13 @@ def _ensure_cc_wa_bridge_accounts_schema() -> None:
                 updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 updated_by INTEGER
             )
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             ALTER TABLE cc_wa_bridge_accounts
             ADD COLUMN IF NOT EXISTS wa_number_hint TEXT,
             ADD COLUMN IF NOT EXISTS default_route_mode TEXT NOT NULL DEFAULT 'manual'
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             DO $$
             BEGIN
                 IF NOT EXISTS (
@@ -575,14 +561,11 @@ def _ensure_cc_wa_bridge_accounts_schema() -> None:
                     CHECK (default_route_mode IN ('manual','ai'));
                 END IF;
             END $$;
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE INDEX IF NOT EXISTS idx_cc_wa_bridge_accounts_active
             ON cc_wa_bridge_accounts (is_active, bridge_key)
-            """
-        )
+            """)
     _CC_BRIDGE_ACCOUNTS_SCHEMA_READY = True
 
 
@@ -613,16 +596,14 @@ def list_cc_wa_bridge_accounts(*, include_inactive: bool = True) -> list[dict]:
     _ensure_cc_wa_bridge_accounts_schema()
     where = "" if include_inactive else "WHERE is_active = TRUE"
     with get_cursor() as cur:
-        cur.execute(
-            f"""
+        cur.execute(f"""
             SELECT id, bridge_key, display_name, wa_number_hint, default_route_mode, client_id, http_port,
                    session_path, status_path, pid_path, log_path,
                    internal_url, is_active, created_at, updated_at, updated_by
             FROM cc_wa_bridge_accounts
             {where}
             ORDER BY CASE WHEN bridge_key = 'main' THEN 0 ELSE 1 END, bridge_key ASC
-            """
-        )
+            """)
         return [dict(r) for r in cur.fetchall()]
 
 
@@ -728,7 +709,9 @@ def save_cc_wa_bridge_account(
     if raw_default_route_mode:
         clean_default_route_mode = _normalize_route_mode(raw_default_route_mode)
     elif existing and existing.get("default_route_mode"):
-        clean_default_route_mode = _normalize_route_mode(existing.get("default_route_mode"))
+        clean_default_route_mode = _normalize_route_mode(
+            existing.get("default_route_mode")
+        )
     else:
         clean_default_route_mode = _normalize_route_mode(defaults["default_route_mode"])
     clean_client_id = str(client_id or "").strip() or defaults["client_id"]
@@ -835,8 +818,7 @@ def _ensure_cc_public_whatsapp_cta_schema() -> None:
         return
 
     with get_cursor(commit=True) as cur:
-        cur.execute(
-            """
+        cur.execute("""
             CREATE TABLE IF NOT EXISTS cc_public_whatsapp_cta_settings (
                 id INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),
                 wa_number TEXT,
@@ -845,8 +827,7 @@ def _ensure_cc_public_whatsapp_cta_schema() -> None:
                 updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 updated_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL
             )
-            """
-        )
+            """)
     _CC_PUBLIC_WHATSAPP_CTA_SCHEMA_READY = True
 
 
@@ -854,8 +835,7 @@ def fetch_cc_public_whatsapp_cta_settings() -> dict:
     _ensure_cc_public_whatsapp_cta_schema()
     try:
         with get_cursor() as cur:
-            cur.execute(
-                """
+            cur.execute("""
                 SELECT
                     s.wa_number,
                     s.opening_message,
@@ -867,8 +847,7 @@ def fetch_cc_public_whatsapp_cta_settings() -> dict:
                 LEFT JOIN dashboard_users u ON u.id = s.updated_by
                 WHERE s.id = 1
                 LIMIT 1
-                """
-            )
+                """)
             row = cur.fetchone()
         return dict(row) if row else {}
     except Exception:
@@ -883,7 +862,9 @@ def upsert_cc_public_whatsapp_cta_settings(
 ) -> dict:
     _ensure_cc_public_whatsapp_cta_schema()
     clean_number = _normalize_wa_user_id(wa_number) or None
-    clean_message = str(opening_message or "").strip() or CC_PUBLIC_WHATSAPP_DEFAULT_MESSAGE
+    clean_message = (
+        str(opening_message or "").strip() or CC_PUBLIC_WHATSAPP_DEFAULT_MESSAGE
+    )
     with get_cursor(commit=True) as cur:
         cur.execute(
             """
@@ -917,13 +898,11 @@ def delete_cc_public_whatsapp_cta_settings() -> bool:
 
 def list_cc_bridge_keys_in_use() -> list[str]:
     with get_cursor() as cur:
-        cur.execute(
-            """
+        cur.execute("""
             SELECT DISTINCT wa_user_id
             FROM cc_conversations
             WHERE wa_user_id IS NOT NULL
-            """
-        )
+            """)
         rows = [dict(r) for r in cur.fetchall()]
     keys = set()
     for row in rows:
@@ -936,6 +915,7 @@ def list_cc_bridge_keys_in_use() -> list[str]:
 # ---------------------------------------------------------------------------
 # Conversations
 # ---------------------------------------------------------------------------
+
 
 def upsert_cc_conversation(
     wa_user_id: str,
@@ -961,7 +941,11 @@ def upsert_cc_conversation(
             RETURNING id, wa_user_id, display_name, status, last_message_at,
                       unread_count, created_at, updated_at
             """,
-            {"wa": wa_user_id, "name": display_name, "last_message_at": last_message_at},
+            {
+                "wa": wa_user_id,
+                "name": display_name,
+                "last_message_at": last_message_at,
+            },
         )
         row = cur.fetchone()
     return enrich_cc_conversation_row(dict(row)) if row else {}
@@ -986,8 +970,7 @@ def fetch_cc_conversations(
         conditions.append("COALESCE(c.unread_count, 0) > 0")
 
     if search:
-        conditions.append(
-            """
+        conditions.append("""
             (
                 c.display_name ILIKE %(search)s
                 OR c.wa_user_id ILIKE %(search)s
@@ -1001,8 +984,7 @@ def fetch_cc_conversations(
                       )
                 )
             )
-            """
-        )
+            """)
         params["search"] = f"%{search}%"
 
     selected_bridge_key = _normalize_cc_bridge_filter(bridge_key)
@@ -1016,9 +998,7 @@ def fetch_cc_conversations(
     where = ("WHERE " + " AND ".join(conditions)) if conditions else ""
 
     with get_cursor() as cur:
-        cur.execute(
-            f"SELECT COUNT(*) AS cnt FROM cc_conversations c {where}", params
-        )
+        cur.execute(f"SELECT COUNT(*) AS cnt FROM cc_conversations c {where}", params)
         total = (cur.fetchone() or {}).get("cnt", 0)
 
         paging_clause = ""
@@ -1095,15 +1075,13 @@ def fetch_cc_unread_total() -> int:
     """Return total unread messages for open WA Main conversations."""
     try:
         with get_cursor() as cur:
-            cur.execute(
-                """
+            cur.execute("""
                 SELECT COALESCE(SUM(unread_count), 0) AS total
                 FROM cc_conversations
                 WHERE status = 'open'
                   AND COALESCE(unread_count, 0) > 0
                   AND POSITION('::' IN COALESCE(wa_user_id, '')) = 0
-                """
-            )
+                """)
             row = cur.fetchone()
         return int((row or {}).get("total", 0))
     except Exception:
@@ -1113,6 +1091,7 @@ def fetch_cc_unread_total() -> int:
 # ---------------------------------------------------------------------------
 # Statistics
 # ---------------------------------------------------------------------------
+
 
 def fetch_cc_statistics(
     *,
@@ -1134,7 +1113,9 @@ def fetch_cc_statistics(
         try:
             month_dt = datetime.strptime(f"{selected_month}-01", "%Y-%m-%d")
             last_day = calendar.monthrange(month_dt.year, month_dt.month)[1]
-            history_cutoff_date = f"{month_dt.year:04d}-{month_dt.month:02d}-{last_day:02d}"
+            history_cutoff_date = (
+                f"{month_dt.year:04d}-{month_dt.month:02d}-{last_day:02d}"
+            )
         except Exception:
             history_cutoff_date = None
     elif mode == "yearly" and selected_year:
@@ -1161,7 +1142,9 @@ def fetch_cc_statistics(
     if selected_bridge_key:
         if selected_bridge_key == _CC_BRIDGE_DEFAULT_KEY:
             msg_conditions.append("POSITION('::' IN COALESCE(c.wa_user_id, '')) = 0")
-            admin_reply_conditions.append("POSITION('::' IN COALESCE(c.wa_user_id, '')) = 0")
+            admin_reply_conditions.append(
+                "POSITION('::' IN COALESCE(c.wa_user_id, '')) = 0"
+            )
             conv_conditions.append("POSITION('::' IN COALESCE(c.wa_user_id, '')) = 0")
         else:
             msg_conditions.append("c.wa_user_id LIKE %(bridge_prefix)s")
@@ -1172,29 +1155,51 @@ def fetch_cc_statistics(
             conv_params["bridge_prefix"] = f"{selected_bridge_key}::%"
 
     if mode == "daily" and selected_date:
-        msg_conditions.append("timezone('Asia/Jakarta', m.created_at)::date = %(selected_date)s::date")
-        admin_reply_conditions.append("timezone('Asia/Jakarta', m.created_at)::date = %(selected_date)s::date")
-        conv_conditions.append("timezone('Asia/Jakarta', c.created_at)::date = %(selected_date)s::date")
+        msg_conditions.append(
+            "timezone('Asia/Jakarta', m.created_at)::date = %(selected_date)s::date"
+        )
+        admin_reply_conditions.append(
+            "timezone('Asia/Jakarta', m.created_at)::date = %(selected_date)s::date"
+        )
+        conv_conditions.append(
+            "timezone('Asia/Jakarta', c.created_at)::date = %(selected_date)s::date"
+        )
         msg_params["selected_date"] = selected_date
         reply_params["selected_date"] = selected_date
         conv_params["selected_date"] = selected_date
     elif mode == "monthly" and selected_month:
-        msg_conditions.append("to_char(timezone('Asia/Jakarta', m.created_at), 'YYYY-MM') = %(selected_month)s")
-        admin_reply_conditions.append("to_char(timezone('Asia/Jakarta', m.created_at), 'YYYY-MM') = %(selected_month)s")
-        conv_conditions.append("to_char(timezone('Asia/Jakarta', c.created_at), 'YYYY-MM') = %(selected_month)s")
+        msg_conditions.append(
+            "to_char(timezone('Asia/Jakarta', m.created_at), 'YYYY-MM') = %(selected_month)s"
+        )
+        admin_reply_conditions.append(
+            "to_char(timezone('Asia/Jakarta', m.created_at), 'YYYY-MM') = %(selected_month)s"
+        )
+        conv_conditions.append(
+            "to_char(timezone('Asia/Jakarta', c.created_at), 'YYYY-MM') = %(selected_month)s"
+        )
         msg_params["selected_month"] = selected_month
         reply_params["selected_month"] = selected_month
         conv_params["selected_month"] = selected_month
     elif mode == "yearly" and selected_year:
-        msg_conditions.append("EXTRACT(YEAR FROM timezone('Asia/Jakarta', m.created_at)) = %(selected_year)s")
-        admin_reply_conditions.append("EXTRACT(YEAR FROM timezone('Asia/Jakarta', m.created_at)) = %(selected_year)s")
-        conv_conditions.append("EXTRACT(YEAR FROM timezone('Asia/Jakarta', c.created_at)) = %(selected_year)s")
+        msg_conditions.append(
+            "EXTRACT(YEAR FROM timezone('Asia/Jakarta', m.created_at)) = %(selected_year)s"
+        )
+        admin_reply_conditions.append(
+            "EXTRACT(YEAR FROM timezone('Asia/Jakarta', m.created_at)) = %(selected_year)s"
+        )
+        conv_conditions.append(
+            "EXTRACT(YEAR FROM timezone('Asia/Jakarta', c.created_at)) = %(selected_year)s"
+        )
         msg_params["selected_year"] = int(selected_year)
         reply_params["selected_year"] = int(selected_year)
         conv_params["selected_year"] = int(selected_year)
 
     where_msg = ("WHERE " + " AND ".join(msg_conditions)) if msg_conditions else ""
-    where_admin_reply = ("WHERE " + " AND ".join(admin_reply_conditions)) if admin_reply_conditions else ""
+    where_admin_reply = (
+        ("WHERE " + " AND ".join(admin_reply_conditions))
+        if admin_reply_conditions
+        else ""
+    )
     where_conv = ("WHERE " + " AND ".join(conv_conditions)) if conv_conditions else ""
 
     jenjang_case_template = """
@@ -1227,8 +1232,12 @@ def fetch_cc_statistics(
     """
     jenjang_case_sql = jenjang_case_template.format(col="txt")
     issue_case_sql = issue_case_template.format(col="txt")
-    jenjang_case_hist_sql = jenjang_case_template.format(col="LOWER(COALESCE(hm.message_text, ''))")
-    issue_case_hist_sql = issue_case_template.format(col="LOWER(COALESCE(hm.message_text, ''))")
+    jenjang_case_hist_sql = jenjang_case_template.format(
+        col="LOWER(COALESCE(hm.message_text, ''))"
+    )
+    issue_case_hist_sql = issue_case_template.format(
+        col="LOWER(COALESCE(hm.message_text, ''))"
+    )
     history_cutoff_clause = ""
     if history_cutoff_date:
         history_cutoff_clause = "AND timezone('Asia/Jakarta', hm.created_at)::date <= %(history_cutoff_date)s::date"
@@ -1626,6 +1635,7 @@ def fetch_cc_statistics(
 # Messages
 # ---------------------------------------------------------------------------
 
+
 def save_cc_message(
     conversation_id: int,
     direction: str,
@@ -1825,6 +1835,7 @@ def update_cc_message_text(
 # Message Drafts
 # ---------------------------------------------------------------------------
 
+
 def _ensure_cc_message_drafts_schema() -> None:
     """Ensure draft table exists for older deployments that haven't run schema updates yet."""
     global _CC_DRAFTS_SCHEMA_READY
@@ -1832,8 +1843,7 @@ def _ensure_cc_message_drafts_schema() -> None:
         return
 
     with get_cursor(commit=True) as cur:
-        cur.execute(
-            """
+        cur.execute("""
             CREATE TABLE IF NOT EXISTS cc_message_drafts (
                 id SERIAL PRIMARY KEY,
                 admin_user_id INTEGER NOT NULL REFERENCES dashboard_users(id) ON DELETE CASCADE,
@@ -1848,35 +1858,26 @@ def _ensure_cc_message_drafts_schema() -> None:
                 created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
             )
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             ALTER TABLE cc_message_drafts
             ADD COLUMN IF NOT EXISTS pinned BOOLEAN NOT NULL DEFAULT FALSE
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             ALTER TABLE cc_message_drafts
             ADD COLUMN IF NOT EXISTS media_path TEXT,
             ADD COLUMN IF NOT EXISTS media_mime_type TEXT,
             ADD COLUMN IF NOT EXISTS media_filename TEXT,
             ADD COLUMN IF NOT EXISTS media_size INTEGER
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE INDEX IF NOT EXISTS idx_cc_message_drafts_admin
             ON cc_message_drafts (admin_user_id, updated_at DESC)
-            """
-        )
-        cur.execute(
-            """
+            """)
+        cur.execute("""
             CREATE INDEX IF NOT EXISTS idx_cc_message_drafts_admin_category
             ON cc_message_drafts (admin_user_id, category)
-            """
-        )
+            """)
     _CC_DRAFTS_SCHEMA_READY = True
 
 
@@ -1948,7 +1949,11 @@ def list_cc_message_draft_categories(admin_user_id: int) -> list[str]:
             """,
             {"admin_user_id": admin_user_id},
         )
-        return [str(r.get("category") or "") for r in cur.fetchall() if (r.get("category") or "").strip()]
+        return [
+            str(r.get("category") or "")
+            for r in cur.fetchall()
+            if (r.get("category") or "").strip()
+        ]
 
 
 def create_cc_message_draft(
@@ -2089,7 +2094,10 @@ def delete_cc_message_draft(draft_id: int, admin_user_id: int) -> bool:
 # Telegram notification settings (Call Center)
 # ---------------------------------------------------------------------------
 
-def upsert_cc_telegram_settings(bot_token: str, updated_by: Optional[int] = None) -> None:
+
+def upsert_cc_telegram_settings(
+    bot_token: str, updated_by: Optional[int] = None
+) -> None:
     with get_cursor(commit=True) as cur:
         cur.execute(
             """
@@ -2107,14 +2115,18 @@ def upsert_cc_telegram_settings(bot_token: str, updated_by: Optional[int] = None
 def fetch_cc_telegram_settings() -> dict:
     try:
         with get_cursor() as cur:
-            cur.execute("SELECT bot_token, updated_at FROM cc_telegram_settings WHERE id = 1")
+            cur.execute(
+                "SELECT bot_token, updated_at FROM cc_telegram_settings WHERE id = 1"
+            )
             row = cur.fetchone()
         return dict(row) if row else {}
     except Exception:
         return {}
 
 
-def add_cc_telegram_group(chat_id: int, title: Optional[str] = None, created_by: Optional[int] = None) -> bool:
+def add_cc_telegram_group(
+    chat_id: int, title: Optional[str] = None, created_by: Optional[int] = None
+) -> bool:
     """Add a Telegram group for CC notifications. Returns True on success."""
     try:
         with get_cursor(commit=True) as cur:
@@ -2146,7 +2158,9 @@ def list_cc_telegram_groups() -> list[dict]:
 
 def delete_cc_telegram_group(group_id: int) -> bool:
     with get_cursor(commit=True) as cur:
-        cur.execute("DELETE FROM cc_telegram_groups WHERE id = %(id)s", {"id": group_id})
+        cur.execute(
+            "DELETE FROM cc_telegram_groups WHERE id = %(id)s", {"id": group_id}
+        )
         return cur.rowcount > 0
 
 
@@ -2154,14 +2168,15 @@ def delete_cc_telegram_group(group_id: int) -> bool:
 # Send Telegram notification for Call Center
 # ---------------------------------------------------------------------------
 
+
 def send_cc_telegram_notification(
     wa_user_name: str,
     message_preview: str,
 ) -> dict:
     """Send a Telegram notification to all CC groups about a new incoming message."""
-    import urllib.request
-    import urllib.parse
     import json as _json
+    import urllib.parse
+    import urllib.request
 
     settings = fetch_cc_telegram_settings()
     bot_token = (settings.get("bot_token") or "").strip()
@@ -2184,11 +2199,13 @@ def send_cc_telegram_notification(
     for group in groups:
         try:
             url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
-            data = urllib.parse.urlencode({
-                "chat_id": group["chat_id"],
-                "text": text,
-                "parse_mode": "Markdown",
-            }).encode()
+            data = urllib.parse.urlencode(
+                {
+                    "chat_id": group["chat_id"],
+                    "text": text,
+                    "parse_mode": "Markdown",
+                }
+            ).encode()
             req = urllib.request.Request(url, data=data, method="POST")
             with urllib.request.urlopen(req, timeout=10) as resp:
                 if resp.status == 200:
@@ -2202,6 +2219,7 @@ def send_cc_telegram_notification(
 # ---------------------------------------------------------------------------
 # Media Manager
 # ---------------------------------------------------------------------------
+
 
 def fetch_cc_media_db_refs(paths: list[str]) -> list[dict]:
     """Return DB rows that reference any of the given relative media paths.
@@ -2263,6 +2281,25 @@ def clear_cc_media_db_refs(paths: list[str]) -> int:
 
 def _escape_md(text: str) -> str:
     """Escape Markdown special chars for Telegram."""
-    for ch in ("_", "*", "[", "]", "(", ")", "~", "`", ">", "#", "+", "-", "=", "|", "{", "}", ".", "!"):
+    for ch in (
+        "_",
+        "*",
+        "[",
+        "]",
+        "(",
+        ")",
+        "~",
+        "`",
+        ">",
+        "#",
+        "+",
+        "-",
+        "=",
+        "|",
+        "{",
+        "}",
+        ".",
+        "!",
+    ):
         text = text.replace(ch, f"\\{ch}")
     return text

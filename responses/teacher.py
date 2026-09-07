@@ -34,19 +34,80 @@ class PracticeQuestion:
 
 
 _SUBJECT_KEYWORDS: Dict[str, tuple[str, ...]] = {
-    "Matematika": ("matematika", "mtk", "berhitung", "pecahan", "bangun", "geometri", "angka", "mat", "aljabar"),
-    "IPA": ("ipa", "sains", "ilmu pengetahuan alam", "tumbuhan", "hewan", "energi", "perubahan wujud", "biologi", "fisika"),
-    "IPS": ("ips", "sejarah", "geografi", "ekonomi", "sosial", "kewilayahan", "peta", "kerajaan"),
-    "Bahasa Indonesia": ("bahasa indonesia", "b indonesia", "bi", "kalimat", "antonim", "sinonim", "tata bahasa", "puisi", "paragraf"),
-    "PPKN": ("ppkn", "pkn", "pancasila", "semboyan", "hukum", "warga negara", "aturan", "norma"),
-    "Agama": ("agama", "akhlak", "ibadah", "kitab suci", "nabi", "alquran", "quran", "al-quran"),
+    "Matematika": (
+        "matematika",
+        "mtk",
+        "berhitung",
+        "pecahan",
+        "bangun",
+        "geometri",
+        "angka",
+        "mat",
+        "aljabar",
+    ),
+    "IPA": (
+        "ipa",
+        "sains",
+        "ilmu pengetahuan alam",
+        "tumbuhan",
+        "hewan",
+        "energi",
+        "perubahan wujud",
+        "biologi",
+        "fisika",
+    ),
+    "IPS": (
+        "ips",
+        "sejarah",
+        "geografi",
+        "ekonomi",
+        "sosial",
+        "kewilayahan",
+        "peta",
+        "kerajaan",
+    ),
+    "Bahasa Indonesia": (
+        "bahasa indonesia",
+        "b indonesia",
+        "bi",
+        "kalimat",
+        "antonim",
+        "sinonim",
+        "tata bahasa",
+        "puisi",
+        "paragraf",
+    ),
+    "PPKN": (
+        "ppkn",
+        "pkn",
+        "pancasila",
+        "semboyan",
+        "hukum",
+        "warga negara",
+        "aturan",
+        "norma",
+    ),
+    "Agama": (
+        "agama",
+        "akhlak",
+        "ibadah",
+        "kitab suci",
+        "nabi",
+        "alquran",
+        "quran",
+        "al-quran",
+    ),
     "SBdP": ("seni budaya", "sbdp", "musik", "gambar", "tari", "lagu daerah"),
 }
 
 _DEFAULT_SUBJECT = "Campuran"
 
 
-_LLM_MODEL = os.getenv("ASKA_TEACHER_MODEL") or os.getenv("ASKA_QA_MODEL") or "llama-3.1-8b-instant"
+_LLM_MODEL = (
+    os.getenv("ASKA_TEACHER_MODEL")
+    or os.getenv("ASKA_QA_MODEL")
+    or "llama-3.1-8b-instant"
+)
 _LLM_TEMPERATURE = float(os.getenv("ASKA_TEACHER_TEMPERATURE", "0.6"))
 _LLM_MAX_OUTPUT_TOKENS = int(os.getenv("ASKA_TEACHER_MAX_TOKENS", "600"))
 _llm_client: Optional[OpenAI] = None
@@ -73,7 +134,9 @@ def _get_llm_client() -> Optional[OpenAI]:
             or os.getenv("OPENAI_API_KEY")
         )
         if not api_key:
-            print("[TEACHER] GROQ_API_KEY atau OPENAI_API_KEY belum di-set; mode guru dinonaktifkan.")
+            print(
+                "[TEACHER] GROQ_API_KEY atau OPENAI_API_KEY belum di-set; mode guru dinonaktifkan."
+            )
             _llm_client_failed = True
             return None
         try:
@@ -100,7 +163,9 @@ def _normalize_subject(subject: Optional[str]) -> Optional[str]:
         return None
     subject_lower = subject.lower()
     for canonical, keywords in _SUBJECT_KEYWORDS.items():
-        if subject_lower == canonical.lower() or any(subject_lower == keyword for keyword in keywords):
+        if subject_lower == canonical.lower() or any(
+            subject_lower == keyword for keyword in keywords
+        ):
             return canonical
     return subject.title()
 
@@ -446,20 +511,32 @@ def _generate_llm_question(
     grade_max = max(grade_min, min(6, grade_max))
 
     subject_value = str(data.get("subject") or subject_hint or subject_text).strip()
-    subject_canonical = _normalize_subject(subject_value) or subject_value or _DEFAULT_SUBJECT
+    subject_canonical = (
+        _normalize_subject(subject_value) or subject_value or _DEFAULT_SUBJECT
+    )
 
     keywords_raw = data.get("answer_keywords") or ()
     if isinstance(keywords_raw, str):
-        keywords = tuple(_normalize_answer(keyword) for keyword in keywords_raw.split(",") if keyword.strip())
+        keywords = tuple(
+            _normalize_answer(keyword)
+            for keyword in keywords_raw.split(",")
+            if keyword.strip()
+        )
     elif isinstance(keywords_raw, Sequence):
-        keywords = tuple(_normalize_answer(str(keyword)) for keyword in keywords_raw if str(keyword).strip())
+        keywords = tuple(
+            _normalize_answer(str(keyword))
+            for keyword in keywords_raw
+            if str(keyword).strip()
+        )
     else:
         keywords = ()
     keywords = tuple(filter(None, keywords))
 
     choices_raw = data.get("choices") or ()
     if isinstance(choices_raw, Sequence) and not isinstance(choices_raw, (str, bytes)):
-        choices = tuple(str(choice).strip() for choice in choices_raw if str(choice).strip())
+        choices = tuple(
+            str(choice).strip() for choice in choices_raw if str(choice).strip()
+        )
     else:
         choices = ()
 
@@ -510,10 +587,7 @@ def grade_response(question: PracticeQuestion, user_answer: str) -> tuple[bool, 
     possible_answers.extend(_normalize_answer(opt) for opt in question.answer_keywords)
 
     if normalized in possible_answers:
-        message = (
-            "Mantap, jawaban kamu benar! "
-            f"Penjelasan: {question.explanation}"
-        )
+        message = "Mantap, jawaban kamu benar! " f"Penjelasan: {question.explanation}"
         return True, message
 
     if question.source == "llm":
@@ -568,8 +642,7 @@ def _evaluate_answer_with_llm(
 
     if not feedback:
         feedback = (
-            "Jawaban kamu sudah tepat! Penjelasan: "
-            f"{question.explanation}"
+            "Jawaban kamu sudah tepat! Penjelasan: " f"{question.explanation}"
             if is_correct
             else f"Belum tepat. Jawaban yang benar: {question.answer}. Penjelasan: {question.explanation}"
         )
@@ -584,10 +657,7 @@ def generate_discussion_reply(
 ) -> str:
     client = _get_llm_client()
     if client is None:
-        return (
-            "Penjelasan singkatnya begini: "
-            f"{question.explanation}"
-        )
+        return "Penjelasan singkatnya begini: " f"{question.explanation}"
 
     system_prompt = (
         "Kamu adalah guru SD kelas 4-6 yang sabar, suportif, dan vibes Gen Z. "
@@ -615,10 +685,7 @@ def generate_discussion_reply(
         max_tokens=_LLM_MAX_OUTPUT_TOKENS,
     )
     if not response_text:
-        return (
-            "Intinya: "
-            f"{question.explanation}"
-        )
+        return "Intinya: " f"{question.explanation}"
     return response_text.strip()
 
 

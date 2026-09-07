@@ -4,43 +4,85 @@ from __future__ import annotations
 import random
 import re
 from datetime import datetime
-from zoneinfo import ZoneInfo
 from typing import Optional
+from zoneinfo import ZoneInfo
 
 from ._shared import tokenize
-
 
 # ─────────────────────────────────────────────────────────
 # 0) Penanda pertanyaan dasar (untuk mencegah false positive greeting)
 QUESTION_TOKENS = {
-    "apa", "gimana", "bagaimana", "kenapa", "mengapa",
-    "siapa", "kapan", "dimana", "di", "mana", "berapa", "kah"
+    "apa",
+    "gimana",
+    "bagaimana",
+    "kenapa",
+    "mengapa",
+    "siapa",
+    "kapan",
+    "dimana",
+    "di",
+    "mana",
+    "berapa",
+    "kah",
 }
 
 
 # ─────────────────────────────────────────────────────────
 # 1) Kata/frasa sapaan umum (tanpa kata waktu agar tidak bentrok)
 GREETING_KEYWORDS = (
-    "hai", "hay",
-    "halo", "hallo", "helo",
-    "hello", "hey", "heyy", "heyyy",
-    "hi", "hii", "hiya",
-    "yo", "yoo", "yooo", "yoooo", "yow", "oy", "oi", "oii", "woy", "hoi",
-    "cuy", "cui",
-    "bro", "sis", "gan", "min",
-    "permisi", "p",
-    "assalamualaikum", "asswrwb",
+    "hai",
+    "hay",
+    "halo",
+    "hallo",
+    "helo",
+    "hello",
+    "hey",
+    "heyy",
+    "heyyy",
+    "hi",
+    "hii",
+    "hiya",
+    "yo",
+    "yoo",
+    "yooo",
+    "yoooo",
+    "yow",
+    "oy",
+    "oi",
+    "oii",
+    "woy",
+    "hoi",
+    "cuy",
+    "cui",
+    "bro",
+    "sis",
+    "gan",
+    "min",
+    "permisi",
+    "p",
+    "assalamualaikum",
+    "asswrwb",
     # Catatan: sengaja TIDAK menyertakan "morning/afternoon/evening"
     # maupun "pagi/siang/sore/malam" di sini; itu diproses di TIME_*
 )
 GREETING_KEYWORDS_SET = set(GREETING_KEYWORDS)
 
 GREETING_PHRASES = (
-    "selamat pagi", "selamat siang", "selamat sore", "selamat malam",
-    "good morning", "good afternoon", "good evening",
-    "assalamualaikum", "assalamualaikum wr wb", "assalamu alaikum",
-    "permisi kak", "permisi min", "permisi bang",
-    "ass wr wb", "ass.wr.wb"
+    "selamat pagi",
+    "selamat siang",
+    "selamat sore",
+    "selamat malam",
+    "good morning",
+    "good afternoon",
+    "good evening",
+    "assalamualaikum",
+    "assalamualaikum wr wb",
+    "assalamu alaikum",
+    "permisi kak",
+    "permisi min",
+    "permisi bang",
+    "ass wr wb",
+    "ass.wr.wb",
 )
 
 GREETING_RESPONSES = [
@@ -93,14 +135,36 @@ TIME_GREETING_PATTERNS = {
     "siang": ("selamat siang", "good afternoon", "met siang"),
     "sore": ("selamat sore", "met sore"),
     # Konsisten: "good evening" → malam
-    "malam": ("selamat malam", "good evening", "good night", "met malam"),  
+    "malam": ("selamat malam", "good evening", "good night", "met malam"),
 }
 
 TIME_GREETING_KEYWORDS = {
-    "pagi": {"pagi", "pagii", "pagiii", "pg", "morning", "gm", "gmorn", "goodmorning", "subuh"},
+    "pagi": {
+        "pagi",
+        "pagii",
+        "pagiii",
+        "pg",
+        "morning",
+        "gm",
+        "gmorn",
+        "goodmorning",
+        "subuh",
+    },
     "siang": {"siang", "siangg", "sianggg", "afternoon", "noon", "midday"},
     "sore": {"sore", "soree", "sorean", "petang"},
-    "malam": {"malam", "malemm", "malammm", "mlm", "night", "evening", "gn", "goodnight", "nite", "midnight", "larut"},
+    "malam": {
+        "malam",
+        "malemm",
+        "malammm",
+        "mlm",
+        "night",
+        "evening",
+        "gn",
+        "goodnight",
+        "nite",
+        "midnight",
+        "larut",
+    },
 }
 
 # Respons sapaan bergaya Gen-Z + sopan (≤10/slot waktu)
@@ -212,7 +276,9 @@ def _detect_time_greeting(text: str) -> str | None:
     return None
 
 
-def get_time_based_greeting_response(text: str, user_name: Optional[str] = None) -> str | None:
+def get_time_based_greeting_response(
+    text: str, user_name: Optional[str] = None
+) -> str | None:
     period = _detect_time_greeting(text)
     if not period:
         return None
@@ -220,10 +286,14 @@ def get_time_based_greeting_response(text: str, user_name: Optional[str] = None)
     if not options:
         return None
     response = random.choice(options)
-    return response.format(user_name=user_name or 'bestie')
+    return response.format(user_name=user_name or "bestie")
 
 
-def get_contextual_greeting_response(text: str | None = None, now: datetime | None = None, user_name: Optional[str] = None) -> str:
+def get_contextual_greeting_response(
+    text: str | None = None,
+    now: datetime | None = None,
+    user_name: Optional[str] = None,
+) -> str:
     """
     Gunakan ini kalau ingin sapaan terasa kontekstual:
     - Jika teks berisi salam waktu → pakai respons waktu.
@@ -237,7 +307,7 @@ def get_contextual_greeting_response(text: str | None = None, now: datetime | No
     options = TIME_GREETING_RESPONSES.get(period)
     if options:
         response = random.choice(options)
-        return response.format(user_name=user_name or 'bestie')
+        return response.format(user_name=user_name or "bestie")
     return get_greeting_response(user_name=user_name)
 
 
@@ -271,7 +341,9 @@ def is_greeting_message(text: str) -> bool:
     if any(phrase in lowered for phrase in GREETING_PHRASES):
         # Batasi supaya tidak menelan kalimat panjang non-salam
         words = re.findall(r"\w+", lowered)
-        return len(words) <= 6  # frasa salam + 1–2 kata tambahan (mis. "selamat pagi min")
+        return (
+            len(words) <= 6
+        )  # frasa salam + 1–2 kata tambahan (mis. "selamat pagi min")
 
     # Kata salam umum (tanpa waktu) → hanya kalau pesan pendek
     if GREETING_KEYWORDS_SET & tokens:
@@ -286,9 +358,9 @@ def is_greeting_message(text: str) -> bool:
 # 6) Ambil respons sapaan generik (kompatibilitas lama)
 def get_greeting_response(user_name: Optional[str] = None) -> str:
     response = random.choice(GREETING_RESPONSES)
-    return response.format(user_name=user_name or 'bestie')
+    return response.format(user_name=user_name or "bestie")
 
 
 def get_qa_only_greeting_response(user_name: Optional[str] = None) -> str:
     response = random.choice(QA_ONLY_GREETING_RESPONSES)
-    return response.format(user_name=user_name or 'bestie')
+    return response.format(user_name=user_name or "bestie")

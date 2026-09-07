@@ -366,7 +366,17 @@
                                                     title="Edit user">
                                                     <i class="bi bi-pencil-square"></i>
                                                 </button>
+                                                <button type="button" class="btn btn-outline-danger"
+                                                    onclick='confirmAndSubmitResetPassword("resetPasswordForm-{{ user.id }}", {{ (user.full_name or user.email or "user")|tojson }})'
+                                                    title="Reset password">
+                                                    <i class="bi bi-key-fill"></i>
+                                                </button>
                                             </div>
+                                            <form method="post" id="resetPasswordForm-{{ user.id }}" class="d-none">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                                <input type="hidden" name="action" value="reset_password">
+                                                <input type="hidden" name="user_id" value="{{ user.id }}">
+                                            </form>
                                             {% endif %}
                                         </td>
                                     </tr>
@@ -678,6 +688,14 @@
     function normalizeWhatsAppNumber(value) {
         if (!value) return '';
         return String(value).replace(/[^0-9]/g, '');
+    }
+
+    function confirmAndSubmitResetPassword(formId, userName) {
+        const name = (userName || 'user').toString().trim() || 'user';
+        const form = document.getElementById(formId);
+        if (!form) return;
+        if (!window.confirm(`Lanjut reset password untuk ${name}?`)) return;
+        form.submit();
     }
 
     function buildWhatsAppMessage(user) {

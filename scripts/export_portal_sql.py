@@ -5,9 +5,9 @@ import os
 from typing import Dict, List, Optional, Sequence, Tuple
 
 import psycopg2
+from dotenv import load_dotenv
 from psycopg2 import sql
 from psycopg2.extras import RealDictCursor
-from dotenv import load_dotenv
 
 # Urutan tabel memastikan dependensi foreign key terpenuhi lebih dulu.
 TABLES_IN_ORDER: Sequence[str] = (
@@ -175,11 +175,18 @@ def _format_value(value) -> str:
 
 
 def _fetch_rows(cur, table: str, columns: List[str]) -> List[Dict[str, object]]:
-    order_clause = sql.SQL(" ORDER BY {}").format(sql.Identifier("id")) if "id" in columns else sql.SQL("")
-    query = sql.SQL("SELECT {} FROM {}").format(
-        sql.SQL(", ").join(sql.Identifier(c) for c in columns),
-        sql.Identifier(table),
-    ) + order_clause
+    order_clause = (
+        sql.SQL(" ORDER BY {}").format(sql.Identifier("id"))
+        if "id" in columns
+        else sql.SQL("")
+    )
+    query = (
+        sql.SQL("SELECT {} FROM {}").format(
+            sql.SQL(", ").join(sql.Identifier(c) for c in columns),
+            sql.Identifier(table),
+        )
+        + order_clause
+    )
     cur.execute(query)
     return list(cur.fetchall())
 
@@ -200,7 +207,7 @@ def _sequence_setval_statements(cur, table: str) -> List[str]:
         if not seq:
             continue
         stmts.append(
-            f"SELECT setval('{seq}', COALESCE((SELECT MAX(\"{col}\") FROM \"{table}\"), 1), TRUE);"
+            f'SELECT setval(\'{seq}\', COALESCE((SELECT MAX("{col}") FROM "{table}"), 1), TRUE);'
         )
     return stmts
 
@@ -227,7 +234,7 @@ def export_portal(output_file: str = "portal_export.sql") -> None:
 
             f.write(f"-- Data for table: {table}\n")
             rows = _fetch_rows(cur, table, columns)
-            col_list = ", ".join(f"\"{c}\"" for c in columns)
+            col_list = ", ".join(f'"{c}"' for c in columns)
             for row in rows:
                 values = [_format_value(row[col]) for col in columns]
                 val_list = ", ".join(values)

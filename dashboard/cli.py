@@ -14,7 +14,9 @@ def _handle_create_user(args: argparse.Namespace) -> None:
         print("Password minimal 8 karakter.")
         sys.exit(1)
 
-    password_hash = generate_password_hash(password, method="pbkdf2:sha256", salt_length=12)
+    password_hash = generate_password_hash(
+        password, method="pbkdf2:sha256", salt_length=12
+    )
     new_id = create_dashboard_user(
         email=args.email.lower(),
         full_name=args.full_name,
@@ -42,9 +44,13 @@ def main() -> None:
         choices=["admin", "editor", "viewer", "staff"],
         help="Role for the user",
     )
-    create.add_argument("--password", help="Plain password. If omitted, prompt securely.")
+    create.add_argument(
+        "--password", help="Plain password. If omitted, prompt securely."
+    )
 
-    init_db = subparsers.add_parser("init-db", help="Create dashboard tables if missing")
+    init_db = subparsers.add_parser(
+        "init-db", help="Create dashboard tables if missing"
+    )
 
     args = parser.parse_args()
 

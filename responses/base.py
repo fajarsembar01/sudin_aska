@@ -7,10 +7,7 @@ ASKA_NO_DATA_RESPONSE = (
 )
 
 ASKA_TECHNICAL_ISSUE_RESPONSE = (
-    "⚠️ Maaf, lagi ada gangguan teknis 🛠️\n"
-    "🤖 Coba tanya *ASKA* nanti ya~ 🙏"
+    "⚠️ Maaf, lagi ada gangguan teknis 🛠️\n" "🤖 Coba tanya *ASKA* nanti ya~ 🙏"
 )
 
-ASKA_RATE_LIMIT_RESPONSE = (
-    RATE_LIMIT_RESPONSES[0]
-)
+ASKA_RATE_LIMIT_RESPONSE = RATE_LIMIT_RESPONSES[0]

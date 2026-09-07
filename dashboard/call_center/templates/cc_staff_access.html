@@ -1,0 +1,80 @@
+{% extends "base_cc.html" %}
+{% set page_title = "Akses Staf Call Center" %}
+{% block portal_content %}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+    <div>
+        <h4 class="mb-1"><i class="bi bi-person-check text-primary me-2"></i>Akses Staf Call Center</h4>
+        <p class="text-secondary mb-0">Pilih staf yang bertugas menjawab pesan Call Center.</p>
+    </div>
+    <a class="btn btn-outline-secondary" href="{{ url_for('call_center.inbox') }}">Kembali ke Inbox</a>
+</div>
+<div class="alert alert-info">
+    Staf yang diberi akses dapat membaca dan membalas semua percakapan, menggunakan serta mengelola draft, dan menutup atau membuka kembali percakapan.
+    Pengaturan layanan dan akses staf hanya dapat dikelola admin. Pencabutan akses berlaku pada permintaan berikutnya tanpa perlu logout.
+</div>
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <div class="d-flex justify-content-between flex-wrap gap-3 mb-3">
+            <span class="badge text-bg-primary align-self-center">{{ staff|selectattr('has_access')|list|length }} staf diberi akses</span>
+            <div><label for="staffSearch" class="visually-hidden">Cari nama atau email staf</label><input type="search" id="staffSearch" class="form-control" placeholder="Cari nama atau email staf"></div>
+        </div>
+        <form method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead><tr><th><input type="checkbox" class="form-check-input" id="selectAll" aria-label="Pilih semua staf yang terlihat"></th><th>Staf</th><th>Peran</th><th>Status akun</th><th>Akses Call Center</th></tr></thead>
+                    <tbody>
+                    {% for person in staff %}
+                    <tr data-staff-row data-search="{{ (person.full_name ~ ' ' ~ person.email)|lower }}">
+                        <td><input type="checkbox" class="form-check-input staff-choice" name="user_ids" value="{{ person.id }}" aria-label="Pilih {{ person.full_name }}"></td>
+                        <td><div class="fw-semibold">{{ person.full_name }}</div><small class="text-secondary">{{ person.email }}</small></td>
+                        <td>{{ 'Koordinator' if person.role == 'coordinator' else ('Staf' if person.role == 'staff' else person.role) }}</td>
+                        <td>{{ 'Disetujui' if person.account_status == 'approved' else person.account_status }}</td>
+                        <td><span class="badge {{ 'text-bg-success' if person.has_access else 'text-bg-secondary' }}">{{ 'Diberi akses' if person.has_access else 'Belum diberi akses' }}</span></td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="5" class="text-center text-secondary py-5">Belum ada akun staf atau koordinator. Tambahkan akun melalui pengelolaan pengguna terlebih dahulu.</td></tr>
+                    {% endfor %}
+                    <tr id="noResults" hidden><td colspan="5" class="text-center text-secondary py-4">Tidak ada staf yang cocok dengan pencarian.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="d-flex flex-wrap align-items-center gap-2 mt-3">
+                <button type="submit" name="action" value="grant" class="btn btn-primary" disabled data-access-action><i class="bi bi-person-plus me-1"></i>Berikan Akses</button>
+                <button type="submit" name="action" value="revoke" class="btn btn-outline-danger" disabled data-access-action><i class="bi bi-person-dash me-1"></i>Cabut Akses</button>
+                <span class="small text-secondary" id="selectionCount" aria-live="polite">0 staf dipilih</span>
+            </div>
+            <p class="small text-secondary mt-3 mb-0">Pemberian akses hanya tersedia untuk akun staf atau koordinator yang telah disetujui. Admin otomatis memiliki akses.</p>
+        </form>
+    </div>
+</div>
+<script>
+(() => {
+    const rows = [...document.querySelectorAll('[data-staff-row]')];
+    const choices = [...document.querySelectorAll('.staff-choice')];
+    const all = document.getElementById('selectAll');
+    function update() {
+        const count = choices.filter(input => input.checked).length;
+        document.getElementById('selectionCount').textContent = `${count} staf dipilih`;
+        document.querySelectorAll('[data-access-action]').forEach(button => button.disabled = count === 0);
+        const visible = rows.filter(row => !row.hidden).map(row => row.querySelector('input'));
+        all.checked = visible.length > 0 && visible.every(input => input.checked);
+        all.indeterminate = visible.some(input => input.checked) && !all.checked;
+    }
+    choices.forEach(input => input.addEventListener('change', update));
+    all.addEventListener('change', () => {
+        rows.filter(row => !row.hidden).forEach(row => row.querySelector('input').checked = all.checked);
+        update();
+    });
+    document.getElementById('staffSearch').addEventListener('input', event => {
+        const search = event.target.value.toLowerCase().trim();
+        rows.forEach(row => {
+            row.hidden = !row.dataset.search.includes(search);
+            if (row.hidden) row.querySelector('input').checked = false;
+        });
+        document.getElementById('noResults').hidden = !rows.length || rows.some(row => !row.hidden);
+        update();
+    });
+})();
+</script>
+{% endblock %}

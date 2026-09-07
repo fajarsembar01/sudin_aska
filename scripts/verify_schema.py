@@ -1,5 +1,5 @@
-
 import os
+
 import psycopg2
 from dotenv import load_dotenv
 
@@ -11,24 +11,38 @@ DB_PASS = os.getenv("DB_PASS")
 DB_HOST = os.getenv("DB_HOST")
 DB_PORT = os.getenv("DB_PORT")
 
+
 def verify_schema():
     conn = psycopg2.connect(
-        dbname=DB_NAME,
-        user=DB_USER,
-        password=DB_PASS,
-        host=DB_HOST,
-        port=DB_PORT
+        dbname=DB_NAME, user=DB_USER, password=DB_PASS, host=DB_HOST, port=DB_PORT
     )
     cursor = conn.cursor()
 
     # List of expected tables
     expected_tables = [
-        "chat_logs", "bullying_reports", "psych_reports", "chat_feedback", "web_users", "telegram_users",
-        "dashboard_users", "school_classes", "students", "notifications", "twitter_worker_logs",
-        "telegram_notification_settings", "telegram_admin_accounts", "telegram_notification_groups",
-        "portal_schools", "portal_rooms", "portal_aspects", "portal_school_rooms",
-        "portal_assessment_periods", "portal_assessments", "portal_assessment_scores",
-        "portal_assessment_photos", "portal_assessment_room_details"
+        "chat_logs",
+        "bullying_reports",
+        "psych_reports",
+        "chat_feedback",
+        "web_users",
+        "telegram_users",
+        "dashboard_users",
+        "school_classes",
+        "students",
+        "notifications",
+        "twitter_worker_logs",
+        "telegram_notification_settings",
+        "telegram_admin_accounts",
+        "telegram_notification_groups",
+        "portal_schools",
+        "portal_rooms",
+        "portal_aspects",
+        "portal_school_rooms",
+        "portal_assessment_periods",
+        "portal_assessments",
+        "portal_assessment_scores",
+        "portal_assessment_photos",
+        "portal_assessment_room_details",
     ]
 
     print("Checking tables...")
@@ -38,7 +52,7 @@ def verify_schema():
         WHERE table_schema = 'public' 
     """)
     existing_tables = set(row[0] for row in cursor.fetchall())
-    
+
     missing = []
     for t in expected_tables:
         if t in existing_tables:
@@ -89,6 +103,7 @@ def verify_schema():
         print(f"  [OK] FK: {fk[0]} -> {fk[1]}")
 
     conn.close()
+
 
 if __name__ == "__main__":
     verify_schema()

@@ -1,0 +1,301 @@
+{% extends "portal/base_portal.html" %}
+{% set page_title = school.name ~ " – Adiwiyata" %}
+
+{% block portal_nav %}
+    {% include "adiwiyata/admin/_nav.html" %}
+{% endblock %}
+
+{% block head_extra %}
+<style>
+/* ─── School header card ─── */
+.school-avatar-lg {
+    width: 64px; height: 64px; border-radius: 18px;
+    background: var(--bs-success);
+    color: white; font-weight: 900; font-size: 1.6rem;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+}
+.hd-stat { text-align: center; min-width: 70px; }
+.hd-stat-num { font-size: 1.4rem; font-weight: 900; color: var(--bs-success); }
+.hd-stat-label { font-size: 0.65rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: .3px; }
+
+/* ─── Category tabs ─── */
+.cat-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 18px; }
+.cat-tab {
+    padding: 7px 16px; border-radius: 999px;
+    font-size: 0.78rem; font-weight: 800;
+    text-decoration: none; border: 2px solid transparent;
+    transition: all .15s;
+}
+.cat-tab.all { background: var(--bg-surface); color: var(--text-main); border-color: var(--border-soft); }
+.cat-tab.all.active, .cat-tab.all:hover { background: var(--bs-success); color: white; border-color: var(--bs-success); }
+.cat-tab.sampah { background: rgba(209,250,229,0.9); color: #065f46; }
+.cat-tab.energi { background: rgba(254,243,199,0.9); color: #92400e; }
+.cat-tab.air { background: rgba(219,234,254,0.9); color: #1e40af; }
+.cat-tab.sanitasi { background: rgba(243,232,255,0.9); color: #6b21a8; }
+.cat-tab.kompos { background: rgba(252,231,243,0.9); color: #9d174d; }
+.cat-tab.tanaman { background: rgba(236,253,245,0.9); color: #047857; }
+.cat-tab.active { box-shadow: 0 0 0 2px currentColor; }
+
+/* ─── Gallery grid ─── */
+.gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 24px; }
+@media (max-width: 600px) { .gallery-grid { grid-template-columns: 1fr 1fr; gap: 8px; } }
+
+.gallery-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-soft);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow .18s, transform .18s;
+}
+.gallery-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+.gallery-thumb { position: relative; aspect-ratio: 1; overflow: hidden; background: var(--bg-subtle); cursor: pointer; }
+.gallery-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .3s; }
+.gallery-card:hover .gallery-thumb img { transform: scale(1.05); }
+.gallery-thumb .play-icon { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.35); color: white; font-size: 2rem; }
+.cat-label {
+    position: absolute; top: 7px; left: 7px;
+    font-size: 0.62rem; font-weight: 900;
+    padding: 2px 8px; border-radius: 999px;
+    backdrop-filter: blur(6px);
+}
+.like-pill {
+    position: absolute; bottom: 7px; right: 7px;
+    background: rgba(0,0,0,0.55); color: white;
+    padding: 2px 7px; border-radius: 999px;
+    font-size: 0.62rem; font-weight: 900;
+    display: flex; align-items: center; gap: 3px;
+}
+.gallery-meta { padding: 9px 11px; }
+.gallery-desc { font-size: 0.72rem; color: var(--text-muted); line-height: 1.45; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; margin-bottom: 5px; }
+.gallery-date { font-size: 0.65rem; color: var(--text-muted); font-weight: 700; }
+.gallery-actions { display: flex; gap: 6px; padding: 0 11px 9px; }
+
+/* Category badge colors */
+.lbl-sampah { background: rgba(209,250,229,0.9); color: #065f46; }
+.lbl-energi { background: rgba(254,243,199,0.9); color: #92400e; }
+.lbl-air { background: rgba(219,234,254,0.9); color: #1e40af; }
+.lbl-sanitasi { background: rgba(243,232,255,0.9); color: #6b21a8; }
+.lbl-kompos { background: rgba(252,231,243,0.9); color: #9d174d; }
+.lbl-tanaman { background: rgba(236,253,245,0.9); color: #047857; }
+
+/* ─── Lightbox ─── */
+.lbx-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 9999; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity .2s; flex-direction: column; gap: 12px; }
+.lbx-overlay.open { opacity: 1; pointer-events: all; }
+.lbx-img { max-width: 92vw; max-height: 80vh; border-radius: 12px; object-fit: contain; }
+.lbx-caption { color: rgba(255,255,255,0.8); font-size: 0.82rem; max-width: 500px; text-align: center; line-height: 1.5; }
+.lbx-close { position: absolute; top: 16px; right: 16px; font-size: 1.5rem; color: white; cursor: pointer; background: rgba(255,255,255,0.15); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
+
+/* ─── Pagination ─── */
+.pagination { margin-bottom: 0; }
+.page-link { color: var(--text-main); font-weight: 600; font-size: 0.85rem; border-color: var(--border-soft); background: var(--bg-surface); }
+.page-item.active .page-link { background-color: var(--bs-success); border-color: var(--bs-success); color: white; }
+.page-link:hover { background-color: var(--bg-subtle); color: var(--bs-success); border-color: var(--border-soft); }
+</style>
+{% endblock %}
+
+{% block portal_content %}
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb small fw-semibold">
+        <li class="breadcrumb-item"><a href="{{ url_for('adiwiyata.admin_adiwiyata_dashboard') }}" class="text-success text-decoration-none"><i class="bi bi-grid-1x2-fill me-1"></i>Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('adiwiyata.admin_adiwiyata_schools') }}" class="text-success text-decoration-none">Per Sekolah</a></li>
+        <li class="breadcrumb-item active" aria-current="page">{{ school.name }}</li>
+    </ol>
+</nav>
+
+<!-- School Header -->
+<div class="card border-0 shadow-sm mb-4" style="border-radius: 18px;">
+    <div class="card-body p-4 d-flex align-items-center gap-4 flex-wrap">
+        <div class="school-avatar-lg">{{ (school.name or 'S')[:1] }}</div>
+        <div class="flex-grow-1 min-w-0">
+            <h1 class="h5 fw-bold mb-1">{{ school.name }}</h1>
+            <div class="d-flex flex-wrap gap-3 text-muted small fw-semibold">
+                <span><i class="bi bi-card-text me-1"></i>NPSN {{ school.npsn }}</span>
+                <span><i class="bi bi-mortarboard me-1"></i>{{ school.jenjang }}</span>
+                {% if school.alamat %}<span><i class="bi bi-geo-alt me-1"></i>{{ school.alamat }}</span>{% endif %}
+            </div>
+        </div>
+        <div class="d-flex gap-4">
+            <div class="hd-stat">
+                <div class="hd-stat-num">{{ school.total_posts }}</div>
+                <div class="hd-stat-label">Total Post</div>
+            </div>
+            <div class="hd-stat">
+                <div class="hd-stat-num text-danger">{{ school.total_likes }}</div>
+                <div class="hd-stat-label">Total Likes</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Category Filter Tabs -->
+<div class="cat-tabs">
+    {% set all_active = not selected_category %}
+    <a href="{{ url_for('adiwiyata.admin_adiwiyata_school_detail', school_id=school.id) }}"
+       class="cat-tab all {{ 'active' if all_active }}">
+        <i class="bi bi-grid me-1"></i>Semua ({{ total }})
+    </a>
+    {% set tab_data = [
+        ('pengelolaan-sampah', 'Sampah', 'sampah', 'bi-trash3'),
+        ('konservasi-energi', 'Energi', 'energi', 'bi-lightning-charge'),
+        ('konservasi-air', 'Air', 'air', 'bi-droplet'),
+        ('kebersihan-sanitasi-drainase', 'Sanitasi', 'sanitasi', 'bi-bucket'),
+        ('kompos', 'Kompos', 'kompos', 'bi-recycle'),
+        ('tanaman', 'Tanaman', 'tanaman', 'bi-tree'),
+    ] %}
+    {% for cat_key, cat_label, cat_cls, cat_icon in tab_data %}
+    <a href="{{ url_for('adiwiyata.admin_adiwiyata_school_detail', school_id=school.id, category=cat_key) }}"
+       class="cat-tab {{ cat_cls }} {{ 'active' if selected_category == cat_key }}">
+        <i class="{{ cat_icon }} me-1"></i>{{ cat_label }}
+    </a>
+    {% endfor %}
+</div>
+
+<!-- Gallery -->
+{% if posts %}
+<div class="gallery-grid">
+    {% for post in posts %}
+    {% set cat_cls = {
+        'pengelolaan-sampah': 'lbl-sampah',
+        'konservasi-energi': 'lbl-energi',
+        'konservasi-air': 'lbl-air',
+        'kebersihan-sanitasi-drainase': 'lbl-sanitasi',
+        'kompos': 'lbl-kompos',
+        'tanaman': 'lbl-tanaman',
+    }.get(post.category, '') %}
+    <div class="gallery-card">
+        <div class="gallery-thumb" onclick="openLightbox('{{ post.cover_url or '' }}', '{{ post.media_type }}', '{{ post.description | replace("'", "\\'") | truncate(100) }}')">
+            {% if post.cover_url %}
+            <img src="{{ post.cover_url }}" alt="{{ post.description or 'Post' }}" loading="lazy">
+            {% else %}
+            <div class="play-icon"><i class="bi bi-play-circle-fill"></i></div>
+            {% endif %}
+            <span class="cat-label {{ cat_cls }}">{{ category_titles.get(post.category, post.category) }}</span>
+            {% if post.likes %}
+            <span class="like-pill"><i class="bi bi-heart-fill text-danger me-1"></i>{{ post.likes }}</span>
+            {% endif %}
+        </div>
+        <div class="gallery-meta">
+            {% if post.description %}
+            <div class="gallery-desc">{{ post.description }}</div>
+            {% endif %}
+            <div class="gallery-date">
+                <i class="bi bi-calendar3 me-1"></i>
+                {{ post.created_at_str }}
+                {% if post.author_name %}&nbsp;·&nbsp;<i class="bi bi-person"></i> {{ post.author_name }}{% endif %}
+            </div>
+        </div>
+        <div class="gallery-actions">
+            {% if post.cover_url %}
+            <button class="btn btn-sm btn-outline-success flex-grow-1 fw-bold py-1" onclick="openLightbox('{{ post.cover_url }}', '{{ post.media_type }}', '{{ post.description | replace("'", "\\'") | truncate(100) }}')">
+                <i class="bi bi-zoom-in me-1"></i>Lihat
+            </button>
+            {% else %}
+            <a href="{{ post.media_path }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-success flex-grow-1 fw-bold py-1">
+                <i class="bi bi-play-btn me-1"></i>Video
+            </a>
+            {% endif %}
+            <button class="btn btn-sm btn-outline-danger fw-bold py-1" onclick="confirmDelete({{ post.id }}, {{ school.id }}, '{{ (post.description or 'post ini') | replace("'", "\\'") | truncate(40) }}')">
+                <i class="bi bi-trash3"></i>
+            </button>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if total_pages > 1 %}
+<nav aria-label="Page navigation" class="mt-4 d-flex justify-content-center">
+    <ul class="pagination pagination-sm">
+        {% set base_args = {'category': selected_category} %}
+        <li class="page-item {{ 'disabled' if page <= 1 }}">
+            <a class="page-link" href="{{ url_for('adiwiyata.admin_adiwiyata_school_detail', school_id=school.id, **dict(base_args, page=1)) }}"><i class="bi bi-chevron-double-left"></i></a>
+        </li>
+        <li class="page-item {{ 'disabled' if page <= 1 }}">
+            <a class="page-link" href="{{ url_for('adiwiyata.admin_adiwiyata_school_detail', school_id=school.id, **dict(base_args, page=page-1)) }}"><i class="bi bi-chevron-left"></i></a>
+        </li>
+        {% for p in range([1, page-2]|max, [total_pages+1, page+3]|min) %}
+        <li class="page-item {{ 'active' if p == page }}">
+            <a class="page-link" href="{{ url_for('adiwiyata.admin_adiwiyata_school_detail', school_id=school.id, **dict(base_args, page=p)) }}">{{ p }}</a>
+        </li>
+        {% endfor %}
+        <li class="page-item {{ 'disabled' if page >= total_pages }}">
+            <a class="page-link" href="{{ url_for('adiwiyata.admin_adiwiyata_school_detail', school_id=school.id, **dict(base_args, page=page+1)) }}"><i class="bi bi-chevron-right"></i></a>
+        </li>
+        <li class="page-item {{ 'disabled' if page >= total_pages }}">
+            <a class="page-link" href="{{ url_for('adiwiyata.admin_adiwiyata_school_detail', school_id=school.id, **dict(base_args, page=total_pages)) }}"><i class="bi bi-chevron-double-right"></i></a>
+        </li>
+    </ul>
+</nav>
+{% endif %}
+
+{% else %}
+<div class="card border-0 shadow-sm mt-3">
+    <div class="card-body text-center py-5">
+        <i class="bi bi-images text-muted" style="font-size: 3rem;"></i>
+        <p class="text-muted mt-3 mb-2">Belum ada post {% if selected_category %}untuk kategori ini{% endif %}.</p>
+        {% if selected_category %}
+        <a href="{{ url_for('adiwiyata.admin_adiwiyata_school_detail', school_id=school.id) }}" class="btn btn-outline-success btn-sm mt-2 fw-bold">Lihat Semua Kategori</a>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Lightbox -->
+<div class="lbx-overlay" id="lbxOverlay" onclick="closeLightbox()">
+    <span class="lbx-close" onclick="closeLightbox()"><i class="bi bi-x"></i></span>
+    <img class="lbx-img" id="lbxImg" src="" alt="" onclick="event.stopPropagation()">
+    <p class="lbx-caption" id="lbxCaption"></p>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-body text-center p-4">
+                <div class="bg-danger-subtle text-danger rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 60px; height: 60px; font-size: 1.5rem;">
+                    <i class="bi bi-trash3-fill"></i>
+                </div>
+                <h5 class="fw-bold">Hapus Post?</h5>
+                <p class="text-muted small mb-4" id="delModalDesc">Post ini akan dihapus permanen.</p>
+                <form id="delForm" method="post" class="d-flex gap-2">
+                    <input type="hidden" name="redirect_to" value="school_detail">
+                    <button type="button" class="btn btn-light w-50 fw-bold" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-danger w-50 fw-bold">Hapus</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block portal_scripts %}
+<script>
+function openLightbox(src, type, caption) {
+    if (!src || type === 'video_link') return;
+    document.getElementById('lbxImg').src = src;
+    document.getElementById('lbxCaption').textContent = caption || '';
+    document.getElementById('lbxOverlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+}
+function closeLightbox() {
+    document.getElementById('lbxOverlay').classList.remove('open');
+    document.getElementById('lbxImg').src = '';
+    document.body.style.overflow = '';
+}
+
+function confirmDelete(postId, schoolId, desc) {
+    const form = document.getElementById('delForm');
+    form.action = `/adiwiyata/admin/post/${postId}/delete`;
+    document.getElementById('delModalDesc').textContent = `"${desc}" akan dihapus permanen dan tidak bisa dipulihkan.`;
+    const bsModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    bsModal.show();
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeLightbox();
+});
+</script>
+{% endblock %}

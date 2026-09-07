@@ -3,19 +3,18 @@ import logging
 import os
 
 from dotenv import load_dotenv
-from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler
+from telegram.ext import ApplicationBuilder, CallbackQueryHandler, CommandHandler
 
 from db import save_chat
 from telegram_admin_commands import (
-    admin_pending,
     admin_approve,
-    admin_reject,
+    admin_pending,
     admin_register_group,
+    admin_reject,
     admin_unregister_group,
-    handle_verification_callback,
     handle_guestbook_callback,
+    handle_verification_callback,
 )
-
 
 logging.basicConfig(
     level=logging.INFO,
@@ -60,7 +59,9 @@ def _load_token() -> str:
 
 TOKEN = _load_token()
 if not TOKEN:
-    logging.error("Token bot notifikasi tidak ditemukan. Set TELEGRAM_NOTIF_BOT_TOKEN atau isi di dashboard.")
+    logging.error(
+        "Token bot notifikasi tidak ditemukan. Set TELEGRAM_NOTIF_BOT_TOKEN atau isi di dashboard."
+    )
     raise SystemExit(1)
 
 app = ApplicationBuilder().token(TOKEN).build()

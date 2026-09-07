@@ -1,0 +1,656 @@
+{% extends "monev_bos/base_monev_bos.html" %}
+
+{% block monev_bos_content %}
+<div class="container-fluid py-3 py-md-4">
+    <!-- Header -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
+        <div>
+            <h4 class="fw-bold mb-1"><i class="bi bi-shop text-primary me-2"></i>Daftar Vendor / Narasumber</h4>
+            <p class="text-muted mb-0 small d-none d-md-block">Kelola data vendor/toko dan narasumber/instruktur yang digunakan pada laporan kegiatan. Setiap entri harus diverifikasi oleh tim Admin/Staff terlebih dahulu.</p>
+        </div>
+        <div class="w-100 w-md-auto">
+            <button type="button" class="btn btn-primary fw-bold shadow-sm w-100 w-md-auto" data-bs-toggle="modal" data-bs-target="#addVendorModal">
+                <i class="bi bi-plus-lg me-1"></i> Daftarkan Baru
+            </button>
+        </div>
+    </div>
+
+    {% if duplicate_warning %}
+    <!-- Peringatan inline agar halaman tidak tertutup backdrop/pop-up. -->
+    <form method="POST" action="{{ url_for('monev_bos.sekolah_vendors') }}" class="card border-warning shadow-sm mb-4" id="duplicateRegistrationWarning">
+        <input type="hidden" name="action" value="{{ duplicate_warning.action }}">
+        {% if duplicate_warning.vendor_id %}<input type="hidden" name="vendor_id" value="{{ duplicate_warning.vendor_id }}">{% endif %}
+        {% for field in ['name', 'npwp', 'phone', 'address', 'owner_name', 'bank_name', 'bank_account_type', 'bank_account', 'vendor_type'] %}
+        <input type="hidden" name="{{ field }}" value="{{ duplicate_warning.data.get(field, '')|e }}">
+        {% endfor %}
+        <div class="card-header bg-warning-subtle border-warning-subtle py-3">
+            <h5 class="fw-bold text-warning-emphasis mb-0">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>Vendor Sudah Didaftarkan
+            </h5>
+        </div>
+        <div class="card-body">
+            <p class="mb-2">
+                Data <strong>{{ duplicate_warning.data.owner_name if duplicate_warning.data.vendor_type == 'narsum' else duplicate_warning.data.name }}</strong>
+                mirip dengan vendor/narasumber yang sudah didaftarkan. Anda dapat menggunakan vendor milik sekolah lain yang tersedia saat mengisi laporan kegiatan.
+            </p>
+            <p class="small text-muted mb-3">Periksa data pembanding berikut. Jangan lanjutkan jika ini adalah vendor/narasumber yang sama.</p>
+
+            <div class="table-responsive border rounded mb-3">
+                <table class="table table-sm align-middle mb-0">
+                    <thead class="table-light">
+                        <tr><th>Sekolah pendaftar</th><th>Vendor / Narasumber</th><th>Data yang sama</th><th>Status</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for duplicate in duplicate_warning.matches %}
+                        <tr>
+                            <td><strong>{{ duplicate.school_name }}</strong>{% if duplicate.npsn %}<div class="small text-muted">NPSN {{ duplicate.npsn }}</div>{% endif %}</td>
+                            <td>
+                                <strong>{{ (duplicate.owner_name or duplicate.name) if duplicate_warning.data.vendor_type == 'narsum' else duplicate.name }}</strong>
+                                <div class="small text-muted">NPWP/KTP: {{ duplicate.name if duplicate_warning.data.vendor_type == 'narsum' else (duplicate.npwp or '-') }} · Kontak: {{ duplicate.phone or '-' }}</div>
+                            </td>
+                            <td>{% for field in duplicate.duplicate_fields %}<span class="badge text-bg-danger me-1">{{ field }}</span>{% endfor %}</td>
+                            <td><span class="badge {{ 'text-bg-success' if duplicate.status == 'verified' else ('text-bg-danger' if duplicate.status == 'rejected' else 'text-bg-warning') }}">{{ {'verified': 'Terverifikasi', 'rejected': 'Ditolak', 'pending': 'Menunggu'}.get(duplicate.status, duplicate.status) }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="p-3 border border-warning rounded bg-warning-subtle mb-3">
+                <label class="form-label fw-bold" for="duplicateRegistrationConfirmation">
+                    Jika memang berbeda, ketik <code>vendor berbeda</code>
+                </label>
+                <input type="text" class="form-control" name="duplicate_confirmation" id="duplicateRegistrationConfirmation"
+                       autocomplete="off" placeholder="vendor berbeda" required
+                       pattern="[Vv][Ee][Nn][Dd][Oo][Rr] [Bb][Ee][Rr][Bb][Ee][Dd][Aa]"
+                       title="Ketik tepat: vendor berbeda">
+                <div class="form-text">Konfirmasi ini menyatakan Anda sudah memeriksa data pembanding dan memastikan vendor/narasumber tersebut benar-benar berbeda.</div>
+            </div>
+            <div class="d-flex flex-column flex-sm-row justify-content-end gap-2">
+                <a href="{{ url_for('monev_bos.sekolah_vendors') }}" class="btn btn-secondary">Batal, gunakan data yang sudah ada</a>
+                <button type="submit" class="btn btn-warning fw-bold"><i class="bi bi-check-circle me-1"></i>Ya, Berbeda &amp; Lanjutkan</button>
+            </div>
+        </div>
+    </form>
+    {% endif %}
+
+    <!-- Filter & Search Bar -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-3">
+            <form method="GET" action="{{ url_for('monev_bos.sekolah_vendors') }}" id="vendorSearchForm" class="row g-2 align-items-center">
+                {% if status_filter %}
+                <input type="hidden" name="status" value="{{ status_filter }}">
+                {% endif %}
+                <div class="col-12 col-md-7 col-lg-8">
+                    <div class="d-flex align-items-center gap-2 overflow-auto pb-1 pb-md-0" style="white-space: nowrap;">
+                        <span class="fw-semibold me-1 small text-muted d-none d-sm-inline">Status:</span>
+                        <a href="{{ url_for('monev_bos.sekolah_vendors', q=search_query) }}" class="btn btn-sm {% if not status_filter %}btn-primary{% else %}btn-outline-secondary{% endif %} rounded-pill px-3">
+                            Semua
+                        </a>
+                        <a href="{{ url_for('monev_bos.sekolah_vendors', status='pending', q=search_query) }}" class="btn btn-sm {% if status_filter == 'pending' %}btn-warning text-dark{% else %}btn-outline-warning text-dark{% endif %} rounded-pill px-3">
+                            <i class="bi bi-clock-history me-1"></i>Menunggu
+                        </a>
+                        <a href="{{ url_for('monev_bos.sekolah_vendors', status='verified', q=search_query) }}" class="btn btn-sm {% if status_filter == 'verified' %}btn-success{% else %}btn-outline-success{% endif %} rounded-pill px-3">
+                            <i class="bi bi-check-circle me-1"></i>Terverifikasi
+                        </a>
+                        <a href="{{ url_for('monev_bos.sekolah_vendors', status='rejected', q=search_query) }}" class="btn btn-sm {% if status_filter == 'rejected' %}btn-danger{% else %}btn-outline-danger{% endif %} rounded-pill px-3">
+                            <i class="bi bi-x-circle me-1"></i>Ditolak
+                        </a>
+                    </div>
+                </div>
+                <div class="col-12 col-md-5 col-lg-4">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-white text-muted border-end-0"><i class="bi bi-search"></i></span>
+                        <input type="text" name="q" id="vendorSearchInput" class="form-control border-start-0" placeholder="Cari nama vendor / narsum, NPWP, kontak..." value="{{ search_query or '' }}">
+                        {% if search_query %}
+                        <a href="{{ url_for('monev_bos.sekolah_vendors', status=status_filter) }}" class="btn btn-outline-secondary" title="Bersihkan pencarian">
+                            <i class="bi bi-x-lg"></i>
+                        </a>
+                        {% endif %}
+                        <button type="submit" class="btn btn-primary fw-bold">Cari</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Desktop Table View (d-none d-md-block) -->
+    <div class="card border-0 shadow-sm d-none d-md-block">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light text-muted small uppercase">
+                        <tr>
+                            <th class="ps-4">No</th>
+                            <th>Tipe</th>
+                            <th>Nama Toko / Vendor / Narsum</th>
+                            <th>NPWP &amp; Kontak</th>
+                            <th>Penanggung Jawab / Narsum</th>
+                            <th>Bank &amp; Pembayaran</th>
+                            <th>Status Verifikasi</th>
+                            <th>Tgl Didaftarkan</th>
+                            <th class="pe-4 text-end text-nowrap">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if vendors %}
+                            {% for v in vendors %}
+                            {% set is_narsum = v.vendor_type == 'narsum' %}
+                            <tr class="vendor-row">
+                                <td class="ps-4 fw-semibold text-muted">{{ loop.index }}</td>
+                                <td>
+                                    {% if is_narsum %}
+                                    <span class="badge bg-info-subtle text-info border border-info-subtle"><i class="bi bi-person-video3 me-1"></i>Narsum</span>
+                                    {% else %}
+                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle"><i class="bi bi-shop me-1"></i>Vendor</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="fw-bold text-dark">{{ v.name }}</div>
+                                    {% if v.address %}
+                                    <div class="small text-muted text-truncate" style="max-width: 220px;" title="{{ v.address }}">
+                                        <i class="bi bi-geo-alt me-1"></i>{{ v.address }}
+                                    </div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="small fw-semibold">{{ v.npwp or '-' }}</div>
+                                    {% if v.phone %}
+                                    <div class="small text-muted"><i class="bi bi-telephone me-1"></i>{{ v.phone }}</div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="small">{{ v.owner_name or '-' }}</span>
+                                </td>
+                                <td>
+                                    {% if v.bank_name or v.bank_account or (v.bank_account_type or 'rekening') == 'va' %}
+                                    <div class="small fw-semibold text-primary">{{ v.bank_name or 'Bank' }}</div>
+                                    {% if (v.bank_account_type or 'rekening') == 'va' %}
+                                    <span class="badge bg-info-subtle text-info border border-info-subtle">Virtual Account (VA)</span>
+                                    {% else %}
+                                    <div class="small text-muted">{{ v.bank_account or '-' }}</div>
+                                    {% endif %}
+                                    {% else %}
+                                    <span class="text-muted small">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if v.status == 'verified' %}
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
+                                            <i class="bi bi-check-circle-fill me-1"></i>Terverifikasi
+                                        </span>
+                                        {% if v.verified_by_name %}
+                                        <div class="text-xs text-muted mt-1">
+                                            oleh {{ v.verified_by_name }}
+                                            {% if v.verified_at %}<br><span class="text-secondary">{{ v.verified_at|jakarta('%d %b %Y %H:%M') }}</span>{% endif %}
+                                        </div>
+                                        {% endif %}
+                                    {% elif v.status == 'rejected' %}
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1">
+                                            <i class="bi bi-x-circle-fill me-1"></i>Ditolak
+                                        </span>
+                                        {% if v.verified_by_name %}
+                                        <div class="text-xs text-muted mt-1">oleh {{ v.verified_by_name }}</div>
+                                        {% endif %}
+                                        {% if v.rejection_reason %}
+                                        <div class="text-xs text-danger mt-1 fw-medium" title="{{ v.rejection_reason }}">
+                                            <i class="bi bi-info-circle me-1"></i>{{ v.rejection_reason }}
+                                        </div>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1">
+                                            <i class="bi bi-clock-history me-1"></i>Menunggu Verifikasi
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td class="small text-muted">
+                                    {{ v.created_at|jakarta('%d %b %Y %H:%M') }}
+                                </td>
+                                <td class="pe-4 text-end text-nowrap">
+                                    {% if v.status == 'pending' %}
+                                    <button type="button" class="btn btn-sm btn-outline-primary me-1 edit-vendor-button" title="Edit Vendor" aria-label="Edit Vendor"
+                                            data-bs-toggle="modal" data-bs-target="#editVendorModal"
+                                            data-vendor-id="{{ v.id }}" data-vendor-type="{{ v.vendor_type or 'vendor' }}"
+                                            data-name="{{ v.name|e }}" data-npwp="{{ (v.npwp or '')|e }}"
+                                            data-phone="{{ (v.phone or '')|e }}" data-owner-name="{{ (v.owner_name or '')|e }}"
+                                            data-address="{{ (v.address or '')|e }}" data-bank-name="{{ (v.bank_name or '')|e }}"
+                                            data-bank-account-type="{{ v.bank_account_type or 'rekening' }}" data-bank-account="{{ (v.bank_account or '')|e }}">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </button>
+                                    <form method="POST" action="{{ url_for('monev_bos.sekolah_vendors') }}" class="d-inline" onsubmit="return confirm('Yakin ingin menghapus pengajuan ini?')">
+                                        <input type="hidden" name="action" value="delete_vendor">
+                                        <input type="hidden" name="vendor_id" value="{{ v.id }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Hapus Pendaftaran" aria-label="Hapus Pendaftaran">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                    {% else %}
+                                    <span class="text-muted text-xs">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="9" class="text-center py-5">
+                                    <div class="text-muted">
+                                        <i class="bi bi-shop fs-1 d-block mb-2 text-secondary opacity-50"></i>
+                                        Belum ada vendor/narsum terdaftar{% if status_filter %} dengan status ini{% endif %}.
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-primary mt-3" data-bs-toggle="modal" data-bs-target="#addVendorModal">
+                                        <i class="bi bi-plus-lg me-1"></i> Daftarkan Baru
+                                    </button>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Card View (d-block d-md-none) -->
+    <div class="d-block d-md-none">
+        {% if vendors %}
+            {% for v in vendors %}
+            {% set is_narsum = v.vendor_type == 'narsum' %}
+            <div class="card border shadow-sm mb-3 vendor-card">
+                <div class="card-header bg-white d-flex justify-content-between align-items-start py-2.5 px-3">
+                    <div>
+                        <div class="fw-bold text-dark fs-6">{{ v.name }}</div>
+                        <div class="text-xs text-muted d-flex align-items-center gap-2">
+                            {% if is_narsum %}
+                            <span class="badge bg-info-subtle text-info border border-info-subtle text-xs"><i class="bi bi-person-video3 me-1"></i>Narsum/Instruktur</span>
+                            {% else %}
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle text-xs"><i class="bi bi-shop me-1"></i>Vendor/Toko</span>
+                            {% endif %}
+                            <span><i class="bi bi-calendar-event me-1"></i>{{ v.created_at|jakarta('%d %b %Y %H:%M') }}</span>
+                        </div>
+                    </div>
+                    {% if v.status == 'verified' %}
+                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 text-xs">
+                            <i class="bi bi-check-circle-fill me-1"></i>Terverifikasi
+                        </span>
+                    {% elif v.status == 'rejected' %}
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 text-xs">
+                            <i class="bi bi-x-circle-fill me-1"></i>Ditolak
+                        </span>
+                    {% else %}
+                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1 text-xs">
+                            <i class="bi bi-clock-history me-1"></i>Menunggu
+                        </span>
+                    {% endif %}
+                </div>
+                <div class="card-body p-3 text-sm">
+                    {% if v.address %}
+                    <div class="mb-2 text-muted small"><i class="bi bi-geo-alt me-1 text-primary"></i>{{ v.address }}</div>
+                    {% endif %}
+
+                    <div class="row g-2 bg-light p-2.5 rounded mb-2 text-xs">
+                        <div class="col-6">
+                            <span class="text-muted d-block">NPWP:</span>
+                            <span class="fw-semibold text-dark">{{ v.npwp or '-' }}</span>
+                        </div>
+                        <div class="col-6">
+                            <span class="text-muted d-block">No. HP / WA:</span>
+                            <span class="fw-semibold text-dark">{{ v.phone or '-' }}</span>
+                        </div>
+                        <div class="col-6">
+                            <span class="text-muted d-block">{% if is_narsum %}Nama Narsum/Instruktur:{% else %}Penanggung Jawab:{% endif %}</span>
+                            <span class="fw-semibold text-dark">{{ v.owner_name or '-' }}</span>
+                        </div>
+                        <div class="col-6">
+                            <span class="text-muted d-block">Bank &amp; Pembayaran:</span>
+                            <span class="fw-bold text-primary">{{ v.bank_name or '-' }}</span>
+                            {% if (v.bank_account_type or 'rekening') == 'va' %}
+                            <span class="d-block text-info fw-semibold">Virtual Account (VA)</span>
+                            {% else %}
+                            <span class="d-block text-dark">{{ v.bank_account or '' }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {% if v.verified_by_name %}
+                    <div class="p-2 bg-success-subtle border border-success-subtle rounded text-xs text-muted mb-2">
+                        <i class="bi bi-shield-check text-success me-1"></i>Diverifikasi oleh: <strong>{{ v.verified_by_name }}</strong>
+                        {% if v.verified_at %}<span class="d-block text-secondary text-xs">{{ v.verified_at|jakarta('%d %b %Y %H:%M') }}</span>{% endif %}
+                    </div>
+                    {% endif %}
+
+                    {% if v.rejection_reason %}
+                    <div class="alert alert-danger p-2 text-xs mb-2">
+                        <i class="bi bi-exclamation-triangle-fill me-1"></i><strong>Alasan Ditolak:</strong> {{ v.rejection_reason }}
+                    </div>
+                    {% endif %}
+
+                    {% if v.status == 'pending' %}
+                    <div class="mt-2 pt-2 border-top d-grid gap-2">
+                        <button type="button" class="btn btn-sm btn-outline-primary edit-vendor-button"
+                                data-bs-toggle="modal" data-bs-target="#editVendorModal"
+                                data-vendor-id="{{ v.id }}" data-vendor-type="{{ v.vendor_type or 'vendor' }}"
+                                data-name="{{ v.name|e }}" data-npwp="{{ (v.npwp or '')|e }}"
+                                data-phone="{{ (v.phone or '')|e }}" data-owner-name="{{ (v.owner_name or '')|e }}"
+                                data-address="{{ (v.address or '')|e }}" data-bank-name="{{ (v.bank_name or '')|e }}"
+                                data-bank-account-type="{{ v.bank_account_type or 'rekening' }}" data-bank-account="{{ (v.bank_account or '')|e }}">
+                            <i class="bi bi-pencil-square me-1"></i>Edit Data
+                        </button>
+                        <form method="POST" action="{{ url_for('monev_bos.sekolah_vendors') }}" class="d-inline" onsubmit="return confirm('Yakin ingin menghapus pengajuan ini?')">
+                            <input type="hidden" name="action" value="delete_vendor">
+                            <input type="hidden" name="vendor_id" value="{{ v.id }}">
+                            <button type="submit" class="btn btn-sm btn-outline-danger w-100">
+                                <i class="bi bi-trash me-1"></i> Batalkan &amp; Hapus Pendaftaran
+                            </button>
+                        </form>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="card border-0 shadow-sm p-4 text-center">
+                <div class="text-muted">
+                    <i class="bi bi-shop fs-1 d-block mb-2 text-secondary opacity-50"></i>
+                    Belum ada vendor/narsum terdaftar{% if status_filter %} dengan status ini{% endif %}.
+                </div>
+                <button type="button" class="btn btn-sm btn-primary mt-3 w-100" data-bs-toggle="modal" data-bs-target="#addVendorModal">
+                    <i class="bi bi-plus-lg me-1"></i> Daftarkan Baru
+                </button>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal Tambah Vendor / Narsum -->
+<div class="modal fade" id="addVendorModal" tabindex="-1" aria-labelledby="addVendorModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('monev_bos.sekolah_vendors') }}" id="addVendorForm">
+                <input type="hidden" name="action" value="create_vendor">
+                <input type="hidden" name="vendor_type" id="hiddenVendorType" value="vendor">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="addVendorModalLabel">
+                        <i class="bi bi-shop text-primary me-2" id="modalTitleIcon"></i><span id="modalTitleText">Daftarkan Vendor / Toko Baru</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Toggle Vendor / Narsum -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold mb-2">Tipe Pendaftaran</label>
+                        <div class="btn-group w-100" role="group" id="vendorTypeToggle">
+                            <button type="button" class="btn btn-primary fw-bold" id="btnTypeVendor" onclick="setVendorType('vendor')">
+                                <i class="bi bi-shop me-2"></i>Vendor / Toko
+                            </button>
+                            <button type="button" class="btn btn-outline-info fw-bold" id="btnTypeNarsum" onclick="setVendorType('narsum')">
+                                <i class="bi bi-person-video3 me-2"></i>Narasumber / Instruktur
+                            </button>
+                        </div>
+                        <div class="form-text text-xs mt-1" id="vendorTypeDesc">Pilih <strong>Vendor/Toko</strong> untuk toko atau pemasok barang. Pilih <strong>Narasumber/Instruktur</strong> untuk perorangan sebagai pembicara, pelatih, atau instruktur.</div>
+                    </div>
+
+                    <div class="alert alert-info py-2 small mb-3">
+                        <i class="bi bi-info-circle-fill me-1"></i>
+                        Data yang didaftarkan akan dikirim ke Tim Admin/Staff Monev BOS untuk diverifikasi sebelum dapat digunakan pada laporan kegiatan.
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold" id="labelName">Nama Toko / Vendor <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="name" id="inputName" placeholder="Contoh: CV. Sukses Mandiri Jaya" required>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold">NPWP Vendor</label>
+                            <input type="text" class="form-control" name="npwp" placeholder="Contoh: 01.234.567.8-901.000">
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold">No. Telepon / WhatsApp</label>
+                            <input type="text" class="form-control" name="phone" placeholder="Contoh: 081234567890">
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold" id="labelOwnerName">Nama Penanggung Jawab / Pemilik</label>
+                            <input type="text" class="form-control" name="owner_name" id="inputOwnerName" placeholder="Contoh: Ahmad Hidayat">
+                        </div>
+
+                        <div class="col-12" id="fieldAddress">
+                            <label class="form-label fw-semibold" id="labelAddress">Alamat Lengkap Toko</label>
+                            <textarea class="form-control" name="address" rows="2" id="inputAddress" placeholder="Jl. Raya Yos Sudarso No. 12, Jakarta Utara"></textarea>
+                        </div>
+
+                        <div class="col-12 col-md-6" id="fieldBankName">
+                            <label class="form-label fw-semibold">Nama Bank</label>
+                            <select class="form-select" name="bank_name">
+                                <option value="">-- Pilih Nama Bank --</option>
+                                {% for b in master_banks %}
+                                    <option value="{{ b }}" {% if b == 'Bank DKI' %}selected{% endif %}>{{ b }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold d-block">Jenis Rekening</label>
+                            <div class="d-flex gap-4 pt-2">
+                                <div class="form-check">
+                                    <input class="form-check-input bank-account-type" type="radio" name="bank_account_type" id="addAccountTypeRekening" value="rekening" checked>
+                                    <label class="form-check-label" for="addAccountTypeRekening">Rekening</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input bank-account-type" type="radio" name="bank_account_type" id="addAccountTypeVa" value="va">
+                                    <label class="form-check-label" for="addAccountTypeVa">Virtual Account (VA)</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6" id="fieldBankAccount" data-bank-account-field>
+                            <label class="form-label fw-semibold">No. Rekening Bank</label>
+                            <input type="text" class="form-control" name="bank_account" placeholder="Contoh: 12345678901">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer flex-column flex-sm-row">
+                    <button type="button" class="btn btn-secondary w-100 w-sm-auto mb-2 mb-sm-0" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary fw-bold w-100 w-sm-auto px-4" id="btnSubmitForm">
+                        <i class="bi bi-send me-1"></i> <span id="submitBtnText">Kirim Pendaftaran Vendor</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Edit Vendor / Narsum (hanya data berstatus pending) -->
+<div class="modal fade" id="editVendorModal" tabindex="-1" aria-labelledby="editVendorModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('monev_bos.sekolah_vendors') }}" id="editVendorForm">
+                <input type="hidden" name="action" value="update_vendor">
+                <input type="hidden" name="vendor_id">
+                <input type="hidden" name="vendor_type" id="hiddenEditVendorType" value="vendor">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="editVendorModalLabel">
+                        <i class="bi bi-shop text-primary me-2" id="editModalTitleIcon"></i><span id="editModalTitleText">Edit Vendor / Toko</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-4">
+                        <label class="form-label fw-bold mb-2">Tipe Pendaftaran</label>
+                        <div class="btn-group w-100" role="group" id="editVendorTypeToggle">
+                            <button type="button" class="btn btn-primary fw-bold" id="btnEditTypeVendor" onclick="setEditVendorType('vendor')">
+                                <i class="bi bi-shop me-2"></i>Vendor / Toko
+                            </button>
+                            <button type="button" class="btn btn-outline-info fw-bold" id="btnEditTypeNarsum" onclick="setEditVendorType('narsum')">
+                                <i class="bi bi-person-video3 me-2"></i>Narasumber / Instruktur
+                            </button>
+                        </div>
+                        <div class="form-text text-xs mt-1">Pilih <strong>Vendor/Toko</strong> untuk toko atau pemasok barang. Pilih <strong>Narasumber/Instruktur</strong> untuk perorangan sebagai pembicara, pelatih, atau instruktur.</div>
+                    </div>
+
+                    <div class="alert alert-warning py-2 small mb-3">
+                        <i class="bi bi-clock-history me-1"></i>
+                        Data hanya dapat diedit selama masih menunggu verifikasi. Perubahan akan diperiksa oleh Tim Admin/Staff Monev BOS.
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold" id="editLabelName">Nama Toko / Vendor <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="name" id="editInputName" placeholder="Contoh: CV. Sukses Mandiri Jaya" required>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold">NPWP Vendor</label>
+                            <input type="text" class="form-control" name="npwp" placeholder="Contoh: 01.234.567.8-901.000">
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold">No. Telepon / WhatsApp</label>
+                            <input type="text" class="form-control" name="phone" placeholder="Contoh: 081234567890">
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold" id="editLabelOwnerName">Nama Penanggung Jawab / Pemilik</label>
+                            <input type="text" class="form-control" name="owner_name" id="editInputOwnerName" placeholder="Contoh: Ahmad Hidayat">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Alamat Lengkap Toko</label>
+                            <textarea class="form-control" name="address" rows="2" placeholder="Jl. Raya Yos Sudarso No. 12, Jakarta Utara"></textarea>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold">Nama Bank</label>
+                            <select class="form-select" name="bank_name">
+                                <option value="">-- Pilih Nama Bank --</option>
+                                {% for b in master_banks %}<option value="{{ b }}">{{ b }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold d-block">Jenis Rekening</label>
+                            <div class="d-flex gap-4 pt-2">
+                                <div class="form-check">
+                                    <input class="form-check-input bank-account-type" type="radio" name="bank_account_type" id="editAccountTypeRekening" value="rekening">
+                                    <label class="form-check-label" for="editAccountTypeRekening">Rekening</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input bank-account-type" type="radio" name="bank_account_type" id="editAccountTypeVa" value="va">
+                                    <label class="form-check-label" for="editAccountTypeVa">Virtual Account (VA)</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6" data-bank-account-field>
+                            <label class="form-label fw-semibold">No. Rekening Bank</label>
+                            <input type="text" class="form-control" name="bank_account" placeholder="Contoh: 12345678901">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer flex-column flex-sm-row">
+                    <button type="button" class="btn btn-secondary w-100 w-sm-auto mb-2 mb-sm-0" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary fw-bold w-100 w-sm-auto px-4">
+                        <i class="bi bi-save me-1"></i>Simpan Perubahan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function setVendorType(type) {
+    document.getElementById('hiddenVendorType').value = type;
+    const isNarsum = type === 'narsum';
+
+    // Toggle buttons
+    document.getElementById('btnTypeVendor').className = isNarsum ? 'btn btn-outline-primary fw-bold' : 'btn btn-primary fw-bold';
+    document.getElementById('btnTypeNarsum').className = isNarsum ? 'btn btn-info fw-bold text-white' : 'btn btn-outline-info fw-bold';
+
+    // Modal title & icon
+    document.getElementById('modalTitleText').textContent = isNarsum ? 'Daftarkan Narasumber / Instruktur Baru' : 'Daftarkan Vendor / Toko Baru';
+    document.getElementById('modalTitleIcon').className = isNarsum ? 'bi bi-person-video3 text-info me-2' : 'bi bi-shop text-primary me-2';
+
+    // Field labels — hanya 2 yang berubah sesuai tipe
+    document.getElementById('labelName').innerHTML = (isNarsum ? 'Nomer KTP' : 'Nama Toko / Vendor') + ' <span class="text-danger">*</span>';
+    document.getElementById('inputName').placeholder = isNarsum ? 'Contoh: 3175012345670001' : 'Contoh: CV. Sukses Mandiri Jaya';
+    document.getElementById('labelOwnerName').textContent = isNarsum ? 'Nama Narsum / Instruktur' : 'Nama Penanggung Jawab / Pemilik';
+    document.getElementById('inputOwnerName').placeholder = isNarsum ? 'Contoh: Dr. Budi Santoso, M.Pd.' : 'Contoh: Ahmad Hidayat';
+
+    // Submit button
+    document.getElementById('submitBtnText').textContent = isNarsum ? 'Kirim Pendaftaran Narasumber' : 'Kirim Pendaftaran Vendor';
+}
+
+function setEditVendorType(type) {
+    const normalizedType = type === 'narsum' ? 'narsum' : 'vendor';
+    const isNarsum = normalizedType === 'narsum';
+    document.getElementById('hiddenEditVendorType').value = normalizedType;
+
+    document.getElementById('btnEditTypeVendor').className = isNarsum ? 'btn btn-outline-primary fw-bold' : 'btn btn-primary fw-bold';
+    document.getElementById('btnEditTypeNarsum').className = isNarsum ? 'btn btn-info fw-bold text-white' : 'btn btn-outline-info fw-bold';
+
+    document.getElementById('editModalTitleText').textContent = isNarsum ? 'Edit Narasumber / Instruktur' : 'Edit Vendor / Toko';
+    document.getElementById('editModalTitleIcon').className = isNarsum ? 'bi bi-person-video3 text-info me-2' : 'bi bi-shop text-primary me-2';
+    document.getElementById('editLabelName').innerHTML = (isNarsum ? 'Nomer KTP' : 'Nama Toko / Vendor') + ' <span class="text-danger">*</span>';
+    document.getElementById('editInputName').placeholder = isNarsum ? 'Contoh: 3175012345670001' : 'Contoh: CV. Sukses Mandiri Jaya';
+    document.getElementById('editLabelOwnerName').textContent = isNarsum ? 'Nama Narsum / Instruktur' : 'Nama Penanggung Jawab / Pemilik';
+    document.getElementById('editInputOwnerName').placeholder = isNarsum ? 'Contoh: Dr. Budi Santoso, M.Pd.' : 'Contoh: Ahmad Hidayat';
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    function syncBankAccountField(form) {
+        const selected = form.querySelector('input[name="bank_account_type"]:checked');
+        const field = form.querySelector('[data-bank-account-field]');
+        if (!selected || !field) return;
+        const accountInput = field.querySelector('input[name="bank_account"]');
+        const isVa = selected.value === 'va';
+        field.classList.toggle('d-none', isVa);
+        accountInput.disabled = isVa;
+        if (isVa) accountInput.value = '';
+    }
+
+    document.querySelectorAll('form').forEach(function(form) {
+        if (!form.querySelector('.bank-account-type')) return;
+        form.querySelectorAll('.bank-account-type').forEach(function(radio) {
+            radio.addEventListener('change', function() { syncBankAccountField(form); });
+        });
+        syncBankAccountField(form);
+    });
+
+    const editModal = document.getElementById('editVendorModal');
+    if (editModal) {
+        editModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const form = document.getElementById('editVendorForm');
+            if (!button || !form) return;
+            const values = {
+                vendor_id: button.dataset.vendorId,
+                vendor_type: button.dataset.vendorType,
+                name: button.dataset.name,
+                npwp: button.dataset.npwp,
+                phone: button.dataset.phone,
+                owner_name: button.dataset.ownerName,
+                address: button.dataset.address,
+                bank_name: button.dataset.bankName,
+                bank_account: button.dataset.bankAccount
+            };
+            Object.entries(values).forEach(function(entry) {
+                const input = form.elements.namedItem(entry[0]);
+                if (input) input.value = entry[1] || '';
+            });
+            setEditVendorType(values.vendor_type);
+            const accountType = button.dataset.bankAccountType === 'va' ? 'va' : 'rekening';
+            const accountRadio = form.querySelector('input[name="bank_account_type"][value="' + accountType + '"]');
+            if (accountRadio) accountRadio.checked = true;
+            syncBankAccountField(form);
+        });
+    }
+
+    const searchInput = document.getElementById('vendorSearchInput');
+    if (!searchInput) return;
+
+    searchInput.addEventListener('input', function() {
+        const query = this.value.toLowerCase().trim();
+        const rows = document.querySelectorAll('.vendor-row, .vendor-card');
+
+        rows.forEach(item => {
+            const text = item.textContent.toLowerCase();
+            if (!query || text.includes(query)) {
+                item.style.display = '';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
