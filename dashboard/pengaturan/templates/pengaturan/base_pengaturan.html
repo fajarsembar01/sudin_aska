@@ -3,21 +3,111 @@
 {% block title %}{{ page_title|default("Pengaturan") }} - Pengaturan{% endblock %}
 
 {% block portal_nav %}
-<nav class="navbar navbar-expand-lg sticky-top">
+<style>
+  .settings-navbar { min-height: 76px; }
+  .settings-navbar .navbar-brand {
+    flex-shrink: 0;
+    gap: .65rem;
+    margin-right: 1.5rem;
+  }
+  .settings-navbar .brand-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+  }
+  .settings-navbar .navbar-collapse {
+    min-width: 0;
+    gap: 1rem;
+  }
+  .settings-navbar .navbar-nav { gap: .25rem; }
+  .settings-navbar .navbar-nav > .nav-item > .nav-link {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .6rem .8rem;
+    border-radius: 10px;
+    font-size: .9rem;
+    white-space: nowrap;
+  }
+  .settings-navbar .nav-link .nav-icon { margin: 0; }
+  .settings-navbar .nav-link.active {
+    color: var(--bs-primary);
+    background: rgba(13, 110, 253, .09);
+  }
+  .settings-navbar .user-nav-actions {
+    flex-shrink: 0;
+    gap: .85rem !important;
+  }
+  .settings-navbar .user-name {
+    max-width: 155px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .settings-navbar .user-menu-toggle { min-width: 0; }
+  .settings-navbar .dropdown-menu { font-size: .9rem; }
+  .settings-navbar .dropdown-item { padding: .65rem 1rem; }
+
+  @media (max-width: 1199.98px) {
+    .settings-navbar { min-height: auto; }
+    .settings-navbar .navbar-collapse { padding-top: .75rem; }
+    .settings-navbar .navbar-nav { padding-bottom: .75rem; }
+    .settings-navbar .user-nav-actions {
+      padding: .85rem 0 .25rem;
+      border-top: 1px solid var(--bs-border-color);
+      flex-wrap: wrap;
+    }
+    .settings-navbar .user-menu { margin-left: auto; }
+    .settings-navbar .navbar-nav .dropdown-menu {
+      margin: .25rem 0 0 .75rem;
+      border: 0;
+      background: var(--bs-tertiary-bg);
+    }
+  }
+
+  @media (max-width: 575.98px) {
+    .settings-navbar .user-name { display: none; }
+    .settings-navbar .user-dropdown {
+      min-width: min(280px, calc(100vw - 2rem));
+      max-width: calc(100vw - 2rem);
+    }
+    .settings-navbar .user-dropdown small { overflow-wrap: anywhere; }
+  }
+</style>
+<nav class="navbar navbar-expand-xl sticky-top settings-navbar" aria-label="Navigasi Pengaturan">
   <div class="container-fluid px-lg-4">
     <a class="navbar-brand" href="{{ url_for('pengaturan.admin_settings') }}">
       <span class="icon-badge brand-icon text-primary"><i class="bi bi-gear-fill"></i></span>
       <span class="fw-bold">Pengaturan</span>
     </a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#pengaturanNavbar">
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#pengaturanNavbar"
+      aria-controls="pengaturanNavbar" aria-expanded="false" aria-label="Buka menu navigasi">
       <span class="navbar-toggler-icon"></span>
     </button>
     <div class="collapse navbar-collapse" id="pengaturanNavbar">
-      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+      <ul class="navbar-nav me-auto mb-2 mb-xl-0">
         <li class="nav-item">
-          <a class="nav-link {% if request.args.get('tab', 'general') == 'general' %}active{% endif %}" href="{{ url_for('pengaturan.admin_settings', tab='general') }}">
+          <a class="nav-link {% if request.endpoint == 'pengaturan.admin_settings' and request.args.get('tab', 'general') == 'general' %}active{% endif %}" href="{{ url_for('pengaturan.admin_settings', tab='general') }}">
             <i class="bi bi-sliders nav-icon"></i>Umum
           </a>
+        </li>
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle {% if request.endpoint in ['pengaturan.manage_users', 'pengaturan.preview_accounts'] %}active{% endif %}"
+            href="#" id="accountSettingsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-people nav-icon"></i>Akun
+          </a>
+          <ul class="dropdown-menu shadow-sm border-0" aria-labelledby="accountSettingsDropdown">
+            <li>
+              <a class="dropdown-item {% if request.endpoint == 'pengaturan.manage_users' %}active{% endif %}" href="{{ url_for('pengaturan.manage_users') }}">
+                <i class="bi bi-people me-2 text-primary"></i>User Dashboard
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item {% if request.endpoint == 'pengaturan.preview_accounts' %}active{% endif %}" href="{{ url_for('pengaturan.preview_accounts') }}">
+                <i class="bi bi-eye me-2 text-primary"></i>Preview Akun
+              </a>
+            </li>
+          </ul>
         </li>
         <li class="nav-item">
           <a class="nav-link {% if request.args.get('tab') == 'notification' %}active{% endif %}" href="{{ url_for('pengaturan.admin_settings', tab='notification') }}">

@@ -15,6 +15,7 @@ from flask import (
 )
 
 from dashboard.auth import current_user, role_required
+from dashboard.portal import routes as portal_routes
 from dashboard.queries import (
     list_admin_users,
     fetch_telegram_notification_settings,
@@ -39,11 +40,33 @@ from .queries import (
     fetch_public_schools_api_data,
 )
 
-pengaturan_bp = Blueprint("pengaturan", __name__, url_prefix="/pengaturan", template_folder="templates")
+pengaturan_bp = Blueprint(
+    "pengaturan",
+    __name__,
+    url_prefix="/dashboard/pengaturan",
+    template_folder="templates",
+)
+pengaturan_legacy_bp = Blueprint(
+    "pengaturan_legacy",
+    __name__,
+    url_prefix="/pengaturan",
+)
 
 
-@pengaturan_bp.route("/", methods=["GET", "POST"])
+@pengaturan_legacy_bp.route("/", defaults={"path": ""}, methods=["GET", "POST"])
+@pengaturan_legacy_bp.route("/<path:path>", methods=["GET", "POST"])
+def legacy_settings_redirect(path: str) -> Response:
+    """Keep existing settings bookmarks and form targets working."""
+    target = url_for("pengaturan.admin_settings").rstrip("/")
+    if path:
+        target = f"{target}/{path}"
+    if request.query_string:
+        target = f"{target}?{request.query_string.decode('utf-8', errors='ignore')}"
+    return redirect(target, code=307 if request.method == "POST" else 302)
+
+
 @pengaturan_bp.route("/admin", methods=["GET", "POST"])
+@pengaturan_bp.route("/", methods=["GET", "POST"])
 @role_required("admin")
 def admin_settings() -> Response | str:
     user = current_user() or {}
@@ -203,6 +226,26 @@ def admin_settings() -> Response | str:
         active_tab=active_tab,
         page_title="Pengaturan Aplikasi Dashboard",
     )
+
+
+@pengaturan_bp.route("/users", methods=["GET", "POST"])
+@portal_routes._preview_access_required
+def manage_users() -> Response:
+    """Manage dashboard accounts from the central settings module."""
+    from dashboard.user_management import handle_manage_users
+
+    return handle_manage_users(
+        actor=portal_routes._preview_admin_actor(),
+        base_template="pengaturan/base_pengaturan.html",
+        read_only=portal_routes._is_preview_read_only_session(),
+    )
+
+
+@pengaturan_bp.route("/preview-akun", methods=["GET"])
+@portal_routes._preview_access_required
+def preview_accounts() -> Response:
+    """Open the account preview workspace from central settings."""
+    return portal_routes._render_preview_accounts()
 
 
 @pengaturan_bp.route("/public-api", methods=["GET", "POST"])

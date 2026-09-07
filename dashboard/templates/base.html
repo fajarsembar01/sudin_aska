@@ -186,7 +186,7 @@
 
                     {% if is_admin %}
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle {% if request.endpoint in ['auth.manage_users', 'auth.manage_aska_users', 'auth.manage_monev_teams', 'auth.telegram_notifications', 'auth.whatsapp_link_settings', 'auth.whatsapp_bridge_settings', 'main.admin_performance'] %}active{% endif %}"
+                        <a class="nav-link dropdown-toggle {% if request.endpoint in ['pengaturan.manage_users', 'pengaturan.preview_accounts', 'auth.manage_aska_users', 'auth.manage_monev_teams', 'auth.telegram_notifications', 'auth.whatsapp_link_settings', 'auth.whatsapp_bridge_settings', 'main.admin_performance'] %}active{% endif %}"
                             href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="bi bi-gear nav-icon"></i>Manajemen
                         </a>
@@ -201,8 +201,14 @@
                                 <hr class="dropdown-divider">
                             </li>
                             <li>
-                                <a class="dropdown-item {% if request.endpoint == 'auth.manage_users' %}active{% endif %}"
-                                    href="{{ url_for('auth.manage_users') }}">
+                                <a class="dropdown-item {% if request.endpoint == 'pengaturan.manage_users' %}active{% endif %}"
+                                    href="{{ url_for('pengaturan.manage_users') }}">
+                                    <i class="bi bi-people me-2"></i>User Dashboard
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if request.endpoint == 'pengaturan.preview_accounts' %}active{% endif %}"
+                                    href="{{ url_for('pengaturan.preview_accounts') }}">
                                     <i class="bi bi-eye me-2"></i>Preview Akun
                                 </a>
                             </li>

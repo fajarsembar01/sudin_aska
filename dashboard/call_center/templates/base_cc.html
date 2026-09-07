@@ -2,7 +2,41 @@
 {% set app_title = "ASKA Call Center" %}
 
 {% block portal_nav %}
-<nav class="navbar navbar-expand-lg sticky-top">
+<style>
+    .cc-navbar .navbar-brand { flex-shrink: 0; margin-right: 1.5rem; gap: .65rem; }
+    .cc-navbar .brand-icon { width: 40px; height: 40px; border-radius: 12px; }
+    .cc-navbar .navbar-nav { gap: .25rem; }
+    .cc-navbar .navbar-nav .nav-link {
+        display: flex; align-items: center; gap: .5rem; white-space: nowrap;
+        padding: .6rem .8rem; border-radius: 10px; font-size: .9rem;
+    }
+    .cc-navbar .nav-link .nav-icon { margin: 0; }
+    .cc-navbar .nav-link.active { background: rgba(13, 110, 253, .09); color: var(--bs-primary); }
+    .cc-navbar .user-nav-actions { flex-shrink: 0; gap: .85rem !important; }
+    .cc-navbar .user-name { max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .cc-navbar .user-menu-toggle { min-width: 0; }
+    .cc-navbar .dropdown-menu { font-size: .9rem; }
+    .cc-navbar .dropdown-item { padding: .65rem 1rem; }
+    .cc-navbar .cc-bridge-dot { flex-shrink: 0; width: 7px; height: 7px; border-radius: 50%; background: #dc3545; }
+    @media (min-width: 1200px) {
+        .cc-navbar { min-height: 76px; }
+        .cc-navbar .navbar-collapse { min-width: 0; gap: 1rem; }
+    }
+    @media (max-width: 1199.98px) {
+        .cc-navbar .navbar-collapse { padding-top: .75rem; }
+        .cc-navbar .navbar-nav { padding-bottom: .75rem; }
+        .cc-navbar .user-nav-actions { border-top: 1px solid var(--bs-border-color); padding: .85rem 0 .25rem; flex-wrap: wrap; }
+        .cc-navbar .user-menu { margin-left: auto; }
+        .cc-navbar .user-name { max-width: 130px; }
+        .cc-navbar .navbar-nav .dropdown-menu { border: 0; margin: .25rem 0 0 .75rem; background: var(--bs-tertiary-bg); }
+    }
+    @media (max-width: 575.98px) {
+        .cc-navbar .user-name { display: none; }
+        .cc-navbar .user-dropdown { max-width: calc(100vw - 2rem); min-width: min(280px, calc(100vw - 2rem)); }
+        .cc-navbar .user-dropdown small { overflow-wrap: anywhere; }
+    }
+</style>
+<nav class="navbar navbar-expand-xl sticky-top cc-navbar" aria-label="Navigasi Call Center">
     <div class="container-fluid px-lg-4">
         <a class="navbar-brand" href="{{ url_for('call_center.inbox') }}">
             <span class="icon-badge brand-icon text-primary">
@@ -10,13 +44,13 @@
             </span>
             <span class="fw-bold">Call Center</span>
         </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#ccNavbar">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#ccNavbar" aria-controls="ccNavbar" aria-expanded="false" aria-label="Buka menu navigasi">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="ccNavbar">
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <ul class="navbar-nav me-auto mb-2 mb-xl-0">
                 <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint == 'call_center.inbox' %}active{% endif %}"
+                    <a class="nav-link {% if request.endpoint in ['call_center.inbox', 'call_center.thread'] %}active{% endif %}"
                         href="{{ url_for('call_center.inbox') }}">
                         <i class="bi bi-inbox nav-icon"></i>Inbox
                         {% if cc_unread_count %}
@@ -24,6 +58,7 @@
                         {% endif %}
                     </a>
                 </li>
+                {% if current_user.role == 'admin' %}
                 <li class="nav-item">
                     <a class="nav-link {% if request.endpoint == 'call_center.stats' %}active{% endif %}"
                         href="{{ url_for('call_center.stats') }}">
@@ -31,25 +66,25 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint == 'call_center.settings_wa' %}active{% endif %}"
-                        href="{{ url_for('call_center.settings_wa') }}">
-                        <i class="bi bi-whatsapp nav-icon"></i>WhatsApp
-                        <span id="cc-bridge-nav-dot" class="d-none ms-1" title="Bridge tidak aktif"
-                              style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#dc3545;vertical-align:middle;"></span>
+                    <a class="nav-link {% if request.endpoint == 'call_center.staff_access' %}active{% endif %}" href="{{ url_for('call_center.staff_access') }}">
+                        <i class="bi bi-person-check nav-icon"></i>Akses Staf
                     </a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint == 'call_center.settings_telegram' %}active{% endif %}"
-                        href="{{ url_for('call_center.settings_telegram') }}">
-                        <i class="bi bi-telegram nav-icon"></i>Telegram
+                {% set settings_endpoints = ['call_center.settings_wa', 'call_center.settings_telegram', 'call_center.media_manager'] %}
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle {% if request.endpoint in settings_endpoints %}active{% endif %}"
+                       href="#" id="ccSettingsMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-gear nav-icon"></i>Pengaturan
+                        <span id="cc-bridge-nav-dot" class="d-none cc-bridge-dot" title="WhatsApp Bridge tidak aktif" aria-label="WhatsApp Bridge tidak aktif"></span>
                     </a>
+                    <ul class="dropdown-menu" aria-labelledby="ccSettingsMenu">
+                        <li><a class="dropdown-item {% if request.endpoint == 'call_center.settings_wa' %}active{% endif %}" href="{{ url_for('call_center.settings_wa') }}"><i class="bi bi-whatsapp me-2"></i>WhatsApp</a></li>
+                        <li><a class="dropdown-item {% if request.endpoint == 'call_center.settings_telegram' %}active{% endif %}" href="{{ url_for('call_center.settings_telegram') }}"><i class="bi bi-telegram me-2"></i>Telegram</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item {% if request.endpoint == 'call_center.media_manager' %}active{% endif %}" href="{{ url_for('call_center.media_manager') }}"><i class="bi bi-folder2-open me-2"></i>Media Manager</a></li>
+                    </ul>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint == 'call_center.media_manager' %}active{% endif %}"
-                        href="{{ url_for('call_center.media_manager') }}">
-                        <i class="bi bi-folder2-open nav-icon"></i>Media Manager
-                    </a>
-                </li>
+                {% endif %}
             </ul>
 
             <div class="d-flex align-items-center gap-3 user-nav-actions">
@@ -60,7 +95,7 @@
                 {% set notification_extra_include = 'portal/components/_notification_admin_quick.html' %}
                 {% include "portal/components/_notification_dropdown.html" with context %}
                 {% endif %}
-                <a href="{{ url_for('main.admin_select_role') }}"
+                <a href="{{ url_for('main.admin_select_role') if current_user.role == 'admin' else url_for('portal.home') }}"
                     class="btn btn-outline-secondary btn-sm text-nowrap oss-home-btn">
                     <i class="bi bi-house me-1"></i><span class="oss-home-label">Home</span>
                 </a>
@@ -80,6 +115,7 @@
     </div>
 </nav>
 
+{% if current_user.role == 'admin' %}
 <!-- Bridge Status Banner -->
 <div id="cc-bridge-alert" class="d-none">
     <div class="alert alert-warning alert-dismissible mb-0 rounded-0 border-0 border-bottom py-2 px-3" role="alert"
@@ -158,4 +194,5 @@
 })();
 </script>
 
+{% endif %}
 {% endblock %}

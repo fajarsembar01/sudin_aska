@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import io
 import os
 import sys
 
@@ -140,3 +141,77 @@ def test_bulk_camera_photo_uses_shared_camera_processor(monkeypatch):
     assert response.json["success"] is True
     assert response.json["photo_id"] == 91
     assert saved[0][0:2] == (44, "live_photo")
+
+
+def test_staff_camera_photo_accepts_multipart_file(monkeypatch):
+    app = Flask(__name__)
+    saved = []
+    _configure_staff_action_route(monkeypatch)
+    monkeypatch.setattr(
+        routes,
+        "_save_camera_photo_file",
+        lambda uploaded, root, relative_dir: (
+            "static/uploads/monev_bos/353/44/live_photo/camera.jpg",
+            None,
+        ),
+    )
+    monkeypatch.setattr(routes.os.path, "getsize", lambda _path: 12345)
+    monkeypatch.setattr(
+        routes.queries,
+        "add_activity_doc",
+        lambda *args: saved.append(args) or 92,
+    )
+    monkeypatch.setattr(routes, "_record_monev_admin_action", lambda *args, **kwargs: None)
+
+    with app.test_request_context(
+        "/monev-bos/staff/verifikasi/kegiatan/44",
+        method="POST",
+        headers={"X-Requested-With": "XMLHttpRequest", "Accept": "application/json"},
+        data={
+            "action": "upload_photo",
+            "live_photo_file": (io.BytesIO(b"image bytes"), "staff-camera.jpg"),
+        },
+    ):
+        response = routes.staff_audit_activity.__wrapped__(44)
+
+    assert response.json["success"] is True
+    assert response.json["photo_id"] == 92
+    assert saved[0][0:2] == (44, "live_photo")
+
+
+def test_staff_camera_photo_requires_photo_payload(monkeypatch):
+    app = Flask(__name__)
+    _configure_staff_action_route(monkeypatch)
+
+    with app.test_request_context(
+        "/monev-bos/staff/verifikasi/kegiatan/44",
+        method="POST",
+        headers={"X-Requested-With": "XMLHttpRequest", "Accept": "application/json"},
+        data={"action": "upload_photo"},
+    ):
+        response, status = routes.staff_audit_activity.__wrapped__(44)
+
+    assert status == 400
+    assert response.json["success"] is False
+    assert "Ambil foto" in response.json["message"]
+
+
+def test_staff_camera_photo_is_saved_at_most_200_kb(tmp_path):
+    from PIL import Image
+    from werkzeug.datastructures import FileStorage
+
+    # Random pixels are deliberately difficult to compress and exercise both
+    # quality reduction and image resizing.
+    image = Image.frombytes("RGB", (1800, 1800), os.urandom(1800 * 1800 * 3))
+    source = io.BytesIO()
+    image.save(source, format="PNG")
+    source.seek(0)
+    upload = FileStorage(stream=source, filename="camera.png", content_type="image/png")
+
+    relative_dir = "monev_bos/test/live_photo"
+    db_path, error = routes._save_camera_photo_file(upload, str(tmp_path), relative_dir)
+
+    assert error is None
+    assert db_path is not None
+    saved_path = tmp_path / relative_dir / os.path.basename(db_path)
+    assert saved_path.stat().st_size <= 200 * 1024

@@ -5,7 +5,8 @@ import os
 from datetime import timedelta
 
 from flask import Flask
-from flask_wtf.csrf import CSRFProtect
+from flask_wtf.csrf import CSRFError, CSRFProtect
+from werkzeug.exceptions import RequestEntityTooLarge
 
 from .auth import auth_bp, current_user, init_oauth
 from .routes import main_bp
@@ -18,7 +19,7 @@ from .call_center import call_center_api_bp, call_center_bp
 from .penugasan import penugasan_bp
 from .cms.routes import cms_bp
 from .laporan import laporan_bp
-from .pengaturan import pengaturan_bp
+from .pengaturan import pengaturan_bp, pengaturan_legacy_bp
 from .db_access import shutdown_pool
 from .queries import fetch_pending_bullying_count, fetch_pending_psych_count, fetch_pending_corruption_count
 from .schema import ensure_dashboard_schema, ensure_laporan_schema, ensure_monev_bos_schema
@@ -59,6 +60,34 @@ def create_app() -> Flask:
     app.config["MAX_CONTENT_LENGTH"] = _max_upload_mb * 1024 * 1024
 
     csrf = CSRFProtect(app)
+
+    @app.errorhandler(CSRFError)
+    def handle_csrf_error(error):
+        from flask import jsonify, request
+
+        if (
+            request.headers.get("X-Requested-With") == "XMLHttpRequest"
+            or request.accept_mimetypes.best == "application/json"
+        ):
+            return jsonify({
+                "success": False,
+                "message": "Sesi formulir telah kedaluwarsa. Muat ulang halaman lalu coba simpan kembali.",
+            }), 400
+        return error.get_response()
+
+    @app.errorhandler(RequestEntityTooLarge)
+    def handle_request_too_large(error):
+        from flask import jsonify, request
+
+        if (
+            request.headers.get("X-Requested-With") == "XMLHttpRequest"
+            or request.accept_mimetypes.best == "application/json"
+        ):
+            return jsonify({
+                "success": False,
+                "message": "Ukuran foto yang dikirim terlalu besar. Ambil ulang foto lalu coba kembali.",
+            }), 413
+        return error.get_response()
     from flask_cors import CORS
 
     CORS(
@@ -90,6 +119,7 @@ def create_app() -> Flask:
     from .monev_bos.routes import monev_bos_bp
     app.register_blueprint(monev_bos_bp)
     app.register_blueprint(pengaturan_bp)
+    app.register_blueprint(pengaturan_legacy_bp)
     
     # Exempt public API endpoints from CSRF
     from .adiwiyata.routes import api_adiwiyata_likes
@@ -247,7 +277,7 @@ def create_app() -> Flask:
 
                 admin_pending = fetch_admin_pending_summary()
                 admin_notification_items = [
-                    {"href": url_for("portal.manage_users"), "title": "User baru", "subtitle": "Menunggu verifikasi akun", "count": admin_pending.get("pending_users", 0), "item_id": "adminPendingUsersItem", "count_id": "adminPendingUsersCount", "badge_class": "bg-warning text-dark"},
+                    {"href": url_for("pengaturan.manage_users"), "title": "User baru", "subtitle": "Menunggu verifikasi akun", "count": admin_pending.get("pending_users", 0), "item_id": "adminPendingUsersItem", "count_id": "adminPendingUsersCount", "badge_class": "bg-warning text-dark"},
                     {"href": url_for("portal.admin_manage_staff"), "title": "Permintaan penugasan", "subtitle": "Koordinator ajukan penugasan staff", "count": admin_pending.get("pending_assignment_requests", 0), "item_id": "adminPendingAssignmentItem", "count_id": "adminPendingAssignmentCount", "badge_class": "bg-info text-dark"},
                     {"href": url_for("portal.manage_monev_teams"), "title": "Permintaan anggota tim", "subtitle": "Persetujuan anggota monev", "count": admin_pending.get("pending_team_member_requests", 0), "item_id": "adminPendingTeamItem", "count_id": "adminPendingTeamCount", "badge_class": "bg-primary"},
                     {"href": url_for("portal.admin_reopen_requests"), "title": "Permintaan reopen", "subtitle": "Penilaian diajukan untuk dibuka", "count": admin_pending.get("pending_reopen_requests", 0), "item_id": "adminPendingReopenItem", "count_id": "adminPendingReopenCount", "badge_class": "bg-danger"},

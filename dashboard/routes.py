@@ -644,7 +644,8 @@ def admin_select_role() -> Response:
         cards=cards,
         default_col_class=default_col_class,
         enable_odd_center=False,
-        container_class="role-selection-wide",
+        container_class="role-selection-wide admin-role-selection",
+        mobile_compact=True,
         show_logout=True,
     )
 

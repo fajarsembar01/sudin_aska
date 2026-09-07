@@ -265,7 +265,7 @@ def _enforce_preview_read_only_mode() -> Response | None:
     if not _is_preview_read_only_session():
         return None
     return _preview_read_only_block_response(
-        fallback_url=url_for("portal.preview_accounts")
+        fallback_url=url_for("pengaturan.preview_accounts")
     )
 
 

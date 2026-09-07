@@ -909,6 +909,10 @@
             </button>
             <div class="collapse navbar-collapse" id="portalNavbar">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    {% if can_answer_call_center_access %}
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('call_center.inbox') }}"><i class="bi bi-headset nav-icon"></i>Call Center</a></li>
+                    {% endif %}
+
                     {% if not current_user or current_user.role == 'admin' %}
                     {% set home_active_endpoints = ['portal.admin_stats'] %}
                     <li class="nav-item">
@@ -1032,7 +1036,7 @@
                     <!-- Admin dropdown with new Kelola Staff -->
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle {% if ('admin' in request.endpoint and request.endpoint != 'portal.admin_stats') 
-                        or request.endpoint in ['portal.manage_monev_teams', 'portal.portal_kontak_wilayah', 'portal.manage_users', 'portal.preview_accounts', 'portal.sekolah_rooms'] %} active {% endif %}"
+                        or request.endpoint in ['portal.manage_monev_teams', 'portal.portal_kontak_wilayah', 'portal.sekolah_rooms'] %} active {% endif %}"
                         href="#" data-bs-toggle="dropdown">
                             <i class="bi bi-gear nav-icon"></i>Admin
                         </a>
@@ -1067,18 +1071,6 @@
                             </li>
                             <li>
                                 <hr class="dropdown-divider">
-                            </li>
-                            <li>
-                                <a class="dropdown-item {% if request.endpoint == 'portal.manage_users' %}active{% endif %}"
-                                    href="{{ url_for('portal.manage_users') }}">
-                                    <i class="bi bi-people me-2"></i>User Dashboard
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item {% if request.endpoint == 'portal.preview_accounts' %}active{% endif %}"
-                                    href="{{ url_for('portal.preview_accounts') }}">
-                                    <i class="bi bi-eye me-2"></i>Preview Akun
-                                </a>
                             </li>
                             <li>
                                 <a class="dropdown-item" href="{{ url_for('portal.manage_monev_teams') }}">

@@ -379,7 +379,7 @@ def _enforce_preview_read_only_mode() -> Response | None:
     if not _is_preview_read_only_session():
         return None
     return _preview_read_only_block_response(
-        fallback_url=url_for("portal.preview_accounts")
+        fallback_url=url_for("pengaturan.preview_accounts")
     )
 
 
@@ -1957,6 +1957,20 @@ def home() -> Response:
                     "col_class": "col-lg-4 col-md-6 col-12",
                 },
             )
+        if role == "staff":
+            from dashboard.call_center.access import can_answer_call_center
+
+            if can_answer_call_center():
+                cards.insert(
+                    0,
+                    {
+                        "title": "Call Center",
+                        "description": "Baca dan jawab pesan Call Center yang masuk.",
+                        "icon": "bi-headset",
+                        "href": url_for("call_center.inbox"),
+                        "col_class": "col-lg-4 col-md-6 col-12",
+                    },
+                )
         return render_template(
             "role_selection.html",
             page_title="ASKA Portal - Pilih Layanan Staff ",
@@ -2007,6 +2021,19 @@ def home() -> Response:
                 "col_class": "col-md-6 col-12",
             },
         ]
+        from dashboard.call_center.access import can_answer_call_center
+
+        if can_answer_call_center():
+            cards.insert(
+                0,
+                {
+                    "title": "Call Center",
+                    "description": "Baca dan jawab pesan Call Center yang masuk.",
+                    "icon": "bi-headset",
+                    "href": url_for("call_center.inbox"),
+                    "col_class": "col-md-6 col-12",
+                },
+            )
         return render_template(
             "role_selection.html",
             page_title="ASKA Portal - Pilih Layanan Koordinator",
@@ -9045,6 +9072,14 @@ def inject_permissions():
     if not user:
         return {}
     can_view_laporan_answers = _staff_can_view_laporan_answers(user)
+    can_answer_call_center_access = False
+    if user.get("role") in {"staff", "coordinator"}:
+        try:
+            from dashboard.call_center.access import can_answer_call_center
+
+            can_answer_call_center_access = can_answer_call_center()
+        except Exception:
+            current_app.logger.exception("Failed to check Call Center staff access")
 
     # Keep session photo state in sync with DB so modal rules reflect latest admin changes.
     session_photo_path = user.get("profile_photo_path")
@@ -9154,7 +9189,7 @@ def inject_permissions():
 
         admin_notification_items = [
             {
-                "href": url_for("portal.manage_users"),
+                "href": url_for("pengaturan.manage_users"),
                 "title": "User baru",
                 "subtitle": "Menunggu verifikasi akun",
                 "count": admin_pending.get("pending_users", 0),
@@ -9223,6 +9258,7 @@ def inject_permissions():
         "is_superadmin": is_superadmin(user),
         "can_access_aska": can_access_aska(user),
         "can_view_laporan_answers": can_view_laporan_answers,
+        "can_answer_call_center_access": can_answer_call_center_access,
         "user_school": user_school,
         "area_contacts": area_contacts,
         "admin_pending": admin_pending,
@@ -9735,7 +9771,10 @@ def _sanitize_preview_return_url(raw_url: str | None) -> str | None:
         return None
 
     # Prevent redirect loop back into preview workspace/stop endpoint.
-    if path == url_for("portal.preview_accounts") or path.startswith(
+    if path in {
+        url_for("portal.preview_accounts"),
+        url_for("pengaturan.preview_accounts"),
+    } or path.startswith(
         "/portal/preview/"
     ):
         return None
@@ -9836,19 +9875,21 @@ def _find_preview_target(user_id: int) -> dict | None:
 @portal_bp.route("/settings/users", methods=["GET", "POST"])
 @_preview_access_required
 def manage_users() -> Response:
-    """Manage dashboard users from Portal app."""
-    from dashboard.user_management import handle_manage_users
-
-    return handle_manage_users(
-        actor=_preview_admin_actor(),
-        base_template="portal/base_portal.html",
-        read_only=_is_preview_read_only_session(),
+    """Redirect the former Portal URL to central settings."""
+    return redirect(
+        url_for("pengaturan.manage_users"),
+        code=307 if request.method == "POST" else 302,
     )
 
 
 @portal_bp.route("/settings/preview-akun", methods=["GET"])
 @_preview_access_required
 def preview_accounts() -> Response:
+    """Redirect the former Portal URL to central settings."""
+    return redirect(url_for("pengaturan.preview_accounts"))
+
+
+def _render_preview_accounts() -> Response:
     """Admin preview workspace for target accounts."""
     actor = _preview_admin_actor()
     pinned_ids: list[int] = []

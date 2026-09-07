@@ -1367,6 +1367,41 @@ def _save_uploaded_file(file, base_dir, sub_path, max_size_bytes=100 * 1024):
     except Exception:
         return None, "File gambar gagal diproses. Pastikan file tidak rusak."
 
+def _compress_camera_photo(image, max_size_bytes=200 * 1024):
+    """Encode a camera image as JPEG without exceeding the size limit."""
+    image = ImageOps.exif_transpose(image)
+    if image.mode != "RGB":
+        image = image.convert("RGB")
+    image.thumbnail((1200, 1200), Image.Resampling.LANCZOS)
+
+    quality = 82
+    while True:
+        output = io.BytesIO()
+        image.save(output, format="JPEG", quality=quality, optimize=True)
+        if output.tell() <= max_size_bytes:
+            return output.getvalue()
+
+        if quality > 32:
+            quality -= 10
+            continue
+
+        width, height = image.size
+        longest_side = max(width, height)
+        if longest_side > 320:
+            scale = max(320 / longest_side, 0.82)
+            image = image.resize(
+                (max(1, round(width * scale)), max(1, round(height * scale))),
+                Image.Resampling.LANCZOS,
+            )
+            quality = 72
+            continue
+
+        if quality > 10:
+            quality = max(10, quality - 5)
+            continue
+        return None
+
+
 def _save_camera_photo(data_url, base_dir, sub_path):
     if not data_url:
         return None, "Foto kegiatan wajib diambil langsung dari kamera."
@@ -1378,16 +1413,43 @@ def _save_camera_photo(data_url, base_dir, sub_path):
         if not header.startswith("data:image/"):
             return None, "Format foto kamera harus berupa gambar."
         image_bytes = base64.b64decode(encoded)
-        img = Image.open(io.BytesIO(image_bytes))
-        if img.mode in ("RGBA", "P"):
-            img = img.convert("RGB")
+        compressed_bytes = _compress_camera_photo(Image.open(io.BytesIO(image_bytes)))
+        if compressed_bytes is None:
+            return None, "Foto tidak dapat dikompres hingga maksimal 200 KB."
 
         upload_dir = os.path.join(base_dir, sub_path)
         os.makedirs(upload_dir, exist_ok=True)
         filename = f"camera_{uuid.uuid4().hex[:10]}.jpg"
         file_path = os.path.join(upload_dir, filename)
-        img.thumbnail((1200, 1200), Image.Resampling.LANCZOS)
-        img.save(file_path, format="JPEG", quality=75, optimize=True)
+        with open(file_path, "wb") as file_handle:
+            file_handle.write(compressed_bytes)
+        return f"static/uploads/{sub_path}/{filename}", None
+    except Exception:
+        return None, "Foto kamera gagal diproses. Silakan ambil ulang foto."
+
+
+def _save_camera_photo_file(file_storage, base_dir, sub_path):
+    """Save a camera image sent as a multipart file.
+
+    Camera photos used to be posted as a base64 form field. Large phone photos
+    can exceed Werkzeug's per-field memory limit even when the application's
+    overall upload limit is much higher. Multipart files are streamed instead.
+    """
+    if not file_storage or not file_storage.filename:
+        return None, "Foto kegiatan wajib diambil langsung dari kamera."
+
+    try:
+        file_storage.stream.seek(0)
+        compressed_bytes = _compress_camera_photo(Image.open(file_storage.stream))
+        if compressed_bytes is None:
+            return None, "Foto tidak dapat dikompres hingga maksimal 200 KB."
+
+        upload_dir = os.path.join(base_dir, sub_path)
+        os.makedirs(upload_dir, exist_ok=True)
+        filename = f"camera_{uuid.uuid4().hex[:10]}.jpg"
+        file_path = os.path.join(upload_dir, filename)
+        with open(file_path, "wb") as file_handle:
+            file_handle.write(compressed_bytes)
         return f"static/uploads/{sub_path}/{filename}", None
     except Exception:
         return None, "Foto kamera gagal diproses. Silakan ambil ulang foto."
@@ -3544,11 +3606,27 @@ def staff_audit_activity(activity_id):
             return jsonify({"success": True, "status": act.get("status") if act else target_status})
             
         elif action == "upload_photo":
+            image_file = request.files.get("live_photo_file")
             image_data = request.form.get("live_photo_data")
-            if image_data:
+            if image_file and image_file.filename:
+                upload_root = os.path.join(monev_bos_bp.root_path, "..", "static", "uploads")
+                relative_dir = f"monev_bos/{report_id}/{activity_id}/live_photo"
+                db_path, error = _save_camera_photo_file(image_file, upload_root, relative_dir)
+            elif image_data:
+                # Backward compatibility for older pages that still submit a
+                # base64 field. New pages use multipart files to avoid the
+                # server's per-form-field size limit.
                 upload_root = os.path.join(monev_bos_bp.root_path, "..", "static", "uploads")
                 relative_dir = f"monev_bos/{report_id}/{activity_id}/live_photo"
                 db_path, error = _save_camera_photo(image_data, upload_root, relative_dir)
+            else:
+                message = "Ambil foto terlebih dahulu sebelum menyimpan."
+                if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.headers.get("Accept") == "application/json":
+                    return jsonify({"success": False, "message": message}), 400
+                flash(message, "warning")
+                return redirect(url_for("monev_bos.staff_audit_report", report_id=report_id))
+
+            if image_file or image_data:
                 if error:
                     if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.headers.get("Accept") == "application/json":
                         return jsonify({"success": False, "message": error}), 400

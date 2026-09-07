@@ -977,7 +977,9 @@
                                     {% if act.has_school_live_photo %}
                                     <div class="d-flex align-items-center gap-2 mt-2 pt-1 border-top flex-wrap">
                                         <small class="text-success text-xs"><i class="bi bi-shield-check me-1"></i>Foto sekolah masuk perhitungan laporan.</small>
-                                        <button type="button" class="btn btn-xs btn-outline-secondary ms-auto text-nowrap py-1 px-2" onclick="openCameraModal({{ act.id }})">
+                                        <button type="button" class="btn btn-xs btn-outline-secondary ms-auto text-nowrap py-1 px-2"
+                                                data-upload-url="{{ url_for('monev_bos.staff_audit_activity', activity_id=act.id) }}"
+                                                onclick="openCameraModal({{ act.id }}, false, this.dataset.uploadUrl)">
                                             <i class="bi bi-camera me-1"></i> Foto Live Tambahan
                                         </button>
                                     </div>
@@ -986,7 +988,9 @@
                                         {% if act.staff_photos %}
                                         <small class="text-danger text-xs d-block mb-2"><i class="bi bi-info-circle me-1"></i>Foto staff tersedia, tetapi tidak masuk perhitungan foto sekolah.</small>
                                         {% endif %}
-                                        <button type="button" class="btn btn-sm btn-primary py-1 px-2 text-xs" onclick="openCameraModal({{ act.id }})">
+                                        <button type="button" class="btn btn-sm btn-primary py-1 px-2 text-xs"
+                                                data-upload-url="{{ url_for('monev_bos.staff_audit_activity', activity_id=act.id) }}"
+                                                onclick="openCameraModal({{ act.id }}, false, this.dataset.uploadUrl)">
                                             <i class="bi bi-camera me-1"></i> Ambil Foto Live (Staff)
                                         </button>
                                     </div>
@@ -1371,7 +1375,8 @@
          data-item="{{ act.item_name or '-' }}"
          data-audit-notes="{{ act.audit_notes or '' }}"
          data-vendor-missing="{{ 'true' if act.vendor_required_missing else 'false' }}"
-         data-can-valid="{{ 'false' if act.vendor_verification_blocked else 'true' }}">
+         data-can-valid="{{ 'false' if act.vendor_verification_blocked else 'true' }}"
+         data-action-url="{{ url_for('monev_bos.staff_audit_activity', activity_id=act.id) }}">
         {% for photo in act.school_photos %}
         <span data-bulk-media data-kind="image" data-url="/{{ photo.file_path }}" data-label="Foto Sekolah{% if not photo.is_audit_valid %} · Tidak Sah{% endif %}" data-invalid="{{ 'true' if not photo.is_audit_valid else 'false' }}"></span>
         {% endfor %}
@@ -1663,10 +1668,10 @@
         });
     }
 
-    function openCameraModal(activityId, fromBulkMode) {
+    function openCameraModal(activityId, fromBulkMode, uploadUrl) {
         cameraActivityId = String(activityId);
         bulkCameraActivityId = fromBulkMode ? String(activityId) : null;
-        uploadForm.action = "{{ url_for('monev_bos.staff_audit_activity', activity_id=0) }}".replace('0', activityId);
+        uploadForm.action = uploadUrl;
         const myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('cameraModal'));
         myModal.show();
         startCamera();
@@ -1762,13 +1767,32 @@
         const reader = new FileReader();
         reader.onload = function (event) {
             const dataUrl = event.target.result;
-            preview.src = dataUrl;
-            livePhotoDataInput.value = dataUrl;
-            video.style.display = 'none';
-            cameraControls.style.display = 'none';
-            preview.style.display = 'block';
-            previewControls.style.display = 'block';
-            stopCamera();
+            const image = new Image();
+            image.onload = function () {
+                const MAX_DIMENSION = 1200;
+                let width = image.naturalWidth;
+                let height = image.naturalHeight;
+                const scale = Math.min(1, MAX_DIMENSION / Math.max(width, height));
+                width = Math.max(1, Math.round(width * scale));
+                height = Math.max(1, Math.round(height * scale));
+                canvas.width = width;
+                canvas.height = height;
+                canvas.getContext('2d').drawImage(image, 0, 0, width, height);
+
+                const normalizedDataUrl = canvas.toDataURL('image/jpeg', 0.78);
+                preview.src = normalizedDataUrl;
+                livePhotoDataInput.value = normalizedDataUrl;
+                video.style.display = 'none';
+                cameraControls.style.display = 'none';
+                preview.style.display = 'block';
+                previewControls.style.display = 'block';
+                stopCamera();
+            };
+            image.onerror = function () {
+                alert('Format foto tidak dapat dibaca browser. Gunakan foto JPG/PNG atau ambil ulang melalui kamera.');
+                input.value = '';
+            };
+            image.src = dataUrl;
         };
         reader.onerror = function () {
             alert('Foto gagal dibaca. Silakan ambil ulang.');
@@ -1783,6 +1807,19 @@
         previewControls.style.display = 'none';
         livePhotoDataInput.value = '';
         nativeCameraInput.value = '';
+    }
+
+    function dataUrlToBlob(dataUrl) {
+        const parts = dataUrl.split(',', 2);
+        if (parts.length !== 2) throw new Error('Format foto tidak valid. Silakan ambil ulang.');
+        const mimeMatch = parts[0].match(/^data:([^;]+);base64$/);
+        if (!mimeMatch) throw new Error('Format foto tidak valid. Silakan ambil ulang.');
+        const binary = atob(parts[1]);
+        const bytes = new Uint8Array(binary.length);
+        for (let index = 0; index < binary.length; index += 1) {
+            bytes[index] = binary.charCodeAt(index);
+        }
+        return new Blob([bytes], { type: mimeMatch[1] });
     }
     
     document.getElementById('cameraModal').addEventListener('hidden.bs.modal', function () {
@@ -1805,16 +1842,38 @@
         uploadButton.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Menyimpan…';
 
         try {
+            // Send the photo as a multipart file. A base64 string is a regular
+            // form field and large phone photos can be rejected by the server's
+            // per-field memory limit before the route is reached.
+            const formData = new FormData(uploadForm);
+            const photoBlob = dataUrlToBlob(livePhotoDataInput.value);
+            formData.delete('live_photo_data');
+            formData.append('live_photo_file', photoBlob, 'staff-camera.jpg');
             const response = await fetch(uploadForm.action, {
                 method: 'POST',
+                credentials: 'same-origin',
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
                     'X-CSRFToken': '{{ csrf_token() }}',
                     'Accept': 'application/json'
                 },
-                body: new FormData(uploadForm)
+                body: formData
             });
-            const result = await response.json().catch(function () { return {}; });
+            const responseText = await response.text();
+            let result;
+            try {
+                result = JSON.parse(responseText);
+            } catch (parseError) {
+                if (response.redirected && new URL(response.url).pathname.includes('/login')) {
+                    result = { message: 'Sesi login telah berakhir. Muat ulang halaman dan login kembali.' };
+                } else if (response.status === 400) {
+                    result = { message: 'Sesi formulir tidak valid. Muat ulang halaman lalu coba kembali.' };
+                } else if (response.status === 413) {
+                    result = { message: 'Ukuran foto terlalu besar. Silakan ambil ulang foto.' };
+                } else {
+                    result = { message: 'Upload gagal (HTTP ' + response.status + ') pada ' + new URL(uploadForm.action).pathname + '.' };
+                }
+            }
             if (!response.ok || !result.success) throw new Error(result.message || 'Foto staff gagal disimpan.');
             if (openedFromBulkMode && window.bulkCheckAddStaffPhoto) {
                 window.bulkCheckAddStaffPhoto(activityId, result.photo_url);
@@ -1860,6 +1919,7 @@
                 auditNotes: source.dataset.auditNotes || '',
                 vendorMissing: source.dataset.vendorMissing === 'true',
                 canValid: source.dataset.canValid === 'true',
+                actionUrl: source.dataset.actionUrl,
                 media: media
             };
         });
@@ -2276,7 +2336,7 @@
         validButton.addEventListener('click', function () { requestDecision('valid', 'right'); });
         takePhotoButton.addEventListener('click', function () {
             const activity = currentActivity();
-            if (activity) openCameraModal(activity.id, true);
+            if (activity) openCameraModal(activity.id, true, activity.actionUrl);
         });
         revisionBackdrop.addEventListener('click', function () {
             revisionSheet.classList.remove('is-open');

@@ -302,6 +302,14 @@ def role_required(*roles: str) -> Callable:
         def wrapper(*args, **kwargs):
             user = current_user()
             if not user:
+                if (
+                    request.headers.get("X-Requested-With") == "XMLHttpRequest"
+                    or request.accept_mimetypes.best == "application/json"
+                ):
+                    return jsonify({
+                        "success": False,
+                        "message": "Sesi login telah berakhir. Muat ulang halaman dan login kembali.",
+                    }), 401
                 # flash("Silakan login terlebih dahulu.", "warning")
                 return redirect(url_for("auth.login", next=request.path))
 
@@ -813,11 +821,7 @@ def google_callback() -> Response:
 @auth_bp.route("/settings/users", methods=["GET", "POST"])
 @role_required("admin")
 def manage_users() -> Response:
-    from dashboard.user_management import handle_manage_users
-
-    return handle_manage_users(
-        actor=current_user(), base_template="base.html", read_only=True
-    )
+    return redirect(url_for("pengaturan.preview_accounts"))
 
 
 @auth_bp.route("/settings/monev-teams", methods=["GET", "POST"])

@@ -43,6 +43,7 @@ from dashboard.queries import (
 
 from ..auth import current_user, role_required
 from . import call_center_api_bp, call_center_bp
+from .access import can_answer_call_center, list_staff_access, operator_required, update_staff_access
 from .media import (
     CC_MEDIA_ROOT,
     call_center_media_label,
@@ -1052,7 +1053,7 @@ def api_callcenter_import_history() -> Response:
 
 
 @call_center_bp.route("/")
-@role_required("admin")
+@operator_required
 def inbox() -> Response:
     """Main inbox view listing all conversations."""
     args = request.args
@@ -1199,7 +1200,7 @@ def stats() -> Response:
 
 
 @call_center_bp.route("/thread/<int:conv_id>")
-@role_required("admin")
+@operator_required
 def thread(conv_id: int) -> Response:
     """Conversation thread view."""
     page = request.args.get("page", default=1, type=int) or 1
@@ -1260,7 +1261,7 @@ def thread(conv_id: int) -> Response:
 
 
 @call_center_bp.route("/media/<path:filename>")
-@role_required("admin")
+@operator_required
 def media_file(filename: str) -> Response:
     """Serve stored WhatsApp media for authenticated dashboard admins."""
     target_path = resolve_call_center_media_path(filename)
@@ -1274,7 +1275,7 @@ def media_file(filename: str) -> Response:
 
 
 @call_center_bp.route("/api/send", methods=["POST"])
-@role_required("admin")
+@operator_required
 def api_send() -> Response:
     """Send a reply to a WA user."""
     user = current_user() or {}
@@ -1396,7 +1397,7 @@ def api_send() -> Response:
 
 
 @call_center_bp.route("/api/conversations")
-@role_required("admin")
+@operator_required
 def api_conversations() -> Response:
     """JSON API for polling conversations."""
     status_filter = request.args.get("status") or None
@@ -1414,7 +1415,7 @@ def api_conversations() -> Response:
 
 
 @call_center_bp.route("/api/messages/<int:conv_id>")
-@role_required("admin")
+@operator_required
 def api_messages(conv_id: int) -> Response:
     """JSON API for polling messages."""
     after_id = request.args.get("after_id", type=int)
@@ -1423,21 +1424,21 @@ def api_messages(conv_id: int) -> Response:
 
 
 @call_center_bp.route("/api/message/<int:message_id>", methods=["POST", "PUT"])
-@role_required("admin")
+@operator_required
 def api_message_detail(message_id: int) -> Response:
     """Edit an outbound message that was already sent."""
     return _handle_message_edit(message_id)
 
 
 @call_center_bp.route("/edit-message", methods=["POST"])
-@role_required("admin")
+@operator_required
 def message_edit() -> Response:
     """Edit endpoint outside /api for proxies that restrict API paths."""
     return _handle_message_edit_from_request()
 
 
 @call_center_bp.route("/api/edit-message", methods=["POST"])
-@role_required("admin")
+@operator_required
 def api_message_edit() -> Response:
     """FormData-compatible edit endpoint for production proxies."""
     return _handle_message_edit_from_request()
@@ -1521,7 +1522,7 @@ def _handle_message_edit(message_id: int, data=None) -> Response:
 
 
 @call_center_bp.route("/api/drafts/<int:draft_id>/use", methods=["POST"])
-@role_required("admin")
+@operator_required
 def api_draft_use(draft_id: int) -> Response:
     user = current_user() or {}
     try:
@@ -1539,7 +1540,7 @@ def api_draft_use(draft_id: int) -> Response:
 
 
 @call_center_bp.route("/api/close/<int:conv_id>", methods=["POST"])
-@role_required("admin")
+@operator_required
 def api_close(conv_id: int) -> Response:
     user = current_user() or {}
     close_conversation(conv_id)
@@ -1558,7 +1559,7 @@ def api_close(conv_id: int) -> Response:
 
 
 @call_center_bp.route("/api/reopen/<int:conv_id>", methods=["POST"])
-@role_required("admin")
+@operator_required
 def api_reopen(conv_id: int) -> Response:
     user = current_user() or {}
     reopen_conversation(conv_id)
@@ -1577,7 +1578,7 @@ def api_reopen(conv_id: int) -> Response:
 
 
 @call_center_bp.route("/api/drafts", methods=["GET", "POST"])
-@role_required("admin")
+@operator_required
 def api_drafts() -> Response:
     user = current_user() or {}
     admin_user_id = user.get("id")
@@ -1657,7 +1658,7 @@ def api_drafts() -> Response:
 
 
 @call_center_bp.route("/api/drafts/<int:draft_id>", methods=["PUT", "DELETE"])
-@role_required("admin")
+@operator_required
 def api_draft_detail(draft_id: int) -> Response:
     user = current_user() or {}
     admin_user_id = user.get("id")
@@ -1771,7 +1772,7 @@ def api_draft_detail(draft_id: int) -> Response:
 
 
 @call_center_bp.route("/api/drafts/<int:draft_id>/pin", methods=["POST"])
-@role_required("admin")
+@operator_required
 def api_draft_pin(draft_id: int) -> Response:
     user = current_user() or {}
     admin_user_id = user.get("id")
@@ -2450,3 +2451,31 @@ def sync_history() -> Response:
         return jsonify({"success": True, "message": msg, "result": result})
     flash(msg, "success")
     return _settings_wa_redirect(bridge_key)
+
+
+@call_center_bp.app_context_processor
+def inject_call_center_access():
+    return {"can_answer_call_center": can_answer_call_center}
+
+
+@call_center_bp.route("/staff-access", methods=["GET", "POST"])
+@role_required("admin")
+def staff_access():
+    if request.method == "POST":
+        try:
+            action = request.form.get("action")
+            if action not in {"grant", "revoke"}:
+                raise ValueError("Tindakan tidak valid.")
+            try:
+                user_ids = {int(value) for value in request.form.getlist("user_ids")}
+            except ValueError:
+                raise ValueError("Pilihan staf tidak valid.") from None
+            update_staff_access(user_ids, grant=action == "grant", actor_id=current_user()["id"])
+            flash(f"Akses {len(user_ids)} staf berhasil " + ("diberikan." if action == "grant" else "dicabut."), "success")
+        except ValueError as exc:
+            flash(str(exc), "warning")
+        except Exception:
+            current_app.logger.exception("Gagal memperbarui akses staf Call Center")
+            flash("Gagal menyimpan akses staf. Silakan coba lagi.", "danger")
+        return redirect(url_for("call_center.staff_access"))
+    return render_template("cc_staff_access.html", staff=list_staff_access())
