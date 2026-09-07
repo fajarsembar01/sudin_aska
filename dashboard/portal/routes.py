@@ -1979,7 +1979,7 @@ def home() -> Response:
                 "title": "Laporan",
                 "description": "Lihat laporan dan riwayat laporan yang masuk.",
                 "icon": "bi-file-earmark-text",
-                "href": url_for("laporan.staff_laporan_list"),
+                "href": url_for("laporan.admin_laporan_list"),
                 "col_class": "col-md-6 col-12",
             },
         ]

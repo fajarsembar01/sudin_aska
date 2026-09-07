@@ -14,6 +14,70 @@ from ..db_access import get_cursor
 # ─────────────────────────────────────────────
 
 
+def has_laporan_answer_access(user_id: int) -> bool:
+    """Return whether an approved staff account may inspect report answers."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT 1
+            FROM laporan_answer_access a
+            JOIN dashboard_users u ON u.id = a.user_id
+            WHERE a.user_id = %s
+              AND u.role = 'staff'
+              AND u.account_status = 'approved'
+            LIMIT 1
+            """,
+            (user_id,),
+        )
+        return cur.fetchone() is not None
+
+
+def list_laporan_answer_access_staff() -> list[dict]:
+    """List approved staff accounts and their report-answer access state."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT u.id, u.full_name, u.email, u.nip, u.jabatan,
+                   (a.user_id IS NOT NULL) AS has_answer_access,
+                   a.granted_at,
+                   grantor.full_name AS granted_by_name
+            FROM dashboard_users u
+            LEFT JOIN laporan_answer_access a ON a.user_id = u.id
+            LEFT JOIN dashboard_users grantor ON grantor.id = a.granted_by
+            WHERE u.role = 'staff'
+              AND u.account_status = 'approved'
+            ORDER BY COALESCE(u.full_name, u.email) ASC, u.id ASC
+            """
+        )
+        return [dict(row) for row in cur.fetchall()]
+
+
+def replace_laporan_answer_access(
+    user_ids: list[int], *, granted_by: Optional[int]
+) -> int:
+    """Replace the staff answer-access list and return the granted count."""
+    normalized_ids = sorted({int(user_id) for user_id in user_ids if user_id})
+    with get_cursor(commit=True) as cur:
+        cur.execute("DELETE FROM laporan_answer_access")
+        if not normalized_ids:
+            return 0
+        cur.execute(
+            """
+            INSERT INTO laporan_answer_access (user_id, granted_by)
+            SELECT u.id, %s
+            FROM dashboard_users u
+            WHERE u.id = ANY(%s)
+              AND u.role = 'staff'
+              AND u.account_status = 'approved'
+            ON CONFLICT (user_id) DO UPDATE
+            SET granted_by = EXCLUDED.granted_by,
+                granted_at = NOW()
+            """,
+            (granted_by, normalized_ids),
+        )
+        return cur.rowcount
+
+
 def list_all_forms(include_inactive: bool = False) -> list[dict]:
     """List all forms (for admin)."""
     with get_cursor() as cur:
@@ -931,21 +995,38 @@ def get_form_target_schools(form: dict) -> list[dict]:
     with get_cursor() as cur:
         if target_scope == "all":
             cur.execute(
-                "SELECT id, name, npsn, jenjang, status, metadata FROM portal_schools WHERE active=TRUE"
+                """
+                SELECT sc.id, sc.name, sc.npsn, sc.jenjang, sc.status, sc.metadata,
+                       k.name AS kecamatan_name
+                FROM portal_schools sc
+                LEFT JOIN portal_kelurahan l ON l.id = sc.kelurahan_id
+                LEFT JOIN portal_kecamatan k ON k.id = l.kecamatan_id
+                WHERE sc.active=TRUE
+                """
             )
             return [dict(r) for r in cur.fetchall()]
         elif target_scope == "jenjang":
             cur.execute(
-                "SELECT id, name, npsn, jenjang, status, metadata FROM portal_schools WHERE active=TRUE AND jenjang = %s",
+                """
+                SELECT sc.id, sc.name, sc.npsn, sc.jenjang, sc.status, sc.metadata,
+                       k.name AS kecamatan_name
+                FROM portal_schools sc
+                LEFT JOIN portal_kelurahan l ON l.id = sc.kelurahan_id
+                LEFT JOIN portal_kecamatan k ON k.id = l.kecamatan_id
+                WHERE sc.active=TRUE AND sc.jenjang = %s
+                """,
                 (target_jenjang,),
             )
             return [dict(r) for r in cur.fetchall()]
         elif target_scope == "specific":
             cur.execute(
                 """
-                SELECT sc.id, sc.name, sc.npsn, sc.jenjang, sc.status, sc.metadata 
+                SELECT sc.id, sc.name, sc.npsn, sc.jenjang, sc.status, sc.metadata,
+                       k.name AS kecamatan_name
                 FROM portal_schools sc
                 JOIN laporan_form_targets ft ON ft.school_id = sc.id
+                LEFT JOIN portal_kelurahan l ON l.id = sc.kelurahan_id
+                LEFT JOIN portal_kecamatan k ON k.id = l.kecamatan_id
                 WHERE sc.active=TRUE AND ft.form_id = %s
                 """,
                 (form.get("id"),),
@@ -970,10 +1051,14 @@ def list_form_submissions(form_id: int) -> list[dict]:
                    COALESCE(sc.name, u.full_name, u.email, 'Staff') AS school_name,
                    COALESCE(sc.npsn, '-') AS npsn,
                    COALESCE(sc.jenjang, 'Staff') AS jenjang,
+                   k.name AS kecamatan_name,
+                   sc.status AS school_status,
                    u.full_name AS submitted_by_name
             FROM laporan_submissions s
             JOIN laporan_forms f ON f.id = s.form_id
             LEFT JOIN portal_schools sc ON sc.id = s.school_id
+            LEFT JOIN portal_kelurahan l ON l.id = sc.kelurahan_id
+            LEFT JOIN portal_kecamatan k ON k.id = l.kecamatan_id
             LEFT JOIN dashboard_users u ON u.id = s.submitted_by
             WHERE s.form_id = %s AND s.status IN ('submitted', 'no_submission')
             ORDER BY s.repeat_period_key DESC NULLS LAST, s.submitted_at DESC NULLS LAST, s.created_at DESC, COALESCE(sc.name, u.full_name, 'Staff') ASC
@@ -1001,8 +1086,23 @@ def _answer_export_value(field: dict, answer: Optional[dict]) -> str:
     return answer.get("answer_text", "") or ""
 
 
+def _matches_export_values(value: object, selected: object) -> bool:
+    """Match one value against an optional single- or multi-value export filter."""
+    if not selected:
+        return True
+    raw_values = selected if isinstance(selected, (list, tuple, set)) else [selected]
+    normalized = {
+        str(item).strip().casefold() for item in raw_values if str(item).strip()
+    }
+    return not normalized or str(value or "").strip().casefold() in normalized
+
+
 def export_form_xlsx(
-    form_id: int, filter_period: Optional[str] = None
+    form_id: int,
+    filter_period: Optional[str] = None,
+    jenjang: Optional[object] = None,
+    kecamatan: Optional[str] = None,
+    school_status: Optional[str] = None,
 ) -> tuple[str, bytes]:
     """
     Export all submitted answers for a form as a styled Excel workbook.
@@ -1026,11 +1126,31 @@ def export_form_xlsx(
         submissions = [
             s for s in submissions if s.get("repeat_period_key") == filter_period
         ]
+    if jenjang:
+        submissions = [
+            s
+            for s in submissions
+            if _matches_export_values(s.get("jenjang"), jenjang)
+        ]
+    if kecamatan:
+        submissions = [
+            s
+            for s in submissions
+            if (s.get("kecamatan_name") or "").casefold() == kecamatan.casefold()
+        ]
+    if school_status:
+        submissions = [
+            s
+            for s in submissions
+            if (s.get("school_status") or "").casefold() == school_status.casefold()
+        ]
     header = [
         "No",
         "Sekolah",
         "NPSN",
         "Jenjang",
+        "Kecamatan",
+        "Jenis Sekolah",
         "Disubmit Oleh",
         "Periode",
         "Waktu Submit",
@@ -1064,6 +1184,8 @@ def export_form_xlsx(
             sub.get("school_name", ""),
             sub.get("npsn", ""),
             sub.get("jenjang", ""),
+            sub.get("kecamatan_name", "") or "",
+            sub.get("school_status", "") or "",
             sub.get("submitted_by_name", "") or "",
             sub.get("repeat_period_label", "") or "",
             (
@@ -1168,7 +1290,11 @@ def export_form_csv(form_id: int) -> tuple[str, bytes]:
 
 
 def export_no_submissions_xlsx(
-    form_id: int, filter_period: Optional[str] = None
+    form_id: int,
+    filter_period: Optional[str] = None,
+    jenjang: Optional[object] = None,
+    kecamatan: Optional[str] = None,
+    school_status: Optional[str] = None,
 ) -> tuple[str, bytes]:
     """
     Export the list of schools that did not submit for a form as an Excel workbook.
@@ -1186,6 +1312,25 @@ def export_no_submissions_xlsx(
 
     # Get all target schools
     target_schools = get_form_target_schools(form)
+    if jenjang:
+        target_schools = [
+            school
+            for school in target_schools
+            if _matches_export_values(school.get("jenjang"), jenjang)
+        ]
+    if kecamatan:
+        target_schools = [
+            school
+            for school in target_schools
+            if (school.get("kecamatan_name") or "").casefold()
+            == kecamatan.casefold()
+        ]
+    if school_status:
+        target_schools = [
+            school
+            for school in target_schools
+            if (school.get("status") or "").casefold() == school_status.casefold()
+        ]
 
     # Get submissions for the form
     submissions = list_form_submissions(form_id)
@@ -1210,7 +1355,16 @@ def export_no_submissions_xlsx(
             submissions[0].get("repeat_period_label") or filter_period
         )
 
-    header = ["No", "Sekolah", "NPSN", "Jenjang", "Periode", "Status"]
+    header = [
+        "No",
+        "Sekolah",
+        "NPSN",
+        "Jenjang",
+        "Kecamatan",
+        "Jenis Sekolah",
+        "Periode",
+        "Status",
+    ]
 
     wb = Workbook()
     ws = wb.active
@@ -1234,6 +1388,8 @@ def export_no_submissions_xlsx(
             sc.get("name", ""),
             sc.get("npsn", ""),
             sc.get("jenjang", ""),
+            sc.get("kecamatan_name", "") or "",
+            sc.get("status", "") or "",
             period_label_for_export,
             "Tidak Mengumpulkan",
         ]

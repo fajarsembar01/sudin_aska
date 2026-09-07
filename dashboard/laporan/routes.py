@@ -57,8 +57,10 @@ from .queries import (
     get_form_target_schools,
     get_last_submission_answers,
     get_submission_with_answers,
+    has_laporan_answer_access,
     list_all_forms,
     list_all_schools_simple,
+    list_laporan_answer_access_staff,
     list_form_submissions,
     list_forms_for_school,
     list_forms_for_staff,
@@ -66,6 +68,7 @@ from .queries import (
     list_staff_submissions,
     replace_answer_files,
     replace_form_fields,
+    replace_laporan_answer_access,
     save_answer,
     save_file,
     school_has_submitted,
@@ -132,12 +135,43 @@ def inject_laporan_context():
         _selected_no_submission_statuses
     )
     user = current_user() or {}
+    role = user.get("role")
+    context["can_view_laporan_answers"] = role in {"admin", "coordinator"}
+    if role == "staff" and user.get("id"):
+        try:
+            context["can_view_laporan_answers"] = has_laporan_answer_access(
+                int(user["id"])
+            )
+        except Exception:
+            current_app.logger.exception("Failed to check laporan answer access")
+            context["can_view_laporan_answers"] = False
     if user.get("role") == "sekolah":
         try:
             context["user_school"] = _fetch_user_school(user.get("id"))
         except Exception:
             context["user_school"] = None
     return context
+
+
+def _can_view_laporan_answers(user: Optional[dict] = None) -> bool:
+    user = user or current_user() or {}
+    role = user.get("role")
+    if role in {"admin", "coordinator"}:
+        return True
+    if role != "staff" or not user.get("id"):
+        return False
+    try:
+        return has_laporan_answer_access(int(user["id"]))
+    except Exception:
+        current_app.logger.exception("Failed to validate laporan answer access")
+        return False
+
+
+def _laporan_answer_access_denied(*, api: bool = False) -> Response:
+    if api:
+        return jsonify({"status": "error", "message": "Akses tidak diizinkan."}), 403
+    flash("Anda belum diberi hak akses untuk melihat jawaban laporan.", "danger")
+    return redirect(url_for("laporan.staff_laporan_list"))
 
 
 @laporan_bp.before_request
@@ -1378,6 +1412,8 @@ def staff_laporan_list() -> Response:
     user = current_user()
     if not user:
         return redirect(url_for("portal.login"))
+    if user.get("role") == "coordinator":
+        return redirect(url_for("laporan.admin_laporan_list"))
     # Hanya izinkan role bukan sekolah & bukan admin (admin pakai halaman /admin)
     if user.get("role") in ("sekolah",):
         flash("Akses tidak diizinkan.", "danger")
@@ -2838,16 +2874,58 @@ def sekolah_laporan_edit_submission(submission_id: int) -> Response:
 
 
 @laporan_bp.route("/admin")
-@role_required("admin")
+@role_required("admin", "coordinator", "staff")
 def admin_laporan_list() -> Response:
-    """Admin: daftar semua form laporan."""
+    """Admin manages forms; coordinators can inspect published-form answers."""
+    user = current_user() or {}
+    if not _can_view_laporan_answers(user):
+        return _laporan_answer_access_denied()
+    read_only = user.get("role") != "admin"
     forms = list_all_forms(include_inactive=True)
+    if read_only:
+        forms = [form for form in forms if form.get("status") == "published"]
     now = datetime.now(JAKARTA_TZ)
     for form in forms:
         _annotate_repeat_form(form, now)
         if form.get("status") != "draft":
             form["share_caption"] = _build_form_share_caption(form, now)
-    return render_template("laporan/admin/list.html", forms=forms)
+    return render_template(
+        "laporan/admin/list.html", forms=forms, read_only=read_only
+    )
+
+
+@laporan_bp.route("/admin/akses-jawaban", methods=["GET", "POST"])
+@role_required("admin")
+def admin_laporan_answer_access() -> Response:
+    """Admin: configure which staff accounts may inspect report answers."""
+    user = current_user() or {}
+    if request.method == "POST":
+        selected_user_ids = [
+            int(value)
+            for value in request.form.getlist("user_ids[]")
+            if value.isdigit()
+        ]
+        granted_count = replace_laporan_answer_access(
+            selected_user_ids, granted_by=user.get("id")
+        )
+        _record_laporan_admin_action(
+            "UPDATE_ANSWER_ACCESS",
+            "LAPORAN_ACCESS",
+            metadata={
+                "granted_count": granted_count,
+                "selected_user_ids": selected_user_ids,
+            },
+        )
+        flash(
+            f"Hak akses jawaban laporan berhasil disimpan untuk {granted_count} staff.",
+            "success",
+        )
+        return redirect(url_for("laporan.admin_laporan_answer_access"))
+
+    return render_template(
+        "laporan/admin/answer_access.html",
+        staff_users=list_laporan_answer_access_staff(),
+    )
 
 
 @laporan_bp.route("/admin/buat", methods=["GET", "POST"])
@@ -3321,9 +3399,13 @@ def admin_laporan_preview(form_id: int) -> Response:
 
 
 @laporan_bp.route("/admin/<int:form_id>/jawaban")
-@role_required("admin")
+@role_required("admin", "coordinator", "staff")
 def admin_laporan_answers(form_id: int) -> Response:
-    """Admin: lihat semua jawaban yang masuk untuk form ini."""
+    """Admin/coordinator: lihat semua jawaban yang masuk untuk form ini."""
+    user = current_user() or {}
+    if not _can_view_laporan_answers(user):
+        return _laporan_answer_access_denied()
+    read_only = user.get("role") != "admin"
     sync_no_submissions(form_id)
     form = get_form(form_id)
     if not form:
@@ -3383,6 +3465,27 @@ def admin_laporan_answers(form_id: int) -> Response:
     # Calculate accurate target vs missing counts
     target_schools = get_form_target_schools(form)
     total_target = len(target_schools)
+    export_filter_jenjangs = sorted(
+        {
+            (school.get("jenjang") or "").strip()
+            for school in target_schools
+            if (school.get("jenjang") or "").strip()
+        }
+    )
+    export_filter_kecamatans = sorted(
+        {
+            (school.get("kecamatan_name") or "").strip()
+            for school in target_schools
+            if (school.get("kecamatan_name") or "").strip()
+        }
+    )
+    export_filter_school_statuses = sorted(
+        {
+            (school.get("status") or "").strip().upper()
+            for school in target_schools
+            if (school.get("status") or "").strip()
+        }
+    )
     # Submitted for this period
     total_submitted = len([s for s in submissions if s.get("status") == "submitted"])
     # Not submitted for this period (target - submitted)
@@ -3407,6 +3510,10 @@ def admin_laporan_answers(form_id: int) -> Response:
         total_submitted=total_submitted,
         total_missing=total_missing,
         total_unique_schools_submitted=unique_schools_submitted,
+        read_only=read_only,
+        export_filter_jenjangs=export_filter_jenjangs,
+        export_filter_kecamatans=export_filter_kecamatans,
+        export_filter_school_statuses=export_filter_school_statuses,
     )
 
 
@@ -3551,9 +3658,11 @@ def admin_laporan_delete_submission(form_id: int, submission_id: int) -> Respons
 
 
 @laporan_bp.route("/admin/<int:form_id>/export")
-@role_required("admin")
+@role_required("admin", "coordinator", "staff")
 def admin_laporan_export(form_id: int) -> Response:
-    """Admin: export semua jawaban ke Excel."""
+    """Admin/coordinator: export semua jawaban ke Excel."""
+    if not _can_view_laporan_answers():
+        return _laporan_answer_access_denied()
     sync_no_submissions(form_id)
     form = get_form(form_id)
     if not form:
@@ -3561,7 +3670,18 @@ def admin_laporan_export(form_id: int) -> Response:
         return redirect(url_for("laporan.admin_laporan_list"))
 
     filter_period = request.args.get("period") or request.args.get("date") or "all"
-    filename, xlsx_bytes = export_form_xlsx(form_id, filter_period)
+    filename, xlsx_bytes = export_form_xlsx(
+        form_id,
+        filter_period,
+        jenjang=[
+            value.strip()
+            for value in request.args.getlist("jenjang")
+            if value.strip()
+        ]
+        or None,
+        kecamatan=(request.args.get("kecamatan") or "").strip() or None,
+        school_status=(request.args.get("school_status") or "").strip() or None,
+    )
     return send_file(
         io.BytesIO(xlsx_bytes),
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -3571,9 +3691,11 @@ def admin_laporan_export(form_id: int) -> Response:
 
 
 @laporan_bp.route("/admin/<int:form_id>/export-no-submission")
-@role_required("admin")
+@role_required("admin", "coordinator", "staff")
 def admin_laporan_export_no_submission(form_id: int) -> Response:
-    """Admin: export list sekolah yang tidak mengumpulkan ke Excel."""
+    """Admin/coordinator: export list sekolah yang tidak mengumpulkan ke Excel."""
+    if not _can_view_laporan_answers():
+        return _laporan_answer_access_denied()
     sync_no_submissions(form_id)
     form = get_form(form_id)
     if not form:
@@ -3581,7 +3703,18 @@ def admin_laporan_export_no_submission(form_id: int) -> Response:
         return redirect(url_for("laporan.admin_laporan_list"))
 
     filter_period = request.args.get("period") or request.args.get("date") or "all"
-    filename, xlsx_bytes = export_no_submissions_xlsx(form_id, filter_period)
+    filename, xlsx_bytes = export_no_submissions_xlsx(
+        form_id,
+        filter_period,
+        jenjang=[
+            value.strip()
+            for value in request.args.getlist("jenjang")
+            if value.strip()
+        ]
+        or None,
+        kecamatan=(request.args.get("kecamatan") or "").strip() or None,
+        school_status=(request.args.get("school_status") or "").strip() or None,
+    )
     return send_file(
         io.BytesIO(xlsx_bytes),
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -3648,12 +3781,16 @@ def admin_laporan_delete(form_id: int) -> Response:
 
 
 @laporan_bp.route("/uploads/<path:filepath>")
-@role_required("sekolah", "admin", "coordinator")
+@role_required("sekolah", "admin", "coordinator", "staff")
 def laporan_serve_file(filepath: str) -> Response:
     """Serve uploaded laporan files securely."""
     from pathlib import PurePosixPath
 
-    from flask import abort, send_from_directory
+    from flask import abort
+
+    user = current_user() or {}
+    if user.get("role") == "staff" and not _can_view_laporan_answers(user):
+        abort(403)
 
     file_path = PurePosixPath(filepath)
     if ".." in file_path.parts:
@@ -3732,9 +3869,11 @@ def _get_category_schools_data(form_id: int, period: str, category: str) -> list
 
 
 @laporan_bp.route("/admin/<int:form_id>/category_schools_api")
-@role_required("admin")
+@role_required("admin", "coordinator", "staff")
 def admin_laporan_category_schools_api(form_id: int) -> Response:
-    """Admin: get list of schools for a specific category (target/submitted/missing/unique)."""
+    """Admin/coordinator: get schools for a report summary category."""
+    if not _can_view_laporan_answers():
+        return _laporan_answer_access_denied(api=True)
     try:
         period = request.args.get("period", "all")
         category = request.args.get("category", "target")
@@ -3746,9 +3885,11 @@ def admin_laporan_category_schools_api(form_id: int) -> Response:
 
 
 @laporan_bp.route("/admin/<int:form_id>/category_schools_export")
-@role_required("admin")
+@role_required("admin", "coordinator", "staff")
 def admin_laporan_category_schools_export(form_id: int) -> Response:
-    """Admin: export list of schools for a specific category to Excel."""
+    """Admin/coordinator: export schools for a report summary category."""
+    if not _can_view_laporan_answers():
+        return _laporan_answer_access_denied()
     try:
         import openpyxl
 

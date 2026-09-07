@@ -1869,6 +1869,7 @@ def ensure_dashboard_schema() -> None:
         _LAPORAN_SUBMISSION_ANSWERS_INDEX_SQL,
         _LAPORAN_SUBMISSION_FILES_SQL,
         _LAPORAN_SUBMISSION_FILES_INDEX_SQL,
+        _LAPORAN_ANSWER_ACCESS_SQL,
     )
 
     # Execute statements one by one to ensure partial success and better error reporting
@@ -2149,6 +2150,16 @@ _LAPORAN_SUBMISSION_FILES_INDEX_SQL = """
 CREATE INDEX IF NOT EXISTS idx_laporan_files_answer ON laporan_submission_files (answer_id);
 """
 
+_LAPORAN_ANSWER_ACCESS_SQL = """
+CREATE TABLE IF NOT EXISTS laporan_answer_access (
+    user_id INTEGER PRIMARY KEY REFERENCES dashboard_users(id) ON DELETE CASCADE,
+    granted_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    granted_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_laporan_answer_access_granted_by
+ON laporan_answer_access (granted_by);
+"""
+
 
 def ensure_laporan_schema() -> None:
     """Create laporan (form reports) tables without touching unrelated schema."""
@@ -2178,6 +2189,7 @@ def ensure_laporan_schema() -> None:
         _LAPORAN_SUBMISSION_ANSWERS_INDEX_SQL,
         _LAPORAN_SUBMISSION_FILES_SQL,
         _LAPORAN_SUBMISSION_FILES_INDEX_SQL,
+        _LAPORAN_ANSWER_ACCESS_SQL,
     )
     for i, statement in enumerate(statements):
         try:

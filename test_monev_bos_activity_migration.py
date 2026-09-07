@@ -18,6 +18,50 @@ def test_school_bku_number_requires_exactly_three_digits():
     assert routes._school_bku_number("0001")[1] is not None
 
 
+def test_checklist_completion_matches_staff_applicability_rules():
+    checklists = [
+        {"id": 1, "expense_type_ids": []},
+        {"id": 2, "expense_type_ids": [10]},
+        {"id": 3, "expense_type_ids": [20]},
+    ]
+    activities = [
+        {
+            "expense_type_id": 10,
+            "checklist_results": [
+                {"checklist_id": 1, "status": "yes"},
+                {"checklist_id": 2, "status": "no"},
+                {"checklist_id": 3, "status": "yes"},
+            ],
+        },
+        {
+            # Staff applies every active checklist when Jenis Belanja is empty.
+            "expense_type_id": None,
+            "checklist_results": [
+                {"checklist_id": 1, "status": "yes"},
+                {"checklist_id": 2, "status": "yes"},
+            ],
+        },
+    ]
+
+    metrics = routes._checklist_completion_metrics(activities, checklists)
+
+    assert metrics == {
+        "checklist_yes": 3,
+        "checklist_no": 2,
+        "checklist_total": 5,
+        "checklist_percent": 60.0,
+    }
+
+
+def test_checklist_completion_handles_no_applicable_checklists():
+    assert routes._checklist_completion_metrics([], []) == {
+        "checklist_yes": 0,
+        "checklist_no": 0,
+        "checklist_total": 0,
+        "checklist_percent": 0,
+    }
+
+
 def _configure_activity_route(monkeypatch, activity, report_status="draft"):
     monkeypatch.setattr(routes, "current_user", lambda: {"id": 10, "role": "sekolah"})
     monkeypatch.setattr(routes.queries, "get_active_periods", lambda: [{"id": 2}])

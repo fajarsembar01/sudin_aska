@@ -137,14 +137,15 @@
                     </p>
                 </div>
                 <div class="d-flex gap-2 flex-wrap">
-                    <a href="{{ url_for('laporan.admin_laporan_export', form_id=form.id, period=filter_period) }}"
-                        class="btn btn-success d-inline-flex align-items-center gap-2">
+                    <button type="button" class="btn btn-success d-inline-flex align-items-center gap-2"
+                        onclick='openExportFilter({{ url_for("laporan.admin_laporan_export", form_id=form.id) | tojson }}, "Download Excel Jawaban")'>
                         <i class="bi bi-file-earmark-excel"></i> Download Excel
-                    </a>
-                    <a href="{{ url_for('laporan.admin_laporan_export_no_submission', form_id=form.id, period=filter_period) }}"
-                        class="btn btn-danger d-inline-flex align-items-center gap-2">
+                    </button>
+                    <button type="button" class="btn btn-danger d-inline-flex align-items-center gap-2"
+                        onclick='openExportFilter({{ url_for("laporan.admin_laporan_export_no_submission", form_id=form.id) | tojson }}, "Download Excel Tidak Mengumpulkan")'>
                         <i class="bi bi-file-earmark-excel-fill"></i> Download Excel (Tidak Mengumpulkan)
-                    </a>
+                    </button>
+                    {% if not read_only %}
                     <a href="{{ url_for('laporan.admin_laporan_edit', form_id=form.id) }}"
                         class="btn btn-outline-secondary d-inline-flex align-items-center gap-2">
                         <i class="bi bi-pencil"></i> Edit Form
@@ -157,11 +158,71 @@
                             <i class="bi bi-trash"></i> Hapus Semua Media
                         </button>
                     </form>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
 </section>
+
+{# Excel Export Filter Modal #}
+<div class="modal fade" id="exportFilterModal" tabindex="-1" aria-labelledby="exportFilterModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="GET" id="exportFilterForm">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="exportFilterModalLabel">Filter Download Excel</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="period" value="{{ filter_period }}">
+                    <div class="mb-3">
+                        <span class="form-label fw-semibold d-block">Jenjang</span>
+                        <div class="border rounded-3 p-3 d-flex flex-wrap gap-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="exportFilterJenjangAll" checked
+                                    onchange="selectAllExportJenjang(this)">
+                                <label class="form-check-label fw-semibold" for="exportFilterJenjangAll">Semua Jenjang</label>
+                            </div>
+                            {% for jenjang in export_filter_jenjangs %}
+                            <div class="form-check">
+                                <input class="form-check-input export-jenjang-option" type="checkbox" name="jenjang"
+                                    value="{{ jenjang }}" id="exportFilterJenjang{{ loop.index }}"
+                                    onchange="syncExportJenjangAll()">
+                                <label class="form-check-label" for="exportFilterJenjang{{ loop.index }}">{{ jenjang }}</label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="exportFilterKecamatan" class="form-label fw-semibold">Kecamatan</label>
+                        <select class="form-select" id="exportFilterKecamatan" name="kecamatan">
+                            <option value="">Semua Kecamatan</option>
+                            {% for kecamatan in export_filter_kecamatans %}
+                            <option value="{{ kecamatan }}">{{ kecamatan }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label for="exportFilterSchoolStatus" class="form-label fw-semibold">Jenis Sekolah</label>
+                        <select class="form-select" id="exportFilterSchoolStatus" name="school_status">
+                            <option value="">Semua Jenis Sekolah</option>
+                            {% for school_status in export_filter_school_statuses %}
+                            <option value="{{ school_status }}">{{ school_status }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-success d-inline-flex align-items-center gap-2">
+                        <i class="bi bi-download"></i> Download Excel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
 {# Period Filter Form #}
 {% if is_periodic %}
@@ -197,6 +258,7 @@
         <i class="bi bi-exclamation-triangle-fill me-2"></i>
         Ada {{ empty_submitted_count }} riwayat terkirim tanpa jawaban pada tampilan ini.
     </div>
+    {% if not read_only %}
     <form method="POST"
         action="{{ url_for('laporan.admin_laporan_delete_empty_submissions', form_id=form.id, period=filter_period) }}"
         onsubmit="return confirmDeleteEmptySubmissions({{ empty_submitted_count }})">
@@ -206,6 +268,7 @@
             <i class="bi bi-trash"></i> Hapus Riwayat Kosong
         </button>
     </form>
+    {% endif %}
 </div>
 {% endif %}
 
@@ -398,7 +461,7 @@
             {% else %}
             <span class="badge bg-success-subtle text-success">Tepat Waktu</span>
             {% endif %}
-            {% if sub.status == 'submitted' %}
+            {% if sub.status == 'submitted' and not read_only %}
             <form method="POST"
                 action="{{ url_for('laporan.admin_laporan_delete_submission', form_id=form.id, submission_id=sub.id, period=filter_period) }}"
                 class="d-inline"
@@ -437,7 +500,7 @@
         {% elif not sub.answers %}
         <p class="text-warning mb-0 small fw-medium">
             <i class="bi bi-exclamation-triangle-fill me-1"></i>
-            Riwayat terkirim ini tidak memiliki jawaban tersimpan. Hapus riwayat agar sekolah bisa mengisi ulang jika form masih dibuka.
+            Riwayat terkirim ini tidak memiliki jawaban tersimpan.{% if not read_only %} Hapus riwayat agar sekolah bisa mengisi ulang jika form masih dibuka.{% endif %}
         </p>
         {% else %}
         {% for ans in sub.answers %}
@@ -497,6 +560,32 @@
 
 {% block portal_scripts %}
 <script>
+
+function openExportFilter(actionUrl, title) {
+    var form = document.getElementById('exportFilterForm');
+    form.reset();
+    form.action = actionUrl;
+    document.getElementById('exportFilterModalLabel').textContent = title;
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('exportFilterModal')).show();
+}
+
+function selectAllExportJenjang(selectAllCheckbox) {
+    if (selectAllCheckbox.checked) {
+        document.querySelectorAll('.export-jenjang-option').forEach(function(checkbox) {
+            checkbox.checked = false;
+        });
+    } else {
+        var hasSelectedJenjang = Array.from(document.querySelectorAll('.export-jenjang-option'))
+            .some(function(checkbox) { return checkbox.checked; });
+        if (!hasSelectedJenjang) selectAllCheckbox.checked = true;
+    }
+}
+
+function syncExportJenjangAll() {
+    var hasSelectedJenjang = Array.from(document.querySelectorAll('.export-jenjang-option'))
+        .some(function(checkbox) { return checkbox.checked; });
+    document.getElementById('exportFilterJenjangAll').checked = !hasSelectedJenjang;
+}
 
 function toggleCard(header) {
     var body = header.nextElementSibling;

@@ -640,36 +640,55 @@
                 </div>
             </div>
         </div>
-        <!-- Tanda Tangan & Tim Verifikator Monev -->
-        <div class="card border-0 shadow-sm mt-4 signature-section">
-            <div class="card-body p-4">
-                <div class="row align-items-start g-4">
-                    <!-- TTD Kepala Sekolah -->
-                    <div class="col-md-6 text-center signature-column signature-headmaster">
-                        <p class="mb-1 text-body-secondary small">Mengetahui / Menyetujui,</p>
-                        <p class="fw-bold mb-4 text-body">Kepala {{ school_display_name }}</p>
-                        <div style="height: 65px;"></div>
-                        <p class="fw-bold mb-0 text-body border-bottom d-inline-block px-4 pb-1">{{ headmaster_info.name if headmaster_info else '-' }}</p>
-                        <p class="text-body-secondary small mb-0 mt-1">NIP. {{ headmaster_info.nip if headmaster_info else '-' }}</p>
-                    </div>
+        <div class="print-signoff-block">
+            <div class="print-only print-checklist-summary">
+                <div class="print-checklist-summary-copy">
+                    <strong>Hasil Kelengkapan Dokumen {{ fund_source_label }}</strong>
+                    <span>
+                        {{ checklist_completion.checklist_yes }}/{{ checklist_completion.checklist_total }}
+                        &middot; {{ checklist_completion.checklist_percent|round(1) }}%
+                    </span>
+                </div>
+                <div class="print-checklist-progress" role="img" aria-label="Kelengkapan dokumen {{ checklist_completion.checklist_percent|round(1) }} persen">
+                    <div class="print-checklist-progress-bar" style="width: {{ checklist_completion.checklist_percent|round(1) }}%;"></div>
+                </div>
+                <div class="print-checklist-summary-caption">
+                    {{ school_display_name }} &middot; Triwulan {{ active_period.tw }} Tahun {{ active_period.year }}
+                    &middot; Berdasarkan kelengkapan yang telah diverifikasi oleh staff.
+                </div>
+            </div>
 
-                    <!-- Tim Verifikator Monev -->
-                    <div class="col-md-6 text-center signature-column signature-auditors">
-                        <p class="mb-3 text-body-secondary small">Tim Verifikator Monev:</p>
-                        {% if auditor_team and auditor_team.members %}
-                            <div class="d-inline-block text-start">
-                                {% for m in auditor_team.members %}
-                                <div class="mb-2 small">
-                                    <i class="bi bi-person-check-fill text-success me-1.5"></i>
-                                    <span class="fw-bold text-body">{{ m.staff_name }}</span>
-                                    {% if m.is_leader %}<span class="badge bg-primary text-white text-xs ms-1">Ketua</span>{% endif %}
-                                    {% if m.staff_nip %}<br><span class="text-body-secondary ms-4 text-xs">NIP. {{ m.staff_nip }}</span>{% endif %}
+            <!-- Tanda Tangan & Tim Verifikator Monev -->
+            <div class="card border-0 shadow-sm mt-4 signature-section">
+                <div class="card-body p-4">
+                    <div class="row align-items-start g-4">
+                        <!-- TTD Kepala Sekolah -->
+                        <div class="col-md-6 text-center signature-column signature-headmaster">
+                            <p class="mb-1 text-body-secondary small">Mengetahui / Menyetujui,</p>
+                            <p class="fw-bold mb-4 text-body">Kepala {{ school_display_name }}</p>
+                            <div class="signature-space" style="height: 65px;"></div>
+                            <p class="fw-bold mb-0 text-body border-bottom d-inline-block px-4 pb-1">{{ headmaster_info.name if headmaster_info else '-' }}</p>
+                            <p class="text-body-secondary small mb-0 mt-1">NIP. {{ headmaster_info.nip if headmaster_info else '-' }}</p>
+                        </div>
+
+                        <!-- Tim Verifikator Monev -->
+                        <div class="col-md-6 text-center signature-column signature-auditors">
+                            <p class="mb-3 text-body-secondary small">Tim Verifikator Monev:</p>
+                            {% if auditor_team and auditor_team.members %}
+                                <div class="d-inline-block text-start">
+                                    {% for m in auditor_team.members %}
+                                    <div class="mb-2 small signature-auditor-member">
+                                        <i class="bi bi-person-check-fill text-success me-1.5"></i>
+                                        <span class="fw-bold text-body">{{ m.staff_name }}</span>
+                                        {% if m.is_leader %}<span class="badge bg-primary text-white text-xs ms-1">Ketua</span>{% endif %}
+                                        {% if m.staff_nip %}<br><span class="text-body-secondary ms-4 text-xs">NIP. {{ m.staff_nip }}</span>{% endif %}
+                                    </div>
+                                    {% endfor %}
                                 </div>
-                                {% endfor %}
-                            </div>
-                        {% else %}
-                            <p class="text-body-secondary small fst-italic">Tim verifikator wilayah kecamatan</p>
-                        {% endif %}
+                            {% else %}
+                                <p class="text-body-secondary small fst-italic">Tim verifikator wilayah kecamatan</p>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -2457,6 +2476,10 @@ document.addEventListener('DOMContentLoaded', function () {
 {% endif %}
 
 <style>
+@page {
+    size: A4 landscape;
+    margin: 8mm 10mm;
+}
 .print-only {
     display: none !important;
 }
@@ -2498,8 +2521,10 @@ document.addEventListener('DOMContentLoaded', function () {
         color: #000 !important;
     }
     .container-fluid {
-        padding: 0 !important;
+        width: 100% !important;
+        padding: 4mm 5mm !important;
         margin: 0 !important;
+        box-sizing: border-box !important;
     }
     .card {
         border: 1px solid #ddd !important;
@@ -2509,11 +2534,18 @@ document.addEventListener('DOMContentLoaded', function () {
         width: 100% !important;
         border-collapse: collapse !important;
         table-layout: fixed !important;
+        font-size: 7pt !important;
+        line-height: 1.05 !important;
     }
     .table th, .table td {
         border: 1px solid #000 !important;
         vertical-align: top !important;
-        padding: 4px 5px !important;
+        padding: 2px 3px !important;
+    }
+    .table small,
+    .table .text-xs {
+        font-size: 6.5pt !important;
+        line-height: 1.05 !important;
     }
     .table .print-col-activity {
         width: 24% !important;
@@ -2530,15 +2562,70 @@ document.addEventListener('DOMContentLoaded', function () {
     .table .print-col-notes {
         width: 32% !important;
     }
-    .signature-section {
+    .print-signoff-block {
+        padding-top: 4mm !important;
+        break-before: avoid-page !important;
+        page-break-before: avoid !important;
         break-inside: avoid !important;
         page-break-inside: avoid !important;
+    }
+    .print-checklist-summary {
+        display: block !important;
+        margin: 6px 0 4px !important;
+        padding: 5px 8px !important;
+        border: 1px solid #777 !important;
+        border-radius: 4px;
+        color: #000 !important;
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    }
+    .print-checklist-summary-copy {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 3px;
+        font-size: 8.5pt;
+    }
+    .print-checklist-summary-copy span {
+        font-weight: 700;
+        white-space: nowrap;
+    }
+    .print-checklist-progress {
+        height: 8px;
+        overflow: hidden;
+        border: 1px solid #777;
+        border-radius: 999px;
+        background: #e5e7eb !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    .print-checklist-progress-bar {
+        height: 100%;
+        background: #198754 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    .print-checklist-summary-caption {
+        margin-top: 2px;
+        font-size: 7pt;
+        color: #444 !important;
+    }
+    .signature-section {
+        margin-top: 6px !important;
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    }
+    .signature-section .card-body {
+        padding: 10px 12px !important;
     }
     .signature-section .card-body > .row {
         display: flex !important;
         flex-direction: row !important;
         flex-wrap: nowrap !important;
         align-items: flex-start !important;
+        --bs-gutter-x: 12px;
+        --bs-gutter-y: 0;
     }
     .signature-section .signature-column {
         display: block !important;
@@ -2551,6 +2638,20 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     .signature-section .signature-auditors {
         order: 2 !important;
+    }
+    .signature-section p {
+        margin-top: 0 !important;
+    }
+    .signature-section .signature-headmaster .mb-4,
+    .signature-section .signature-auditors .mb-3 {
+        margin-bottom: 4px !important;
+    }
+    .signature-section .signature-space {
+        height: 38px !important;
+    }
+    .signature-section .signature-auditor-member {
+        margin-bottom: 3px !important;
+        line-height: 1.15;
     }
 }
 </style>

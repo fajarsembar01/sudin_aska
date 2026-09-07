@@ -1,5 +1,5 @@
 {% extends "laporan/base_laporan.html" %}
-{% set page_title = "Manajemen Form Laporan" %}
+{% set page_title = "Jawaban Laporan" if read_only else "Manajemen Form Laporan" %}
 
 {% block portal_content %}
 <section class="mb-4">
@@ -7,13 +7,15 @@
         <div class="card-body">
             <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
                 <div>
-                    <h1 class="h3 fw-bold page-title mb-1">Form Laporan</h1>
-                    <p class="page-subtitle mb-0">Kelola form laporan yang dikirimkan ke sekolah</p>
+                    <h1 class="h3 fw-bold page-title mb-1">{{ 'Jawaban Laporan' if read_only else 'Form Laporan' }}</h1>
+                    <p class="page-subtitle mb-0">{{ 'Cek jawaban laporan yang telah dikirimkan' if read_only else 'Kelola form laporan yang dikirimkan ke sekolah' }}</p>
                 </div>
+                {% if not read_only %}
                 <a href="{{ url_for('laporan.admin_laporan_create') }}"
                     class="btn btn-primary d-inline-flex align-items-center gap-2">
                     <i class="bi bi-plus-lg"></i> Buat Form Baru
                 </a>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -22,10 +24,12 @@
 {% if not forms %}
 <div class="text-center py-5">
     <div class="mb-3" style="font-size:3rem;opacity:0.3;"><i class="bi bi-file-earmark-plus"></i></div>
-    <p class="text-muted mb-3">Belum ada form laporan yang dibuat.</p>
+    <p class="text-muted mb-3">{{ 'Belum ada form laporan yang dapat diperiksa.' if read_only else 'Belum ada form laporan yang dibuat.' }}</p>
+    {% if not read_only %}
     <a href="{{ url_for('laporan.admin_laporan_create') }}" class="btn btn-primary">
         <i class="bi bi-plus-lg me-1"></i>Buat Form Pertama
     </a>
+    {% endif %}
 </div>
 {% else %}
 <div class="row g-3">
@@ -97,10 +101,12 @@
 
                 <div class="d-flex flex-wrap gap-2">
                     {% if f.status == 'draft' %}
+                    {% if not read_only %}
                     <a href="{{ url_for('laporan.admin_laporan_edit', form_id=f.id) }}"
                         class="btn btn-sm btn-warning d-inline-flex align-items-center gap-1">
                         <i class="bi bi-pencil-square"></i> Lanjutkan Draft
                     </a>
+                    {% endif %}
                     {% else %}
                     <a href="{{ url_for('laporan.admin_laporan_answers', form_id=f.id) }}"
                         class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1">
@@ -110,6 +116,7 @@
                         class="btn btn-sm btn-outline-success d-inline-flex align-items-center gap-1">
                         <i class="bi bi-file-earmark-excel"></i> Excel
                     </a>
+                    {% if not read_only %}
                     <a href="{{ url_for('laporan.admin_laporan_edit', form_id=f.id) }}"
                         class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1">
                         <i class="bi bi-pencil"></i> Edit
@@ -143,10 +150,13 @@
                     </button>
                     <textarea id="shareCaption{{ f.id }}" class="d-none">{{ f.share_caption | default('') }}</textarea>
                     {% endif %}
+                    {% endif %}
+                    {% if not read_only %}
                     <button type="button" class="btn btn-sm btn-outline-danger d-inline-flex align-items-center gap-1"
                         onclick="confirmDelete({{ f.id }}, '{{ f.title | e }}', {{ 'true' if f.status == 'draft' else 'false' }})">
                         <i class="bi bi-trash"></i>
                     </button>
+                    {% endif %}
                 </div>
             </div>
             <div class="card-footer bg-transparent border-top text-muted small py-2 px-3">
@@ -159,6 +169,7 @@
 </div>
 {% endif %}
 
+{% if not read_only %}
 {# Delete Modal #}
 <div class="modal fade" id="deleteModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
@@ -181,6 +192,7 @@
         </div>
     </div>
 </div>
+{% endif %}
 {% endblock %}
 
 {% block portal_scripts %}

@@ -91,6 +91,47 @@ def _activity_vendor_is_unverified(activity):
     return activity.get("vendor_status") != "verified"
 
 
+def _checklist_completion_metrics(activities, checklists):
+    """Calculate checklist completeness using the same rules as the staff audit."""
+    checklist_yes = 0
+    checklist_total = 0
+
+    for activity in activities:
+        expense_type_id = activity.get("expense_type_id")
+        applicable_checklists = [
+            checklist
+            for checklist in checklists
+            if not expense_type_id
+            or not checklist.get("expense_type_ids")
+            or expense_type_id in checklist.get("expense_type_ids", [])
+        ]
+        raw_results = activity.get("checklist_results") or []
+        if isinstance(raw_results, dict):
+            results_by_id = raw_results
+        else:
+            results_by_id = {
+                result.get("checklist_id"): result
+                for result in raw_results
+                if result.get("checklist_id") is not None
+            }
+
+        checklist_total += len(applicable_checklists)
+        checklist_yes += sum(
+            1
+            for checklist in applicable_checklists
+            if (results_by_id.get(checklist["id"]) or {}).get("status") == "yes"
+        )
+
+    return {
+        "checklist_yes": checklist_yes,
+        "checklist_no": checklist_total - checklist_yes,
+        "checklist_total": checklist_total,
+        "checklist_percent": (
+            checklist_yes / checklist_total * 100 if checklist_total else 0
+        ),
+    }
+
+
 def _requested_activity_photos():
     files = [
         file
@@ -2715,6 +2756,7 @@ def sekolah_activities():
             transaction["recommended_expense_type_name"] = recommendation.get("name") if recommendation else None
     try:
         active_checklists = queries.list_checklists(include_inactive=False)
+        checklist_completion = _checklist_completion_metrics(activities, active_checklists)
         checklist_requirements_by_expense_type = {
             str(expense_type["id"]): [
                 checklist["name"]
@@ -2726,6 +2768,7 @@ def sekolah_activities():
         }
     except Exception:
         current_app.logger.exception("Failed to load checklist requirements by expense type")
+        checklist_completion = _checklist_completion_metrics(activities, [])
         checklist_requirements_by_expense_type = {}
     try:
         account_codes = queries.list_account_codes(include_inactive=False)
@@ -2781,6 +2824,7 @@ def sekolah_activities():
                            auditor_team=auditor_team,
                            headmaster_info=headmaster_info,
                            school_display_name=school_display_name,
+                           checklist_completion=checklist_completion,
                            bop_claim=bop_claim,
                            bop_claim_supported=bop_claim_supported)
 

@@ -12,7 +12,7 @@
 
     <!-- Brand -->
     <a class="navbar-brand"
-       href="{{ url_for('laporan.admin_laporan_list') if current_user and current_user.role == 'admin' else (url_for('laporan.staff_laporan_list') if current_user and current_user.role in ['staff', 'pengawas', 'kasi', 'operator', 'coordinator'] else url_for('laporan.sekolah_laporan_list')) }}">
+       href="{{ url_for('laporan.admin_laporan_list') if current_user and current_user.role in ['admin', 'coordinator'] else (url_for('laporan.staff_laporan_list') if current_user and current_user.role in ['staff', 'pengawas', 'kasi', 'operator'] else url_for('laporan.sekolah_laporan_list')) }}">
       <span class="icon-badge brand-icon text-primary">
         <i class="bi bi-file-earmark-text"></i>
       </span>
@@ -39,7 +39,6 @@
             <i class="bi bi-list-ul nav-icon"></i>Semua Form
           </a>
         </li>
-
         <li class="nav-item">
           <a class="nav-link {% if request.endpoint == 'laporan.admin_laporan_create' %}active{% endif %}"
              href="{{ url_for('laporan.admin_laporan_create') }}">
@@ -51,6 +50,13 @@
           <a class="nav-link {% if request.endpoint == 'laporan.admin_laporan_kpi' %}active{% endif %}"
              href="{{ url_for('laporan.admin_laporan_kpi') }}">
             <i class="bi bi-bar-chart-line nav-icon"></i>KPI Kepatuhan
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint == 'laporan.admin_laporan_answer_access' %}active{% endif %}"
+             href="{{ url_for('laporan.admin_laporan_answer_access') }}">
+            <i class="bi bi-person-check nav-icon"></i>Akses Jawaban
           </a>
         </li>
 
@@ -78,6 +84,14 @@
         {# ──── STAFF ──── #}
         {% if current_user and current_user.role in ['staff', 'pengawas', 'kasi', 'operator', 'coordinator'] %}
 
+        {% if current_user.role == 'coordinator' %}
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint in ['laporan.admin_laporan_list', 'laporan.admin_laporan_answers'] %}active{% endif %}"
+             href="{{ url_for('laporan.admin_laporan_list') }}">
+            <i class="bi bi-table nav-icon"></i>Jawaban Laporan
+          </a>
+        </li>
+        {% else %}
         <li class="nav-item">
           <a class="nav-link {% if request.endpoint in ['laporan.staff_laporan_list', 'laporan.staff_laporan_fill'] %}active{% endif %}"
              href="{{ url_for('laporan.staff_laporan_list') }}">
@@ -90,6 +104,15 @@
             <i class="bi bi-clock-history nav-icon"></i>Riwayat
           </a>
         </li>
+        {% if current_user.role == 'staff' and can_view_laporan_answers %}
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint in ['laporan.admin_laporan_list', 'laporan.admin_laporan_answers'] %}active{% endif %}"
+             href="{{ url_for('laporan.admin_laporan_list') }}">
+            <i class="bi bi-table nav-icon"></i>Jawaban Laporan
+          </a>
+        </li>
+        {% endif %}
+        {% endif %}
 
         {% endif %}
 
