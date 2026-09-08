@@ -15,6 +15,11 @@ PLACEHOLDER = "<!-- {{ASKA_PROFIL_DAN_JADWAL}} -->"
 DATA_SEKOLAH_FILE = MARKDOWN_DIR / "Data_Sekolah_Sudin_JU2.md"
 DETAIL_SEKOLAH_FILE = MARKDOWN_DIR / "Detail_Sekolah.md"
 STRUKTUR_ORG_FILE = MARKDOWN_DIR / "struktur_organisasi_sudindikju2.md"
+KJP_2026_FILE = MARKDOWN_DIR / "KJP2026_11-14.md"
+
+# Berkas acuan terkini yang harus berada di awal konteks gabungan agar tidak
+# kalah oleh materi historis atau lampiran panjang saat konteks diproses.
+PRIORITY_FILES = (KJP_2026_FILE,)
 
 GENERATED_DIR = KECERDASAN_DIR / ".generated"
 
@@ -32,6 +37,7 @@ _BUILT_IN_PATHS = {
     DATA_SEKOLAH_FILE.resolve(),
     DETAIL_SEKOLAH_FILE.resolve(),
     STRUKTUR_ORG_FILE.resolve(),
+    KJP_2026_FILE.resolve(),
 }
 
 
@@ -154,6 +160,11 @@ def load_kecerdasan(*, ensure_output_file: bool = False) -> str:
     gabungan (misalnya untuk keperluan debug/manual).
     """
 
+    priority_texts = []
+    for path in PRIORITY_FILES:
+        priority_text = _read_clean(path).strip()
+        if priority_text:
+            priority_texts.append(priority_text)
     general_text = _read(GENERAL_FILE)
     specific_text = _read(SPECIFIC_FILE).strip()
     schools_text = _read(DATA_SEKOLAH_FILE).strip()
@@ -211,6 +222,10 @@ def load_kecerdasan(*, ensure_output_file: bool = False) -> str:
         if not extra_text:
             continue
         combined = f"{combined.rstrip()}\n\n{extra_text}\n"
+
+    if priority_texts:
+        priority_content = "\n\n".join(priority_texts)
+        combined = f"{priority_content.rstrip()}\n\n{combined.lstrip()}"
 
     combined = combined.strip() + "\n"
     return combined

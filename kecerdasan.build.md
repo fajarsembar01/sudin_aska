@@ -1,3 +1,629 @@
+# Sosialisasi KJP Plus Tahap II Tahun 2026 dan BPMS Tahun 2026
+
+# KJP Plus Tahap II Tahun 2026
+
+> **Acuan ASKA:** Bagian ini merupakan informasi KJP Plus terbaru untuk Tahap II Tahun 2026. Untuk pertanyaan mengenai KJP terbaru atau KJP saat ini yang tidak menyebutkan tahun, gunakan informasi tahun 2026 pada bagian ini.
+
+## Kriteria Penerima KJP Plus
+
+1. Memiliki NIK sebagai penduduk DKI Jakarta
+2. Berdomisili di DKI Jakarta paling singkat 5 tahun berturut-turut, dikecualikan bagi murid Sekolah Rakyat
+3. Terdaftar sebagai murid di Satuan Pendidikan Negeri di Provinsi DKI Jakarta, Satuan Pendidikan Swasta, atau Sekolah Rakyat
+4. Berusia 6–21 tahun, dikecualikan bagi murid Sekolah Rakyat
+5. Terdaftar dalam DTSEN atau merupakan Penerima Manfaat Panti Sosial
+
+### Keterangan
+
+- Pendataan **calon penerima baru** KJP Plus Tahap II Tahun 2026 menggunakan DTSEN sebagai basis data sesuai kebijakan Pemerintah Pusat (Inpres Nomor 4 Tahun 2025).
+- Calon penerima baru diperingkatkan berdasarkan tingkat kesejahteraan (desil), dimulai dari desil terendah hingga desil yang lebih tinggi sesuai kuota anggaran yang tersedia.
+- Penerima lanjutan KJP Plus tetap dapat menerima bantuan sampai lulus jenjang pendidikan sepanjang masih memenuhi persyaratan dan tidak melanggar ketentuan yang berlaku.
+- Penetapan penerima dilakukan setelah melalui proses verifikasi dan validasi sesuai ketentuan yang berlaku.
+
+### Ketentuan Verifikasi Calon Penerima Baru
+
+Calon penerima baru harus memenuhi ketentuan berikut dan tetap melalui proses verifikasi serta validasi:
+
+1. Terdaftar dalam Data Tunggal Sosial Ekonomi Nasional (DTSEN) pada desil 1 sampai dengan 5
+2. Berdomisili di DKI Jakarta paling singkat 5 tahun berturut-turut, dikecualikan bagi murid Sekolah Rakyat
+3. Anggota rumah tangga dalam satu Kartu Keluarga tidak memiliki mobil
+4. Anggota keluarga dalam satu Kartu Keluarga tidak memiliki aset berupa tanah atau bangunan dengan Nilai Jual Objek Pajak (NJOP) di atas Rp1.000.000.000
+5. Tidak terdapat anggota keluarga yang berstatus Aparatur Sipil Negara (ASN)
+
+Terdaftar pada desil 1 sampai dengan 5 tidak otomatis menjamin penerimaan bantuan. Data calon penerima tetap dipadankan, diverifikasi berdasarkan kondisi sebenarnya, dan ditetapkan sesuai ketentuan serta kuota anggaran yang tersedia.
+
+*Sumber tambahan: [BeritaJakarta—Pemprov DKI Tetapkan 661.209 Peserta Didik Terima KJP Tahap II Gelombang I, 4 September 2026](https://www.beritajakarta.id/read/155235/pemprov-dki-tetapkan-661209-peserta-didik-terima-kjp-tahap-ii-gelombang-i).*
+
+## Besaran Dana KJP Plus
+
+### Sekolah/Madrasah Negeri dan Swasta
+
+| Jenjang | Biaya Personal Sekolah/Madrasah Negeri per Bulan | SPP Sekolah/Madrasah Swasta per Bulan | Biaya Personal Sekolah/Madrasah Swasta per Bulan |
+| :--- | :---: | :---: | :---: |
+| SD/MI/SDLB | Rp250.000 | Rp130.000 | Rp250.000 |
+| SMP/MTs/SMPLB | Rp300.000 | Rp170.000 | Rp300.000 |
+| SMA/MA/SMALB | Rp420.000 | Rp290.000 | Rp420.000 |
+| SMK | Rp450.000 | Rp240.000 | Rp450.000 |
+| PKBM (Pusat Kegiatan Belajar Masyarakat Paket A/B/C) | Rp300.000 | - | Rp300.000 |
+
+### Sekolah/Madrasah Swasta Peserta SPMB Bersama
+
+| Jenjang | Biaya Personal per Bulan | SPP Sekolah Swasta per Bulan |
+| :--- | :---: | :---: |
+| SMP Klaster 1 | Rp300.000 | Rp225.000 |
+| SMP Klaster 2 | Rp300.000 | Rp350.000 |
+| SMP Klaster 3 | Rp300.000 | Rp623.705 |
+| SMA Klaster 1 | Rp420.000 | Rp620.000 |
+| SMA Klaster 2 | Rp420.000 | Rp920.000 |
+| SMA Klaster 3 | Rp420.000 | Rp1.100.000 |
+| SMK Klaster 1 | Rp450.000 | Rp620.000 |
+| SMK Klaster 2 | Rp450.000 | Rp920.000 |
+| SMK Klaster 3 | Rp450.000 | Rp1.100.000 |
+
+### Lembaga Kursus dan Pelatihan (LKP)
+
+Peserta LKP memperoleh dana bantuan sebesar Rp1.800.000 per semester.
+
+*Sumber informasi LKP: [Portal Pendaftaran KJP Plus Dinas Pendidikan Provinsi DKI Jakarta](https://edu.jakarta.go.id/kjp/login).*
+
+### Ketentuan Sekolah Rakyat dan Sekolah Gratis
+
+Murid pada Sekolah Rakyat dan Sekolah Gratis dapat mengajukan KJP Plus, tetapi hanya memperoleh bantuan biaya personal. Besaran bantuan biaya personal sama dengan sekolah/madrasah negeri.
+
+*Sumber besaran dana pada tabel: Keputusan Gubernur Nomor 262 Tahun 2026.*
+
+## Timeline KJP Plus Tahap II Tahun 2026
+
+| Tahap | Kegiatan | Jadwal |
+| :---: | :--- | :--- |
+| **1** | Pendaftaran | 24 Juli s.d. 5 Agustus 2026 |
+| **2** | Verifikasi dan Unggah SPTJM oleh Sekolah | Verifikasi sekolah: 27 Juli s.d. 5 Agustus 2026<br>Unggah SPTJM: 27 Juli s.d. 7 Agustus 2026 |
+| **3** | Verifikasi oleh Dinas Pendidikan | 10 s.d. 13 Agustus 2026 |
+| **4** | Penetapan penerima melalui Keputusan Gubernur | 13 Agustus s.d. 3 September 2026 |
+| **5** | Penyaluran dana | 4 September 2026 |
+
+## Tata Cara Pendaftaran KJP Plus
+
+1. Orang tua/wali murid datang ke sekolah pada saat pendaftaran KJP Plus Tahap II Tahun 2026.
+2. Orang tua/wali murid membawa dokumen persyaratan verifikasi penerima KJP Plus:
+   - Surat permohonan kepada Gubernur (dapat diunduh melalui JAKEDU)
+   - Surat pernyataan ketaatan menggunakan dana KJP Plus sesuai ketentuan (dapat diunduh melalui JAKEDU)
+   - Fotokopi Kartu Keluarga
+   - Fotokopi KTP orang tua/wali murid
+
+*Sumber: Keputusan Kepala Dinas Pendidikan Nomor 124 Tahun 2024.*
+
+## Tata Cara Sekolah Memverifikasi Kelayakan Pendaftar KJP Plus
+
+### 1. Pengecekan Data
+
+Sekolah melakukan verifikasi dan pemadanan data secara sistem. Data yang diinput sekolah secara otomatis dipadankan dengan data kependudukan dan DTSEN melalui [https://edu.jakarta.go.id/kjp](https://edu.jakarta.go.id/kjp).
+
+### 2. Kelayakan Dokumen Persyaratan
+
+Sekolah memverifikasi kelengkapan dokumen usulan yang tersedia secara manual:
+
+1. Surat permohonan kepada Gubernur
+2. Surat pernyataan ketaatan menggunakan dana KJP Plus sesuai ketentuan
+3. Fotokopi Kartu Keluarga
+4. Fotokopi KTP orang tua/wali
+
+### 3. Kelayakan Legalitas dan Integritas
+
+Sekolah memeriksa kondisi murid secara faktual untuk memastikan bahwa:
+
+1. Murid terdaftar aktif di sekolah/madrasah, memiliki NISN, dan terdaftar di Dapodik/EMIS
+2. Murid disiplin hadir bersekolah
+3. Murid mematuhi tata tertib sekolah dan tidak melanggar larangan
+
+### 4. Kelayakan sebagai Anak Keluarga Tidak Mampu
+
+Sesuai Keputusan Gubernur Nomor 1250 Tahun 2020 tentang Variabel Khas Daerah untuk Pendataan dan Pemutakhiran Data Fakir Miskin dan Orang Tidak Mampu, dilakukan verifikasi berikut:
+
+1. **Status anggota keluarga:** Tidak terdapat anggota rumah tangga yang menjadi pegawai tetap BUMN, PNS, TNI, POLRI, atau anggota DPR/DPRD.
+2. **Kepemilikan kendaraan:** Anggota rumah tangga dalam satu Kartu Keluarga tidak memiliki mobil.
+3. **Kepemilikan aset tanah/bangunan:** Anggota keluarga dalam satu Kartu Keluarga tidak memiliki aset berupa tanah atau bangunan dengan nilai NJOP di atas Rp1.000.000.000.
+4. **Konsumsi air minum rumah tangga:** Anggota keluarga dalam satu Kartu Keluarga tidak mengonsumsi air kemasan bermerek paling sedikit 19 liter.
+
+## Larangan Penerima KJP Plus
+
+1. Menerima beasiswa atau bantuan pendidikan lain yang bersumber dari APBN/APBD
+2. Membelanjakan Bantuan Biaya Peningkatan Mutu Pendidikan di luar penggunaan yang telah diatur dalam Peraturan Gubernur
+3. Melakukan perkawinan secara sah menurut ketentuan peraturan perundang-undangan
+4. Menggunakan Bantuan Biaya Peningkatan Mutu Pendidikan untuk belanja yang tidak secara nyata dibutuhkan oleh peserta didik yang bersangkutan
+5. Meminjamkan dana Bantuan Biaya Peningkatan Mutu Pendidikan kepada pihak mana pun
+6. Merokok
+7. Melakukan tawuran
+8. Terlibat geng motor atau geng sekolah
+9. Melakukan perkelahian
+10. Melakukan mencontek massal
+11. Membocorkan soal dan/atau kunci jawaban
+12. Tidak menghadiri kegiatan pembelajaran atau perkuliahan paling sedikit 4 kali dalam 1 bulan
+13. Sering datang terlambat pada kegiatan pembelajaran atau perkuliahan, berturut-turut atau tidak berturut-turut, paling sedikit 6 kali dalam 1 bulan
+14. Menggandakan dan/atau menjaminkan Bantuan Biaya Peningkatan Mutu Pendidikan dan/atau buku tabungan bantuan kepada pihak mana pun dan/atau dalam bentuk apa pun
+15. Terlibat dan/atau melakukan pornoaksi dan/atau pornografi
+16. Menyebarluaskan gambar tidak senonoh, baik secara konvensional maupun melalui media daring
+17. Membawa senjata tajam, bahan peledak, dan/atau peralatan lain yang membahayakan
+18. Melakukan perusakan fasilitas umum dan/atau barang milik orang lain
+19. Melakukan praktik judi dalam bentuk apa pun
+20. Mengonsumsi minuman keras atau minuman beralkohol
+21. Melakukan penipuan, pencurian, pemalakan, pemerasan, dan/atau penjambretan
+22. Menggunakan dan/atau mengedarkan narkotika dan obat-obatan terlarang
+23. Melakukan perbuatan asusila atau pelecehan seksual
+24. Melakukan tindakan kekerasan atau perundungan
+25. Melakukan perbuatan yang melanggar tata tertib dan/atau peraturan pada satuan pendidikan
+
+### Sanksi
+
+Bantuan sosial KJP Plus dapat dihentikan apabila terjadi pelanggaran ketentuan dalam Peraturan Gubernur.
+
+---
+
+# BPMS Tahun 2026
+
+## Kriteria Penerima BPMS
+
+## Persyaratan
+1. Memiliki NIK sebagai penduduk DKI Jakarta
+2. Berdomisili di DKI Jakarta paling singkat 5 tahun berturut-turut, dikecualikan bagi murid Sekolah Rakyat
+3. Terdaftar sebagai murid di Satuan Pendidikan Swasta di Provinsi DKI Jakarta
+4. Berusia 6-21 tahun, dikecualikan bagi murid Sekolah Rakyat
+5. Terdaftar dalam DTSEN atau Penerima Manfaat Panti Sosial
+
+## *Keterangan:
+- Pendataan **calon penerima** BPMS Tahun 2026 menggunakan DTSEN sebagai basis data sesuai kebijakan Pemerintah Pusat (Inpres No. 4 Tahun 2025)
+- **Calon penerima** akan diperingkatkan berdasarkan tingkat kesejahteraan (desil), dimulai dari desil terendah hingga desil yang lebih tinggi sesuai kuota anggaran yang tersedia.
+- Penetapan penerima dilakukan setelah melalui proses verifikasi dan validasi sesuai ketentuan yang berlaku.
+
+# Besaran Dana BPMS
+
+## SEKOLAH/MADRASAH SWASTA
+
+| Jenjang Pendidikan | Besaran BPMS Khusus Murid Baru |
+| :--- | :--- |
+| SD/MI/SLB | Maksimum Rp1.000.000 |
+| SMP/MTs/SMPLB | Maksimum Rp1.500.000 |
+| SMA/MA/SMALB | Maksimum Rp2.500.000 |
+| SMK | Maksimum Rp2.500.000 |
+
+*(Catatan: Pada gambar asli, *header* kolom pertama tertulis "No", namun karena isinya adalah tingkat pendidikan, maka disesuaikan menjadi "Jenjang Pendidikan" untuk kejelasan database).*
+
+## SEKOLAH/MADRASAH SWASTA SPMB BERSAMA
+
+| Jenjang | Besaran BPMS Khusus Murid Baru SPMB Bersama |
+| :--- | :--- |
+| SMP Klaster 1 | Maksimum Rp1.500.000 |
+| SMP Klaster 2 | Maksimum Rp2.000.000 |
+| SMP Klaster 3 | Maksimum Rp8.000.000 |
+| SMA Klaster 1 | Maksimum Rp3.000.000 |
+| SMA Klaster 2 | Maksimum Rp7.000.000 |
+| SMA Klaster 3 | Maksimum Rp10.000.000 |
+| SMK Klaster 1 | Maksimum Rp3.000.000 |
+| SMK Klaster 2 | Maksimum Rp7.000.000 |
+| SMK Klaster 3 | Maksimum Rp10.000.000 |
+
+# Timeline BPMS Tahun 2026
+
+| Tahap | Kegiatan | Jadwal |
+| :---: | :--- | :--- |
+| **1** | Pendaftaran | 24 Juli s.d. 5 Agustus 2026 |
+| **2** | Verifikasi dan Unggah SPTJM oleh Sekolah | - Verifikasi Sekolah: 27 Juli s.d. 5 Agustus 2026<br>- Unggah SPTJM: 27 Juli s.d. 7 Agustus 2026 |
+| **3** | Verifikasi oleh Dinas Pendidikan | 10 s.d. 13 Agustus 2026 |
+| **4** | Penetapan Penerima melalui Keputusan Gubernur | 13 Agustus s.d. 3 September 2026 |
+| **5** | Penyaluran Dana | 4 September 2026 |
+
+# Layanan Informasi dan Pengaduan BPMS (P4OP)
+
+| Kategori | Detail Informasi |
+| :--- | :--- |
+| **WhatsApp Pengaduan** | 0852-1124-7089 |
+| **Telepon** | 021-3528-9335 |
+| **Alamat P4OP** | Jl. Budi Utomo No. 3, Pasar Baru, Sawah Besar, Jakarta Pusat |
+| **Jam Operasional** | 08.00 - 16.00 WIB (hari kerja) |
+| **POSKO KJP** | posko terletak di setiap kantor kecamatan, jam operasional dari 08.00 - 16.00 WIB (hari kerja)|
+
+---
+
+# Dasar Hukum dan Ketentuan Umum KJP/BPMS
+
+Bagian berikut memuat Peraturan Gubernur Nomor 110 Tahun 2021 yang sebelumnya berada di `umum.md`. Informasi tahun 2026 pada bagian awal dokumen tetap menjadi acuan utama untuk pertanyaan terkini.
+
+# PERATURAN GUBERNUR DAERAH KHUSUS IBUKOTA JAKARTA TERKAIT KJP (KARTU JAKARTA PINTAR)
+NOMOR 110 TAHUN 2021
+
+## TENTANG
+BANTUAN SOSIAL BIAYA PENDIDIKAN
+
+---
+
+### Dengan Rahmat Tuhan Yang Maha Esa
+**Gubernur Daerah Khusus Ibukota Jakarta**,
+
+### Menimbang
+a. bahwa dalam rangka mencegah kerentanan sosial dan memberikan layanan mutu pendidikan kepada peserta didik, perlu pemberian dalam bentuk bantuan sosial biaya pendidikan;
+
+b. bahwa berdasarkan Pasal 39 ayat (5) Peraturan Gubernur Nomor 35 Tahun 2021 tentang Tata Cara Pemberian Hibah dan Bantuan Sosial, persyaratan penerima bantuan sosial diatur dengan Peraturan Gubernur;
+
+c. bahwa berdasarkan pertimbangan sebagaimana dimaksud dalam huruf a dan huruf b, perlu menetapkan Peraturan Gubernur tentang Bantuan Sosial Biaya Pendidikan;
+
+### Mengingat
+1. Undang-Undang Nomor 29 Tahun 2007 tentang Pemerintahan Provinsi Daerah Khusus Ibukota Jakarta sebagai Ibukota Negara Kesatuan Republik Indonesia (Lembaran Negara Republik Indonesia Tahun 2007 Nomor 93, Tambahan Lembaran Negara Republik Indonesia Nomor 4744);
+
+2. Undang-Undang Nomor 23 Tahun 2014 tentang Pemerintahan Daerah (Lembaran Negara Republik Indonesia Tahun 2014 Nomor 244, Tambahan Lembaran Negara Republik Indonesia Nomor 5587) sebagaimana telah beberapa kali diubah terakhir dengan Undang-Undang Nomor 11 Tahun 2020 tentang Cipta Kerja (Lembaran Negara Republik Indonesia Tahun 2020 Nomor 245, Tambahan Lembaran Negara Republik Indonesia Nomor 6573);
+
+3. Peraturan Gubernur Nomor 35 Tahun 2021 tentang Tata Cara Pemberian Hibah dan Bantuan Sosial (Berita Daerah Provinsi Daerah Khusus Ibukota Jakarta Tahun 2021 Nomor 71013);
+
+### Menetapkan
+**PERATURAN GUBERNUR TENTANG BANTUAN SOSIAL BIAYA PENDIDIKAN.**
+
+## BAB I
+KETENTUAN UMUM
+
+### Pasal 1
+Dalam Peraturan Gubernur ini yang dimaksud dengan:
+
+1. **Bantuan Sosial Biaya Pendidikan** adalah bantuan sosial dalam bentuk uang yang diberikan kepada Peserta Didik untuk menunjang biaya pendidikan.
+
+2. **Bantuan Sosial Biaya Personal** adalah biaya yang diberikan kepada Peserta Didik untuk pemenuhan kebutuhan dasar penunjang pendidikan.
+
+3. **Bantuan Sosial Biaya Penyelenggaraan Pendidikan** adalah biaya sumbangan pembinaan pendidikan dan/atau biaya penyelenggaraan pendidikan lainnya.
+
+4. **Bantuan Sosial Biaya Pendidikan Masuk Sekolah** adalah biaya yang diberikan kepada Peserta Didik baru pada awal tahun pelajaran di Satuan Pendidikan Swasta.
+
+5. **Biaya Rutin** adalah Bantuan Sosial Biaya Personal yang diberikan kepada seluruh Peserta Didik sebagai uang saku dan uang transportasi.
+
+6. **Biaya Berkala** adalah Bantuan Sosial Biaya Personal yang diberikan kepada seluruh Peserta Didik untuk menunjang kegiatan belajar dalam melaksanakan proses belajar.
+
+7. **Biaya Persiapan Masuk Perguruan Tinggi** adalah Bantuan Sosial Biaya Personal yang diberikan kepada seluruh Peserta Didik di kelas akhir pada jenjang Sekolah Menengah Atas/Madrasah Aliyah, Sekolah Menengah Kejuruan atau sederajat sebagai biaya persiapan masuk perguruan tinggi dan/atau mengikuti ujian seleksi masuk perguruan tinggi.
+
+8. **Satuan Pendidikan Negeri** adalah Sekolah/Madrasah/Pusat Kegiatan Belajar Masyarakat berstatus negeri yang diselenggarakan oleh Pemerintah Provinsi Daerah Khusus Ibukota Jakarta.
+
+9. **Satuan Pendidikan Swasta** adalah Sekolah/Madrasah/Pusat Kegiatan Belajar Masyarakat/Lembaga Kursus dan Pelatihan yang diselenggarakan oleh masyarakat di Provinsi Daerah Khusus Ibukota Jakarta.
+
+10. **Lembaga Kursus dan Pelatihan** adalah satuan pendidikan nonformal yang diselenggarakan bagi masyarakat yang memerlukan bekal pengetahuan, keterampilan, kecakapan hidup, dan sikap untuk mengembangkan diri, mengembangkan profesi, bekerja, usaha mandiri dan/atau melanjutkan pendidikan ke jenjang yang lebih tinggi.
+
+11. **Pusat Kegiatan Belajar Masyarakat** adalah satuan pendidikan nonformal yang menyelenggarakan berbagai kegiatan belajar sesuai dengan kebutuhan masyarakat atas dasar dari, oleh, dan untuk masyarakat.
+
+12. **Peserta Didik** adalah warga masyarakat yang berasal dari keluarga miskin, tidak mampu dan rentan terhadap risiko sosial yang sedang mengikuti pendidikan pada jenjang Sekolah Dasar/Madrasah Ibtidaiyah, Sekolah Menengah Pertama/Madrasah Tsanawiyah, Sekolah Menengah Atas/Madrasah Aliyah, Sekolah Menengah Kejuruan, Sekolah Luar Biasa, Pusat Kegiatan Belajar Masyarakat dan Lembaga Kursus dan Pelatihan.
+
+13. **Penerimaan Peserta Didik Baru Bersama** yang selanjutnya disingkat **PPDB Bersama** adalah penerimaan peserta didik baru pada Sekolah/Madrasah atau Satuan Pendidikan Swasta yang telah menandatangani perjanjian kerja sama dengan Dinas Pendidikan.
+
+14. **Data Terpadu Kesejahteraan Sosial** adalah sistem data elektronik yang memuat informasi sosial, ekonomi dan demografi dengan status kesejahteraan terendah di Indonesia.
+
+15. **Data Terpadu Kesejahteraan Sosial Daerah** adalah sistem data elektronik yang memuat informasi sosial, ekonomi dan demografi dengan status kesejahteraan terendah di Provinsi Daerah Khusus Ibukota Jakarta yang ditetapkan dengan Keputusan Gubernur.
+
+16. **Anak Panti Sosial** adalah anak yang memiliki nomor induk kependudukan dan terdaftar dalam kartu keluarga di dalam panti sosial yang dikelola Pemerintah Provinsi DKI Jakarta.
+
+17. **Anak Tidak Sekolah** adalah anak yang berusia 6 sampai dengan 21 tahun dan tidak sekolah.
+
+18. **Penyandang Disabilitas** adalah setiap orang yang mengalami keterbatasan fisik, intelektual, mental, dan/atau sensorik dalam jangka waktu lama yang dalam berinteraksi dengan lingkungan dapat mengalami hambatan dan kesulitan untuk berpartisipasi secara penuh dan efektif dengan warga negara lainnya berdasarkan kesamaan hak.
+
+19. **Pengemudi JakLingko** adalah pengemudi bus yang terdaftar dalam sistem JakLingko.
+
+20. **Mikrotrans** adalah bus berukuran panjang maksimum 6 (enam) meter, lebar maksimum 2,1 (dua koma satu) meter, tinggi maksimum 1,7 (satu koma tujuh) meter dan kecepatan kendaraan maksimum tidak lebih dari 60 (enam puluh) km/jam, jumlah tempat duduk 8 (delapan), dan jumlah berdiri 7 (tujuh) yang dioperasikan oleh mitra perusahaan otobus JakLingko.
+
+21. **Kartu Pekerja Jakarta** adalah kartu bagi pekerja/buruh yang memiliki perusahaan.
+22. **Kartu Jakarta Pintar Plus** atau KJP Plus adalah kartu sebagai sarana pemberian Bantuan Sosial Biaya Pendidikan yang diberikan kepada Peserta Didik yang memenuhi syarat.
+
+23. **Provinsi Daerah Khusus Ibukota Jakarta** yang selanjutnya disebut Provinsi DKI Jakarta adalah provinsi yang mempunyai kekhususan dalam penyelenggaraan pemerintahan daerah karena kedudukannya sebagai Ibukota Negara Kesatuan Republik Indonesia.
+
+24. **Gubernur** adalah Kepala Daerah Provinsi Daerah Khusus Ibukota Jakarta.
+
+25. **Dinas Pendidikan** adalah Dinas Pendidikan Provinsi Daerah Khusus Ibukota Jakarta.
+
+26. **Pusat Pelayanan Pendanaan Personal dan Operasional Pendidikan** yang selanjutnya disebut **P4OP** adalah Pusat Pelayanan Pendanaan Personal dan Operasional Pendidikan Provinsi DKI Jakarta.
+
+27. **Satuan Pelaksana Pendidikan Kecamatan** adalah Satuan Pelaksana Pendidikan Kecamatan di Provinsi Daerah Khusus Ibu Kota Jakarta.
+
+---
+
+### Pasal 2
+Peraturan Gubernur ini dimaksudkan sebagai pedoman bagi Pemerintah Provinsi DKI Jakarta dalam melakukan pemberian Bantuan Sosial Biaya Pendidikan.
+
+---
+
+### Pasal 3
+Pemberian Bantuan Sosial Biaya Pendidikan bertujuan:
+
+a. mendukung terselenggaranya program wajib belajar 12 (dua belas) tahun;
+b. meningkatkan akses layanan pendidikan secara adil dan merata;
+c. menjamin kepastian mendapatkan layanan pendidikan;
+d. meningkatkan mutu layanan dan kualitas hasil pendidikan;
+e. menumbuhkan motivasi bagi Peserta Didik untuk berprestasi dan menuntaskan pendidikan pada jenjang pendidikan yang diikuti; dan
+f. mendorong Anak Tidak Sekolah agar kembali mendapatkan layanan pendidikan pada satuan pendidikan tertentu.
+
+---
+
+### Pasal 4
+Ruang lingkup pelaksanaan pemberian Bantuan Sosial Biaya Pendidikan meliputi:
+
+a. Bantuan Sosial Biaya Personal dan Biaya Penyelenggaraan Pendidikan bagi Peserta Didik pada Satuan Pendidikan Negeri atau Swasta; dan
+b. Bantuan Sosial Biaya Pendidikan Masuk Sekolah bagi Peserta Didik pada Satuan Pendidikan Swasta.
+
+---
+
+## BAB II
+BANTUAN SOSIAL BIAYA PERSONAL DAN BIAYA PENYELENGGARAAN PENDIDIKAN
+
+### Pasal 5
+(1) Persyaratan penerima Bantuan Sosial Biaya Personal dan Biaya Penyelenggaraan Pendidikan meliputi:
+
+a. Peserta Didik dengan usia 6 (enam) tahun sampai dengan usia 21 (dua puluh satu) tahun;
+b. terdaftar sebagai Peserta Didik pada Satuan Pendidikan Negeri atau Swasta di Provinsi DKI Jakarta;
+c. memiliki nomor induk kependudukan sebagai penduduk Provinsi DKI Jakarta dan berdomisili di Provinsi DKI Jakarta; dan
+d. memenuhi kriteria khusus sebagai penerima bantuan sosial.
+
+(2) Kriteria khusus sebagaimana dimaksud pada ayat (1) huruf d sebagai berikut:
+a. terdaftar dalam Data Terpadu Kesejahteraan Sosial atau Data Terpadu Kesejahteraan Sosial Daerah;
+b. Anak Panti Sosial, anak Penyandang Disabilitas dan anak dari Penyandang Disabilitas;
+c. Anak dari Pengemudi JakLingko yang mengemudikan Mikrotrans;
+d. Anak dari penerima Kartu Pekerja Jakarta; atau
+e. Anak Tidak Sekolah.
+
+---
+
+### Pasal 6
+(1) Peserta Didik pada Satuan Pendidikan Negeri menerima komponen Bantuan Sosial Biaya Personal.
+
+(2) Peserta Didik pada Satuan Pendidikan Swasta menerima komponen Bantuan Sosial Biaya Personal dan Biaya Penyelenggaraan Pendidikan.
+
+### Pasal 7
+(1) Bantuan Sosial Biaya Personal yang diberikan kepada Peserta Didik dapat digunakan untuk:
+a. Biaya Rutin;
+b. Biaya Berkala; dan/atau
+c. Biaya Persiapan Masuk Perguruan Tinggi.
+
+(2) Bantuan Sosial Biaya Penyelenggaraan Pendidikan diberikan kepada Peserta Didik pada Satuan Pendidikan Swasta baik yang mengikuti Penerimaan Peserta Didik Baru Bersama maupun yang tidak mengikuti Penerimaan Peserta Didik Baru Bersama.
+
+---
+
+### Pasal 8
+(1) Pemberian Bantuan Sosial Biaya Personal dan Biaya Penyelenggaraan Pendidikan disalurkan melalui Kartu Jakarta Pintar Plus.
+
+(2) Tata cara pendataan dan pengusulan calon penerima Bantuan Sosial Biaya Personal dan Biaya Penyelenggaraan Pendidikan melalui Kartu Jakarta Pintar Plus ditetapkan dalam Keputusan Kepala Dinas Pendidikan.
+
+---
+
+### Pasal 9
+(1) Dalam hal status keadaan darurat bencana diberlakukan di Provinsi DKI Jakarta, Biaya Rutin dan Biaya Berkala sebagaimana dimaksud dalam Pasal 7 ayat (1) huruf a dan huruf b dapat digunakan untuk pemenuhan kebutuhan Peserta Didik.
+
+(2) Pemenuhan kebutuhan Peserta Didik sebagaimana dimaksud pada ayat (1) meliputi:
+a. kebutuhan pangan;
+b. kebutuhan kesehatan; dan
+c. kebutuhan pendidikan.
+
+(3) Penggunaan Biaya Rutin dan Biaya Berkala untuk pemenuhan kebutuhan Peserta Didik dapat dilakukan setiap bulan secara tunai dan/atau non tunai.
+
+---
+
+## BAB III
+BANTUAN SOSIAL BIAYA PENDIDIKAN MASUK SEKOLAH
+
+### Pasal 10
+(1) Persyaratan penerima Bantuan Sosial Biaya Pendidikan Masuk Sekolah meliputi:
+a. Peserta Didik dengan usia 6 (enam) tahun sampai dengan usia 21 (dua puluh satu) tahun;
+b. terdaftar sebagai Peserta Didik pada Satuan Pendidikan Swasta di Provinsi DKI Jakarta;
+c. memiliki nomor induk kependudukan sebagai penduduk Provinsi DKI Jakarta dan berdomisili di Provinsi DKI Jakarta; dan
+d. memenuhi kriteria khusus sebagai penerima bantuan sosial.
+
+(2) Kriteria khusus sebagaimana dimaksud pada ayat (1) huruf d sebagai berikut:
+a. terdaftar dalam Data Terpadu Kesejahteraan Sosial atau Data Terpadu Kesejahteraan Sosial Daerah;
+b. Anak Panti Sosial, anak Penyandang Disabilitas dan anak dari Penyandang Disabilitas;
+c. Anak dari Pengemudi JakLingko yang mengemudikan Mikrotrans;
+d. Anak dari penerima Kartu Pekerja Jakarta; atau
+e. Anak Tidak Sekolah.
+
+---
+
+### Pasal 11
+(1) Bantuan Sosial Biaya Pendidikan Masuk Sekolah digunakan sebagai biaya investasi.
+
+(2) Bantuan Sosial Biaya Pendidikan Masuk Sekolah diberikan kepada Peserta Didik pada Satuan Pendidikan Swasta baik yang mengikuti Penerimaan Peserta Didik Baru Bersama maupun yang tidak mengikuti Penerimaan Peserta Didik Baru Bersama.
+
+---
+
+### Pasal 12
+(1) Bantuan Sosial Biaya Pendidikan Masuk Sekolah dapat diberikan kepada Peserta Didik yang mengalami kesulitan ekonomi terdampak **Corona Virus Disease 2019** dengan persyaratan:
+a. salah satu atau kedua orang tua mengalami kehilangan pekerjaan karena pemutusan hubungan kerja;
+b. salah satu atau kedua orang tua kehilangan usaha dan/atau penghasilan yang berkurang secara signifikan;
+c. salah satu atau kedua orang tua berpenghasilan tidak tetap sebagai dampak **Corona Virus Disease 2019**;
+d. salah satu atau kedua orang tua dirumahkan tanpa diberikan atau dipotong penghasilannya; dan/atau
+e. salah satu atau kedua orang tua meninggal dunia akibat terkonfirmasi **Corona Virus Disease 2019**.
+
+### Pasal 13
+(1) Pemberian Bantuan Sosial Biaya Pendidikan Masuk Sekolah disalurkan melalui Peserta Didik.
+
+(2) Tata cara pendataan dan pengusulan calon penerima Bantuan Sosial Biaya Pendidikan Masuk Sekolah ditetapkan dalam Keputusan Kepala Dinas Pendidikan.
+
+---
+
+## BAB IV
+TATA CARA PEMBERIAN BANTUAN SOSIAL
+
+### Pasal 14
+Pemberian Bantuan Sosial Biaya Pendidikan dilakukan berdasarkan mekanisme pemberian bantuan sosial yang direncanakan sesuai dengan ketentuan peraturan perundang-undangan.
+
+### Pasal 15
+Kepala Dinas Pendidikan mengajukan usulan calon penerima Bantuan Sosial Biaya Pendidikan secara tertulis kepada Gubernur.
+
+### Pasal 16
+Besaran dan penerima Bantuan Sosial Biaya Pendidikan ditetapkan dalam Keputusan Gubernur berdasarkan usulan dari Kepala Dinas Pendidikan.
+
+### Pasal 17
+Petunjuk teknis pemberian Bantuan Sosial Biaya Pendidikan ditetapkan dalam Keputusan Kepala Dinas Pendidikan.
+
+---
+
+## BAB VI
+PEMANTAUAN DAN EVALUASI
+
+### Pasal 19
+(1) Pemantauan dan evaluasi kebijakan penggunaan Bantuan Sosial Biaya Pendidikan dilaksanakan oleh Asisten Kesejahteraan Rakyat Sekretaris Daerah Pemerintah Provinsi DKI Jakarta.
+
+(2) Pemantauan dan evaluasi teknis pelaksanaan dan penggunaan Bantuan Sosial Biaya Pendidikan dilakukan oleh Dinas Pendidikan dan berkoordinasi dengan instansi vertikal lainnya.
+
+### Pasal 20
+(1) Walikota/Bupati selaku pejabat wilayah masing-masing menugaskan Camat dan Lurah untuk melakukan pemantauan atas pelanggaran aturan yang dilakukan oleh penerima Bantuan Sosial Biaya Pendidikan.
+
+(2) Hasil pemantauan Camat dan Lurah disampaikan kepada Walikota/Bupati.
+
+(3) Hasil pemantauan sebagaimana dimaksud pada ayat (2) dikoordinasikan dengan Kepala Dinas Pendidikan.
+
+(4) Hasil pemantauan sebagaimana dimaksud pada ayat (3) dapat dijadikan sebagai bahan pertimbangan dalam menentukan kelanjutan penerima Bantuan Sosial Biaya Pendidikan.
+
+(5) Berdasarkan bahan pertimbangan sebagaimana dimaksud pada ayat (4) dan pengaduan masyarakat, **P4OP** menindaklanjuti dengan memberhentikan Bantuan Sosial Biaya Pendidikan kepada penerima Bantuan Sosial Biaya Pendidikan.
+
+
+### Pasal 21
+(1) Pemantauan dan evaluasi dilaksanakan paling sedikit 1 (satu) kali dalam 6 (enam) bulan.
+
+(2) Pemantauan dan evaluasi dilaporkan kepada Gubernur melalui kjp.jakarta.go.id yang terintegrasi dengan sistem pemerintahan berbasis elektronik.
+
+---
+
+### Pasal 22
+Hasil pemantauan dan evaluasi sebagaimana dimaksud dalam Pasal 21 dilaporkan kepada Gubernur.
+
+---
+
+## BAB VII
+LARANGAN
+
+### Pasal 23
+Peserta Didik yang merupakan penerima Bantuan Sosial Biaya Pendidikan dilarang:
+
+a. membelanjakan Bantuan Sosial Biaya Pendidikan di luar penggunaan yang telah diatur dalam Peraturan Gubernur ini;
+b. merokok;
+c. menggunakan dan mengedarkan narkotika dan obat-obatan terlarang;
+d. melakukan perbuatan asusila/pergaulan bebas/pelecehan seksual;
+e. terlibat dalam kekerasan/perundungan;
+f. terlibat tawuran;
+g. terlibat geng motor/geng sekolah;
+h. minum minuman keras/minuman beralkohol;
+i. terlibat pencurian;
+j. melakukan pemalakan/pemerasan/penjambretan;
+k. terlibat perkelahian;
+l. terlibat penipuan;
+m. terlibat mencontek massal;
+n. membocorkan soal/kunci jawaban;
+o. terlibat pornografi/pornografi;
+p. menyebarluaskan gambar tidak senonoh baik secara konvensional maupun melalui media daring;
+q. membawa senjata tajam dan peralatan lain yang membahayakan;
+r. sering bolos sekolah minimal 4 (empat) kali dalam 1 (satu) bulan;
+s. sering terlambat tiba di sekolah berturut-turut atau tidak berturut-turut paling sedikit 6 (enam) kali dalam 1 (satu) bulan;
+t. menggadaikan/meminjamkan Bantuan Sosial Biaya Pendidikan dan/atau buku tabungan Bantuan Sosial Biaya Pendidikan kepada pihak manapun dan dalam bentuk apapun;
+u. menghabiskan Bantuan Sosial Biaya Pendidikan untuk belanja penggunaan yang tidak secara nyata dibutuhkan oleh Peserta Didik yang bersangkutan;
+v. meminjamkan Bantuan Sosial Biaya Pendidikan kepada pihak manapun; dan
+w. melakukan perbuatan yang melanggar peraturan tata tertib sekolah/peraturan sekolah.
+
+---
+
+### Pasal 24
+Orang tua/wali Peserta Didik penerima Bantuan Sosial Biaya Pendidikan dilarang:
+
+a. membelanjakan Bantuan Sosial Biaya Pendidikan di luar penggunaan yang telah ditetapkan dalam Keputusan Kepala Dinas Pendidikan;
+b. mengondisikan pelaksanaan pencairan/pemindahbukuan rekening dana dengan imbalan/jasa tertentu;
+c. memalsukan bukti belanja penggunaan Bantuan Sosial Biaya Pendidikan;
+d. mengondisikan bukti penggunaan Bantuan Sosial Biaya Pendidikan sebagai pertanggungjawaban;
+e. menggunakan jasa pihak ketiga termasuk sekolah/madrasah untuk melakukan pencairan Bantuan Sosial Biaya Pendidikan dengan janji memberikan imbalan tertentu;
+f. menggadaikan/meminjamkan Bantuan Sosial Biaya Pendidikan dan/atau buku tabungan Bantuan Sosial Biaya Pendidikan kepada pihak manapun dan dalam bentuk apapun;
+g. menghabiskan Bantuan Sosial Biaya Pendidikan untuk belanja penggunaan yang tidak secara nyata dibutuhkan oleh Peserta Didik yang bersangkutan; dan
+h. meminjamkan Bantuan Sosial Biaya Pendidikan kepada pihak manapun.
+
+---
+
+### Pasal 25
+Satuan Pendidikan dilarang:
+a. melakukan manipulasi maupun pembiaran terhadap indikasi ketidakbenaran data Peserta Didik calon penerima Bantuan Sosial Biaya Pendidikan;
+b. memanfaatkan Bantuan Sosial Biaya Pendidikan yang diterima Peserta Didik dengan dalih apapun; dan
+c. memotong/mengurangi Bantuan Sosial Biaya Pendidikan dan/atau memungut biaya dari orang tua/wali Peserta Didik atau Peserta Didik berkenaan dengan pelaksanaan tugas Satuan Pendidikan terkait pemberian Bantuan Sosial Biaya Pendidikan.
+
+---
+
+## BAB VII
+SANKSI DISKUALIFIKASI
+
+### Pasal 26
+(1) Peserta Didik dan/atau orang tua/wali Peserta Didik penerima Bantuan Sosial Biaya Pendidikan yang melanggar salah satu atau secara kumulatif larangan sebagaimana dimaksud dalam Pasal 23 dan Pasal 24 diberikan sanksi berupa penarikan dana Bantuan Sosial Biaya Pendidikan dan penghentian Bantuan Sosial Biaya Pendidikan sesuai dengan rekomendasi yang diberikan oleh satuan pendidikan.
+
+(2) Sanksi sebagaimana dimaksud pada ayat (1) dapat dicabut berdasarkan rekomendasi yang diberikan oleh satuan pendidikan.
+
+(3) Rekomendasi sebagaimana dimaksud pada ayat (2) dapat digunakan sebagai dasar untuk pengajuan kembali Bantuan Sosial Biaya Pendidikan.
+
+---
+
+## BAB VIII
+PEMBIAYAAN
+
+### Pasal 27
+(1) Pembiayaan Bantuan Sosial Biaya Pendidikan bersumber dari Anggaran Pendapatan dan Belanja Daerah dan sumber lain yang sah dan tidak mengikat sesuai dengan ketentuan peraturan perundang-undangan.
+
+(2) Pembiayaan Bantuan Sosial Biaya Pendidikan dicantumkan pada rencana kerja dan anggaran Dinas Pendidikan.
+
+(3) Pembiayaan Bantuan Sosial Biaya Pendidikan berdasarkan usulan dari Kepala Dinas Pendidikan kepada Gubernur dengan tembusan Kepala Badan Perencanaan dan Pembangunan Daerah Provinsi DKI Jakarta.
+
+---
+
+## BAB IX
+KETENTUAN PERALIHAN
+
+### Pasal 28
+Penerima Kartu Jakarta Pintar Plus sebelum berlakunya Peraturan Gubernur ini tetap mendapatkan bantuan sosial sepanjang terdaftar dan memenuhi kriteria sebagaimana dimaksud dalam Pasal 5 sebagai Peserta Didik pada Satuan Pendidikan Negeri atau Swasta di Provinsi DKI Jakarta.
+
+---
+
+## BAB X
+KETENTUAN PENUTUP
+
+### Pasal 29
+Pada saat Peraturan Gubernur ini mulai berlaku:
+
+a. Peraturan Gubernur Nomor 4 Tahun 2018 tentang Kartu Jakarta Pintar Plus (Berita Daerah Provinsi Daerah Khusus Ibukota Jakarta Tahun 2018 Nomor 75001);
+
+b. Peraturan Gubernur Nomor 15 Tahun 2019 tentang Perubahan atas Peraturan Gubernur Nomor 4 Tahun 2018 tentang Kartu Jakarta Pintar Plus (Berita Daerah Provinsi Daerah Khusus Ibukota Jakarta Tahun 2019 Nomor 75003);
+
+c. Peraturan Gubernur Nomor 46 Tahun 2020 tentang Perubahan Kedua atas Peraturan Gubernur Nomor 4 Tahun 2018 tentang Kartu Jakarta Pintar Plus (Berita Daerah Provinsi Daerah Khusus Ibukota Jakarta Tahun 2020 Nomor 75006);
+
+d. Peraturan Gubernur Nomor 90 Tahun 2020 tentang Perubahan Ketiga atas Peraturan Gubernur Nomor 4 Tahun 2018 tentang Kartu Jakarta Pintar Plus (Berita Daerah Provinsi Daerah Khusus Ibukota Jakarta Tahun 2020 Nomor 75014); dan
+
+e. Peraturan Gubernur Nomor 114 Tahun 2020 tentang Pemberian Bantuan Sosial Biaya Pendidikan Masuk Sekolah Bagi Peserta Didik Baru di Sekolah/Madrasah Swasta;
+
+— dicabut dan dinyatakan tidak berlaku lagi.
+
+### Pasal 30
+Peraturan Gubernur ini mulai berlaku pada tanggal diundangkan dan berlaku surut sejak tanggal 1 Desember 2021.
+
+Agar setiap orang mengetahuinya, memerintahkan pengundangan Peraturan Gubernur ini dengan penempatannya dalam Berita Daerah Provinsi Daerah Khusus Ibukota Jakarta.
+
+---
+
+Ditetapkan di Jakarta
+pada tanggal 15 Desember 2021
+
+GUBERNUR DAERAH KHUSUS IBUKOTA JAKARTA,
+**ttd**
+**ANIES RASYID BASWEDAN**
+
+---
+
+Diundangkan di Jakarta
+pada tanggal 15 Desember 2021
+
+SEKRETARIS DAERAH PROVINSI DAERAH KHUSUS IBUKOTA JAKARTA,
+**ttd**
+**MARULLAH MATALI**
+
+---
+
+**BERITA DAERAH PROVINSI DAERAH KHUSUS IBUKOTA JAKARTA
+TAHUN 2021 NOMOR 71017**
+
+Salinan sesuai dengan aslinya
+KEPALA BIRO HUKUM SEKRETARIAT DAERAH
+PROVINSI DAERAH KHUSUS IBUKOTA JAKARTA,
+
+**YAYAN YUHANAH**
+NIP 196508241994032003
+
 # FAQ
 
 ### Batas pengajuan akun
@@ -17,6 +643,15 @@ Ya. Pendaftaran akun SPMB dapat dilakukan setiap hari mulai tanggal 18 Mei, term
 ## Di mana lokasi Posko SPMB 2026?
 
 Posko SPMB 2026 tersedia di setiap wilayah DKI Jakarta dan Kepulauan Seribu. Masyarakat dapat menghubungi Posko SPMB sesuai wilayah domisili melalui WhatsApp atau Hotline berikut.
+
+##  butuh brp lama untuk pengajuan akun diverifikasi?
+akun diverifikasi oleh operator sekolah yang bapak/ibu pilih untuk verifikasi, jika dalam waktu beberapa jam juga belum diverifikasi, silahkan datangi sekolah tempat verifikasi untuk mengingatkan operatornya melakukan verifikasi akun.
+
+## apakah posko buka di hari libur atau tanggal merah ?
+Posko libur pada hari libur seperti Sabtu, minggu, dan tanggal merah.
+
+## Dimana saya bisa melihat nomor id atau perserta DHTKA?
+untuk mendapatkan nomor id DHTKA bisa menghubungi operator sekolah masing-masing
 
 ### Jakarta Pusat 1
 
@@ -178,91 +813,91 @@ Jika ada masalah kependudukan baik kartu keluaga, NIK sudah terdaftar, tanggal t
 # Tentang ASKA – Agent AI Sekolah Kita 🏫🤖✨
 
 ## Apa itu ASKA?
-**ASKA (Agent AI Sekolah Kita)** adalah asisten digital berbasis kecerdasan buatan (AI) yang dibuat khusus untuk mendukung layanan informasi, pembelajaran, dan komunikasi di lingkungan **Suku Dinas Pendidikan Jakarta Utara 2**.  
-ASKA hadir sebagai **teman belajar, sahabat interaktif, sekaligus pusat informasi pendidikan** yang bisa diakses kapan saja (**24/7**) oleh siswa, orang tua, guru, dan pemangku kepentingan di wilayah Jakarta Utara 2.  
+**ASKA (Agent AI Sekolah Kita)** adalah asisten digital berbasis kecerdasan buatan (AI) yang dibuat khusus untuk mendukung layanan informasi, pembelajaran, dan komunikasi di lingkungan **Suku Dinas Pendidikan Jakarta Utara 2**.
+ASKA hadir sebagai **teman belajar, sahabat interaktif, sekaligus pusat informasi pendidikan** yang bisa diakses kapan saja (**24/7**) oleh siswa, orang tua, guru, dan pemangku kepentingan di wilayah Jakarta Utara 2.
 
 Dengan gaya komunikasi yang ramah, responsif, dan sesuai tren generasi saat ini, ASKA tidak hanya memberikan jawaban, tapi juga menciptakan pengalaman belajar yang lebih **asyik, efisien, dan menyenangkan**.
 
 ## Fitur Terbaru ASKA
-- 🎓 **Mode Guru Interaktif**  
+- 🎓 **Mode Guru Interaktif**
   Flow `teacher_flow` menyediakan latihan soal adaptif: memilih soal berdasarkan kelas/mata pelajaran, memberi umpan balik tiap jawaban, dan mengatur diskusi lanjutan agar siswa bisa belajar mandiri.
 
 ---
 
 ## Tujuan Pembuatan
-1. 📚 **Mempermudah akses informasi sekolah**  
-   - Memberikan jawaban cepat terkait **PPDB, KJP, jadwal pelajaran, ekstrakurikuler, dan kegiatan sekolah lainnya**.  
+1. 📚 **Mempermudah akses informasi sekolah**
+   - Memberikan jawaban cepat terkait **PPDB, program bantuan pendidikan, jadwal pelajaran, ekstrakurikuler, dan kegiatan sekolah lainnya**.
 
-2. ⚡ **Meningkatkan efisiensi layanan**  
-   - Menghemat waktu pencarian informasi (hingga 10x lebih cepat) dibandingkan metode manual.  
+2. ⚡ **Meningkatkan efisiensi layanan**
+   - Menghemat waktu pencarian informasi (hingga 10x lebih cepat) dibandingkan metode manual.
 
-3. 🌐 **Mendukung transformasi digital sekolah**  
-   - Selaras dengan kebijakan **SPBE (Sistem Pemerintahan Berbasis Elektronik)**, **Satu Data**, dan digitalisasi pelayanan publik.  
+3. 🌐 **Mendukung transformasi digital sekolah**
+   - Selaras dengan kebijakan **SPBE (Sistem Pemerintahan Berbasis Elektronik)**, **Satu Data**, dan digitalisasi pelayanan publik.
 
-4. 🤝 **Meningkatkan interaksi & partisipasi**  
-   - Menjadi media komunikasi dua arah yang ramah bagi siswa, guru, maupun orang tua.  
+4. 🤝 **Meningkatkan interaksi & partisipasi**
+   - Menjadi media komunikasi dua arah yang ramah bagi siswa, guru, maupun orang tua.
 
 ---
 
 ## Manfaat ASKA
-- 🏫 **Untuk Sekolah**: Meningkatkan citra sebagai sekolah digital yang modern, transparan, dan responsif.  
-- 👩‍🏫 **Untuk Guru & Tenaga Kependidikan**: Mengurangi beban pertanyaan berulang, sehingga bisa fokus pada pembelajaran dan pelayanan utama.  
-- 👨‍👩‍👧‍👦 **Untuk Orang Tua**: Mendapatkan informasi resmi sekolah dengan cepat, jelas, dan akurat.  
-- 👦👧 **Untuk Siswa**: Mendapatkan teman belajar yang selalu siap membantu, dengan gaya bahasa yang seru dan mudah dipahami.  
+- 🏫 **Untuk Sekolah**: Meningkatkan citra sebagai sekolah digital yang modern, transparan, dan responsif.
+- 👩‍🏫 **Untuk Guru & Tenaga Kependidikan**: Mengurangi beban pertanyaan berulang, sehingga bisa fokus pada pembelajaran dan pelayanan utama.
+- 👨‍👩‍👧‍👦 **Untuk Orang Tua**: Mendapatkan informasi resmi sekolah dengan cepat, jelas, dan akurat.
+- 👦👧 **Untuk Siswa**: Mendapatkan teman belajar yang selalu siap membantu, dengan gaya bahasa yang seru dan mudah dipahami.
 
 ---
 
 ## Fungsi Utama ASKA
-- 🔎 Menjawab pertanyaan seputar kebijakan sekolah, jadwal, dan administrasi.  
-- 📝 Memberikan ringkasan materi pembelajaran dasar.  
-- 📑 Menyediakan akses cepat ke dokumen penting yang sudah disimpan dalam **Knowledge Base (KB)** sekolah.  
-- 💬 Menjadi sahabat interaktif yang ramah, sesuai persona Gen-Z.  
+- 🔎 Menjawab pertanyaan seputar kebijakan sekolah, jadwal, dan administrasi.
+- 📝 Memberikan ringkasan materi pembelajaran dasar.
+- 📑 Menyediakan akses cepat ke dokumen penting yang sudah disimpan dalam **Knowledge Base (KB)** sekolah.
+- 💬 Menjadi sahabat interaktif yang ramah, sesuai persona Gen-Z.
 
 ---
 
 ## Siapa yang Membuat ASKA?
-ASKA dibuat dan dikembangkan oleh **MH. Ainun Fajar**, seorang **Pegawai Negeri Sipil (PNS) di lingkungan pendidikan Jakarta Utara 2**, yang bertugas di bidang **Penata Kelola Sistem & Teknologi Informasi**.  
+ASKA dibuat dan dikembangkan oleh **MH. Ainun Fajar**, seorang **Pegawai Negeri Sipil (PNS) di lingkungan pendidikan Jakarta Utara 2**, yang bertugas di bidang **Penata Kelola Sistem & Teknologi Informasi**.
 
-Proyek ini lahir sebagai bagian dari **Aktualisasi Latsar CPNS** dan menjadi inovasi nyata untuk mendukung:  
-- 📖 **Program Smart ASN**  
-- 🎯 **Nilai BerAKHLAK** (Berorientasi Pelayanan, Akuntabel, Kompeten, Harmonis, Loyal, Adaptif, Kolaboratif)  
-- 🏛️ **Pergub DKI Jakarta No. 40 Tahun 2024 tentang SPBE**  
+Proyek ini lahir sebagai bagian dari **Aktualisasi Latsar CPNS** dan menjadi inovasi nyata untuk mendukung:
+- 📖 **Program Smart ASN**
+- 🎯 **Nilai BerAKHLAK** (Berorientasi Pelayanan, Akuntabel, Kompeten, Harmonis, Loyal, Adaptif, Kolaboratif)
+- 🏛️ **Pergub DKI Jakarta No. 40 Tahun 2024 tentang SPBE**
 
 ---
 
 ## Visi ASKA
-Menjadi **sobat belajar dan sahabat digital sekolah** yang mampu:  
-- Memberikan **informasi cepat, akurat, dan transparan**.  
-- Menjadi **teman belajar yang cerdas, asyik, dan aman**.  
-- Mewujudkan **sekolah digital berbasis AI** yang siap menghadapi era transformasi teknologi.  
+Menjadi **sobat belajar dan sahabat digital sekolah** yang mampu:
+- Memberikan **informasi cepat, akurat, dan transparan**.
+- Menjadi **teman belajar yang cerdas, asyik, dan aman**.
+- Mewujudkan **sekolah digital berbasis AI** yang siap menghadapi era transformasi teknologi.
 
 # Profil Suku Dinas Pendidikan Jakarta Utara 2
 
 ## 1. Identitas dan Kanal Resmi
 
-**Nama Instansi:** Suku Dinas Pendidikan Jakarta Utara 2  
-**Unit Induk:** Dinas Pendidikan Provinsi DKI Jakarta  
+**Nama Instansi:** Suku Dinas Pendidikan Jakarta Utara 2
+**Unit Induk:** Dinas Pendidikan Provinsi DKI Jakarta
 
-**Alamat Kantor:**  
+**Alamat Kantor:**
 Lantai 4 Blok R Kantor Walikota Administrasi Jakarta Utara, Jl. Yos Sudarso No.27-29, RT.19/RW.5, Kb. Bawang, Kec. Tj. Priok, Jkt Utara, Daerah Khusus Ibukota Jakarta 14320
 
 **Kontak Resmi (disarankan diisi manual):**
-- **Telepon:** (62-21) 4303111  
-- **Email:** umum-jakut@jakarta.go.id  
-- **Website Resmi:** https://www.sudindikju2.com/ 
-- **Instagram:** https://www.instagram.com/sudindikju_dua/   
+- **Telepon:** (62-21) 4303111
+- **Email:** umum-jakut@jakarta.go.id
+- **Website Resmi:** https://www.sudindikju2.com/
+- **Instagram:** https://www.instagram.com/sudindikju_dua/
 
 
 ---
 
 ## 2. Wilayah Kerja
 
-Suku Dinas Pendidikan Jakarta Utara 2 membina dan mengoordinasikan satuan pendidikan di sebagian wilayah Kota Administrasi Jakarta Utara.  
+Suku Dinas Pendidikan Jakarta Utara 2 membina dan mengoordinasikan satuan pendidikan di sebagian wilayah Kota Administrasi Jakarta Utara.
 
 Secara umum, lingkup kerja mencakup:
-- Sekolah dasar (SD) negeri dan swasta di wilayah kerja Sudin 2.  
-- Sekolah menengah pertama (SMP) negeri dan swasta di wilayah kerja Sudin 2.  
-- Satuan pendidikan non-formal tertentu sesuai kewenangan Sudin.  
+- Sekolah dasar (SD) negeri dan swasta di wilayah kerja Sudin 2.
+- Sekolah menengah pertama (SMP) negeri dan swasta di wilayah kerja Sudin 2.
+- Satuan pendidikan non-formal tertentu sesuai kewenangan Sudin.
 
 **Wilayah Kecamatan Jakarta Utara 2:**
 1. **Cilincing**
@@ -275,23 +910,23 @@ Secara umum, lingkup kerja mencakup:
 Suku Dinas Pendidikan Jakarta Utara 2 menjalankan tugas dekonsentrasi dan tugas pembantuan dari Dinas Pendidikan Provinsi DKI Jakarta, antara lain:
 
 1. **Pembinaan dan Pengawasan Sekolah**
-   - Membina kepala sekolah, guru, dan tenaga kependidikan.  
-   - Memantau pelaksanaan kurikulum dan proses pembelajaran.  
-   - Mendorong peningkatan mutu pendidikan dan budaya integritas di sekolah.  
+   - Membina kepala sekolah, guru, dan tenaga kependidikan.
+   - Memantau pelaksanaan kurikulum dan proses pembelajaran.
+   - Mendorong peningkatan mutu pendidikan dan budaya integritas di sekolah.
 
 2. **Layanan Peserta Didik**
-   - Mengelola pelaksanaan kebijakan PPDB pada jenjang yang menjadi kewenangan.  
-   - Memfasilitasi layanan bantuan pendidikan (mis. KJP/Beasiswa Daerah) bekerja sama dengan instansi terkait.  
+   - Mengelola pelaksanaan kebijakan PPDB pada jenjang yang menjadi kewenangan.
+   - Memfasilitasi layanan bantuan pendidikan (mis. KJP/Beasiswa Daerah) bekerja sama dengan instansi terkait.
 
 3. **Administrasi dan Tata Kelola Pendidikan**
-   - Mengelola data pendidikan (Dapodik, SIRUP, e-Kinerja, dan sistem lain sesuai regulasi).  
-   - Menyiapkan laporan kinerja pendidikan wilayah Jakarta Utara 2.  
-   - Melaksanakan program-program prioritas Dinas Pendidikan DKI Jakarta di tingkat Sudin.  
+   - Mengelola data pendidikan (Dapodik, SIRUP, e-Kinerja, dan sistem lain sesuai regulasi).
+   - Menyiapkan laporan kinerja pendidikan wilayah Jakarta Utara 2.
+   - Melaksanakan program-program prioritas Dinas Pendidikan DKI Jakarta di tingkat Sudin.
 
 4. **Kolaborasi dan Layanan Informasi**
-   - Menjadi penghubung antara sekolah, orang tua, komite, dan masyarakat.  
-   - Menyediakan layanan informasi publik terkait pendidikan dasar/menengah di wilayah Jakarta Utara 2.  
-   - Mengembangkan inovasi layanan, termasuk pemanfaatan asisten digital seperti **ASKA**.  
+   - Menjadi penghubung antara sekolah, orang tua, komite, dan masyarakat.
+   - Menyediakan layanan informasi publik terkait pendidikan dasar/menengah di wilayah Jakarta Utara 2.
+   - Mengembangkan inovasi layanan, termasuk pemanfaatan asisten digital seperti **ASKA**.
 
 ---
 
@@ -300,14 +935,14 @@ Suku Dinas Pendidikan Jakarta Utara 2 menjalankan tugas dekonsentrasi dan tugas 
 > Data nama jabatan di bawah ini adalah struktur umum. Silakan lengkapi **nama pejabat** dan kontak bila sudah ada sumber resmi.
 
 **Pimpinan:**
-- **Kepala Suku Dinas Pendidikan Jakarta Utara 2:** Heni Nurhayani  
+- **Kepala Suku Dinas Pendidikan Jakarta Utara 2:** Heni Nurhayani
 
 **Jabatan Kunci (contoh yang relevan untuk ASKA):**
-- **Kepala Suku Dinas:** Heni Nurhayani 
-- **Kasubag Tata Usaha** Mukheri  
-- **Kepala Seksi Peserta Didik dan Pembangunan Karakter** – membina urusan kesiswaan, PPDB, dan layanan peserta didik.  
-- **Kepala Seksi PTK (Pendidik dan Tenaga Kependidikan)** – membina guru dan tenaga kependidikan.  
-- **Kepala Seksi Didik Dasmen (SD/SMP)** – membina proses pembelajaran, kurikulum, dan mutu pendidikan di sekolah binaan.  
+- **Kepala Suku Dinas:** Heni Nurhayani
+- **Kasubag Tata Usaha** Mukheri
+- **Kepala Seksi Peserta Didik dan Pembangunan Karakter** – membina urusan kesiswaan, PPDB, dan layanan peserta didik.
+- **Kepala Seksi PTK (Pendidik dan Tenaga Kependidikan)** – membina guru dan tenaga kependidikan.
+- **Kepala Seksi Didik Dasmen (SD/SMP)** – membina proses pembelajaran, kurikulum, dan mutu pendidikan di sekolah binaan.
 
 Anda dapat menambahkan tabel ringkas seperti:
 
@@ -325,11 +960,11 @@ Anda dapat menambahkan tabel ringkas seperti:
 
 Agar ASKA dapat menjawab pertanyaan dengan konteks Sudin, berikut contoh jenis layanan yang bisa dijelaskan oleh bot:
 
-- Informasi umum tentang **PPDB** di wilayah Jakarta Utara 2 (alur, jalur, dan kanal resmi informasi).  
-- Penjelasan singkat mengenai **bantuan pendidikan** (misalnya KJP/Beasiswa Daerah) dan kanal pengaduan terkait.  
+- Informasi umum tentang **PPDB** di wilayah Jakarta Utara 2 (alur, jalur, dan kanal resmi informasi).
+- Penjelasan singkat mengenai **bantuan pendidikan** (misalnya KJP/Beasiswa Daerah) dan kanal pengaduan terkait.
 - Kontak atau tautan resmi untuk:
-  - Pengaduan layanan pendidikan.  
-  - Informasi administrasi sekolah (mutasi, surat keterangan, dsb), bila disediakan oleh Sudin.  
+  - Pengaduan layanan pendidikan.
+  - Informasi administrasi sekolah (mutasi, surat keterangan, dsb), bila disediakan oleh Sudin.
 
 Anda bisa menambahkan detail per layanan (mis. link formulir pengaduan, jadwal loket layanan, dsb) bila sudah tersedia.
 
@@ -337,627 +972,35 @@ Anda bisa menambahkan detail per layanan (mis. link formulir pengaduan, jadwal l
 
 ## 6. Catatan untuk Konfigurasi ASKA
 
-- ASKA dikonfigurasi untuk melayani kebutuhan informasi dan layanan pendukung di lingkungan **Suku Dinas Pendidikan Jakarta Utara 2**, bukan lagi hanya satu sekolah tertentu.  
-- Bila pengguna **tidak menyebut nama sekolah secara spesifik**, ASKA boleh menjelaskan kebijakan atau prosedur **tingkat Sudin** (umum) dan menyarankan agar menyebut nama sekolah bila butuh informasi yang sangat spesifik.  
+- ASKA dikonfigurasi untuk melayani kebutuhan informasi dan layanan pendukung di lingkungan **Suku Dinas Pendidikan Jakarta Utara 2**, bukan lagi hanya satu sekolah tertentu.
+- Bila pengguna **tidak menyebut nama sekolah secara spesifik**, ASKA boleh menjelaskan kebijakan atau prosedur **tingkat Sudin** (umum) dan menyarankan agar menyebut nama sekolah bila butuh informasi yang sangat spesifik.
 - Pastikan semua **link resmi, alamat, dan nomor kontak** diisi berdasarkan sumber yang sah agar jawaban ASKA tetap akurat dan tidak menyesatkan.
 
 
 
 
-# PERATURAN GUBERNUR DAERAH KHUSUS IBUKOTA JAKARTA TERKAIT KJP (KARTU JAKARTA PINTAR)
-NOMOR 110 TAHUN 2021  
-
-## TENTANG  
-BANTUAN SOSIAL BIAYA PENDIDIKAN  
-
----
-
-### Dengan Rahmat Tuhan Yang Maha Esa  
-**Gubernur Daerah Khusus Ibukota Jakarta**,  
-
-### Menimbang  
-a. bahwa dalam rangka mencegah kerentanan sosial dan memberikan layanan mutu pendidikan kepada peserta didik, perlu pemberian dalam bentuk bantuan sosial biaya pendidikan;  
-
-b. bahwa berdasarkan Pasal 39 ayat (5) Peraturan Gubernur Nomor 35 Tahun 2021 tentang Tata Cara Pemberian Hibah dan Bantuan Sosial, persyaratan penerima bantuan sosial diatur dengan Peraturan Gubernur;  
-
-c. bahwa berdasarkan pertimbangan sebagaimana dimaksud dalam huruf a dan huruf b, perlu menetapkan Peraturan Gubernur tentang Bantuan Sosial Biaya Pendidikan;  
-
-### Mengingat  
-1. Undang-Undang Nomor 29 Tahun 2007 tentang Pemerintahan Provinsi Daerah Khusus Ibukota Jakarta sebagai Ibukota Negara Kesatuan Republik Indonesia (Lembaran Negara Republik Indonesia Tahun 2007 Nomor 93, Tambahan Lembaran Negara Republik Indonesia Nomor 4744);  
-
-2. Undang-Undang Nomor 23 Tahun 2014 tentang Pemerintahan Daerah (Lembaran Negara Republik Indonesia Tahun 2014 Nomor 244, Tambahan Lembaran Negara Republik Indonesia Nomor 5587) sebagaimana telah beberapa kali diubah terakhir dengan Undang-Undang Nomor 11 Tahun 2020 tentang Cipta Kerja (Lembaran Negara Republik Indonesia Tahun 2020 Nomor 245, Tambahan Lembaran Negara Republik Indonesia Nomor 6573);  
-
-3. Peraturan Gubernur Nomor 35 Tahun 2021 tentang Tata Cara Pemberian Hibah dan Bantuan Sosial (Berita Daerah Provinsi Daerah Khusus Ibukota Jakarta Tahun 2021 Nomor 71013);  
-
-### Menetapkan  
-**PERATURAN GUBERNUR TENTANG BANTUAN SOSIAL BIAYA PENDIDIKAN.**
-
-## BAB I  
-KETENTUAN UMUM  
-
-### Pasal 1  
-Dalam Peraturan Gubernur ini yang dimaksud dengan:  
-
-1. **Bantuan Sosial Biaya Pendidikan** adalah bantuan sosial dalam bentuk uang yang diberikan kepada Peserta Didik untuk menunjang biaya pendidikan.  
-
-2. **Bantuan Sosial Biaya Personal** adalah biaya yang diberikan kepada Peserta Didik untuk pemenuhan kebutuhan dasar penunjang pendidikan.  
-
-3. **Bantuan Sosial Biaya Penyelenggaraan Pendidikan** adalah biaya sumbangan pembinaan pendidikan dan/atau biaya penyelenggaraan pendidikan lainnya.  
-
-4. **Bantuan Sosial Biaya Pendidikan Masuk Sekolah** adalah biaya yang diberikan kepada Peserta Didik baru pada awal tahun pelajaran di Satuan Pendidikan Swasta.  
-
-5. **Biaya Rutin** adalah Bantuan Sosial Biaya Personal yang diberikan kepada seluruh Peserta Didik sebagai uang saku dan uang transportasi.  
-
-6. **Biaya Berkala** adalah Bantuan Sosial Biaya Personal yang diberikan kepada seluruh Peserta Didik untuk menunjang kegiatan belajar dalam melaksanakan proses belajar.  
-
-7. **Biaya Persiapan Masuk Perguruan Tinggi** adalah Bantuan Sosial Biaya Personal yang diberikan kepada seluruh Peserta Didik di kelas akhir pada jenjang Sekolah Menengah Atas/Madrasah Aliyah, Sekolah Menengah Kejuruan atau sederajat sebagai biaya persiapan masuk perguruan tinggi dan/atau mengikuti ujian seleksi masuk perguruan tinggi.  
-
-8. **Satuan Pendidikan Negeri** adalah Sekolah/Madrasah/Pusat Kegiatan Belajar Masyarakat berstatus negeri yang diselenggarakan oleh Pemerintah Provinsi Daerah Khusus Ibukota Jakarta.  
-
-9. **Satuan Pendidikan Swasta** adalah Sekolah/Madrasah/Pusat Kegiatan Belajar Masyarakat/Lembaga Kursus dan Pelatihan yang diselenggarakan oleh masyarakat di Provinsi Daerah Khusus Ibukota Jakarta.  
-
-10. **Lembaga Kursus dan Pelatihan** adalah satuan pendidikan nonformal yang diselenggarakan bagi masyarakat yang memerlukan bekal pengetahuan, keterampilan, kecakapan hidup, dan sikap untuk mengembangkan diri, mengembangkan profesi, bekerja, usaha mandiri dan/atau melanjutkan pendidikan ke jenjang yang lebih tinggi.  
-
-11. **Pusat Kegiatan Belajar Masyarakat** adalah satuan pendidikan nonformal yang menyelenggarakan berbagai kegiatan belajar sesuai dengan kebutuhan masyarakat atas dasar dari, oleh, dan untuk masyarakat.  
-
-12. **Peserta Didik** adalah warga masyarakat yang berasal dari keluarga miskin, tidak mampu dan rentan terhadap risiko sosial yang sedang mengikuti pendidikan pada jenjang Sekolah Dasar/Madrasah Ibtidaiyah, Sekolah Menengah Pertama/Madrasah Tsanawiyah, Sekolah Menengah Atas/Madrasah Aliyah, Sekolah Menengah Kejuruan, Sekolah Luar Biasa, Pusat Kegiatan Belajar Masyarakat dan Lembaga Kursus dan Pelatihan.  
-
-13. **Penerimaan Peserta Didik Baru Bersama** yang selanjutnya disingkat **PPDB Bersama** adalah penerimaan peserta didik baru pada Sekolah/Madrasah atau Satuan Pendidikan Swasta yang telah menandatangani perjanjian kerja sama dengan Dinas Pendidikan.  
-
-14. **Data Terpadu Kesejahteraan Sosial** adalah sistem data elektronik yang memuat informasi sosial, ekonomi dan demografi dengan status kesejahteraan terendah di Indonesia.  
-
-15. **Data Terpadu Kesejahteraan Sosial Daerah** adalah sistem data elektronik yang memuat informasi sosial, ekonomi dan demografi dengan status kesejahteraan terendah di Provinsi Daerah Khusus Ibukota Jakarta yang ditetapkan dengan Keputusan Gubernur.  
-
-16. **Anak Panti Sosial** adalah anak yang memiliki nomor induk kependudukan dan terdaftar dalam kartu keluarga di dalam panti sosial yang dikelola Pemerintah Provinsi DKI Jakarta.  
-
-17. **Anak Tidak Sekolah** adalah anak yang berusia 6 sampai dengan 21 tahun dan tidak sekolah.  
-
-18. **Penyandang Disabilitas** adalah setiap orang yang mengalami keterbatasan fisik, intelektual, mental, dan/atau sensorik dalam jangka waktu lama yang dalam berinteraksi dengan lingkungan dapat mengalami hambatan dan kesulitan untuk berpartisipasi secara penuh dan efektif dengan warga negara lainnya berdasarkan kesamaan hak.  
-
-19. **Pengemudi JakLingko** adalah pengemudi bus yang terdaftar dalam sistem JakLingko.  
-
-20. **Mikrotrans** adalah bus berukuran panjang maksimum 6 (enam) meter, lebar maksimum 2,1 (dua koma satu) meter, tinggi maksimum 1,7 (satu koma tujuh) meter dan kecepatan kendaraan maksimum tidak lebih dari 60 (enam puluh) km/jam, jumlah tempat duduk 8 (delapan), dan jumlah berdiri 7 (tujuh) yang dioperasikan oleh mitra perusahaan otobus JakLingko.  
-
-21. **Kartu Pekerja Jakarta** adalah kartu bagi pekerja/buruh yang memiliki perusahaan.  
-22. **Kartu Jakarta Pintar Plus** atau KJP Plus adalah kartu sebagai sarana pemberian Bantuan Sosial Biaya Pendidikan yang diberikan kepada Peserta Didik yang memenuhi syarat.  
-
-23. **Provinsi Daerah Khusus Ibukota Jakarta** yang selanjutnya disebut Provinsi DKI Jakarta adalah provinsi yang mempunyai kekhususan dalam penyelenggaraan pemerintahan daerah karena kedudukannya sebagai Ibukota Negara Kesatuan Republik Indonesia.  
-
-24. **Gubernur** adalah Kepala Daerah Provinsi Daerah Khusus Ibukota Jakarta.  
-
-25. **Dinas Pendidikan** adalah Dinas Pendidikan Provinsi Daerah Khusus Ibukota Jakarta.  
-
-26. **Pusat Pelayanan Pendanaan Personal dan Operasional Pendidikan** yang selanjutnya disebut **P4OP** adalah Pusat Pelayanan Pendanaan Personal dan Operasional Pendidikan Provinsi DKI Jakarta.  
-
-27. **Satuan Pelaksana Pendidikan Kecamatan** adalah Satuan Pelaksana Pendidikan Kecamatan di Provinsi Daerah Khusus Ibu Kota Jakarta.  
-
----
-
-### Pasal 2  
-Peraturan Gubernur ini dimaksudkan sebagai pedoman bagi Pemerintah Provinsi DKI Jakarta dalam melakukan pemberian Bantuan Sosial Biaya Pendidikan.  
-
----
-
-### Pasal 3  
-Pemberian Bantuan Sosial Biaya Pendidikan bertujuan:  
-
-a. mendukung terselenggaranya program wajib belajar 12 (dua belas) tahun;  
-b. meningkatkan akses layanan pendidikan secara adil dan merata;  
-c. menjamin kepastian mendapatkan layanan pendidikan;  
-d. meningkatkan mutu layanan dan kualitas hasil pendidikan;  
-e. menumbuhkan motivasi bagi Peserta Didik untuk berprestasi dan menuntaskan pendidikan pada jenjang pendidikan yang diikuti; dan  
-f. mendorong Anak Tidak Sekolah agar kembali mendapatkan layanan pendidikan pada satuan pendidikan tertentu.  
-
----
-
-### Pasal 4  
-Ruang lingkup pelaksanaan pemberian Bantuan Sosial Biaya Pendidikan meliputi:  
-
-a. Bantuan Sosial Biaya Personal dan Biaya Penyelenggaraan Pendidikan bagi Peserta Didik pada Satuan Pendidikan Negeri atau Swasta; dan  
-b. Bantuan Sosial Biaya Pendidikan Masuk Sekolah bagi Peserta Didik pada Satuan Pendidikan Swasta.  
-
----
-
-## BAB II  
-BANTUAN SOSIAL BIAYA PERSONAL DAN BIAYA PENYELENGGARAAN PENDIDIKAN  
-
-### Pasal 5  
-(1) Persyaratan penerima Bantuan Sosial Biaya Personal dan Biaya Penyelenggaraan Pendidikan meliputi:  
-
-a. Peserta Didik dengan usia 6 (enam) tahun sampai dengan usia 21 (dua puluh satu) tahun;  
-b. terdaftar sebagai Peserta Didik pada Satuan Pendidikan Negeri atau Swasta di Provinsi DKI Jakarta;  
-c. memiliki nomor induk kependudukan sebagai penduduk Provinsi DKI Jakarta dan berdomisili di Provinsi DKI Jakarta; dan  
-d. memenuhi kriteria khusus sebagai penerima bantuan sosial.  
-
-(2) Kriteria khusus sebagaimana dimaksud pada ayat (1) huruf d sebagai berikut:  
-a. terdaftar dalam Data Terpadu Kesejahteraan Sosial atau Data Terpadu Kesejahteraan Sosial Daerah;  
-b. Anak Panti Sosial, anak Penyandang Disabilitas dan anak dari Penyandang Disabilitas;  
-c. Anak dari Pengemudi JakLingko yang mengemudikan Mikrotrans;  
-d. Anak dari penerima Kartu Pekerja Jakarta; atau  
-e. Anak Tidak Sekolah.  
-
----
-
-### Pasal 6  
-(1) Peserta Didik pada Satuan Pendidikan Negeri menerima komponen Bantuan Sosial Biaya Personal.  
-
-(2) Peserta Didik pada Satuan Pendidikan Swasta menerima komponen Bantuan Sosial Biaya Personal dan Biaya Penyelenggaraan Pendidikan.  
-
-### Pasal 7  
-(1) Bantuan Sosial Biaya Personal yang diberikan kepada Peserta Didik dapat digunakan untuk:  
-a. Biaya Rutin;  
-b. Biaya Berkala; dan/atau  
-c. Biaya Persiapan Masuk Perguruan Tinggi.  
-
-(2) Bantuan Sosial Biaya Penyelenggaraan Pendidikan diberikan kepada Peserta Didik pada Satuan Pendidikan Swasta baik yang mengikuti Penerimaan Peserta Didik Baru Bersama maupun yang tidak mengikuti Penerimaan Peserta Didik Baru Bersama.  
-
----
-
-### Pasal 8  
-(1) Pemberian Bantuan Sosial Biaya Personal dan Biaya Penyelenggaraan Pendidikan disalurkan melalui Kartu Jakarta Pintar Plus.  
-
-(2) Tata cara pendataan dan pengusulan calon penerima Bantuan Sosial Biaya Personal dan Biaya Penyelenggaraan Pendidikan melalui Kartu Jakarta Pintar Plus ditetapkan dalam Keputusan Kepala Dinas Pendidikan.  
-
----
-
-### Pasal 9  
-(1) Dalam hal status keadaan darurat bencana diberlakukan di Provinsi DKI Jakarta, Biaya Rutin dan Biaya Berkala sebagaimana dimaksud dalam Pasal 7 ayat (1) huruf a dan huruf b dapat digunakan untuk pemenuhan kebutuhan Peserta Didik.  
-
-(2) Pemenuhan kebutuhan Peserta Didik sebagaimana dimaksud pada ayat (1) meliputi:  
-a. kebutuhan pangan;  
-b. kebutuhan kesehatan; dan  
-c. kebutuhan pendidikan.  
-
-(3) Penggunaan Biaya Rutin dan Biaya Berkala untuk pemenuhan kebutuhan Peserta Didik dapat dilakukan setiap bulan secara tunai dan/atau non tunai.  
-
----
-
-## BAB III  
-BANTUAN SOSIAL BIAYA PENDIDIKAN MASUK SEKOLAH  
-
-### Pasal 10  
-(1) Persyaratan penerima Bantuan Sosial Biaya Pendidikan Masuk Sekolah meliputi:  
-a. Peserta Didik dengan usia 6 (enam) tahun sampai dengan usia 21 (dua puluh satu) tahun;  
-b. terdaftar sebagai Peserta Didik pada Satuan Pendidikan Swasta di Provinsi DKI Jakarta;  
-c. memiliki nomor induk kependudukan sebagai penduduk Provinsi DKI Jakarta dan berdomisili di Provinsi DKI Jakarta; dan  
-d. memenuhi kriteria khusus sebagai penerima bantuan sosial.  
-
-(2) Kriteria khusus sebagaimana dimaksud pada ayat (1) huruf d sebagai berikut:  
-a. terdaftar dalam Data Terpadu Kesejahteraan Sosial atau Data Terpadu Kesejahteraan Sosial Daerah;  
-b. Anak Panti Sosial, anak Penyandang Disabilitas dan anak dari Penyandang Disabilitas;  
-c. Anak dari Pengemudi JakLingko yang mengemudikan Mikrotrans;  
-d. Anak dari penerima Kartu Pekerja Jakarta; atau  
-e. Anak Tidak Sekolah.  
-
----
-
-### Pasal 11  
-(1) Bantuan Sosial Biaya Pendidikan Masuk Sekolah digunakan sebagai biaya investasi.  
-
-(2) Bantuan Sosial Biaya Pendidikan Masuk Sekolah diberikan kepada Peserta Didik pada Satuan Pendidikan Swasta baik yang mengikuti Penerimaan Peserta Didik Baru Bersama maupun yang tidak mengikuti Penerimaan Peserta Didik Baru Bersama.  
-
----
-
-### Pasal 12  
-(1) Bantuan Sosial Biaya Pendidikan Masuk Sekolah dapat diberikan kepada Peserta Didik yang mengalami kesulitan ekonomi terdampak **Corona Virus Disease 2019** dengan persyaratan:  
-a. salah satu atau kedua orang tua mengalami kehilangan pekerjaan karena pemutusan hubungan kerja;  
-b. salah satu atau kedua orang tua kehilangan usaha dan/atau penghasilan yang berkurang secara signifikan;  
-c. salah satu atau kedua orang tua berpenghasilan tidak tetap sebagai dampak **Corona Virus Disease 2019**;  
-d. salah satu atau kedua orang tua dirumahkan tanpa diberikan atau dipotong penghasilannya; dan/atau  
-e. salah satu atau kedua orang tua meninggal dunia akibat terkonfirmasi **Corona Virus Disease 2019**.  
-
-### Pasal 13  
-(1) Pemberian Bantuan Sosial Biaya Pendidikan Masuk Sekolah disalurkan melalui Peserta Didik.  
-
-(2) Tata cara pendataan dan pengusulan calon penerima Bantuan Sosial Biaya Pendidikan Masuk Sekolah ditetapkan dalam Keputusan Kepala Dinas Pendidikan.  
-
----
-
-## BAB IV  
-TATA CARA PEMBERIAN BANTUAN SOSIAL  
-
-### Pasal 14  
-Pemberian Bantuan Sosial Biaya Pendidikan dilakukan berdasarkan mekanisme pemberian bantuan sosial yang direncanakan sesuai dengan ketentuan peraturan perundang-undangan.  
-
-### Pasal 15  
-Kepala Dinas Pendidikan mengajukan usulan calon penerima Bantuan Sosial Biaya Pendidikan secara tertulis kepada Gubernur.  
-
-### Pasal 16  
-Besaran dan penerima Bantuan Sosial Biaya Pendidikan ditetapkan dalam Keputusan Gubernur berdasarkan usulan dari Kepala Dinas Pendidikan.  
-
-### Pasal 17  
-Petunjuk teknis pemberian Bantuan Sosial Biaya Pendidikan ditetapkan dalam Keputusan Kepala Dinas Pendidikan.  
-
----
-
-## BAB VI  
-PEMANTAUAN DAN EVALUASI  
-
-### Pasal 19  
-(1) Pemantauan dan evaluasi kebijakan penggunaan Bantuan Sosial Biaya Pendidikan dilaksanakan oleh Asisten Kesejahteraan Rakyat Sekretaris Daerah Pemerintah Provinsi DKI Jakarta.  
-
-(2) Pemantauan dan evaluasi teknis pelaksanaan dan penggunaan Bantuan Sosial Biaya Pendidikan dilakukan oleh Dinas Pendidikan dan berkoordinasi dengan instansi vertikal lainnya.  
-
-### Pasal 20
-(1) Walikota/Bupati selaku pejabat wilayah masing-masing menugaskan Camat dan Lurah untuk melakukan pemantauan atas pelanggaran aturan yang dilakukan oleh penerima Bantuan Sosial Biaya Pendidikan.
-
-(2) Hasil pemantauan Camat dan Lurah disampaikan kepada Walikota/Bupati.
-
-(3) Hasil pemantauan sebagaimana dimaksud pada ayat (2) dikoordinasikan dengan Kepala Dinas Pendidikan.
-
-(4) Hasil pemantauan sebagaimana dimaksud pada ayat (3) dapat dijadikan sebagai bahan pertimbangan dalam menentukan kelanjutan penerima Bantuan Sosial Biaya Pendidikan.
-
-(5) Berdasarkan bahan pertimbangan sebagaimana dimaksud pada ayat (4) dan pengaduan masyarakat, **P4OP** menindaklanjuti dengan memberhentikan Bantuan Sosial Biaya Pendidikan kepada penerima Bantuan Sosial Biaya Pendidikan.
-
-
-### Pasal 21  
-(1) Pemantauan dan evaluasi dilaksanakan paling sedikit 1 (satu) kali dalam 6 (enam) bulan.  
-
-(2) Pemantauan dan evaluasi dilaporkan kepada Gubernur melalui kjp.jakarta.go.id yang terintegrasi dengan sistem pemerintahan berbasis elektronik.  
-
----
-
-### Pasal 22  
-Hasil pemantauan dan evaluasi sebagaimana dimaksud dalam Pasal 21 dilaporkan kepada Gubernur.  
-
----
-
-## BAB VII  
-LARANGAN  
-
-### Pasal 23  
-Peserta Didik yang merupakan penerima Bantuan Sosial Biaya Pendidikan dilarang:  
-
-a. membelanjakan Bantuan Sosial Biaya Pendidikan di luar penggunaan yang telah diatur dalam Peraturan Gubernur ini;  
-b. merokok;  
-c. menggunakan dan mengedarkan narkotika dan obat-obatan terlarang;  
-d. melakukan perbuatan asusila/pergaulan bebas/pelecehan seksual;  
-e. terlibat dalam kekerasan/perundungan;  
-f. terlibat tawuran;  
-g. terlibat geng motor/geng sekolah;  
-h. minum minuman keras/minuman beralkohol;  
-i. terlibat pencurian;  
-j. melakukan pemalakan/pemerasan/penjambretan;  
-k. terlibat perkelahian;  
-l. terlibat penipuan;  
-m. terlibat mencontek massal;  
-n. membocorkan soal/kunci jawaban;  
-o. terlibat pornografi/pornografi;  
-p. menyebarluaskan gambar tidak senonoh baik secara konvensional maupun melalui media daring;  
-q. membawa senjata tajam dan peralatan lain yang membahayakan;  
-r. sering bolos sekolah minimal 4 (empat) kali dalam 1 (satu) bulan;  
-s. sering terlambat tiba di sekolah berturut-turut atau tidak berturut-turut paling sedikit 6 (enam) kali dalam 1 (satu) bulan;  
-t. menggadaikan/meminjamkan Bantuan Sosial Biaya Pendidikan dan/atau buku tabungan Bantuan Sosial Biaya Pendidikan kepada pihak manapun dan dalam bentuk apapun;  
-u. menghabiskan Bantuan Sosial Biaya Pendidikan untuk belanja penggunaan yang tidak secara nyata dibutuhkan oleh Peserta Didik yang bersangkutan;  
-v. meminjamkan Bantuan Sosial Biaya Pendidikan kepada pihak manapun; dan  
-w. melakukan perbuatan yang melanggar peraturan tata tertib sekolah/peraturan sekolah.  
-
----
-
-### Pasal 24  
-Orang tua/wali Peserta Didik penerima Bantuan Sosial Biaya Pendidikan dilarang:  
-
-a. membelanjakan Bantuan Sosial Biaya Pendidikan di luar penggunaan yang telah ditetapkan dalam Keputusan Kepala Dinas Pendidikan;  
-b. mengondisikan pelaksanaan pencairan/pemindahbukuan rekening dana dengan imbalan/jasa tertentu;  
-c. memalsukan bukti belanja penggunaan Bantuan Sosial Biaya Pendidikan;  
-d. mengondisikan bukti penggunaan Bantuan Sosial Biaya Pendidikan sebagai pertanggungjawaban;  
-e. menggunakan jasa pihak ketiga termasuk sekolah/madrasah untuk melakukan pencairan Bantuan Sosial Biaya Pendidikan dengan janji memberikan imbalan tertentu;  
-f. menggadaikan/meminjamkan Bantuan Sosial Biaya Pendidikan dan/atau buku tabungan Bantuan Sosial Biaya Pendidikan kepada pihak manapun dan dalam bentuk apapun;  
-g. menghabiskan Bantuan Sosial Biaya Pendidikan untuk belanja penggunaan yang tidak secara nyata dibutuhkan oleh Peserta Didik yang bersangkutan; dan  
-h. meminjamkan Bantuan Sosial Biaya Pendidikan kepada pihak manapun.  
-
----
-
-### Pasal 25  
-Satuan Pendidikan dilarang:  
-a. melakukan manipulasi maupun pembiaran terhadap indikasi ketidakbenaran data Peserta Didik calon penerima Bantuan Sosial Biaya Pendidikan;  
-b. memanfaatkan Bantuan Sosial Biaya Pendidikan yang diterima Peserta Didik dengan dalih apapun; dan  
-c. memotong/mengurangi Bantuan Sosial Biaya Pendidikan dan/atau memungut biaya dari orang tua/wali Peserta Didik atau Peserta Didik berkenaan dengan pelaksanaan tugas Satuan Pendidikan terkait pemberian Bantuan Sosial Biaya Pendidikan.  
-
----
-
-## BAB VII  
-SANKSI DISKUALIFIKASI  
-
-### Pasal 26  
-(1) Peserta Didik dan/atau orang tua/wali Peserta Didik penerima Bantuan Sosial Biaya Pendidikan yang melanggar salah satu atau secara kumulatif larangan sebagaimana dimaksud dalam Pasal 23 dan Pasal 24 diberikan sanksi berupa penarikan dana Bantuan Sosial Biaya Pendidikan dan penghentian Bantuan Sosial Biaya Pendidikan sesuai dengan rekomendasi yang diberikan oleh satuan pendidikan.  
-
-(2) Sanksi sebagaimana dimaksud pada ayat (1) dapat dicabut berdasarkan rekomendasi yang diberikan oleh satuan pendidikan.  
-
-(3) Rekomendasi sebagaimana dimaksud pada ayat (2) dapat digunakan sebagai dasar untuk pengajuan kembali Bantuan Sosial Biaya Pendidikan.  
-
----
-
-## BAB VIII  
-PEMBIAYAAN  
-
-### Pasal 27  
-(1) Pembiayaan Bantuan Sosial Biaya Pendidikan bersumber dari Anggaran Pendapatan dan Belanja Daerah dan sumber lain yang sah dan tidak mengikat sesuai dengan ketentuan peraturan perundang-undangan.  
-
-(2) Pembiayaan Bantuan Sosial Biaya Pendidikan dicantumkan pada rencana kerja dan anggaran Dinas Pendidikan.  
-
-(3) Pembiayaan Bantuan Sosial Biaya Pendidikan berdasarkan usulan dari Kepala Dinas Pendidikan kepada Gubernur dengan tembusan Kepala Badan Perencanaan dan Pembangunan Daerah Provinsi DKI Jakarta.  
-
----
-
-## BAB IX  
-KETENTUAN PERALIHAN  
-
-### Pasal 28  
-Penerima Kartu Jakarta Pintar Plus sebelum berlakunya Peraturan Gubernur ini tetap mendapatkan bantuan sosial sepanjang terdaftar dan memenuhi kriteria sebagaimana dimaksud dalam Pasal 5 sebagai Peserta Didik pada Satuan Pendidikan Negeri atau Swasta di Provinsi DKI Jakarta.  
-
----
-
-## BAB X  
-KETENTUAN PENUTUP  
-
-### Pasal 29  
-Pada saat Peraturan Gubernur ini mulai berlaku:  
-
-a. Peraturan Gubernur Nomor 4 Tahun 2018 tentang Kartu Jakarta Pintar Plus (Berita Daerah Provinsi Daerah Khusus Ibukota Jakarta Tahun 2018 Nomor 75001);  
-
-b. Peraturan Gubernur Nomor 15 Tahun 2019 tentang Perubahan atas Peraturan Gubernur Nomor 4 Tahun 2018 tentang Kartu Jakarta Pintar Plus (Berita Daerah Provinsi Daerah Khusus Ibukota Jakarta Tahun 2019 Nomor 75003);  
-
-c. Peraturan Gubernur Nomor 46 Tahun 2020 tentang Perubahan Kedua atas Peraturan Gubernur Nomor 4 Tahun 2018 tentang Kartu Jakarta Pintar Plus (Berita Daerah Provinsi Daerah Khusus Ibukota Jakarta Tahun 2020 Nomor 75006);  
-
-d. Peraturan Gubernur Nomor 90 Tahun 2020 tentang Perubahan Ketiga atas Peraturan Gubernur Nomor 4 Tahun 2018 tentang Kartu Jakarta Pintar Plus (Berita Daerah Provinsi Daerah Khusus Ibukota Jakarta Tahun 2020 Nomor 75014); dan  
-
-e. Peraturan Gubernur Nomor 114 Tahun 2020 tentang Pemberian Bantuan Sosial Biaya Pendidikan Masuk Sekolah Bagi Peserta Didik Baru di Sekolah/Madrasah Swasta;  
-
-— dicabut dan dinyatakan tidak berlaku lagi.  
-
-### Pasal 30  
-Peraturan Gubernur ini mulai berlaku pada tanggal diundangkan dan berlaku surut sejak tanggal 1 Desember 2021.  
-
-Agar setiap orang mengetahuinya, memerintahkan pengundangan Peraturan Gubernur ini dengan penempatannya dalam Berita Daerah Provinsi Daerah Khusus Ibukota Jakarta.  
-
----
-
-Ditetapkan di Jakarta  
-pada tanggal 15 Desember 2021  
-
-GUBERNUR DAERAH KHUSUS IBUKOTA JAKARTA,  
-**ttd**  
-**ANIES RASYID BASWEDAN**  
-
----
-
-Diundangkan di Jakarta  
-pada tanggal 15 Desember 2021  
-
-SEKRETARIS DAERAH PROVINSI DAERAH KHUSUS IBUKOTA JAKARTA,  
-**ttd**  
-**MARULLAH MATALI**  
-
----
-
-**BERITA DAERAH PROVINSI DAERAH KHUSUS IBUKOTA JAKARTA  
-TAHUN 2021 NOMOR 71017**  
-
-Salinan sesuai dengan aslinya  
-KEPALA BIRO HUKUM SEKRETARIAT DAERAH  
-PROVINSI DAERAH KHUSUS IBUKOTA JAKARTA,  
-
-**YAYAN YUHANAH**  
-NIP 196508241994032003  
-
-
-# KJP (KARTU JAKARTA PINTAR)
-
-KARTU JAKARTA PINTAR (KJP) PLUS TAHAP II TAHUN 2025
-
-## PERSYARATAN PENERIMA
-
-### Persyaratan Umum
-
-1. Murid dengan usia 6-21 tahun
-2. Terdaftar sebagai murid pada satuan pendidikan negeri atau swasta di DKI Jakarta
-3. Memiliki NIK sebagai penduduk DKI Jakarta dan berdomisili di DKI Jakarta
-4. Memenuhi kriteria khusus sebagai penerima bantuan sosial
-
-### Persyaratan Khusus
-
-1. Terdaftar dalam DTKS
-2. Anak panti sosial berdasarkan SK Kepala Dinas Sosial
-3. Anak penyandang disabilitas dan anak dari penyandang disabilitas yang terdaftar dalam DTKS
-
-
-# KJP (Kartu Jakarta Pintar)
-
-## Besaran Dana KJP Plus
-
-Untuk membantu biaya pendidikan siswa, **KJP Plus memberikan bantuan setiap bulan (bulanan)**.  
-Berikut adalah **besaran dana KJP per jenjang pendidikan**:
-
----
-
-### 💡 SD/MI/SDLB
-
-| Jenjang    | Sekolah Negeri (Rp/bulan) | Sekolah Swasta (Rp/bulan) | SPP Swasta (Rp/bulan) |
-|------------|---------------------------|----------------------------|------------------------|
-| SD/MI/SDLB | Rp250.000                 | Rp250.000                  | Rp130.000              |
-
----
-
-### 💡 SMP/MTs/SMPLB
-
-| Jenjang        | Sekolah Negeri (Rp/bulan) | Sekolah Swasta (Rp/bulan) | SPP Swasta (Rp/bulan) |
-|----------------|---------------------------|----------------------------|------------------------|
-| SMP/MTs/SMPLB  | Rp300.000                 | Rp300.000                  | Rp170.000              |
-
----
-
-### 💡 SMA/MA/SMALB
-
-| Jenjang        | Sekolah Negeri (Rp/bulan) | Sekolah Swasta (Rp/bulan) | SPP Swasta (Rp/bulan) |
-|----------------|---------------------------|----------------------------|------------------------|
-| SMA/MA/SMALB   | Rp420.000                 | Rp420.000                  | Rp290.000              |
-
----
-
-### 💡 SMK
-
-| Jenjang | Sekolah Negeri (Rp/bulan) | Sekolah Swasta (Rp/bulan) | SPP Swasta (Rp/bulan) |
-|---------|---------------------------|----------------------------|------------------------|
-| SMK     | Rp450.000                 | Rp450.000                  | Rp240.000              |
-
----
-
-### 💡 PKBM (Paket A/B/C)
-
-| Jenjang            | Sekolah Negeri (Rp/bulan) | Sekolah Swasta (Rp/bulan) |
-|--------------------|---------------------------|----------------------------|
-| PKBM (Paket A/B/C) | Rp300.000                 | Rp300.000                  |
-
----
-
-### 💡 LKP (Lembaga Kursus Pelatihan)
-
-| Jenjang                   | Dana Bantuan (per semester) |
-|---------------------------|-----------------------------|
-| LKP (Kursus Pelatihan)    | Rp1.800.000                 |
-
----
-
-### 🏫 Sekolah/Madrasah Swasta Peserta SPMB Bersama
-
-| Jenjang        | Biaya Personal Per Bulan | SPP Sekolah Swasta Per Bulan |
-|----------------|---------------------------|-------------------------------|
-| SMP Klaster 1  | Rp300.000                 | Rp225.000                     |
-| SMP Klaster 2  | Rp300.000                 | Rp350.000                     |
-| SMP Klaster 3  | Rp300.000                 | Rp623.705                     |
-| SMA Klaster 1  | Rp420.000                 | Rp620.000                     |
-| SMA Klaster 2  | Rp420.000                 | Rp920.000                     |
-| SMA Klaster 3  | Rp420.000                 | Rp1.100.000                   |
-| SMK Klaster 1  | Rp450.000                 | Rp620.000                     |
-| SMK Klaster 2  | Rp450.000                 | Rp920.000                     |
-| SMK Klaster 3  | Rp450.000                 | Rp1.100.000                   |
-
-**Catatan:**  
-Murid pada **Sekolah Rakyat** dan **Sekolah Gratis** dapat mengajukan KJP Plus, tetapi hanya mendapatkan bantuan **dana personal**. Besaran dana personal sama dengan sekolah/madrasah negeri.
-
-
-## TATA CARA PENDAFTARAN KJP PLUS TAHAP II TAHUN 2025
-
-### Pertama 
-
-Orang tua/wali murid datang ke sekolah pada saat pendaftaran KJP Plus Tahap II Tahun 2025.
-
-### Kedua 
-
-Orang tua/wali murid membawa dokumen persyaratan pendaftaran KJP Plus: 
-1. Surat permohonan kepada Gubernur (format standar disediakan sekolah)
-2. Surat pernyataan ketaatan menggunakan dana KJP Plus sesuai ketentuan (format standar disediakan sekolah)
-3. Fotokopi Kartu Keluarga
-4. Fotokopi KTP orang tua/wali murid
-
-## Timeline Pendaftaran KJP Plus Tahap II Tahun 2025
-
-- **26 s.d. 28 Juli 2025**  
-  Orang tua/wali murid menyiapkan berkas persyaratan usulan KJP Plus.
-
-- **30 Juli s.d. 8 Agustus 2025**  
-  - Pendaftaran: 30 Juli s.d. 7 Agustus 2025  
-  - Verifikasi dan Unggah SPTJM: 30 Juli s.d. 8 Agustus 2025  
-
-- **11 s.d. 16 Agustus 2025**  
-  Verifikasi oleh Dinas Pendidikan Provinsi DKI Jakarta.
-
-- **18 Agustus s.d. 30 September 2025**  
-  Penetapan penerima melalui Keputusan Gubernur.
-
-## Tata Cara Sekolah Memverifikasi Kelayakan Pendaftar KJP Plus Tahap II Tahun 2025
-
-### 01. Pengecekan DTKS
-- Cek DTKS: terdaftar pada DTKS kategori layak.
-
-### 02. Kelayakan Dokumen Persyaratan
-Verifikasi kelengkapan dokumen usulan:
-1. Surat permohonan kepada Gubernur.  
-2. Surat pernyataan ketaatan menggunakan dana KJP Plus sesuai ketentuan.  
-3. Fotokopi Kartu Keluarga.  
-4. Fotokopi KTP orang tua/wali.  
-
-### 03. Kelayakan Legalitas & Integritas
-Verifikasi kedisiplinan dan kepatuhan murid:  
-1. Terdaftar sebagai murid aktif di sekolah/madrasah, memiliki NISN, dan terdaftar di Dapodik/EMIS.  
-2. Murid disiplin hadir bersekolah.  
-3. Murid memiliki kepatuhan terhadap tata tertib sekolah dan tidak melanggar larangan.  
-
-### 04. Kelayakan sebagai Anak Keluarga Tidak Mampu
-(Sesuai Kepgub 1250 Tahun 2020 tentang Variabel Khas Daerah Untuk Pendataan dan Pemutakhiran Data Fakir Miskin dan Orang Tidak Mampu)
-
-#### Verifikasi Kelayakan 1 – Cek Kartu Keluarga
-Pastikan sebagai warga DKI Jakarta dan anggota keluarga dalam 1 KK **tidak ada** yang berstatus:  
-1. ASN (PNS/PPPK).  
-2. TNI/Polri.  
-3. Anggota MPR RI.  
-4. Anggota DPR RI.  
-5. Anggota DPD RI.  
-6. Anggota DPRD Provinsi.  
-7. Anggota DPRD Kabupaten/Kota.  
-8. Pegawai tetap BUMN.  
-9. Pegawai tetap BUMD.  
-
-#### Verifikasi Kelayakan 2 – Cek Orang Tua/Wali
-Anggota keluarga dalam 1 KK **tidak memiliki** kendaraan roda empat/mobil.  
-
-#### Verifikasi Kelayakan 3 – Cek Orang Tua/Wali
-Anggota keluarga dalam 1 KK **tidak memiliki** aset berupa tanah/bangunan dengan nilai NJOP **di atas Rp1.000.000.000**.  
-
-#### Verifikasi Kelayakan 4 – Cek ke Rumah
-Anggota keluarga dalam 1 KK **tidak mengonsumsi** air kemasan bermerek paling sedikit 19 liter.  
-## Larangan Penerima KJP Plus
-
-1. Membelanjakan bansos biaya pendidikan di luar penggunaan yang telah diatur dalam Pergub.  
-2. Merokok.  
-3. Menggunakan dan mengedarkan narkotika dan obat-obatan terlarang.  
-4. Melakukan perbuatan asusila/pergaulan bebas/pelecehan seksual.  
-5. Terlibat dalam kekerasan/perundungan.  
-6. Terlibat tawuran.  
-7. Terlibat geng motor/geng sekolah.  
-8. Minum minuman keras/minuman beralkohol.  
-9. Terlibat pencurian.  
-10. Melakukan pemalakan/pemerasan/penjambretan.  
-11. Terlibat perkelahian.  
-12. Terlibat penipuan.  
-13. Terlibat mencontek massal.  
-14. Membocorkan soal/kunci jawaban.  
-15. Terlibat pornoaksi/pornografi.  
-16. Menyebarluaskan gambar tidak senonoh baik secara konvensional maupun melalui media daring.  
-17. Membawa senjata tajam dan peralatan lain yang membahayakan.  
-18. Sering bolos sekolah minimal 4 kali dalam 1 bulan.  
-19. Sering terlambat tiba di sekolah berturut-turut atau tidak berturut-turut minimal 6 kali dalam 1 bulan.  
-20. Menggandakan/menjaminkan bansos biaya pendidikan dan/atau buku tabungan kepada pihak manapun dan dalam bentuk apapun.  
-21. Menghabiskan bansos biaya pendidikan untuk belanja penggunaan yang tidak secara nyata dibutuhkan.  
-22. Meminjamkan bansos biaya pendidikan kepada pihak manapun.  
-23. Melakukan perbuatan yang melanggar peraturan tata tertib sekolah/peraturan sekolah.  
-
-### Sanksi
-Penarikan dana KJP Plus dan penghentian KJP Plus sesuai dengan rekomendasi yang diberikan oleh satuan pendidikan.
-
 # Program Indonesia Pintar (PIP)
 
 ## Tujuan PIP
-PIP dirancang untuk membantu anak-anak usia sekolah dari keluarga miskin/rentan miskin/prioritas agar tetap mendapatkan layanan pendidikan sampai tamat pendidikan menengah.  
-Program ini mencakup jalur formal (SD sampai SMA/SMK) maupun jalur non-formal (Paket A sampai Paket C, serta pendidikan khusus).  
+PIP dirancang untuk membantu anak-anak usia sekolah dari keluarga miskin/rentan miskin/prioritas agar tetap mendapatkan layanan pendidikan sampai tamat pendidikan menengah.
+Program ini mencakup jalur formal (SD sampai SMA/SMK) maupun jalur non-formal (Paket A sampai Paket C, serta pendidikan khusus).
 
-Melalui program ini pemerintah berupaya:  
-- Mencegah peserta didik dari kemungkinan putus sekolah.  
-- Menarik kembali siswa putus sekolah agar melanjutkan pendidikannya.  
-- Meringankan biaya personal pendidikan peserta didik, baik biaya langsung maupun tidak langsung.  
+Melalui program ini pemerintah berupaya:
+- Mencegah peserta didik dari kemungkinan putus sekolah.
+- Menarik kembali siswa putus sekolah agar melanjutkan pendidikannya.
+- Meringankan biaya personal pendidikan peserta didik, baik biaya langsung maupun tidak langsung.
 
 ## Penerima PIP
-1. Peserta didik pemegang **KIP** (Kartu Indonesia Pintar).  
-2. Peserta didik dari keluarga miskin/rentan miskin dan/atau dengan pertimbangan khusus, seperti:  
-   - Peserta didik dari keluarga miskin/rentan miskin dengan pertimbangan khusus.  
-   - Peserta didik dari keluarga peserta **Program Keluarga Harapan (PKH)**.  
-   - Peserta didik dari keluarga pemegang **Kartu Keluarga Sejahtera (KKS)**.  
-   - Peserta didik yang berstatus yatim/piatu/yatim-piatu dari sekolah/panti sosial/panti asuhan.  
-   - Peserta didik yang terkena dampak bencana alam.  
-   - Peserta didik yang tidak bersekolah (**drop out**) dan diharapkan kembali bersekolah.  
-   - Peserta didik yang mengalami kelainan fisik, korban musibah, dari orang tua yang mengalami pemutusan hubungan kerja, di daerah konflik, dari keluarga terpidana, berada di lembaga pemasyarakatan, memiliki lebih dari 3 saudara yang tinggal serumah.  
-   - Peserta pada lembaga kursus atau satuan pendidikan non-formal lainnya.  
+1. Peserta didik pemegang **KIP** (Kartu Indonesia Pintar).
+2. Peserta didik dari keluarga miskin/rentan miskin dan/atau dengan pertimbangan khusus, seperti:
+   - Peserta didik dari keluarga miskin/rentan miskin dengan pertimbangan khusus.
+   - Peserta didik dari keluarga peserta **Program Keluarga Harapan (PKH)**.
+   - Peserta didik dari keluarga pemegang **Kartu Keluarga Sejahtera (KKS)**.
+   - Peserta didik yang berstatus yatim/piatu/yatim-piatu dari sekolah/panti sosial/panti asuhan.
+   - Peserta didik yang terkena dampak bencana alam.
+   - Peserta didik yang tidak bersekolah (**drop out**) dan diharapkan kembali bersekolah.
+   - Peserta didik yang mengalami kelainan fisik, korban musibah, dari orang tua yang mengalami pemutusan hubungan kerja, di daerah konflik, dari keluarga terpidana, berada di lembaga pemasyarakatan, memiliki lebih dari 3 saudara yang tinggal serumah.
+   - Peserta pada lembaga kursus atau satuan pendidikan non-formal lainnya.
 
 
 # BANTUAN PENDIDIKAN MASUK SEKOLAH (BPMS) TAHUN 2025
@@ -965,30 +1008,30 @@ Melalui program ini pemerintah berupaya:
 Pergub No. 110 Tahun 2021 tentang Bantuan Sosial Biaya Pendidikan.
 
 ## Persyaratan Penerima
-1. Murid usia **6–21 tahun**.  
-2. Terdaftar sebagai murid baru di sekolah/madrasah swasta di Provinsi DKI Jakarta.  
-3. Berdomisili dan memiliki **NIK Provinsi DKI Jakarta**.  
-4. Termasuk dalam kategori:  
-   - Anak dari keluarga tidak mampu yang terdaftar dalam **DTKS** dan/atau DTKS daerah.  
-   - Anak panti sosial berdasarkan SK Kepala Dinas Sosial.  
-   - Anak penyandang disabilitas dan anak dari penyandang disabilitas (**harus terdaftar dalam DTKS**).  
-   - Anak dari pengemudi Jaklingko yang mengemudikan Mikrotrans (**harus terdaftar dalam DTKS**).  
-   - Anak dari penerima Kartu Pekerja Jakarta (**harus terdaftar dalam DTKS**).  
-   - Anak tidak sekolah (**harus terdaftar dalam DTKS**).  
-   - Anak yang mengikuti SPMB Bersama (**harus terdaftar dalam DTKS**).  
+1. Murid usia **6–21 tahun**.
+2. Terdaftar sebagai murid baru di sekolah/madrasah swasta di Provinsi DKI Jakarta.
+3. Berdomisili dan memiliki **NIK Provinsi DKI Jakarta**.
+4. Termasuk dalam kategori:
+   - Anak dari keluarga tidak mampu yang terdaftar dalam **DTKS** dan/atau DTKS daerah.
+   - Anak panti sosial berdasarkan SK Kepala Dinas Sosial.
+   - Anak penyandang disabilitas dan anak dari penyandang disabilitas (**harus terdaftar dalam DTKS**).
+   - Anak dari pengemudi Jaklingko yang mengemudikan Mikrotrans (**harus terdaftar dalam DTKS**).
+   - Anak dari penerima Kartu Pekerja Jakarta (**harus terdaftar dalam DTKS**).
+   - Anak tidak sekolah (**harus terdaftar dalam DTKS**).
+   - Anak yang mengikuti SPMB Bersama (**harus terdaftar dalam DTKS**).
 ## Timeline Pendaftaran BPMS Tahun 2025
 
-- **26 s.d. 28 Juli 2025**  
+- **26 s.d. 28 Juli 2025**
   Orang tua/wali murid menyiapkan berkas persyaratan usulan BPMS.
 
-- **30 Juli s.d. 8 Agustus 2025**  
-  - Pendaftaran: 30 Juli s.d. 7 Agustus 2025  
-  - Verifikasi dan Unggah SPTJM: 30 Juli s.d. 8 Agustus 2025  
+- **30 Juli s.d. 8 Agustus 2025**
+  - Pendaftaran: 30 Juli s.d. 7 Agustus 2025
+  - Verifikasi dan Unggah SPTJM: 30 Juli s.d. 8 Agustus 2025
 
-- **11 s.d. 16 Agustus 2025**  
+- **11 s.d. 16 Agustus 2025**
   Verifikasi oleh Dinas Pendidikan Provinsi DKI Jakarta.
 
-- **18 Agustus s.d. 30 September 2025**  
+- **18 Agustus s.d. 30 September 2025**
   Penetapan penerima melalui Keputusan Gubernur.
 
 ## BESARAN DANA BPMS
@@ -1002,7 +1045,7 @@ Pergub No. 110 Tahun 2021 tentang Bantuan Sosial Biaya Pendidikan.
 | SMA/MA/SMALB     | Maksimum Rp2.500.000                 |
 | SMK              | Maksimum Rp2.500.000                 |
 
-> **Catatan:**  
+> **Catatan:**
 > Murid pada **Sekolah Gratis** tidak dapat mengajukan BPMS.
 
 ---
@@ -1024,7 +1067,7 @@ Pergub No. 110 Tahun 2021 tentang Bantuan Sosial Biaya Pendidikan.
 
 # Kartu Jakarta Mahasiswa Unggul (KJMU) — Tahap II Tahun 2025
 
-**Status:** Telah dibuka  
+**Status:** Telah dibuka
 **Proyeksi penerima baru:** 3.466 mahasiswa (untuk mengisi kuota penerima KJMU yang telah lulus)
 link pendafatran : https://p4op.jakarta.go.id/kjmu/login
 inf lebih lengkap : p4op.jakarta.go.id/kjmu
@@ -1032,223 +1075,265 @@ inf lebih lengkap : p4op.jakarta.go.id/kjmu
 Sesuai **Pergub DKI Jakarta No. 101 Tahun 2021**.
 
 ## Persyaratan Umum
-- Berdomisili dan memiliki **KTP** serta **KK DKI Jakarta**.  
-- Terdaftar dalam **DTKS** dan/atau **warga binaan sosial** pada panti sosial Dinas Sosial.  
+- Berdomisili dan memiliki **KTP** serta **KK DKI Jakarta**.
+- Terdaftar dalam **DTKS** dan/atau **warga binaan sosial** pada panti sosial Dinas Sosial.
 - **Tidak** menerima beasiswa/bantuan pendidikan lain yang bersumber dari **APBN** dan/atau **APBD**.
 
 ## Persyaratan Khusus
 ### A. Calon Mahasiswa
-- Dinyatakan **lulus pendidikan menengah** pada satuan pendidikan negeri/swasta di DKI Jakarta **paling lama 3 tahun** sebelumnya.  
-- Dinyatakan **lulus PTN** (jalur reguler) di bawah naungan **Kemendikbudristek** dan **Kemenag**.  
+- Dinyatakan **lulus pendidikan menengah** pada satuan pendidikan negeri/swasta di DKI Jakarta **paling lama 3 tahun** sebelumnya.
+- Dinyatakan **lulus PTN** (jalur reguler) di bawah naungan **Kemendikbudristek** dan **Kemenag**.
 - Dinyatakan **lulus PTS jalur reguler** **terakreditasi A/unggul** dan **program studi terakreditasi A/unggul** di **DKI Jakarta**.
 
 ### B. Mahasiswa (penerima/lanjutan)
-- Dinyatakan **lulus pendidikan menengah** pada satuan pendidikan negeri/swasta di DKI Jakarta **paling lama 3 tahun** sebelumnya.  
-- Dinyatakan **lulus PTN** (jalur reguler) di bawah naungan **Kemendikbudristek** dan **Kemenag**.  
-- Dinyatakan **lulus PTS jalur reguler** **terakreditasi A/unggul** dan **program studi terakreditasi A/unggul** di **DKI Jakarta**.  
+- Dinyatakan **lulus pendidikan menengah** pada satuan pendidikan negeri/swasta di DKI Jakarta **paling lama 3 tahun** sebelumnya.
+- Dinyatakan **lulus PTN** (jalur reguler) di bawah naungan **Kemendikbudristek** dan **Kemenag**.
+- Dinyatakan **lulus PTS jalur reguler** **terakreditasi A/unggul** dan **program studi terakreditasi A/unggul** di **DKI Jakarta**.
 - **Pengajuan paling lama pada semester 4.**
 
 ## Timeline Pendaftaran KJMU Tahap II 2025
-1. **18–22 September 2025** — *Pendaftaran KJMU* (**khusus pendaftar baru**)  
-2. **18–24 September 2025** — *Verifikasi & Unggah SPTJM Sekolah* (**khusus pendaftar baru**)  
-3. **18–29 September 2025** — *Verifikasi & Unggah SPTJM Perguruan Tinggi* (**pendaftar baru & penerima lanjutan**)  
-4. **30 September – 6 Oktober 2025** — *Verifikasi Dinas Pendidikan*  
+1. **18–22 September 2025** — *Pendaftaran KJMU* (**khusus pendaftar baru**)
+2. **18–24 September 2025** — *Verifikasi & Unggah SPTJM Sekolah* (**khusus pendaftar baru**)
+3. **18–29 September 2025** — *Verifikasi & Unggah SPTJM Perguruan Tinggi* (**pendaftar baru & penerima lanjutan**)
+4. **30 September – 6 Oktober 2025** — *Verifikasi Dinas Pendidikan*
 5. **7–16 Oktober 2025** — *Penetapan Penerima melalui Keputusan Gubernur*
 
 ## Kanal Informasi Resmi
-- Instagram: **@upt.p4op**  
+- Instagram: **@upt.p4op**
 - WhatsApp pengaduan 0852-1124-7089w
 
+## Link dokumen SPTJM
+- Link SPTJM Tidak buta warna : https://dokumen-jkt.spmb.id/2026/20260523/SPTJM%20Tidak%20Buta%20Warna%202026-berkas--260523092550.pdf
+- Link SPTJM Mutasi : https://dokumen-jkt.spmb.id/2026/20260523/SPTJM%20Mutasi%202026-berkas--260523092511.pdf
+- Link SPTJM SPMB : https://dokumen-jkt.spmb.id/2026/20260523/SPTJM%20SPMB%202026-berkas--260523092443.pdf
+- Link SURAT KETERANGAN PERINGKAT RERATA NILAI RAPOR : https://dokumen-jkt.spmb.id/2026/20260523/SURAT%20KETERANGAN%20PERINGKAT%20RERATA%20NILAI%20RAPOR-berkas--260523092713.pdf
+- Link SURAT KETERANGAN RAPOR PENDIDIKAN : https://dokumen-jkt.spmb.id/2026/20260523/SURAT%20KETERANGAN%20RAPOR%20PENDIDIKAN-berkas--260523092652.pdf
 
-# KALENDER PENDIDIKAN TAHUN AJARAN 2025/2026   
-**KEPUTUSAN KEPALA DINAS PENDIDIKAN PROVINSI DAERAH KHUSUS IBUKOTA JAKARTA NOMOR 89 TAHUN 2025**  
-**TENTANG**  
+## Seluruh Lokasi Posko SPMB SD
+- Seluruh posko SPMB SD bisa dilihat di https://spmb.jakarta.go.id/010101/lokasi
+## Seluruh Lokasi Posko SPMB SMP
+- Seluruh posko SPMB SMP bisa dilihat di https://spmb.jakarta.go.id/020101/lokasi
+## Seluruh Lokasi Posko SPMB SMA
+- Seluruh posko SPMB SMA bisa dilihat di https://spmb.jakarta.go.id/030101/lokasi
+## Seluruh Lokasi Posko SPMB SMK
+- Seluruh posko SPMB SMK bisa dilihat di https://spmb.jakarta.go.id/040201/lokasi
+
+## Jadwal pelaksanaan Jalur Domisili SD
+- Pendaftaran dan pemilihan sekolah dilakukkan online dari tanggal 15-18 Juni 2026
+- Proses seleksi dari tanggal 15-18 juni 2026
+- Pengumuman tanggal 18 Juni 2026
+- Daftar ulang 19-20 Juni 2026
+
+## Jadwal Pelaksanaan Jalur Domisili SMP
+- Pendaftaran dan pemilihan sekolah dilakukkan online dari tanggal 29 Juni-1 Juli 2026
+- Proses seleksi dari tanggal 29 Juni-1 Juli 2026
+- pengumuman 1 Juli 2026
+- Daftar ulang 2-3 Juli 2026
+
+## Jadwal Pelaksanaan Jalur Domisili SMA
+- Pendaftaran dan pemilihan sekolah dilakukkan online dari tanggal 29 Juni-1 Juli 2026
+- Proses seleksi dari tanggal 29 Juni-1 Juli 2026
+- pengumuman 1 Juli 2026
+- Daftar ulang 2-3 Juli 2026
+
+## Jadwal Pelaksanaan Jalur Domisili SMK
+- Pendaftaran dan pemilihan sekolah dilakukkan online dari tanggal 15 Juni-18 Juni 2026
+- Proses seleksi dari tanggal 15 Juni-18 Juni 2026
+- pengumuman 18 Juni 2026
+- Daftar ulang 19-20 Juni 2026
+
+## notif respons akses data server dukcapil untuk nik anak tidak bisa diproses
+- jika muncul notif respons akses data server dukcapil untuk nik anak tidak bisa diproses maka silahkan hubungi dukcapil terdekat
+
+# KALENDER PENDIDIKAN TAHUN AJARAN 2025/2026
+**KEPUTUSAN KEPALA DINAS PENDIDIKAN PROVINSI DAERAH KHUSUS IBUKOTA JAKARTA NOMOR 89 TAHUN 2025**
+**TENTANG**
 **KALENDER PENDIDIKAN TAHUN AJARAN 2025/2026**
 Sumber KALENDER PENDIDIKAN TAHUN AJARAN 2025/2026 : https://edu.jakarta.go.id/cdn/files/cms/2025-06-25_09:11:38_275c35de-fe11-e719-f1bb-d17171c08a68_pdf.pdf
 
-## I. UMUM  
+## I. UMUM
 
-Yang dimaksud dalam Keputusan ini dengan:  
+Yang dimaksud dalam Keputusan ini dengan:
 
-1. **Dinas** adalah Dinas Pendidikan Provinsi DKI Jakarta.  
+1. **Dinas** adalah Dinas Pendidikan Provinsi DKI Jakarta.
 
-2. **Satuan Pendidikan** adalah bentuk kelompok layanan pendidikan yang menyelenggarakan Pendidikan Anak Usia Dini (TK/KB/SPS/TPA), Taman Kanak Luar Biasa (TKLB), Sekolah Dasar (SD), Sekolah Dasar Luar Biasa (SDLB), Sekolah Menengah Pertama (SMP), Sekolah Menengah Pertama Luar Biasa (SMPLB), Sekolah Menengah Atas (SMA), Sekolah Menengah Atas Luar Biasa (SMALB), Sekolah Menengah Kejuruan (SMK), dan Sanggar Kegiatan Belajar (SKB)/Pusat Kegiatan Belajar Masyarakat (PKBM) dalam lingkungan pembinaan Dinas Pendidikan Provinsi Daerah Khusus Ibukota Jakarta.  
+2. **Satuan Pendidikan** adalah bentuk kelompok layanan pendidikan yang menyelenggarakan Pendidikan Anak Usia Dini (TK/KB/SPS/TPA), Taman Kanak Luar Biasa (TKLB), Sekolah Dasar (SD), Sekolah Dasar Luar Biasa (SDLB), Sekolah Menengah Pertama (SMP), Sekolah Menengah Pertama Luar Biasa (SMPLB), Sekolah Menengah Atas (SMA), Sekolah Menengah Atas Luar Biasa (SMALB), Sekolah Menengah Kejuruan (SMK), dan Sanggar Kegiatan Belajar (SKB)/Pusat Kegiatan Belajar Masyarakat (PKBM) dalam lingkungan pembinaan Dinas Pendidikan Provinsi Daerah Khusus Ibukota Jakarta.
 
-3. **Pendidikan Kesetaraan** adalah pendidikan nonformal yang mencakup pendidikan Paket A setara SD, Paket B setara SMP, dan Paket C setara SMA dengan penekanan pada penguasaan pengetahuan, keterampilan fungsional, serta pengembangan sikap dan kepribadian profesional Murid, yang dilaksanakan pada suatu lembaga pendidikan dalam bentuk Sanggar Kegiatan Belajar (SKB) dan Pusat Kegiatan Belajar Mengajar (PKBM).  
+3. **Pendidikan Kesetaraan** adalah pendidikan nonformal yang mencakup pendidikan Paket A setara SD, Paket B setara SMP, dan Paket C setara SMA dengan penekanan pada penguasaan pengetahuan, keterampilan fungsional, serta pengembangan sikap dan kepribadian profesional Murid, yang dilaksanakan pada suatu lembaga pendidikan dalam bentuk Sanggar Kegiatan Belajar (SKB) dan Pusat Kegiatan Belajar Mengajar (PKBM).
 
-4. **Pendidikan Anak Usia Dini**, yang selanjutnya disingkat PAUD, adalah upaya pembinaan yang ditujukan kepada anak sejak lahir sampai usia 6 (enam) tahun yang dilakukan melalui pemberian rangsangan pendidikan untuk membantu pertumbuhan dan perkembangan jasmani dan rohani agar memiliki kesiapan dalam memasuki pendidikan lebih lanjut.  
+4. **Pendidikan Anak Usia Dini**, yang selanjutnya disingkat PAUD, adalah upaya pembinaan yang ditujukan kepada anak sejak lahir sampai usia 6 (enam) tahun yang dilakukan melalui pemberian rangsangan pendidikan untuk membantu pertumbuhan dan perkembangan jasmani dan rohani agar memiliki kesiapan dalam memasuki pendidikan lebih lanjut.
 
-5. **Satuan PAUD** adalah layanan PAUD yang dilaksanakan pada suatu lembaga pendidikan dalam bentuk Taman Kanak-Kanak (TK), Kelompok Bermain (KB), Taman Penitipan Anak (TPA), dan Satuan PAUD Sejenis (SPS).  
+5. **Satuan PAUD** adalah layanan PAUD yang dilaksanakan pada suatu lembaga pendidikan dalam bentuk Taman Kanak-Kanak (TK), Kelompok Bermain (KB), Taman Penitipan Anak (TPA), dan Satuan PAUD Sejenis (SPS).
 
-6. **Sekolah Dasar**, yang selanjutnya disingkat SD adalah salah satu bentuk Satuan Pendidikan formal yang menyelenggarakan pendidikan umum pada jenjang pendidikan dasar.  
+6. **Sekolah Dasar**, yang selanjutnya disingkat SD adalah salah satu bentuk Satuan Pendidikan formal yang menyelenggarakan pendidikan umum pada jenjang pendidikan dasar.
 
-7. **Sekolah Dasar Luar Biasa**, yang selanjutnya disingkat SDLB adalah salah satu bentuk Satuan Pendidikan Khusus bagi Murid yang memiliki tingkat kesulitan dalam mengikuti proses pembelajaran karena kelainan fisik, emosional, mental, dan/atau sosial.  
+7. **Sekolah Dasar Luar Biasa**, yang selanjutnya disingkat SDLB adalah salah satu bentuk Satuan Pendidikan Khusus bagi Murid yang memiliki tingkat kesulitan dalam mengikuti proses pembelajaran karena kelainan fisik, emosional, mental, dan/atau sosial.
 
-8. **Sekolah Menengah Pertama**, yang selanjutnya disingkat SMP, adalah salah satu bentuk Satuan Pendidikan formal yang menyelenggarakan pendidikan umum pada jenjang pendidikan dasar sebagai lanjutan dari SD atau bentuk lain yang sederajat atau lanjutan dari hasil belajar yang diakui sama atau setara SD.  
+8. **Sekolah Menengah Pertama**, yang selanjutnya disingkat SMP, adalah salah satu bentuk Satuan Pendidikan formal yang menyelenggarakan pendidikan umum pada jenjang pendidikan dasar sebagai lanjutan dari SD atau bentuk lain yang sederajat atau lanjutan dari hasil belajar yang diakui sama atau setara SD.
 
-9. **Sekolah Menengah Pertama Luar Biasa**, yang selanjutnya disingkat SMPLB adalah salah satu bentuk Satuan Pendidikan Khusus bagi Murid sebagai lanjutan dari SDLB atau bentuk lain yang sederajat.  
+9. **Sekolah Menengah Pertama Luar Biasa**, yang selanjutnya disingkat SMPLB adalah salah satu bentuk Satuan Pendidikan Khusus bagi Murid sebagai lanjutan dari SDLB atau bentuk lain yang sederajat.
 
-10. **Sekolah Menengah Atas**, yang selanjutnya disingkat SMA adalah salah satu bentuk Satuan Pendidikan formal yang menyelenggarakan pendidikan umum pada jenjang pendidikan menengah sebagai lanjutan SMP atau bentuk lain yang sederajat atau lanjutan dari hasil belajar yang diakui sama/setara SMP.  
+10. **Sekolah Menengah Atas**, yang selanjutnya disingkat SMA adalah salah satu bentuk Satuan Pendidikan formal yang menyelenggarakan pendidikan umum pada jenjang pendidikan menengah sebagai lanjutan SMP atau bentuk lain yang sederajat atau lanjutan dari hasil belajar yang diakui sama/setara SMP.
 
-11. **Sekolah Menengah Atas Luar Biasa**, yang selanjutnya disingkat SMALB adalah salah satu bentuk Satuan Pendidikan Khusus bagi Murid yang telah lulus dari SMPLB atau bentuk lain yang sederajat.  
+11. **Sekolah Menengah Atas Luar Biasa**, yang selanjutnya disingkat SMALB adalah salah satu bentuk Satuan Pendidikan Khusus bagi Murid yang telah lulus dari SMPLB atau bentuk lain yang sederajat.
 
-12. **Sekolah Menengah Kejuruan**, yang selanjutnya disingkat SMK adalah salah satu bentuk Satuan Pendidikan formal yang menyelenggarakan pendidikan kejuruan pada jenjang pendidikan menengah sebagai lanjutan dari SMP atau bentuk lain yang sederajat atau lanjutan dari hasil belajar yang diakui sama atau setara SMP.  
+12. **Sekolah Menengah Kejuruan**, yang selanjutnya disingkat SMK adalah salah satu bentuk Satuan Pendidikan formal yang menyelenggarakan pendidikan kejuruan pada jenjang pendidikan menengah sebagai lanjutan dari SMP atau bentuk lain yang sederajat atau lanjutan dari hasil belajar yang diakui sama atau setara SMP.
 
-13. **Permulaan Tahun Ajaran** adalah waktu dimulainya kegiatan pembelajaran pada awal tahun ajaran pada setiap Satuan Pendidikan.  
+13. **Permulaan Tahun Ajaran** adalah waktu dimulainya kegiatan pembelajaran pada awal tahun ajaran pada setiap Satuan Pendidikan.
 
-14. **Hari Sekolah** adalah jumlah hari dan jam yang digunakan oleh guru, tenaga kependidikan, dan Murid dalam penyelenggaraan pendidikan di Satuan Pendidikan.  
+14. **Hari Sekolah** adalah jumlah hari dan jam yang digunakan oleh guru, tenaga kependidikan, dan Murid dalam penyelenggaraan pendidikan di Satuan Pendidikan.
 
-15. **Minggu Efektif Belajar** adalah jumlah minggu kegiatan pembelajaran di luar waktu libur untuk setiap tahun ajaran pada setiap Satuan Pendidikan.  
+15. **Minggu Efektif Belajar** adalah jumlah minggu kegiatan pembelajaran di luar waktu libur untuk setiap tahun ajaran pada setiap Satuan Pendidikan.
 
 16. **Waktu Libur** adalah waktu yang ditetapkan untuk tidak diadakan kegiatan pembelajaran terjadi pada Satuan Pendidikan yang dimaksud. Waktu libur dapat berbentuk jeda tengah semester, jeda antar semester, libur akhir tahun ajaran, hari libur keagamaan, hari libur umum termasuk hari-hari besar nasional, dan hari libur khusus.
 
-17. **Kegiatan Tatap Muka** adalah kegiatan pembelajaran yang berupa proses interaksi antara Murid dengan pendidik.  
+17. **Kegiatan Tatap Muka** adalah kegiatan pembelajaran yang berupa proses interaksi antara Murid dengan pendidik.
 
-18. **Penugasan Terstruktur** adalah kegiatan pembelajaran yang berupa pendalaman materi pembelajaran oleh Murid yang dirancang oleh pendidik untuk mencapai kompetensi dasar. Waktu penyelesaian penugasan terstruktur ditentukan oleh pendidik.  
+18. **Penugasan Terstruktur** adalah kegiatan pembelajaran yang berupa pendalaman materi pembelajaran oleh Murid yang dirancang oleh pendidik untuk mencapai kompetensi dasar. Waktu penyelesaian penugasan terstruktur ditentukan oleh pendidik.
 
-19. **Kegiatan Mandiri Tidak Terstruktur** adalah kegiatan pembelajaran yang berupa pendalaman materi pembelajaran oleh Murid yang dirancang oleh pendidik untuk mencapai kompetensi dasar. Waktu penyelesaiannya diatur sendiri oleh Murid.  
+19. **Kegiatan Mandiri Tidak Terstruktur** adalah kegiatan pembelajaran yang berupa pendalaman materi pembelajaran oleh Murid yang dirancang oleh pendidik untuk mencapai kompetensi dasar. Waktu penyelesaiannya diatur sendiri oleh Murid.
 
-20. **Hari Belajar Efektif** adalah hari belajar yang betul-betul digunakan untuk kegiatan belajar mengajar sesuai dengan kebutuhan kurikulum.  
+20. **Hari Belajar Efektif** adalah hari belajar yang betul-betul digunakan untuk kegiatan belajar mengajar sesuai dengan kebutuhan kurikulum.
 
-21. **Semester** adalah periode paruh tahun, yang menggambarkan masa enam bulan pada tahun ajaran. Dimana dalam satu tahun terdiri atas dua semester yaitu semester satu dan semester dua.  
+21. **Semester** adalah periode paruh tahun, yang menggambarkan masa enam bulan pada tahun ajaran. Dimana dalam satu tahun terdiri atas dua semester yaitu semester satu dan semester dua.
 
-22. **Tahun ajaran** adalah satuan waktu pemberian pelajaran selama satu tahun.  
+22. **Tahun ajaran** adalah satuan waktu pemberian pelajaran selama satu tahun.
 
-23. **Libur Semester** adalah libur yang diadakan pada akhir setiap Semester.  
+23. **Libur Semester** adalah libur yang diadakan pada akhir setiap Semester.
 
-24. **Libur Umum** adalah libur yang diadakan untuk memperingati peristiwa nasional atau keagamaan sesuai dengan ketentuan yang ditetapkan oleh Menteri Agama, Menteri Tenaga Kerja dan Transmigrasi, dan Menteri Pendayagunaan Aparatur Negara serta Surat Edaran Gubernur Provinsi DKI Jakarta.  
+24. **Libur Umum** adalah libur yang diadakan untuk memperingati peristiwa nasional atau keagamaan sesuai dengan ketentuan yang ditetapkan oleh Menteri Agama, Menteri Tenaga Kerja dan Transmigrasi, dan Menteri Pendayagunaan Aparatur Negara serta Surat Edaran Gubernur Provinsi DKI Jakarta.
 
-25. **Libur Ramadan** adalah libur awal puasa dan menjelang Hari Raya Idulfitri.  
+25. **Libur Ramadan** adalah libur awal puasa dan menjelang Hari Raya Idulfitri.
 
-26. **Libur Hari Raya Idulfitri** adalah libur sekitar Hari Raya Idulfitri.  
+26. **Libur Hari Raya Idulfitri** adalah libur sekitar Hari Raya Idulfitri.
 
-27. **Libur Khusus** adalah libur yang diadakan sehubungan dengan adanya peristiwa lain di luar ketentuan tentang libur umum dan libur bulan Ramadan.  
+27. **Libur Khusus** adalah libur yang diadakan sehubungan dengan adanya peristiwa lain di luar ketentuan tentang libur umum dan libur bulan Ramadan.
 
-28. **Pembelajaran** adalah proses interaksi Murid dengan pendidik dan/atau sumber belajar pada suatu lingkungan belajar tertentu untuk menjadikan Murid memahami dan menguasai ilmu pengetahuan.  
+28. **Pembelajaran** adalah proses interaksi Murid dengan pendidik dan/atau sumber belajar pada suatu lingkungan belajar tertentu untuk menjadikan Murid memahami dan menguasai ilmu pengetahuan.
 
-29. **Penilaian** adalah proses pengumpulan dan pengolahan informasi untuk mengetahui kebutuhan belajar dan capaian perkembangan hasil belajar Murid.  
+29. **Penilaian** adalah proses pengumpulan dan pengolahan informasi untuk mengetahui kebutuhan belajar dan capaian perkembangan hasil belajar Murid.
 
-30. **Masa Pengenalan Lingkungan Sekolah** selanjutnya disingkat MPLS adalah masa/waktu di mana Anak diperkenalkan dengan situasi dan kondisi lingkungan yang baru, dengan tujuan agar anak mampu beradaptasi lebih cepat dan lebih mengenal situasi baik lingkungan fisik maupun lingkungan sosial.  
+30. **Masa Pengenalan Lingkungan Sekolah** selanjutnya disingkat MPLS adalah masa/waktu di mana Anak diperkenalkan dengan situasi dan kondisi lingkungan yang baru, dengan tujuan agar anak mampu beradaptasi lebih cepat dan lebih mengenal situasi baik lingkungan fisik maupun lingkungan sosial.
 
-31. **Masa Pengenalan Lingkungan Sekolah** adalah dalam rangka:  
-   a. mengenali potensi diri siswa baru;  
-   b. membantu siswa baru beradaptasi dengan lingkungan Satuan Pendidikan dan sekitarnya, antara lain terhadap aspek keamanan, fasilitas umum, dan sarana prasarana sekolah;  
-   c. menumbuhkan motivasi, semangat, dan cara belajar efektif sebagai siswa baru.  
-
----
-
-## II. PERMULAAN DAN AKHIR TAHUN AJARAN  
-
-1. Tahun Ajaran 2025/2026 dimulai hari Senin, tanggal 14 Juli 2025 dan berakhir hari Jumat, tanggal 19 Juni 2026.  
-
-2. Untuk Pendidikan Kesetaraan pada SKB/PKBM bagi Murid baru dimulai hari Rabu, tanggal 4 Agustus 2025 dan berakhir hari Jumat, tanggal 19 Juni 2026.  
+31. **Masa Pengenalan Lingkungan Sekolah** adalah dalam rangka:
+   a. mengenali potensi diri siswa baru;
+   b. membantu siswa baru beradaptasi dengan lingkungan Satuan Pendidikan dan sekitarnya, antara lain terhadap aspek keamanan, fasilitas umum, dan sarana prasarana sekolah;
+   c. menumbuhkan motivasi, semangat, dan cara belajar efektif sebagai siswa baru.
 
 ---
 
-## III. PENERIMAAN MURID BARU DAN PERSIAPAN TAHUN AJARAN  
+## II. PERMULAAN DAN AKHIR TAHUN AJARAN
 
-1. Alur proses pelaksanaan Penerimaan Murid Baru (PMB) diatur tersendiri dalam Keputusan Kepala Dinas Pendidikan.  
+1. Tahun Ajaran 2025/2026 dimulai hari Senin, tanggal 14 Juli 2025 dan berakhir hari Jumat, tanggal 19 Juni 2026.
 
-2. Pengaturan kelas dan penyusunan jadwal pelajaran dilaksanakan selambat-lambatnya hari Jumat, tanggal 11 Juli 2025 dan untuk Murid baru pada Pendidikan Kesetaraan hari Jumat, tanggal 1 Agustus 2025.  
-
-3. Sebelum memasuki tahun ajaran baru, Kepala Satuan Pendidikan wajib membuat program yang mencakup:  
-   a. Program Kerja Sekolah; dan  
-   b. Rencana Kegiatan dan Anggaran Sekolah (RKAS).  
-
-4. Sebelum tahun ajaran baru, Pendidik (guru/tutor) wajib membuat program yang mencakup:  
-   a. Program Tahunan dan Semester;  
-   b. Program Kegiatan Pembelajaran;  
-   c. Program Pengembangan Diri yang meliputi:  
-      1) Kegiatan ekstrakurikuler, khusus bagi guru yang diberikan tugas sebagai Pembina kegiatan ekstrakurikuler;  
-      2) Layanan bimbingan dan peminatan pembelajaran oleh Guru Bimbingan Konseling (BK).  
-   d. Program lain dalam rangka pelaksanaan Manajemen Berbasis Sekolah (MBS).  
-
-
-## IV. HARI-HARI PERTAMA MASUK SEKOLAH  
-
-1. **Masa Pengenalan Lingkungan Sekolah (MPLS)** bagi Murid kelas VII SMP dan SMPLB, kelas X SMA, SMALB, dan SMK dilaksanakan mulai tanggal 14 sampai dengan 16 Juli 2025. Khusus Murid baru PAUD, TKLB, kelas I SD dan SDLB dilaksanakan mulai tanggal 14 sampai dengan 25 Juli 2025.  
-
-2. Bagi Murid Pendidikan Kesetaraan Paket B setara SMP dan Paket C setara SMA dilaksanakan mulai tanggal 4 sampai dengan 6 Agustus 2025. Khusus Murid baru Pendidikan Kesetaraan Paket A setara SD dilaksanakan mulai tanggal 4 sampai dengan 15 Agustus 2025.  
-
-3. Hari-hari pertama masuk sekolah diisi dengan MPLS, sesuai dengan ketentuan yang berlaku.  
+2. Untuk Pendidikan Kesetaraan pada SKB/PKBM bagi Murid baru dimulai hari Rabu, tanggal 4 Agustus 2025 dan berakhir hari Jumat, tanggal 19 Juni 2026.
 
 ---
 
-## V. WAKTU KEGIATAN PEMBELAJARAN  
+## III. PENERIMAAN MURID BARU DAN PERSIAPAN TAHUN AJARAN
 
-### 1. Kegiatan Pembelajaran  
+1. Alur proses pelaksanaan Penerimaan Murid Baru (PMB) diatur tersendiri dalam Keputusan Kepala Dinas Pendidikan.
 
-a. Kegiatan pembelajaran bagi kelas VII SMP dan SMPLB, kelas X SMA, SMALB dan SMK dimulai hari Kamis, tanggal 17 Juli 2025. Khusus PAUD, TKLB, kelas I SD dan SDLB dimulai Senin tanggal 28 Juli 2025.  
+2. Pengaturan kelas dan penyusunan jadwal pelajaran dilaksanakan selambat-lambatnya hari Jumat, tanggal 11 Juli 2025 dan untuk Murid baru pada Pendidikan Kesetaraan hari Jumat, tanggal 1 Agustus 2025.
 
-b. Kegiatan pembelajaran bagi kelas II sampai dengan kelas VI SD dan SDLB, kelas VIII dan IX SMP dan SMPLB, kelas XI dan XII SMA dan SMK, dan kelas XIII khusus program SMK 4 tahun dimulai hari Senin, tanggal 14 Juli 2025.  
+3. Sebelum memasuki tahun ajaran baru, Kepala Satuan Pendidikan wajib membuat program yang mencakup:
+   a. Program Kerja Sekolah; dan
+   b. Rencana Kegiatan dan Anggaran Sekolah (RKAS).
 
-c. Kegiatan pembelajaran bagi Murid baru Paket B dan Paket C dimulai hari Kamis, tanggal 7 Agustus 2025. Khusus Paket A dimulai Senin, tanggal 18 Agustus 2025.  
+4. Sebelum tahun ajaran baru, Pendidik (guru/tutor) wajib membuat program yang mencakup:
+   a. Program Tahunan dan Semester;
+   b. Program Kegiatan Pembelajaran;
+   c. Program Pengembangan Diri yang meliputi:
+      1) Kegiatan ekstrakurikuler, khusus bagi guru yang diberikan tugas sebagai Pembina kegiatan ekstrakurikuler;
+      2) Layanan bimbingan dan peminatan pembelajaran oleh Guru Bimbingan Konseling (BK).
+   d. Program lain dalam rangka pelaksanaan Manajemen Berbasis Sekolah (MBS).
 
-d. Kegiatan pembelajaran bagi Paket A Kelas II sampai dengan kelas VI, Paket B Kelas VIII dan Kelas IX, Paket C Kelas XI dan Kelas XII dimulai hari Senin, 4 Agustus 2025.  
+
+## IV. HARI-HARI PERTAMA MASUK SEKOLAH
+
+1. **Masa Pengenalan Lingkungan Sekolah (MPLS)** bagi Murid kelas VII SMP dan SMPLB, kelas X SMA, SMALB, dan SMK dilaksanakan mulai tanggal 14 sampai dengan 16 Juli 2025. Khusus Murid baru PAUD, TKLB, kelas I SD dan SDLB dilaksanakan mulai tanggal 14 sampai dengan 25 Juli 2025.
+
+2. Bagi Murid Pendidikan Kesetaraan Paket B setara SMP dan Paket C setara SMA dilaksanakan mulai tanggal 4 sampai dengan 6 Agustus 2025. Khusus Murid baru Pendidikan Kesetaraan Paket A setara SD dilaksanakan mulai tanggal 4 sampai dengan 15 Agustus 2025.
+
+3. Hari-hari pertama masuk sekolah diisi dengan MPLS, sesuai dengan ketentuan yang berlaku.
 
 ---
 
-### 2. Penilaian Hasil Belajar  
+## V. WAKTU KEGIATAN PEMBELAJARAN
 
-a. Penilaian Hasil Belajar disesuaikan dengan Karakteristik, Jalur, Jenjang, dan Jenis Satuan Pendidikan; dan  
-b. Pelaksanaan Penilaian dilakukan sebelum, pada saat, dan/atau setelah pembelajaran berlangsung.  
+### 1. Kegiatan Pembelajaran
+
+a. Kegiatan pembelajaran bagi kelas VII SMP dan SMPLB, kelas X SMA, SMALB dan SMK dimulai hari Kamis, tanggal 17 Juli 2025. Khusus PAUD, TKLB, kelas I SD dan SDLB dimulai Senin tanggal 28 Juli 2025.
+
+b. Kegiatan pembelajaran bagi kelas II sampai dengan kelas VI SD dan SDLB, kelas VIII dan IX SMP dan SMPLB, kelas XI dan XII SMA dan SMK, dan kelas XIII khusus program SMK 4 tahun dimulai hari Senin, tanggal 14 Juli 2025.
+
+c. Kegiatan pembelajaran bagi Murid baru Paket B dan Paket C dimulai hari Kamis, tanggal 7 Agustus 2025. Khusus Paket A dimulai Senin, tanggal 18 Agustus 2025.
+
+d. Kegiatan pembelajaran bagi Paket A Kelas II sampai dengan kelas VI, Paket B Kelas VIII dan Kelas IX, Paket C Kelas XI dan Kelas XII dimulai hari Senin, 4 Agustus 2025.
 
 ---
 
-### 3. Beban Belajar  
+### 2. Penilaian Hasil Belajar
 
-Beban Belajar merupakan keseluruhan kegiatan yang harus diikuti Murid dalam satu minggu, satu semester dan satu tahun pembelajaran.  
+a. Penilaian Hasil Belajar disesuaikan dengan Karakteristik, Jalur, Jenjang, dan Jenis Satuan Pendidikan; dan
+b. Pelaksanaan Penilaian dilakukan sebelum, pada saat, dan/atau setelah pembelajaran berlangsung.
 
-a. **Beban Belajar Satuan Pendidikan Anak Usia Dini**  
-- Alokasi waktu pembelajaran di pendidikan anak usia dini atau bentuk lain yang sederajat untuk anak usia 4 (empat) sampai dengan 6 (enam) tahun paling sedikit 900 (sembilan ratus) menit per minggu.  
-- Alokasi waktu pembelajaran di pendidikan anak usia dini atau bentuk lain yang sederajat untuk anak usia 3 (tiga) sampai dengan 4 (empat) tahun paling sedikit 360 (tiga ratus enam puluh) menit per minggu.  
+---
 
-b. **Beban Belajar Sekolah Dasar**  
-1) Beban belajar di Kelas I, II, III, IV dan V dalam satu semester paling sedikit 18 minggu dan paling banyak 20 minggu.  
-2) Beban belajar di Kelas VI pada semester 1 (satu) paling sedikit 18 minggu dan paling banyak 20 minggu.  
-3) Beban belajar di Kelas VI pada semester 2 (dua) paling sedikit 14 minggu dan paling banyak 16 minggu.  
+### 3. Beban Belajar
 
-c. **Beban Belajar Sekolah Menengah Pertama**  
-1) Beban belajar di Kelas VII dan VIII dalam satu semester paling sedikit 18 minggu dan paling banyak 20 minggu.  
-2) Beban belajar di Kelas IX pada semester 1 (satu) paling sedikit 18 minggu dan paling banyak 20 minggu.  
-3) Beban belajar di Kelas IX pada semester 2 (dua) paling sedikit 14 minggu dan paling banyak 16 minggu.  
+Beban Belajar merupakan keseluruhan kegiatan yang harus diikuti Murid dalam satu minggu, satu semester dan satu tahun pembelajaran.
 
-d. **Beban Belajar Sekolah Menengah Atas**  
-1) Beban belajar di Kelas X dan XI dalam satu semester paling sedikit 18 minggu dan paling banyak 20 minggu.  
-2) Beban belajar di Kelas XII pada semester 1 (satu) paling sedikit 18 minggu dan paling banyak 20 minggu.  
-3) Beban belajar di Kelas XII pada semester 2 (dua) paling sedikit 14 minggu dan paling banyak 16 minggu.  
+a. **Beban Belajar Satuan Pendidikan Anak Usia Dini**
+- Alokasi waktu pembelajaran di pendidikan anak usia dini atau bentuk lain yang sederajat untuk anak usia 4 (empat) sampai dengan 6 (enam) tahun paling sedikit 900 (sembilan ratus) menit per minggu.
+- Alokasi waktu pembelajaran di pendidikan anak usia dini atau bentuk lain yang sederajat untuk anak usia 3 (tiga) sampai dengan 4 (empat) tahun paling sedikit 360 (tiga ratus enam puluh) menit per minggu.
 
-e. **Beban Belajar Sekolah Menengah Kejuruan**  
-1) Beban belajar di Kelas X dan XI dalam satu semester paling sedikit 18 minggu dan paling banyak 20 minggu.  
-2) Beban belajar di Kelas XII pada semester 1 (satu) paling sedikit 18 minggu dan paling banyak 20 minggu.  
-3) Beban belajar di Kelas XII pada semester 2 (dua) paling sedikit 14 minggu dan paling banyak 16 minggu.  
-4) Beban belajar di Kelas XIII pada semester 1 (satu) paling sedikit 18 minggu dan paling banyak 20 minggu.  
-5) Beban belajar di Kelas XIII pada semester 2 (dua) paling sedikit 14 minggu dan paling banyak 16 minggu.  
+b. **Beban Belajar Sekolah Dasar**
+1) Beban belajar di Kelas I, II, III, IV dan V dalam satu semester paling sedikit 18 minggu dan paling banyak 20 minggu.
+2) Beban belajar di Kelas VI pada semester 1 (satu) paling sedikit 18 minggu dan paling banyak 20 minggu.
+3) Beban belajar di Kelas VI pada semester 2 (dua) paling sedikit 14 minggu dan paling banyak 16 minggu.
 
-f. **Beban Belajar di SLB (TKLB, SDLB, SMPLB dan SMALB)**  
-1) **Taman Kanak-kanak Luar Biasa**  
-   - Alokasi waktu pembelajaran di taman kanak-kanak luar biasa untuk Murid usia 4 (empat) sampai dengan 6 (enam) tahun paling sedikit 900 (sembilan ratus) menit per minggu.  
-   - Untuk Murid usia 3 (tiga) sampai dengan 4 (empat) tahun paling sedikit 360 (tiga ratus enam puluh) menit per minggu.  
-2) **Sekolah Dasar Luar Biasa**  
-   - Kelas I–V: satu semester paling sedikit 18 minggu dan paling banyak 20 minggu.  
-   - Kelas VI semester 1: paling sedikit 18 minggu dan paling banyak 20 minggu.  
-   - Kelas VI semester 2: paling sedikit 14 minggu dan paling banyak 16 minggu.  
-3) **Sekolah Menengah Pertama Luar Biasa**  
-   - Kelas VII–VIII: satu semester paling sedikit 18 minggu dan paling banyak 20 minggu.  
-   - Kelas IX semester 1: paling sedikit 18 minggu dan paling banyak 20 minggu.  
-   - Kelas IX semester 2: paling sedikit 14 minggu dan paling banyak 16 minggu.  
-4) **Sekolah Menengah Atas Luar Biasa**  
-   - Kelas X–XI: satu semester paling sedikit 18 minggu dan paling banyak 20 minggu.  
-   - Kelas XII semester 1: paling sedikit 18 minggu dan paling banyak 20 minggu.  
-   - Kelas XII semester 2: paling sedikit 14 minggu dan paling banyak 16 minggu.  
+c. **Beban Belajar Sekolah Menengah Pertama**
+1) Beban belajar di Kelas VII dan VIII dalam satu semester paling sedikit 18 minggu dan paling banyak 20 minggu.
+2) Beban belajar di Kelas IX pada semester 1 (satu) paling sedikit 18 minggu dan paling banyak 20 minggu.
+3) Beban belajar di Kelas IX pada semester 2 (dua) paling sedikit 14 minggu dan paling banyak 16 minggu.
 
-g. **Beban Belajar Pendidikan Kesetaraan**  
-Muatan belajar program pendidikan kesetaraan dinyatakan dalam Satuan Kredit Kompetensi (SKK) yang menunjukkan bobot kompetensi yang harus dicapai oleh Murid dalam mengikuti program pembelajaran, baik melalui tatap muka, kegiatan belajar mandiri, dan/atau tutorial.  
-- 1 (satu) SKK adalah 1 (satu) satuan kompetensi yang dicapai melalui pembelajaran 1 jam tatap muka atau 2 jam pembelajaran tutorial atau 3 jam pembelajaran mandiri, atau kombinasi secara proporsional.  
-- 1 jam tatap muka = 35 menit untuk Program Paket A, 40 menit untuk Program Paket B, dan 45 menit untuk Program Paket C.  
-- Kelas tengah dan akhir menyesuaikan pelaksanaan di Satuan Pendidikan.  
+d. **Beban Belajar Sekolah Menengah Atas**
+1) Beban belajar di Kelas X dan XI dalam satu semester paling sedikit 18 minggu dan paling banyak 20 minggu.
+2) Beban belajar di Kelas XII pada semester 1 (satu) paling sedikit 18 minggu dan paling banyak 20 minggu.
+3) Beban belajar di Kelas XII pada semester 2 (dua) paling sedikit 14 minggu dan paling banyak 16 minggu.
 
-### 4. Alokasi Waktu Minggu Efektif Belajar, Waktu Libur, dan Kegiatan Lainnya  
+e. **Beban Belajar Sekolah Menengah Kejuruan**
+1) Beban belajar di Kelas X dan XI dalam satu semester paling sedikit 18 minggu dan paling banyak 20 minggu.
+2) Beban belajar di Kelas XII pada semester 1 (satu) paling sedikit 18 minggu dan paling banyak 20 minggu.
+3) Beban belajar di Kelas XII pada semester 2 (dua) paling sedikit 14 minggu dan paling banyak 16 minggu.
+4) Beban belajar di Kelas XIII pada semester 1 (satu) paling sedikit 18 minggu dan paling banyak 20 minggu.
+5) Beban belajar di Kelas XIII pada semester 2 (dua) paling sedikit 14 minggu dan paling banyak 16 minggu.
+
+f. **Beban Belajar di SLB (TKLB, SDLB, SMPLB dan SMALB)**
+1) **Taman Kanak-kanak Luar Biasa**
+   - Alokasi waktu pembelajaran di taman kanak-kanak luar biasa untuk Murid usia 4 (empat) sampai dengan 6 (enam) tahun paling sedikit 900 (sembilan ratus) menit per minggu.
+   - Untuk Murid usia 3 (tiga) sampai dengan 4 (empat) tahun paling sedikit 360 (tiga ratus enam puluh) menit per minggu.
+2) **Sekolah Dasar Luar Biasa**
+   - Kelas I–V: satu semester paling sedikit 18 minggu dan paling banyak 20 minggu.
+   - Kelas VI semester 1: paling sedikit 18 minggu dan paling banyak 20 minggu.
+   - Kelas VI semester 2: paling sedikit 14 minggu dan paling banyak 16 minggu.
+3) **Sekolah Menengah Pertama Luar Biasa**
+   - Kelas VII–VIII: satu semester paling sedikit 18 minggu dan paling banyak 20 minggu.
+   - Kelas IX semester 1: paling sedikit 18 minggu dan paling banyak 20 minggu.
+   - Kelas IX semester 2: paling sedikit 14 minggu dan paling banyak 16 minggu.
+4) **Sekolah Menengah Atas Luar Biasa**
+   - Kelas X–XI: satu semester paling sedikit 18 minggu dan paling banyak 20 minggu.
+   - Kelas XII semester 1: paling sedikit 18 minggu dan paling banyak 20 minggu.
+   - Kelas XII semester 2: paling sedikit 14 minggu dan paling banyak 16 minggu.
+
+g. **Beban Belajar Pendidikan Kesetaraan**
+Muatan belajar program pendidikan kesetaraan dinyatakan dalam Satuan Kredit Kompetensi (SKK) yang menunjukkan bobot kompetensi yang harus dicapai oleh Murid dalam mengikuti program pembelajaran, baik melalui tatap muka, kegiatan belajar mandiri, dan/atau tutorial.
+- 1 (satu) SKK adalah 1 (satu) satuan kompetensi yang dicapai melalui pembelajaran 1 jam tatap muka atau 2 jam pembelajaran tutorial atau 3 jam pembelajaran mandiri, atau kombinasi secara proporsional.
+- 1 jam tatap muka = 35 menit untuk Program Paket A, 40 menit untuk Program Paket B, dan 45 menit untuk Program Paket C.
+- Kelas tengah dan akhir menyesuaikan pelaksanaan di Satuan Pendidikan.
+
+### 4. Alokasi Waktu Minggu Efektif Belajar, Waktu Libur, dan Kegiatan Lainnya
 
 | No | KEGIATAN                             | ALOKASI WAKTU               | KETERANGAN                                                                 |
 |----|--------------------------------------|-----------------------------|-----------------------------------------------------------------------------|
@@ -1262,74 +1347,74 @@ Muatan belajar program pendidikan kesetaraan dinyatakan dalam Satuan Kredit Komp
 
 ---
 
-## VI. HARI-HARI BELAJAR SATUAN PENDIDIKAN  
+## VI. HARI-HARI BELAJAR SATUAN PENDIDIKAN
 
-1. **Awal dan Akhir Semester**  
-   a. Semester 1 dimulai hari Senin, tanggal 14 Juli 2025 dan berakhir hari Jumat, tanggal 19 Desember 2025.  
-   b. Semester 1 untuk Pendidikan Kesetaraan dimulai hari Senin, tanggal 4 Agustus 2025 dan berakhir hari Jumat, tanggal 19 Desember 2025.  
-   c. Semester 2 dimulai hari Senin, tanggal 5 Januari 2026 dan berakhir hari Jumat, tanggal 19 Juni 2026.    
+1. **Awal dan Akhir Semester**
+   a. Semester 1 dimulai hari Senin, tanggal 14 Juli 2025 dan berakhir hari Jumat, tanggal 19 Desember 2025.
+   b. Semester 1 untuk Pendidikan Kesetaraan dimulai hari Senin, tanggal 4 Agustus 2025 dan berakhir hari Jumat, tanggal 19 Desember 2025.
+   c. Semester 2 dimulai hari Senin, tanggal 5 Januari 2026 dan berakhir hari Jumat, tanggal 19 Juni 2026.
 
-2. **Larangan Perayaan Pada Hari Efektif**  
-   a. Hari belajar efektif tidak dibenarkan untuk kegiatan perayaan ulang tahun Daerah atau Kota dan Badan atau Organisasi, penerimaan tamu, dan lain-lain kegiatan yang bukan kegiatan dalam proses pembelajaran di Satuan Pendidikan.  
-   b. Pengecualian pada angka a di atas dapat dilaksanakan dengan izin khusus dari Kepala Dinas Pendidikan Provinsi DKI Jakarta.  
-
----
-
-## VII. KEGIATAN AKHIR SEMESTER  
-
-1. Akhir semester adalah akhir waktu yang ada pada semester 1 (satu) dan semester 2 (dua).  
-2. Guru dapat melaksanakan Penilaian Pada Akhir Semester.  
-3. Pada akhir semester 1 dan semester 2 Satuan Pendidikan dapat melakukan kegiatan pekan olahraga dan seni (Porseni), lomba kreativitas, atau praktik pembelajaran yang bertujuan untuk mengembangkan bakat, kepribadian, prestasi dan kreativitas siswa dalam rangka pengembangan pendidikan anak seutuhnya.  
-4. Kegiatan penilaian pada akhir semester direncanakan dan dilaksanakan oleh Satuan Pendidikan.  
+2. **Larangan Perayaan Pada Hari Efektif**
+   a. Hari belajar efektif tidak dibenarkan untuk kegiatan perayaan ulang tahun Daerah atau Kota dan Badan atau Organisasi, penerimaan tamu, dan lain-lain kegiatan yang bukan kegiatan dalam proses pembelajaran di Satuan Pendidikan.
+   b. Pengecualian pada angka a di atas dapat dilaksanakan dengan izin khusus dari Kepala Dinas Pendidikan Provinsi DKI Jakarta.
 
 ---
 
-## VIII. PENYERAHAN LAPORAN HASIL BELAJAR DAN HARI-HARI LIBUR  
+## VII. KEGIATAN AKHIR SEMESTER
 
-1. **Penyerahan Laporan Hasil Belajar (Rapor)**  
-   a. Penyerahan Laporan Penilaian Hasil Belajar PAUD, TKLB, SD, SDLB, SMP, SMPLB, SMA, SMALB, SMK, SKB/PKBM untuk Semester 1 (satu) dilaksanakan pada hari Jumat, tanggal 19 Desember 2025.  
-   b. Penyerahan Laporan Penilaian Hasil Belajar PAUD, TKLB, SD, SDLB, SMP, SMPLB, SMA, SMALB, SMK, SKB/PKBM untuk Semester 2 (dua) dilaksanakan pada hari Jumat, tanggal 19 Juni 2026.  
-   c. Khusus untuk Kelas VI SD/SDLB, Kelas IX SMP/SMPLB, Kelas XII SMA/SMALB, Kelas XI SMK, Kelas XIII SMK 4 tahun dan Pendidikan Kesetaraan, Laporan Hasil Belajar semester 2 (dua) disesuaikan dengan tanggal kelulusan yang ditetapkan oleh BSKAP Kemendiknas RI.  
+1. Akhir semester adalah akhir waktu yang ada pada semester 1 (satu) dan semester 2 (dua).
+2. Guru dapat melaksanakan Penilaian Pada Akhir Semester.
+3. Pada akhir semester 1 dan semester 2 Satuan Pendidikan dapat melakukan kegiatan pekan olahraga dan seni (Porseni), lomba kreativitas, atau praktik pembelajaran yang bertujuan untuk mengembangkan bakat, kepribadian, prestasi dan kreativitas siswa dalam rangka pengembangan pendidikan anak seutuhnya.
+4. Kegiatan penilaian pada akhir semester direncanakan dan dilaksanakan oleh Satuan Pendidikan.
 
-2. **Prakiraan Libur Umum Tahun Ajaran 2025/2026**  
-   a. Libur Umum Tahun 2025:  
-      1) Hari Kemerdekaan RI, Minggu, 17 Agustus 2025  
-      2) Maulid Nabi Muhammad SAW, Jumat, 5 September 2025  
-      3) Hari Raya Natal, Kamis, 25 Desember 2025  
-   b. Libur Umum Tahun 2026:  
-      1) Tahun Baru Masehi, Kamis, 1 Januari 2026  
-      2) Isra Mi’raj Nabi Muhammad SAW, Jumat, 16 Januari 2026  
-      3) Tahun Baru Imlek 2577, Selasa, 17 Februari 2026  
-      4) Hari Raya Nyepi, Sabtu, 19 Maret 2026  
-      5) Hari Raya Idulfitri 1447 H, Jumat–Sabtu, 20–21 Maret 2026  
-      6) Wafat Isa Almasih, Jumat, 3 April 2026  
-      7) Hari Buruh Internasional, Jumat, 1 Mei 2026  
-      8) Kenaikan Isa Almasih, Kamis, 14 Mei 2026  
-      9) Hari Raya Iduladha 1447 H, Rabu, 27 Mei 2026  
-      10) Hari Raya Waisak 2567, Minggu, 31 Mei 2026  
-      11) Hari Lahir Pancasila, Senin, 1 Juni 2026  
+---
+
+## VIII. PENYERAHAN LAPORAN HASIL BELAJAR DAN HARI-HARI LIBUR
+
+1. **Penyerahan Laporan Hasil Belajar (Rapor)**
+   a. Penyerahan Laporan Penilaian Hasil Belajar PAUD, TKLB, SD, SDLB, SMP, SMPLB, SMA, SMALB, SMK, SKB/PKBM untuk Semester 1 (satu) dilaksanakan pada hari Jumat, tanggal 19 Desember 2025.
+   b. Penyerahan Laporan Penilaian Hasil Belajar PAUD, TKLB, SD, SDLB, SMP, SMPLB, SMA, SMALB, SMK, SKB/PKBM untuk Semester 2 (dua) dilaksanakan pada hari Jumat, tanggal 19 Juni 2026.
+   c. Khusus untuk Kelas VI SD/SDLB, Kelas IX SMP/SMPLB, Kelas XII SMA/SMALB, Kelas XI SMK, Kelas XIII SMK 4 tahun dan Pendidikan Kesetaraan, Laporan Hasil Belajar semester 2 (dua) disesuaikan dengan tanggal kelulusan yang ditetapkan oleh BSKAP Kemendiknas RI.
+
+2. **Prakiraan Libur Umum Tahun Ajaran 2025/2026**
+   a. Libur Umum Tahun 2025:
+      1) Hari Kemerdekaan RI, Minggu, 17 Agustus 2025
+      2) Maulid Nabi Muhammad SAW, Jumat, 5 September 2025
+      3) Hari Raya Natal, Kamis, 25 Desember 2025
+   b. Libur Umum Tahun 2026:
+      1) Tahun Baru Masehi, Kamis, 1 Januari 2026
+      2) Isra Mi’raj Nabi Muhammad SAW, Jumat, 16 Januari 2026
+      3) Tahun Baru Imlek 2577, Selasa, 17 Februari 2026
+      4) Hari Raya Nyepi, Sabtu, 19 Maret 2026
+      5) Hari Raya Idulfitri 1447 H, Jumat–Sabtu, 20–21 Maret 2026
+      6) Wafat Isa Almasih, Jumat, 3 April 2026
+      7) Hari Buruh Internasional, Jumat, 1 Mei 2026
+      8) Kenaikan Isa Almasih, Kamis, 14 Mei 2026
+      9) Hari Raya Iduladha 1447 H, Rabu, 27 Mei 2026
+      10) Hari Raya Waisak 2567, Minggu, 31 Mei 2026
+      11) Hari Lahir Pancasila, Senin, 1 Juni 2026
       12) Tahun Baru Islam 1447 H, Rabu, 17 Juni
 
-3. **Libur umum Tahun Ajaran 2025/2026** mengikuti ketentuan hari libur yang ditetapkan bersama oleh Pemerintah.  
+3. **Libur umum Tahun Ajaran 2025/2026** mengikuti ketentuan hari libur yang ditetapkan bersama oleh Pemerintah.
 
-4. **Libur Semester**  
-   - Libur Semester bagi PAUD, TKLB, SD, SDLB, SMP, SMPLB, SMA, SMALB, SMK dan SKB/PKBM diatur sebagai berikut:  
-     a. Libur setiap semester berlangsung selama 2 minggu.  
-     b. Libur Semester 1 (satu) mulai hari Sabtu tanggal 20 Desember 2025 dan berakhir hari Sabtu tanggal 3 Januari 2026.  
-     c. Libur Semester 2 (dua) mulai hari Sabtu, tanggal 27 Juni 2026 dan berakhir hari Sabtu tanggal 11 Juli 2026.  
+4. **Libur Semester**
+   - Libur Semester bagi PAUD, TKLB, SD, SDLB, SMP, SMPLB, SMA, SMALB, SMK dan SKB/PKBM diatur sebagai berikut:
+     a. Libur setiap semester berlangsung selama 2 minggu.
+     b. Libur Semester 1 (satu) mulai hari Sabtu tanggal 20 Desember 2025 dan berakhir hari Sabtu tanggal 3 Januari 2026.
+     c. Libur Semester 2 (dua) mulai hari Sabtu, tanggal 27 Juni 2026 dan berakhir hari Sabtu tanggal 11 Juli 2026.
 
-5. **Libur Ramadan dan Libur Hari Raya Idulfitri**  
-   a. Libur awal Ramadan berlangsung 1 hari sebelum bulan Ramadan dan 2 hari pada awal bulan Ramadan.  
-   b. Libur Hari Raya Idulfitri berlangsung 6 hari sebelum dan sesudah tanggal 1 Syawal 1447 H.  
+5. **Libur Ramadan dan Libur Hari Raya Idulfitri**
+   a. Libur awal Ramadan berlangsung 1 hari sebelum bulan Ramadan dan 2 hari pada awal bulan Ramadan.
+   b. Libur Hari Raya Idulfitri berlangsung 6 hari sebelum dan sesudah tanggal 1 Syawal 1447 H.
 
 ---
 
-**KEPALA DINAS PENDIDIKAN PROVINSI DAERAH KHUSUS IBUKOTA JAKARTA**  
+**KEPALA DINAS PENDIDIKAN PROVINSI DAERAH KHUSUS IBUKOTA JAKARTA**
 
-_(ttd & stempel)_  
+_(ttd & stempel)_
 
-**NAHDIANA**  
-NIP 196908061992012001  
+**NAHDIANA**
+NIP 196908061992012001
 
 
 # 📚 Jadwal Pelaksanaan Asesmen Nasional atau ANBK 2025
@@ -1365,7 +1450,7 @@ NIP 196908061992012001
 
 ## 2. Jadwal Pelaksanaan Asesmen Nasional 2025 untuk Peserta Didik
 
-### a. Jadwal SMA/MA, SMK, SMALB, MAK dan sederajat  
+### a. Jadwal SMA/MA, SMK, SMALB, MAK dan sederajat
 **Senin – Kamis, 4 – 7 Agustus 2025**
 
 | Sesi | Waktu         | Jenis Asesmen                         | Pelaksanaan |
@@ -1379,9 +1464,9 @@ NIP 196908061992012001
 
 ---
 
-### b. Jadwal Paket C/PKPPS Ulya dan sederajat  
-**Senin – Kamis, 4 – 7 Agustus 2025**  
-**dan/atau**  
+### b. Jadwal Paket C/PKPPS Ulya dan sederajat
+**Senin – Kamis, 4 – 7 Agustus 2025**
+**dan/atau**
 **Sabtu – Minggu, 9 – 10 Agustus 2025**
 
 | Sesi | Waktu         | Jenis Asesmen                         | Pelaksanaan |
@@ -1395,7 +1480,7 @@ NIP 196908061992012001
 
 ---
 
-### c. Jadwal SMP, MTs, SMPLB dan sederajat  
+### c. Jadwal SMP, MTs, SMPLB dan sederajat
 **Senin – Kamis, 25 – 28 Agustus 2025**
 
 | Sesi | Waktu         | Jenis Asesmen                         | Pelaksanaan |
@@ -1409,8 +1494,8 @@ NIP 196908061992012001
 
 ### d. Jadwal Paket B/PKPPS Wustha dan yang sederajat
 
-**Senin – Kamis, 25 – 28 Agustus 2025**  
-**dan/atau**  
+**Senin – Kamis, 25 – 28 Agustus 2025**
+**dan/atau**
 **Sabtu – Minggu, 30 – 31 Agustus 2025**
 
 | Sesi | Waktu         | Jenis Asesmen                         | Pelaksanaan |
@@ -1424,7 +1509,7 @@ NIP 196908061992012001
 
 ---
 
-### e. Jadwal SD, MI, SDLB dan yang sederajat Tahap I (Gelombang 1 dan 2)  
+### e. Jadwal SD, MI, SDLB dan yang sederajat Tahap I (Gelombang 1 dan 2)
 **Senin – Kamis, 22 – 25 September 2025**
 
 | Sesi | Waktu         | Jenis Asesmen                         | Pelaksanaan |
@@ -1438,9 +1523,9 @@ NIP 196908061992012001
 
 ---
 
-### f. Jadwal Paket A/PKPPS Ula dan yang sederajat Tahap I  
-**Senin – Kamis, 22 – 25 September 2025**  
-**dan/atau**  
+### f. Jadwal Paket A/PKPPS Ula dan yang sederajat Tahap I
+**Senin – Kamis, 22 – 25 September 2025**
+**dan/atau**
 **Sabtu – Minggu, 27 – 28 September 2025**
 
 | Sesi | Waktu         | Jenis Asesmen                         | Pelaksanaan |
@@ -1454,7 +1539,7 @@ NIP 196908061992012001
 
 ---
 
-### g. Jadwal SD, MI, SDLB dan yang sederajat Tahap II (Gelombang 3 dan 4)  
+### g. Jadwal SD, MI, SDLB dan yang sederajat Tahap II (Gelombang 3 dan 4)
 **29 September – 2 Oktober 2025**
 
 | Sesi | Waktu         | Jenis Asesmen                         | Pelaksanaan |
@@ -1468,9 +1553,9 @@ NIP 196908061992012001
 
 ---
 
-### h. Jadwal Paket A/PKPPS Ula dan yang sederajat Tahap II  
-**29 September – 2 Oktober 2025**  
-**dan/atau**  
+### h. Jadwal Paket A/PKPPS Ula dan yang sederajat Tahap II
+**29 September – 2 Oktober 2025**
+**dan/atau**
 **Sabtu – Minggu, 4 – 5 Oktober 2025**
 
 | Sesi | Waktu         | Jenis Asesmen                         | Pelaksanaan |
@@ -1484,7 +1569,7 @@ NIP 196908061992012001
 
 ---
 
-## 3. Jadwal Pelaksanaan Survei Lingkungan Belajar  
+## 3. Jadwal Pelaksanaan Survei Lingkungan Belajar
 **Untuk Kepala Satuan Pendidikan dan Pendidik pada Pendidikan Dasar dan Menengah**
 
 | No | Hari           | Tanggal                          | Kegiatan                                                                 |
@@ -1494,7 +1579,7 @@ NIP 196908061992012001
 
 ## Lokasi Pelaksanaan Asesmen Nasional di Luar Negeri
 
-Atase Pendidikan dan Kebudayaan, Konsulat Jenderal Kementerian Luar Negeri, dan/atau Perwakilan Pemerintah Republik Indonesia di Luar Negeri dapat melaksanakan sosialisasi dan penyelenggaraan Asesmen Nasional untuk satuan pendidikan pada wilayah hukum kewenangannya.  
+Atase Pendidikan dan Kebudayaan, Konsulat Jenderal Kementerian Luar Negeri, dan/atau Perwakilan Pemerintah Republik Indonesia di Luar Negeri dapat melaksanakan sosialisasi dan penyelenggaraan Asesmen Nasional untuk satuan pendidikan pada wilayah hukum kewenangannya.
 
 Berikut adalah daftar lokasi pelaksanaan:
 
@@ -1528,42 +1613,42 @@ Berikut adalah daftar lokasi pelaksanaan:
 | 26 | PKBM P3K SI Luar Negeri Singapura   | 20A Siglap Road Singapore 45585                                                             | Singapura         |
 
 # Struktur Organisasi
-# Struktur Organisasi  
+# Struktur Organisasi
 ## Suku Dinas Pendidikan Wilayah II Kota Administrasi Jakarta Utara Periode Tahun 2025-2026
 
 ---
 
 ### 1. Kepala Suku Dinas Pendidikan (KASUDIN)
-#### **Ibu Heni Nurhayani**  
+#### **Ibu Heni Nurhayani**
 *Kepala Suku Dinas Pendidikan Wilayah II Kota Administrasi Jakarta Utara*
 
 ---
 
 ### 2. Kepala Subbagian Tata Usaha (KASUBAG)
-#### **Bapak Mukheri**  
+#### **Bapak Mukheri**
 *Kepala Subbagian Tata Usaha Suku Dinas Pendidikan Wilayah II Kota Administrasi Jakarta Utara*
 
 ---
 
 ### 3. Seksi-Seksi
 #### 3.1. Seksi PAUD (Pendidikan Anak Usia Dini) dan PMPK (Pendidikan Masyarakat dan Pendidikan Khusus)
-- **Ibu Meliyati**  
+- **Ibu Meliyati**
   *Kepala Seksi PAUD (Pendidikan Anak Usia Dini) dan PMPK (Pendidikan Masyarakat dan Pendidikan Khusus)*
 
 #### 3.2. Seksi SD
-- **Bapak Mulyadi**  
+- **Bapak Mulyadi**
   *Kepala Seksi SD*
 
 #### 3.3. Seksi SMP dan SMA
-- **Bapak Acep Mahmudin**  
+- **Bapak Acep Mahmudin**
   *Kepala Seksi SMP dan SMA*
 
 #### 3.4. Seksi SMK, Kursus, dan Pelatihan
-- **Ibu Suyamti**  
+- **Ibu Suyamti**
   *Kepala Seksi SMK, Kursus, dan Pelatihan*
 
 #### 3.5. Seksi PTK (Pendidik dan Tenaga Kependidikan)
-- **Bapak Agus Isnadi**  
+- **Bapak Agus Isnadi**
   *Kepala Seksi PTK (Pendidik dan Tenaga Kependidikan)*
 
 ---
@@ -1571,22 +1656,22 @@ Berikut adalah daftar lokasi pelaksanaan:
 ### 4. Satuan Pelaksana Pendidikan Kecamatan
 
 #### 4.1. Kecamatan Cilincing
-- **Bapak Sahri**  
+- **Bapak Sahri**
   *Ketua Satuan Pelaksana Pendidikan Kecamatan Cilincing*
 
 #### 4.2. Kecamatan Koja
-- **Bapak Jumaedy**  
+- **Bapak Jumaedy**
   *Plt. Ketua Satuan Pelaksana Pendidikan Kecamatan Koja*
 
 #### 4.3. Kecamatan Kelapa Gading
-- **Bapak Sriyono**  
+- **Bapak Sriyono**
   *Ketua Satuan Pelaksana Pendidikan Kecamatan Kelapa Gading*
 
 
 # Tim Pengembang ASKA (Agen AI Sekolah Kita) Suku Dinas Pendidikan Wilayah II Kota Administrasi Jakarta Utara
 
 **ASKA dikembangkan oleh:**
-**1. Mh. Ainun Fajar** 
+**1. Mh. Ainun Fajar**
 *Kak Fajar bertugas di SDN Semper Barat 01 sebagai Penata Kelola Sistem Informasi.*
 
 **2. Aisyah Dhia Salsabila**
@@ -5603,12 +5688,12 @@ KEPUTUSAN KEPALA DINAS PENDIDIKAN TENTANG ALUR PROSES PELAKSANAAN PENERIMAAN MUR
 - Format asal: ekstraksi teks PDF yang disusun ulang per bab/subbab
 
 ### Pengantar Lampiran I
-LAMPIRAN I KEPUTUSAN KEPALA DINAS PENDIDIKAN PROVINSI DAERAH KHUSUS IBUKOTA JAKARTA  
-NOMOR 261 TAHUN 2026  
+LAMPIRAN I KEPUTUSAN KEPALA DINAS PENDIDIKAN PROVINSI DAERAH KHUSUS IBUKOTA JAKARTA
+NOMOR 261 TAHUN 2026
 TENTANG ALUR PROSES PELAKSANAAN PENERIMAAN MURID BARU TAHUN AJARAN 2026/2027
 
 ### Bab I. Dasar Hukum
-A. Peraturan Menteri Pendidikan Dasar dan Menengah Nomor 3 Tahun 2025 tentang Sistem Penerimaan Murid Baru.  
+A. Peraturan Menteri Pendidikan Dasar dan Menengah Nomor 3 Tahun 2025 tentang Sistem Penerimaan Murid Baru.
 B. Keputusan Gubernur DKI Jakarta Nomor 238 Tahun 2026 tentang Petunjuk Teknis Penerimaan Murid Baru.
 
 ### Bab II. Pengumuman
@@ -6061,9 +6146,9 @@ _Konten bab belum terbaca pada lapisan teks PDF sumber._
 - Format asal: ekstraksi teks PDF yang disusun ulang per bab/subbab
 
 ### Pengantar Lampiran II
-LAMPIRAN II KEPUTUSAN KEPALA DINAS PENDIDIKAN PROVINSI DAERAH KHUSUS IBUKOTA JAKARTA  
-NOMOR 261 TAHUN 2026  
-TENTANG ALUR PROSES PELAKSANAAN PENERIMAAN MURID BARU TAHUN AJARAN 2026/2027  
+LAMPIRAN II KEPUTUSAN KEPALA DINAS PENDIDIKAN PROVINSI DAERAH KHUSUS IBUKOTA JAKARTA
+NOMOR 261 TAHUN 2026
+TENTANG ALUR PROSES PELAKSANAAN PENERIMAAN MURID BARU TAHUN AJARAN 2026/2027
 INDEKS PRESTASI PADA PENERIMAAN MURID BARU
 
 ### Bab I. Indeks Prestasi PMB SMP
@@ -6075,7 +6160,7 @@ INDEKS PRESTASI PADA PENERIMAAN MURID BARU
 - Indikator: Prestasi akademik; Akademik: 25%; Nonakademik: 5%; Keterangan: Juara 1-3 tingkat Internasional/Nasional/Provinsi/Kota-Kab
 - Indikator: Prestasi nonakademik; Akademik: 5%; Nonakademik: 50%; Keterangan: Juara 1-3 tingkat Internasional/Nasional/Provinsi/Kota-Kab
 - Indikator: Pengalaman kepemimpinan/seleksi ketat; Akademik: 10%; Nonakademik: 20%; Keterangan: Sesuai ketentuan
-- Indikator: **Total**; Akademik: **100%**; Nonakademik: **100%**; Keterangan: 
+- Indikator: **Total**; Akademik: **100%**; Nonakademik: **100%**; Keterangan:
 
 Ketentuan persentil nilai rapor:
 1. Sekolah dengan nilai rapor pendidikan **Baik**:
@@ -6190,7 +6275,7 @@ Ketentuan persentil nilai rapor:
 - Indikator: Prestasi akademik; Akademik: 25%; Nonakademik: 5%; Keterangan: Juara 1-3 tingkat Internasional/Nasional/Provinsi/Kota-Kab
 - Indikator: Prestasi nonakademik; Akademik: 5%; Nonakademik: 50%; Keterangan: Juara 1-3 tingkat Internasional/Nasional/Provinsi/Kota-Kab
 - Indikator: Pengalaman kepemimpinan; Akademik: 10%; Nonakademik: 20%; Keterangan: Unsur: OSIS/MPK (40%), ekstrakurikuler (20%), seleksi ketat (40%)
-- Indikator: **Total**; Akademik: **100%**; Nonakademik: **100%**; Keterangan: 
+- Indikator: **Total**; Akademik: **100%**; Nonakademik: **100%**; Keterangan:
 
 Ketentuan persentil nilai rapor sama dengan Bab I (kategori Baik/Sedang/Kurang).
 
@@ -6254,7 +6339,7 @@ Struktur indikator, skor predikat, dan rentang nilai rapor pendidikan sama denga
 - Indikator: Prestasi akademik; Akademik: 25%; Nonakademik: 5%; Keterangan: Juara 1-3 tingkat Internasional/Nasional/Provinsi/Kota-Kab
 - Indikator: Prestasi nonakademik; Akademik: 5%; Nonakademik: 50%; Keterangan: Juara 1-3 tingkat Internasional/Nasional/Provinsi/Kota-Kab
 - Indikator: Pengalaman kepemimpinan; Akademik: 10%; Nonakademik: 20%; Keterangan: Unsur: OSIS/MPK (40%), ekstrakurikuler (20%), seleksi ketat (40%)
-- Indikator: **Total**; Akademik: **100%**; Nonakademik: **100%**; Keterangan: 
+- Indikator: **Total**; Akademik: **100%**; Nonakademik: **100%**; Keterangan:
 
 Ketentuan persentil nilai rapor sama dengan Bab I (kategori Baik/Sedang/Kurang).
 
@@ -11559,7 +11644,7 @@ PETUNJUK TEKNIS PELAKSANAAN PENERIMAAN MURID BARU SATUAN PENDIDIKAN SWASTA PENER
         - a. Rerata Nilai Rapor Murni (bobot 70%) dan rerata nilai Tes Kemampuan Akademik (bobot 30%); dan
         - b. Usia tertua ke usia termuda.
     - 2. Ketentuan rerata nilai rapor murni pada jenjang SD/MI/Paket A dihitung dari nilai rapor pada 5 (lima) semester: kelas 4 semester 1 dan semester 2; kelas 5 semester 1 dan semester 2; dan kelas 6 semester 1, pada mata pelajaran Pendidikan Kewarganegaraan (PKn) atau Pendidikan Pancasila, Bahasa Indonesia, Matematika, dan Ilmu Pengetahuan Alam (IPA) atau Ilmu Pengetahuan Alam dan Sosial (IPAS).
-    - 3. Ketentuan rerata nilai Tes Kemampuan Akademik (TKA) berupa rerata nilai pada mata pelajaran Bahasa Indonesia dan Matematika dengan bobot 30%. 
+    - 3. Ketentuan rerata nilai Tes Kemampuan Akademik (TKA) berupa rerata nilai pada mata pelajaran Bahasa Indonesia dan Matematika dengan bobot 30%.
 - G. Seleksi jenjang SMA dan SMK
     - 1. Dalam hal jumlah pendaftar Satuan Pendidikan Swasta Penerima Pendanaan Pendidikan melebihi daya tampung, maka dilakukan seleksi dengan urutan langkah sebagai berikut:
         - a. Rerata Nilai Rapor Murni (bobot 70%) dan rerata nilai Tes Kemampuan Akademik (bobot 30%); dan
@@ -11596,7 +11681,7 @@ DAFTAR NAMA DAN DAYA TAMPUNG SATUAN PENDIDIKAN SWASTA PENERIMA PENDANAAN PENDIDI
 - NPSN: 20109532
 - Suku Dinas Pendidikan: Wilayah I Kota Administrasi Jakarta Barat
 - Kategori: Umum
-- SDLB: 
+- SDLB:
   - Kekhususan: A; daya tampung gelombang 1: 0; daya tampung gelombang 2: 0
   - Kekhususan: B; daya tampung gelombang 1: 3; daya tampung gelombang 2: 2
   - Kekhususan: C; daya tampung gelombang 1: 3; daya tampung gelombang 2: 2
@@ -11665,7 +11750,7 @@ DAFTAR NAMA DAN DAYA TAMPUNG SATUAN PENDIDIKAN SWASTA PENERIMA PENDANAAN PENDIDI
 - NPSN: 20109552
 - Suku Dinas Pendidikan: Wilayah I Kota Administrasi Jakarta Barat
 - Kategori: Katolik
-- SDLB: 
+- SDLB:
   - Kekhususan: A; daya tampung gelombang 1: 0; daya tampung gelombang 2: 0
   - Kekhususan: B; daya tampung gelombang 1: 2; daya tampung gelombang 2: 1
   - Kekhususan: C; daya tampung gelombang 1: 0; daya tampung gelombang 2: 0
@@ -38993,7 +39078,7 @@ Penerimaan murid baru dilaksanakan pada Sanggar Kegiatan Belajar, meliputi:
 
 #paste disini
 
-# BAB I  
+# BAB I
 # KETENTUAN UMUM PENERIMAAN MURID BARU
 
 ## A. DEFINISI OPERASIONAL
@@ -39057,24 +39142,1338 @@ Penerimaan murid baru dilaksanakan pada Sanggar Kegiatan Belajar, meliputi:
 1. Satuan pendidikan formal dan nonformal penyelenggara penerimaan murid baru terdiri atas:
 
 ### a. Satuan Pendidikan Anak Usia Dini
-1. Taman Kanak-Kanak  
-2. Kelompok Bermain  
-3. Taman Penitipan Anak  
-4. Satuan Pendidikan Anak Usia Dini sejenis  
+1. Taman Kanak-Kanak
+2. Kelompok Bermain
+3. Taman Penitipan Anak
+4. Satuan Pendidikan Anak Usia Dini sejenis
 
 ### b. Satuan Pendidikan Dasar
-1. Sekolah Dasar  
-2. Sekolah Menengah Pertama  
+1. Sekolah Dasar
+2. Sekolah Menengah Pertama
 
 ### c. Satuan Pendidikan Menengah
-1. Sekolah Menengah Atas  
-2. Sekolah Menengah Kejuruan  
+1. Sekolah Menengah Atas
+2. Sekolah Menengah Kejuruan
 
 ### d. Sekolah Luar Biasa
-1. Taman Kanak-Kanak Luar Biasa  
-2. Sekolah Dasar Luar Biasa  
-3. Sekolah Menengah Pertama Luar Biasa  
+1. Taman Kanak-Kanak Luar Biasa
+2. Sekolah Dasar Luar Biasa
+3. Sekolah Menengah Pertama Luar Biasa
 4. Sekolah Menengah Atas Luar Biasa
+
+---
+document_type: Keputusan Kepala Dinas Pendidikan
+title: Kalender Pendidikan Tahun Ajaran 2026/2027
+document_number: 346 Tahun 2026
+issuing_authority: Kepala Dinas Pendidikan Provinsi Daerah Khusus Ibukota Jakarta
+province: DKI Jakarta
+academic_year: 2026/2027
+language: id
+keywords:
+  - Kalender Pendidikan
+  - Tahun Ajaran 2026/2027
+  - Keputusan Kepala Dinas Pendidikan
+  - DKI Jakarta
+  - Pendidikan
+---
+
+# KEPUTUSAN KEPALA DINAS PENDIDIKAN
+## PROVINSI DAERAH KHUSUS IBUKOTA JAKARTA
+
+**Nomor:** 346 Tahun 2026
+
+## Tentang
+
+# KALENDER PENDIDIKAN TAHUN AJARAN 2026/2027
+
+**Dengan Rahmat Tuhan Yang Maha Esa**
+
+Kepala Dinas Pendidikan Provinsi Daerah Khusus Ibukota Jakarta,
+
+---
+
+# Menimbang
+
+Bahwa untuk memberikan pedoman kepada Satuan Pendidikan di Provinsi Daerah Khusus Ibukota Jakarta dalam mengatur waktu pembelajaran dan untuk mewujudkan efektivitas kegiatan belajar mengajar pada Tahun Ajaran 2026/2027, perlu menetapkan Keputusan Kepala Dinas Pendidikan tentang Kalender Pendidikan Tahun Ajaran 2026/2027.
+
+---
+
+# Mengingat
+
+## 1.
+Undang-Undang Nomor 20 Tahun 2003 tentang Sistem Pendidikan Nasional (Lembaran Negara Republik Indonesia Tahun 2003 Nomor 78, Tambahan Lembaran Negara Republik Indonesia Nomor 4301).
+
+## 2.
+Undang-Undang Nomor 29 Tahun 2007 tentang Pemerintahan Provinsi Daerah Khusus Ibukota Jakarta sebagai Ibukota Negara Kesatuan Republik Indonesia (Lembaran Negara Republik Indonesia Tahun 2007 Nomor 93, Tambahan Lembaran Negara Republik Indonesia Nomor 4744).
+
+## 3.
+Undang-Undang Nomor 23 Tahun 2014 tentang Pemerintahan Daerah (Lembaran Negara Republik Indonesia Tahun 2014 Nomor 244, Tambahan Lembaran Negara Republik Indonesia Nomor 5587), sebagaimana telah beberapa kali diubah terakhir dengan Undang-Undang Nomor 6 Tahun 2023 tentang Penetapan Peraturan Pemerintah Pengganti Undang-Undang Nomor 2 Tahun 2022 tentang Cipta Kerja Menjadi Undang-Undang.
+
+---
+
+# Ringkasan Halaman
+
+Halaman pertama merupakan bagian pembuka Keputusan Kepala Dinas Pendidikan Provinsi DKI Jakarta Nomor 346 Tahun 2026 tentang Kalender Pendidikan Tahun Ajaran 2026/2027. Pada halaman ini dijelaskan:
+
+- Identitas keputusan.
+- Nomor keputusan.
+- Judul keputusan.
+- Dasar pertimbangan (Menimbang).
+- Dasar hukum (Mengingat), yang diawali dengan Undang-Undang Nomor 20 Tahun 2003, Undang-Undang Nomor 29 Tahun 2007, dan Undang-Undang Nomor 23 Tahun 2014 beserta perubahan terakhir.
+
+
+
+# Mengingat (Lanjutan)
+
+## 4.
+
+Undang-Undang Nomor 30 Tahun 2014 tentang Administrasi Pemerintahan (Lembaran Negara Republik Indonesia Tahun 2014 Nomor 292, Tambahan Lembaran Negara Republik Indonesia Nomor 5601), sebagaimana telah beberapa kali diubah terakhir dengan Undang-Undang Nomor 6 Tahun 2023 tentang Penetapan Peraturan Pemerintah Pengganti Undang-Undang Nomor 2 Tahun 2022 tentang Cipta Kerja Menjadi Undang-Undang (Lembaran Negara Republik Indonesia Tahun 2023 Nomor 41, Tambahan Lembaran Negara Republik Indonesia Nomor 6856).
+
+## 5.
+
+Peraturan Pemerintah Nomor 2 Tahun 2018 tentang Standar Pelayanan Minimal (Lembaran Negara Republik Indonesia Tahun 2018 Nomor 2, Tambahan Lembaran Negara Republik Indonesia Nomor 6178).
+
+## 6.
+
+Peraturan Pemerintah Nomor 57 Tahun 2021 tentang Standar Nasional Pendidikan (Lembaran Negara Republik Indonesia Tahun 2021 Nomor 87, Tambahan Lembaran Negara Republik Indonesia Nomor 6676), sebagaimana telah diubah dengan Peraturan Pemerintah Nomor 4 Tahun 2022 tentang Perubahan atas Peraturan Pemerintah Nomor 57 Tahun 2021 tentang Standar Nasional Pendidikan (Lembaran Negara Republik Indonesia Tahun 2022 Nomor 14, Tambahan Lembaran Negara Republik Indonesia Nomor 6762).
+
+## 7.
+
+Peraturan Presiden Nomor 87 Tahun 2017 tentang Penguatan Pendidikan Karakter (Lembaran Negara Republik Indonesia Tahun 2017 Nomor 195).
+
+## 8.
+
+Peraturan Menteri Pendidikan Nasional Nomor 39 Tahun 2008 tentang Pembinaan Kesiswaan (Lembaran Negara Republik Indonesia Tahun 2015 Nomor 166).
+
+## 9.
+
+Peraturan Menteri Pendidikan dan Kebudayaan Nomor 23 Tahun 2017 tentang Hari Sekolah (Berita Negara Republik Indonesia Tahun 2017 Nomor 829).
+
+## 10.
+
+Peraturan Menteri Pendidikan dan Kebudayaan Nomor 22 Tahun 2018 tentang Pedoman Upacara Bendera di Sekolah (Berita Negara Republik Indonesia Tahun 2018 Nomor 830).
+
+
+
+# Mengingat (Lanjutan)
+
+## 11.
+
+Peraturan Menteri Pendidikan dan Kebudayaan Nomor 6 Tahun 2019 tentang Pedoman Organisasi dan Tata Kerja Satuan Pendidikan Dasar dan Menengah (Berita Negara Republik Indonesia Tahun 2019 Nomor 206).
+
+## 12.
+
+Peraturan Menteri Pendidikan, Kebudayaan, Riset, dan Teknologi Nomor 21 Tahun 2022 tentang Standar Penilaian pada Pendidikan Anak Usia Dini, Jenjang Pendidikan Dasar, dan Jenjang Pendidikan Menengah (Berita Negara Republik Indonesia Tahun 2022 Nomor 460).
+
+## 13.
+
+Peraturan Menteri Pendidikan, Kebudayaan, Riset, dan Teknologi Nomor 32 Tahun 2022 tentang Standar Teknis Pelayanan Minimal Pendidikan (Berita Negara Republik Indonesia Tahun 2022 Nomor 677).
+
+## 14.
+
+Peraturan Menteri Pendidikan, Kebudayaan, Riset, dan Teknologi Nomor 12 Tahun 2024 tentang Kurikulum pada Pendidikan Anak Usia Dini, Jenjang Pendidikan Dasar, dan Jenjang Pendidikan Menengah (Berita Negara Republik Indonesia Tahun 2024 Nomor 172), sebagaimana telah diubah dengan Peraturan Menteri Pendidikan Dasar dan Menengah Nomor 13 Tahun 2025 tentang Perubahan atas Peraturan Menteri Pendidikan, Kebudayaan, Riset, dan Teknologi Nomor 12 Tahun 2024 tentang Kurikulum pada Pendidikan Anak Usia Dini, Jenjang Pendidikan Dasar, dan Jenjang Pendidikan Menengah (Berita Negara Republik Indonesia Tahun 2025 Nomor 503).
+
+## 15.
+
+Peraturan Menteri Pendidikan Dasar dan Menengah Nomor 26 Tahun 2025 tentang Standar Pengelolaan pada Pendidikan Anak Usia Dini, Jenjang Pendidikan Dasar, dan Jenjang Pendidikan Menengah (Berita Negara Republik Indonesia Tahun 2025 Nomor 1079).
+
+## 16.
+
+Peraturan Menteri Pendidikan Dasar dan Menengah Nomor 3 Tahun 2025 tentang Sistem Penerimaan Murid Baru (Berita Negara Republik Indonesia Tahun 2025 Nomor 134).
+
+## 17.
+
+Peraturan Menteri Pendidikan Dasar dan Menengah Nomor 10 Tahun 2025 tentang Standar Kompetensi Lulusan pada Pendidikan Anak Usia Dini, Jenjang Pendidikan Dasar, dan Jenjang Pendidikan Menengah (Berita Negara Republik Indonesia Tahun 2025 Nomor 410).
+
+---
+
+# Ringkasan Halaman
+
+Halaman ini merupakan lanjutan bagian **Mengingat** yang memuat dasar hukum operasional penyelenggaraan pendidikan sebagai landasan penetapan Kalender Pendidikan Tahun Ajaran 2026/2027.
+
+Pokok-pokok regulasi yang dicantumkan meliputi:
+
+- Pedoman organisasi dan tata kerja satuan pendidikan dasar dan menengah.
+- Standar penilaian pendidikan untuk PAUD, pendidikan dasar, dan pendidikan menengah.
+- Standar teknis pelayanan minimal bidang pendidikan.
+- Kurikulum nasional beserta perubahan terbaru melalui Peraturan Menteri Pendidikan Dasar dan Menengah Tahun 2025.
+- Standar pengelolaan satuan pendidikan.
+- Sistem Penerimaan Murid Baru (SPMB).
+- Standar Kompetensi Lulusan (SKL) pada jenjang PAUD, pendidikan dasar, dan pendidikan menengah.
+
+
+
+# Mengingat (Lanjutan)
+
+## 18.
+
+Peraturan Menteri Pendidikan Dasar dan Menengah Nomor 12 Tahun 2025 tentang Standar Isi pada Pendidikan Anak Usia Dini, Jenjang Pendidikan Dasar, dan Jenjang Pendidikan Menengah (Berita Negara Republik Indonesia Tahun 2025 Nomor 502).
+
+## 19.
+
+Peraturan Menteri Pendidikan Dasar dan Menengah Nomor 1 Tahun 2026 tentang Standar Proses pada Pendidikan Anak Usia Dini, Jenjang Pendidikan Dasar, dan Jenjang Pendidikan Menengah (Berita Negara Republik Indonesia Tahun 2026 Nomor 1).
+
+## 20.
+
+Peraturan Menteri Pendidikan Dasar dan Menengah Nomor 12 Tahun 2026 tentang Masa Pengenalan Lingkungan Sekolah (Berita Negara Republik Indonesia Tahun 2026 Nomor 352).
+
+## 21.
+
+Peraturan Daerah Nomor 5 Tahun 2025 tentang Penyelenggaraan Pendidikan (Lembaran Daerah Provinsi Daerah Khusus Jakarta Tahun 2025 Nomor 401, Tambahan Lembaran Daerah Provinsi Daerah Khusus Jakarta Nomor 4008).
+
+## 22.
+
+Peraturan Gubernur Nomor 175 Tahun 2014 tentang Jam Masuk Sekolah (Berita Daerah Provinsi Daerah Khusus Ibukota Jakarta Tahun 2014 Nomor 75029).
+
+## 23.
+
+Peraturan Gubernur Nomor 80 Tahun 2017 tentang Kurikulum Muatan Lokal di Sekolah/Madrasah (Berita Daerah Provinsi Daerah Khusus Ibukota Jakarta Tahun 2017 Nomor 65006), sebagaimana telah diubah dengan Peraturan Gubernur Nomor 89 Tahun 2018 tentang Perubahan Atas Peraturan Gubernur Nomor 80 Tahun 2017 tentang Kurikulum Muatan Lokal di Sekolah/Madrasah (Berita Daerah Provinsi Daerah Khusus Ibukota Jakarta Tahun 2018 Nomor 65019).
+
+## 24.
+
+Peraturan Gubernur Nomor 57 Tahun 2022 tentang Organisasi dan Tata Kerja Perangkat Daerah (Berita Daerah Provinsi Daerah Khusus Ibukota Jakarta Tahun 2022 Nomor 71023), sebagaimana telah beberapa kali diubah terakhir dengan Peraturan Gubernur Nomor 40 Tahun 2023 tentang Perubahan Kedua Atas Peraturan Gubernur Nomor 57 Tahun 2022 tentang Organisasi dan Tata Kerja Perangkat Daerah (Berita Daerah Provinsi Daerah Khusus Ibukota Jakarta Tahun 2023 Nomor 71012).
+
+---
+
+# Ringkasan Halaman
+
+Halaman ini merupakan lanjutan bagian **Mengingat** yang memuat regulasi nasional dan daerah sebagai landasan penyusunan Kalender Pendidikan Tahun Ajaran 2026/2027.
+
+Regulasi yang tercantum meliputi:
+
+- Standar Isi pada pendidikan anak usia dini, pendidikan dasar, dan pendidikan menengah.
+- Standar Proses pada seluruh jenjang pendidikan.
+- Ketentuan mengenai Masa Pengenalan Lingkungan Sekolah (MPLS).
+- Peraturan Daerah Provinsi Daerah Khusus Jakarta tentang Penyelenggaraan Pendidikan.
+- Ketentuan mengenai Jam Masuk Sekolah di Provinsi DKI Jakarta.
+- Kurikulum Muatan Lokal pada sekolah dan madrasah beserta perubahannya.
+- Organisasi dan Tata Kerja Perangkat Daerah beserta perubahan terakhir.
+
+
+
+# Mengingat (Butir Terakhir)
+
+## 25.
+
+Keputusan Gubernur DKI Jakarta Nomor 238 Tahun 2026 tentang Petunjuk Teknis Penerimaan Murid Baru.
+
+---
+
+# MEMUTUSKAN
+
+## Menetapkan
+
+**KEPUTUSAN KEPALA DINAS PENDIDIKAN TENTANG KALENDER PENDIDIKAN TAHUN AJARAN 2026/2027.**
+
+---
+
+## KESATU
+
+Menetapkan Kalender Pendidikan Tahun Ajaran 2026/2027 sebagai dasar dan acuan dalam penyelenggaraan pendidikan pada jenjang:
+
+- PAUD/TKLB
+- SD/SDLB
+- Paket A
+- SMP/SMPLB
+- Paket B
+- SMA/SMALB
+- SMK
+- Paket C
+
+di Provinsi Daerah Khusus Ibukota Jakarta.
+
+---
+
+## KEDUA
+
+Kalender Pendidikan sebagaimana dimaksud pada diktum **KESATU** tercantum dalam **Lampiran I sampai dengan Lampiran III** yang merupakan bagian tidak terpisahkan dari Keputusan Kepala Dinas Pendidikan ini.
+
+---
+
+## KETIGA
+
+Keputusan Kepala Dinas Pendidikan ini mulai berlaku pada tanggal ditetapkan.
+
+---
+
+# Ringkasan Halaman
+
+Halaman ini merupakan bagian **penetapan keputusan (Memutuskan)** dari Keputusan Kepala Dinas Pendidikan Provinsi DKI Jakarta Nomor 346 Tahun 2026.
+
+Pokok keputusan yang ditetapkan meliputi:
+
+- Dasar hukum terakhir berupa Keputusan Gubernur DKI Jakarta Nomor 238 Tahun 2026 tentang Petunjuk Teknis Penerimaan Murid Baru.
+- Penetapan Kalender Pendidikan Tahun Ajaran 2026/2027 sebagai pedoman resmi penyelenggaraan pendidikan di Provinsi DKI Jakarta.
+- Kalender Pendidikan berlaku untuk seluruh satuan pendidikan pada jenjang PAUD, Pendidikan Dasar, Pendidikan Menengah, Pendidikan Khusus, dan Pendidikan Kesetaraan.
+- Kalender Pendidikan secara lengkap dimuat dalam Lampiran I, Lampiran II, dan Lampiran III yang menjadi satu kesatuan dengan keputusan ini.
+- Keputusan mulai berlaku sejak tanggal ditetapkan.
+
+
+
+# LAMPIRAN I
+
+## Keputusan Kepala Dinas Pendidikan Provinsi Daerah Khusus Ibukota Jakarta
+
+**Nomor:** 346 Tahun 2026
+
+**Tentang:** Kalender Pendidikan Tahun Ajaran 2026/2027
+
+---
+
+# KALENDER PENDIDIKAN TAHUN AJARAN 2026/2027
+
+# I. UMUM
+
+Yang dimaksud dalam Keputusan ini adalah:
+
+## 1. Dinas
+
+Dinas adalah **Dinas Pendidikan Provinsi DKI Jakarta**.
+
+---
+
+## 2. Satuan Pendidikan
+
+Satuan Pendidikan adalah bentuk kelompok layanan pendidikan yang menyelenggarakan:
+
+- Pendidikan Anak Usia Dini (TK/KB/SPS/TPA)
+- Taman Kanak-kanak Luar Biasa (TKLB)
+- Sekolah Dasar (SD)
+- Sekolah Dasar Luar Biasa (SDLB)
+- Sekolah Menengah Pertama (SMP)
+- Sekolah Menengah Pertama Luar Biasa (SMPLB)
+- Sekolah Menengah Atas (SMA)
+- Sekolah Menengah Atas Luar Biasa (SMALB)
+- Sekolah Menengah Kejuruan (SMK)
+- Sanggar Kegiatan Belajar (SKB)
+- Pusat Kegiatan Belajar Masyarakat (PKBM)
+
+yang berada dalam lingkungan pembinaan Dinas Pendidikan Provinsi Daerah Khusus Ibukota Jakarta.
+
+---
+
+## 3. Jenjang Pendidikan
+
+Jenjang Pendidikan adalah tahapan pendidikan yang ditetapkan berdasarkan tingkat perkembangan peserta didik, tujuan yang akan dicapai, serta kemampuan yang dikembangkan.
+
+---
+
+## 4. Pendidikan Kesetaraan
+
+Pendidikan Kesetaraan adalah pendidikan nonformal yang mencakup:
+
+- Paket A setara SD
+- Paket B setara SMP
+- Paket C setara SMA
+
+dengan penekanan pada:
+
+- penguasaan pengetahuan;
+- keterampilan fungsional; dan
+- pengembangan sikap serta kepribadian profesional peserta didik.
+
+Pendidikan Kesetaraan diselenggarakan melalui:
+
+- Sanggar Kegiatan Belajar (SKB); dan
+- Pusat Kegiatan Belajar Masyarakat (PKBM).
+
+---
+
+## 5. Pendidikan Anak Usia Dini (PAUD)
+
+Pendidikan Anak Usia Dini (PAUD) adalah upaya pembinaan yang ditujukan kepada anak sejak lahir sampai usia 6 (enam) tahun melalui pemberian rangsangan pendidikan untuk membantu pertumbuhan dan perkembangan jasmani maupun rohani agar anak memiliki kesiapan memasuki pendidikan lebih lanjut.
+
+---
+
+# Ringkasan Halaman
+
+Halaman ini merupakan awal **Lampiran I** yang berisi ketentuan umum dan definisi istilah yang digunakan dalam Kalender Pendidikan Tahun Ajaran 2026/2027.
+
+Istilah yang didefinisikan meliputi:
+
+- Dinas Pendidikan Provinsi DKI Jakarta.
+- Satuan Pendidikan beserta jenis-jenisnya.
+- Jenjang Pendidikan.
+- Pendidikan Kesetaraan (Paket A, Paket B, dan Paket C).
+- Pendidikan Anak Usia Dini (PAUD).
+
+Definisi-definisi ini menjadi acuan dalam memahami seluruh ketentuan kalender pendidikan pada halaman-halaman berikutnya.
+
+
+
+# I. UMUM (Lanjutan)
+
+Yang dimaksud dalam Keputusan ini adalah:
+
+## 6. Satuan PAUD
+
+Satuan PAUD adalah layanan Pendidikan Anak Usia Dini yang dilaksanakan pada suatu lembaga pendidikan dalam bentuk:
+
+- Taman Kanak-kanak (TK)
+- Kelompok Bermain (KB)
+- Taman Penitipan Anak (TPA)
+- Satuan PAUD Sejenis (SPS)
+
+---
+
+## 7. Sekolah Dasar (SD)
+
+Sekolah Dasar (SD) adalah salah satu bentuk satuan pendidikan formal yang menyelenggarakan pendidikan umum pada jenjang pendidikan dasar.
+
+---
+
+## 8. Sekolah Dasar Luar Biasa (SDLB)
+
+Sekolah Dasar Luar Biasa (SDLB) adalah salah satu bentuk satuan pendidikan khusus bagi peserta didik yang memiliki tingkat kesulitan dalam mengikuti proses pembelajaran karena kelainan fisik, emosional, mental, dan/atau sosial.
+
+---
+
+## 9. Sekolah Menengah Pertama (SMP)
+
+Sekolah Menengah Pertama (SMP) adalah salah satu bentuk satuan pendidikan formal yang menyelenggarakan pendidikan umum pada jenjang pendidikan dasar sebagai lanjutan dari SD atau bentuk lain yang sederajat atau lanjutan dari hasil belajar yang diakui sama atau setara SD.
+
+---
+
+## 10. Sekolah Menengah Pertama Luar Biasa (SMPLB)
+
+Sekolah Menengah Pertama Luar Biasa (SMPLB) adalah salah satu bentuk satuan pendidikan khusus bagi peserta didik sebagai lanjutan dari SDLB atau bentuk lain yang sederajat.
+
+---
+
+## 11. Sekolah Menengah Atas (SMA)
+
+Sekolah Menengah Atas (SMA) adalah salah satu bentuk satuan pendidikan formal yang menyelenggarakan pendidikan umum pada jenjang pendidikan menengah sebagai lanjutan SMP atau bentuk lain yang sederajat atau lanjutan dari hasil belajar yang diakui sama atau setara SMP.
+
+---
+
+## 12. Sekolah Menengah Atas Luar Biasa (SMALB)
+
+Sekolah Menengah Atas Luar Biasa (SMALB) adalah salah satu bentuk satuan pendidikan khusus bagi peserta didik yang telah lulus dari SMPLB atau bentuk lain yang sederajat.
+
+---
+
+## 13. Sekolah Menengah Kejuruan (SMK)
+
+Sekolah Menengah Kejuruan (SMK) adalah salah satu bentuk satuan pendidikan formal yang menyelenggarakan pendidikan kejuruan pada jenjang pendidikan menengah sebagai lanjutan dari SMP atau bentuk lain yang sederajat atau lanjutan dari hasil belajar yang diakui sama atau setara SMP.
+
+---
+
+## 14. Permulaan Tahun Ajaran
+
+Permulaan Tahun Ajaran adalah waktu dimulainya kegiatan pembelajaran pada awal tahun ajaran di setiap satuan pendidikan.
+
+---
+
+## 15. Hari Sekolah
+
+Hari Sekolah adalah jumlah hari dan jam yang digunakan oleh guru, tenaga kependidikan, dan peserta didik dalam penyelenggaraan pendidikan di satuan pendidikan.
+
+---
+
+## 16. Minggu Efektif Belajar
+
+Minggu Efektif Belajar adalah jumlah minggu kegiatan pembelajaran di luar waktu libur untuk setiap tahun ajaran pada setiap satuan pendidikan.
+
+---
+
+# Ringkasan Halaman
+
+Halaman ini merupakan lanjutan bagian **Ketentuan Umum** pada Lampiran I yang berisi definisi istilah dan jenis satuan pendidikan yang digunakan dalam Kalender Pendidikan Tahun Ajaran 2026/2027.
+
+Definisi yang dijelaskan meliputi:
+
+- Bentuk layanan Satuan PAUD.
+- Pengertian SD, SDLB, SMP, SMPLB, SMA, SMALB, dan SMK.
+- Pengertian Permulaan Tahun Ajaran.
+- Pengertian Hari Sekolah.
+- Pengertian Minggu Efektif Belajar.
+
+Seluruh istilah tersebut menjadi dasar dalam penafsiran ketentuan kalender pendidikan pada bagian-bagian berikutnya.
+
+---
+
+
+
+# I. UMUM (Lanjutan)
+
+Yang dimaksud dalam Keputusan ini adalah:
+
+## 17. Waktu Libur
+
+Waktu Libur adalah waktu yang ditetapkan untuk tidak diadakan kegiatan pembelajaran terjadwal pada satuan pendidikan. Waktu libur dapat berbentuk:
+
+- Jeda tengah semester
+- Jeda antar semester
+- Libur akhir tahun ajaran
+- Hari libur keagamaan
+- Hari libur umum (termasuk hari-hari besar nasional)
+- Hari libur khusus
+
+---
+
+## 18. Pembelajaran
+
+Pembelajaran adalah proses interaksi peserta didik dengan pendidik dan sumber belajar pada suatu lingkungan belajar.
+
+---
+
+## 19. Intrakurikuler
+
+Intrakurikuler adalah kegiatan pembelajaran untuk mencapai tujuan belajar sesuai jadwal dan beban belajar pada struktur kurikulum.
+
+---
+
+## 20. Kokurikuler
+
+Kokurikuler adalah kegiatan pembelajaran yang dilaksanakan untuk penguatan, pendalaman, dan/atau pengayaan kegiatan intrakurikuler dalam rangka pengembangan karakter dan kompetensi peserta didik.
+
+---
+
+## 21. Hari Belajar Efektif
+
+Hari Belajar Efektif adalah hari belajar yang betul-betul digunakan untuk kegiatan belajar mengajar sesuai dengan kebutuhan kurikulum.
+
+---
+
+## 22. Semester
+
+Semester adalah periode paruh tahun yang menggambarkan masa enam bulan pada tahun ajaran. Dalam satu tahun ajaran terdiri atas:
+
+- Semester satu
+- Semester dua
+
+---
+
+## 23. Tahun Ajaran
+
+Tahun Ajaran adalah satuan waktu pemberian pelajaran selama satu tahun.
+
+---
+
+## 24. Libur Semester
+
+Libur Semester adalah libur yang diadakan pada akhir setiap semester.
+
+---
+
+## 25. Libur Umum
+
+Libur Umum adalah libur yang diadakan untuk memperingati peristiwa nasional atau keagamaan sesuai dengan ketentuan yang ditetapkan oleh:
+
+- Menteri Agama
+- Menteri Ketenagakerjaan
+- Menteri Pendayagunaan Aparatur Negara dan Reformasi Birokrasi
+- Surat Edaran Gubernur Provinsi DKI Jakarta
+
+---
+
+## 26. Libur Ramadan
+
+Libur Ramadan adalah libur awal puasa dan menjelang Hari Raya Idulfitri.
+
+---
+
+## 27. Libur Hari Raya Idulfitri
+
+Libur Hari Raya Idulfitri adalah libur sekitar Hari Raya Idulfitri.
+
+---
+
+## 28. Libur Khusus
+
+Libur Khusus adalah libur yang diadakan sehubungan dengan adanya keperluan lain di luar ketentuan mengenai libur umum dan libur bulan Ramadan.
+
+---
+
+## 29. Penilaian
+
+Penilaian adalah proses pengumpulan dan pengolahan informasi untuk mengetahui kebutuhan belajar serta capaian perkembangan atau hasil belajar peserta didik.
+
+---
+
+## 30. Masa Pengenalan Lingkungan Sekolah (MPLS)
+
+Masa Pengenalan Lingkungan Sekolah (MPLS) adalah kegiatan pertama bagi murid baru yang dilakukan oleh sekolah untuk menumbuhkan dan memperkuat karakter serta profil lulusan.
+
+---
+
+# Ringkasan Halaman
+
+Halaman ini melanjutkan bagian **Ketentuan Umum** dengan memberikan definisi istilah-istilah yang berkaitan dengan pelaksanaan kalender pendidikan dan proses pembelajaran.
+
+Istilah yang dijelaskan meliputi:
+
+- Waktu libur beserta jenis-jenisnya.
+- Pembelajaran.
+- Kegiatan intrakurikuler dan kokurikuler.
+- Hari belajar efektif.
+- Semester dan tahun ajaran.
+- Libur semester, libur umum, libur Ramadan, libur Hari Raya Idulfitri, dan libur khusus.
+- Penilaian hasil belajar.
+- Masa Pengenalan Lingkungan Sekolah (MPLS).
+
+Seluruh definisi tersebut menjadi acuan dalam penetapan jadwal pembelajaran, hari efektif, serta waktu libur pada Kalender Pendidikan Tahun Ajaran 2026/2027.
+
+
+
+# II. PERMULAAN DAN AKHIR TAHUN AJARAN
+
+## 1. Tahun Ajaran 2026/2027
+
+- Dimulai pada **Senin, 13 Juli 2026**.
+- Berakhir pada **Jumat, 25 Juni 2027**.
+
+## 2. Pendidikan Kesetaraan (SKB/PKBM)
+
+Bagi murid baru pada Pendidikan Kesetaraan yang diselenggarakan melalui SKB/PKBM:
+
+- Dimulai pada **Senin, 27 Juli 2026**.
+- Berakhir pada **Jumat, 25 Juni 2027**.
+
+---
+
+# III. PENERIMAAN MURID BARU DAN PERSIAPAN TAHUN AJARAN
+
+## 1. Penerimaan Murid Baru (PMB)
+
+Alur proses pelaksanaan Penerimaan Murid Baru (PMB) diatur tersendiri dalam Keputusan Kepala Dinas Pendidikan.
+
+## 2. Pengaturan Kelas dan Penyusunan Jadwal Pelajaran
+
+Pengaturan kelas dan penyusunan jadwal pelajaran dilaksanakan:
+
+- Paling lambat **Jumat, 10 Juli 2026**.
+- Untuk murid baru Pendidikan Kesetaraan paling lambat **Jumat, 24 Juli 2026**.
+
+## 3. Program yang Disusun Kepala Satuan Pendidikan
+
+Sebelum memasuki tahun ajaran baru, Kepala Satuan Pendidikan wajib menyusun:
+
+- Program Kerja Sekolah.
+- Rencana Kegiatan dan Anggaran Sekolah (RKAS).
+
+## 4. Program yang Disusun Pendidik (Guru/Tutor)
+
+Sebelum tahun ajaran baru, pendidik (guru/tutor) wajib menyusun:
+
+### a. Program Tahunan dan Semester
+
+Program pembelajaran selama satu tahun dan satu semester.
+
+### b. Program Pembelajaran
+
+Meliputi:
+
+- Intrakurikuler.
+- Kokurikuler.
+- Layanan pembelajaran.
+
+### c. Program Ekstrakurikuler
+
+Program ekstrakurikuler bagi pendidik yang mendapat tugas sebagai pembina kegiatan ekstrakurikuler.
+
+### d. Program Manajemen Berbasis Sekolah (MBS)
+
+Program sebagai bagian dari pelaksanaan Manajemen Berbasis Sekolah (MBS).
+
+---
+
+# IV. HARI-HARI PERTAMA MASUK SEKOLAH
+
+## 1. Ketentuan MPLS
+
+Pelaksanaan Masa Pengenalan Lingkungan Sekolah (MPLS) mengacu pada Peraturan Menteri Pendidikan Dasar dan Menengah Nomor 12 Tahun 2026 tentang Masa Pengenalan Lingkungan Sekolah.
+
+## 2. MPLS Ramah
+
+Masa Pengenalan Lingkungan Satuan Pendidikan (MPLS) Ramah diselenggarakan untuk:
+
+- Menumbuhkan dan memperkuat karakter serta profil lulusan murid baru.
+- Membantu murid baru mengenal dan beradaptasi dengan sarana dan prasarana sekolah.
+- Membantu memahami kondisi lingkungan sekitar sekolah.
+- Mengenalkan kurikulum yang diterapkan.
+- Mengidentifikasi karakteristik serta kebutuhan perkembangan setiap murid baru.
+- Menjadi dasar bagi pendidik dalam merancang pembelajaran yang berkesadaran, bermakna, dan menyenangkan.
+
+---
+
+# Ringkasan Halaman
+
+Halaman ini memuat ketentuan mengenai awal dan akhir Tahun Ajaran 2026/2027, persiapan sebelum dimulainya pembelajaran, serta pelaksanaan hari-hari pertama masuk sekolah.
+
+Pokok-pokok ketentuan meliputi:
+
+- Tahun Ajaran 2026/2027 dimulai pada **13 Juli 2026** dan berakhir pada **25 Juni 2027**.
+- Pendidikan Kesetaraan (SKB/PKBM) bagi murid baru dimulai pada **27 Juli 2026**.
+- Pengaturan kelas dan jadwal pelajaran harus diselesaikan sebelum tahun ajaran dimulai.
+- Kepala satuan pendidikan wajib menyiapkan Program Kerja Sekolah dan RKAS.
+- Guru atau tutor wajib menyusun program tahunan, program semester, program pembelajaran, program ekstrakurikuler, serta program Manajemen Berbasis Sekolah.
+- Pelaksanaan MPLS mengacu pada regulasi nasional dan dilaksanakan dengan pendekatan **MPLS Ramah**, yang berorientasi pada adaptasi, penguatan karakter, dan pembelajaran yang bermakna.
+
+
+
+# IV. HARI-HARI PERTAMA MASUK SEKOLAH (Lanjutan)
+
+## 3. Pelaksanaan MPLS Ramah
+
+Masa Pengenalan Lingkungan Sekolah (MPLS) Ramah bagi murid baru:
+
+- PAUD
+- SLB
+- Kelas I SD
+- Kelas VII SMP
+- Kelas X SMA
+- Kelas X SMK
+
+dilaksanakan mulai **13 Juli 2026** sampai dengan **17 Juli 2026**.
+
+---
+
+## 4. MPLS Pendidikan Kesetaraan
+
+Bagi murid baru Pendidikan Kesetaraan:
+
+- Paket A setara SD
+- Paket B setara SMP
+- Paket C setara SMA
+
+MPLS dilaksanakan mulai **27 Juli 2026** sampai dengan **31 Juli 2026**.
+
+---
+
+## 5. Hari Pertama Masuk Sekolah
+
+Hari-hari pertama masuk sekolah diisi dengan kegiatan **MPLS Ramah** sesuai dengan ketentuan yang berlaku.
+
+---
+
+# V. WAKTU KEGIATAN PEMBELAJARAN
+
+## 1. Kegiatan Pembelajaran
+
+### a. Murid Baru
+
+Kegiatan pembelajaran bagi murid baru:
+
+- PAUD
+- SLB
+- Kelas I SD
+- Kelas VII SMP
+- Kelas X SMA
+- Kelas X SMK
+
+dimulai pada **Senin, 20 Juli 2026**.
+
+### b. Murid Lama
+
+Kegiatan pembelajaran dimulai pada **Senin, 13 Juli 2026** bagi:
+
+- Kelas II sampai Kelas VI SD/SDLB
+- Kelas VIII dan IX SMP/SMPLB
+- Kelas XI dan XII SMA/SMALB
+- SMK
+- Kelas XIII khusus Program SMK 4 Tahun
+
+### c. Pendidikan Kesetaraan (Murid Baru)
+
+Kegiatan pembelajaran bagi murid baru:
+
+- Paket A
+- Paket B
+- Paket C
+
+dimulai pada **Senin, 3 Agustus 2026**.
+
+### d. Pendidikan Kesetaraan (Murid Lama)
+
+Kegiatan pembelajaran dimulai pada **Senin, 27 Juli 2026** bagi:
+
+- Paket A Kelas II sampai Kelas VI
+- Paket B Kelas VIII dan IX
+- Paket C Kelas XI dan XII
+
+---
+
+## 2. Penilaian Hasil Belajar
+
+Ketentuan penilaian hasil belajar meliputi:
+
+### a.
+
+Penilaian hasil belajar disesuaikan dengan:
+
+- Karakteristik satuan pendidikan
+- Jalur pendidikan
+- Jenjang pendidikan
+- Jenis satuan pendidikan
+
+### b.
+
+Pelaksanaan penilaian dilakukan:
+
+- Sebelum pembelajaran
+- Pada saat pembelajaran
+- Setelah pembelajaran
+
+---
+
+## 3. Beban Belajar
+
+Beban belajar merupakan alokasi waktu pembelajaran untuk mencapai kompetensi murid.
+
+### a. Beban Belajar PAUD
+
+Alokasi waktu pembelajaran:
+
+- Untuk anak usia **4–6 tahun** atau bentuk lain yang sederajat: **paling sedikit 900 menit per minggu**.
+- Untuk anak usia **3–4 tahun** atau bentuk lain yang sederajat: **paling sedikit 360 menit per minggu**.
+
+---
+
+# Ringkasan Halaman
+
+Halaman ini mengatur pelaksanaan MPLS, jadwal dimulainya kegiatan pembelajaran, prinsip penilaian hasil belajar, serta ketentuan awal mengenai beban belajar.
+
+Pokok-pokok ketentuan meliputi:
+
+- MPLS Ramah bagi murid baru dilaksanakan pada **13–17 Juli 2026**.
+- MPLS bagi Pendidikan Kesetaraan dilaksanakan pada **27–31 Juli 2026**.
+- Pembelajaran murid baru dimulai **20 Juli 2026**, sedangkan sebagian besar murid lama mulai belajar **13 Juli 2026**.
+- Pembelajaran Pendidikan Kesetaraan memiliki jadwal tersendiri sesuai jenjang dan status murid baru atau lama.
+- Penilaian hasil belajar dilakukan secara berkelanjutan sebelum, selama, dan setelah proses pembelajaran.
+- Beban belajar PAUD ditetapkan berdasarkan kelompok usia dengan alokasi waktu minimum setiap minggu.
+
+
+
+# V. WAKTU KEGIATAN PEMBELAJARAN
+
+## 3. Beban Belajar (Lanjutan)
+
+### b. Beban Belajar Sekolah Dasar (SD)
+
+#### 1. Kelas I, II, III, IV, dan V
+
+- Dalam satu semester: **paling sedikit 18 minggu** dan **paling banyak 20 minggu**.
+
+#### 2. Kelas VI Semester 1
+
+- Paling sedikit **18 minggu** dan paling banyak **20 minggu**.
+
+#### 3. Kelas VI Semester 2
+
+- Paling sedikit **14 minggu** dan paling banyak **16 minggu**.
+
+---
+
+### c. Beban Belajar Sekolah Menengah Pertama (SMP)
+
+#### 1. Kelas VII dan VIII
+
+- Dalam satu semester: **paling sedikit 18 minggu** dan **paling banyak 20 minggu**.
+
+#### 2. Kelas IX Semester 1
+
+- Paling sedikit **18 minggu** dan paling banyak **20 minggu**.
+
+#### 3. Kelas IX Semester 2
+
+- Paling sedikit **14 minggu** dan paling banyak **16 minggu**.
+
+---
+
+### d. Beban Belajar Sekolah Menengah Atas (SMA)
+
+#### 1. Kelas X dan XI
+
+- Dalam satu semester: **paling sedikit 18 minggu** dan **paling banyak 20 minggu**.
+
+#### 2. Kelas XII Semester 1
+
+- Paling sedikit **18 minggu** dan paling banyak **20 minggu**.
+
+#### 3. Kelas XII Semester 2
+
+- Paling sedikit **14 minggu** dan paling banyak **16 minggu**.
+
+---
+
+### e. Beban Belajar Sekolah Menengah Kejuruan (SMK)
+
+#### 1. Kelas X dan XI
+
+- Dalam satu semester: **paling sedikit 18 minggu** dan **paling banyak 20 minggu**.
+
+#### 2. Kelas XII Semester 1
+
+- Paling sedikit **18 minggu** dan paling banyak **20 minggu**.
+
+#### 3. Kelas XII Semester 2
+
+- Paling sedikit **14 minggu** dan paling banyak **16 minggu**.
+
+#### 4. Kelas XIII Semester 1 (Program SMK 4 Tahun)
+
+- Paling sedikit **18 minggu** dan paling banyak **20 minggu**.
+
+#### 5. Kelas XIII Semester 2 (Program SMK 4 Tahun)
+
+- Paling sedikit **14 minggu** dan paling banyak **16 minggu**.
+
+---
+
+### f. Beban Belajar Sekolah Luar Biasa (SLB)
+
+#### 1. Taman Kanak-kanak Luar Biasa (TKLB)
+
+Alokasi waktu pembelajaran:
+
+- Murid usia **4–6 tahun**: **paling sedikit 900 menit per minggu**.
+- Murid usia **3–4 tahun**: **paling sedikit 360 menit per minggu**.
+
+---
+
+# Ringkasan Halaman
+
+Halaman ini merupakan lanjutan ketentuan mengenai **beban belajar** pada setiap jenjang pendidikan.
+
+Ketentuan yang diatur meliputi:
+
+- Beban belajar SD berdasarkan tingkat kelas dan semester.
+- Beban belajar SMP berdasarkan tingkat kelas dan semester.
+- Beban belajar SMA berdasarkan tingkat kelas dan semester.
+- Beban belajar SMK, termasuk Program SMK 4 Tahun (Kelas XIII).
+- Alokasi waktu pembelajaran pada TKLB berdasarkan kelompok usia.
+
+Secara umum:
+
+- Semester reguler memiliki beban belajar **18–20 minggu**.
+- Semester akhir bagi kelas yang akan menyelesaikan jenjang pendidikan memiliki beban belajar **14–16 minggu** untuk menyesuaikan pelaksanaan asesmen dan kelulusan.
+
+
+
+
+
+# V. WAKTU KEGIATAN PEMBELAJARAN
+
+## 3. Beban Belajar (Lanjutan)
+
+### f. Beban Belajar Sekolah Luar Biasa (SLB)
+
+#### 2. Sekolah Dasar Luar Biasa (SDLB)
+
+##### a. Kelas I, II, III, IV, dan V
+
+- Beban belajar dalam satu semester: **paling sedikit 18 minggu** dan **paling banyak 20 minggu**.
+
+##### b. Kelas VI Semester 1
+
+- Beban belajar: **paling sedikit 18 minggu** dan **paling banyak 20 minggu**.
+
+##### c. Kelas VI Semester 2
+
+- Beban belajar: **paling sedikit 14 minggu** dan **paling banyak 16 minggu**.
+
+---
+
+#### 3. Sekolah Menengah Pertama Luar Biasa (SMPLB)
+
+##### a. Kelas VII dan VIII
+
+- Beban belajar dalam satu semester: **paling sedikit 18 minggu** dan **paling banyak 20 minggu**.
+
+##### b. Kelas IX Semester 1
+
+- Beban belajar: **paling sedikit 18 minggu** dan **paling banyak 20 minggu**.
+
+##### c. Kelas IX Semester 2
+
+- Beban belajar: **paling sedikit 14 minggu** dan **paling banyak 16 minggu**.
+
+---
+
+#### 4. Sekolah Menengah Atas Luar Biasa (SMALB)
+
+##### a. Kelas X dan XI
+
+- Beban belajar dalam satu semester: **paling sedikit 18 minggu** dan **paling banyak 20 minggu**.
+
+##### b. Kelas XII Semester 1
+
+- Beban belajar: **paling sedikit 18 minggu** dan **paling banyak 20 minggu**.
+
+##### c. Kelas XII Semester 2
+
+- Beban belajar: **paling sedikit 14 minggu** dan **paling banyak 16 minggu**.
+
+---
+
+### g. Beban Belajar Pendidikan Kesetaraan
+
+Muatan belajar pada program pendidikan kesetaraan dinyatakan dalam **Satuan Kredit Kompetensi (SKK)** yang menunjukkan bobot kompetensi yang harus dicapai oleh murid selama mengikuti program pembelajaran.
+
+Ketentuan SKK meliputi:
+
+- Pembelajaran dapat dilaksanakan melalui:
+  - Tatap muka.
+  - Belajar mandiri.
+  - Tutorial.
+
+- **1 (satu) SKK** merupakan satuan kompetensi yang dapat dicapai melalui:
+  - 1 jam pembelajaran tatap muka; atau
+  - 2 jam pembelajaran tutorial; atau
+  - 3 jam pembelajaran mandiri; atau
+  - Kombinasi ketiganya secara proporsional.
+
+Durasi **1 jam pembelajaran tatap muka** ditetapkan sebagai berikut:
+
+| Program | Durasi |
+|---------|--------:|
+| Paket A | 35 menit |
+| Paket B | 40 menit |
+| Paket C | 45 menit |
+
+Ketentuan pelaksanaan kelas tengah dan kelas akhir disesuaikan dengan kondisi pada masing-masing Satuan Pendidikan.
+
+---
+
+# Ringkasan Halaman
+
+Halaman ini melanjutkan pengaturan mengenai **beban belajar** untuk pendidikan khusus dan pendidikan kesetaraan.
+
+Pokok-pokok ketentuan meliputi:
+
+- Beban belajar SDLB, SMPLB, dan SMALB mengikuti pola yang sama dengan sekolah reguler, yaitu:
+  - **18–20 minggu** pada semester reguler.
+  - **14–16 minggu** pada semester akhir.
+- Pendidikan Kesetaraan menggunakan sistem **Satuan Kredit Kompetensi (SKK)** sebagai ukuran capaian pembelajaran.
+- SKK dapat diperoleh melalui pembelajaran tatap muka, tutorial, belajar mandiri, atau kombinasi ketiganya.
+- Durasi jam tatap muka berbeda pada setiap program:
+  - Paket A: **35 menit**
+  - Paket B: **40 menit**
+  - Paket C: **45 menit**
+
+
+document_type: Lampiran Keputusan Kepala Dinas Pendidikan
+parent_document: Keputusan Kepala Dinas Pendidikan Provinsi Daerah Khusus Ibukota Jakarta
+document_number: 346 Tahun 2026
+attachment: Lampiran I
+title: Kalender Pendidikan Tahun Ajaran 2026/2027
+academic_year: 2026/2027
+page: 13
+total_pages: 17
+section:
+  - V. Waktu Kegiatan Pembelajaran
+  - VI. Hari-Hari Belajar Satuan Pendidikan
+language: id
+---
+
+# V. WAKTU KEGIATAN PEMBELAJARAN
+
+## 4. Alokasi Waktu Minggu Efektif Belajar, Waktu Libur, dan Kegiatan Lainnya
+
+| No | Kegiatan | Alokasi Waktu | Keterangan |
+|----|----------|---------------|------------|
+| 1 | Minggu efektif belajar | Minimum **32 minggu**, maksimum **40 minggu** | Digunakan untuk kegiatan pembelajaran efektif pada setiap satuan pendidikan. |
+| 2 | Libur semester | Maksimum **2 minggu** | Digunakan untuk penyiapan kegiatan Semester 2. |
+| 3 | Libur akhir tahun ajaran | Maksimum **3 minggu** | Digunakan untuk penyiapan kegiatan dan administrasi akhir serta awal tahun ajaran. |
+| 4 | Hari libur keagamaan | **2–4 minggu** | Satuan pendidikan yang memerlukan libur keagamaan lebih panjang dapat mengaturnya tanpa mengurangi jumlah minggu efektif belajar dan waktu pembelajaran efektif. |
+| 5 | Hari libur umum/nasional | Maksimum **2 minggu** | Disesuaikan dengan ketentuan Peraturan Pemerintah. |
+| 6 | Hari libur khusus | Maksimum **1 minggu** | Diperuntukkan bagi satuan pendidikan sesuai dengan karakteristik atau kekhususan masing-masing. |
+| 7 | Kegiatan khusus satuan pendidikan | Maksimum **2 minggu** | Digunakan untuk kegiatan yang diprogramkan secara khusus oleh satuan pendidikan tanpa mengurangi jumlah minggu efektif belajar dan waktu pembelajaran efektif. |
+
+---
+
+# VI. HARI-HARI BELAJAR SATUAN PENDIDIKAN
+
+## 1. Awal dan Akhir Semester
+
+### a. Semester 1
+
+- Mulai: **Senin, 13 Juli 2026**
+- Berakhir: **Jumat, 18 Desember 2026**
+
+### b. Semester 1 Pendidikan Kesetaraan
+
+- Mulai: **Senin, 27 Juli 2026**
+- Berakhir: **Jumat, 18 Desember 2026**
+
+### c. Semester 2
+
+- Mulai: **Senin, 4 Januari 2027**
+- Berakhir: **Jumat, 25 Juni 2027**
+
+---
+
+# Ringkasan Halaman
+
+Halaman ini menetapkan alokasi waktu dalam satu tahun ajaran yang meliputi minggu efektif belajar, waktu libur, dan kegiatan khusus satuan pendidikan.
+
+Ketentuan utama meliputi:
+
+- Minggu efektif belajar berlangsung antara **32 hingga 40 minggu**.
+- Libur semester paling lama **2 minggu**.
+- Libur akhir tahun ajaran paling lama **3 minggu**.
+- Hari libur keagamaan dialokasikan **2–4 minggu** sesuai kebutuhan tanpa mengurangi minggu efektif belajar.
+- Hari libur umum/nasional maksimal **2 minggu**.
+- Hari libur khusus maksimal **1 minggu**.
+- Kegiatan khusus satuan pendidikan maksimal **2 minggu**.
+
+Halaman ini juga menetapkan jadwal awal dan akhir semester:
+
+- **Semester 1:** 13 Juli 2026 – 18 Desember 2026.
+- **Semester 1 Pendidikan Kesetaraan:** 27 Juli 2026 – 18 Desember 2026.
+- **Semester 2:** 4 Januari 2027 – 25 Juni 2027.
+
+
+document_type: Lampiran Keputusan Kepala Dinas Pendidikan
+parent_document: Keputusan Kepala Dinas Pendidikan Provinsi Daerah Khusus Ibukota Jakarta
+document_number: 346 Tahun 2026
+attachment: Lampiran I
+title: Kalender Pendidikan Tahun Ajaran 2026/2027
+academic_year: 2026/2027
+page: 14
+total_pages: 17
+section:
+  - VI. Hari-Hari Belajar Satuan Pendidikan
+  - VII. Kegiatan Akhir Semester
+  - VIII. Penyerahan Laporan Hasil Belajar dan Hari-Hari Libur
+language: id
+---
+
+# VI. HARI-HARI BELAJAR SATUAN PENDIDIKAN
+
+## 2. Larangan Perayaan pada Hari Efektif
+
+### a. Ketentuan
+
+Pada hari belajar efektif **tidak diperkenankan** menyelenggarakan kegiatan berikut apabila mengganggu proses pembelajaran:
+
+- Perayaan ulang tahun daerah atau kota.
+- Perayaan ulang tahun badan atau organisasi.
+- Penjemputan tamu.
+- Kegiatan lain yang bukan merupakan bagian dari proses pembelajaran di satuan pendidikan.
+
+### b. Pengecualian
+
+Pengecualian terhadap ketentuan tersebut hanya dapat dilakukan dengan **izin khusus dari Kepala Dinas Pendidikan Provinsi DKI Jakarta**.
+
+---
+
+# VII. KEGIATAN AKHIR SEMESTER
+
+## 1. Akhir Semester
+
+Akhir semester merupakan akhir waktu pada:
+
+- Semester 1 (satu).
+- Semester 2 (dua).
+
+## 2. Penilaian Akhir Semester
+
+Pendidik (guru/tutor) dapat melaksanakan **Penilaian Akhir Semester (PAS)**.
+
+## 3. Kegiatan Akhir Semester
+
+Pada akhir Semester 1 maupun Semester 2, satuan pendidikan dapat melaksanakan kegiatan seperti:
+
+- Pekan Olahraga dan Seni (Porseni).
+- Lomba kreativitas.
+- Praktik pembelajaran.
+
+Kegiatan tersebut bertujuan untuk:
+
+- Mengembangkan bakat peserta didik.
+- Membentuk kepribadian.
+- Meningkatkan prestasi.
+- Mengembangkan kreativitas siswa sebagai bagian dari pendidikan yang utuh.
+
+## 4. Pelaksanaan Penilaian
+
+Kegiatan penilaian pada akhir semester direncanakan dan dilaksanakan oleh masing-masing satuan pendidikan.
+
+---
+
+# VIII. PENYERAHAN LAPORAN HASIL BELAJAR DAN HARI-HARI LIBUR
+
+## 1. Penyerahan Laporan Hasil Belajar (Rapor)
+
+### a. Semester 1
+
+Penyerahan Laporan Penilaian Hasil Belajar bagi:
+
+- PAUD
+- TKLB
+- SD
+- SDLB
+- SMP
+- SMPLB
+- SMA
+- SMALB
+- SMK
+- SKB/PKBM
+
+dilaksanakan pada:
+
+**Jumat, 18 Desember 2026.**
+
+### b. Semester 2
+
+Penyerahan Laporan Penilaian Hasil Belajar bagi:
+
+- PAUD
+- TKLB
+- SD
+- SDLB
+- SMP
+- SMPLB
+- SMA
+- SMALB
+- SMK
+- SKB/PKBM
+
+dilaksanakan pada:
+
+**Jumat, 25 Juni 2027.**
+
+### c. Ketentuan Khusus Kelas Akhir
+
+Untuk:
+
+- Kelas VI SD/SDLB.
+- Kelas IX SMP/SMPLB.
+- Kelas XII SMA/SMALB.
+- Kelas XII SMK.
+- Kelas XIII Program SMK 4 Tahun.
+- Pendidikan Kesetaraan.
+
+Tanggal penyerahan laporan hasil belajar Semester 2 disesuaikan dengan **tanggal kelulusan** yang ditetapkan oleh kementerian yang membidangi urusan pendidikan.
+
+---
+
+## 2. Prakiraan Libur Umum Tahun Ajaran 2026/2027
+
+### a. Libur Umum Tahun 2026
+
+| No | Hari Libur | Tanggal |
+|----|------------|---------|
+| 1 | Hari Kemerdekaan Republik Indonesia | Senin, 17 Agustus 2026 |
+| 2 | Maulid Nabi Muhammad SAW | Selasa, 25 Agustus 2026 |
+| 3 | Cuti Bersama Hari Raya Natal | Kamis, 24 Desember 2026 |
+| 4 | Hari Raya Natal | Jumat, 25 Desember 2026 |
+
+---
+
+# Ringkasan Halaman
+
+Halaman ini mengatur ketentuan mengenai kegiatan pada hari efektif sekolah, pelaksanaan kegiatan akhir semester, penyerahan laporan hasil belajar (rapor), serta prakiraan hari libur umum.
+
+Pokok-pokok ketentuan meliputi:
+
+- Hari belajar efektif tidak boleh digunakan untuk kegiatan nonpembelajaran tanpa izin khusus dari Kepala Dinas Pendidikan.
+- Satuan pendidikan dapat melaksanakan Penilaian Akhir Semester (PAS), Porseni, lomba kreativitas, dan praktik pembelajaran pada akhir semester.
+- Rapor Semester 1 diserahkan pada **18 Desember 2026**.
+- Rapor Semester 2 diserahkan pada **25 Juni 2027**, kecuali bagi kelas akhir yang mengikuti jadwal kelulusan nasional.
+- Halaman ini juga memuat prakiraan hari libur umum pada Tahun 2026 sebagai acuan penyusunan kalender pendidikan.
+
+---
+
+
+
+
+document_type: Lampiran Keputusan Kepala Dinas Pendidikan
+parent_document: Keputusan Kepala Dinas Pendidikan Provinsi Daerah Khusus Ibukota Jakarta
+document_number: 346 Tahun 2026
+attachment: Lampiran I
+title: Kalender Pendidikan Tahun Ajaran 2026/2027
+academic_year: 2026/2027
+page: 15
+total_pages: 17
+section:
+  - VIII. Penyerahan Laporan Hasil Belajar dan Hari-Hari Libur
+language: id
+---
+
+# VIII. PENYERAHAN LAPORAN HASIL BELAJAR DAN HARI-HARI LIBUR
+
+## 2. Prakiraan Libur Umum Tahun Ajaran 2026/2027 (Lanjutan)
+
+### b. Libur Umum Tahun 2027
+
+| No | Hari Libur | Tanggal |
+|----|------------|---------|
+| 1 | Tahun Baru Masehi | Jumat, 1 Januari 2027 |
+| 2 | Isra Mi'raj Nabi Muhammad SAW | Selasa, 5 Januari 2027 |
+| 3 | Tahun Baru Imlek 2578 | Sabtu, 6 Februari 2027 |
+| 4 | Hari Raya Nyepi, Tahun Saka 1949 | Selasa, 9 Maret 2027 |
+| 5 | Hari Raya Idulfitri 1448 Hijriah | Rabu–Kamis, 10–11 Maret 2027 |
+| 6 | Wafat Yesus Kristus | Jumat, 26 Maret 2027 |
+| 7 | Hari Buruh Internasional | Sabtu, 1 Mei 2027 |
+| 8 | Kenaikan Yesus Kristus | Kamis, 6 Mei 2027 |
+| 9 | Hari Raya Iduladha 1448 H | Senin, 17 Mei 2027 |
+| 10 | Hari Raya Waisak 2571 BE | Kamis, 20 Mei 2027 |
+| 11 | Hari Lahir Pancasila | Selasa, 1 Juni 2027 |
+| 12 | Tahun Baru Islam 1449 H | Minggu, 6 Juni 2027 |
+
+---
+
+## 3. Ketentuan Libur Umum
+
+Libur umum pada Tahun Ajaran 2026/2027 mengikuti ketentuan hari libur yang ditetapkan bersama oleh Pemerintah.
+
+---
+
+## 4. Libur Semester
+
+Libur semester bagi:
+
+- PAUD
+- TKLB
+- SD
+- SDLB
+- SMP
+- SMPLB
+- SMA
+- SMALB
+- SMK
+- SKB/PKBM
+
+diatur sebagai berikut:
+
+### a. Durasi Libur Semester
+
+- Libur setiap semester berlangsung selama **2 minggu**.
+
+### b. Libur Semester 1
+
+- Mulai: **Sabtu, 19 Desember 2026**
+- Berakhir: **Sabtu, 2 Januari 2027**
+
+### c. Libur Semester 2
+
+- Mulai: **Sabtu, 26 Juni 2027**
+- Berakhir: **Sabtu, 10 Juli 2027**
+
+---
+
+## 5. Libur Ramadan dan Hari Raya Idulfitri
+
+Pelaksanaan libur Ramadan dan Hari Raya Idulfitri berpedoman pada ketentuan yang ditetapkan oleh Pemerintah.
+
+---
+
+# Ringkasan Halaman
+
+Halaman ini melanjutkan daftar prakiraan hari libur umum Tahun 2027 serta mengatur ketentuan libur semester dan libur keagamaan.
+
+Pokok-pokok ketentuan meliputi:
+
+- Daftar hari libur nasional Tahun 2027 sebagai acuan penyusunan kalender pendidikan.
+- Penetapan bahwa seluruh hari libur umum mengikuti keputusan bersama Pemerintah.
+- Libur Semester 1 berlangsung pada **19 Desember 2026 – 2 Januari 2027**.
+- Libur Semester 2 berlangsung pada **26 Juni 2027 – 10 Juli 2027**.
+- Libur Ramadan dan Hari Raya Idulfitri mengikuti ketentuan resmi Pemerintah yang berlaku.
+
+---
 
 # Ringkasan Jadwal SPMB/PMB DKI Jakarta Tahun Ajaran 2026/2027
 
