@@ -1,5 +1,6 @@
 # web_aska/handlers.py
 import asyncio
+import logging
 import os
 import time
 from threading import Lock
@@ -444,7 +445,7 @@ async def process_channel_request(
         return response, bot_chat_log_id
 
     except Exception as e:
-        print(f"[{now_str()}] [ERROR] {e}")
+        logging.getLogger(__name__).exception("ASKA channel request failed (topic=%s)", normalized_topic)
         if is_llm_quota_error(e):
             print(
                 f"[{now_str()}] [WARN] Rate limit detected, returning notice to user."

@@ -630,8 +630,9 @@ async function handleIncoming(msg) {
     }
 }
 
+// Incoming messages also emit message_create; subscribe only to message so
+// one incoming event reaches the backend even when its serialized ID is absent.
 client.on("message", (msg) => handleIncoming(msg));
-client.on("message_create", (msg) => handleIncoming(msg));
 
 // ── Express HTTP API for outbound messages ───────────────────────────────────
 
