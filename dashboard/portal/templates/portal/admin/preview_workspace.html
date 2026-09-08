@@ -397,12 +397,17 @@
                 </div>
                 <p>Login virtual untuk cek bug akun staff, koordinator, dan sekolah.</p>
             </div>
-            <div class="preview-search">
+            <form class="preview-search" method="get" id="accountSearchForm">
                 <div class="input-group input-group-sm">
                     <span class="input-group-text"><i class="bi bi-search"></i></span>
-                    <input type="text" class="form-control" id="accountSearch" placeholder="Cari nama / email">
+                    <input type="search" class="form-control" id="accountSearch" name="q"
+                        value="{{ preview_search }}" maxlength="200"
+                        placeholder="Cari nama / email / sekolah">
+                    <button class="btn btn-primary" type="submit" aria-label="Cari akun">
+                        <i class="bi bi-search"></i>
+                    </button>
                 </div>
-            </div>
+            </form>
             <div class="preview-list" id="accountList" data-pin-url-template="{{ url_for('portal.preview_pin', user_id=0) }}">
                 {% for user in preview_users %}
                 {% set initials = ((user.full_name or user.email or '?') | trim)[:1] | upper %}
@@ -414,8 +419,7 @@
                     data-user-name="{{ user.full_name or user.email or '-' }}"
                     data-user-role="{{ user.role or '-' }}"
                     data-pinned="{{ 1 if user.is_pinned else 0 }}"
-                    data-index="{{ user.preview_index or 0 }}"
-                    data-search="{{ ((user.full_name or '') ~ ' ' ~ (user.email or '') ~ ' ' ~ (user.role or '') ~ ' ' ~ (user.kecamatan_name or '') ~ ' ' ~ (user.school_name or '')) | lower }}">
+                    data-index="{{ user.preview_index or 0 }}">
                     {% if user.role == 'sekolah' and user.school_logo_url %}
                     <span class="account-avatar account-avatar-image">
                         <img src="{{ user.school_logo_url }}" alt="Logo sekolah {{ user.school_name or user.full_name or user.email }}">
@@ -452,6 +456,26 @@
                 <div class="text-muted small p-2">Belum ada akun yang bisa dipreview.</div>
                 {% endfor %}
             </div>
+            <nav class="d-flex align-items-center justify-content-between gap-2 px-3 py-2 border-top"
+                aria-label="Halaman akun preview">
+                {% if preview_pagination.page > 1 %}
+                <a class="btn btn-sm btn-outline-secondary"
+                    href="{{ url_for('pengaturan.preview_accounts', q=preview_search, page=preview_pagination.page-1) }}"
+                    aria-label="Halaman sebelumnya"><i class="bi bi-chevron-left"></i></a>
+                {% else %}
+                <span></span>
+                {% endif %}
+                <span class="small text-muted text-nowrap">
+                    {{ preview_pagination.total }} akun · {{ preview_pagination.page }}/{{ preview_pagination.pages }}
+                </span>
+                {% if preview_pagination.page < preview_pagination.pages %}
+                <a class="btn btn-sm btn-outline-secondary"
+                    href="{{ url_for('pengaturan.preview_accounts', q=preview_search, page=preview_pagination.page+1) }}"
+                    aria-label="Halaman berikutnya"><i class="bi bi-chevron-right"></i></a>
+                {% else %}
+                <span></span>
+                {% endif %}
+            </nav>
         </aside>
 
         <main class="preview-main">
@@ -504,7 +528,6 @@
         (function () {
             var previewShell = document.getElementById('previewShell');
             var accountList = document.getElementById('accountList');
-            var accountSearch = document.getElementById('accountSearch');
             var frameShell = document.getElementById('previewFrameShell');
             var frame = document.getElementById('previewFrame');
             var emptyState = document.getElementById('previewEmptyState');
@@ -729,18 +752,6 @@
                     event.preventDefault();
                     var userId = Number(button.dataset.userId);
                     activatePreview(userId);
-                });
-            }
-
-            if (accountSearch) {
-                accountSearch.addEventListener('input', function () {
-                    var keyword = (accountSearch.value || '').trim().toLowerCase();
-                    var buttons = accountList ? Array.from(accountList.querySelectorAll('.account-item[data-user-id]')) : [];
-                    buttons.forEach(function (button) {
-                        var haystack = (button.dataset.search || '').toLowerCase();
-                        var matched = !keyword || haystack.indexOf(keyword) >= 0;
-                        button.classList.toggle('hidden', !matched);
-                    });
                 });
             }
 

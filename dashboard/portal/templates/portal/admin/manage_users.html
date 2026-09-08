@@ -226,70 +226,70 @@
                     </span>
                     <ul class="nav nav-pills flex-grow-1" id="userTabs" role="tablist">
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="list-tab" data-bs-toggle="tab"
-                                data-bs-target="#list-pane" type="button" role="tab" aria-controls="list-pane"
-                                aria-selected="true">
+                            <a class="nav-link{{ ' active' if tab == 'list' else '' }}" id="list-tab" href="{{ page_url(tab='list', page=1, status='') }}" aria-current="{{ 'page' if tab == 'list' else 'false' }}">
                                 Daftar User
-                            </button>
+                            </a>
                         </li>
                         <li class="nav-item" role="presentation">
-                            {% set pending_count = users | selectattr('account_status', 'equalto', 'pending') | list |
-                            length %}
-                            <button class="nav-link position-relative" id="verify-tab" data-bs-toggle="tab"
-                                data-bs-target="#verify-pane" type="button" role="tab" aria-controls="verify-pane"
-                                aria-selected="false">
+
+                            <a class="nav-link position-relative{{ ' active' if tab == 'verify' else '' }}" id="verify-tab" href="{{ page_url(tab='verify', page=1, status='') }}" aria-current="{{ 'page' if tab == 'verify' else 'false' }}">
                                 Verifikasi User
                                 <span
                                     class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger{% if pending_count == 0 %} d-none{% endif %}"
                                     id="pendingUserBadge" data-count="{{ pending_count }}">
                                     {{ pending_count }}
                                 </span>
-                            </button>
+                            </a>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="history-tab" data-bs-toggle="tab"
-                                data-bs-target="#history-pane" type="button" role="tab" aria-controls="history-pane"
-                                aria-selected="false">
+                            <a class="nav-link{{ ' active' if tab == 'history' else '' }}" id="history-tab" href="{{ page_url(tab='history', page=1, status='') }}" aria-current="{{ 'page' if tab == 'history' else 'false' }}">
                                 History
-                            </button>
+                            </a>
                         </li>
                     </ul>
                 </div>
 
-                <div class="tab-content" id="userTabsContent">
-                    <!-- Tab Daftar User (Non-Pending) -->
-                    <div class="tab-pane fade show active" id="list-pane" role="tabpanel" aria-labelledby="list-tab"
-                        tabindex="0">
-                        <div class="row g-2 mb-3">
+                {% if tab != 'history' %}
+                <form method="get" class="row g-2 mb-3" id="userFilterForm">
+                    <input type="hidden" name="tab" value="{{ tab }}">
                             <div class="col-12 col-md-6">
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="bi bi-search"></i></span>
-                                    <input type="text" class="form-control" id="userSearch"
+                                    <input type="text" class="form-control" id="userSearch" name="q" maxlength="200" value="{{ search }}"
                                         placeholder="Cari nama, email, role, NPSN..." autocomplete="off">
                                 </div>
                             </div>
                             <div class="col-6 col-md-3">
-                                <select class="form-select" id="userRoleFilter">
-                                    <option value="">Semua Role</option>
-                                    <option value="viewer">Viewer</option>
-                                    <option value="editor">Editor</option>
-                                    <option value="staff">Staff</option>
-                                    <option value="admin">Admin</option>
-                                    <option value="coordinator">Coordinator</option>
-                                    <option value="sekolah">Sekolah</option>
+                                <select class="form-select" id="userRoleFilter" name="role">
+                                    <option value="" {% if role_filter == '' %}selected{% endif %}>Semua Role</option>
+                                    <option value="viewer" {% if role_filter == 'viewer' %}selected{% endif %}>Viewer</option>
+                                    <option value="editor" {% if role_filter == 'editor' %}selected{% endif %}>Editor</option>
+                                    <option value="staff" {% if role_filter == 'staff' %}selected{% endif %}>Staff</option>
+                                    <option value="admin" {% if role_filter == 'admin' %}selected{% endif %}>Admin</option>
+                                    <option value="coordinator" {% if role_filter == 'coordinator' %}selected{% endif %}>Coordinator</option>
+                                    <option value="sekolah" {% if role_filter == 'sekolah' %}selected{% endif %}>Sekolah</option>
                                 </select>
                             </div>
                             <div class="col-6 col-md-3">
-                                <select class="form-select" id="userStatusFilter">
-                                    <option value="">Semua Status</option>
-                                    <option value="approved">Approved</option>
-                                    <option value="rejected">Rejected</option>
-                                    <option value="suspended">Suspended</option>
-                                    <option value="not_registered">Not Register</option>
-                                    <option value="disabled">Disabled</option>
+                                <select class="form-select" id="userStatusFilter" name="status" {{ 'disabled' if tab != 'list' else '' }}>
+                                    <option value="" {% if status_filter == '' %}selected{% endif %}>Semua Status</option>
+                                    <option value="approved" {% if status_filter == 'approved' %}selected{% endif %}>Approved</option>
+                                    <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>Rejected</option>
+                                    <option value="suspended" {% if status_filter == 'suspended' %}selected{% endif %}>Suspended</option>
+                                    <option value="not_registered" {% if status_filter == 'not_registered' %}selected{% endif %}>Not Register</option>
+                                    <option value="disabled" {% if status_filter == 'disabled' %}selected{% endif %}>Disabled</option>
                                 </select>
                             </div>
+                        <div class="col-12 d-flex gap-2">
+                            <button class="btn btn-primary btn-sm" type="submit">Cari</button>
+                            <a class="btn btn-outline-secondary btn-sm" href="{{ page_url(q='', role='', status='', page=1) }}">Reset filter</a>
                         </div>
+                </form>
+                {% endif %}
+                <div class="tab-content" id="userTabsContent">
+                    <!-- Tab Daftar User (Non-Pending) -->
+                    <div class="tab-pane fade{{ ' show active' if tab == 'list' else '' }}" id="list-pane" role="tabpanel" aria-labelledby="list-tab"
+                        tabindex="0">
                         <div class="table-responsive">
                             <table class="table align-middle table-hover">
                                 <thead class="table-light">
@@ -305,10 +305,9 @@
                                     {% set active_users = users | selectattr('account_status', 'ne', 'pending') | list
                                     %}
                                     {% for user in active_users %}
-                                    <tr {% if not read_only %}style="cursor: pointer;" onclick='editUser({{ user|tojson }})'{% endif %} data-user-row="true"
+                                    <tr {% if not read_only %}style="cursor: pointer;" onclick='loadUserAction({{ user.id }}, "edit")'{% endif %} data-user-row="true"
                                         data-role="{{ user.role or '' }}"
-                                        data-status="{{ user.account_status or '' }}"
-                                        data-search="{{ (user.full_name or '') ~ ' ' ~ (user.email or '') ~ ' ' ~ (user.role or '') ~ ' ' ~ (user.account_status or '') ~ ' ' ~ (user.kecamatan_name or '') ~ ' ' ~ (user.jabatan or '') ~ ' ' ~ (user.whatsapp_number or '') ~ ' ' ~ (user.get('school_npsn') or '') ~ ' ' ~ (user.get('school_name') or '') ~ ' ' ~ (user.get('school_operator_phone') or '') ~ ' ' ~ (user.get('school_phone') or '') }}">
+                                        data-status="{{ user.account_status or '' }}">
                                         <td>
                                             <div class="fw-bold">{{ user.full_name }}</div>
                                             <div class="small text-muted">{{ user.email }}</div>
@@ -350,19 +349,19 @@
                                         <td class="text-end" {% if not read_only %}onclick="event.stopPropagation()"{% endif %}>
                                             {% if read_only %}
                                             <button type="button" class="btn btn-sm btn-outline-secondary"
-                                                onclick='viewUserPreview({{ user|tojson }})'>
+                                                onclick='loadUserAction({{ user.id }}, "preview")'>
                                                 <i class="bi bi-eye me-1"></i>Preview
                                             </button>
                                             {% else %}
                                             {% set has_wa_contact = (user.whatsapp_number or user.school_operator_phone or user.school_phone) %}
                                             <div class="btn-group btn-group-sm">
                                                 <button type="button" class="btn btn-outline-success"
-                                                    onclick='openWhatsAppContact({{ user|tojson }})'
+                                                    onclick='openWhatsAppContact({{ dict(role=user.role, full_name=user.full_name, email=user.email, school_name=user.school_name, whatsapp_number=user.whatsapp_number, school_operator_phone=user.school_operator_phone, school_phone=user.school_phone)|tojson }})'
                                                     title="Hubungi WhatsApp" {% if not has_wa_contact %}disabled{% endif %}>
                                                     <i class="bi bi-whatsapp"></i>
                                                 </button>
                                                 <button type="button" class="btn btn-outline-primary"
-                                                    onclick='editUser({{ user|tojson }})'
+                                                    onclick='loadUserAction({{ user.id }}, "edit")'
                                                     title="Edit user">
                                                     <i class="bi bi-pencil-square"></i>
                                                 </button>
@@ -382,7 +381,7 @@
                                     </tr>
                                     {% else %}
                                     <tr>
-                                        <td colspan="5" class="text-center text-muted">Tidak ada user aktif.</td>
+                                        <td colspan="5" class="text-center text-muted">Tidak ada user sesuai filter.</td>
                                     </tr>
                                     {% endfor %}
                                     <tr id="noUserResults" style="display:none;">
@@ -394,7 +393,7 @@
                     </div>
 
                     <!-- Tab Verifikasi User (Pending) -->
-                    <div class="tab-pane fade" id="verify-pane" role="tabpanel" aria-labelledby="verify-tab"
+                    <div class="tab-pane fade{{ ' show active' if tab == 'verify' else '' }}" id="verify-pane" role="tabpanel" aria-labelledby="verify-tab"
                         tabindex="0">
                         {% if not read_only %}
                         <div class="d-flex flex-wrap align-items-center gap-2 mb-2" id="pendingUsersBulkBar">
@@ -428,7 +427,7 @@
                                         {% if not read_only %}
                                         <th style="width: 36px;">
                                             <input class="form-check-input" type="checkbox" id="pendingUsersSelectAll"
-                                                aria-label="Pilih semua">
+                                                aria-label="Pilih semua pada halaman ini">
                                         </th>
                                         {% endif %}
                                         <th>User</th>
@@ -459,7 +458,7 @@
                                         data-user-school-npsn="{{ user.school_npsn or '' }}"
                                         data-user-school-jenjang="{{ user.school_jenjang or '' }}"
                                         data-user-school-kecamatan="{{ user.school_kecamatan_name or '' }}"
-                                        {% if not read_only %}style="cursor: pointer;" onclick='editUser({{ user|tojson }})'{% endif %}>
+                                        {% if not read_only %}style="cursor: pointer;" onclick='loadUserAction({{ user.id }}, "edit")'{% endif %}>
                                         {% if not read_only %}
                                         <td onclick="event.stopPropagation()">
                                             <input class="form-check-input pending-user-select" type="checkbox"
@@ -500,7 +499,7 @@
                                         <td class="text-end" {% if not read_only %}onclick="event.stopPropagation()"{% endif %}>
                                             {% if read_only %}
                                             <button type="button" class="btn btn-sm btn-outline-secondary"
-                                                onclick='viewUserPreview({{ user|tojson }})'>
+                                                onclick='loadUserAction({{ user.id }}, "preview")'>
                                                 <i class="bi bi-eye me-1"></i>Preview
                                             </button>
                                             {% else %}
@@ -543,7 +542,7 @@
                         </div>
                     </div>
 
-                    <div class="tab-pane fade" id="history-pane" role="tabpanel" aria-labelledby="history-tab"
+                    <div class="tab-pane fade{{ ' show active' if tab == 'history' else '' }}" id="history-pane" role="tabpanel" aria-labelledby="history-tab"
                         tabindex="0">
                         <h6 class="text-muted mb-3 small">Aktivitas User Terakhir ({{ activity_logs|length }})</h6>
                         {% set empty_text = "Belum ada aktivitas user." %}
@@ -554,6 +553,16 @@
         </div>
     </div>
 </div>
+
+
+{% if tab != 'history' %}
+<nav class="d-flex align-items-center justify-content-end gap-3 my-3" aria-label="Halaman akun">
+<span class="small text-muted">{{ pagination.total }} akun · Halaman {{ pagination.page }} dari {{ pagination.pages }}</span>
+{% if pagination.page > 1 %}<a class="btn btn-outline-secondary btn-sm" href="{{ page_url(page=pagination.page-1) }}">Sebelumnya</a>{% endif %}
+{% if pagination.page < pagination.pages %}<a class="btn btn-outline-secondary btn-sm" href="{{ page_url(page=pagination.page+1) }}">Berikutnya</a>{% endif %}
+<a class="btn btn-outline-secondary btn-sm" href="{{ page_url() }}">Muat ulang</a>
+</nav>
+{% endif %}
 
 <div class="modal fade" id="userPreviewModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
@@ -966,33 +975,65 @@
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    function bindMergeSearch(inputEl, selectEl) {
+    function bindMergeSearch(inputEl, selectEl, status) {
         if (!inputEl || !selectEl) return;
-        const originalOptions = Array.from(selectEl.options).map(option => ({
-            value: option.value,
-            label: option.textContent || '',
-            disabled: option.disabled,
-        }));
-
-        function renderOptions(query) {
-            const keyword = (query || '').trim().toLowerCase();
-            selectEl.innerHTML = '';
-            originalOptions.forEach(option => {
-                if (option.value && keyword && !option.label.toLowerCase().includes(keyword)) {
-                    return;
-                }
-                const el = document.createElement('option');
-                el.value = option.value;
-                el.textContent = option.label;
-                if (option.disabled) el.disabled = true;
-                selectEl.appendChild(el);
-            });
+        let timer;
+        let version = 0;
+        let controller;
+        const message = document.createElement('small');
+        message.className = 'text-muted d-block';
+        selectEl.after(message);
+        async function searchAccounts(currentVersion) {
+            if (controller) controller.abort();
+            controller = new AbortController();
+            const url = new URL(window.location.pathname, window.location.origin);
+            url.search = new URLSearchParams({lookup: 'merge', status: status, q: inputEl.value.trim()});
+            message.textContent = 'Mencari akun…';
+            try {
+                const response = await fetch(url, {signal: controller.signal});
+                if (!response.ok) throw new Error('Gagal mencari akun.');
+                const data = await response.json();
+                if (currentVersion !== version) return;
+                const selected = selectEl.selectedOptions[0];
+                const saved = selected && selected.value ? selected.cloneNode(true) : null;
+                selectEl.replaceChildren(new Option('-- pilih akun --', ''));
+                if (saved) selectEl.add(saved);
+                data.users.forEach(user => {
+                    if (saved && saved.value === String(user.id)) return;
+                    selectEl.add(new Option(`${user.full_name || user.email} • ${user.email || user.jabatan || '-'}`, user.id));
+                });
+                if (saved) selectEl.value = saved.value;
+                message.textContent = data.total > data.users.length
+                    ? `Menampilkan ${data.users.length} dari ${data.total} akun. Perjelas pencarian untuk akun lainnya.`
+                    : `${data.total} akun ditemukan.`;
+            } catch (error) {
+                if (error.name !== 'AbortError' && currentVersion === version) message.textContent = 'Gagal mencari akun. Ketik ulang untuk mencoba lagi.';
+            }
         }
-
-        renderOptions('');
         inputEl.addEventListener('input', function () {
-            renderOptions(inputEl.value);
+            clearTimeout(timer);
+            const currentVersion = ++version;
+            if (controller) controller.abort();
+            timer = setTimeout(() => searchAccounts(currentVersion), 300);
         });
+        searchAccounts(++version);
+    }
+
+    let userDetailVersion = 0;
+    async function loadUserAction(userId, action) {
+        const version = ++userDetailVersion;
+        const url = new URL(window.location.pathname, window.location.origin);
+        url.search = new URLSearchParams({lookup: 'detail', user_id: userId});
+        try {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('Data akun tidak dapat dimuat. Muat ulang halaman dan coba lagi.');
+            const data = await response.json();
+            if (version !== userDetailVersion) return;
+            if (action === 'edit') editUser(data.user);
+            else viewUserPreview(data.user);
+        } catch (error) {
+            if (version === userDetailVersion) alert(error.message);
+        }
     }
 
     function resetForm() {
@@ -1025,50 +1066,6 @@
         toggleSchoolField(false);
         setSchoolNullMode(false);
     }
-
-    document.addEventListener('DOMContentLoaded', function () {
-        const userSearch = document.getElementById('userSearch');
-        if (!userSearch) return;
-
-        const roleFilter = document.getElementById('userRoleFilter');
-        const statusFilter = document.getElementById('userStatusFilter');
-        const userRows = Array.from(document.querySelectorAll('#userTableBody tr[data-user-row="true"]'));
-        const noUserResults = document.getElementById('noUserResults');
-
-        function updateUserFilter() {
-            const query = userSearch.value.trim().toLowerCase();
-            const roleValue = roleFilter ? roleFilter.value.trim().toLowerCase() : '';
-            const statusValue = statusFilter ? statusFilter.value.trim().toLowerCase() : '';
-            let visibleCount = 0;
-
-            userRows.forEach(row => {
-                const haystack = (row.dataset.search || '').toLowerCase();
-                const rowRole = (row.dataset.role || '').toLowerCase();
-                const rowStatus = (row.dataset.status || '').toLowerCase();
-                const matchesQuery = !query || haystack.includes(query);
-                const matchesRole = !roleValue || rowRole === roleValue;
-                const matchesStatus = !statusValue || rowStatus === statusValue;
-                const matches = matchesQuery && matchesRole && matchesStatus;
-                row.style.display = matches ? '' : 'none';
-                if (matches) {
-                    visibleCount += 1;
-                }
-            });
-
-            if (noUserResults) {
-                const hasFilters = Boolean(query || roleValue || statusValue);
-                if (hasFilters && visibleCount === 0 && userRows.length > 0) {
-                    noUserResults.style.display = '';
-                } else {
-                    noUserResults.style.display = 'none';
-                }
-            }
-        }
-
-        userSearch.addEventListener('input', updateUserFilter);
-        if (roleFilter) roleFilter.addEventListener('change', updateUserFilter);
-        if (statusFilter) statusFilter.addEventListener('change', updateUserFilter);
-    });
 
     document.addEventListener('DOMContentLoaded', function () {
         roleSelect = document.getElementById('role');
@@ -1194,8 +1191,8 @@
 
         syncUnregisteredToggle();
         toggleSchoolField();
-        bindMergeSearch(mergeOldSearch, mergeOldSelect);
-        bindMergeSearch(mergeNewSearch, mergeNewSelect);
+        bindMergeSearch(mergeOldSearch, mergeOldSelect, 'not_registered');
+        bindMergeSearch(mergeNewSearch, mergeNewSelect, 'approved');
     });
 </script>
 <script>

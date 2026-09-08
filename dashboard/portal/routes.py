@@ -51,9 +51,10 @@ from dashboard.db_access import get_cursor
 from dashboard.photo_stamp import decode_data_url_image, stamp_live_photo
 from dashboard.queries import (
     create_team_member_request,
+    fetch_preview_accounts_page,
     get_available_staff,
+    get_dashboard_user_detail,
     get_team_member_request,
-    list_dashboard_users,
     list_team_member_requests,
     list_team_member_requests_for_team,
     update_team_member_request_status,
@@ -9829,47 +9830,20 @@ def _serialize_preview_target(row: dict) -> dict:
     }
 
 
-def _list_preview_accounts(pinned_ids: list[int] | None = None) -> list[dict]:
-    pinned_ids = pinned_ids or []
-    pinned_set = set()
-    for value in pinned_ids:
-        try:
-            pinned_set.add(int(value))
-        except (TypeError, ValueError):
-            continue
-    rows = []
-    for index, user in enumerate(list_dashboard_users()):
-        role = (user.get("role") or "").strip().lower()
-        if role not in _PREVIEW_ALLOWED_ROLES:
-            continue
-        account_status = (user.get("account_status") or "").strip().lower()
-        if account_status != "approved":
-            continue
-        if user.get("merged_to"):
-            continue
-        row = dict(user)
-        row["profile_photo_url"] = _build_profile_photo_url(
-            row.get("profile_photo_path")
-        )
-        row["preview_index"] = index
-        try:
-            row_id = int(row.get("id") or 0)
-        except (TypeError, ValueError):
-            row_id = 0
-        row["is_pinned"] = row_id in pinned_set
-        rows.append(row)
-    if not pinned_set:
-        return rows
-    pinned_rows = [row for row in rows if row.get("is_pinned")]
-    unpinned_rows = [row for row in rows if not row.get("is_pinned")]
-    return pinned_rows + unpinned_rows
-
-
 def _find_preview_target(user_id: int) -> dict | None:
-    for row in _list_preview_accounts():
-        if int(row.get("id") or 0) == int(user_id):
-            return row
-    return None
+    row = get_dashboard_user_detail(user_id)
+    if not row:
+        return None
+    role = (row.get("role") or "").strip().lower()
+    account_status = (row.get("account_status") or "").strip().lower()
+    if role not in _PREVIEW_ALLOWED_ROLES or account_status != "approved":
+        return None
+    if row.get("merged_to"):
+        return None
+    row["profile_photo_url"] = _build_profile_photo_url(
+        row.get("profile_photo_path")
+    )
+    return row
 
 
 @portal_bp.route("/settings/users", methods=["GET", "POST"])
@@ -9898,15 +9872,23 @@ def _render_preview_accounts() -> Response:
             pinned_ids = list_preview_pins(int(actor["id"]))
         except (TypeError, ValueError):
             pinned_ids = []
-    preview_users = _list_preview_accounts(pinned_ids)
+    search = (request.args.get("q") or "").strip()[:200]
+    result = fetch_preview_accounts_page(
+        page=request.args.get("page", 1, type=int) or 1,
+        search=search,
+        pinned_ids=pinned_ids,
+    )
+    preview_users = result["users"]
+    for user in preview_users:
+        user["profile_photo_url"] = _build_profile_photo_url(
+            user.get("profile_photo_path")
+        )
     selected_target = session.get(_PREVIEW_TARGET_SESSION_KEY)
     selected_app = _normalize_preview_app(session.get(_PREVIEW_APP_SESSION_KEY))
     preview_url = None
     if isinstance(selected_target, dict):
         selected_id = int(selected_target.get("id") or 0)
-        still_exists = any(
-            int(user.get("id") or 0) == selected_id for user in preview_users
-        )
+        still_exists = bool(selected_id and _find_preview_target(selected_id))
         if still_exists:
             preview_url = _build_preview_entry_url(
                 role=(selected_target.get("role") or ""),
@@ -9935,6 +9917,8 @@ def _render_preview_accounts() -> Response:
         preview_selected_app=selected_app,
         preview_url=preview_url,
         preview_return_url=preview_return_url,
+        preview_search=search,
+        preview_pagination=result,
     )
 
 

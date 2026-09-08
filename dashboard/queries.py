@@ -1818,9 +1818,7 @@ def get_user_by_email(email: str) -> Optional[DictRow]:
     return row
 
 
-def list_dashboard_users() -> List[Dict[str, Any]]:
-    with get_cursor() as cur:
-        cur.execute("""
+_DASHBOARD_USER_SELECT = """
             SELECT
                 u.id,
                 u.email,
@@ -1853,15 +1851,155 @@ def list_dashboard_users() -> List[Dict[str, Any]]:
                 sk.name as school_kecamatan_name,
                 NULLIF(TRIM(s.metadata->>'coordinator_phone'), '') as school_operator_phone,
                 NULLIF(TRIM(s.metadata->>'school_phone'), '') as school_phone
-            FROM dashboard_users u
+"""
+_DASHBOARD_USER_FROM = """FROM dashboard_users u
             LEFT JOIN portal_kecamatan k ON u.requested_kecamatan = k.id
             LEFT JOIN portal_schools s ON u.school_id = s.id
             LEFT JOIN portal_kelurahan sl ON s.kelurahan_id = sl.id
             LEFT JOIN portal_kecamatan sk ON sl.kecamatan_id = sk.id
-            ORDER BY u.created_at DESC
-            """)
-        rows = cur.fetchall()
-    return [dict(row) for row in rows]
+"""
+
+
+def list_dashboard_users() -> List[Dict[str, Any]]:
+    with get_cursor() as cur:
+        cur.execute(
+            _DASHBOARD_USER_SELECT + _DASHBOARD_USER_FROM
+            + " ORDER BY u.created_at DESC, u.id DESC"
+        )
+        return [dict(row) for row in cur.fetchall()]
+
+
+def get_dashboard_user_detail(user_id: int) -> Optional[Dict[str, Any]]:
+    # Explicit management fields; never serialize password hashes.
+    with get_cursor() as cur:
+        cur.execute(
+            _DASHBOARD_USER_SELECT + _DASHBOARD_USER_FROM + " WHERE u.id = %s",
+            (user_id,),
+        )
+        row = cur.fetchone()
+    return dict(row) if row else None
+
+
+def fetch_dashboard_users_page(
+    *,
+    page: int = 1,
+    per_page: int = 50,
+    search: str = "",
+    role: str = "",
+    status: str = "",
+    pending: bool = False,
+) -> Dict[str, Any]:
+    """Filter and paginate in SQL so account growth does not grow response memory."""
+    per_page = max(1, min(per_page, 50))
+    conditions = [
+        "u.account_status = 'pending'"
+        if pending else "u.account_status IS DISTINCT FROM 'pending'"
+    ]
+    params: List[Any] = []
+    if role:
+        conditions.append("u.role = %s")
+        params.append(role)
+    if status and not pending:
+        conditions.append("u.account_status = %s")
+        params.append(status)
+    if search.strip():
+        conditions.append("""concat_ws(' ', u.full_name, u.email, u.role, u.account_status,
+            k.name, u.jabatan, u.whatsapp_number, s.npsn, s.name,
+            s.metadata->>'coordinator_phone', s.metadata->>'school_phone') ILIKE %s""")
+        # Treat wildcard characters as literal search text.
+        term = search.strip().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        params.append("%" + term + "%")
+    where = " WHERE " + " AND ".join(conditions)
+    with get_cursor() as cur:
+        cur.execute("SELECT COUNT(*) AS total " + _DASHBOARD_USER_FROM + where, tuple(params))
+        total = int(cur.fetchone()["total"])
+        pages = max(1, (total + per_page - 1) // per_page)
+        page = max(1, min(page, pages))
+        cur.execute(
+            _DASHBOARD_USER_SELECT + _DASHBOARD_USER_FROM + where
+            + " ORDER BY u.created_at DESC, u.id DESC LIMIT %s OFFSET %s",
+            (*params, per_page, (page - 1) * per_page),
+        )
+        users = [dict(row) for row in cur.fetchall()]
+        cur.execute("SELECT COUNT(*) AS total FROM dashboard_users WHERE account_status = 'pending'")
+        pending_count = int(cur.fetchone()["total"])
+    return dict(
+        users=users, total=total, page=page, pages=pages,
+        per_page=per_page, pending_count=pending_count,
+    )
+
+
+def fetch_preview_accounts_page(
+    *,
+    page: int = 1,
+    per_page: int = 50,
+    search: str = "",
+    pinned_ids: Optional[List[int]] = None,
+) -> Dict[str, Any]:
+    """Return approved preview targets without loading every dashboard account."""
+    per_page = max(1, min(per_page, 50))
+    allowed_roles = ["staff", "coordinator", "sekolah"]
+    params: List[Any] = [allowed_roles]
+    conditions = [
+        "u.role = ANY(%s)",
+        "u.account_status = 'approved'",
+        "u.merged_to IS NULL",
+    ]
+    if search.strip():
+        conditions.append(
+            """concat_ws(' ', u.full_name, u.email, u.role, k.name, s.npsn, s.name)
+               ILIKE %s ESCAPE '\\'"""
+        )
+        term = (
+            search.strip()
+            .replace("\\", "\\\\")
+            .replace("%", "\\%")
+            .replace("_", "\\_")
+        )
+        params.append(f"%{term}%")
+
+    where = " WHERE " + " AND ".join(conditions)
+    clean_pinned_ids = []
+    for value in pinned_ids or []:
+        try:
+            clean_pinned_ids.append(int(value))
+        except (TypeError, ValueError):
+            continue
+
+    with get_cursor() as cur:
+        cur.execute(
+            "SELECT COUNT(*) AS total " + _DASHBOARD_USER_FROM + where,
+            tuple(params),
+        )
+        total = int(cur.fetchone()["total"])
+        pages = max(1, (total + per_page - 1) // per_page)
+        page = max(1, min(page, pages))
+        order_params: List[Any] = []
+        order = " ORDER BY u.created_at DESC, u.id DESC"
+        if clean_pinned_ids:
+            order = (
+                " ORDER BY CASE WHEN u.id = ANY(%s) THEN 0 ELSE 1 END,"
+                " u.created_at DESC, u.id DESC"
+            )
+            order_params.append(clean_pinned_ids)
+        cur.execute(
+            _DASHBOARD_USER_SELECT + _DASHBOARD_USER_FROM + where + order
+            + " LIMIT %s OFFSET %s",
+            (*params, *order_params, per_page, (page - 1) * per_page),
+        )
+        users = [dict(row) for row in cur.fetchall()]
+
+    pinned_set = set(clean_pinned_ids)
+    for index, user in enumerate(users):
+        user["is_pinned"] = int(user.get("id") or 0) in pinned_set
+        user["preview_index"] = (page - 1) * per_page + index
+    return dict(
+        users=users,
+        total=total,
+        page=page,
+        pages=pages,
+        per_page=per_page,
+    )
 
 
 def update_dashboard_user(

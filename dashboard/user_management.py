@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 import secrets
 from typing import Optional
+from urllib.parse import urlencode
 from uuid import uuid4
 
 from flask import (
@@ -25,7 +26,8 @@ from dashboard.portal.queries import (
 )
 from dashboard.queries import (
     create_dashboard_user,
-    list_dashboard_users,
+    fetch_dashboard_users_page,
+    get_dashboard_user_detail,
     merge_dashboard_users,
     update_dashboard_user,
 )
@@ -50,6 +52,35 @@ def handle_manage_users(
 ) -> Response:
     """Shared handler for dashboard user management across apps."""
     actor_id = actor.get("id") if actor else None
+
+    if request.method == "GET" and request.args.get("lookup"):
+        lookup = request.args.get("lookup")
+        if lookup == "detail":
+            user_id = request.args.get("user_id", type=int)
+            user = get_dashboard_user_detail(user_id) if user_id else None
+            if not user:
+                return jsonify(error="User tidak ditemukan."), 404
+            response = jsonify(user=user)
+        elif lookup == "merge" and not read_only:
+            status = request.args.get("status")
+            if status not in {"not_registered", "approved"}:
+                return jsonify(error="Status akun tidak valid."), 400
+            result = fetch_dashboard_users_page(
+                search=(request.args.get("q") or "")[:200],
+                status=status,
+                per_page=20,
+            )
+            response = jsonify(
+                users=[
+                    {key: user.get(key) for key in ("id", "full_name", "email", "jabatan")}
+                    for user in result["users"]
+                ],
+                total=result["total"],
+            )
+        else:
+            return jsonify(error="Permintaan tidak tersedia."), 403
+        response.headers["Cache-Control"] = "no-store"
+        return response
 
     if request.method == "POST":
         wants_json = request.headers.get("X-Requested-With") == "XMLHttpRequest"
@@ -372,22 +403,43 @@ def handle_manage_users(
                 return jsonify({"success": False, "message": str(exc)}), 500
             flash(f"Gagal memproses data: {exc}", "danger")
 
-    users = list_dashboard_users()
-    merge_old_users = [u for u in users if u.get("account_status") == "not_registered"]
-    merge_new_users = [u for u in users if u.get("account_status") == "approved"]
-    kecamatan_list = list_kecamatan()
-    activity_logs = fetch_activity_logs(limit=50, target_types=("USER",))
+    tab = request.args.get("tab", "list")
+    if tab not in {"list", "verify", "history"}:
+        tab = "list"
+    search = (request.args.get("q") or "").strip()[:200]
+    role_filter = (request.args.get("role") or "").strip()
+    status_filter = (request.args.get("status") or "").strip() if tab == "list" else ""
+    result = fetch_dashboard_users_page(
+        page=request.args.get("page", 1, type=int) or 1,
+        search=search,
+        role=role_filter,
+        status=status_filter,
+        pending=tab == "verify",
+    )
+
+    def page_url(**changes):
+        args = dict(q=search, role=role_filter, status=status_filter, tab=tab, page=result["page"])
+        args.update(changes)
+        return request.path + "?" + urlencode({key: value for key, value in args.items() if value != ""})
 
     return render_template(
         "portal/admin/manage_users.html",
-        users=users,
-        merge_old_users=merge_old_users,
-        merge_new_users=merge_new_users,
-        kecamatan_list=kecamatan_list,
-        activity_logs=activity_logs,
-        admin_contact_name=(
-            (actor or {}).get("full_name") or (actor or {}).get("email") or "Admin"
+        users=result["users"] if tab != "history" else [],
+        merge_old_users=[],
+        merge_new_users=[],
+        kecamatan_list=list_kecamatan(),
+        activity_logs=(
+            fetch_activity_logs(limit=50, target_types=("USER",))
+            if tab == "history" else []
         ),
+        admin_contact_name=(actor or {}).get("full_name") or (actor or {}).get("email") or "Admin",
         base_template=base_template,
         read_only=read_only,
+        pagination=result,
+        pending_count=result["pending_count"],
+        tab=tab,
+        search=search,
+        role_filter=role_filter,
+        status_filter=status_filter,
+        page_url=page_url,
     )
