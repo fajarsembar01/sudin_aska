@@ -1671,7 +1671,8 @@
     function openCameraModal(activityId, fromBulkMode, uploadUrl) {
         cameraActivityId = String(activityId);
         bulkCameraActivityId = fromBulkMode ? String(activityId) : null;
-        uploadForm.action = uploadUrl;
+        // The hidden input named "action" shadows the form.action property.
+        uploadForm.setAttribute('action', uploadUrl);
         const myModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('cameraModal'));
         myModal.show();
         startCamera();
@@ -1842,6 +1843,7 @@
         uploadButton.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Menyimpan…';
 
         try {
+            const uploadUrl = new URL(uploadForm.getAttribute('action'), window.location.href);
             // Send the photo as a multipart file. A base64 string is a regular
             // form field and large phone photos can be rejected by the server's
             // per-field memory limit before the route is reached.
@@ -1849,7 +1851,7 @@
             const photoBlob = dataUrlToBlob(livePhotoDataInput.value);
             formData.delete('live_photo_data');
             formData.append('live_photo_file', photoBlob, 'staff-camera.jpg');
-            const response = await fetch(uploadForm.action, {
+            const response = await fetch(uploadUrl.href, {
                 method: 'POST',
                 credentials: 'same-origin',
                 headers: {
@@ -1871,7 +1873,7 @@
                 } else if (response.status === 413) {
                     result = { message: 'Ukuran foto terlalu besar. Silakan ambil ulang foto.' };
                 } else {
-                    result = { message: 'Upload gagal (HTTP ' + response.status + ') pada ' + new URL(uploadForm.action).pathname + '.' };
+                    result = { message: 'Upload gagal (HTTP ' + response.status + ') pada ' + uploadUrl.pathname + '.' };
                 }
             }
             if (!response.ok || !result.success) throw new Error(result.message || 'Foto staff gagal disimpan.');
