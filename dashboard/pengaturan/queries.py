@@ -73,6 +73,13 @@ DEFAULT_SYSTEM_SETTINGS = [
         "description": "Izinkan registrasi pengguna baru secara mandiri",
         "is_secret": False,
     },
+    {
+        "setting_key": "github_performance_repository",
+        "setting_value": "fajarsembar01/sudin_aska",
+        "category": "integration",
+        "description": "Repository GitHub untuk pengukuran commit admin",
+        "is_secret": False,
+    },
     # Notification Settings
     {
         "setting_key": "telegram_notifications_enabled",
@@ -491,4 +498,3 @@ def fetch_public_schools_api_data() -> List[Dict[str, Any]]:
     except Exception as exc:
         logging.error("Error fetching public schools API data: %s", exc)
     return results
-

@@ -559,6 +559,7 @@
         <div class="d-flex align-items-center gap-2 flex-wrap audit-header-actions">
             <div class="d-flex align-items-center gap-1.5 bg-body border rounded-pill px-3 py-1 shadow-2xs audit-status-control">
                 <span class="text-body-secondary fw-bold text-xs text-nowrap"><i class="bi bi-clipboard-check me-1"></i>Status Verifikasi:</span>
+                {% if can_audit %}
                 <form action="{{ url_for('monev_bos.staff_audit_report', report_id=report.id) }}" method="POST" class="m-0">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="action" value="update_report_status">
@@ -570,12 +571,22 @@
                         <option value="completed" {% if report.status == 'completed' %}selected{% endif %}>Verifikasi Selesai</option>
                     </select>
                 </form>
+                {% else %}
+                <span class="badge bg-secondary-subtle text-secondary border rounded-pill">Mode baca</span>
+                {% endif %}
             </div>
             <a href="{{ url_for('monev_bos.staff_dashboard', period_id=report.period_id) }}" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
                 <i class="bi bi-arrow-left me-1.5"></i> Dashboard
             </a>
         </div>
     </div>
+
+    {% if not can_audit %}
+    <div class="alert alert-info border-info-subtle py-2 px-3 mb-3 small d-flex align-items-center gap-2">
+        <i class="bi bi-eye-fill"></i>
+        <span>Mode baca: aksi verifikasi hanya tersedia untuk staff dari tim yang ditugaskan.</span>
+    </div>
+    {% endif %}
 
     <div class="audit-progress-sticky">
         <div class="progress audit-progress-compact bg-secondary" aria-label="Kelengkapan dokumen {{ fund_source }}">
@@ -948,14 +959,18 @@
                                             {% if photo.doc_type == 'field_photo' %}
                                                 {% if photo.is_audit_valid %}
                                                 <span class="badge bg-info position-absolute bottom-0 start-0 m-1" style="font-size: 0.6rem;">Sekolah · Sah</span>
+                                                {% if can_audit %}
                                                 <button type="button" class="btn btn-danger position-absolute top-0 end-0 m-1 p-0 rounded-circle" style="width: 22px; height: 22px; line-height: 18px;" title="Anulir foto" onclick="event.stopPropagation(); auditSchoolPhoto({{ act.id }}, {{ photo.id }}, false)">
                                                     <i class="bi bi-x" style="font-size: 0.75rem;"></i>
                                                 </button>
+                                                {% endif %}
                                                 {% else %}
                                                 <span class="badge bg-danger position-absolute bottom-0 start-0 m-1" style="font-size: 0.6rem;">Tidak Sah</span>
+                                                {% if can_audit %}
                                                 <button type="button" class="btn btn-success position-absolute top-0 end-0 m-1 p-0 rounded-circle" style="width: 22px; height: 22px; line-height: 18px;" title="Sahkan kembali" onclick="event.stopPropagation(); auditSchoolPhoto({{ act.id }}, {{ photo.id }}, true)">
                                                     <i class="bi bi-arrow-counterclockwise" style="font-size: 0.65rem;"></i>
                                                 </button>
+                                                {% endif %}
                                                 {% if photo.photo_audit_notes %}
                                                 <small class="d-block text-danger text-xs text-truncate mt-1" title="{{ photo.photo_audit_notes }}">Alasan: {{ photo.photo_audit_notes }}</small>
                                                 {% endif %}
@@ -977,22 +992,22 @@
                                     {% if act.has_school_live_photo %}
                                     <div class="d-flex align-items-center gap-2 mt-2 pt-1 border-top flex-wrap">
                                         <small class="text-success text-xs"><i class="bi bi-shield-check me-1"></i>Foto sekolah masuk perhitungan laporan.</small>
-                                        <button type="button" class="btn btn-xs btn-outline-secondary ms-auto text-nowrap py-1 px-2"
+                                        {% if can_audit %}<button type="button" class="btn btn-xs btn-outline-secondary ms-auto text-nowrap py-1 px-2"
                                                 data-upload-url="{{ url_for('monev_bos.staff_audit_activity', activity_id=act.id) }}"
                                                 onclick="openCameraModal({{ act.id }}, false, this.dataset.uploadUrl)">
                                             <i class="bi bi-camera me-1"></i> Foto Live Tambahan
-                                        </button>
+                                        </button>{% endif %}
                                     </div>
                                     {% else %}
                                     <div class="mt-2">
                                         {% if act.staff_photos %}
                                         <small class="text-danger text-xs d-block mb-2"><i class="bi bi-info-circle me-1"></i>Foto staff tersedia, tetapi tidak masuk perhitungan foto sekolah.</small>
                                         {% endif %}
-                                        <button type="button" class="btn btn-sm btn-primary py-1 px-2 text-xs"
+                                        {% if can_audit %}<button type="button" class="btn btn-sm btn-primary py-1 px-2 text-xs"
                                                 data-upload-url="{{ url_for('monev_bos.staff_audit_activity', activity_id=act.id) }}"
                                                 onclick="openCameraModal({{ act.id }}, false, this.dataset.uploadUrl)">
                                             <i class="bi bi-camera me-1"></i> Ambil Foto Live (Staff)
-                                        </button>
+                                        </button>{% endif %}
                                     </div>
                                     {% endif %}
                                 </div>
@@ -1004,6 +1019,7 @@
                                         <input type="hidden" name="action" value="validate">
                                         <input type="hidden" name="report_id" value="{{ report.id }}">
                                         <input type="hidden" name="status" class="activity-status-input" value="">
+                                        <fieldset class="border-0 p-0 m-0" {% if not can_audit %}disabled{% endif %}>
                                         
                                         <!-- Checklist Kelengkapan Dokumen (2 Pilihan Jelas: Ada / Tidak Ada) -->
                                         {% set act_checklists = act.checklists if act.checklists else checklists %}
@@ -1124,6 +1140,7 @@
                                             </button>
                                             {% endif %}
                                         </div>
+                                        </fieldset>
                                     </form>
                                 </div>
                             </div>
@@ -1236,7 +1253,7 @@
     </div>
 </div>
 
-{% if activities %}
+{% if activities and can_audit %}
 <button type="button" class="btn btn-primary fw-bold bulk-check-desktop-fab" data-bs-toggle="modal" data-bs-target="#bulkCheckDesktopInfoModal">
     <i class="bi bi-layers-fill me-2"></i>Mode Cek Barang
 </button>
@@ -1259,7 +1276,7 @@
 </div>
 {% endif %}
 
-{% if activities %}
+{% if activities and can_audit %}
 <button type="button" class="btn btn-primary fw-bold bulk-check-fab" id="bulkCheckFab" aria-controls="bulkCheckMode" aria-expanded="false">
     <i class="bi bi-layers-fill me-2"></i>Mode Cek Barang
 </button>

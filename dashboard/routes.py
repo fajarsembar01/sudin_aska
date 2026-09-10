@@ -52,8 +52,6 @@ from .queries import (
     create_spmb_service_type,
     delete_spmb_evaluation,
     delete_spmb_service_type,
-    fetch_admin_activity_page,
-    fetch_admin_performance_data,
     fetch_all_chat_users,
     fetch_aska_knowledge_history,
     fetch_bullying_report_basic,
@@ -1226,54 +1224,21 @@ def dashboard() -> Response:
 @main_bp.route("/overview/admin-performance")
 @role_required("admin")
 def admin_performance() -> Response:
-    feature_key = (request.args.get("feature") or "all").strip().lower() or "all"
-    admin_id = request.args.get("admin_id", type=int)
-    action = (request.args.get("action") or "").strip().upper() or None
-    target_type = (request.args.get("target_type") or "").strip().upper() or None
-    search = (request.args.get("search") or "").strip() or None
-    start = _parse_date(request.args.get("start"))
-    end = _parse_date(request.args.get("end"))
-
-    data = fetch_admin_performance_data(
-        feature_key=feature_key,
-        admin_id=admin_id,
-        action=action,
-        target_type=target_type,
-        search=search,
-        start=start,
-        end=end,
-        detail_limit=400,
-    )
-    return render_template(
-        "admin_performance.html",
-        performance=data,
-    )
+    target = url_for("pengaturan.admin_performance")
+    if request.query_string:
+        target = f"{target}?{request.query_string.decode('utf-8', errors='ignore')}"
+    return redirect(target)
 
 
 @main_bp.route("/overview/admin-performance/admin/<int:admin_id>/events")
 @role_required("admin")
 def admin_performance_admin_events(admin_id: int) -> Response:
-    feature_key = (request.args.get("feature") or "all").strip().lower() or "all"
-    action = (request.args.get("action") or "").strip().upper() or None
-    target_type = (request.args.get("target_type") or "").strip().upper() or None
-    search = (request.args.get("search") or "").strip() or None
-    start = _parse_date(request.args.get("start"))
-    end = _parse_date(request.args.get("end"))
-    page = max(1, request.args.get("page", type=int) or 1)
-    per_page = max(1, min(request.args.get("per_page", type=int) or 8, 25))
-
-    payload = fetch_admin_activity_page(
-        admin_id=admin_id,
-        feature_key=feature_key,
-        action=action,
-        target_type=target_type,
-        search=search,
-        start=start,
-        end=end,
-        page=page,
-        per_page=per_page,
+    target = url_for(
+        "pengaturan.admin_performance_admin_events", admin_id=admin_id
     )
-    return jsonify(payload)
+    if request.query_string:
+        target = f"{target}?{request.query_string.decode('utf-8', errors='ignore')}"
+    return redirect(target)
 
 
 @main_bp.route("/twitter/logs")

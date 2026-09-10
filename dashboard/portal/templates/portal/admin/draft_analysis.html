@@ -1,45 +1,6 @@
 {% extends "portal/base_portal.html" %}
 {% set page_title = "Cek Draft PANBERSS" %}
 
-{% macro draft_modal_source(source_id, source_state, empty_label, draft_items) %}
-<div id="{{ source_id }}" class="d-none">
-    {% set ns = namespace(count=0) %}
-    {% for draft in draft_items %}
-    {% if source_state == 'all' or draft.draft_state == source_state %}
-    {% set ns.count = ns.count + 1 %}
-    <article class="draft-modal-item">
-        <div class="draft-modal-main">
-            <div class="draft-modal-title">
-                <span class="fw-semibold">#{{ draft.id }} {{ draft.school_name }}</span>
-                <span class="badge text-bg-{{ draft.state_badge }}">{{ draft.state_label }}</span>
-            </div>
-            <div class="draft-modal-meta">
-                {{ draft.school_npsn or '-' }} &middot; {{ draft.school_jenjang or '-' }}
-                {% if draft.period_name %}&middot; {{ draft.period_name }}{% endif %}
-                &middot; {{ draft.staff_name or draft.staff_email or 'Tanpa nama' }}
-                {% if draft.kecamatan_name %}&middot; {{ draft.kecamatan_name }}{% endif %}
-            </div>
-            <div class="draft-modal-meta">
-                Foto {{ draft.photo_room_count }}/{{ draft.min_photo_rooms }}
-                &middot; Skor {{ draft.scored_aspect_count }}/{{ draft.expected_aspect_count }}
-                &middot; {{ draft.reason_text }}
-                &middot; Update {{ draft.updated_label }}
-            </div>
-        </div>
-        <a class="btn btn-outline-primary btn-sm draft-modal-detail"
-            href="{{ url_for('portal.assess', school_id=draft.school_id, assessment_id=draft.id) }}"
-            target="_blank" rel="noopener">
-            <i class="bi bi-box-arrow-up-right me-1"></i>Cek Detail
-        </a>
-    </article>
-    {% endif %}
-    {% endfor %}
-    {% if ns.count == 0 %}
-    <div class="text-center text-muted py-4">{{ empty_label }}</div>
-    {% endif %}
-</div>
-{% endmacro %}
-
 {% block head_extra %}
 <style>
     .draft-summary-card {
@@ -94,70 +55,6 @@
         margin-top: 0.75rem;
     }
 
-    .draft-modal-item {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 0.75rem;
-        border: 1px solid var(--border-soft);
-        border-radius: 8px;
-        padding: 0.5rem 0.65rem;
-        background: var(--bg-surface);
-    }
-
-    .draft-modal-item + .draft-modal-item {
-        margin-top: 0.35rem;
-    }
-
-    .draft-modal-main {
-        min-width: 0;
-        flex: 1 1 auto;
-    }
-
-    .draft-modal-title {
-        display: flex;
-        align-items: center;
-        gap: 0.45rem;
-        min-width: 0;
-        line-height: 1.15;
-    }
-
-    .draft-modal-title .fw-semibold {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    .draft-modal-title .badge {
-        flex: 0 0 auto;
-    }
-
-    .draft-modal-meta {
-        color: var(--text-muted);
-        font-size: 0.76rem;
-        line-height: 1.25;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    .draft-modal-detail {
-        flex: 0 0 auto;
-        white-space: nowrap;
-        padding: 0.25rem 0.5rem;
-        font-size: 0.76rem;
-    }
-
-    @media (max-width: 576px) {
-        .draft-modal-item {
-            display: block;
-        }
-
-        .draft-modal-detail {
-            width: 100%;
-            margin-top: 0.75rem;
-        }
-    }
 </style>
 {% endblock %}
 
@@ -178,36 +75,32 @@
 
 <section class="row g-3 mb-4">
     <div class="col-sm-6 col-xl-3">
-        <button type="button" class="draft-summary-card" data-draft-list-trigger data-state="all"
-            data-title="Total Draft" data-count="{{ summary.total }}">
+        <a class="draft-summary-card text-decoration-none" href="{{ summary_urls[''] }}">
             <div class="text-muted small mb-2">Total Draft</div>
             <div class="draft-summary-value">{{ summary.total }}</div>
             <div class="small text-muted mt-2">{{ summary.filled }} sudah ada isi</div>
-        </button>
+        </a>
     </div>
     <div class="col-sm-6 col-xl-3">
-        <button type="button" class="draft-summary-card" data-draft-list-trigger data-state="empty"
-            data-title="Draft Kosong" data-count="{{ summary.empty }}">
+        <a class="draft-summary-card text-decoration-none" href="{{ summary_urls.empty }}">
             <div class="text-muted small mb-2">Draft Kosong</div>
             <div class="draft-summary-value text-secondary">{{ summary.empty }}</div>
             <div class="small text-muted mt-2">Belum ada skor, foto, atau catatan.</div>
-        </button>
+        </a>
     </div>
     <div class="col-sm-6 col-xl-3">
-        <button type="button" class="draft-summary-card" data-draft-list-trigger data-state="incomplete"
-            data-title="Foto Belum Cukup" data-count="{{ summary.incomplete }}">
+        <a class="draft-summary-card text-decoration-none" href="{{ summary_urls.incomplete }}">
             <div class="text-muted small mb-2">Foto Belum Cukup</div>
             <div class="draft-summary-value text-warning">{{ summary.incomplete }}</div>
             <div class="small text-muted mt-2">Ada isi, tapi foto minimal 20% belum lengkap.</div>
-        </button>
+        </a>
     </div>
     <div class="col-sm-6 col-xl-3">
-        <button type="button" class="draft-summary-card" data-draft-list-trigger data-state="ready"
-            data-title="Siap Submit" data-count="{{ summary.ready }}">
+        <a class="draft-summary-card text-decoration-none" href="{{ summary_urls.ready }}">
             <div class="text-muted small mb-2">Siap Submit</div>
             <div class="draft-summary-value text-success">{{ summary.ready }}</div>
             <div class="small text-muted mt-2">Foto minimal 20% terpenuhi, masih draft.</div>
-        </button>
+        </a>
     </div>
 </section>
 
@@ -343,7 +236,12 @@
                     <div>
                         <h2 class="h6 fw-bold mb-1">Daftar Draft</h2>
                         <p class="text-muted small mb-0">
-                            Menampilkan {{ drafts|length }} dari {{ all_draft_count }} draft sesuai filter.
+                            {% if drafts %}
+                            Menampilkan {{ ((page - 1) * page_size) + 1 }}–{{ ((page - 1) * page_size) + drafts|length }}
+                            dari {{ all_draft_count }} draft sesuai filter.
+                            {% else %}
+                            Tidak ada draft sesuai filter.
+                            {% endif %}
                         </p>
                     </div>
                 </div>
@@ -469,53 +367,27 @@
                     <p class="text-muted mb-0">Coba reset filter atau pilih periode lain.</p>
                 </div>
                 {% endif %}
+
+                {% if total_pages > 1 %}
+                <nav class="mt-3" aria-label="Halaman draft">
+                    <ul class="pagination pagination-sm justify-content-end mb-0">
+                        <li class="page-item {% if not previous_page_url %}disabled{% endif %}">
+                            <a class="page-link" href="{{ previous_page_url or '#' }}">Sebelumnya</a>
+                        </li>
+                        {% for number, page_url in pagination_pages %}
+                        <li class="page-item {% if number == page %}active{% endif %}">
+                            <a class="page-link" href="{{ page_url }}">{{ number }}</a>
+                        </li>
+                        {% endfor %}
+                        <li class="page-item {% if not next_page_url %}disabled{% endif %}">
+                            <a class="page-link" href="{{ next_page_url or '#' }}">Berikutnya</a>
+                        </li>
+                    </ul>
+                </nav>
+                {% endif %}
             </div>
         </div>
     </div>
 </section>
 
-<div class="modal fade" id="draftListModal" tabindex="-1" aria-labelledby="draftListModalTitle" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header">
-                <div>
-                    <h5 class="modal-title" id="draftListModalTitle">Daftar Draft</h5>
-                    <div class="small text-muted" id="draftListModalSubtitle"></div>
-                </div>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
-            </div>
-            <div class="modal-body" id="draftListModalBody"></div>
-        </div>
-    </div>
-</div>
-
-{{ draft_modal_source('draftModalList-all', 'all', 'Tidak ada draft pada filter ini.', modal_drafts) }}
-{{ draft_modal_source('draftModalList-empty', 'empty', 'Tidak ada draft kosong pada filter ini.', modal_drafts) }}
-{{ draft_modal_source('draftModalList-incomplete', 'incomplete', 'Tidak ada draft yang fotonya kurang pada filter ini.', modal_drafts) }}
-{{ draft_modal_source('draftModalList-ready', 'ready', 'Tidak ada draft siap submit pada filter ini.', modal_drafts) }}
-{% endblock %}
-
-{% block portal_scripts %}
-<script>
-    (function () {
-        var modalEl = document.getElementById('draftListModal');
-        var titleEl = document.getElementById('draftListModalTitle');
-        var subtitleEl = document.getElementById('draftListModalSubtitle');
-        var bodyEl = document.getElementById('draftListModalBody');
-        if (!modalEl || !titleEl || !subtitleEl || !bodyEl || !window.bootstrap) return;
-
-        document.querySelectorAll('[data-draft-list-trigger]').forEach(function (button) {
-            button.addEventListener('click', function () {
-                var state = button.getAttribute('data-state') || 'all';
-                var source = document.getElementById('draftModalList-' + state);
-                var title = button.getAttribute('data-title') || 'Daftar Draft';
-                var count = button.getAttribute('data-count') || '0';
-                titleEl.textContent = title;
-                subtitleEl.textContent = count + ' draft sesuai filter aktif. Detail dibuka di tab baru.';
-                bodyEl.innerHTML = source ? source.innerHTML : '<div class="text-center text-muted py-4">Data tidak tersedia.</div>';
-                window.bootstrap.Modal.getOrCreateInstance(modalEl).show();
-            });
-        });
-    })();
-</script>
 {% endblock %}

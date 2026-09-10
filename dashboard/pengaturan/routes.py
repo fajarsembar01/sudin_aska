@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Dict, Optional
 
 from flask import (
@@ -11,12 +11,16 @@ from flask import (
     redirect,
     render_template,
     request,
+    send_file,
     url_for,
 )
 
 from dashboard.auth import current_user, role_required
 from dashboard.portal import routes as portal_routes
 from dashboard.queries import (
+    fetch_admin_activity_events,
+    fetch_admin_activity_page,
+    fetch_admin_performance_data,
     list_admin_users,
     fetch_telegram_notification_settings,
     upsert_telegram_notification_settings,
@@ -27,6 +31,22 @@ from dashboard.queries import (
     delete_telegram_notification_group,
 )
 from dashboard.telegram_notifications import send_test_notification
+from utils import current_jakarta_time
+from .admin_performance_pdf import build_admin_performance_pdf
+from .github_performance import (
+    DEFAULT_REPOSITORY,
+    attach_github_metrics,
+    get_commit_daily_series,
+    get_commit_line_summary,
+    get_commit_line_totals,
+    get_commit_snapshots,
+    hydrate_commit_line_stats,
+    list_admin_github_accounts,
+    normalize_repository,
+    period_key,
+    save_admin_github_accounts,
+    sync_admin_commits,
+)
 from .queries import (
     get_all_system_settings,
     get_system_setting,
@@ -51,6 +71,479 @@ pengaturan_legacy_bp = Blueprint(
     __name__,
     url_prefix="/pengaturan",
 )
+
+
+def _parse_date(value: Optional[str]) -> Optional[datetime]:
+    if not value:
+        return None
+    for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%Y-%m-%dT%H:%M"):
+        try:
+            return datetime.strptime(value, fmt)
+        except ValueError:
+            continue
+    return None
+
+
+def _resolve_admin_performance_period() -> Dict[str, Any]:
+    period_scope = (request.values.get("period_scope") or "month").strip().lower()
+    if period_scope not in {"month", "year", "all"}:
+        period_scope = "month"
+
+    now = current_jakarta_time()
+    selected_month = (request.values.get("month") or now.strftime("%Y-%m")).strip()
+    try:
+        month_start = datetime.strptime(selected_month, "%Y-%m")
+    except ValueError:
+        selected_month = now.strftime("%Y-%m")
+        month_start = datetime(now.year, now.month, 1)
+
+    selected_year = request.values.get("year", type=int) or now.year
+    if selected_year < 2000 or selected_year > now.year:
+        selected_year = now.year
+
+    if period_scope == "month":
+        start = month_start
+        if month_start.month == 12:
+            next_month = datetime(month_start.year + 1, 1, 1)
+        else:
+            next_month = datetime(month_start.year, month_start.month + 1, 1)
+        end = next_month - timedelta(days=1)
+    elif period_scope == "year":
+        start = datetime(selected_year, 1, 1)
+        end = datetime(selected_year, 12, 31)
+    else:
+        start = None
+        end = None
+
+    return {
+        "period_scope": period_scope,
+        "selected_month": selected_month,
+        "selected_year": selected_year,
+        "year_options": list(range(now.year, 1999, -1)),
+        "start": start,
+        "end": end,
+        "generated_at": now,
+    }
+
+
+def _complete_admin_leaderboard(
+    leaderboard: list[Dict[str, Any]], admin_users: list[Dict[str, Any]],
+    *, minimum_actions: int = 1,
+) -> list[Dict[str, Any]]:
+    """Return every current admin with at least one matching activity."""
+    rows_by_id = {
+        int(row["actor_user_id"]): dict(row)
+        for row in leaderboard
+        if row.get("actor_user_id")
+    }
+    rows_without_id = [dict(row) for row in leaderboard if not row.get("actor_user_id")]
+    for admin in admin_users:
+        admin_id = int(admin.get("id") or 0)
+        if not admin_id:
+            continue
+        row = rows_by_id.setdefault(
+            admin_id,
+            {
+                "actor_user_id": admin_id,
+                "total_actions": 0,
+                "last_action_at": None,
+                "feature_counts": {},
+                "action_counts": {},
+            },
+        )
+        row["actor_name"] = admin.get("full_name") or row.get("actor_name")
+        row["actor_email"] = admin.get("email") or row.get("actor_email")
+        row["actor_label"] = (
+            admin.get("full_name")
+            or admin.get("email")
+            or row.get("actor_label")
+            or f"Admin #{admin_id}"
+        )
+
+    rows = [
+        row
+        for row in [*rows_by_id.values(), *rows_without_id]
+        if int(row.get("total_actions") or 0) >= minimum_actions
+    ]
+    rows.sort(
+        key=lambda row: (
+            -int(row.get("total_actions") or 0),
+            (row.get("actor_label") or "").lower(),
+        )
+    )
+    return rows
+
+
+def _score_admin_leaderboard(
+    leaderboard: list[Dict[str, Any]], *, coding_multiplier: int = 10
+) -> list[Dict[str, Any]]:
+    scored = []
+    for source in leaderboard:
+        row = dict(source)
+        actions = int(row.get("total_actions") or 0)
+        scored_value = row.get("github_coding_days")
+        coding_updates = int(
+            scored_value if scored_value is not None else row.get("github_commits") or 0
+        )
+        row["coding_score_units"] = coding_updates
+        row["coding_points"] = coding_updates * coding_multiplier
+        row["performance_total"] = actions + row["coding_points"]
+        row["coding_multiplier"] = coding_multiplier
+        if row["performance_total"] >= 1:
+            scored.append(row)
+    scored.sort(
+        key=lambda row: (
+            -int(row["performance_total"]),
+            -int(row.get("total_actions") or 0),
+            (row.get("actor_label") or "").lower(),
+        )
+    )
+    return scored
+
+
+def _admin_performance_period_label(period: Dict[str, Any]) -> str:
+    month_names = (
+        "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+        "Juli", "Agustus", "September", "Oktober", "November", "Desember",
+    )
+    if period["period_scope"] == "month" and period.get("start"):
+        start = period["start"]
+        return f"{month_names[start.month - 1]} {start.year}"
+    if period["period_scope"] == "year":
+        return f"Tahun {period['selected_year']}"
+    return "Seluruh riwayat"
+
+
+def _github_performance_context(period: Dict[str, Any]) -> Dict[str, Any]:
+    repository = normalize_repository(
+        get_system_setting("github_performance_repository", DEFAULT_REPOSITORY)
+        or DEFAULT_REPOSITORY
+    )
+    key = period_key(period["start"], period["end"])
+    snapshots = get_commit_snapshots(repository, key)
+    all_time_snapshots = snapshots if key == "all" else get_commit_snapshots(repository, "all")
+    accounts = list_admin_github_accounts()
+    for account in accounts:
+        admin_id = int(account["id"])
+        snapshot = dict(snapshots.get(admin_id, {}))
+        snapshot["github_username"] = account.get("github_username")
+        snapshot.setdefault("commit_count", None)
+        snapshot.setdefault("coding_day_count", None)
+        snapshot.setdefault("sync_error", None)
+        snapshot.setdefault("synced_at", None)
+        all_time = all_time_snapshots.get(admin_id, {})
+        snapshot["all_time_commit_count"] = all_time.get("commit_count")
+        snapshot["all_time_last_commit_at"] = all_time.get("last_commit_at")
+        snapshots[admin_id] = snapshot
+        account.update(snapshot)
+    return {
+        "repository": repository,
+        "period_key": key,
+        "snapshots": snapshots,
+        "all_time_snapshots": all_time_snapshots,
+        "accounts": accounts,
+        "last_synced_at": max(
+            (item.get("synced_at") for item in snapshots.values() if item.get("synced_at")),
+            default=None,
+        ),
+    }
+
+
+def _performance_redirect_from_form() -> Response:
+    allowed = ("feature", "admin_id", "action", "target_type", "search", "period_scope", "month", "year")
+    values = {key: request.form.get(key) for key in allowed if request.form.get(key)}
+    return redirect(url_for("pengaturan.admin_performance", **values))
+
+
+@pengaturan_bp.route("/admin-performance")
+@role_required("admin")
+def admin_performance() -> Response:
+    feature_key = (request.args.get("feature") or "all").strip().lower() or "all"
+    admin_id = request.args.get("admin_id", type=int)
+    action = (request.args.get("action") or "").strip().upper() or None
+    target_type = (request.args.get("target_type") or "").strip().upper() or None
+    search = (request.args.get("search") or "").strip() or None
+    period = _resolve_admin_performance_period()
+
+    data = fetch_admin_performance_data(
+        feature_key=feature_key,
+        admin_id=admin_id,
+        action=action,
+        target_type=target_type,
+        search=search,
+        start=period["start"],
+        end=period["end"],
+        detail_limit=400,
+    )
+    github = _github_performance_context(period)
+    leaderboard_accounts = github["accounts"]
+    if admin_id:
+        leaderboard_accounts = [
+            account for account in leaderboard_accounts
+            if int(account.get("id") or 0) == admin_id
+        ]
+    leaderboard = _complete_admin_leaderboard(
+        data.get("leaderboard") or [], leaderboard_accounts, minimum_actions=0
+    )
+    attach_github_metrics(leaderboard, github["snapshots"])
+    data["leaderboard"] = _score_admin_leaderboard(leaderboard)
+    selected_snapshots = github["snapshots"]
+    if admin_id:
+        selected_snapshots = {
+            admin_id: github["snapshots"][admin_id]
+        } if admin_id in github["snapshots"] else {}
+    github_counts = [
+        int(item["commit_count"])
+        for item in selected_snapshots.values()
+        if item.get("commit_count") is not None
+    ]
+    github_coding_days = [
+        int(item["coding_day_count"])
+        for item in selected_snapshots.values()
+        if item.get("coding_day_count") is not None
+    ]
+    github_all_time_counts = [
+        int(item["all_time_commit_count"])
+        for item in selected_snapshots.values()
+        if item.get("all_time_commit_count") is not None
+    ]
+    github_daily_series = get_commit_daily_series(
+        github["repository"], github["period_key"], admin_id=admin_id
+    )
+    github_line_totals = get_commit_line_totals(
+        github["repository"], github["period_key"], admin_id=admin_id
+    )
+    data.update(
+        {
+            "period_scope": period["period_scope"],
+            "selected_month": period["selected_month"],
+            "selected_year": period["selected_year"],
+            "year_options": period["year_options"],
+            "github": github,
+            "github_total_commits": sum(github_counts),
+            "github_coding_days": sum(github_coding_days),
+            "github_all_time_commits": sum(github_all_time_counts),
+            "github_contributors": sum(1 for count in github_counts if count > 0),
+            "github_daily_series": github_daily_series,
+            "github_line_totals": github_line_totals,
+            "period_label": _admin_performance_period_label(period),
+            "total_performance_score": sum(
+                int(item.get("performance_total") or 0)
+                for item in data["leaderboard"]
+            ),
+            "top_performance_score": (
+                int(data["leaderboard"][0].get("performance_total") or 0)
+                if data["leaderboard"] else 0
+            ),
+        }
+    )
+    return render_template("admin_performance.html", performance=data)
+
+
+@pengaturan_bp.route("/admin-performance/github-settings", methods=["POST"])
+@role_required("admin")
+def admin_performance_github_settings() -> Response:
+    try:
+        repository = normalize_repository(request.form.get("github_repository") or "")
+        admins = list_admin_github_accounts()
+        entries = [
+            {
+                "id": admin["id"],
+                "github_username": request.form.get(f"github_username_{admin['id']}", ""),
+                "github_author_email": request.form.get(f"github_author_email_{admin['id']}", ""),
+            }
+            for admin in admins
+        ]
+        mapped = save_admin_github_accounts(entries)
+        update_system_settings(
+            {"github_performance_repository": repository},
+            user_id=(current_user() or {}).get("id"),
+        )
+        flash(f"Pengaturan GitHub disimpan. {mapped} akun admin telah dipetakan.", "success")
+    except (KeyError, TypeError, ValueError) as exc:
+        flash(str(exc), "danger")
+    return _performance_redirect_from_form()
+
+
+@pengaturan_bp.route("/admin-performance/github-sync", methods=["POST"])
+@role_required("admin")
+def admin_performance_github_sync() -> Response:
+    try:
+        repository = normalize_repository(
+            get_system_setting("github_performance_repository", DEFAULT_REPOSITORY)
+            or DEFAULT_REPOSITORY
+        )
+    except ValueError as exc:
+        flash(str(exc), "danger")
+        return _performance_redirect_from_form()
+    actor_id = int((current_user() or {}).get("id") or 0)
+    accounts = [item for item in list_admin_github_accounts() if item.get("github_username")]
+    success_count = 0
+    inserted_count = 0
+    initial_count = 0
+    errors = []
+    for account in accounts:
+        try:
+            result = sync_admin_commits(
+                repository, account["github_username"], synced_by=actor_id,
+                author_email=account.get("github_author_email") or "",
+            )
+            hydrate_commit_line_stats(
+                repository, account["github_username"], start=None, end=None
+            )
+            success_count += 1
+            inserted_count += int(result.get("inserted") or 0)
+            initial_count += 1 if result.get("initial") else 0
+        except (RuntimeError, ValueError) as exc:
+            error = str(exc)
+            errors.append(f"{account.get('full_name') or account['github_username']}: {error}")
+    if not accounts:
+        flash("Belum ada username GitHub yang dipetakan.", "warning")
+    elif success_count:
+        mode_note = f" {initial_count} akun mengambil riwayat dari awal." if initial_count else ""
+        flash(
+            f"GitHub tersinkron untuk {success_count} admin; {inserted_count} commit baru disimpan.{mode_note}",
+            "success",
+        )
+    for error in errors[:5]:
+        flash(error, "warning")
+    return _performance_redirect_from_form()
+
+
+@pengaturan_bp.route("/admin-performance/pdf")
+@role_required("admin")
+def admin_performance_pdf() -> Response:
+    """Download the full leaderboard and the downloader's personal recap."""
+    downloader = current_user() or {}
+    downloader_id = int(downloader.get("id") or 0)
+    if not downloader_id:
+        return Response("Akun admin tidak valid.", status=400)
+
+    feature_key = (request.args.get("feature") or "all").strip().lower() or "all"
+    action = (request.args.get("action") or "").strip().upper() or None
+    target_type = (request.args.get("target_type") or "").strip().upper() or None
+    search = (request.args.get("search") or "").strip() or None
+    period = _resolve_admin_performance_period()
+    source_events = fetch_admin_activity_events(
+        start=period["start"], end=period["end"]
+    )
+    common_filters = {
+        "feature_key": feature_key,
+        "action": action,
+        "target_type": target_type,
+        "search": search,
+        "start": period["start"],
+        "end": period["end"],
+        "source_events": source_events,
+    }
+
+    # The requested admin_id is intentionally ignored in the PDF. Page one is
+    # organization-wide; the personal page is bound to the authenticated user.
+    organization = fetch_admin_performance_data(
+        admin_id=None, detail_limit=50, **common_filters
+    )
+    personal = fetch_admin_performance_data(
+        admin_id=downloader_id, detail_limit=50, **common_filters
+    )
+    leaderboard = _complete_admin_leaderboard(
+        organization.get("leaderboard") or [], list_admin_users(), minimum_actions=0
+    )
+    github = _github_performance_context(period)
+    attach_github_metrics(leaderboard, github["snapshots"])
+    leaderboard = _score_admin_leaderboard(leaderboard)
+    personal_snapshot = github["snapshots"].get(downloader_id, {})
+    personal["github_username"] = personal_snapshot.get("github_username")
+    personal["github_commits"] = personal_snapshot.get("commit_count")
+    personal["github_coding_days"] = int(
+        personal_snapshot.get("coding_day_count") or 0
+    )
+    personal["coding_points"] = personal["github_coding_days"] * 10
+    personal["performance_total"] = (
+        int((personal.get("summary") or {}).get("total_actions") or 0)
+        + personal["coding_points"]
+    )
+    personal["organization_rank"] = next(
+        (
+            index
+            for index, row in enumerate(leaderboard, start=1)
+            if int(row.get("actor_user_id") or 0) == downloader_id
+        ),
+        None,
+    )
+    if personal.get("github_username"):
+        hydrate_commit_line_stats(
+            github["repository"], personal["github_username"],
+            start=period["start"], end=period["end"],
+        )
+        personal["github_line_stats"] = get_commit_line_summary(
+            github["repository"], personal["github_username"],
+            start=period["start"], end=period["end"],
+        )
+    else:
+        personal["github_line_stats"] = {
+            "additions": 0, "deletions": 0, "changed_lines": 0,
+            "measured_commits": 0, "total_commits": 0, "missing_commits": 0,
+        }
+
+    feature_label = (organization.get("feature_options") or {}).get(
+        feature_key, feature_key
+    )
+    filter_parts = [
+        f"Fitur: {feature_label}",
+        f"Aksi: {action or 'Semua'}",
+        f"Target: {target_type or 'Semua'}",
+        f"GitHub: {github['repository']}",
+    ]
+    if search:
+        filter_parts.append(f"Pencarian: {search}")
+    pdf = build_admin_performance_pdf(
+        leaderboard=leaderboard,
+        personal=personal,
+        downloader=downloader,
+        period_label=_admin_performance_period_label(period),
+        filters_label=" | ".join(filter_parts),
+        generated_at=period["generated_at"],
+    )
+    if period["period_scope"] == "month":
+        suffix = period["selected_month"]
+    elif period["period_scope"] == "year":
+        suffix = str(period["selected_year"])
+    else:
+        suffix = "seluruhnya"
+    response = send_file(
+        pdf,
+        mimetype="application/pdf",
+        as_attachment=True,
+        download_name=f"performa-admin-{suffix}-{downloader_id}.pdf",
+    )
+    response.headers["Cache-Control"] = "private, no-store"
+    return response
+
+
+@pengaturan_bp.route("/admin-performance/admin/<int:admin_id>/events")
+@role_required("admin")
+def admin_performance_admin_events(admin_id: int) -> Response:
+    feature_key = (request.args.get("feature") or "all").strip().lower() or "all"
+    action = (request.args.get("action") or "").strip().upper() or None
+    target_type = (request.args.get("target_type") or "").strip().upper() or None
+    search = (request.args.get("search") or "").strip() or None
+    start = _parse_date(request.args.get("start"))
+    end = _parse_date(request.args.get("end"))
+    page = max(1, request.args.get("page", type=int) or 1)
+    per_page = max(1, min(request.args.get("per_page", type=int) or 8, 25))
+
+    payload = fetch_admin_activity_page(
+        admin_id=admin_id,
+        feature_key=feature_key,
+        action=action,
+        target_type=target_type,
+        search=search,
+        start=start,
+        end=end,
+        page=page,
+        per_page=per_page,
+    )
+    return jsonify(payload)
 
 
 @pengaturan_legacy_bp.route("/", defaults={"path": ""}, methods=["GET", "POST"])

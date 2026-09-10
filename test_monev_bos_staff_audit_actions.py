@@ -4,12 +4,21 @@ import io
 import os
 import sys
 
+import pytest
 from flask import Flask
+from werkzeug.exceptions import Forbidden
 
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from dashboard.monev_bos import routes
+
+
+@pytest.fixture(autouse=True)
+def _allow_assigned_staff(monkeypatch):
+    monkeypatch.setattr(
+        routes.queries, "staff_can_audit_report", lambda staff_id, report_id: True
+    )
 
 
 class _CursorContext:
@@ -194,6 +203,87 @@ def test_staff_camera_photo_requires_photo_payload(monkeypatch):
     assert status == 400
     assert response.json["success"] is False
     assert "Ambil foto" in response.json["message"]
+
+
+def test_admin_cannot_mutate_staff_verification(monkeypatch):
+    app = Flask(__name__)
+    monkeypatch.setattr(
+        routes,
+        "current_user",
+        lambda: {"id": 1, "role": "admin", "full_name": "Admin"},
+    )
+    monkeypatch.setattr(
+        routes.queries,
+        "get_activity_by_id",
+        lambda activity_id: {
+            "id": activity_id,
+            "report_id": 353,
+            "activity_name": "Belanja alat",
+            "status": "pending",
+        },
+    )
+    updates = []
+    monkeypatch.setattr(
+        routes.queries,
+        "update_activity_audit",
+        lambda *args: updates.append(args),
+    )
+
+    with app.test_request_context(
+        "/monev-bos/staff/verifikasi/kegiatan/44",
+        method="POST",
+        headers={"Accept": "application/json"},
+        data={"action": "validate", "status": "valid"},
+    ):
+        response, status = routes.staff_audit_activity.__wrapped__(44)
+
+    assert status == 403
+    assert response.json["success"] is False
+    assert updates == []
+
+
+def test_admin_cannot_change_report_verification_status(monkeypatch):
+    app = Flask(__name__)
+    monkeypatch.setattr(
+        routes, "current_user", lambda: {"id": 1, "role": "admin"}
+    )
+    monkeypatch.setattr(
+        routes.queries,
+        "get_report_by_id",
+        lambda report_id: {"id": report_id, "school_name": "Sekolah Uji"},
+    )
+
+    with app.test_request_context(
+        "/monev-bos/staff/verifikasi/353",
+        method="POST",
+        headers={"Accept": "application/json"},
+        data={"action": "update_report_status", "status": "completed"},
+    ):
+        response, status = routes.staff_audit_report.__wrapped__(353)
+
+    assert status == 403
+    assert response.json["success"] is False
+
+
+def test_unassigned_staff_cannot_open_verification(monkeypatch):
+    app = Flask(__name__)
+    monkeypatch.setattr(
+        routes,
+        "current_user",
+        lambda: {"id": 10, "role": "staff", "full_name": "Staff Lain"},
+    )
+    monkeypatch.setattr(
+        routes.queries,
+        "get_report_by_id",
+        lambda report_id: {"id": report_id, "school_name": "Sekolah Uji"},
+    )
+    monkeypatch.setattr(
+        routes.queries, "staff_can_audit_report", lambda staff_id, report_id: False
+    )
+
+    with app.test_request_context("/monev-bos/staff/verifikasi/353"):
+        with pytest.raises(Forbidden):
+            routes.staff_audit_report.__wrapped__(353)
 
 
 def test_staff_camera_photo_is_saved_at_most_200_kb(tmp_path):

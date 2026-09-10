@@ -109,36 +109,52 @@
             </li>
           </ul>
         </li>
-        <li class="nav-item">
-          <a class="nav-link {% if request.args.get('tab') == 'notification' %}active{% endif %}" href="{{ url_for('pengaturan.admin_settings', tab='notification') }}">
-            <i class="bi bi-bell nav-icon"></i>Notifikasi
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle {% if request.endpoint == 'pengaturan.admin_performance' or request.args.get('tab') == 'system' %}active{% endif %}"
+             href="#" id="monitoringSettingsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-activity nav-icon"></i>Monitoring
           </a>
+          <ul class="dropdown-menu shadow-sm border-0" aria-labelledby="monitoringSettingsDropdown">
+            <li>
+              <a class="dropdown-item py-2 {% if request.endpoint == 'pengaturan.admin_performance' %}active{% endif %}"
+                 href="{{ url_for('pengaturan.admin_performance') }}">
+                <i class="bi bi-person-lines-fill me-2 text-primary"></i>Performa Admin
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item py-2 {% if request.args.get('tab') == 'system' %}active{% endif %}"
+                 href="{{ url_for('pengaturan.admin_settings', tab='system') }}">
+                <i class="bi bi-cpu me-2 text-success"></i>Status Sistem
+              </a>
+            </li>
+          </ul>
         </li>
         <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle {% if request.args.get('tab') == 'api' or request.endpoint == 'pengaturan.public_api_settings' %}active{% endif %}"
-             href="#" id="apiDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-            <i class="bi bi-key nav-icon"></i>API
+          <a class="nav-link dropdown-toggle {% if request.args.get('tab') in ['notification', 'api'] or request.endpoint == 'pengaturan.public_api_settings' %}active{% endif %}"
+             href="#" id="integrationSettingsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-plug nav-icon"></i>Integrasi
           </a>
-          <ul class="dropdown-menu shadow-sm border-0" aria-labelledby="apiDropdown">
+          <ul class="dropdown-menu shadow-sm border-0" aria-labelledby="integrationSettingsDropdown">
             <li>
-              <a class="dropdown-item py-2 {% if request.args.get('tab') == 'api' %}active{% endif %}" 
-                 href="{{ url_for('pengaturan.admin_settings', tab='api') }}">
-                <i class="bi bi-diagram-3 me-2 text-primary"></i>Integrasi API
+              <a class="dropdown-item py-2 {% if request.args.get('tab') == 'notification' %}active{% endif %}"
+                 href="{{ url_for('pengaturan.admin_settings', tab='notification') }}">
+                <i class="bi bi-bell me-2 text-warning"></i>Notifikasi
               </a>
             </li>
             <li><hr class="dropdown-divider my-1"></li>
             <li>
-              <a class="dropdown-item py-2 {% if request.endpoint == 'pengaturan.public_api_settings' %}active{% endif %}" 
+              <a class="dropdown-item py-2 {% if request.args.get('tab') == 'api' %}active{% endif %}"
+                 href="{{ url_for('pengaturan.admin_settings', tab='api') }}">
+                <i class="bi bi-diagram-3 me-2 text-primary"></i>Integrasi API
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item py-2 {% if request.endpoint == 'pengaturan.public_api_settings' %}active{% endif %}"
                  href="{{ url_for('pengaturan.public_api_settings') }}">
                 <i class="bi bi-globe2 me-2 text-success"></i>API Publik (Instansi Extra)
               </a>
             </li>
           </ul>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link {% if request.args.get('tab') == 'system' %}active{% endif %}" href="{{ url_for('pengaturan.admin_settings', tab='system') }}">
-            <i class="bi bi-cpu nav-icon"></i>Status Sistem
-          </a>
         </li>
       </ul>
       <div class="d-flex align-items-center gap-3 user-nav-actions">

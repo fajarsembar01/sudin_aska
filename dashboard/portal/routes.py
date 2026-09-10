@@ -4984,52 +4984,66 @@ def _build_draft_analysis_row(
     return item
 
 
-def _summarize_draft_analysis(rows: list[dict]) -> dict:
-    summary = {
-        "total": len(rows),
+def _new_draft_analysis_summary() -> dict:
+    return {
+        "total": 0,
         "empty": 0,
         "incomplete": 0,
         "ready": 0,
         "filled": 0,
+        "staff_map": {},
     }
-    staff_map: dict[int | str, dict] = {}
-    for row in rows:
-        state = row.get("draft_state")
-        if state in {"empty", "incomplete", "ready"}:
-            summary[state] += 1
-        if row.get("is_filled"):
-            summary["filled"] += 1
 
-        staff_key = row.get("staff_id") or f"unknown-{row.get('id')}"
-        staff = staff_map.setdefault(
-            staff_key,
-            {
-                "staff_id": row.get("staff_id"),
-                "staff_name": row.get("staff_name")
-                or row.get("staff_email")
-                or "Tanpa nama",
-                "staff_email": row.get("staff_email"),
-                "staff_role": row.get("staff_role"),
-                "total": 0,
-                "empty": 0,
-                "incomplete": 0,
-                "ready": 0,
-                "oldest_age_days": 0,
-            },
-        )
-        staff["total"] += 1
-        if state in {"empty", "incomplete", "ready"}:
-            staff[state] += 1
-        age_days = row.get("age_days")
-        if isinstance(age_days, int):
-            staff["oldest_age_days"] = max(staff["oldest_age_days"], age_days)
 
-    staff_rows = list(staff_map.values())
+def _accumulate_draft_analysis_summary(summary: dict, row: dict) -> None:
+    summary["total"] += 1
+    state = row.get("draft_state")
+    if state in {"empty", "incomplete", "ready"}:
+        summary[state] += 1
+    if row.get("is_filled"):
+        summary["filled"] += 1
+
+    staff_map = summary["staff_map"]
+    staff_key = row.get("staff_id") or f"unknown-{row.get('id')}"
+    staff = staff_map.setdefault(
+        staff_key,
+        {
+            "staff_id": row.get("staff_id"),
+            "staff_name": row.get("staff_name")
+            or row.get("staff_email")
+            or "Tanpa nama",
+            "staff_email": row.get("staff_email"),
+            "staff_role": row.get("staff_role"),
+            "total": 0,
+            "empty": 0,
+            "incomplete": 0,
+            "ready": 0,
+            "oldest_age_days": 0,
+        },
+    )
+    staff["total"] += 1
+    if state in {"empty", "incomplete", "ready"}:
+        staff[state] += 1
+    age_days = row.get("age_days")
+    if isinstance(age_days, int):
+        staff["oldest_age_days"] = max(staff["oldest_age_days"], age_days)
+
+
+def _finalize_draft_analysis_summary(summary: dict) -> dict:
+    staff_rows = list(summary.pop("staff_map", {}).values())
+
     staff_rows.sort(
         key=lambda item: (-int(item.get("total") or 0), item.get("staff_name") or "")
     )
     summary["staff_rows"] = staff_rows
     return summary
+
+
+def _summarize_draft_analysis(rows: list[dict]) -> dict:
+    summary = _new_draft_analysis_summary()
+    for row in rows:
+        _accumulate_draft_analysis_summary(summary, row)
+    return _finalize_draft_analysis_summary(summary)
 
 
 def _serialize_related_photos(
@@ -5372,6 +5386,14 @@ def admin_draft_analysis() -> Response:
     selected_year_arg = request.args.get("year", type=int)
     selected_month_arg = request.args.get("month", type=int)
     selected_period_arg = request.args.get("period_id", type=int)
+    if not any(key in request.args for key in ("year", "month", "period_id")):
+        default_period = next(
+            (period for period in periods if period.get("is_active")),
+            periods[0] if periods else None,
+        )
+        selected_period_arg = (
+            default_period.get("id") if isinstance(default_period, dict) else None
+        )
     period_id, period_ids, period_year_options, selected_year, selected_month = (
         _build_admin_stats_period_filter(
             periods,
@@ -5390,6 +5412,8 @@ def admin_draft_analysis() -> Response:
     if state_filter not in {"empty", "incomplete", "ready"}:
         state_filter = ""
     query_text = (request.args.get("q") or "").strip()
+    page = max(request.args.get("page", default=1, type=int) or 1, 1)
+    page_size = 25
 
     staff_ids: list[int] | None = None
     selected_team = None
@@ -5405,58 +5429,102 @@ def admin_draft_analysis() -> Response:
         school_status=school_status_filter,
         query_text=query_text,
     )
-    draft_rows = list_draft_assessments(
-        period_id=period_id,
-        period_ids=period_ids,
-        staff_ids=staff_ids,
-        staff_id=staff_filter,
-        school_status=school_status_filter,
-        query_text=query_text,
-    )
-    input_rows = get_draft_assessment_inputs([row["id"] for row in draft_rows])
+    # Status draft bergantung pada aturan ruangan Python. Proses dalam batch agar
+    # hitungan tetap tepat tanpa menahan seluruh skor/foto/catatan di RAM.
+    batch_size = 100
+    batch_offset = 0
+    visible_offset = (page - 1) * page_size
+    visible_count = 0
+    visible_drafts: list[dict] = []
+    summary_accumulator = _new_draft_analysis_summary()
+    while True:
+        draft_rows = list_draft_assessments(
+            period_id=period_id,
+            period_ids=period_ids,
+            staff_ids=staff_ids,
+            staff_id=staff_filter,
+            school_status=school_status_filter,
+            query_text=query_text,
+            limit=batch_size,
+            offset=batch_offset,
+        )
+        if not draft_rows:
+            break
 
-    room_cache: dict[int, tuple[list[dict], list[dict]]] = {}
-    analyzed_drafts: list[dict] = []
-    for row in draft_rows:
-        assessment_id = row.get("id")
-        school_id = row.get("school_id")
-        if not assessment_id or not school_id:
-            continue
+        input_rows = get_draft_assessment_inputs([row["id"] for row in draft_rows])
+        room_cache: dict[int, tuple[list[dict], list[dict]]] = {}
+        for row in draft_rows:
+            assessment_id = row.get("id")
+            school_id = row.get("school_id")
+            if not assessment_id or not school_id:
+                continue
 
-        if school_id not in room_cache:
-            all_rooms = list_school_rooms(int(school_id))
-            filtered_rooms = _filter_assessment_rooms(
-                list(all_rooms), row.get("school_jenjang")
+            if school_id not in room_cache:
+                all_rooms = list_school_rooms(int(school_id))
+                filtered_rooms = _filter_assessment_rooms(
+                    list(all_rooms), row.get("school_jenjang")
+                )
+                room_cache[int(school_id)] = (all_rooms, filtered_rooms)
+            all_rooms, filtered_rooms = room_cache[int(school_id)]
+
+            scores = input_rows["scores"].get(int(assessment_id), [])
+            photos = input_rows["photos"].get(int(assessment_id), [])
+            notes = input_rows["notes"].get(int(assessment_id), [])
+            room_note_map = {
+                int(note["school_room_id"]): note.get("notes")
+                for note in notes
+                if note.get("school_room_id")
+            }
+            rooms, _scores, _photos, _notes = _augment_rooms_with_assessment_data(
+                list(all_rooms),
+                list(filtered_rooms),
+                int(assessment_id),
+                existing_scores=scores,
+                photos_list=photos,
+                room_notes=room_note_map,
             )
-            room_cache[int(school_id)] = (all_rooms, filtered_rooms)
-        all_rooms, filtered_rooms = room_cache[int(school_id)]
+            analyzed = _build_draft_analysis_row(row, rooms, scores, photos, notes)
+            _accumulate_draft_analysis_summary(summary_accumulator, analyzed)
+            if state_filter and analyzed.get("draft_state") != state_filter:
+                continue
+            if visible_offset <= visible_count < visible_offset + page_size:
+                visible_drafts.append(analyzed)
+            visible_count += 1
 
-        scores = input_rows["scores"].get(int(assessment_id), [])
-        photos = input_rows["photos"].get(int(assessment_id), [])
-        notes = input_rows["notes"].get(int(assessment_id), [])
-        room_note_map = {
-            int(note["school_room_id"]): note.get("notes")
-            for note in notes
-            if note.get("school_room_id")
-        }
-        rooms, _scores, _photos, _notes = _augment_rooms_with_assessment_data(
-            list(all_rooms),
-            list(filtered_rooms),
-            int(assessment_id),
-            existing_scores=scores,
-            photos_list=photos,
-            room_notes=room_note_map,
-        )
-        analyzed_drafts.append(
-            _build_draft_analysis_row(row, rooms, scores, photos, notes)
-        )
+        batch_offset += len(draft_rows)
+        if len(draft_rows) < batch_size:
+            break
 
-    summary = _summarize_draft_analysis(analyzed_drafts)
-    visible_drafts = [
-        draft
-        for draft in analyzed_drafts
-        if not state_filter or draft.get("draft_state") == state_filter
+    summary = _finalize_draft_analysis_summary(summary_accumulator)
+    total_pages = max(1, math.ceil(visible_count / page_size))
+    if visible_count and page > total_pages:
+        redirect_args = request.args.to_dict(flat=True)
+        redirect_args["page"] = total_pages
+        return redirect(url_for("portal.admin_draft_analysis", **redirect_args))
+
+    def draft_page_url(target_page: int, state: str | None = None) -> str:
+        args = request.args.to_dict(flat=True)
+        if state is not None:
+            if state:
+                args["state"] = state
+            else:
+                args.pop("state", None)
+        if target_page > 1:
+            args["page"] = target_page
+        else:
+            args.pop("page", None)
+        return url_for("portal.admin_draft_analysis", **args)
+
+    page_start = max(1, page - 2)
+    page_end = min(total_pages, page + 2)
+    pagination_pages = [
+        (number, draft_page_url(number))
+        for number in range(page_start, page_end + 1)
     ]
+    summary_urls = {
+        state: draft_page_url(1, state)
+        for state in ("", "empty", "incomplete", "ready")
+    }
 
     month_options = [
         (1, "Januari"),
@@ -5482,9 +5550,15 @@ def admin_draft_analysis() -> Response:
     return render_template(
         "portal/admin/draft_analysis.html",
         drafts=visible_drafts,
-        modal_drafts=analyzed_drafts,
-        all_draft_count=len(analyzed_drafts),
+        all_draft_count=visible_count,
         summary=summary,
+        page=page,
+        page_size=page_size,
+        total_pages=total_pages,
+        pagination_pages=pagination_pages,
+        previous_page_url=draft_page_url(page - 1) if page > 1 else None,
+        next_page_url=draft_page_url(page + 1) if page < total_pages else None,
+        summary_urls=summary_urls,
         periods=periods,
         current_period_id=period_id,
         current_period_year=selected_year,

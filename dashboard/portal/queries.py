@@ -3479,8 +3479,10 @@ def list_draft_assessments(
     staff_id: Optional[int] = None,
     school_status: Optional[str] = None,
     query_text: Optional[str] = None,
+    limit: int = 100,
+    offset: int = 0,
 ) -> List[Dict[str, Any]]:
-    """List draft assessments with staff, school, area, and period context."""
+    """List one bounded page of drafts with staff, school, area, and period context."""
     if staff_ids is not None and len(staff_ids) == 0:
         return []
 
@@ -3523,6 +3525,8 @@ def list_draft_assessments(
         params.extend([like] * 7)
 
     where_clause = "WHERE " + " AND ".join(clauses)
+    safe_limit = max(1, min(int(limit or 100), 200))
+    safe_offset = max(0, int(offset or 0))
     query = f"""
         SELECT
             a.id,
@@ -3566,7 +3570,9 @@ def list_draft_assessments(
         ) previous_done ON TRUE
         {where_clause}
         ORDER BY COALESCE(a.updated_at, a.created_at) DESC NULLS LAST, a.id DESC
+        LIMIT %s OFFSET %s
     """
+    params.extend([safe_limit, safe_offset])
     with get_cursor() as cur:
         cur.execute(query, params)
         return [dict(row) for row in cur.fetchall()]

@@ -1,16 +1,16 @@
-{% extends 'base.html' %}
+{% extends 'pengaturan/base_pengaturan.html' %}
 {% block title %}Performa Admin - ASKA Insights{% endblock %}
 
 {% block head_extra %}
 <style>
     .performance-shell {
         display: grid;
-        gap: 1.25rem;
+        gap: 0.75rem;
     }
     .performance-hero {
         position: relative;
         overflow: hidden;
-        border-radius: 1.5rem;
+        border-radius: 1rem;
         border: 1px solid var(--border-soft);
         background:
             radial-gradient(circle at top right, rgba(255, 193, 7, 0.18), transparent 34%),
@@ -30,11 +30,11 @@
     .performance-hero .card-body {
         position: relative;
         z-index: 1;
-        padding: 1.5rem;
+        padding: 1rem 1.15rem 0.8rem;
     }
     .tab-chip {
         border-radius: 999px;
-        padding: 0.55rem 0.95rem;
+        padding: 0.35rem 0.7rem;
         border: 1px solid var(--border-soft);
         background: var(--bg-surface);
         color: var(--text-secondary);
@@ -43,6 +43,8 @@
         gap: 0.5rem;
         text-decoration: none;
         font-weight: 600;
+        font-size: 0.84rem;
+        white-space: nowrap;
     }
     .tab-chip.active {
         background: linear-gradient(135deg, rgba(13,110,253,0.12), rgba(25,135,84,0.14));
@@ -54,11 +56,11 @@
     }
     .metric-grid {
         display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 1rem;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 0.65rem;
     }
     .metric-card {
-        border-radius: 1.2rem;
+        border-radius: 0.9rem;
         border: 1px solid var(--border-soft);
         box-shadow: var(--shadow-soft);
     }
@@ -69,17 +71,17 @@
         color: var(--text-muted);
     }
     .metric-value {
-        font-size: 2rem;
+        font-size: 1.55rem;
         font-weight: 700;
         line-height: 1.05;
     }
     .summary-grid {
         display: grid;
         grid-template-columns: 1.25fr 0.95fr;
-        gap: 1rem;
+        gap: 0.75rem;
     }
     .panel-card {
-        border-radius: 1.25rem;
+        border-radius: 1rem;
         border: 1px solid var(--border-soft);
         box-shadow: var(--shadow-soft);
     }
@@ -88,6 +90,16 @@
     .detail-table td,
     .detail-table th {
         vertical-align: middle;
+        padding: 0.55rem 0.65rem;
+        font-size: 0.86rem;
+    }
+    .leaderboard-table th,
+    .detail-table th {
+        white-space: nowrap;
+        font-size: 0.76rem;
+        letter-spacing: 0.025em;
+        text-transform: uppercase;
+        color: var(--text-muted);
     }
     .admin-avatar {
         width: 2rem;
@@ -102,21 +114,21 @@
     }
     .mini-list {
         display: grid;
-        gap: 0.7rem;
+        gap: 0.45rem;
     }
     .mini-item {
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 0.75rem;
-        padding: 0.8rem 0.9rem;
-        border-radius: 1rem;
+        padding: 0.5rem 0.65rem;
+        border-radius: 0.7rem;
         background: var(--bg-surface);
         border: 1px solid var(--border-soft);
     }
     .trend-wrap {
         position: relative;
-        min-height: 320px;
+        min-height: 235px;
     }
     .admin-link {
         border: 0;
@@ -133,25 +145,142 @@
     }
     .activity-feed {
         display: grid;
-        gap: 0.85rem;
+        gap: 0.55rem;
     }
     .activity-item {
         border: 1px solid var(--border-soft);
-        border-radius: 1rem;
-        padding: 0.9rem 1rem;
+        border-radius: 0.75rem;
+        padding: 0.65rem 0.75rem;
         background: var(--bg-surface);
     }
+    .compact-card > .card-body,
+    .panel-card > .card-body {
+        padding: 0.85rem;
+    }
+    .hero-tabs {
+        display: flex;
+        gap: 0.4rem;
+        margin-top: 0.7rem;
+        overflow-x: auto;
+        padding-bottom: 0.15rem;
+        scrollbar-width: thin;
+    }
+    .filter-grid {
+        display: grid;
+        grid-template-columns: minmax(190px, 1.6fr) repeat(3, minmax(130px, 1fr)) minmax(135px, .85fr) minmax(145px, .9fr) auto;
+        align-items: end;
+        gap: 0.6rem;
+    }
+    .filter-grid .form-label {
+        margin-bottom: 0.25rem;
+        font-size: 0.76rem;
+        font-weight: 600;
+        color: var(--text-muted);
+    }
+    .filter-grid .form-control,
+    .filter-grid .form-select {
+        min-height: 36px;
+        font-size: 0.86rem;
+    }
+    .coding-strip {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto auto;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    .coding-status {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        align-items: center;
+    }
+    .metric-card .card-body {
+        padding: 0.75rem 0.8rem;
+    }
+    .metric-icon {
+        width: 1.8rem;
+        height: 1.8rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: .55rem;
+        background: rgba(13, 110, 253, .1);
+        color: var(--accent);
+    }
+    .score-breakdown {
+        min-width: 128px;
+        line-height: 1.25;
+    }
+    .feature-more-toggle {
+        border: 0;
+        background: transparent;
+        color: var(--accent);
+        font-size: .8rem;
+        font-weight: 600;
+        padding: .15rem .2rem;
+        white-space: nowrap;
+    }
+    .feature-more-toggle:hover,
+    .feature-more-toggle:focus {
+        text-decoration: underline;
+    }
+    .feature-overflow.show {
+        display: inline;
+    }
+    .distribution-columns {
+        display: grid;
+        grid-template-columns: 0.9fr 1fr 1.25fr;
+        gap: .65rem;
+    }
+    .distribution-group {
+        min-width: 0;
+        padding: .6rem;
+        border: 1px solid var(--border-soft);
+        border-radius: .8rem;
+        background: rgba(248, 249, 250, .55);
+    }
+    .distribution-group .mini-item {
+        width: 100%;
+        min-width: 0;
+        min-height: 2.35rem;
+    }
+    .distribution-label {
+        min-width: 0;
+        font-size: .82rem;
+        line-height: 1.15;
+        overflow-wrap: anywhere;
+    }
+    .distribution-group .badge {
+        flex: 0 0 auto;
+    }
+    .section-heading {
+        font-size: 0.95rem;
+        font-weight: 700;
+        margin-bottom: 0.55rem;
+    }
+    .data-note {
+        border-left: 3px solid var(--bs-warning);
+        padding-left: .65rem;
+    }
+    @media (max-width: 1399px) {
+        .metric-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .filter-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        .filter-search { grid-column: span 2; }
+    }
     @media (max-width: 1100px) {
-        .metric-grid,
         .summary-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
         }
+        .distribution-columns { grid-template-columns: 1fr; }
     }
     @media (max-width: 768px) {
         .metric-grid,
         .summary-grid {
             grid-template-columns: 1fr;
         }
+        .filter-grid { grid-template-columns: 1fr; }
+        .filter-search { grid-column: auto; }
+        .coding-strip { grid-template-columns: 1fr; }
     }
 </style>
 {% endblock %}
@@ -160,20 +289,30 @@
 <div class="performance-shell">
     <section class="card performance-hero border-0">
         <div class="card-body">
-            <div class="d-flex flex-wrap align-items-start justify-content-between gap-3">
-                <div>
-                    <div class="text-uppercase small fw-semibold text-muted mb-2">ASKA Insight</div>
-                    <h1 class="h3 fw-bold mb-2">Performa Admin</h1>
-                    <p class="text-muted mb-0">Rekap aksi perubahan data admin lintas app, dengan tab per fitur dan mode gabungan.</p>
-                </div>
-                <div class="text-end">
-                    <div class="small text-muted">Terakhir terdeteksi</div>
-                    <div class="fw-semibold">
-                        {{ performance.summary.latest_action_at|jakarta if performance.summary.latest_action_at else '-' }}
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                <div class="d-flex align-items-center gap-3">
+                    <span class="metric-icon fs-5"><i class="bi bi-speedometer2"></i></span>
+                    <div>
+                        <div class="d-flex flex-wrap align-items-center gap-2">
+                            <h1 class="h4 fw-bold mb-0">Performa Admin</h1>
+                            <span class="badge text-bg-primary">{{ performance.period_label }}</span>
+                        </div>
+                        <div class="text-muted small mt-1">Aksi Admin dan Coding Update seluruh admin dalam satu laporan.</div>
                     </div>
                 </div>
+                <div class="d-flex flex-wrap align-items-center justify-content-end gap-2">
+                    <div class="text-end d-none d-lg-block me-1">
+                        <div class="small text-muted">Aktivitas terakhir</div>
+                        <div class="small fw-semibold">{{ performance.summary.latest_action_at|jakarta if performance.summary.latest_action_at else '-' }}</div>
+                    </div>
+                    <button type="submit" form="filterForm"
+                        formaction="{{ url_for('pengaturan.admin_performance_pdf') }}"
+                        class="btn btn-light btn-sm">
+                        <i class="bi bi-file-earmark-pdf me-1"></i>Download PDF
+                    </button>
+                </div>
             </div>
-            <div class="d-flex flex-wrap gap-2 mt-4">
+            <div class="hero-tabs">
                 {% for key, label in performance.feature_options.items() %}
                 {% if key == 'all' %}
                     {% set count = performance.all_feature_total %}
@@ -190,15 +329,15 @@
         </div>
     </section>
 
-    <section class="card panel-card">
+    <section class="card panel-card compact-card">
         <div class="card-body">
-            <form id="filterForm" method="get" class="row g-3 align-items-end">
-                <div class="col-xl-3 col-lg-6">
+            <form id="filterForm" method="get" class="filter-grid">
+                <div class="filter-search">
                     <label class="form-label">Cari</label>
                     <input type="text" class="form-control" name="search" value="{{ performance.search }}"
                         placeholder="Admin, aksi, target, detail">
                 </div>
-                <div class="col-xl-2 col-lg-6">
+                <div>
                     <label class="form-label">Admin</label>
                     <select class="form-select" name="admin_id">
                         <option value="">Semua admin</option>
@@ -209,7 +348,7 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-xl-2 col-lg-6">
+                <div>
                     <label class="form-label">Aksi</label>
                     <select class="form-select" name="action">
                         <option value="">Semua aksi</option>
@@ -218,7 +357,7 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-xl-2 col-lg-6">
+                <div>
                     <label class="form-label">Target</label>
                     <select class="form-select" name="target_type">
                         <option value="">Semua target</option>
@@ -227,60 +366,144 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-xl-1 col-md-6">
-                    <label class="form-label">Mulai</label>
-                    <input type="date" class="form-control" name="start"
-                        value="{{ performance.start.strftime('%Y-%m-%d') if performance.start else '' }}">
+                <div>
+                    <label class="form-label">Update</label>
+                    <select class="form-select" name="period_scope" id="performancePeriodScope">
+                        <option value="month" {% if performance.period_scope == 'month' %}selected{% endif %}>Per Bulan</option>
+                        <option value="year" {% if performance.period_scope == 'year' %}selected{% endif %}>1 Tahun</option>
+                        <option value="all" {% if performance.period_scope == 'all' %}selected{% endif %}>Seluruhnya</option>
+                    </select>
                 </div>
-                <div class="col-xl-1 col-md-6">
-                    <label class="form-label">Sampai</label>
-                    <input type="date" class="form-control" name="end"
-                        value="{{ performance.end.strftime('%Y-%m-%d') if performance.end else '' }}">
+                <div id="performanceMonthField">
+                    <label class="form-label">Bulan</label>
+                    <input type="month" class="form-control" name="month"
+                        value="{{ performance.selected_month }}">
                 </div>
-                <div class="col-xl-1 col-md-12 d-flex gap-2">
-                    <button type="submit" class="btn btn-primary w-100">Terapkan</button>
+                <div id="performanceYearField">
+                    <label class="form-label">Tahun</label>
+                    <select class="form-select" name="year">
+                        {% for year in performance.year_options %}
+                        <option value="{{ year }}" {% if performance.selected_year == year %}selected{% endif %}>{{ year }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary btn-sm px-3"><i class="bi bi-funnel me-1"></i>Terapkan</button>
+                    <a href="{{ url_for('pengaturan.admin_performance') }}" class="btn btn-outline-secondary btn-sm" title="Reset filter"><i class="bi bi-arrow-counterclockwise"></i></a>
                 </div>
             </form>
         </div>
     </section>
 
-    <section class="alert alert-warning border-0 shadow-sm mb-0">
-        <div class="d-flex gap-3 align-items-start">
-            <i class="bi bi-info-circle-fill fs-5"></i>
-            <div class="small">
-                PANBERSS dan bullying memakai event/log yang sudah historis. Sebagian data Buku Tamu, psych, dan Call Center lama
-                direkonstruksi dari metadata yang tersedia. Aksi perubahan baru pada Monev BOS/BOP dan Laporan juga masuk ke rekap ini.
+    <section class="card panel-card compact-card">
+        <div class="card-body">
+            <div class="coding-strip">
+                <div class="coding-status">
+                    <strong><i class="bi bi-code-slash me-1"></i>Coding</strong>
+                    <span class="badge text-bg-light">{{ performance.github.repository }}</span>
+                    <span class="small text-muted">
+                        {% if performance.github.last_synced_at %}Sinkron {{ performance.github.last_synced_at|jakarta }}{% else %}Belum pernah disinkronkan{% endif %}
+                    </span>
+                    <span class="badge text-bg-dark">{{ performance.github.accounts|selectattr('github_username')|list|length }} akun terhubung</span>
+                </div>
+                <form method="post" action="{{ url_for('pengaturan.admin_performance_github_sync') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="feature" value="{{ performance.selected_feature }}">
+                    <input type="hidden" name="admin_id" value="{{ performance.selected_admin_id or '' }}">
+                    <input type="hidden" name="action" value="{{ performance.selected_action }}">
+                    <input type="hidden" name="target_type" value="{{ performance.selected_target_type }}">
+                    <input type="hidden" name="search" value="{{ performance.search }}">
+                    <input type="hidden" name="period_scope" value="{{ performance.period_scope }}">
+                    <input type="hidden" name="month" value="{{ performance.selected_month }}">
+                    <input type="hidden" name="year" value="{{ performance.selected_year }}">
+                    <button class="btn btn-dark btn-sm" type="submit"><i class="bi bi-arrow-repeat me-1"></i>Sinkronkan</button>
+                </form>
+                <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#codingSettings" aria-expanded="false">
+                    <i class="bi bi-gear me-1"></i>Pengaturan
+                </button>
+            </div>
+            <div class="collapse" id="codingSettings">
+                <form method="post" action="{{ url_for('pengaturan.admin_performance_github_settings') }}" class="mt-3">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="feature" value="{{ performance.selected_feature }}">
+                    <input type="hidden" name="admin_id" value="{{ performance.selected_admin_id or '' }}">
+                    <input type="hidden" name="action" value="{{ performance.selected_action }}">
+                    <input type="hidden" name="target_type" value="{{ performance.selected_target_type }}">
+                    <input type="hidden" name="search" value="{{ performance.search }}">
+                    <input type="hidden" name="period_scope" value="{{ performance.period_scope }}">
+                    <input type="hidden" name="month" value="{{ performance.selected_month }}">
+                    <input type="hidden" name="year" value="{{ performance.selected_year }}">
+                    <div class="row g-2">
+                        <div class="col-lg-4">
+                            <label class="form-label">Repository GitHub</label>
+                            <input class="form-control" name="github_repository" value="{{ performance.github.repository }}" placeholder="owner/repository" required>
+                        </div>
+                        {% for admin in performance.github.accounts %}
+                        <div class="col-lg-4">
+                            <label class="form-label mb-1">{{ admin.full_name }}</label>
+                            <div class="input-group">
+                                <span class="input-group-text">@</span>
+                                <input class="form-control" name="github_username_{{ admin.id }}" value="{{ admin.github_username or '' }}" placeholder="username-github">
+                                {% if admin.commit_count is not none %}<span class="input-group-text">{{ admin.commit_count }} update</span>{% endif %}
+                            </div>
+                            <input class="form-control form-control-sm mt-2"
+                                name="github_author_email_{{ admin.id }}"
+                                value="{{ admin.github_author_email or '' }}"
+                                placeholder="Email author Git (opsional; pisahkan dengan koma)">
+                            {% if admin.all_time_last_commit_at %}<div class="text-muted small mt-1">Commit terakhir: {{ admin.all_time_last_commit_at|jakarta }}</div>{% endif %}
+                            {% if admin.sync_error %}<div class="text-danger small mt-1">{{ admin.sync_error }}</div>{% endif %}
+                        </div>
+                        {% endfor %}
+                        <div class="col-12 d-flex align-items-center justify-content-between gap-2">
+                            <div class="small text-muted">Email author dapat dipisahkan dengan koma. Akun baru disinkronkan dari riwayat awal.</div>
+                            <button class="btn btn-primary btn-sm" type="submit">Simpan Pemetaan</button>
+                        </div>
+                    </div>
+                </form>
             </div>
         </div>
     </section>
 
+    <details class="small text-muted data-note">
+        <summary style="cursor:pointer">Catatan sumber data</summary>
+        PANBERSS dan bullying memakai event historis. Sebagian data lama Buku Tamu, Psych, dan Call Center direkonstruksi dari metadata yang tersedia.
+    </details>
+
     <section class="metric-grid">
         <article class="card metric-card border-0">
             <div class="card-body">
-                <div class="metric-label mb-2">Total Action</div>
-                <div class="metric-value">{{ performance.summary.total_actions }}</div>
-                <div class="text-muted small mt-2">Sesuai filter aktif</div>
+                <div class="d-flex justify-content-between align-items-start"><div><div class="metric-label">Total Skor</div><div class="metric-value">{{ performance.total_performance_score }}</div></div><span class="metric-icon"><i class="bi bi-trophy"></i></span></div>
+                <div class="text-muted small mt-1">Aksi Admin + Coding ×10</div>
             </div>
         </article>
         <article class="card metric-card border-0">
             <div class="card-body">
-                <div class="metric-label mb-2">Admin Aktif</div>
-                <div class="metric-value">{{ performance.summary.unique_admins }}</div>
-                <div class="text-muted small mt-2">Jumlah admin yang melakukan perubahan</div>
+                <div class="d-flex justify-content-between align-items-start"><div><div class="metric-label">Aksi Admin</div><div class="metric-value">{{ performance.summary.total_actions }}</div></div><span class="metric-icon"><i class="bi bi-activity"></i></span></div>
+                <div class="text-muted small mt-1">Sesuai filter aktif</div>
             </div>
         </article>
         <article class="card metric-card border-0">
             <div class="card-body">
-                <div class="metric-label mb-2">Cakupan Fitur</div>
-                <div class="metric-value">{{ performance.summary.total_features }}</div>
-                <div class="text-muted small mt-2">Fitur yang punya aksi pada filter ini</div>
+                <div class="d-flex justify-content-between align-items-start"><div><div class="metric-label">Coding Update</div><div class="metric-value">{{ performance.github_total_commits }}</div></div><span class="metric-icon"><i class="bi bi-code-slash"></i></span></div>
+                <div class="text-muted small mt-1">{{ performance.github_coding_days }} hari aktif · {{ performance.github_coding_days * 10 }} poin</div>
             </div>
         </article>
         <article class="card metric-card border-0">
             <div class="card-body">
-                <div class="metric-label mb-2">Baris Detail</div>
-                <div class="metric-value">{{ performance.detail_total }}</div>
-                <div class="text-muted small mt-2">Siap diinspeksi pada tabel event</div>
+                <div class="d-flex justify-content-between align-items-start"><div><div class="metric-label">Total Baris Code</div><div class="metric-value">{{ '{:,}'.format(performance.github_line_totals.changed_lines) }}</div></div><span class="metric-icon"><i class="bi bi-file-earmark-code"></i></span></div>
+                <div class="text-muted small mt-1">+{{ '{:,}'.format(performance.github_line_totals.additions) }} tambah · −{{ '{:,}'.format(performance.github_line_totals.deletions) }} hapus</div>
+            </div>
+        </article>
+        <article class="card metric-card border-0">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start"><div><div class="metric-label">Admin Aktif</div><div class="metric-value">{{ performance.summary.unique_admins }}</div></div><span class="metric-icon"><i class="bi bi-people"></i></span></div>
+                <div class="text-muted small mt-1">{{ performance.github_contributors }} kontributor Coding</div>
+            </div>
+        </article>
+        <article class="card metric-card border-0">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start"><div><div class="metric-label">Skor Tertinggi</div><div class="metric-value">{{ performance.top_performance_score }}</div></div><span class="metric-icon"><i class="bi bi-bar-chart"></i></span></div>
+                <div class="text-muted small mt-1">{{ performance.detail_total }} event tersedia</div>
             </div>
         </article>
     </section>
@@ -288,10 +511,10 @@
     <section class="summary-grid">
         <article class="card panel-card">
             <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
                     <div>
-                        <h2 class="h5 mb-1">Tren Harian</h2>
-                        <div class="text-muted small">Volume aksi admin per hari pada tab aktif</div>
+                            <h2 class="h5 mb-1">Tren Harian</h2>
+                            <div class="text-muted small">Aktivitas Admin dan Coding Update per hari</div>
                     </div>
                 </div>
                 <div class="trend-wrap">
@@ -301,41 +524,44 @@
         </article>
         <article class="card panel-card">
             <div class="card-body">
-                <h2 class="h5 mb-3">Distribusi Ringkas</h2>
-                <div class="mini-list">
-                    {% for item in performance.top_actions[:5] %}
-                    <div class="mini-item">
-                        <div>
-                            <div class="fw-semibold">{{ item.action }}</div>
-                            <div class="text-muted small">Jenis aksi</div>
+                <h2 class="h5 mb-2">Distribusi Aktivitas</h2>
+                <div class="distribution-columns">
+                    <div class="distribution-group">
+                        <div class="section-heading">Aksi</div>
+                        <div class="mini-list">
+                            {% for item in performance.top_actions[:4] %}
+                            <div class="mini-item" title="{{ item.action }}"><span class="distribution-label">{{ item.action|replace('_', ' ') }}</span><span class="badge text-bg-primary rounded-pill">{{ item.count }}</span></div>
+                            {% else %}<div class="text-muted small">Belum ada data.</div>{% endfor %}
                         </div>
-                        <span class="badge text-bg-primary rounded-pill">{{ item.count }}</span>
                     </div>
-                    {% else %}
-                    <div class="text-muted small">Belum ada aksi pada filter ini.</div>
-                    {% endfor %}
-                    {% for item in performance.top_features[:3] %}
-                    <div class="mini-item">
-                        <div>
-                            <div class="fw-semibold">{{ item.feature_label }}</div>
-                            <div class="text-muted small">Fitur teraktif</div>
+                    <div class="distribution-group">
+                        <div class="section-heading">Fitur</div>
+                        <div class="mini-list">
+                            {% for item in performance.top_features[:4] %}
+                            <div class="mini-item" title="{{ item.feature_label }}"><span class="distribution-label">{{ item.feature_label }}</span><span class="badge text-bg-success rounded-pill">{{ item.count }}</span></div>
+                            {% else %}<div class="text-muted small">Belum ada data.</div>{% endfor %}
                         </div>
-                        <span class="badge text-bg-success rounded-pill">{{ item.count }}</span>
                     </div>
-                    {% endfor %}
+                    <div class="distribution-group">
+                        <div class="section-heading">Target</div>
+                        <div class="mini-list">
+                            {% for item in performance.top_targets[:4] %}
+                            <div class="mini-item" title="{{ item.target_type }}"><span class="distribution-label">{{ item.target_type|replace('_', ' ') }}</span><span class="badge text-bg-secondary rounded-pill">{{ item.count }}</span></div>
+                            {% else %}<div class="text-muted small">Belum ada data.</div>{% endfor %}
+                        </div>
+                    </div>
                 </div>
             </div>
         </article>
     </section>
 
-    <section class="row g-3">
-        <div class="col-xl-8">
-            <div class="card panel-card h-100">
+    <section>
+            <div class="card panel-card">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
                         <div>
                             <h2 class="h5 mb-1">Leaderboard Admin</h2>
-                            <div class="text-muted small">Urutan berdasarkan jumlah action mentah</div>
+                            <div class="text-muted small">Total skor = Aksi Admin + (Hari aktif Coding ×10). Semua commit tetap ditampilkan.</div>
                         </div>
                         <span class="badge text-bg-light">{{ performance.leaderboard|length }} admin</span>
                     </div>
@@ -343,8 +569,12 @@
                         <table class="table align-middle leaderboard-table mb-0">
                             <thead class="table-light">
                                 <tr>
+                                    <th class="text-center">#</th>
                                     <th>Admin</th>
-                                    <th>Total</th>
+                                    <th>Total Skor</th>
+                                    <th>Aksi Admin</th>
+                                    <th>Coding Update</th>
+                                    <th>Poin Coding</th>
                                     <th>Aksi Dominan</th>
                                     <th>Fitur</th>
                                     <th>Terakhir</th>
@@ -354,6 +584,7 @@
                                 {% for item in performance.leaderboard %}
                                 {% set top_action = item.action_counts|dictsort(by='value')|last if item.action_counts else None %}
                                 <tr>
+                                    <td class="text-center fw-bold text-muted">{{ loop.index }}</td>
                                     <td>
                                         <button type="button" class="admin-link js-admin-activity-trigger"
                                             data-admin-id="{{ item.actor_user_id or '' }}"
@@ -362,23 +593,50 @@
                                                 <span class="admin-avatar">{{ (item.actor_label or 'A')[0]|upper }}</span>
                                                 <div>
                                                     <div class="fw-semibold">{{ item.actor_label }}</div>
-                                                    <div class="text-muted small">ID: {{ item.actor_user_id or '-' }}</div>
+                                                    <div class="text-muted small">{{ item.actor_email or ('ID: ' ~ (item.actor_user_id or '-')) }}</div>
                                                 </div>
                                             </div>
                                         </button>
                                     </td>
-                                    <td><span class="badge text-bg-primary rounded-pill">{{ item.total_actions }}</span></td>
+                                    <td>
+                                        <div class="score-breakdown"><span class="badge text-bg-primary rounded-pill"
+                                            data-bs-toggle="tooltip"
+                                            title="Aksi Admin {{ item.total_actions }} + {{ item.coding_score_units }} hari aktif Coding × {{ item.coding_multiplier }} = {{ item.performance_total }} ({{ item.github_commits or 0 }} commit)">
+                                            {{ item.performance_total }}
+                                        </span><div class="text-muted small mt-1">{{ item.total_actions }} + {{ item.coding_points }}</div></div>
+                                    </td>
+                                    <td><strong>{{ item.total_actions }}</strong></td>
+                                    <td>
+                                        {% if item.github_username %}
+                                        <div class="text-nowrap"><strong>{{ item.github_commits if item.github_commits is not none else '-' }} update</strong><span class="text-muted"> / {{ item.coding_score_units }} day</span></div>
+                                        <div class="text-muted small text-nowrap">@{{ item.github_username }}</div>
+                                        {% else %}<span class="text-muted small">Belum dipetakan</span>{% endif %}
+                                    </td>
+                                    <td><span class="badge text-bg-dark rounded-pill">{{ item.coding_points }}</span><div class="text-muted small">{{ item.coding_score_units }} hari ×10</div></td>
                                     <td>{{ top_action[0] if top_action else '-' }}</td>
                                     <td>
-                                        {% for feature_key, count in item.feature_counts.items() %}
+                                        {% for feature_key, count in (item.feature_counts.items()|list)[:3] %}
                                         <span class="badge text-bg-light me-1 mb-1">{{ performance.feature_options.get(feature_key, feature_key) }}: {{ count }}</span>
                                         {% endfor %}
+                                        {% if item.feature_counts|length > 3 %}
+                                        <button class="feature-more-toggle" type="button"
+                                            data-bs-toggle="collapse"
+                                            data-bs-target="#adminFeatures{{ loop.index }}"
+                                            aria-expanded="false"
+                                            aria-controls="adminFeatures{{ loop.index }}"
+                                            data-more-count="{{ item.feature_counts|length - 3 }}">+{{ item.feature_counts|length - 3 }} lainnya</button>
+                                        <span class="collapse feature-overflow" id="adminFeatures{{ loop.index }}">
+                                            {% for feature_key, count in (item.feature_counts.items()|list)[3:] %}
+                                            <span class="badge text-bg-light me-1 mb-1">{{ performance.feature_options.get(feature_key, feature_key) }}: {{ count }}</span>
+                                            {% endfor %}
+                                        </span>
+                                        {% endif %}
                                     </td>
                                     <td class="text-muted small">{{ item.last_action_at|jakarta if item.last_action_at else '-' }}</td>
                                 </tr>
                                 {% else %}
                                 <tr>
-                                    <td colspan="5" class="text-center text-muted py-4">Belum ada data performa pada filter ini.</td>
+                                    <td colspan="9" class="text-center text-muted py-4">Belum ada data performa pada filter ini.</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -386,32 +644,11 @@
                     </div>
                 </div>
             </div>
-        </div>
-        <div class="col-xl-4">
-            <div class="card panel-card h-100">
-                <div class="card-body">
-                    <h2 class="h5 mb-3">Target Paling Sering Diubah</h2>
-                    <div class="mini-list">
-                        {% for item in performance.top_targets[:8] %}
-                        <div class="mini-item">
-                            <div>
-                                <div class="fw-semibold">{{ item.target_type }}</div>
-                                <div class="text-muted small">Target perubahan data</div>
-                            </div>
-                            <span class="badge text-bg-secondary rounded-pill">{{ item.count }}</span>
-                        </div>
-                        {% else %}
-                        <div class="text-muted small">Belum ada target yang tercatat.</div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        </div>
     </section>
 
     <section class="card panel-card">
         <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
                 <div>
                     <h2 class="h5 mb-1">Detail Event</h2>
                     <div class="text-muted small">Menampilkan {{ performance.detail_rows|length }} dari {{ performance.detail_total }} event</div>
@@ -468,7 +705,7 @@
                 <div id="adminActivityEmpty" class="text-center text-muted py-4 d-none">Belum ada aktivitas untuk admin ini.</div>
             </div>
             <div class="modal-footer justify-content-between">
-                <div class="text-muted small" id="adminActivityCounter">0 action</div>
+                <div class="text-muted small" id="adminActivityCounter">0 aktivitas</div>
                 <div class="d-flex align-items-center gap-2">
                     <button type="button" class="btn btn-outline-secondary btn-sm" id="adminActivityPrevPage">Prev</button>
                     <div class="text-muted small" id="adminActivityPagination">Page 1 / 1</div>
@@ -482,24 +719,83 @@
 
 {% block scripts %}
 {{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script>
+    (function () {
+        if (window.bootstrap) {
+            document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (element) {
+                new window.bootstrap.Tooltip(element);
+            });
+        }
+    })();
+
+    (function () {
+        document.querySelectorAll('.feature-overflow').forEach(function (panel) {
+            var button = document.querySelector('[data-bs-target="#' + panel.id + '"]');
+            if (!button) return;
+            var count = button.getAttribute('data-more-count') || '0';
+            panel.addEventListener('show.bs.collapse', function () {
+                button.textContent = 'Sembunyikan';
+            });
+            panel.addEventListener('hide.bs.collapse', function () {
+                button.textContent = '+' + count + ' lainnya';
+            });
+        });
+    })();
+
+    (function () {
+        var scope = document.getElementById('performancePeriodScope');
+        var monthField = document.getElementById('performanceMonthField');
+        var yearField = document.getElementById('performanceYearField');
+        if (!scope || !monthField || !yearField) return;
+
+        function updatePeriodFields() {
+            var showMonth = scope.value === 'month';
+            var showYear = scope.value === 'year';
+            monthField.classList.toggle('d-none', !showMonth);
+            yearField.classList.toggle('d-none', !showYear);
+            monthField.querySelector('input').disabled = !showMonth;
+            yearField.querySelector('select').disabled = !showYear;
+        }
+
+        scope.addEventListener('change', updatePeriodFields);
+        updatePeriodFields();
+    })();
+
     (function () {
         var chartEl = document.getElementById('dailyTrendChart');
         if (!chartEl || !window.Chart) return;
-        var labels = {{ performance.daily_series | map(attribute='day') | list | tojson }};
-        var values = {{ performance.daily_series | map(attribute='count') | list | tojson }};
+        var askaRows = {{ performance.daily_series | tojson }};
+        var githubRows = {{ performance.github_daily_series | tojson }};
+        var askaByDay = {};
+        var githubByDay = {};
+        askaRows.forEach(function (row) { askaByDay[row.day] = row.count; });
+        githubRows.forEach(function (row) { githubByDay[row.day] = row.count; });
+        var labels = Array.from(new Set(
+            askaRows.concat(githubRows).map(function (row) { return row.day; })
+        )).sort();
         new Chart(chartEl, {
             type: 'line',
             data: {
                 labels: labels,
                 datasets: [{
-                    label: 'Action Admin',
-                    data: values,
+                    label: 'Aksi Admin',
+                    data: labels.map(function (day) { return askaByDay[day] || 0; }),
                     borderColor: '#0d6efd',
                     backgroundColor: 'rgba(13,110,253,0.14)',
                     fill: true,
                     borderWidth: 2,
                     tension: 0.35,
+                    pointRadius: 3,
+                    pointHoverRadius: 4
+                }, {
+                    label: 'Coding Update',
+                    data: labels.map(function (day) { return githubByDay[day] || 0; }),
+                    borderColor: '#212529',
+                    backgroundColor: 'rgba(33,37,41,0.08)',
+                    fill: false,
+                    borderWidth: 2,
+                    tension: 0.3,
                     pointRadius: 3,
                     pointHoverRadius: 4
                 }]
@@ -508,7 +804,7 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: { display: false }
+                    legend: { display: true }
                 },
                 scales: {
                     x: {
@@ -548,7 +844,7 @@
             start: {{ (performance.start.strftime('%Y-%m-%d') if performance.start else '') | tojson }},
             end: {{ (performance.end.strftime('%Y-%m-%d') if performance.end else '') | tojson }}
         };
-        var endpointTemplate = {{ url_for('main.admin_performance_admin_events', admin_id=0) | tojson }};
+        var endpointTemplate = {{ url_for('pengaturan.admin_performance_admin_events', admin_id=0) | tojson }};
 
         function escapeHtml(value) {
             return String(value || '')
@@ -581,7 +877,7 @@
                     + '<div class="small text-muted">' + escapeHtml(row.detail_text || '-') + '</div>';
                 feedEl.appendChild(item);
             }
-            counterEl.textContent = (currentRows._total || 0) + ' action';
+            counterEl.textContent = (currentRows._total || 0) + ' aktivitas';
             paginationEl.textContent = 'Page ' + currentPage + ' / ' + totalPages();
             prevBtn.disabled = currentPage <= 1;
             nextBtn.disabled = currentPage >= totalPages();
@@ -629,7 +925,7 @@
                 currentRows._total = 0;
                 currentRows._totalPages = 1;
                 feedEl.innerHTML = '<div class="text-danger small">Gagal memuat aktivitas admin.</div>';
-                counterEl.textContent = '0 action';
+                counterEl.textContent = '0 aktivitas';
                 paginationEl.textContent = 'Page 1 / 1';
                 prevBtn.disabled = true;
                 nextBtn.disabled = true;

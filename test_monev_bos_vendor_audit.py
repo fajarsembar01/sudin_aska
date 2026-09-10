@@ -12,6 +12,13 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from dashboard.monev_bos import routes
 
 
+@pytest.fixture(autouse=True)
+def _allow_assigned_staff(monkeypatch):
+    monkeypatch.setattr(
+        routes.queries, "staff_can_audit_report", lambda staff_id, report_id: True
+    )
+
+
 @pytest.mark.parametrize("vendor_type", ["vendor", "narsum"])
 @pytest.mark.parametrize("status", ["pending", "verified"])
 def test_school_can_attach_pending_or_verified_entry_from_any_school(monkeypatch, vendor_type, status):

@@ -280,6 +280,7 @@
                 <table class="table table-hover align-middle mb-0" style="font-size: 0.85rem;">
                     <thead class="table-light">
                         <tr>
+                            <th class="print-only print-col-bku">No. BKU</th>
                             <th class="ps-3 ps-md-4 print-col-activity" width="30%">Nama Kegiatan & Vendor</th>
                             <th class="print-col-account" width="15%">
                                 <span class="no-print">No. BKU</span>
@@ -300,6 +301,7 @@
                     <tbody>
                         {% for act in activities %}
                         <tr class="sekolah-act-row" data-status="{{ act.status }}" data-bku="{{ act.bku_number or '' }}" data-original-order="{{ loop.index0 }}" data-activity-id="{{ act.id }}" data-activity-name="{{ act.activity_name|e }}" data-account-code="{{ act.account_code or '' }}" data-realized-amount="{{ act.realized_amount or 0 }}" data-vendor-name="{{ act.vendor_display_name or act.vendor_name or '' }}" data-item-name="{{ act.item_name or '' }}">
+                            <td class="print-only print-col-bku font-monospace">{{ act.bku_number or '-' }}</td>
                             <td class="ps-3 ps-md-4 print-col-activity">
                                 <strong class="text-body d-block">{{ act.activity_name }}</strong>
                                 <small class="text-body-secondary d-block mt-0.5">
@@ -2548,19 +2550,25 @@ document.addEventListener('DOMContentLoaded', function () {
         line-height: 1.05 !important;
     }
     .table .print-col-activity {
-        width: 24% !important;
+        width: 22% !important;
+    }
+    .table .print-col-bku {
+        display: table-cell !important;
+        width: 8% !important;
+        text-align: center !important;
+        white-space: nowrap !important;
     }
     .table .print-col-account {
         width: 12% !important;
     }
     .table .print-col-realization {
-        width: 14% !important;
+        width: 13% !important;
     }
     .table .print-col-documents {
-        width: 18% !important;
+        width: 17% !important;
     }
     .table .print-col-notes {
-        width: 32% !important;
+        width: 28% !important;
     }
     .print-signoff-block {
         padding-top: 4mm !important;

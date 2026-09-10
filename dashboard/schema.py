@@ -145,6 +145,40 @@ CREATE INDEX IF NOT EXISTS idx_dashboard_admin_action_logs_user
 ON dashboard_admin_action_logs (user_id, created_at DESC);
 """
 
+_GITHUB_ADMIN_COMMITS_SQL = """
+CREATE TABLE IF NOT EXISTS github_admin_commits (
+    id BIGSERIAL PRIMARY KEY,
+    repository TEXT NOT NULL,
+    github_username TEXT NOT NULL,
+    commit_sha TEXT NOT NULL,
+    committed_at TIMESTAMPTZ NOT NULL,
+    commit_url TEXT,
+    commit_message TEXT,
+    additions INTEGER,
+    deletions INTEGER,
+    stats_synced_at TIMESTAMPTZ,
+    synced_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (repository, github_username, commit_sha)
+);
+"""
+
+_GITHUB_ADMIN_COMMITS_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS idx_github_admin_commits_period
+ON github_admin_commits (repository, github_username, committed_at DESC);
+"""
+
+_GITHUB_SYNC_STATE_SQL = """
+CREATE TABLE IF NOT EXISTS github_admin_sync_state (
+    repository TEXT NOT NULL,
+    github_username TEXT NOT NULL,
+    author_email TEXT,
+    last_synced_at TIMESTAMPTZ,
+    last_error TEXT,
+    synced_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    PRIMARY KEY (repository, github_username)
+);
+"""
+
 _NOTIFICATIONS_SQL = """
 CREATE TABLE IF NOT EXISTS notifications (
     id SERIAL PRIMARY KEY,
@@ -1575,6 +1609,9 @@ def ensure_dashboard_schema() -> None:
         _DASHBOARD_ADMIN_ACTION_LOGS_INDEX_CREATED,
         _DASHBOARD_ADMIN_ACTION_LOGS_INDEX_FEATURE,
         _DASHBOARD_ADMIN_ACTION_LOGS_INDEX_USER,
+        _GITHUB_ADMIN_COMMITS_SQL,
+        _GITHUB_ADMIN_COMMITS_INDEX_SQL,
+        _GITHUB_SYNC_STATE_SQL,
         _NOTIFICATIONS_SQL,
         "ALTER TABLE notifications ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES dashboard_users(id) ON DELETE CASCADE",
         _NOTIFICATIONS_INDEX_STATUS,
@@ -1714,6 +1751,12 @@ def ensure_dashboard_schema() -> None:
         "ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS degree_prefix TEXT",
         "ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS degree_suffix TEXT",
         "ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS profile_photo_path TEXT",
+        "ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS github_username TEXT",
+        "ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS github_author_email TEXT",
+        "ALTER TABLE github_admin_sync_state ADD COLUMN IF NOT EXISTS author_email TEXT",
+        "ALTER TABLE github_admin_commits ADD COLUMN IF NOT EXISTS additions INTEGER",
+        "ALTER TABLE github_admin_commits ADD COLUMN IF NOT EXISTS deletions INTEGER",
+        "ALTER TABLE github_admin_commits ADD COLUMN IF NOT EXISTS stats_synced_at TIMESTAMPTZ",
         "ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS merged_to INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL",
         "ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS merged_at TIMESTAMPTZ",
         "ALTER TABLE bullying_reports ADD COLUMN IF NOT EXISTS category TEXT NOT NULL DEFAULT 'general'",

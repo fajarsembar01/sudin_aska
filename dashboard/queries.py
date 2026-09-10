@@ -4479,11 +4479,40 @@ def _normalize_admin_performance_event(row: Dict[str, Any]) -> Dict[str, Any]:
     return event
 
 
-def fetch_admin_activity_events() -> List[Dict[str, Any]]:
-    """Collect admin activity events across all dashboard apps."""
+def _execute_admin_performance_event_query(
+    cur,
+    query: str,
+    *,
+    timestamp_column: str,
+    start: Optional[datetime],
+    end: Optional[datetime],
+) -> None:
+    """Apply an index-friendly date range before an event query reaches Python."""
+    marker = "/* admin_performance_date_filter */"
+    clauses: List[str] = []
+    params: List[Any] = []
+    if start:
+        clauses.append(f"{timestamp_column} >= %s")
+        params.append(start.replace(hour=0, minute=0, second=0, microsecond=0))
+    if end:
+        clauses.append(f"{timestamp_column} < %s")
+        params.append(
+            end.replace(hour=0, minute=0, second=0, microsecond=0)
+            + timedelta(days=1)
+        )
+    replacement = ""
+    if clauses:
+        replacement = " AND " + " AND ".join(clauses)
+    cur.execute(query.replace(marker, replacement), params)
+
+
+def fetch_admin_activity_events(
+    *, start: Optional[datetime] = None, end: Optional[datetime] = None
+) -> List[Dict[str, Any]]:
+    """Collect date-bounded admin activity events across dashboard apps."""
     events: List[Dict[str, Any]] = []
     with get_cursor() as cur:
-        cur.execute("""
+        _execute_admin_performance_event_query(cur, """
             SELECT
                 'portal_activity_logs' AS source,
                 'panbers' AS feature_key,
@@ -4501,12 +4530,13 @@ def fetch_admin_activity_events() -> List[Dict[str, Any]]:
             JOIN dashboard_users u ON u.id = l.user_id
             WHERE l.user_id IS NOT NULL
               AND u.role = 'admin'
-            """)
+              /* admin_performance_date_filter */
+            """, timestamp_column="l.created_at", start=start, end=end)
         events.extend(
             _normalize_admin_performance_event(dict(row)) for row in cur.fetchall()
         )
 
-        cur.execute("""
+        _execute_admin_performance_event_query(cur, """
             SELECT
                 'monev_bos_audit_logs' AS source,
                 'monev_bos' AS feature_key,
@@ -4526,6 +4556,7 @@ def fetch_admin_activity_events() -> List[Dict[str, Any]]:
             LEFT JOIN dashboard_users school ON school.id = r.school_id
             LEFT JOIN monev_bos_activities a ON a.id = l.activity_id
             WHERE u.role = 'admin'
+              /* admin_performance_date_filter */
               AND NOT EXISTS (
                   SELECT 1
                   FROM dashboard_admin_action_logs logged
@@ -4540,11 +4571,12 @@ def fetch_admin_activity_events() -> List[Dict[str, Any]]:
                     AND logged.created_at BETWEEN l.created_at - INTERVAL '5 minutes'
                                               AND l.created_at + INTERVAL '5 minutes'
               )
-            """
+            """, timestamp_column="l.created_at", start=start, end=end
         )
         events.extend(_normalize_admin_performance_event(dict(row)) for row in cur.fetchall())
 
-        cur.execute(
+        _execute_admin_performance_event_query(
+            cur,
             """
             SELECT
                 'laporan_forms_created' AS source,
@@ -4562,6 +4594,7 @@ def fetch_admin_activity_events() -> List[Dict[str, Any]]:
             FROM laporan_forms f
             JOIN dashboard_users creator ON creator.id = f.created_by
             WHERE creator.role = 'admin'
+              /* admin_performance_date_filter */
               AND NOT EXISTS (
                   SELECT 1
                   FROM dashboard_admin_action_logs logged
@@ -4572,11 +4605,12 @@ def fetch_admin_activity_events() -> List[Dict[str, Any]]:
                     AND logged.created_at BETWEEN f.created_at - INTERVAL '5 minutes'
                                               AND f.created_at + INTERVAL '5 minutes'
               )
-            """
+            """, timestamp_column="f.created_at", start=start, end=end
         )
         events.extend(_normalize_admin_performance_event(dict(row)) for row in cur.fetchall())
 
-        cur.execute(
+        _execute_admin_performance_event_query(
+            cur,
             """
             SELECT
                 'laporan_forms_updated' AS source,
@@ -4599,6 +4633,7 @@ def fetch_admin_activity_events() -> List[Dict[str, Any]]:
             FROM laporan_forms f
             JOIN dashboard_users updater ON updater.id = f.updated_by
             WHERE updater.role = 'admin'
+              /* admin_performance_date_filter */
               AND f.status <> 'draft'
               AND f.updated_at > f.created_at + INTERVAL '1 second'
               AND NOT EXISTS (
@@ -4611,11 +4646,12 @@ def fetch_admin_activity_events() -> List[Dict[str, Any]]:
                     AND logged.created_at BETWEEN f.updated_at - INTERVAL '5 minutes'
                                               AND f.updated_at + INTERVAL '5 minutes'
               )
-            """
+            """, timestamp_column="f.updated_at", start=start, end=end
         )
         events.extend(_normalize_admin_performance_event(dict(row)) for row in cur.fetchall())
 
-        cur.execute(
+        _execute_admin_performance_event_query(
+            cur,
             """
             SELECT
                 'bullying_report_events' AS source,
@@ -4650,12 +4686,13 @@ def fetch_admin_activity_events() -> List[Dict[str, Any]]:
             ) actor_match ON TRUE
             WHERE COALESCE(TRIM(e.actor), '') <> ''
               AND actor_match.id IS NOT NULL
-            """)
+              /* admin_performance_date_filter */
+            """, timestamp_column="e.created_at", start=start, end=end)
         events.extend(
             _normalize_admin_performance_event(dict(row)) for row in cur.fetchall()
         )
 
-        cur.execute("""
+        _execute_admin_performance_event_query(cur, """
             SELECT
                 'psych_report_snapshot' AS source,
                 'aska_insight' AS feature_key,
@@ -4688,18 +4725,19 @@ def fetch_admin_activity_events() -> List[Dict[str, Any]]:
             ) actor_match ON TRUE
             WHERE COALESCE(TRIM(p.metadata->>'last_updated_by'), '') <> ''
               AND actor_match.id IS NOT NULL
+              /* admin_performance_date_filter */
               AND NOT EXISTS (
                   SELECT 1
                   FROM dashboard_admin_action_logs a
                   WHERE a.target_type = 'PSYCH_REPORT'
                     AND a.target_id = p.id
               )
-            """)
+            """, timestamp_column="p.updated_at", start=start, end=end)
         events.extend(
             _normalize_admin_performance_event(dict(row)) for row in cur.fetchall()
         )
 
-        cur.execute("""
+        _execute_admin_performance_event_query(cur, """
             SELECT
                 'guestbook_transactions' AS source,
                 'daftar_tamu' AS feature_key,
@@ -4727,18 +4765,19 @@ def fetch_admin_activity_events() -> List[Dict[str, Any]]:
             WHERE t.reviewed_by IS NOT NULL
               AND t.reviewed_at IS NOT NULL
               AND reviewer.role = 'admin'
+              /* admin_performance_date_filter */
               AND NOT EXISTS (
                   SELECT 1
                   FROM dashboard_admin_action_logs a
                   WHERE a.target_type = 'GUESTBOOK_TRANSACTION'
                     AND a.target_id = t.id
               )
-            """)
+            """, timestamp_column="t.reviewed_at", start=start, end=end)
         events.extend(
             _normalize_admin_performance_event(dict(row)) for row in cur.fetchall()
         )
 
-        cur.execute("""
+        _execute_admin_performance_event_query(cur, """
             SELECT
                 'general_guest_verification' AS source,
                 'daftar_tamu' AS feature_key,
@@ -4757,18 +4796,19 @@ def fetch_admin_activity_events() -> List[Dict[str, Any]]:
             WHERE g.verified_by IS NOT NULL
               AND g.verified_at IS NOT NULL
               AND verifier.role = 'admin'
+              /* admin_performance_date_filter */
               AND NOT EXISTS (
                   SELECT 1
                   FROM dashboard_admin_action_logs a
                   WHERE a.target_type = 'GENERAL_GUEST'
                     AND a.target_id = g.id
               )
-            """)
+            """, timestamp_column="g.verified_at", start=start, end=end)
         events.extend(
             _normalize_admin_performance_event(dict(row)) for row in cur.fetchall()
         )
 
-        cur.execute("""
+        _execute_admin_performance_event_query(cur, """
             SELECT
                 'general_guest_delete' AS source,
                 'daftar_tamu' AS feature_key,
@@ -4787,18 +4827,19 @@ def fetch_admin_activity_events() -> List[Dict[str, Any]]:
             WHERE g.deleted_by IS NOT NULL
               AND g.deleted_at IS NOT NULL
               AND deleter.role = 'admin'
+              /* admin_performance_date_filter */
               AND NOT EXISTS (
                   SELECT 1
                   FROM dashboard_admin_action_logs a
                   WHERE a.target_type = 'GENERAL_GUEST'
                     AND a.target_id = g.id
               )
-            """)
+            """, timestamp_column="g.deleted_at", start=start, end=end)
         events.extend(
             _normalize_admin_performance_event(dict(row)) for row in cur.fetchall()
         )
 
-        cur.execute("""
+        _execute_admin_performance_event_query(cur, """
             SELECT
                 'call_center_messages' AS source,
                 'call_center' AS feature_key,
@@ -4818,12 +4859,13 @@ def fetch_admin_activity_events() -> List[Dict[str, Any]]:
             WHERE m.direction = 'outbound'
               AND m.admin_user_id IS NOT NULL
               AND u.role = 'admin'
-            """)
+              /* admin_performance_date_filter */
+            """, timestamp_column="m.created_at", start=start, end=end)
         events.extend(
             _normalize_admin_performance_event(dict(row)) for row in cur.fetchall()
         )
 
-        cur.execute("""
+        _execute_admin_performance_event_query(cur, """
             SELECT
                 'dashboard_admin_action_logs' AS source,
                 a.feature_key,
@@ -4840,11 +4882,12 @@ def fetch_admin_activity_events() -> List[Dict[str, Any]]:
             FROM dashboard_admin_action_logs a
             JOIN dashboard_users u ON u.id = a.user_id
             WHERE u.role = 'admin'
+              /* admin_performance_date_filter */
               AND NOT (
                   a.feature_key = 'laporan'
                   AND UPPER(TRIM(a.action)) = 'AUTOSAVE'
               )
-            """)
+            """, timestamp_column="a.created_at", start=start, end=end)
         events.extend(
             _normalize_admin_performance_event(dict(row)) for row in cur.fetchall()
         )
@@ -4879,9 +4922,14 @@ def fetch_admin_performance_data(
     start: Optional[datetime] = None,
     end: Optional[datetime] = None,
     detail_limit: int = 300,
+    source_events: Optional[List[Dict[str, Any]]] = None,
 ) -> Dict[str, Any]:
     """Build aggregated admin performance data for the insight dashboard."""
-    raw_events = fetch_admin_activity_events()
+    raw_events = (
+        source_events
+        if source_events is not None
+        else fetch_admin_activity_events(start=start, end=end)
+    )
     selected_feature = (feature_key or "all").strip().lower() or "all"
     search_text = (search or "").strip().lower()
     selected_action = (action or "").strip().upper()
@@ -5032,6 +5080,9 @@ def fetch_admin_performance_data(
             else None
         )
         detail_rows.append(row)
+    activity_dates = [
+        event["created_at"] for event in filtered_events if event.get("created_at")
+    ]
 
     return {
         "feature_options": ADMIN_PERFORMANCE_FEATURE_LABELS,
@@ -5059,7 +5110,10 @@ def fetch_admin_performance_data(
                 {event.get("feature_key") for event in filtered_events}
             ),
             "latest_action_at": (
-                filtered_events[0]["created_at"] if filtered_events else None
+                max(activity_dates) if activity_dates else None
+            ),
+            "earliest_action_at": (
+                min(activity_dates) if activity_dates else None
             ),
         },
         "leaderboard": leaderboard,
@@ -5085,7 +5139,7 @@ def fetch_admin_activity_page(
     per_page: int = 10,
 ) -> Dict[str, Any]:
     """Return paginated admin activity rows using the same filters as the main performance page."""
-    raw_events = fetch_admin_activity_events()
+    raw_events = fetch_admin_activity_events(start=start, end=end)
     selected_feature = (feature_key or "all").strip().lower() or "all"
     selected_action = (action or "").strip().upper()
     selected_target = (target_type or "").strip().upper()

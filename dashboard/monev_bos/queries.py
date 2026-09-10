@@ -1,6 +1,6 @@
 from dashboard.db_access import get_cursor
 from typing import List, Dict, Any, Optional
-from datetime import date
+from datetime import date, datetime
 import json
 import secrets
 from .external_photos import generate_access_token
@@ -1762,6 +1762,38 @@ def get_teams_for_staff(staff_id: int) -> List[Dict[str, Any]]:
         )
         return [dict(row) for row in cur.fetchall()]
 
+
+def staff_can_audit_report(staff_id: int, report_id: int) -> bool:
+    """Return whether a staff user belongs to the team assigned to this report."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT EXISTS (
+                SELECT 1
+                FROM monev_bos_reports r
+                JOIN monev_bos_assignments a
+                  ON a.school_id = r.school_id
+                 AND a.period_id = r.period_id
+                JOIN monev_bos_teams t ON t.id = a.team_id
+                WHERE r.id = %s
+                  AND (
+                      t.leader_id = %s
+                      OR EXISTS (
+                          SELECT 1
+                          FROM monev_bos_team_members tm
+                          WHERE tm.team_id = a.team_id
+                            AND tm.staff_id = %s
+                      )
+                  )
+            ) AS allowed
+            """,
+            (report_id, staff_id, staff_id),
+        )
+        row = cur.fetchone()
+    if not row:
+        return False
+    return bool(row["allowed"] if isinstance(row, dict) else row[0])
+
 def get_team_members(team_id: int) -> List[Dict[str, Any]]:
     with get_cursor() as cur:
         cur.execute(
@@ -2190,6 +2222,401 @@ def get_audit_logs(report_id: int) -> List[Dict[str, Any]]:
         for log in logs:
             log["details"] = _verification_display_text(log.get("details"))
         return logs
+
+
+def list_staff_performance(
+    *, start: Optional[datetime] = None, end: Optional[datetime] = None
+) -> List[Dict[str, Any]]:
+    """Rank staff from meaningful Monev verification output in the selected scope."""
+    photo_conditions: List[str] = []
+    audit_conditions: List[str] = []
+    event_period_conditions: List[str] = []
+    params: Dict[str, Any] = {}
+    if start:
+        photo_conditions.append("d.created_at >= %(start)s")
+        audit_conditions.append("l.created_at >= %(start)s")
+        event_period_conditions.append("event.created_at >= %(start)s")
+        params["start"] = start
+    if end:
+        photo_conditions.append("d.created_at < %(end)s")
+        audit_conditions.append("l.created_at < %(end)s")
+        event_period_conditions.append("event.created_at < %(end)s")
+        params["end"] = end
+    photo_date_sql = "".join(f" AND {condition}" for condition in photo_conditions)
+    audit_date_sql = "".join(f" AND {condition}" for condition in audit_conditions)
+    event_period_sql = "".join(
+        f" AND {condition}" for condition in event_period_conditions
+    )
+    with get_cursor() as cur:
+        cur.execute(
+            f"""
+            WITH vendor_events_raw AS (
+                SELECT vlog.id, vlog.user_id AS staff_id, vlog.action, vlog.target_id,
+                       vlog.target_name, vlog.created_at
+                FROM dashboard_admin_action_logs vlog
+                JOIN dashboard_users u ON u.id = vlog.user_id
+                WHERE vlog.feature_key = 'monev_bos'
+                  AND vlog.target_type = 'MONEV_VENDOR'
+                  AND vlog.action IN ('VERIFY_APPROVE', 'VERIFY_REJECT')
+                UNION ALL
+                SELECT -vlegacy.id AS id, vlegacy.verified_by AS staff_id,
+                       CASE WHEN vlegacy.status = 'verified'
+                            THEN 'VERIFY_APPROVE' ELSE 'VERIFY_REJECT' END AS action,
+                       vlegacy.id AS target_id,
+                       CASE WHEN vlegacy.vendor_type = 'narsum'
+                            THEN COALESCE(vlegacy.owner_name, vlegacy.name)
+                            ELSE vlegacy.name END AS target_name,
+                       vlegacy.verified_at AS created_at
+                FROM monev_bos_vendors vlegacy
+                JOIN dashboard_users u ON u.id = vlegacy.verified_by
+                WHERE vlegacy.status IN ('verified', 'rejected')
+                  AND vlegacy.verified_at IS NOT NULL
+                  AND NOT EXISTS (
+                      SELECT 1 FROM dashboard_admin_action_logs recorded
+                      WHERE recorded.feature_key = 'monev_bos'
+                        AND recorded.target_type = 'MONEV_VENDOR'
+                        AND recorded.target_id = vlegacy.id
+                        AND recorded.action IN ('VERIFY_APPROVE', 'VERIFY_REJECT')
+                  )
+            ), vendor_events AS (
+                SELECT DISTINCT ON (target_id)
+                       id, staff_id, action, target_id, target_name, created_at
+                FROM vendor_events_raw
+                ORDER BY target_id, created_at DESC, id DESC
+            ), vendor_events_in_period AS (
+                SELECT event.* FROM vendor_events event
+                WHERE 1=1 {event_period_sql}
+            ), photo_stats AS (
+                SELECT d.uploaded_by AS staff_id, COUNT(d.id)::int AS uploaded_photos
+                FROM monev_bos_activity_docs d
+                JOIN monev_bos_activities photo_activity ON photo_activity.id = d.activity_id
+                JOIN monev_bos_reports photo_report ON photo_report.id = photo_activity.report_id
+                WHERE d.doc_type = 'live_photo'
+                  AND d.uploaded_by IS NOT NULL
+                  {photo_date_sql}
+                GROUP BY d.uploaded_by
+            ), audit_stats AS (
+                SELECT l.user_id AS staff_id,
+                       COUNT(l.id)::int AS audit_actions,
+                       COUNT(DISTINCT l.activity_id) FILTER (
+                           WHERE l.action = 'VALIDATE' AND l.activity_id IS NOT NULL
+                       )::int AS validated_activities,
+                       COUNT(DISTINCT l.report_id) FILTER (
+                           WHERE l.action = 'UPDATE_STATUS'
+                             AND COALESCE(l.details, '') ILIKE '%%completed%%'
+                       )::int AS completed_reports,
+                       COUNT(l.id) FILTER (
+                           WHERE l.action NOT IN ('VALIDATE', 'UPDATE_STATUS', 'UPLOAD_PHOTO')
+                       )::int AS supporting_actions,
+                       COUNT(DISTINCT r.school_id)::int AS handled_schools
+                FROM monev_bos_audit_logs l
+                JOIN dashboard_users u ON u.id = l.user_id AND u.role = 'staff'
+                JOIN monev_bos_reports r ON r.id = l.report_id
+                WHERE 1=1 {audit_date_sql}
+                GROUP BY l.user_id
+            ), vendor_stats AS (
+                SELECT staff_id,
+                       COUNT(*)::int AS vendor_decisions,
+                       COUNT(*) FILTER (WHERE action = 'VERIFY_APPROVE')::int AS verified_vendors,
+                       COUNT(*) FILTER (WHERE action = 'VERIFY_REJECT')::int AS rejected_vendors
+                FROM vendor_events_in_period
+                GROUP BY staff_id
+            ), active_timeline AS (
+                SELECT l.user_id AS staff_id, l.created_at
+                FROM monev_bos_audit_logs l
+                JOIN dashboard_users u ON u.id = l.user_id AND u.role = 'staff'
+                WHERE 1=1 {audit_date_sql}
+                UNION ALL
+                SELECT staff_id, created_at FROM vendor_events_in_period
+            ), timeline_stats AS (
+                SELECT staff_id,
+                       COUNT(DISTINCT created_at::date)::int AS active_days,
+                       MIN(created_at) AS first_action_at,
+                       MAX(created_at) AS last_action_at
+                FROM active_timeline
+                GROUP BY staff_id
+            ), staff_ids AS (
+                SELECT staff_id FROM audit_stats
+                UNION SELECT staff_id FROM vendor_stats
+                UNION SELECT staff_id FROM photo_stats
+            )
+            SELECT u.id AS staff_id,
+                   u.full_name AS staff_name,
+                   u.email AS staff_email,
+                   (COALESCE(audit_stats.audit_actions, 0) + COALESCE(vendor_stats.vendor_decisions, 0))::int AS total_actions,
+                   COALESCE(audit_stats.validated_activities, 0)::int AS validated_activities,
+                   COALESCE(audit_stats.completed_reports, 0)::int AS completed_reports,
+                   COALESCE(photo_stats.uploaded_photos, 0)::int AS uploaded_photos,
+                   COALESCE(audit_stats.supporting_actions, 0)::int AS supporting_actions,
+                   COALESCE(vendor_stats.vendor_decisions, 0)::int AS vendor_decisions,
+                   COALESCE(vendor_stats.verified_vendors, 0)::int AS verified_vendors,
+                   COALESCE(vendor_stats.rejected_vendors, 0)::int AS rejected_vendors,
+                   COALESCE(timeline_stats.active_days, 0)::int AS active_days,
+                   COALESCE(audit_stats.handled_schools, 0)::int AS handled_schools,
+                   timeline_stats.first_action_at,
+                   timeline_stats.last_action_at
+            FROM staff_ids
+            JOIN dashboard_users u ON u.id = staff_ids.staff_id AND u.role = 'staff'
+            LEFT JOIN audit_stats ON audit_stats.staff_id = u.id
+            LEFT JOIN vendor_stats ON vendor_stats.staff_id = u.id
+            LEFT JOIN photo_stats ON photo_stats.staff_id = u.id
+            LEFT JOIN timeline_stats ON timeline_stats.staff_id = u.id
+            """,
+            params,
+        )
+        rows = [dict(row) for row in cur.fetchall()]
+
+    for row in rows:
+        row["score"] = (
+            int(row.get("validated_activities") or 0)
+            + int(row.get("completed_reports") or 0)
+            + int(row.get("uploaded_photos") or 0)
+            + int(row.get("supporting_actions") or 0)
+            + int(row.get("vendor_decisions") or 0)
+        )
+    rows.sort(
+        key=lambda row: (
+            -int(row.get("score") or 0),
+            -int(row.get("validated_activities") or 0),
+            (row.get("staff_name") or row.get("staff_email") or "").casefold(),
+        )
+    )
+    for rank, row in enumerate(rows, start=1):
+        row["rank"] = rank
+    return rows
+
+
+def list_staff_performance_years() -> List[int]:
+    """Return calendar years that contain staff audit or live-photo activity."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT DISTINCT activity_year
+            FROM (
+                SELECT EXTRACT(YEAR FROM l.created_at)::int AS activity_year
+                FROM monev_bos_audit_logs l
+                JOIN dashboard_users u ON u.id = l.user_id AND u.role = 'staff'
+                UNION
+                SELECT EXTRACT(YEAR FROM d.created_at)::int AS activity_year
+                FROM monev_bos_activity_docs d
+                JOIN dashboard_users u ON u.id = d.uploaded_by AND u.role = 'staff'
+                WHERE d.doc_type = 'live_photo'
+                UNION
+                SELECT EXTRACT(YEAR FROM log.created_at)::int AS activity_year
+                FROM dashboard_admin_action_logs log
+                JOIN dashboard_users u ON u.id = log.user_id AND u.role = 'staff'
+                WHERE log.feature_key = 'monev_bos'
+                  AND log.target_type = 'MONEV_VENDOR'
+                  AND log.action IN ('VERIFY_APPROVE', 'VERIFY_REJECT')
+                UNION
+                SELECT EXTRACT(YEAR FROM v.verified_at)::int AS activity_year
+                FROM monev_bos_vendors v
+                JOIN dashboard_users u ON u.id = v.verified_by AND u.role = 'staff'
+                WHERE v.status IN ('verified', 'rejected')
+                  AND v.verified_at IS NOT NULL
+            ) years
+            WHERE activity_year IS NOT NULL
+            ORDER BY activity_year DESC
+            """
+        )
+        return [int(row["activity_year"]) for row in cur.fetchall()]
+
+
+def get_staff_performance_detail(
+    staff_id: int,
+    *,
+    start: Optional[datetime] = None,
+    end: Optional[datetime] = None,
+    detail_limit: int = 50,
+) -> Dict[str, Any]:
+    """Return one staff member's score, action distribution, and recent audit log."""
+    leaderboard = list_staff_performance(start=start, end=end)
+    summary = next(
+        (row for row in leaderboard if int(row.get("staff_id") or 0) == int(staff_id)),
+        {
+            "staff_id": staff_id,
+            "total_actions": 0,
+            "validated_activities": 0,
+            "completed_reports": 0,
+            "uploaded_photos": 0,
+            "supporting_actions": 0,
+            "vendor_decisions": 0,
+            "verified_vendors": 0,
+            "rejected_vendors": 0,
+            "active_days": 0,
+            "handled_schools": 0,
+            "score": 0,
+            "rank": None,
+            "first_action_at": None,
+            "last_action_at": None,
+        },
+    )
+    safe_limit = max(1, min(int(detail_limit or 50), 200))
+    audit_date_conditions: List[str] = []
+    event_period_conditions: List[str] = []
+    params: Dict[str, Any] = {"staff_id": staff_id, "limit": safe_limit}
+    if start:
+        audit_date_conditions.append("l.created_at >= %(start)s")
+        event_period_conditions.append("event.created_at >= %(start)s")
+        params["start"] = start
+    if end:
+        audit_date_conditions.append("l.created_at < %(end)s")
+        event_period_conditions.append("event.created_at < %(end)s")
+        params["end"] = end
+    audit_date_sql = "".join(f" AND {condition}" for condition in audit_date_conditions)
+    event_period_sql = "".join(
+        f" AND {condition}" for condition in event_period_conditions
+    )
+    with get_cursor() as cur:
+        cur.execute(
+            f"""
+            WITH vendor_events_raw AS (
+                SELECT vlog.id, vlog.user_id AS staff_id, vlog.action,
+                       vlog.target_id, vlog.created_at
+                FROM dashboard_admin_action_logs vlog
+                JOIN dashboard_users u ON u.id = vlog.user_id
+                WHERE vlog.feature_key = 'monev_bos'
+                  AND vlog.target_type = 'MONEV_VENDOR'
+                  AND vlog.action IN ('VERIFY_APPROVE', 'VERIFY_REJECT')
+                UNION ALL
+                SELECT -vlegacy.id AS id, vlegacy.verified_by AS staff_id,
+                       CASE WHEN vlegacy.status = 'verified'
+                            THEN 'VERIFY_APPROVE' ELSE 'VERIFY_REJECT' END AS action,
+                       vlegacy.id AS target_id, vlegacy.verified_at AS created_at
+                FROM monev_bos_vendors vlegacy
+                JOIN dashboard_users u ON u.id = vlegacy.verified_by
+                WHERE vlegacy.status IN ('verified', 'rejected')
+                  AND vlegacy.verified_at IS NOT NULL
+                  AND NOT EXISTS (
+                      SELECT 1 FROM dashboard_admin_action_logs recorded
+                      WHERE recorded.feature_key = 'monev_bos'
+                        AND recorded.target_type = 'MONEV_VENDOR'
+                        AND recorded.target_id = vlegacy.id
+                        AND recorded.action IN ('VERIFY_APPROVE', 'VERIFY_REJECT')
+                  )
+            ), vendor_events AS (
+                SELECT DISTINCT ON (target_id)
+                       staff_id, action, target_id, created_at
+                FROM vendor_events_raw
+                ORDER BY target_id, created_at DESC, id DESC
+            ), vendor_events_in_period AS (
+                SELECT event.* FROM vendor_events event
+                WHERE 1=1 {event_period_sql}
+            )
+            SELECT actions.action, COUNT(*)::int AS count
+            FROM (
+                SELECT l.action
+                FROM monev_bos_audit_logs l
+                WHERE l.user_id = %(staff_id)s {audit_date_sql}
+                UNION ALL
+                SELECT action FROM vendor_events_in_period WHERE staff_id = %(staff_id)s
+            ) actions
+            GROUP BY actions.action
+            ORDER BY count DESC, actions.action
+            """,
+            params,
+        )
+        action_counts = [dict(row) for row in cur.fetchall()]
+        cur.execute(
+            f"""
+            WITH vendor_events_raw AS (
+                SELECT vlog.id, vlog.user_id AS staff_id, vlog.action,
+                       vlog.target_id, vlog.target_name,
+                       vlog.created_at
+                FROM dashboard_admin_action_logs vlog
+                JOIN dashboard_users u ON u.id = vlog.user_id
+                WHERE vlog.feature_key = 'monev_bos'
+                  AND vlog.target_type = 'MONEV_VENDOR'
+                  AND vlog.action IN ('VERIFY_APPROVE', 'VERIFY_REJECT')
+                UNION ALL
+                SELECT -vlegacy.id AS id, vlegacy.verified_by AS staff_id,
+                       CASE WHEN vlegacy.status = 'verified'
+                            THEN 'VERIFY_APPROVE' ELSE 'VERIFY_REJECT' END AS action,
+                       vlegacy.id AS target_id,
+                       CASE WHEN vlegacy.vendor_type = 'narsum'
+                            THEN COALESCE(vlegacy.owner_name, vlegacy.name)
+                            ELSE vlegacy.name END AS target_name,
+                       vlegacy.verified_at AS created_at
+                FROM monev_bos_vendors vlegacy
+                JOIN dashboard_users u ON u.id = vlegacy.verified_by
+                WHERE vlegacy.status IN ('verified', 'rejected')
+                  AND vlegacy.verified_at IS NOT NULL
+                  AND NOT EXISTS (
+                      SELECT 1 FROM dashboard_admin_action_logs recorded
+                      WHERE recorded.feature_key = 'monev_bos'
+                        AND recorded.target_type = 'MONEV_VENDOR'
+                        AND recorded.target_id = vlegacy.id
+                        AND recorded.action IN ('VERIFY_APPROVE', 'VERIFY_REJECT')
+                  )
+            ), vendor_events AS (
+                SELECT DISTINCT ON (target_id)
+                       id, staff_id, action, target_id, target_name, created_at
+                FROM vendor_events_raw
+                ORDER BY target_id, created_at DESC, id DESC
+            ), vendor_events_in_period AS (
+                SELECT event.* FROM vendor_events event
+                WHERE 1=1 {event_period_sql}
+            )
+            SELECT recent.*
+            FROM (
+                SELECT l.id, l.action, l.details, l.created_at,
+                       l.report_id, l.activity_id,
+                       COALESCE(s.full_name, s.email, 'Sekolah') AS school_name,
+                       COALESCE(a.activity_name, 'Laporan sekolah') AS activity_name
+                FROM monev_bos_audit_logs l
+                JOIN monev_bos_reports r ON r.id = l.report_id
+                JOIN dashboard_users s ON s.id = r.school_id
+                LEFT JOIN monev_bos_activities a ON a.id = l.activity_id
+                WHERE l.user_id = %(staff_id)s {audit_date_sql}
+                UNION ALL
+                SELECT vlog.id, vlog.action, NULL::text AS details, vlog.created_at,
+                       NULL::integer AS report_id, NULL::integer AS activity_id,
+                       COALESCE(ps.name, school.full_name, 'Sekolah') AS school_name,
+                       COALESCE(vlog.target_name, vendor.name, 'Vendor/Narasumber') AS activity_name
+                FROM vendor_events_in_period vlog
+                LEFT JOIN monev_bos_vendors vendor ON vendor.id = vlog.target_id
+                LEFT JOIN dashboard_users school ON school.id = vendor.school_id
+                LEFT JOIN portal_schools ps ON ps.id = school.school_id
+                WHERE vlog.staff_id = %(staff_id)s
+            ) recent
+            ORDER BY recent.created_at DESC, recent.id DESC
+            LIMIT %(limit)s
+            """,
+            params,
+        )
+        recent_actions = [dict(row) for row in cur.fetchall()]
+        cur.execute(
+            f"""
+            SELECT COALESCE(s.full_name, s.email, 'Sekolah') AS school_name,
+                   STRING_AGG(
+                       DISTINCT ('TW ' || p.tw::text || '/' || p.year::text),
+                       ', '
+                   ) AS periods,
+                   COUNT(DISTINCT l.activity_id) FILTER (
+                       WHERE l.action = 'VALIDATE' AND l.activity_id IS NOT NULL
+                   )::int AS validated_activities,
+                   COUNT(l.id)::int AS action_count,
+                   MIN(l.created_at) AS first_action_at,
+                   MAX(l.created_at) AS last_action_at
+            FROM monev_bos_audit_logs l
+            JOIN monev_bos_reports r ON r.id = l.report_id
+            JOIN monev_bos_periods p ON p.id = r.period_id
+            JOIN dashboard_users s ON s.id = r.school_id
+            WHERE l.user_id = %(staff_id)s {audit_date_sql}
+            GROUP BY r.school_id, s.full_name, s.email
+            ORDER BY school_name
+            """,
+            params,
+        )
+        school_summaries = [dict(row) for row in cur.fetchall()]
+    for row in recent_actions:
+        row["details"] = _verification_display_text(row.get("details"))
+    return {
+        "summary": summary,
+        "action_counts": action_counts,
+        "recent_actions": recent_actions,
+        "school_summaries": school_summaries,
+    }
 
 
 # --- VENDOR MANAGEMENT QUERIES ---

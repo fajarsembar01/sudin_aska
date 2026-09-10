@@ -30,6 +30,8 @@ DB_PORT=5432
 DASHBOARD_SECRET_KEY=ganti-dengan-string-acak
 DASHBOARD_SESSION_DAYS=14
 DASHBOARD_DB_MAX_CONN=8
+# Opsional untuk sinkronisasi performa GitHub (disarankan agar batas API lebih besar)
+GITHUB_TOKEN=github_personal_access_token
 ASKA_WHATSAPP_URL=082143646463      # tombol cepat WA di ASKA Insight
 ```
 

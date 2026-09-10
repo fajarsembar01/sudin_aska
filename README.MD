@@ -209,6 +209,8 @@ ASKA_CC_HTTP_PORT=3100
 DASHBOARD_SECRET_KEY=ubah-ke-random-32-karakter
 DASHBOARD_SESSION_DAYS=14
 DASHBOARD_DB_MAX_CONN=8
+# Opsional untuk sinkronisasi performa GitHub (disarankan agar batas API lebih besar)
+GITHUB_TOKEN=github_personal_access_token
 
 ###############################################################################
 # Web Chat (OAuth Google)
@@ -545,4 +547,4 @@ Silakan buka _issue_ atau _pull request_ bila ada saran perbaikan. Semoga memban
 systemctl restart aska-wa-cc@aska.service
 sleep 20
 systemctl restart aska-wa-cc@main.service
-sleep 20   
+sleep 20

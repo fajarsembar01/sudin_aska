@@ -1,0 +1,175 @@
+{% extends "monev_bos/base_monev_bos.html" %}
+
+{% block monev_bos_content %}
+{% set summary = personal.summary or {} %}
+{% set action_labels = {
+    'VALIDATE': 'Validasi kegiatan',
+    'UPDATE_STATUS': 'Penyelesaian laporan',
+    'UPLOAD_PHOTO': 'Upload foto lapangan',
+    'ANNUL_SCHOOL_PHOTO': 'Anulir foto sekolah',
+    'RESTORE_SCHOOL_PHOTO': 'Pulihkan foto sekolah',
+    'DELETE_PHOTO': 'Hapus foto staff',
+    'VERIFY_APPROVE': 'Verifikasi vendor/narasumber',
+    'VERIFY_REJECT': 'Tolak vendor/narasumber'
+} %}
+<style>
+    .staff-performance-page { max-width: 1500px; }
+    .staff-performance-hero { border: 0; border-radius: 16px; background: linear-gradient(135deg, #0d6efd, #174ea6); color: #fff; }
+    .staff-performance-card { border-radius: 12px; }
+    .staff-rank-number { width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--bs-primary-bg-subtle); color: var(--bs-primary); font-weight: 800; }
+    .staff-score-card { min-height: 112px; }
+    .staff-score-value { font-size: 1.8rem; line-height: 1; }
+    .staff-breakdown-chip { display: inline-flex; align-items: center; gap: 5px; padding: 5px 9px; border: 1px solid var(--bs-border-color); border-radius: 999px; background: var(--bs-tertiary-bg); font-size: .72rem; }
+    .staff-performance-table th { white-space: nowrap; font-size: .72rem; text-transform: uppercase; color: var(--bs-secondary-color); }
+    .staff-performance-table td { vertical-align: middle; }
+    @media (max-width: 767.98px) {
+        .staff-performance-page { padding-left: 10px !important; padding-right: 10px !important; }
+        .staff-performance-hero { border-radius: 10px; }
+        .staff-performance-hero .card-body { padding: 14px !important; }
+        .staff-performance-hero h1 { font-size: 1.05rem; }
+        .staff-score-card { min-height: 92px; }
+        .staff-score-value { font-size: 1.35rem; }
+    }
+</style>
+
+<div class="container-fluid py-3 py-md-4 staff-performance-page">
+    <div class="card staff-performance-hero shadow-sm mb-3">
+        <div class="card-body p-3 p-md-4 d-flex justify-content-between align-items-center gap-3 flex-wrap">
+            <div>
+                <div class="small text-white-50 fw-semibold mb-1"><i class="bi bi-trophy-fill me-1"></i> MONEV BOS/BOP</div>
+                <h1 class="h3 fw-bold mb-1 text-white">Performa Staff Verifikator</h1>
+                <p class="small text-white-50 mb-0">Peringkat dan bukti aktivitas verifikasi pada periode terpilih.</p>
+            </div>
+            <div class="d-flex gap-2 flex-wrap">
+                <a href="{{ url_for('monev_bos.staff_dashboard') }}" class="btn btn-sm btn-outline-light rounded-pill px-3">
+                    <i class="bi bi-arrow-left me-1"></i>Tugas Verifikasi
+                </a>
+                <a href="{{ url_for('monev_bos.staff_performance_pdf', period_scope=period.scope, month=period.selected_month, year=period.selected_year) }}" class="btn btn-sm btn-light text-primary fw-bold rounded-pill px-3">
+                    <i class="bi bi-file-earmark-pdf-fill me-1"></i>Download PDF
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="card bg-body border shadow-xs staff-performance-card mb-3">
+        <div class="card-body p-3">
+            <form method="get" class="d-flex align-items-end gap-2 flex-wrap">
+                <div>
+                    <label for="staffPerformanceScope" class="form-label small fw-bold mb-1">Rentang waktu</label>
+                    <select class="form-select form-select-sm" id="staffPerformanceScope" name="period_scope" onchange="this.form.submit()">
+                        <option value="month" {% if period.scope == 'month' %}selected{% endif %}>Per Bulan</option>
+                        <option value="year" {% if period.scope == 'year' %}selected{% endif %}>Per Tahun</option>
+                        <option value="all" {% if period.scope == 'all' %}selected{% endif %}>Seluruhnya</option>
+                    </select>
+                </div>
+                {% if period.scope == 'month' %}
+                <div>
+                    <label for="staffPerformanceMonth" class="form-label small fw-bold mb-1">Bulan</label>
+                    <input type="month" class="form-control form-control-sm" id="staffPerformanceMonth" name="month" value="{{ period.selected_month }}" onchange="this.form.submit()">
+                </div>
+                {% elif period.scope == 'year' %}
+                <div>
+                    <label for="staffPerformanceYear" class="form-label small fw-bold mb-1">Tahun</label>
+                    <select class="form-select form-select-sm" id="staffPerformanceYear" name="year" onchange="this.form.submit()">
+                        {% for year in period.year_options %}<option value="{{ year }}" {% if year == period.selected_year %}selected{% endif %}>{{ year }}</option>{% endfor %}
+                    </select>
+                </div>
+                {% endif %}
+                <div class="ms-sm-auto small text-body-secondary pb-1">
+                    Aktivitas berdasarkan waktu pengerjaan: <strong>{{ period_label }}</strong>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="row g-2 g-md-3 mb-3">
+        {% for label, value, icon, color in [
+            ('Peringkat Saya', ('#' ~ summary.rank) if summary.rank else '-', 'trophy', 'warning'),
+            ('Total Skor', summary.score or 0, 'speedometer2', 'primary'),
+            ('Kegiatan Divalidasi', summary.validated_activities or 0, 'check2-square', 'success'),
+            ('Vendor/Narasumber', summary.vendor_decisions or 0, 'person-vcard', 'warning'),
+            ('Laporan Diselesaikan', summary.completed_reports or 0, 'file-earmark-check', 'info'),
+            ('Hari Aktif', summary.active_days or 0, 'calendar-check', 'secondary')
+        ] %}
+        <div class="col-6 col-lg">
+            <div class="card bg-body border shadow-xs staff-performance-card staff-score-card h-100">
+                <div class="card-body p-3">
+                    <div class="text-{{ color }} mb-2"><i class="bi bi-{{ icon }}"></i></div>
+                    <div class="staff-score-value fw-bold text-body">{{ value }}</div>
+                    <div class="small text-body-secondary mt-2">{{ label }}</div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="card bg-body border shadow-xs staff-performance-card mb-3">
+        <div class="card-header bg-body py-3 d-flex justify-content-between align-items-center gap-2 flex-wrap">
+            <div>
+                <h2 class="h6 fw-bold mb-1">Leaderboard Staff</h2>
+                <div class="small text-body-secondary">Seluruh staff yang memiliki aktivitas pada {{ period_label }}.</div>
+            </div>
+            <div class="d-flex gap-1 flex-wrap">
+                <span class="staff-breakdown-chip">Validasi ×1</span>
+                <span class="staff-breakdown-chip">Laporan ×1</span>
+                <span class="staff-breakdown-chip">Foto ×1</span>
+                <span class="staff-breakdown-chip">Pendukung ×1</span>
+                <span class="staff-breakdown-chip">Vendor/Narasumber ×1</span>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 staff-performance-table">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">Rank</th><th>Staff</th><th>Skor</th><th>Kegiatan</th><th>Vendor/Narasum</th><th>Laporan</th><th>Foto</th><th>Hari Aktif</th><th>Aksi Terakhir</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in leaderboard %}
+                    <tr {% if row.staff_id == current_user.id %}class="table-primary"{% endif %}>
+                        <td class="ps-3"><span class="staff-rank-number">{{ row.rank }}</span></td>
+                        <td><strong class="d-block">{{ row.staff_name or 'Staff' }}</strong></td>
+                        <td><strong class="text-primary fs-5">{{ row.score }}</strong></td>
+                        <td>{{ row.validated_activities }}</td><td title="Disetujui: {{ row.verified_vendors }} · Ditolak: {{ row.rejected_vendors }}">{{ row.vendor_decisions }}</td><td>{{ row.completed_reports }}</td><td>{{ row.uploaded_photos }}</td><td>{{ row.active_days }}</td>
+                        <td class="text-nowrap small">{{ row.last_action_at.strftime('%d/%m/%Y %H:%M') if row.last_action_at else '-' }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="9" class="text-center text-body-secondary py-4">Belum ada aktivitas staff pada periode ini.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-lg-4">
+            <div class="card bg-body border shadow-xs staff-performance-card h-100">
+                <div class="card-header bg-body py-3"><h2 class="h6 fw-bold mb-0">Rincian Aksi Saya</h2></div>
+                <div class="card-body p-3">
+                    {% for row in personal.action_counts %}
+                    <div class="d-flex justify-content-between align-items-center gap-2 py-2 {% if not loop.last %}border-bottom{% endif %}">
+                        <span class="small">{{ action_labels.get(row.action, row.action.replace('_', ' ').title()) }}</span>
+                        <span class="badge text-bg-primary rounded-pill">{{ row.count }}</span>
+                    </div>
+                    {% else %}<div class="text-body-secondary small">Belum ada aksi.</div>{% endfor %}
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-8">
+            <div class="card bg-body border shadow-xs staff-performance-card h-100">
+                <div class="card-header bg-body py-3"><h2 class="h6 fw-bold mb-0">Aktivitas Terbaru Saya</h2></div>
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0 align-middle">
+                        <thead class="table-light"><tr><th class="ps-3">Waktu</th><th>Sekolah</th><th>Aksi</th><th>Kegiatan</th></tr></thead>
+                        <tbody>
+                            {% for row in personal.recent_actions %}
+                            <tr><td class="ps-3 text-nowrap small">{{ row.created_at.strftime('%d/%m/%Y %H:%M') }}</td><td class="small">{{ row.school_name }}</td><td><span class="badge bg-body-tertiary text-body border">{{ action_labels.get(row.action, row.action) }}</span></td><td class="small">{{ row.activity_name }}</td></tr>
+                            {% else %}<tr><td colspan="4" class="text-center text-body-secondary py-4">Belum ada aktivitas.</td></tr>{% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

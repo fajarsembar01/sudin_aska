@@ -99,6 +99,11 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint in ['monev_bos.staff_performance', 'monev_bos.staff_performance_pdf'] %}active{% endif %}" href="{{ url_for('monev_bos.staff_performance') }}">
+                        <i class="bi bi-trophy nav-icon"></i>Performa Staff
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link {% if request.endpoint == 'monev_bos.admin_vendors' %}active{% endif %}" href="{{ url_for('monev_bos.admin_vendors') }}">
                         <i class="bi bi-shop nav-icon"></i>Verifikasi Vendor
                     </a>

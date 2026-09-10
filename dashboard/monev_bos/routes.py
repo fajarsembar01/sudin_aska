@@ -4,6 +4,7 @@ from dashboard.queries import record_admin_action
 from . import monev_bos_bp, queries
 from .bop_claims import get_school_bop_claim, is_bop_claim_period, recommend_expense_type
 from .external_photos import access_token_matches, validate_external_identity, validate_external_nip
+from .staff_performance_pdf import build_staff_performance_pdf
 import psycopg2
 import base64
 import shutil
@@ -3104,6 +3105,24 @@ def sekolah_activities_export():
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
+def _staff_audit_access_allowed(user, report_id: int) -> bool:
+    return bool(
+        user
+        and user.get("role") == "staff"
+        and queries.staff_can_audit_report(int(user.get("id") or 0), int(report_id))
+    )
+
+
+def _deny_staff_audit_action():
+    message = "Aksi verifikasi hanya dapat dilakukan oleh staff dari tim yang ditugaskan."
+    if (
+        request.headers.get("X-Requested-With") == "XMLHttpRequest"
+        or request.headers.get("Accept") == "application/json"
+    ):
+        return jsonify({"success": False, "message": message}), 403
+    abort(403, description=message)
+
+
 @monev_bos_bp.route("/staff")
 @role_required("staff", "admin")
 def staff_dashboard():
@@ -3179,6 +3198,104 @@ def staff_dashboard():
                            teams=teams, 
                            assigned_schools=assigned_schools)
 
+
+def _resolve_staff_performance_range():
+    now = datetime.now()
+    scope = (request.args.get("period_scope") or "month").strip().lower()
+    if scope not in {"month", "year", "all"}:
+        scope = "month"
+    selected_month = (request.args.get("month") or now.strftime("%Y-%m")).strip()
+    try:
+        month_start = datetime.strptime(selected_month, "%Y-%m")
+    except ValueError:
+        month_start = datetime(now.year, now.month, 1)
+        selected_month = month_start.strftime("%Y-%m")
+    selected_year = request.args.get("year", type=int) or now.year
+    if selected_year < 2000 or selected_year > 2100:
+        selected_year = now.year
+
+    start = end = None
+    month_names = (
+        "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+        "Juli", "Agustus", "September", "Oktober", "November", "Desember",
+    )
+    if scope == "month":
+        start = month_start
+        end = datetime(month_start.year + (month_start.month == 12), (month_start.month % 12) + 1, 1)
+        label = f"{month_names[month_start.month - 1]} {month_start.year}"
+    elif scope == "year":
+        start = datetime(selected_year, 1, 1)
+        end = datetime(selected_year + 1, 1, 1)
+        label = f"Tahun {selected_year}"
+    else:
+        label = "Seluruh Periode"
+
+    years = queries.list_staff_performance_years()
+    year_options = sorted(set(years + [now.year]), reverse=True)
+    return {
+        "scope": scope,
+        "selected_month": selected_month,
+        "selected_year": selected_year,
+        "year_options": year_options,
+        "start": start,
+        "end": end,
+        "label": label,
+    }
+
+
+@monev_bos_bp.route("/staff/performance")
+@role_required("staff")
+def staff_performance():
+    user = current_user() or {}
+    period = _resolve_staff_performance_range()
+    leaderboard = queries.list_staff_performance(
+        start=period["start"], end=period["end"]
+    )
+    personal = queries.get_staff_performance_detail(
+        int(user["id"]), start=period["start"], end=period["end"], detail_limit=30
+    )
+    return render_template(
+        "monev_bos/staff/performance.html",
+        period=period,
+        period_label=period["label"],
+        leaderboard=leaderboard,
+        personal=personal,
+    )
+
+
+@monev_bos_bp.route("/staff/performance/pdf")
+@role_required("staff")
+def staff_performance_pdf():
+    user = current_user() or {}
+    period = _resolve_staff_performance_range()
+    leaderboard = queries.list_staff_performance(
+        start=period["start"], end=period["end"]
+    )
+    personal = queries.get_staff_performance_detail(
+        int(user["id"]), start=period["start"], end=period["end"], detail_limit=50
+    )
+    output = build_staff_performance_pdf(
+        leaderboard=leaderboard,
+        personal=personal,
+        downloader=user,
+        period_label=period["label"],
+        generated_at=datetime.now(),
+    )
+    response = send_file(
+        output,
+        mimetype="application/pdf",
+        as_attachment=True,
+        download_name=(
+            f"performa-staff-{period['selected_month']}-{user['id']}.pdf"
+            if period["scope"] == "month"
+            else f"performa-staff-{period['selected_year']}-{user['id']}.pdf"
+            if period["scope"] == "year"
+            else f"performa-staff-seluruhnya-{user['id']}.pdf"
+        ),
+    )
+    response.headers["Cache-Control"] = "private, no-store"
+    return response
+
 @monev_bos_bp.route("/staff/my-team", methods=["GET", "POST"])
 @role_required("staff", "admin")
 def staff_my_team():
@@ -3239,6 +3356,12 @@ def staff_audit_report(report_id):
     if not report:
         flash("Laporan tidak ditemukan.", "danger")
         return redirect(url_for("monev_bos.staff_dashboard"))
+
+    can_audit = _staff_audit_access_allowed(user, report_id)
+    if user.get("role") == "staff" and not can_audit:
+        abort(403, description="Laporan ini bukan penugasan tim Anda.")
+    if request.method == "POST" and not can_audit:
+        return _deny_staff_audit_action()
         
     if request.method == "POST":
         action = request.form.get("action")
@@ -3262,9 +3385,10 @@ def staff_audit_report(report_id):
             )
             flash(f"Status laporan diubah menjadi {status}", "success")
             return redirect(url_for("monev_bos.staff_audit_report", report_id=report_id))
-    # Reset any stale in_review activity statuses back to pending when loading page
-    with queries.get_cursor(commit=True) as cur:
-        cur.execute("UPDATE monev_bos_activities SET status = 'pending' WHERE report_id = %s AND status = 'in_review'", (report_id,))
+    # Only an assigned verifier may change stale review state while opening the page.
+    if can_audit:
+        with queries.get_cursor(commit=True) as cur:
+            cur.execute("UPDATE monev_bos_activities SET status = 'pending' WHERE report_id = %s AND status = 'in_review'", (report_id,))
 
     fund_source = request.args.get("fund_source", "BOS").upper()
     if fund_source not in ["BOS", "BOP"]:
@@ -3290,7 +3414,7 @@ def staff_audit_report(report_id):
         ]
         act["staff_photos"] = [doc for doc in docs if doc["doc_type"] == "live_photo"]
         for photo in act["staff_photos"]:
-            photo["can_delete"] = True
+            photo["can_delete"] = can_audit
         act["live_photos"] = [doc for doc in docs if doc["doc_type"] in ["live_photo", "field_photo"]]
         act["has_school_live_photo"] = bool(act["valid_school_photos"])
         if act["has_school_live_photo"]:
@@ -3365,6 +3489,7 @@ def staff_audit_report(report_id):
         total_realized=total_realized,
         remaining_balance=remaining_balance,
         percent_spent=percent_spent,
+        can_audit=can_audit,
     )
 
 @monev_bos_bp.route("/staff/audit/activity/<int:activity_id>", methods=["POST"])
@@ -3382,6 +3507,8 @@ def staff_audit_activity(activity_id):
 
     # The activity is authoritative; never trust a submitted report ID for audit mutations.
     report_id = int(act.get("report_id") or 1)
+    if not _staff_audit_access_allowed(user, report_id):
+        return _deny_staff_audit_action()
     
     action = request.form.get("action")
     

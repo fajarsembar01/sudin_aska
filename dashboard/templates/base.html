@@ -186,14 +186,14 @@
 
                     {% if is_admin %}
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle {% if request.endpoint in ['pengaturan.manage_users', 'pengaturan.preview_accounts', 'auth.manage_aska_users', 'auth.manage_monev_teams', 'auth.telegram_notifications', 'auth.whatsapp_link_settings', 'auth.whatsapp_bridge_settings', 'main.admin_performance'] %}active{% endif %}"
+                        <a class="nav-link dropdown-toggle {% if request.endpoint in ['pengaturan.manage_users', 'pengaturan.preview_accounts', 'auth.manage_aska_users', 'auth.manage_monev_teams', 'auth.telegram_notifications', 'auth.whatsapp_link_settings', 'auth.whatsapp_bridge_settings', 'pengaturan.admin_performance'] %}active{% endif %}"
                             href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="bi bi-gear nav-icon"></i>Manajemen
                         </a>
                         <ul class="dropdown-menu">
                             <li>
-                                <a class="dropdown-item {% if request.endpoint == 'main.admin_performance' %}active{% endif %}"
-                                    href="{{ url_for('main.admin_performance') }}">
+                                <a class="dropdown-item {% if request.endpoint == 'pengaturan.admin_performance' %}active{% endif %}"
+                                    href="{{ url_for('pengaturan.admin_performance') }}">
                                     <i class="bi bi-person-lines-fill me-2"></i>Performa Admin
                                 </a>
                             </li>

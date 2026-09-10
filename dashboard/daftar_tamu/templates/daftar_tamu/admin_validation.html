@@ -63,6 +63,133 @@
         border-color: #fda4af;
         color: #881337;
     }
+
+    .validation-photo-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 1rem;
+    }
+
+    .validation-photo-card {
+        min-width: 0;
+        overflow: hidden;
+        border: 1px solid var(--border-soft);
+        border-radius: 14px;
+        background: var(--bg-surface);
+        transition: transform .16s ease, box-shadow .16s ease;
+    }
+
+    .validation-photo-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 .55rem 1.1rem rgba(15, 23, 42, .11);
+    }
+
+    .validation-photo-wrap {
+        position: relative;
+        aspect-ratio: 4 / 3;
+        overflow: hidden;
+        background: #eef2f6;
+    }
+
+    .validation-photo-wrap img {
+        width: 100%;
+        height: 100%;
+        display: block;
+        object-fit: cover;
+    }
+
+    .validation-photo-open {
+        width: 100%;
+        height: 100%;
+        display: block;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        cursor: zoom-in;
+    }
+
+    .validation-photo-modal .modal-dialog {
+        max-width: min(1100px, calc(100vw - 1.5rem));
+    }
+
+    .validation-zoom-stage {
+        max-height: 78vh;
+        overflow: auto;
+        background: #111827;
+        text-align: center;
+        overscroll-behavior: contain;
+        cursor: grab;
+        touch-action: none;
+        user-select: none;
+    }
+
+    .validation-zoom-stage.is-dragging {
+        cursor: grabbing;
+    }
+
+    .validation-zoom-image {
+        width: 100%;
+        height: auto;
+        min-height: 240px;
+        display: block;
+        margin: auto;
+        object-fit: contain;
+        pointer-events: none;
+        -webkit-user-drag: none;
+    }
+
+    .validation-zoom-level {
+        min-width: 56px;
+        text-align: center;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .validation-photo-fallback {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-muted);
+    }
+
+    .validation-check-wrap {
+        position: absolute;
+        top: .65rem;
+        left: .65rem;
+        z-index: 2;
+        padding: .38rem .48rem;
+        border-radius: .55rem;
+        background: rgba(255,255,255,.92);
+        box-shadow: 0 2px 8px rgba(0,0,0,.14);
+    }
+
+    .validation-photo-status {
+        position: absolute;
+        top: .65rem;
+        right: .65rem;
+        z-index: 2;
+    }
+
+    .validation-photo-body {
+        padding: .8rem;
+    }
+
+    .validation-photo-meta {
+        display: grid;
+        gap: .45rem;
+    }
+
+    .validation-photo-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .5rem;
+        padding: .65rem .8rem;
+        border-top: 1px solid var(--border-soft);
+        background: rgba(248,249,250,.65);
+    }
 </style>
 {% endblock %}
 
@@ -218,138 +345,78 @@
             </div>
             {% endif %}
 
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="bg-light">
-                        <tr>
-                            <th style="width: 36px;"></th>
-                            <th>Waktu</th>
-                            <th>Sekolah</th>
-                            <th>Tamu</th>
-                            <th>Status</th>
-                            <th class="text-end">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for row in rows %}
-                        <tr data-transaction-id="{{ row.id }}"
-                            data-duplicate-warning="{{ row.same_day_duplicate_warning or '' }}">
-                            <td>
-                                <input class="form-check-input admin-select" type="checkbox" name="transaction_ids"
-                                    value="{{ row.id }}">
-                            </td>
-                            <td>
-                                <div class="fw-semibold">{{ row.visit_at|jakarta('%d %b %Y') }}</div>
-                                <div class="small text-muted">{{ row.visit_at|jakarta('%H:%M') }} WIB</div>
-                            </td>
-                            <td>
-                                <div class="fw-semibold">{{ row.school_name }}</div>
-                                <div class="small text-muted">
-                                    {{ row.npsn }} &bull; {{ row.jenjang or '-' }} &bull; {{ row.kecamatan or '-' }}
-                                </div>
-                            </td>
-                            <td>
-                                <div class="fw-semibold">{{ row.guest_display or '-' }}</div>
-                                <div class="small text-muted">{{ row.guest_count or 0 }} tamu</div>
-                                {% if row.duplicate_repeat_count and row.duplicate_repeat_count >= 2 %}
-                                <div class="mt-1">
-                                    <span class="badge same-day-duplicate-badge"
-                                        title="{{ row.same_day_duplicate_warning }}">
-                                        <i class="bi bi-exclamation-triangle-fill me-1"></i>
-                                        Duplikat {{ row.duplicate_repeat_count }}X
-                                    </span>
-                                </div>
-                                <div class="small text-danger mt-1">
-                                    {% for duplicate in row.same_day_approved_duplicates %}
-                                    {{ duplicate.guest_name }}{% if not loop.last %}, {% endif %}
-                                    {% endfor %}
-                                    sudah terverifikasi di sekolah ini pada hari yang sama.
-                                </div>
-                                {% endif %}
-                                {% if row.staff_note_text %}
-                                <div class="small mt-1">
-                                    <span class="badge text-bg-{% if row.staff_note_level == 'mendesak' %}danger{% elif row.staff_note_level == 'tindak_lanjut' %}warning{% elif row.staff_note_level == 'pantau' %}info{% else %}secondary{% endif %}">
-                                        Catatan Staff
-                                        {% if row.staff_note_level == 'mendesak' %}Sangat Butuh Penanganan
-                                        {% elif row.staff_note_level == 'tindak_lanjut' %}Butuh Penanganan
-                                        {% elif row.staff_note_level == 'pantau' %}Perlu Dipantau
-                                        {% elif row.staff_note_level == 'tidak_perlu' %}Tidak Perlu Penanganan
-                                        {% else %}-
-                                        {% endif %}
-                                    </span>
-                                </div>
-                                <div class="small text-muted" title="{{ row.staff_note_text }}">
-                                    {{ row.staff_note_text[:120] }}{% if row.staff_note_text|length > 120 %}...{% endif %}
-                                </div>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if row.status == 'approved' %}
-                                <span class="badge text-bg-success">Disetujui</span>
-                                {% elif row.status == 'rejected' %}
-                                <span class="badge text-bg-danger">Ditolak</span>
-                                {% else %}
-                                <span class="badge text-bg-warning">Menunggu</span>
-                                {% endif %}
-                            </td>
-                            <td class="text-end">
-                                <div class="d-inline-flex gap-1">
-                                    {% if row.photo_path %}
-                                    {% set photo_name = row.photo_path.split('uploads/portal/')[-1] %}
-                                    <a href="{{ url_for('portal.uploaded_file', filename=photo_name) }}" target="_blank"
-                                        class="btn btn-sm btn-outline-info" title="Lihat foto" aria-label="Lihat foto">
-                                        <i class="bi bi-eye"></i>
-                                    </a>
-                                    {% endif %}
-                                    <button type="button" class="btn btn-sm btn-outline-primary" title="Detail"
-                                        aria-label="Detail" data-action="detail" data-transaction-id="{{ row.id }}">
-                                        <i class="bi bi-search"></i>
-                                    </button>
-                                    {% if row.status == 'pending' %}
-                                    <button type="button" class="btn btn-sm btn-outline-success" title="Setujui"
-                                        aria-label="Setujui" data-action="approve" data-transaction-id="{{ row.id }}">
-                                        <i class="bi bi-check-lg"></i>
-                                    </button>
-                                    <button type="button" class="btn btn-sm btn-outline-danger" title="Tolak"
-                                        aria-label="Tolak" data-action="reject" data-transaction-id="{{ row.id }}">
-                                        <i class="bi bi-x-lg"></i>
-                                    </button>
-                                    {% elif row.status == 'approved' %}
-                                    <button type="button" class="btn btn-sm btn-outline-warning" title="Kembalikan ke pending"
-                                        aria-label="Kembalikan ke pending" data-action="pending" data-transaction-id="{{ row.id }}">
-                                        <i class="bi bi-arrow-counterclockwise"></i>
-                                    </button>
-                                    <button type="button" class="btn btn-sm btn-outline-danger" title="Tolak"
-                                        aria-label="Tolak" data-action="reject" data-transaction-id="{{ row.id }}">
-                                        <i class="bi bi-x-lg"></i>
-                                    </button>
-                                    {% elif row.status == 'rejected' %}
-                                    <button type="button" class="btn btn-sm btn-outline-warning" title="Kembalikan ke pending"
-                                        aria-label="Kembalikan ke pending" data-action="pending" data-transaction-id="{{ row.id }}">
-                                        <i class="bi bi-arrow-counterclockwise"></i>
-                                    </button>
-                                    <button type="button" class="btn btn-sm btn-outline-success" title="Setujui"
-                                        aria-label="Setujui" data-action="approve" data-transaction-id="{{ row.id }}">
-                                        <i class="bi bi-check-lg"></i>
-                                    </button>
-                                    {% endif %}
-                                </div>
-                            </td>
-                        </tr>
+            <div class="validation-photo-grid">
+                {% for row in rows %}
+                <article class="validation-photo-card" data-transaction-id="{{ row.id }}"
+                    data-duplicate-warning="{{ row.same_day_duplicate_warning or '' }}">
+                    <div class="validation-photo-wrap">
+                        <label class="validation-check-wrap" title="Pilih foto ini">
+                            <input class="form-check-input admin-select m-0" type="checkbox" name="transaction_ids" value="{{ row.id }}" aria-label="Pilih transaksi {{ row.id }}">
+                        </label>
+                        <div class="validation-photo-status">
+                            {% if row.status == 'approved' %}<span class="badge text-bg-success validation-status-badge">Disetujui</span>
+                            {% elif row.status == 'rejected' %}<span class="badge text-bg-danger validation-status-badge">Ditolak</span>
+                            {% else %}<span class="badge text-bg-warning validation-status-badge">Menunggu</span>{% endif %}
+                        </div>
+                        {% if row.photo_path %}
+                        {% set photo_name = row.photo_path.split('uploads/portal/')[-1] %}
+                        <button type="button" class="validation-photo-open" title="Perbesar foto"
+                            data-photo-url="{{ url_for('portal.uploaded_file', filename=photo_name) }}"
+                            data-photo-title="{{ row.school_name }} · {{ row.guest_display or 'Tamu' }}">
+                            <img src="{{ url_for('portal.uploaded_file', filename=photo_name) }}" alt="Foto kunjungan {{ row.guest_display or row.school_name }}" loading="lazy">
+                        </button>
                         {% else %}
-                        <tr>
-                            <td colspan="6" class="text-center text-muted py-4">Belum ada transaksi untuk filter ini.</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                        <div class="validation-photo-fallback"><i class="bi bi-image fs-1"></i><span class="small mt-2">Foto tidak tersedia</span></div>
+                        {% endif %}
+                    </div>
+                    <div class="validation-photo-body">
+                        <div class="validation-photo-meta">
+                            <div class="d-flex justify-content-between gap-2 small text-muted">
+                                <span>{{ row.visit_at|jakarta('%d %b %Y') }}</span><span>{{ row.visit_at|jakarta('%H:%M') }} WIB</span>
+                            </div>
+                            <div>
+                                <div class="fw-bold text-truncate" title="{{ row.school_name }}">{{ row.school_name }}</div>
+                                <div class="small text-muted text-truncate">{{ row.npsn }} · {{ row.jenjang or '-' }} · {{ row.kecamatan or '-' }}</div>
+                            </div>
+                            <div>
+                                <div class="fw-semibold text-truncate" title="{{ row.guest_display or '-' }}">{{ row.guest_display or '-' }}</div>
+                                <div class="small text-muted">{{ row.guest_count or 0 }} tamu</div>
+                            </div>
+                            {% if row.duplicate_repeat_count and row.duplicate_repeat_count >= 2 %}
+                            <span class="badge same-day-duplicate-badge" title="{{ row.same_day_duplicate_warning }}"><i class="bi bi-exclamation-triangle-fill me-1"></i>Duplikat {{ row.duplicate_repeat_count }}X</span>
+                            {% endif %}
+                            {% if row.staff_note_text %}
+                            <div class="small text-muted text-truncate" title="{{ row.staff_note_text }}"><i class="bi bi-chat-left-text me-1"></i>{{ row.staff_note_text }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <footer class="validation-photo-footer">
+                        <span class="small text-muted">#{{ row.id }}</span>
+                        <div class="d-inline-flex gap-1 validation-card-actions">
+                            <button type="button" class="btn btn-sm btn-outline-primary" title="Detail" aria-label="Detail" data-action="detail" data-transaction-id="{{ row.id }}"><i class="bi bi-search"></i></button>
+                            {% if row.status == 'pending' %}
+                            <button type="button" class="btn btn-sm btn-outline-success" title="Setujui" aria-label="Setujui" data-action="approve" data-transaction-id="{{ row.id }}"><i class="bi bi-check-lg"></i></button>
+                            <button type="button" class="btn btn-sm btn-outline-danger" title="Tolak" aria-label="Tolak" data-action="reject" data-transaction-id="{{ row.id }}"><i class="bi bi-x-lg"></i></button>
+                            {% elif row.status == 'approved' %}
+                            <button type="button" class="btn btn-sm btn-outline-warning" title="Kembalikan ke pending" aria-label="Kembalikan ke pending" data-action="pending" data-transaction-id="{{ row.id }}"><i class="bi bi-arrow-counterclockwise"></i></button>
+                            <button type="button" class="btn btn-sm btn-outline-danger" title="Tolak" aria-label="Tolak" data-action="reject" data-transaction-id="{{ row.id }}"><i class="bi bi-x-lg"></i></button>
+                            {% elif row.status == 'rejected' %}
+                            <button type="button" class="btn btn-sm btn-outline-warning" title="Kembalikan ke pending" aria-label="Kembalikan ke pending" data-action="pending" data-transaction-id="{{ row.id }}"><i class="bi bi-arrow-counterclockwise"></i></button>
+                            <button type="button" class="btn btn-sm btn-outline-success" title="Setujui" aria-label="Setujui" data-action="approve" data-transaction-id="{{ row.id }}"><i class="bi bi-check-lg"></i></button>
+                            {% endif %}
+                        </div>
+                    </footer>
+                </article>
+                {% else %}
+                <div class="text-center text-muted py-5">Belum ada foto transaksi untuk filter ini.</div>
+                {% endfor %}
             </div>
         </form>
 
         {% set start_row = ((page - 1) * per_page) + 1 if total_rows else 0 %}
         {% set end_row = ((page - 1) * per_page) + (rows|length) if total_rows else 0 %}
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3">
-            <small class="text-muted">Menampilkan {{ start_row }}-{{ end_row }} dari {{ total_rows }} transaksi</small>
+            <small class="text-muted">Menampilkan {{ start_row }}-{{ end_row }} dari {{ total_rows }} foto</small>
             <ul class="pagination pagination-sm mb-0">
                 <li class="page-item {% if page <= 1 %}disabled{% endif %}">
                     <a class="page-link" href="{{ url_for('daftar_tamu.admin_validation', q=search_query, status=status, staff_note_level=staff_note_level, per_page=per_page, page=page-1, date_from=date_from_str, date_to=date_to_str) }}">Prev</a>
@@ -368,6 +435,30 @@
         </div>
     </div>
 </section>
+
+<div class="modal fade validation-photo-modal" id="validationPhotoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content border-0">
+            <div class="modal-header py-2">
+                <h5 class="modal-title text-truncate" id="validationPhotoTitle">Foto Kunjungan</h5>
+                <div class="d-flex align-items-center gap-1 ms-auto me-3">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="validationZoomOut" title="Perkecil"><i class="bi bi-dash-lg"></i></button>
+                    <span class="small fw-semibold validation-zoom-level" id="validationZoomLevel">100%</span>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="validationZoomIn" title="Perbesar"><i class="bi bi-plus-lg"></i></button>
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="validationZoomReset" title="Ukuran awal"><i class="bi bi-arrow-counterclockwise"></i></button>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+            </div>
+            <div class="modal-body p-0 validation-zoom-stage" id="validationZoomStage">
+                <img class="validation-zoom-image" id="validationZoomImage" src="" alt="Foto kunjungan yang diperbesar">
+            </div>
+            <div class="modal-footer py-2 justify-content-between">
+                <small class="text-muted"><i class="bi bi-mouse me-1"></i>Arahkan kursor untuk zoom. Klik kiri dan tahan untuk menggeser foto.</small>
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Detail Modal -->
 <div class="modal fade" id="transactionDetailModal" tabindex="-1" aria-hidden="true">
@@ -493,6 +584,12 @@
         var guestPhotoTitleEl = document.getElementById('guestProfilePhotoTitle');
         var guestPhotoImageEl = document.getElementById('guestProfilePhotoImage');
         var guestPhotoFallbackEl = document.getElementById('guestProfilePhotoFallback');
+        var validationPhotoModalEl = document.getElementById('validationPhotoModal');
+        var validationPhotoModal = new bootstrap.Modal(validationPhotoModalEl);
+        var validationZoomImage = document.getElementById('validationZoomImage');
+        var validationZoomStage = document.getElementById('validationZoomStage');
+        var validationZoomLevel = document.getElementById('validationZoomLevel');
+        var validationZoom = 1;
         var activeStatusFilter = '{{ status }}';
         var openTransactionId = {{ open_transaction_id if open_transaction_id else 'null' }};
         var currentTransactionId = null;
@@ -508,6 +605,112 @@
             var rel = String(path).split('uploads/portal/').pop();
             return uploadBase.replace('__FILE__', rel);
         }
+
+        function resetValidationZoom() {
+            validationZoom = 1;
+            validationZoomImage.style.width = '100%';
+            validationZoomLevel.textContent = '100%';
+            validationZoomStage.scrollTop = 0;
+            validationZoomStage.scrollLeft = 0;
+        }
+
+        function setValidationZoom(nextZoom, focusClientX, focusClientY) {
+            var oldZoom = validationZoom;
+            var newZoom = Math.max(0.5, Math.min(4, Number(nextZoom) || 1));
+            if (newZoom === oldZoom) return;
+
+            var stageRect = validationZoomStage.getBoundingClientRect();
+            var imageRect = validationZoomImage.getBoundingClientRect();
+            var focusX = Number.isFinite(focusClientX) ? focusClientX : stageRect.left + stageRect.width / 2;
+            var focusY = Number.isFinite(focusClientY) ? focusClientY : stageRect.top + stageRect.height / 2;
+            var imageX = imageRect.width ? (focusX - imageRect.left) / imageRect.width : 0.5;
+            var imageY = imageRect.height ? (focusY - imageRect.top) / imageRect.height : 0.5;
+
+            imageX = Math.max(0, Math.min(1, imageX));
+            imageY = Math.max(0, Math.min(1, imageY));
+            validationZoom = newZoom;
+            validationZoomImage.style.width = Math.round(validationZoom * 100) + '%';
+            validationZoomLevel.textContent = Math.round(validationZoom * 100) + '%';
+
+            window.requestAnimationFrame(function () {
+                var resizedImageRect = validationZoomImage.getBoundingClientRect();
+                validationZoomStage.scrollLeft += resizedImageRect.left + (resizedImageRect.width * imageX) - focusX;
+                validationZoomStage.scrollTop += resizedImageRect.top + (resizedImageRect.height * imageY) - focusY;
+            });
+        }
+
+        function openValidationPhoto(photoUrl, title) {
+            if (!photoUrl) return;
+            document.getElementById('validationPhotoTitle').textContent = title || 'Foto Kunjungan';
+            validationZoomImage.src = photoUrl;
+            validationZoomImage.alt = title || 'Foto kunjungan yang diperbesar';
+            resetValidationZoom();
+            validationPhotoModal.show();
+        }
+
+        document.querySelectorAll('.validation-photo-open').forEach(function (button) {
+            button.addEventListener('click', function () {
+                openValidationPhoto(
+                    button.getAttribute('data-photo-url'),
+                    button.getAttribute('data-photo-title')
+                );
+            });
+        });
+
+        document.getElementById('validationZoomIn').addEventListener('click', function () {
+            setValidationZoom(validationZoom + 0.25);
+        });
+        document.getElementById('validationZoomOut').addEventListener('click', function () {
+            setValidationZoom(validationZoom - 0.25);
+        });
+        document.getElementById('validationZoomReset').addEventListener('click', function () {
+            resetValidationZoom();
+        });
+        validationZoomStage.addEventListener('wheel', function (event) {
+            event.preventDefault();
+            setValidationZoom(
+                validationZoom + (event.deltaY < 0 ? 0.25 : -0.25),
+                event.clientX,
+                event.clientY
+            );
+        }, { passive: false });
+
+        var validationDrag = null;
+        validationZoomStage.addEventListener('pointerdown', function (event) {
+            if (event.pointerType === 'mouse' && event.button !== 0) return;
+            validationDrag = {
+                pointerId: event.pointerId,
+                clientX: event.clientX,
+                clientY: event.clientY,
+                scrollLeft: validationZoomStage.scrollLeft,
+                scrollTop: validationZoomStage.scrollTop
+            };
+            validationZoomStage.classList.add('is-dragging');
+            validationZoomStage.setPointerCapture(event.pointerId);
+            event.preventDefault();
+        });
+        validationZoomStage.addEventListener('pointermove', function (event) {
+            if (!validationDrag || validationDrag.pointerId !== event.pointerId) return;
+            validationZoomStage.scrollLeft = validationDrag.scrollLeft - (event.clientX - validationDrag.clientX);
+            validationZoomStage.scrollTop = validationDrag.scrollTop - (event.clientY - validationDrag.clientY);
+            event.preventDefault();
+        });
+
+        function stopValidationDrag(event) {
+            if (!validationDrag || validationDrag.pointerId !== event.pointerId) return;
+            if (validationZoomStage.hasPointerCapture(validationDrag.pointerId)) {
+                validationZoomStage.releasePointerCapture(validationDrag.pointerId);
+            }
+            validationDrag = null;
+            validationZoomStage.classList.remove('is-dragging');
+        }
+
+        validationZoomStage.addEventListener('pointerup', stopValidationDrag);
+        validationZoomStage.addEventListener('pointercancel', stopValidationDrag);
+        validationPhotoModalEl.addEventListener('hidden.bs.modal', function () {
+            validationZoomImage.src = '';
+            resetValidationZoom();
+        });
 
         function setButtonLoading(btn, isLoading, label) {
             if (!btn) return;
@@ -606,7 +809,7 @@
 
         function setStatusBadge(el, status) {
             if (!el) return;
-            el.className = 'badge';
+            el.className = 'badge validation-status-badge';
             if (status === 'approved') {
                 el.classList.add('text-bg-success');
                 el.textContent = '✅ Disetujui';
@@ -794,9 +997,9 @@
 
         function updateRowStatus(rowEl, status) {
             if (!rowEl) return;
-            var badge = rowEl.querySelector('td:nth-child(5) .badge');
+            var badge = rowEl.querySelector('.validation-status-badge');
             setStatusBadge(badge, status);
-            var checkCell = rowEl.querySelector('td:first-child');
+            var checkCell = rowEl.querySelector('.validation-check-wrap');
             if (checkCell && !(activeStatusFilter === 'history' && status !== 'pending')) {
                 checkCell.innerHTML = '';
             }
@@ -822,7 +1025,7 @@
                 return;
             }
             if (activeStatusFilter === 'history') {
-                var actionWrap = rowEl.querySelector('td.text-end .d-inline-flex');
+                var actionWrap = rowEl.querySelector('.validation-card-actions');
                 if (actionWrap) {
                     if (status === 'approved') {
                         addQuickActionButton(actionWrap, rowEl, 'pending', 'Kembalikan ke pending', 'btn-outline-warning', 'bi-arrow-counterclockwise');
@@ -885,7 +1088,7 @@
         document.querySelectorAll('[data-action="detail"]').forEach(function (btn) {
             btn.addEventListener('click', function () {
                 var transactionId = btn.getAttribute('data-transaction-id');
-                var rowEl = btn.closest('tr');
+                var rowEl = btn.closest('.validation-photo-card');
                 loadTransactionDetail(transactionId, rowEl);
             });
         });
@@ -928,7 +1131,7 @@
         document.querySelectorAll('[data-action="approve"]').forEach(function (btn) {
             btn.addEventListener('click', function () {
                 var transactionId = btn.getAttribute('data-transaction-id');
-                var rowEl = btn.closest('tr');
+                var rowEl = btn.closest('.validation-photo-card');
                 if (!transactionId) return;
                 submitQuickDecision(transactionId, 'approve', rowEl, '', btn);
             });
@@ -937,7 +1140,7 @@
         document.querySelectorAll('[data-action="reject"]').forEach(function (btn) {
             btn.addEventListener('click', function () {
                 var transactionId = btn.getAttribute('data-transaction-id');
-                var rowEl = btn.closest('tr');
+                var rowEl = btn.closest('.validation-photo-card');
                 if (!transactionId) return;
                 var note = window.prompt('Catatan penolakan (wajib):');
                 if (!note) return;
@@ -948,7 +1151,7 @@
         document.querySelectorAll('[data-action="pending"]').forEach(function (btn) {
             btn.addEventListener('click', function () {
                 var transactionId = btn.getAttribute('data-transaction-id');
-                var rowEl = btn.closest('tr');
+                var rowEl = btn.closest('.validation-photo-card');
                 if (!transactionId) return;
                 submitQuickDecision(transactionId, 'pending', rowEl, '', btn);
             });
@@ -967,7 +1170,7 @@
         });
 
         if (openTransactionId) {
-            var matchedRow = document.querySelector('tr[data-transaction-id="' + String(openTransactionId) + '"]');
+            var matchedRow = document.querySelector('.validation-photo-card[data-transaction-id="' + String(openTransactionId) + '"]');
             loadTransactionDetail(openTransactionId, matchedRow || null);
         }
 
@@ -1056,7 +1259,7 @@
                     if (submitter && submitter.id === 'bulkApproveAdmin') {
                         var duplicateRows = checks.filter(function (el) {
                             if (!el.checked) return false;
-                            var row = el.closest('tr');
+                            var row = el.closest('.validation-photo-card');
                             return row && !!row.getAttribute('data-duplicate-warning');
                         });
                         if (duplicateRows.length > 0) {
