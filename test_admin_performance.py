@@ -230,7 +230,7 @@ def test_old_admin_performance_url_redirects_with_filters():
     )
 
 
-def test_complete_leaderboard_excludes_zero_activity_admins():
+def test_complete_leaderboard_includes_zero_activity_admins():
     rows = pengaturan_routes._complete_admin_leaderboard(
         [
             {
@@ -238,7 +238,13 @@ def test_complete_leaderboard_excludes_zero_activity_admins():
                 "actor_label": "Admin Aktif",
                 "total_actions": 4,
                 "feature_counts": {"panbers": 4},
-            }
+            },
+            {
+                "actor_user_id": 3,
+                "actor_label": "Admin Nonaktif",
+                "total_actions": 20,
+                "feature_counts": {"panbers": 20},
+            },
         ],
         [
             {"id": 1, "full_name": "Admin Aktif", "email": "a@example.com"},
@@ -246,7 +252,8 @@ def test_complete_leaderboard_excludes_zero_activity_admins():
         ],
     )
 
-    assert [row["actor_user_id"] for row in rows] == [1]
+    assert [row["actor_user_id"] for row in rows] == [1, 2]
+    assert rows[1]["total_actions"] == 0
 
 
 def test_leaderboard_rank_uses_actions_plus_ten_points_per_coding_update():
@@ -273,9 +280,10 @@ def test_leaderboard_rank_uses_actions_plus_ten_points_per_coding_update():
         ]
     )
 
-    assert [row["actor_user_id"] for row in rows] == [1, 2]
+    assert [row["actor_user_id"] for row in rows] == [1, 2, 3]
     assert rows[0]["coding_points"] == 30
     assert rows[0]["performance_total"] == 32
+    assert rows[2]["performance_total"] == 0
 
 
 def test_leaderboard_uses_active_coding_days_for_score():
@@ -395,6 +403,7 @@ def test_performance_pdf_has_leaderboard_personal_and_activity_pages():
         period_label="September 2026",
         filters_label="Fitur: Semua | Aksi: Semua | Target: Semua",
         generated_at=datetime(2026, 9, 8, 12, 0),
+        feature_options={"panbers": "PANBERSS"},
     ).getvalue()
 
     assert output.startswith(b"%PDF")

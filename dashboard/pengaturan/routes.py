@@ -128,15 +128,18 @@ def _resolve_admin_performance_period() -> Dict[str, Any]:
 
 def _complete_admin_leaderboard(
     leaderboard: list[Dict[str, Any]], admin_users: list[Dict[str, Any]],
-    *, minimum_actions: int = 1,
+    *, minimum_actions: int = 0,
 ) -> list[Dict[str, Any]]:
-    """Return every current admin with at least one matching activity."""
+    """Return current admins, including accounts without matching activity."""
+    active_admin_ids = {
+        int(admin.get("id") or 0) for admin in admin_users if admin.get("id")
+    }
     rows_by_id = {
         int(row["actor_user_id"]): dict(row)
         for row in leaderboard
         if row.get("actor_user_id")
+        and int(row["actor_user_id"]) in active_admin_ids
     }
-    rows_without_id = [dict(row) for row in leaderboard if not row.get("actor_user_id")]
     for admin in admin_users:
         admin_id = int(admin.get("id") or 0)
         if not admin_id:
@@ -162,7 +165,7 @@ def _complete_admin_leaderboard(
 
     rows = [
         row
-        for row in [*rows_by_id.values(), *rows_without_id]
+        for row in rows_by_id.values()
         if int(row.get("total_actions") or 0) >= minimum_actions
     ]
     rows.sort(
@@ -189,8 +192,7 @@ def _score_admin_leaderboard(
         row["coding_points"] = coding_updates * coding_multiplier
         row["performance_total"] = actions + row["coding_points"]
         row["coding_multiplier"] = coding_multiplier
-        if row["performance_total"] >= 1:
-            scored.append(row)
+        scored.append(row)
     scored.sort(
         key=lambda row: (
             -int(row["performance_total"]),
@@ -503,6 +505,7 @@ def admin_performance_pdf() -> Response:
         period_label=_admin_performance_period_label(period),
         filters_label=" | ".join(filter_parts),
         generated_at=period["generated_at"],
+        feature_options=organization.get("feature_options") or {},
     )
     if period["period_scope"] == "month":
         suffix = period["selected_month"]

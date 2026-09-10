@@ -40,7 +40,7 @@ def _font(size: int, *, bold: bool = False):
 
 
 def _clean(value: Any, fallback: str = "-") -> str:
-    text = " ".join(str(value or "").split())
+    text = "" if value is None else " ".join(str(value).split())
     return text or fallback
 
 
@@ -52,6 +52,23 @@ def _fit(draw: ImageDraw.ImageDraw, value: Any, font, width: int) -> str:
     while text and draw.textbbox((0, 0), text + suffix, font=font)[2] > width:
         text = text[:-1]
     return text.rstrip() + suffix
+
+
+def _wrap(draw: ImageDraw.ImageDraw, value: Any, font, width: int) -> List[str]:
+    """Wrap cell text without dropping feature labels."""
+    words = _clean(value).split()
+    lines: List[str] = []
+    current = ""
+    for word in words:
+        candidate = f"{current} {word}".strip()
+        if current and draw.textbbox((0, 0), candidate, font=font)[2] > width:
+            lines.append(current)
+            current = word
+        else:
+            current = candidate
+    if current:
+        lines.append(current)
+    return lines or ["-"]
 
 
 def _date_label(value: Any, *, with_time: bool = True) -> str:
@@ -102,6 +119,8 @@ def _draw_footer(draw: ImageDraw.ImageDraw, text: str) -> None:
 def _draw_leaderboard_page(
     rows: List[Dict[str, Any]],
     *,
+    downloader_id: int,
+    feature_options: Dict[str, str],
     period_label: str,
     generated_at: datetime,
     page_number: int,
@@ -117,49 +136,68 @@ def _draw_leaderboard_page(
         page_number=page_number,
     )
     note_font = _font(13)
-    note = "Leaderboard memuat seluruh admin dengan minimal 1 aksi; pilihan satu admin pada layar diabaikan."
+    note = "Leaderboard memuat seluruh admin, termasuk yang skornya 0; pilihan satu admin pada layar diabaikan."
     draw.rounded_rectangle((MARGIN, y, PAGE_WIDTH - MARGIN, y + 68), radius=12, fill="#eaf2ff")
     draw.text((MARGIN + 18, y + 14), note, font=note_font, fill="#194f9b")
     draw.text((MARGIN + 18, y + 39), _fit(draw, filters_label, note_font, 1040), font=note_font, fill="#194f9b")
     y += 95
 
     columns = [
-        ("No", MARGIN, 40),
-        ("Admin", MARGIN + 45, 205),
-        ("Email", MARGIN + 255, 215),
-        ("GitHub", MARGIN + 475, 155),
-        ("Skor", MARGIN + 635, 60),
-        ("Aksi Admin", MARGIN + 700, 90),
-        ("Coding/Day", MARGIN + 795, 100),
-        ("Aksi Terakhir", MARGIN + 900, 200),
+        ("No", MARGIN, 45),
+        ("Admin", MARGIN + 45, 200),
+        ("GitHub", MARGIN + 245, 140),
+        ("Skor", MARGIN + 385, 60),
+        ("Admin", MARGIN + 445, 70),
+        ("Coding", MARGIN + 515, 145),
+        ("Fitur", MARGIN + 660, 270),
+        ("Aksi Terakhir", MARGIN + 930, 170),
     ]
     draw.rounded_rectangle((MARGIN, y, PAGE_WIDTH - MARGIN, y + 48), radius=8, fill="#dce9fb")
     header_font = _font(14, bold=True)
     for label, x, _width in columns:
         draw.text((x + 8, y + 14), label, font=header_font, fill=INK)
     y += 52
-    row_font = _font(13)
-    row_height = 48
     if not rows:
-        draw.text((MARGIN + 10, y + 18), "Belum ada admin dengan minimal 1 aksi.", font=_font(15), fill=MUTED)
+        draw.text((MARGIN + 10, y + 18), "Belum ada akun admin.", font=_font(15), fill=MUTED)
     for row in rows:
-        if int(row.get("rank") or 0) % 2 == 0:
+        feature_counts = row.get("feature_counts") or {}
+        feature_text = "; ".join(
+            f"{feature_options.get(key, str(key).replace('_', ' ').title())}: {int(count or 0)}"
+            for key, count in sorted(
+                feature_counts.items(),
+                key=lambda item: (-int(item[1] or 0), str(item[0])),
+            )
+            if int(count or 0) > 0
+        ) or "-"
+        feature_font = _font(10)
+        feature_lines = _wrap(draw, feature_text, feature_font, 258)
+        row_height = max(48, 14 + len(feature_lines) * 15)
+        is_downloader = int(row.get("actor_user_id") or 0) == int(downloader_id or 0)
+        if is_downloader:
+            draw.rectangle((MARGIN, y, PAGE_WIDTH - MARGIN, y + row_height), fill="#dbeafe")
+        elif int(row.get("rank") or 0) % 2 == 0:
             draw.rectangle((MARGIN, y, PAGE_WIDTH - MARGIN, y + row_height), fill=LIGHT)
+        row_font = _font(13, bold=is_downloader)
+        row_color = PRIMARY if is_downloader else INK
         values = [
             row.get("rank"),
             row.get("actor_label"),
-            row.get("actor_email"),
             f"@{row['github_username']}" if row.get("github_username") else "-",
             row.get("performance_total", row.get("total_actions", 0)),
             row.get("total_actions", 0),
             (
-                f"{row.get('github_commits', 0)}/{row.get('coding_score_units', row.get('github_commits', 0))}"
+                f"{row.get('github_commits', 0)} update/{row.get('coding_score_units', row.get('github_commits', 0))} day"
                 if row.get("github_commits") is not None else "-"
             ),
+            feature_text,
             _date_label(row.get("last_action_at")),
         ]
-        for value, (_label, x, width) in zip(values, columns):
-            draw.text((x + 8, y + 14), _fit(draw, value, row_font, width - 12), font=row_font, fill=INK)
+        for column_index, (value, (_label, x, width)) in enumerate(zip(values, columns)):
+            if column_index == 6:
+                for line_index, line in enumerate(feature_lines):
+                    draw.text((x + 7, y + 8 + line_index * 15), line, font=feature_font, fill=row_color)
+            else:
+                draw.text((x + 7, y + 14), _fit(draw, value, row_font, width - 10), font=row_font, fill=row_color)
         draw.line((MARGIN, y + row_height, PAGE_WIDTH - MARGIN, y + row_height), fill=BORDER, width=1)
         y += row_height
 
@@ -281,12 +319,12 @@ def _draw_personal_page(
 
     y += 20
     draw.rounded_rectangle((MARGIN, y, PAGE_WIDTH - MARGIN, y + 74), radius=10, fill="#fff8e6", outline="#ead49b", width=2)
-    latest_label = _date_label(summary.get("latest_action_at"))
-    draw.text((MARGIN + 18, y + 13), "Aktivitas terakhir", font=_font(12), fill=MUTED)
-    draw.text((MARGIN + 18, y + 38), latest_label, font=_font(15, bold=True), fill=INK)
     earliest_label = _date_label(summary.get("earliest_action_at"))
-    draw.text((MARGIN + 390, y + 13), "Aktivitas pertama", font=_font(12), fill=MUTED)
-    draw.text((MARGIN + 390, y + 38), earliest_label, font=_font(15, bold=True), fill=INK)
+    draw.text((MARGIN + 18, y + 13), "Aktivitas pertama", font=_font(12), fill=MUTED)
+    draw.text((MARGIN + 18, y + 38), earliest_label, font=_font(15, bold=True), fill=INK)
+    latest_label = _date_label(summary.get("latest_action_at"))
+    draw.text((MARGIN + 390, y + 13), "Aktivitas terakhir", font=_font(12), fill=MUTED)
+    draw.text((MARGIN + 390, y + 38), latest_label, font=_font(15, bold=True), fill=INK)
 
     _draw_footer(draw, "Rekap pribadi dibuat otomatis untuk akun admin yang mengunduh dokumen ini.")
     return page
@@ -358,8 +396,10 @@ def build_admin_performance_pdf(
     period_label: str,
     filters_label: str,
     generated_at: datetime,
+    feature_options: Dict[str, str],
 ) -> io.BytesIO:
     ranked = []
+    downloader_id = int(downloader.get("id") or 0)
     for rank, row in enumerate(leaderboard, start=1):
         item = dict(row)
         item["rank"] = rank
@@ -371,6 +411,8 @@ def build_admin_performance_pdf(
     pages.append(
         _draw_leaderboard_page(
             leaderboard_chunks[0],
+            downloader_id=downloader_id,
+            feature_options=feature_options,
             period_label=period_label,
             generated_at=generated_at,
             page_number=1,
@@ -401,6 +443,8 @@ def build_admin_performance_pdf(
         pages.append(
             _draw_leaderboard_page(
                 rows,
+                downloader_id=downloader_id,
+                feature_options=feature_options,
                 period_label=period_label,
                 generated_at=generated_at,
                 page_number=index,

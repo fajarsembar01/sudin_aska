@@ -2138,12 +2138,13 @@ def create_dashboard_user(
 
 
 def list_admin_users() -> List[Dict[str, Any]]:
-    """List dashboard users with admin role."""
+    """List active dashboard users with admin role."""
     with get_cursor() as cur:
         cur.execute("""
-            SELECT id, full_name, email, role
+            SELECT id, full_name, email, role, account_status
             FROM dashboard_users
             WHERE role = 'admin'
+              AND COALESCE(account_status, 'approved') = 'approved'
             ORDER BY full_name ASC
             """)
         rows = cur.fetchall()

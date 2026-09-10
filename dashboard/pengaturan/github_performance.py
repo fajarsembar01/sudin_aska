@@ -76,9 +76,10 @@ def list_admin_github_accounts() -> list[Dict[str, Any]]:
     with get_cursor() as cur:
         cur.execute(
             """
-            SELECT id, full_name, email, github_username, github_author_email
+            SELECT id, full_name, email, github_username, github_author_email, account_status
             FROM dashboard_users
             WHERE role = 'admin'
+              AND COALESCE(account_status, 'approved') = 'approved'
             ORDER BY full_name ASC
             """
         )
