@@ -476,20 +476,30 @@ client.on("auth_failure", (msg) => {
 client.on("disconnected", (reason) => {
     clientReady = false;
     clearInitRecoveryWatchdog();
-    setBridgeStatus({ state: "disconnected", qrText: "", message: String(reason), whatsappNumber: "" });
+    const cleanReason = String(reason || "unknown");
+    const loggedOut = cleanReason.toUpperCase() === "LOGOUT";
+    setBridgeStatus({
+        state: loggedOut ? "starting" : "disconnected",
+        qrText: "",
+        message: loggedOut
+            ? "Sesi WhatsApp keluar. Menunggu QR baru..."
+            : cleanReason,
+        whatsappNumber: "",
+    });
     console.warn("[CC] Disconnected:", reason);
-    setTimeout(() => {
-        setBridgeStatus({
-            state: "starting",
-            qrText: "",
-            message: "Mencoba inisialisasi ulang setelah disconnect...",
-            whatsappNumber: "",
-        });
+
+    if (loggedOut) {
+        // whatsapp-web.js removes LocalAuth and reinjects the page itself after
+        // emitting LOGOUT. Calling initialize here races that flow and causes
+        // "window[...] already exists" binding failures.
         armInitRecoveryWatchdog();
-        client.initialize().catch((e) =>
-            handleInitFailure("Disconnect reinit", e)
-        );
-    }, 3000);
+        return;
+    }
+
+    // For other disconnects whatsapp-web.js destroys Chromium immediately
+    // after this event. Let systemd create a fresh Client instance instead of
+    // trying to reuse an object whose page is being destroyed.
+    setTimeout(() => process.exit(1), 1000);
 });
 
 // ── Watchdog: deteksi Chromium crash tanpa event disconnected ───────────────
@@ -962,22 +972,26 @@ app.post("/edit", authCheck, async (req, res) => {
 
 // ── boot ─────────────────────────────────────────────────────────────────────
 
-app.listen(HTTP_PORT, () => {
+const httpServer = app.listen(HTTP_PORT, () => {
     console.log(`[CC] HTTP API listening on port ${HTTP_PORT}`);
+    // Only the process that owns the port may update shared status or open
+    // the Chromium session. A duplicate launch must leave the owner intact.
+    setBridgeStatus({
+        state: "starting",
+        qrText: "",
+        message: "Call Center bridge sedang inisialisasi...",
+        whatsappNumber: "",
+        sessionPath: SESSION_PATH,
+        clientId: CLIENT_ID,
+        internalUrl: INTERNAL_URL,
+        httpPort: HTTP_PORT,
+    });
+    armInitRecoveryWatchdog();
+    client.initialize().catch((err) => {
+        handleInitFailure("Boot", err, true);
+    });
 });
-
-setBridgeStatus({
-    state: "starting",
-    qrText: "",
-    message: "Call Center bridge sedang inisialisasi...",
-    whatsappNumber: "",
-    sessionPath: SESSION_PATH,
-    clientId: CLIENT_ID,
-    internalUrl: INTERNAL_URL,
-    httpPort: HTTP_PORT,
-});
-armInitRecoveryWatchdog();
-
-client.initialize().catch((err) => {
-    handleInitFailure("Boot", err, true);
+httpServer.on("error", (err) => {
+    console.error(`[CC] HTTP bind failed for bridge=${BRIDGE_KEY} port=${HTTP_PORT}:`, err.message);
+    process.exit(1);
 });

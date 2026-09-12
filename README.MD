@@ -308,6 +308,28 @@ ASKA_CC_HTTP_PORT=3200 npm run wa:cc   # lepas override bila port 3100 kosong
 - Buka dashboard `Call Center > Settings > WhatsApp`, tekan Generate QR, lalu scan QR di WhatsApp `Linked Devices`.
 - Pastikan backend dashboard (`dashboard.app` port 5002) sudah jalan; bridge ini meneruskan chat ke endpoint `api/callcenter/inbound` dengan header `X-ASKA-CC-TOKEN` yang sama dengan `ASKA_CC_WHATSAPP_INTERNAL_TOKEN`.
 
+Jika server memakai service per akun (`aska-wa-cc@main.service` dan
+`aska-wa-cc@aska.service`), tombol Start/Stop/Generate QR mengendalikan service
+akun yang dipilih. Service lama `aska-wa-cc.service` hanya menjadi fallback
+untuk akun `main`. Dashboard perlu hak menjalankan `systemctl start/stop` untuk
+unit tersebut (root atau izin `sudo -n` terbatas untuk unit terkait). Jika izin
+ditolak, dashboard menampilkan error dan tidak menjalankan proses npm tambahan.
+Konfigurasi port, client ID, session path, dan status path dalam service harus
+sama dengan pengaturan akun di dashboard.
+
+Generate QR menghentikan proses dan memastikan port bebas sebelum mereset sesi
+akun terpilih. Permintaan kontrol bersamaan untuk akun yang sama ditolak. Jika
+port masih dipakai, sesi dipertahankan dan dashboard meminta pemeriksaan proses.
+Proses bridge yang gagal memakai port tidak boleh menimpa status/QR proses aktif.
+
+Setelah memasang pembaruan kontrol bridge, restart dashboard dan hanya bridge
+yang bermasalah; contoh untuk WA Main:
+
+```bash
+sudo systemctl restart aska-dashboard aska-wa-cc@main
+sudo journalctl -u aska-wa-cc@main -n 60 --no-pager
+```
+
 ### 5. Twitter Worker (opsional)
 
 ```bash

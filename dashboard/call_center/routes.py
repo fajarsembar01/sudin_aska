@@ -5,12 +5,16 @@ from __future__ import annotations
 import asyncio
 import base64
 import concurrent.futures
+import fcntl
 import json
 import mimetypes
 import os
 import shutil
 import signal
+import socket
 import subprocess
+import time
+from contextlib import contextmanager
 from datetime import datetime
 from math import ceil
 from pathlib import Path
@@ -225,13 +229,73 @@ def _systemd_service_exists(service: str) -> bool:
     """True jika unit file systemd untuk service ini ditemukan."""
     try:
         result = subprocess.run(
-            ["systemctl", "list-unit-files", "--quiet", service],
+            ["systemctl", "show", "--property=LoadState", "--value", service],
             capture_output=True,
+            text=True,
             timeout=5,
         )
-        return service in (result.stdout.decode(errors="replace") or "")
+        return result.returncode == 0 and result.stdout.strip() == "loaded"
     except Exception:
         return False
+
+
+def _cc_account_service(account: dict) -> Optional[str]:
+    key = normalize_cc_bridge_key(account.get("bridge_key"))
+    base = _cc_systemd_service().removesuffix(".service")
+    if not base:
+        return None
+    instance = f"{base}@{key}.service"
+    if _systemd_service_exists(instance):
+        return instance
+    legacy = f"{base}.service"
+    if key == "main" and _systemd_service_exists(legacy):
+        return legacy
+    return None
+
+
+def _control_cc_service(action: str, service: str) -> None:
+    command = ["systemctl", action, service]
+    if os.geteuid() != 0:
+        command = ["sudo", "-n", *command]
+    result = subprocess.run(command, capture_output=True, text=True, timeout=45)
+    if result.returncode:
+        raise RuntimeError(
+            f"Gagal {action} {service}: {result.stderr.strip() or result.stdout.strip()}"
+        )
+
+
+@contextmanager
+def _cc_bridge_control_lock(account: dict):
+    paths = _cc_runtime_paths(account)
+    key = normalize_cc_bridge_key(account.get("bridge_key"))
+    lock_path = paths["root"] / "runtime" / f"cc_control_{key}.lock"
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    with lock_path.open("a") as handle:
+        try:
+            fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            raise RuntimeError("Bridge sedang diproses. Tunggu sebelum mencoba lagi.") from None
+        try:
+            yield
+        finally:
+            fcntl.flock(handle, fcntl.LOCK_UN)
+
+
+def _wait_cc_port_free(account: dict) -> None:
+    port = int(account.get("http_port") or 3100)
+    deadline = time.monotonic() + 5
+    while True:
+        try:
+            with socket.create_connection(("127.0.0.1", port), timeout=0.3):
+                pass
+        except ConnectionRefusedError:
+            return
+        if time.monotonic() >= deadline:
+            raise RuntimeError(
+                f"Port {port} masih dipakai proses lain. "
+                "Sesi tidak direset; hentikan proses tersebut dulu."
+            )
+        time.sleep(0.1)
 
 
 def _bridge_http_alive(bridge_key: Optional[str] = None) -> bool:
@@ -354,12 +418,29 @@ def _pid_alive(pid: int) -> bool:
 
 
 def _stop_existing_bridge(account: dict) -> None:
+    with _cc_bridge_control_lock(account):
+        _stop_cc_bridge_unlocked(account)
+
+
+def _stop_cc_bridge_unlocked(account: dict) -> None:
     paths = _cc_runtime_paths(account=account)
+    service = _cc_account_service(account)
+    if service:
+        _control_cc_service("stop", service)
+        # Retire a still-running legacy main service before touching its session.
+        legacy = f"{_cc_systemd_service().removesuffix('.service')}.service"
+        if normalize_cc_bridge_key(account.get("bridge_key")) == "main" and legacy != service:
+            if _systemd_service_active(legacy):
+                _control_cc_service("stop", legacy)
     # Fallback: kill via PID
     pid = _read_pid(paths["pid"])
     if pid and _pid_alive(pid):
+        # Subprocess bridges are started in their own session. Never signal
+        # an unrelated process group referenced by an old PID file.
+        if os.getpgid(pid) != pid:
+            raise RuntimeError("PID bridge bukan pemimpin grup proses. Periksa proses sebelum menghentikannya.")
         try:
-            os.killpg(os.getpgid(pid), signal.SIGTERM)
+            os.killpg(pid, signal.SIGTERM)
         except Exception:
             try:
                 os.kill(pid, signal.SIGTERM)
@@ -369,6 +450,7 @@ def _stop_existing_bridge(account: dict) -> None:
         paths["pid"].unlink()
     except Exception:
         pass
+    _wait_cc_port_free(account)
 
 
 def _cc_bridge_http_port(bridge_key: Optional[str] = None) -> int:
@@ -698,8 +780,14 @@ def _sync_history_via_bridge(
 
 
 def _restart_cc_bridge(account: dict, reset_session: bool = True) -> dict:
+    with _cc_bridge_control_lock(account):
+        return _restart_cc_bridge_unlocked(account, reset_session)
+
+
+def _restart_cc_bridge_unlocked(account: dict, reset_session: bool) -> dict:
     paths = _cc_runtime_paths(account=account)
-    _stop_existing_bridge(account)
+    service = _cc_account_service(account)
+    _stop_cc_bridge_unlocked(account)
     bridge_key = normalize_cc_bridge_key(account.get("bridge_key"))
     client_id = str(account.get("client_id") or "").strip() or f"cc-{bridge_key}"
     http_port = int(account.get("http_port") or 3100)
@@ -727,11 +815,21 @@ def _restart_cc_bridge(account: dict, reset_session: bool = True) -> dict:
         pass
 
     if reset_session and paths["session"].exists():
-        shutil.rmtree(paths["session"], ignore_errors=True)
+        shutil.rmtree(paths["session"])
 
     paths["log"].parent.mkdir(parents=True, exist_ok=True)
 
     # ── Kelola via systemd jika service tersedia ──────────────────────────────
+    if service:
+        _control_cc_service("start", service)
+        return {
+            "bridge_key": bridge_key,
+            "http_port": http_port,
+            "log_path": str(paths["log"]),
+            "status_path": str(paths["status"]),
+            "managed_by": "systemd",
+            "service": service,
+        }
     # ── Fallback: spawn subprocess langsung ───────────────────────────────────
     env = os.environ.copy()
     env_file = paths["root"] / ".env"
