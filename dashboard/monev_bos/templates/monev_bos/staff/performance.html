@@ -22,6 +22,10 @@
     .staff-breakdown-chip { display: inline-flex; align-items: center; gap: 5px; padding: 5px 9px; border: 1px solid var(--bs-border-color); border-radius: 999px; background: var(--bs-tertiary-bg); font-size: .72rem; }
     .staff-performance-table th { white-space: nowrap; font-size: .72rem; text-transform: uppercase; color: var(--bs-secondary-color); }
     .staff-performance-table td { vertical-align: middle; }
+    .staff-point-detail-trigger { border-bottom: 1px dashed var(--bs-primary) !important; cursor: pointer; }
+    .performance-points-popover { --bs-popover-max-width: min(440px, calc(100vw - 24px)); }
+    .performance-point-items { max-height: 340px; overflow-y: auto; min-width: min(360px, calc(100vw - 72px)); }
+    .performance-point-item + .performance-point-item { border-top: 1px solid var(--bs-border-color); }
     @media (max-width: 767.98px) {
         .staff-performance-page { padding-left: 10px !important; padding-right: 10px !important; }
         .staff-performance-hero { border-radius: 10px; }
@@ -130,7 +134,45 @@
                         <td class="ps-3"><span class="staff-rank-number">{{ row.rank }}</span></td>
                         <td><strong class="d-block">{{ row.staff_name or 'Staff' }}</strong></td>
                         <td><strong class="text-primary fs-5">{{ row.score }}</strong></td>
-                        <td>{{ row.validated_activities }}</td><td title="Terverifikasi (berpoin): {{ row.verified_vendors }} · Ditolak (tanpa poin): {{ row.rejected_vendors }}">{{ row.vendor_decisions }}</td><td>{{ row.completed_reports }}</td><td>{{ row.uploaded_photos }}</td><td>{{ row.active_days }}</td>
+                        <td>
+                            <button type="button" class="btn btn-link p-0 text-body fw-bold text-decoration-none staff-point-detail-trigger" data-performance-detail-target="activityPointDetails{{ row.staff_id }}" data-performance-detail-title="Kegiatan berpoin ({{ row.validated_activities }})" title="Klik untuk melihat kegiatan yang dihitung">
+                                {{ row.validated_activities }} <i class="bi bi-info-circle small text-primary"></i>
+                            </button>
+                            <div class="d-none" id="activityPointDetails{{ row.staff_id }}">
+                                <div class="performance-point-items">
+                                    {% for item in row.validated_activity_items or [] %}
+                                    <div class="performance-point-item py-2">
+                                        <div class="fw-semibold">{{ loop.index }}. {{ item.name }}</div>
+                                        <div class="small text-body-secondary"><i class="bi bi-building me-1"></i>{{ item.school }}</div>
+                                    </div>
+                                    {% else %}
+                                    <div class="small text-body-secondary py-2">Tidak ada rincian kegiatan berpoin.</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <button type="button" class="btn btn-link p-0 text-body fw-bold text-decoration-none staff-point-detail-trigger" data-performance-detail-target="vendorPointDetails{{ row.staff_id }}" data-performance-detail-title="Kontribusi Vendor/Narasumber ({{ row.vendor_decisions }})" title="Memverifikasi: {{ row.verified_vendors }} · Merevisi: {{ row.revised_vendors }} · Menolak: {{ row.rejected_vendors }} · Klik untuk melihat rinciannya">
+                                {{ row.vendor_decisions }} <i class="bi bi-info-circle small text-primary"></i>
+                            </button>
+                            <div class="d-none" id="vendorPointDetails{{ row.staff_id }}">
+                                <div class="performance-point-items">
+                                    <div class="small text-body-secondary pb-2">Memverifikasi: <strong>{{ row.verified_vendors }}</strong> · Merevisi: <strong>{{ row.revised_vendors }}</strong> · Menolak: <strong>{{ row.rejected_vendors }}</strong></div>
+                                    {% for item in row.vendor_decision_items or [] %}
+                                    <div class="performance-point-item py-2">
+                                        <div class="d-flex align-items-start justify-content-between gap-2">
+                                            <div class="fw-semibold">{{ loop.index }}. {{ item.name }}</div>
+                                            <span class="badge {{ 'text-bg-warning' if item.is_revision else ('text-bg-success' if item.decision == 'VERIFY_APPROVE' else 'text-bg-danger') }}">{{ 'Merevisi' if item.is_revision else ('Memverifikasi' if item.decision == 'VERIFY_APPROVE' else 'Menolak') }}</span>
+                                        </div>
+                                        <div class="small text-body-secondary"><i class="bi bi-building me-1"></i>{{ item.school }}</div>
+                                    </div>
+                                    {% else %}
+                                    <div class="small text-body-secondary py-2">Tidak ada rincian vendor/narasumber berpoin.</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </td>
+                        <td>{{ row.completed_reports }}</td><td>{{ row.uploaded_photos }}</td><td>{{ row.active_days }}</td>
                         <td class="text-nowrap small">{{ row.last_action_at.strftime('%d/%m/%Y %H:%M') if row.last_action_at else '-' }}</td>
                     </tr>
                     {% else %}
@@ -172,4 +214,23 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    if (!window.bootstrap || !window.bootstrap.Popover) return;
+    document.querySelectorAll('[data-performance-detail-target]').forEach(function (trigger) {
+        const detail = document.getElementById(trigger.dataset.performanceDetailTarget);
+        if (!detail) return;
+        new window.bootstrap.Popover(trigger, {
+            container: 'body',
+            customClass: 'performance-points-popover',
+            html: true,
+            placement: 'auto',
+            trigger: 'focus',
+            title: trigger.dataset.performanceDetailTitle || '',
+            content: function () { return detail.innerHTML; }
+        });
+    });
+});
+</script>
 {% endblock %}

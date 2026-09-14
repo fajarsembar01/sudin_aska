@@ -4888,15 +4888,10 @@ def fetch_admin_activity_events(
                   a.feature_key = 'laporan'
                   AND UPPER(TRIM(a.action)) = 'AUTOSAVE'
               )
-              AND NOT (
-                  a.feature_key = 'monev_bos'
-                  AND a.target_type = 'MONEV_VENDOR'
-                  AND a.action = 'VERIFY_REJECT'
-              )
               AND (
                   a.feature_key <> 'monev_bos'
                   OR a.target_type <> 'MONEV_VENDOR'
-                  OR a.action <> 'VERIFY_APPROVE'
+                  OR a.action NOT IN ('VERIFY_APPROVE', 'VERIFY_REJECT')
                   OR NOT EXISTS (
                       SELECT 1
                       FROM dashboard_admin_action_logs newer_vendor_action

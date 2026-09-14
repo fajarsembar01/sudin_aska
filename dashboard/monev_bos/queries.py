@@ -2252,7 +2252,7 @@ def list_staff_performance(
             f"""
             WITH vendor_events_raw AS (
                 SELECT vlog.id, vlog.user_id AS staff_id, vlog.action, vlog.target_id,
-                       vlog.target_name, vlog.created_at
+                       vlog.target_name, vlog.created_at, vlog.metadata
                 FROM dashboard_admin_action_logs vlog
                 JOIN dashboard_users u ON u.id = vlog.user_id
                 WHERE vlog.feature_key = 'monev_bos'
@@ -2266,7 +2266,8 @@ def list_staff_performance(
                        CASE WHEN vlegacy.vendor_type = 'narsum'
                             THEN COALESCE(vlegacy.owner_name, vlegacy.name)
                             ELSE vlegacy.name END AS target_name,
-                       vlegacy.verified_at AS created_at
+                       vlegacy.verified_at AS created_at,
+                       NULL::jsonb AS metadata
                 FROM monev_bos_vendors vlegacy
                 JOIN dashboard_users u ON u.id = vlegacy.verified_by
                 WHERE vlegacy.status IN ('verified', 'rejected')
@@ -2280,7 +2281,7 @@ def list_staff_performance(
                   )
             ), vendor_events AS (
                 SELECT DISTINCT ON (target_id)
-                       id, staff_id, action, target_id, target_name, created_at
+                       id, staff_id, action, target_id, target_name, created_at, metadata
                 FROM vendor_events_raw
                 ORDER BY target_id, created_at DESC, id DESC
             ), vendor_events_in_period AS (
@@ -2314,15 +2315,70 @@ def list_staff_performance(
                 JOIN monev_bos_reports r ON r.id = l.report_id
                 WHERE 1=1 {audit_date_sql}
                 GROUP BY l.user_id
-            ), vendor_stats AS (
-                -- Only the latest approval earns a point. A latest rejection
-                -- cancels the previous verifier's point and earns no point.
+            ), validated_activity_details AS (
+                SELECT DISTINCT ON (l.user_id, l.activity_id)
+                       l.user_id AS staff_id,
+                       l.activity_id,
+                       COALESCE(a.activity_name, 'Kegiatan #' || l.activity_id::text) AS activity_name,
+                       COALESCE(ps.name, school.full_name, 'Sekolah tidak tersedia') AS school_name,
+                       l.created_at
+                FROM monev_bos_audit_logs l
+                JOIN dashboard_users u ON u.id = l.user_id AND u.role = 'staff'
+                JOIN monev_bos_reports r ON r.id = l.report_id
+                LEFT JOIN monev_bos_activities a ON a.id = l.activity_id
+                LEFT JOIN dashboard_users school ON school.id = r.school_id
+                LEFT JOIN portal_schools ps ON ps.id = school.school_id
+                WHERE l.action = 'VALIDATE'
+                  AND l.activity_id IS NOT NULL
+                  {audit_date_sql}
+                ORDER BY l.user_id, l.activity_id, l.created_at DESC, l.id DESC
+            ), validated_activity_lists AS (
                 SELECT staff_id,
-                       COUNT(*) FILTER (WHERE action = 'VERIFY_APPROVE')::int AS vendor_decisions,
-                       COUNT(*) FILTER (WHERE action = 'VERIFY_APPROVE')::int AS verified_vendors,
-                       COUNT(*) FILTER (WHERE action = 'VERIFY_REJECT')::int AS rejected_vendors
-                FROM vendor_events_in_period
+                       JSONB_AGG(
+                           JSONB_BUILD_OBJECT(
+                               'id', activity_id,
+                               'name', activity_name,
+                               'school', school_name,
+                               'created_at', created_at
+                           ) ORDER BY created_at DESC, activity_id DESC
+                       ) AS items
+                FROM validated_activity_details
                 GROUP BY staff_id
+            ), vendor_stats AS (
+                -- The latest decision owns the contribution point, whether the
+                -- reviewer approved valid data or rejected incorrect data.
+                SELECT event.staff_id,
+                       COUNT(*)::int AS vendor_decisions,
+                       COUNT(*) FILTER (
+                           WHERE event.action = 'VERIFY_APPROVE'
+                             AND COALESCE(event.metadata->>'is_revision', 'false') <> 'true'
+                       )::int AS verified_vendors,
+                       COUNT(*) FILTER (
+                           WHERE event.action = 'VERIFY_APPROVE'
+                             AND event.metadata->>'is_revision' = 'true'
+                       )::int AS revised_vendors,
+                       COUNT(*) FILTER (WHERE event.action = 'VERIFY_REJECT')::int AS rejected_vendors,
+                       JSONB_AGG(
+                           JSONB_BUILD_OBJECT(
+                               'id', event.target_id,
+                               'name', COALESCE(
+                                   event.target_name,
+                                   CASE WHEN vendor.vendor_type = 'narsum'
+                                        THEN COALESCE(vendor.owner_name, vendor.name)
+                                        ELSE vendor.name END,
+                                   'Vendor #' || event.target_id::text
+                               ),
+                               'school', COALESCE(ps.name, school.full_name, 'Sekolah tidak tersedia'),
+                               'decision', event.action,
+                               'is_revision', COALESCE(event.metadata->>'is_revision', 'false') = 'true',
+                               'created_at', event.created_at
+                           ) ORDER BY event.created_at DESC, event.target_id DESC
+                       ) AS items
+                FROM vendor_events_in_period event
+                LEFT JOIN monev_bos_vendors vendor ON vendor.id = event.target_id
+                LEFT JOIN dashboard_users school ON school.id = vendor.school_id
+                LEFT JOIN portal_schools ps ON ps.id = school.school_id
+                GROUP BY event.staff_id
             ), active_timeline AS (
                 SELECT l.user_id AS staff_id, l.created_at
                 FROM monev_bos_audit_logs l
@@ -2347,12 +2403,15 @@ def list_staff_performance(
                    u.email AS staff_email,
                    (COALESCE(audit_stats.audit_actions, 0) + COALESCE(vendor_stats.vendor_decisions, 0))::int AS total_actions,
                    COALESCE(audit_stats.validated_activities, 0)::int AS validated_activities,
+                   COALESCE(validated_activity_lists.items, '[]'::jsonb) AS validated_activity_items,
                    COALESCE(audit_stats.completed_reports, 0)::int AS completed_reports,
                    COALESCE(photo_stats.uploaded_photos, 0)::int AS uploaded_photos,
                    COALESCE(audit_stats.supporting_actions, 0)::int AS supporting_actions,
                    COALESCE(vendor_stats.vendor_decisions, 0)::int AS vendor_decisions,
                    COALESCE(vendor_stats.verified_vendors, 0)::int AS verified_vendors,
+                   COALESCE(vendor_stats.revised_vendors, 0)::int AS revised_vendors,
                    COALESCE(vendor_stats.rejected_vendors, 0)::int AS rejected_vendors,
+                   COALESCE(vendor_stats.items, '[]'::jsonb) AS vendor_decision_items,
                    COALESCE(timeline_stats.active_days, 0)::int AS active_days,
                    COALESCE(audit_stats.handled_schools, 0)::int AS handled_schools,
                    timeline_stats.first_action_at,
@@ -2360,6 +2419,7 @@ def list_staff_performance(
             FROM staff_ids
             JOIN dashboard_users u ON u.id = staff_ids.staff_id AND u.role = 'staff'
             LEFT JOIN audit_stats ON audit_stats.staff_id = u.id
+            LEFT JOIN validated_activity_lists ON validated_activity_lists.staff_id = u.id
             LEFT JOIN vendor_stats ON vendor_stats.staff_id = u.id
             LEFT JOIN photo_stats ON photo_stats.staff_id = u.id
             LEFT JOIN timeline_stats ON timeline_stats.staff_id = u.id
@@ -2445,6 +2505,7 @@ def get_staff_performance_detail(
             "vendor_decisions": 0,
             "verified_vendors": 0,
             "rejected_vendors": 0,
+            "revised_vendors": 0,
             "active_days": 0,
             "handled_schools": 0,
             "score": 0,
