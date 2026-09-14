@@ -2315,8 +2315,10 @@ def list_staff_performance(
                 WHERE 1=1 {audit_date_sql}
                 GROUP BY l.user_id
             ), vendor_stats AS (
+                -- Only the latest approval earns a point. A latest rejection
+                -- cancels the previous verifier's point and earns no point.
                 SELECT staff_id,
-                       COUNT(*)::int AS vendor_decisions,
+                       COUNT(*) FILTER (WHERE action = 'VERIFY_APPROVE')::int AS vendor_decisions,
                        COUNT(*) FILTER (WHERE action = 'VERIFY_APPROVE')::int AS verified_vendors,
                        COUNT(*) FILTER (WHERE action = 'VERIFY_REJECT')::int AS rejected_vendors
                 FROM vendor_events_in_period
@@ -2990,6 +2992,61 @@ def update_pending_vendor(vendor_id: int, school_id: int, data: Dict[str, Any]) 
                 data.get("vendor_type", "vendor") if data.get("vendor_type") in ("vendor", "narsum") else "vendor",
                 vendor_id,
                 school_id,
+            ),
+        )
+        return cur.rowcount > 0
+
+
+def revise_verified_vendor(
+    vendor_id: int,
+    reviser_user_id: int,
+    data: Dict[str, Any],
+    review_notes: Optional[str] = None,
+) -> bool:
+    """Update vendor data directly while assigning verification to its reviser."""
+    verified_checklist = {
+        key: True for key in ("identity", "npwp", "phone", "address", "owner", "bank")
+    }
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE monev_bos_vendors
+            SET name = %s,
+                npwp = %s,
+                phone = %s,
+                address = %s,
+                owner_name = %s,
+                bank_name = %s,
+                bank_account_type = %s,
+                bank_account = %s,
+                vendor_type = %s,
+                status = 'verified',
+                verified_by = %s,
+                verified_at = NOW(),
+                rejection_reason = NULL,
+                verification_checklist = %s::jsonb,
+                review_notes = %s,
+                updated_at = NOW()
+            WHERE id = %s AND status = 'verified'
+            """,
+            (
+                data.get("name", "").strip(),
+                data.get("npwp", "").strip() or None,
+                data.get("phone", "").strip() or None,
+                data.get("address", "").strip() or None,
+                data.get("owner_name", "").strip() or None,
+                data.get("bank_name", "").strip() or None,
+                data.get("bank_account_type", "rekening")
+                if data.get("bank_account_type") in ("rekening", "va")
+                else "rekening",
+                data.get("bank_account", "").strip() or None,
+                data.get("vendor_type", "vendor")
+                if data.get("vendor_type") in ("vendor", "narsum")
+                else "vendor",
+                reviser_user_id,
+                json.dumps(verified_checklist),
+                review_notes,
+                vendor_id,
             ),
         )
         return cur.rowcount > 0

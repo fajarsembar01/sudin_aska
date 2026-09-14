@@ -3917,6 +3917,97 @@ def admin_vendors():
         action = request.form.get("action", "")
         vendor_id = request.form.get("vendor_id", type=int)
 
+        if action == "revise_vendor" and vendor_id:
+            vendor_before_review = queries.get_vendor_by_id(vendor_id)
+            if not vendor_before_review or vendor_before_review.get("status") != "verified":
+                flash("Hanya vendor/narasumber terverifikasi yang dapat direvisi.", "warning")
+                return filtered_redirect()
+
+            bank_account_type = (
+                request.form.get("bank_account_type") or "rekening"
+            ).strip().lower()
+            if bank_account_type not in ("rekening", "va"):
+                bank_account_type = "rekening"
+            data = {
+                "name": (request.form.get("name") or "").strip(),
+                "npwp": (request.form.get("npwp") or "").strip(),
+                "phone": (request.form.get("phone") or "").strip(),
+                "address": (request.form.get("address") or "").strip(),
+                "owner_name": (request.form.get("owner_name") or "").strip(),
+                "bank_name": (request.form.get("bank_name") or "").strip(),
+                "bank_account_type": bank_account_type,
+                "bank_account": "" if bank_account_type == "va" else (
+                    request.form.get("bank_account") or ""
+                ).strip(),
+                "vendor_type": vendor_before_review.get("vendor_type") or "vendor",
+            }
+            if not data["name"]:
+                flash(
+                    "No. KTP wajib diisi." if data["vendor_type"] == "narsum"
+                    else "Nama toko/vendor wajib diisi.",
+                    "warning",
+                )
+                return filtered_redirect()
+
+            field_labels = {
+                "name": "No. KTP" if data["vendor_type"] == "narsum" else "Nama vendor",
+                "npwp": "NPWP",
+                "phone": "Kontak",
+                "address": "Alamat",
+                "owner_name": "Nama narasumber" if data["vendor_type"] == "narsum" else "Penanggung jawab",
+                "bank_name": "Bank",
+                "bank_account_type": "Jenis rekening",
+                "bank_account": "No. rekening",
+            }
+            changed_fields = [
+                label for field, label in field_labels.items()
+                if str(vendor_before_review.get(field) or "").strip()
+                != str(data.get(field) or "").strip()
+            ]
+            if not changed_fields:
+                flash("Belum ada data vendor/narasumber yang diubah.", "warning")
+                return filtered_redirect()
+
+            verified_duplicates = [
+                match for match in queries.find_vendor_duplicate_matches_for_data(
+                    data, exclude_vendor_id=vendor_id
+                )
+                if match.get("status") == "verified"
+            ]
+            if verified_duplicates:
+                flash(
+                    "Revisi diblokir karena hasil perubahan sama dengan vendor/narasumber lain yang sudah terverifikasi.",
+                    "danger",
+                )
+                return filtered_redirect()
+
+            review_notes = (request.form.get("review_notes") or "").strip() or None
+            if queries.revise_verified_vendor(
+                vendor_id, user["id"], data, review_notes=review_notes
+            ):
+                revised_vendor = queries.get_vendor_by_id(vendor_id)
+                vendor_name = queries.get_vendor_display_name(revised_vendor or data)
+                _record_monev_admin_action(
+                    "VERIFY_APPROVE",
+                    "MONEV_VENDOR",
+                    target_id=vendor_id,
+                    target_name=vendor_name,
+                    metadata={
+                        "is_revision": True,
+                        "previous_verifier_id": vendor_before_review.get("verified_by"),
+                        "changed_fields": changed_fields,
+                        "review_notes": review_notes,
+                    },
+                    allow_staff=True,
+                )
+                flash(
+                    f"Data '{vendor_name}' berhasil direvisi. Poin performa kini tercatat untuk pemeriksa terakhir.",
+                    "success",
+                )
+            else:
+                flash("Gagal merevisi data vendor/narasumber.", "danger")
+            return filtered_redirect()
+
         if action == "verify_vendor" and vendor_id:
             verified_duplicate_matches = [
                 match for match in queries.find_vendor_duplicate_matches(vendor_id)
@@ -3942,6 +4033,14 @@ def admin_vendors():
                 )
                 return filtered_redirect()
 
+            vendor_before_review = queries.get_vendor_by_id(vendor_id)
+            if not vendor_before_review:
+                flash("Data vendor/narasumber tidak ditemukan.", "danger")
+                return filtered_redirect()
+            if vendor_before_review.get("status") == "verified":
+                flash("Gunakan tombol Revisi untuk mengubah vendor yang sudah terverifikasi.", "warning")
+                return filtered_redirect()
+
             review_notes = (request.form.get("review_notes") or "").strip() or None
             if queries.update_vendor_status(
                 vendor_id,
@@ -3961,6 +4060,7 @@ def admin_vendors():
                 verification_metadata = {
                     "verification_checklist": verification_checklist,
                     "has_review_notes": bool(review_notes),
+                    "is_revision": False,
                 }
                 _record_monev_admin_action(
                     "VERIFY_APPROVE",

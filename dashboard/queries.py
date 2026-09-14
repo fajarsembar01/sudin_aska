@@ -4888,6 +4888,31 @@ def fetch_admin_activity_events(
                   a.feature_key = 'laporan'
                   AND UPPER(TRIM(a.action)) = 'AUTOSAVE'
               )
+              AND NOT (
+                  a.feature_key = 'monev_bos'
+                  AND a.target_type = 'MONEV_VENDOR'
+                  AND a.action = 'VERIFY_REJECT'
+              )
+              AND (
+                  a.feature_key <> 'monev_bos'
+                  OR a.target_type <> 'MONEV_VENDOR'
+                  OR a.action <> 'VERIFY_APPROVE'
+                  OR NOT EXISTS (
+                      SELECT 1
+                      FROM dashboard_admin_action_logs newer_vendor_action
+                      WHERE newer_vendor_action.feature_key = 'monev_bos'
+                        AND newer_vendor_action.target_type = 'MONEV_VENDOR'
+                        AND newer_vendor_action.target_id = a.target_id
+                        AND newer_vendor_action.action IN ('VERIFY_APPROVE', 'VERIFY_REJECT')
+                        AND (
+                            newer_vendor_action.created_at > a.created_at
+                            OR (
+                                newer_vendor_action.created_at = a.created_at
+                                AND newer_vendor_action.id > a.id
+                            )
+                        )
+                  )
+              )
             """, timestamp_column="a.created_at", start=start, end=end)
         events.extend(
             _normalize_admin_performance_event(dict(row)) for row in cur.fetchall()

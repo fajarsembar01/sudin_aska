@@ -130,7 +130,7 @@
                         <td class="ps-3"><span class="staff-rank-number">{{ row.rank }}</span></td>
                         <td><strong class="d-block">{{ row.staff_name or 'Staff' }}</strong></td>
                         <td><strong class="text-primary fs-5">{{ row.score }}</strong></td>
-                        <td>{{ row.validated_activities }}</td><td title="Disetujui: {{ row.verified_vendors }} · Ditolak: {{ row.rejected_vendors }}">{{ row.vendor_decisions }}</td><td>{{ row.completed_reports }}</td><td>{{ row.uploaded_photos }}</td><td>{{ row.active_days }}</td>
+                        <td>{{ row.validated_activities }}</td><td title="Terverifikasi (berpoin): {{ row.verified_vendors }} · Ditolak (tanpa poin): {{ row.rejected_vendors }}">{{ row.vendor_decisions }}</td><td>{{ row.completed_reports }}</td><td>{{ row.uploaded_photos }}</td><td>{{ row.active_days }}</td>
                         <td class="text-nowrap small">{{ row.last_action_at.strftime('%d/%m/%Y %H:%M') if row.last_action_at else '-' }}</td>
                     </tr>
                     {% else %}

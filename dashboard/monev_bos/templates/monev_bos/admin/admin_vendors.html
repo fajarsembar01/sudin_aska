@@ -435,7 +435,8 @@
                                         </div>
                                     {% else %}
                                         <div class="btn-group" role="group">
-                                            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#reviewVendorModal{{ v.id }}"><i class="bi bi-card-checklist me-1"></i>Checklist</button>
+                                            <button type="button" class="btn btn-sm btn-outline-warning" data-bs-toggle="modal" data-bs-target="#reviewVendorModal{{ v.id }}"><i class="bi bi-pencil-square me-1"></i>Revisi</button>
+                                            <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#rejectVendorModal{{ v.id }}"><i class="bi bi-x-lg me-1"></i>Tolak</button>
                                             <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#vendorHistoryModal{{ v.id }}" title="Lihat riwayat tindakan" aria-label="Lihat riwayat tindakan {{ v.name }}"><i class="bi bi-eye"></i></button>
                                         </div>
                                     {% endif %}
@@ -598,7 +599,8 @@
                 <button type="button" class="btn {{ 'btn-danger' if v.verified_duplicate_matches else 'btn-outline-success' }} fw-bold" data-bs-toggle="modal" data-bs-target="#reviewVendorModal{{ v.id }}"><i class="bi {{ 'bi-shield-lock-fill' if v.verified_duplicate_matches else 'bi-card-checklist' }} me-1"></i>{{ 'Verifikasi Diblokir' if v.verified_duplicate_matches else 'Periksa & Setujui' }}</button>
                 <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#vendorHistoryModal{{ v.id }}"><i class="bi bi-eye me-1"></i>Riwayat</button>
                 {% else %}
-                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#reviewVendorModal{{ v.id }}"><i class="bi bi-card-checklist me-1"></i>Checklist</button>
+                <button type="button" class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#reviewVendorModal{{ v.id }}"><i class="bi bi-pencil-square me-1"></i>Revisi</button>
+                <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#rejectVendorMobileModal{{ v.id }}"><i class="bi bi-x-lg me-1"></i>Tolak</button>
                 <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#vendorHistoryModal{{ v.id }}"><i class="bi bi-eye me-1"></i>Riwayat</button>
                 {% endif %}
             </div>
@@ -666,17 +668,64 @@
 <div class="modal fade vendor-review-modal" id="reviewVendorModal{{ v.id }}" tabindex="-1" aria-labelledby="reviewVendorModalLabel{{ v.id }}" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable vendor-review-dialog">
         <form method="POST" action="{{ url_for('monev_bos.admin_vendors', vendor_type=vendor_type_filter, school_id=school_id_filter, status=status_filter, q=search_query, scan=scan_mode) }}" class="modal-content" id="vendorReviewForm{{ v.id }}">
-            <input type="hidden" name="action" value="verify_vendor">
+            <input type="hidden" name="action" value="{{ 'revise_vendor' if v.status == 'verified' else 'verify_vendor' }}">
             <input type="hidden" name="vendor_id" value="{{ v.id }}">
             <div class="modal-header {{ 'bg-danger-subtle' if v.verified_duplicate_matches and v.status != 'verified' else 'bg-primary-subtle' }}">
                 <div>
-                    <h5 class="modal-title fw-bold" id="reviewVendorModalLabel{{ v.id }}"><i class="bi {{ 'bi-shield-lock-fill text-danger' if v.verified_duplicate_matches and v.status != 'verified' else 'bi-card-checklist text-primary' }} me-2"></i>{{ 'Verifikasi Diblokir' if v.verified_duplicate_matches and v.status != 'verified' else 'Checklist Pemeriksaan' }} {{ 'Narasumber' if v.vendor_type == 'narsum' else 'Vendor' }}</h5>
+                    <h5 class="modal-title fw-bold" id="reviewVendorModalLabel{{ v.id }}"><i class="bi {{ 'bi-shield-lock-fill text-danger' if v.verified_duplicate_matches and v.status != 'verified' else ('bi-pencil-square text-warning' if v.status == 'verified' else 'bi-card-checklist text-primary') }} me-2"></i>{{ 'Verifikasi Diblokir' if v.verified_duplicate_matches and v.status != 'verified' else ('Revisi Verifikasi' if v.status == 'verified' else 'Checklist Pemeriksaan') }} {{ 'Narasumber' if v.vendor_type == 'narsum' else 'Vendor' }}</h5>
                     <div class="small text-body-secondary mt-1">{{ v.school_name }}{% if v.npsn %} · NPSN {{ v.npsn }}{% endif %}</div>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
             </div>
             <div class="modal-body">
-                {% if v.verified_duplicate_matches and v.status != 'verified' %}
+                {% if v.status == 'verified' %}
+                <div class="alert alert-warning small"><i class="bi bi-pencil-square me-1"></i>Ubah langsung data yang keliru. Revisi harus memiliki perubahan data dan akan memindahkan poin kepada pemeriksa yang menyimpannya.</div>
+                <div class="row g-3">
+                    <div class="col-12 col-md-6">
+                        <label class="form-label fw-semibold" for="revisionName{{ v.id }}">{{ 'No. KTP' if v.vendor_type == 'narsum' else 'Nama Toko / Vendor' }} <span class="text-danger">*</span></label>
+                        <input id="revisionName{{ v.id }}" type="text" class="form-control" name="name" value="{{ v.name or '' }}" required>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="form-label fw-semibold" for="revisionNpwp{{ v.id }}">NPWP</label>
+                        <input id="revisionNpwp{{ v.id }}" type="text" class="form-control" name="npwp" value="{{ v.npwp or '' }}">
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="form-label fw-semibold" for="revisionPhone{{ v.id }}">No. Telepon / WhatsApp</label>
+                        <input id="revisionPhone{{ v.id }}" type="text" class="form-control" name="phone" value="{{ v.phone or '' }}">
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="form-label fw-semibold" for="revisionOwner{{ v.id }}">{{ 'Nama Narasumber / Instruktur' if v.vendor_type == 'narsum' else 'Penanggung Jawab / Pemilik' }}</label>
+                        <input id="revisionOwner{{ v.id }}" type="text" class="form-control" name="owner_name" value="{{ v.owner_name or '' }}">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold" for="revisionAddress{{ v.id }}">Alamat</label>
+                        <textarea id="revisionAddress{{ v.id }}" class="form-control" name="address" rows="2">{{ v.address or '' }}</textarea>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="form-label fw-semibold" for="revisionBank{{ v.id }}">Nama Bank</label>
+                        <select id="revisionBank{{ v.id }}" class="form-select" name="bank_name">
+                            <option value="">Pilih bank</option>
+                            {% if v.bank_name and v.bank_name not in master_banks %}<option value="{{ v.bank_name }}" selected>{{ v.bank_name }}</option>{% endif %}
+                            {% for bank in master_banks %}<option value="{{ bank }}" {% if bank == v.bank_name %}selected{% endif %}>{{ bank }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="form-label fw-semibold" for="revisionAccountType{{ v.id }}">Jenis Pembayaran</label>
+                        <select id="revisionAccountType{{ v.id }}" class="form-select" name="bank_account_type">
+                            <option value="rekening" {% if (v.bank_account_type or 'rekening') == 'rekening' %}selected{% endif %}>Rekening</option>
+                            <option value="va" {% if v.bank_account_type == 'va' %}selected{% endif %}>Virtual Account (VA)</option>
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold" for="revisionAccount{{ v.id }}">No. Rekening <span class="text-body-secondary fw-normal">(dikosongkan otomatis jika VA)</span></label>
+                        <input id="revisionAccount{{ v.id }}" type="text" class="form-control" name="bank_account" value="{{ v.bank_account or '' }}">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold" for="reviewNotes{{ v.id }}"><i class="bi bi-chat-left-text me-1"></i>Catatan Revisi <span class="text-body-secondary fw-normal">(opsional)</span></label>
+                        <textarea id="reviewNotes{{ v.id }}" name="review_notes" class="form-control" rows="2" placeholder="Jelaskan data yang diperbaiki...">{{ v.review_notes or '' }}</textarea>
+                    </div>
+                </div>
+                {% elif v.verified_duplicate_matches %}
                 <div class="alert alert-danger"><i class="bi bi-shield-lock-fill me-1"></i><strong>Vendor/narasumber yang sama sudah terverifikasi.</strong> Pengajuan ini tidak dapat diverifikasi, termasuk melalui pengiriman request langsung.</div>
                 <div>
                     <div class="vstack gap-2 mb-3">
@@ -694,52 +743,48 @@
                 </div>
                 {% else %}
                 <div id="vendorReviewChecklistStep{{ v.id }}">
-                    {% if v.duplicate_matches and not v.verified_duplicate_matches and v.status != 'verified' %}
+                    {% if v.duplicate_matches and not v.verified_duplicate_matches %}
                     <div class="alert alert-info small"><i class="bi bi-info-circle-fill me-1"></i>Ada data mirip, tetapi belum ada yang terverifikasi. Pengajuan ini tetap dapat diverifikasi setelah checklist dinyatakan sesuai.</div>
                     {% endif %}
-                    {% if v.status == 'verified' and not review_checks %}
-                    <div class="alert alert-info small"><i class="bi bi-info-circle me-1"></i>Data ini diverifikasi sebelum fitur checklist tersedia, sehingga belum memiliki rincian pemeriksaan.</div>
-                    {% else %}
                     <p class="small text-body-secondary">Centang <strong>Sesuai</strong> setelah membandingkan setiap nilai dengan dokumen pendukung.</p>
-                    {% endif %}
 
                     <div class="vstack gap-2">
                         <div class="border rounded p-2 d-flex justify-content-between align-items-center gap-3 vendor-review-row">
                             <div><span class="small text-body-secondary d-block">{{ 'No. KTP' if v.vendor_type == 'narsum' else 'Nama Toko / Vendor' }}</span><strong>{{ v.name or '-' }}</strong></div>
-                            <div class="form-check flex-shrink-0"><input class="form-check-input vendor-review-check-input" type="checkbox" name="check_identity" value="sesuai" id="reviewIdentity{{ v.id }}" {% if review_checks.get('identity') %}checked{% endif %} {% if v.status == 'verified' or (v.verified_duplicate_matches and v.status != 'verified') %}disabled{% endif %} {% if v.status != 'verified' %}required{% endif %}><label class="form-check-label text-success fw-bold" for="reviewIdentity{{ v.id }}">Sesuai</label></div>
+                            <div class="form-check flex-shrink-0"><input class="form-check-input vendor-review-check-input" type="checkbox" name="check_identity" value="sesuai" id="reviewIdentity{{ v.id }}" {% if review_checks.get('identity') %}checked{% endif %} required><label class="form-check-label text-success fw-bold" for="reviewIdentity{{ v.id }}">Sesuai</label></div>
                         </div>
                         <div class="border rounded p-2 d-flex justify-content-between align-items-center gap-3 vendor-review-row">
                             <div><span class="small text-body-secondary d-block">NPWP</span><strong>{{ v.npwp or '-' }}</strong></div>
-                            <div class="form-check flex-shrink-0"><input class="form-check-input vendor-review-check-input" type="checkbox" name="check_npwp" value="sesuai" id="reviewNpwp{{ v.id }}" {% if review_checks.get('npwp') %}checked{% endif %} {% if v.status == 'verified' or (v.verified_duplicate_matches and v.status != 'verified') %}disabled{% endif %} {% if v.status != 'verified' %}required{% endif %}><label class="form-check-label text-success fw-bold" for="reviewNpwp{{ v.id }}">Sesuai</label></div>
+                            <div class="form-check flex-shrink-0"><input class="form-check-input vendor-review-check-input" type="checkbox" name="check_npwp" value="sesuai" id="reviewNpwp{{ v.id }}" {% if review_checks.get('npwp') %}checked{% endif %} required><label class="form-check-label text-success fw-bold" for="reviewNpwp{{ v.id }}">Sesuai</label></div>
                         </div>
                         <div class="border rounded p-2 d-flex justify-content-between align-items-center gap-3 vendor-review-row">
                             <div><span class="small text-body-secondary d-block">No. Telepon / WhatsApp</span><strong>{{ v.phone or '-' }}</strong></div>
-                            <div class="form-check flex-shrink-0"><input class="form-check-input vendor-review-check-input" type="checkbox" name="check_phone" value="sesuai" id="reviewPhone{{ v.id }}" {% if review_checks.get('phone') %}checked{% endif %} {% if v.status == 'verified' or (v.verified_duplicate_matches and v.status != 'verified') %}disabled{% endif %} {% if v.status != 'verified' %}required{% endif %}><label class="form-check-label text-success fw-bold" for="reviewPhone{{ v.id }}">Sesuai</label></div>
+                            <div class="form-check flex-shrink-0"><input class="form-check-input vendor-review-check-input" type="checkbox" name="check_phone" value="sesuai" id="reviewPhone{{ v.id }}" {% if review_checks.get('phone') %}checked{% endif %} required><label class="form-check-label text-success fw-bold" for="reviewPhone{{ v.id }}">Sesuai</label></div>
                         </div>
                         <div class="border rounded p-2 d-flex justify-content-between align-items-center gap-3 vendor-review-row">
                             <div class="min-w-0"><span class="small text-body-secondary d-block">Alamat</span><strong class="text-break">{{ v.address or '-' }}</strong></div>
-                            <div class="form-check flex-shrink-0"><input class="form-check-input vendor-review-check-input" type="checkbox" name="check_address" value="sesuai" id="reviewAddress{{ v.id }}" {% if review_checks.get('address') %}checked{% endif %} {% if v.status == 'verified' or (v.verified_duplicate_matches and v.status != 'verified') %}disabled{% endif %} {% if v.status != 'verified' %}required{% endif %}><label class="form-check-label text-success fw-bold" for="reviewAddress{{ v.id }}">Sesuai</label></div>
+                            <div class="form-check flex-shrink-0"><input class="form-check-input vendor-review-check-input" type="checkbox" name="check_address" value="sesuai" id="reviewAddress{{ v.id }}" {% if review_checks.get('address') %}checked{% endif %} required><label class="form-check-label text-success fw-bold" for="reviewAddress{{ v.id }}">Sesuai</label></div>
                         </div>
                         <div class="border rounded p-2 d-flex justify-content-between align-items-center gap-3 vendor-review-row">
                             <div><span class="small text-body-secondary d-block">{{ 'Nama Narasumber / Instruktur' if v.vendor_type == 'narsum' else 'Penanggung Jawab / Pemilik' }}</span><strong>{{ v.owner_name or '-' }}</strong></div>
-                            <div class="form-check flex-shrink-0"><input class="form-check-input vendor-review-check-input" type="checkbox" name="check_owner" value="sesuai" id="reviewOwner{{ v.id }}" {% if review_checks.get('owner') %}checked{% endif %} {% if v.status == 'verified' or (v.verified_duplicate_matches and v.status != 'verified') %}disabled{% endif %} {% if v.status != 'verified' %}required{% endif %}><label class="form-check-label text-success fw-bold" for="reviewOwner{{ v.id }}">Sesuai</label></div>
+                            <div class="form-check flex-shrink-0"><input class="form-check-input vendor-review-check-input" type="checkbox" name="check_owner" value="sesuai" id="reviewOwner{{ v.id }}" {% if review_checks.get('owner') %}checked{% endif %} required><label class="form-check-label text-success fw-bold" for="reviewOwner{{ v.id }}">Sesuai</label></div>
                         </div>
                         <div class="border rounded p-2 d-flex justify-content-between align-items-center gap-3 vendor-review-row">
                             <div><span class="small text-body-secondary d-block">Bank / Pembayaran</span><strong>{{ v.bank_name or '-' }} · {% if (v.bank_account_type or 'rekening') == 'va' %}Virtual Account (VA){% else %}{{ v.bank_account or '-' }}{% endif %}</strong></div>
-                            <div class="form-check flex-shrink-0"><input class="form-check-input vendor-review-check-input" type="checkbox" name="check_bank" value="sesuai" id="reviewBank{{ v.id }}" {% if review_checks.get('bank') %}checked{% endif %} {% if v.status == 'verified' or (v.verified_duplicate_matches and v.status != 'verified') %}disabled{% endif %} {% if v.status != 'verified' %}required{% endif %}><label class="form-check-label text-success fw-bold" for="reviewBank{{ v.id }}">Sesuai</label></div>
+                            <div class="form-check flex-shrink-0"><input class="form-check-input vendor-review-check-input" type="checkbox" name="check_bank" value="sesuai" id="reviewBankCheck{{ v.id }}" {% if review_checks.get('bank') %}checked{% endif %} required><label class="form-check-label text-success fw-bold" for="reviewBankCheck{{ v.id }}">Sesuai</label></div>
                         </div>
                     </div>
 
                     <div class="mt-3">
                         <label class="form-label fw-bold" for="reviewNotes{{ v.id }}"><i class="bi bi-chat-left-text me-1"></i>Catatan Pemeriksaan <span class="text-body-secondary fw-normal">(opsional)</span></label>
-                        <textarea id="reviewNotes{{ v.id }}" name="review_notes" class="form-control" rows="3" placeholder="Tuliskan temuan atau keterangan hasil pemeriksaan..." {% if v.status == 'verified' %}readonly{% endif %}>{{ v.review_notes or '' }}</textarea>
+                        <textarea id="reviewNotes{{ v.id }}" name="review_notes" class="form-control" rows="3" placeholder="Tuliskan temuan atau keterangan hasil pemeriksaan...">{{ v.review_notes or '' }}</textarea>
                     </div>
                 </div>
                 {% endif %}
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
-                {% if v.status != 'verified' and not v.verified_duplicate_matches %}<button type="submit" class="btn btn-success fw-bold" id="vendorReviewSubmit{{ v.id }}"><i class="bi bi-shield-check me-1"></i>Simpan &amp; Verifikasi</button>{% endif %}
+                {% if not v.verified_duplicate_matches or v.status == 'verified' %}<button type="submit" class="btn {{ 'btn-warning' if v.status == 'verified' else 'btn-success' }} fw-bold" id="vendorReviewSubmit{{ v.id }}"><i class="bi {{ 'bi-pencil-square' if v.status == 'verified' else 'bi-shield-check' }} me-1"></i>{{ 'Simpan Revisi Data' if v.status == 'verified' else 'Simpan & Verifikasi' }}</button>{% endif %}
             </div>
         </form>
     </div>
@@ -762,11 +807,12 @@
                     {% for entry in v.action_history %}
                     {% set history_meta = entry.metadata or {} %}
                     {% set is_approval = entry.action == 'VERIFY_APPROVE' %}
+                    {% set is_revision = is_approval and history_meta.get('is_revision') %}
                     <div class="border rounded p-3 {% if is_approval %}border-success-subtle bg-success-subtle{% else %}border-danger-subtle bg-danger-subtle{% endif %}">
                         <div class="d-flex justify-content-between align-items-start gap-2">
                             <div>
                                 <span class="badge {% if is_approval %}text-bg-success{% else %}text-bg-danger{% endif %}">
-                                    <i class="bi {% if is_approval %}bi-check-circle-fill{% else %}bi-x-circle-fill{% endif %} me-1"></i>{{ 'Diverifikasi' if is_approval else 'Ditolak' }}
+                                    <i class="bi {% if is_revision %}bi-pencil-square{% elif is_approval %}bi-check-circle-fill{% else %}bi-x-circle-fill{% endif %} me-1"></i>{{ 'Revisi Verifikasi' if is_revision else ('Diverifikasi' if is_approval else 'Ditolak') }}
                                 </span>
                                 {% if loop.first %}<span class="badge bg-primary-subtle text-primary border ms-1">Terbaru</span>{% endif %}
                                 <div class="fw-bold text-body mt-2">{{ entry.actor_name }}</div>
@@ -778,6 +824,9 @@
                         <div class="small mt-2"><i class="bi bi-chat-left-text me-1"></i>{{ history_meta.get('review_notes') }}</div>
                         {% elif not is_approval and history_meta.get('rejection_reason') %}
                         <div class="small text-danger mt-2"><i class="bi bi-info-circle me-1"></i>{{ history_meta.get('rejection_reason') }}</div>
+                        {% endif %}
+                        {% if is_revision and history_meta.get('changed_fields') %}
+                        <div class="small mt-2"><i class="bi bi-pencil me-1"></i>Data diubah: {{ history_meta.get('changed_fields')|join(', ') }}</div>
                         {% endif %}
                     </div>
                     {% endfor %}

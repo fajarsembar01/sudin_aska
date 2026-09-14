@@ -1,11 +1,9 @@
 {
-  "name": "aska-dashboard-e2e",
+  "name": "aska-dashboard",
   "private": true,
   "version": "1.0.0",
-  "description": "Playwright mobile e2e for ASKA guestbook super app",
+  "description": "ASKA dashboard and WhatsApp bridge",
   "scripts": {
-    "test:e2e": "playwright test",
-    "test:e2e:headed": "playwright test --headed",
     "bot:supporter": "python3 bot_supporter.py",
     "wa:start": "node scripts/whatsapp_bridge.js",
     "wa:cc": "node scripts/whatsapp_bridge_cc.js"
@@ -15,8 +13,5 @@
     "express": "^4.22.1",
     "qrcode-terminal": "^0.12.0",
     "whatsapp-web.js": "^1.34.1"
-  },
-  "devDependencies": {
-    "@playwright/test": "^1.52.0"
   }
 }
