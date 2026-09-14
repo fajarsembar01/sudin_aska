@@ -3959,11 +3959,25 @@ def admin_vendors():
                 "bank_account_type": "Jenis rekening",
                 "bank_account": "No. rekening",
             }
-            changed_fields = [
-                label for field, label in field_labels.items()
-                if str(vendor_before_review.get(field) or "").strip()
-                != str(data.get(field) or "").strip()
-            ]
+            field_changes = []
+            for field, label in field_labels.items():
+                before_value = str(vendor_before_review.get(field) or "").strip()
+                after_value = str(data.get(field) or "").strip()
+                if before_value != after_value:
+                    if field == "bank_account_type":
+                        account_labels = {
+                            "rekening": "Rekening",
+                            "va": "Virtual Account (VA)",
+                        }
+                        before_value = account_labels.get(before_value, before_value)
+                        after_value = account_labels.get(after_value, after_value)
+                    field_changes.append({
+                        "field": field,
+                        "label": label,
+                        "before": before_value,
+                        "after": after_value,
+                    })
+            changed_fields = [change["label"] for change in field_changes]
             if not changed_fields:
                 flash("Belum ada data vendor/narasumber yang diubah.", "warning")
                 return filtered_redirect()
@@ -3996,6 +4010,7 @@ def admin_vendors():
                         "is_revision": True,
                         "previous_verifier_id": vendor_before_review.get("verified_by"),
                         "changed_fields": changed_fields,
+                        "field_changes": field_changes,
                         "review_notes": review_notes,
                     },
                     allow_staff=True,
