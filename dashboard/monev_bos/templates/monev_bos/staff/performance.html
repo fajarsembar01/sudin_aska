@@ -135,42 +135,14 @@
                         <td><strong class="d-block">{{ row.staff_name or 'Staff' }}</strong></td>
                         <td><strong class="text-primary fs-5">{{ row.score }}</strong></td>
                         <td>
-                            <button type="button" class="btn btn-link p-0 text-body fw-bold text-decoration-none staff-point-detail-trigger" data-performance-detail-target="activityPointDetails{{ row.staff_id }}" data-performance-detail-title="Kegiatan berpoin ({{ row.validated_activities }})" title="Klik untuk melihat kegiatan yang dihitung">
+                            <button type="button" class="btn btn-link p-0 text-body fw-bold text-decoration-none staff-point-detail-trigger" data-performance-detail-url="{{ url_for('monev_bos.staff_performance_point_details', staff_id=row.staff_id, kind='activity', period_scope=period.scope, month=period.selected_month, year=period.selected_year) }}" data-performance-detail-title="Kegiatan berpoin ({{ row.validated_activities }})" title="Klik untuk melihat kegiatan yang dihitung">
                                 {{ row.validated_activities }} <i class="bi bi-info-circle small text-primary"></i>
                             </button>
-                            <div class="d-none" id="activityPointDetails{{ row.staff_id }}">
-                                <div class="performance-point-items">
-                                    {% for item in row.validated_activity_items or [] %}
-                                    <div class="performance-point-item py-2">
-                                        <div class="fw-semibold">{{ loop.index }}. {{ item.name }}</div>
-                                        <div class="small text-body-secondary"><i class="bi bi-building me-1"></i>{{ item.school }}</div>
-                                    </div>
-                                    {% else %}
-                                    <div class="small text-body-secondary py-2">Tidak ada rincian kegiatan berpoin.</div>
-                                    {% endfor %}
-                                </div>
-                            </div>
                         </td>
                         <td>
-                            <button type="button" class="btn btn-link p-0 text-body fw-bold text-decoration-none staff-point-detail-trigger" data-performance-detail-target="vendorPointDetails{{ row.staff_id }}" data-performance-detail-title="Kontribusi Vendor/Narasumber ({{ row.vendor_decisions }})" title="Memverifikasi: {{ row.verified_vendors }} · Merevisi: {{ row.revised_vendors }} · Menolak: {{ row.rejected_vendors }} · Klik untuk melihat rinciannya">
+                            <button type="button" class="btn btn-link p-0 text-body fw-bold text-decoration-none staff-point-detail-trigger" data-performance-detail-url="{{ url_for('monev_bos.staff_performance_point_details', staff_id=row.staff_id, kind='vendor', period_scope=period.scope, month=period.selected_month, year=period.selected_year) }}" data-performance-detail-title="Kontribusi Vendor/Narasumber ({{ row.vendor_decisions }})" title="Memverifikasi: {{ row.verified_vendors }} · Merevisi: {{ row.revised_vendors }} · Menolak: {{ row.rejected_vendors }} · Klik untuk melihat rinciannya">
                                 {{ row.vendor_decisions }} <i class="bi bi-info-circle small text-primary"></i>
                             </button>
-                            <div class="d-none" id="vendorPointDetails{{ row.staff_id }}">
-                                <div class="performance-point-items">
-                                    <div class="small text-body-secondary pb-2">Memverifikasi: <strong>{{ row.verified_vendors }}</strong> · Merevisi: <strong>{{ row.revised_vendors }}</strong> · Menolak: <strong>{{ row.rejected_vendors }}</strong></div>
-                                    {% for item in row.vendor_decision_items or [] %}
-                                    <div class="performance-point-item py-2">
-                                        <div class="d-flex align-items-start justify-content-between gap-2">
-                                            <div class="fw-semibold">{{ loop.index }}. {{ item.name }}</div>
-                                            <span class="badge {{ 'text-bg-warning' if item.is_revision else ('text-bg-success' if item.decision == 'VERIFY_APPROVE' else 'text-bg-danger') }}">{{ 'Merevisi' if item.is_revision else ('Memverifikasi' if item.decision == 'VERIFY_APPROVE' else 'Menolak') }}</span>
-                                        </div>
-                                        <div class="small text-body-secondary"><i class="bi bi-building me-1"></i>{{ item.school }}</div>
-                                    </div>
-                                    {% else %}
-                                    <div class="small text-body-secondary py-2">Tidak ada rincian vendor/narasumber berpoin.</div>
-                                    {% endfor %}
-                                </div>
-                            </div>
                         </td>
                         <td>{{ row.completed_reports }}</td><td>{{ row.uploaded_photos }}</td><td>{{ row.active_days }}</td>
                         <td class="text-nowrap small">{{ row.last_action_at.strftime('%d/%m/%Y %H:%M') if row.last_action_at else '-' }}</td>
@@ -215,22 +187,97 @@
     </div>
 </div>
 
+<div class="modal fade" id="staffPerformanceDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title h6 fw-bold mb-0" id="staffPerformanceDetailTitle">Rincian poin</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+            </div>
+            <div class="modal-body">
+                <div id="staffPerformanceDetailList" class="performance-point-items"></div>
+                <div id="staffPerformanceDetailStatus" class="small text-body-secondary py-3 text-center"></div>
+                <button type="button" class="btn btn-outline-primary btn-sm w-100 d-none" id="staffPerformanceDetailMore">Muat lainnya</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    if (!window.bootstrap || !window.bootstrap.Popover) return;
-    document.querySelectorAll('[data-performance-detail-target]').forEach(function (trigger) {
-        const detail = document.getElementById(trigger.dataset.performanceDetailTarget);
-        if (!detail) return;
-        new window.bootstrap.Popover(trigger, {
-            container: 'body',
-            customClass: 'performance-points-popover',
-            html: true,
-            placement: 'auto',
-            trigger: 'focus',
-            title: trigger.dataset.performanceDetailTitle || '',
-            content: function () { return detail.innerHTML; }
+    if (!window.bootstrap || !window.bootstrap.Modal) return;
+    const modalElement = document.getElementById('staffPerformanceDetailModal');
+    const modal = window.bootstrap.Modal.getOrCreateInstance(modalElement);
+    const title = document.getElementById('staffPerformanceDetailTitle');
+    const list = document.getElementById('staffPerformanceDetailList');
+    const status = document.getElementById('staffPerformanceDetailStatus');
+    const moreButton = document.getElementById('staffPerformanceDetailMore');
+    let baseUrl = '';
+    let nextPage = 1;
+    let loading = false;
+
+    function addItem(item, number) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'performance-point-item py-2';
+        const heading = document.createElement('div');
+        heading.className = 'd-flex align-items-start justify-content-between gap-2';
+        const name = document.createElement('div');
+        name.className = 'fw-semibold';
+        name.textContent = number + '. ' + (item.name || '-');
+        heading.appendChild(name);
+        if (item.decision) {
+            const badge = document.createElement('span');
+            const revised = Boolean(item.is_revision);
+            badge.className = 'badge ' + (revised ? 'text-bg-warning' : (item.decision === 'VERIFY_APPROVE' ? 'text-bg-success' : 'text-bg-danger'));
+            badge.textContent = revised ? 'Merevisi' : (item.decision === 'VERIFY_APPROVE' ? 'Memverifikasi' : 'Menolak');
+            heading.appendChild(badge);
+        }
+        const school = document.createElement('div');
+        school.className = 'small text-body-secondary mt-1';
+        school.textContent = item.school || 'Sekolah tidak tersedia';
+        wrapper.appendChild(heading);
+        wrapper.appendChild(school);
+        list.appendChild(wrapper);
+    }
+
+    async function loadPage(reset) {
+        if (loading || !baseUrl) return;
+        loading = true;
+        moreButton.disabled = true;
+        status.textContent = reset ? 'Memuat rincian...' : 'Memuat data berikutnya...';
+        try {
+            const url = new URL(baseUrl, window.location.origin);
+            url.searchParams.set('page', String(nextPage));
+            const response = await fetch(url.toString(), {headers: {'Accept': 'application/json'}});
+            const payload = await response.json();
+            if (!response.ok || !payload.success) throw new Error(payload.message || 'Rincian gagal dimuat.');
+            if (reset) list.replaceChildren();
+            const startNumber = (payload.page - 1) * payload.page_size;
+            payload.items.forEach(function (item, index) { addItem(item, startNumber + index + 1); });
+            nextPage = payload.page + 1;
+            status.textContent = payload.total ? ('Menampilkan ' + list.children.length + ' dari ' + payload.total + ' rincian') : 'Tidak ada rincian.';
+            moreButton.classList.toggle('d-none', !payload.has_more);
+        } catch (error) {
+            status.textContent = error.message || 'Rincian gagal dimuat.';
+            moreButton.classList.add('d-none');
+        } finally {
+            loading = false;
+            moreButton.disabled = false;
+        }
+    }
+
+    document.querySelectorAll('[data-performance-detail-url]').forEach(function (trigger) {
+        trigger.addEventListener('click', function () {
+            baseUrl = trigger.dataset.performanceDetailUrl || '';
+            nextPage = 1;
+            list.replaceChildren();
+            moreButton.classList.add('d-none');
+            title.textContent = trigger.dataset.performanceDetailTitle || 'Rincian poin';
+            modal.show();
+            loadPage(true);
         });
     });
+    moreButton.addEventListener('click', function () { loadPage(false); });
 });
 </script>
 {% endblock %}

@@ -3252,7 +3252,8 @@ def staff_performance():
         start=period["start"], end=period["end"]
     )
     personal = queries.get_staff_performance_detail(
-        int(user["id"]), start=period["start"], end=period["end"], detail_limit=30
+        int(user["id"]), start=period["start"], end=period["end"], detail_limit=30,
+        leaderboard=leaderboard,
     )
     return render_template(
         "monev_bos/staff/performance.html",
@@ -3261,6 +3262,25 @@ def staff_performance():
         leaderboard=leaderboard,
         personal=personal,
     )
+
+
+@monev_bos_bp.route("/staff/performance/point-details/<int:staff_id>")
+@role_required("staff")
+def staff_performance_point_details(staff_id: int):
+    """Return paginated leaderboard evidence without bloating the main page."""
+    kind = (request.args.get("kind") or "").strip().lower()
+    if kind not in {"activity", "vendor"}:
+        return jsonify({"success": False, "message": "Jenis rincian tidak valid."}), 400
+    period = _resolve_staff_performance_range()
+    result = queries.get_staff_performance_point_items(
+        staff_id,
+        kind,
+        start=period["start"],
+        end=period["end"],
+        page=request.args.get("page", type=int) or 1,
+        page_size=10,
+    )
+    return jsonify({"success": True, **result})
 
 
 @monev_bos_bp.route("/staff/performance/pdf")
@@ -3272,7 +3292,8 @@ def staff_performance_pdf():
         start=period["start"], end=period["end"]
     )
     personal = queries.get_staff_performance_detail(
-        int(user["id"]), start=period["start"], end=period["end"], detail_limit=50
+        int(user["id"]), start=period["start"], end=period["end"], detail_limit=50,
+        leaderboard=leaderboard,
     )
     output = build_staff_performance_pdf(
         leaderboard=leaderboard,
@@ -3307,11 +3328,30 @@ def staff_my_team():
         return redirect(url_for("monev_bos.staff_dashboard"))
         
     team = teams[0] # Ambil tim pertama
+    periods = sorted(
+        queries.list_periods(),
+        key=lambda period: (int(period["year"]), int(period["tw"])),
+        reverse=True,
+    )
+    requested_period = request.args.get("period_id")
+    show_all_periods = requested_period == "all"
+    selected_period = None if show_all_periods else _selected_admin_period(
+        periods,
+        request.args.get("period_id", type=int),
+    )
+    period_selection = "all" if show_all_periods else (
+        selected_period["id"] if selected_period else None
+    )
     
     if request.method == "POST":
         if not team["is_leader"]:
             flash("Hanya ketua tim yang bisa mengelola anggota.", "danger")
-            return redirect(url_for("monev_bos.staff_my_team"))
+            return redirect(
+                url_for(
+                    "monev_bos.staff_my_team",
+                    period_id=period_selection,
+                )
+            )
             
         action = request.form.get("action")
         staff_id = int(request.form.get("staff_id"))
@@ -3335,7 +3375,12 @@ def staff_my_team():
             )
             flash("Anggota berhasil dihapus.", "success")
             
-        return redirect(url_for("monev_bos.staff_my_team"))
+        return redirect(
+            url_for(
+                "monev_bos.staff_my_team",
+                period_id=period_selection,
+            )
+        )
 
     members = queries.get_team_members(team["id"])
     all_staff = queries.get_staff_users() if team["is_leader"] else []
@@ -3343,8 +3388,26 @@ def staff_my_team():
     # Filter out existing members
     member_ids = [m["id"] for m in members]
     available_staff = [s for s in all_staff if s["id"] not in member_ids]
-    
-    return render_template("monev_bos/staff/my_team.html", team=team, members=members, available_staff=available_staff)
+
+    team_progress_rows = queries.list_team_period_performance(
+        team["id"],
+        None if show_all_periods else selected_period["id"] if selected_period else None,
+        include_empty=not show_all_periods,
+    ) if periods else []
+    for progress in team_progress_rows:
+        _attach_team_progress_metrics(progress)
+
+    return render_template(
+        "monev_bos/staff/my_team.html",
+        team=team,
+        members=members,
+        available_staff=available_staff,
+        periods=periods,
+        selected_period=selected_period,
+        show_all_periods=show_all_periods,
+        period_selection=period_selection,
+        team_progress_rows=team_progress_rows,
+    )
 
 @monev_bos_bp.route("/staff/audit/<int:report_id>", methods=["GET", "POST"])
 @monev_bos_bp.route("/staff/verifikasi/<int:report_id>", methods=["GET", "POST"])

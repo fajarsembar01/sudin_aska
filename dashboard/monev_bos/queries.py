@@ -386,6 +386,61 @@ def list_admin_team_performance(period_id: int) -> List[Dict[str, Any]]:
         return [dict(row) for row in cur.fetchall()]
 
 
+def list_team_period_performance(
+    team_id: int,
+    period_id: Optional[int] = None,
+    include_empty: bool = True,
+) -> List[Dict[str, Any]]:
+    """Summarize one team's progress per period without combining periods."""
+    period_filter = "AND period.id = %s" if period_id is not None else ""
+    data_filter = "" if include_empty else "HAVING COUNT(DISTINCT assignment.school_id) > 0"
+    params = (team_id, period_id) if period_id is not None else (team_id,)
+    with get_cursor() as cur:
+        cur.execute(
+            f"""
+            SELECT period.id AS period_id,
+                   period.year AS period_year,
+                   period.tw AS period_tw,
+                   period.is_active AS period_is_active,
+                   team.id AS team_id,
+                   team.name AS team_name,
+                   leader.full_name AS leader_name,
+                   COUNT(DISTINCT assignment.school_id) AS assigned_schools,
+                   COUNT(DISTINCT report.id) AS total_reports,
+                   COUNT(DISTINCT report.id) FILTER (WHERE report.status IN ('submitted', 'in_review')) AS review_queue,
+                   COUNT(DISTINCT report.id) FILTER (WHERE report.status IN ('completed', 'completed_with_notes')) AS completed_reports,
+                   COUNT(DISTINCT report.id) FILTER (WHERE report.status = 'needs_revision') AS revision_reports,
+                   COUNT(activity.id) AS total_activities,
+                   COUNT(activity.id) FILTER (WHERE activity.status = 'valid') AS valid_activities,
+                   COUNT(activity.id) FILTER (WHERE activity.status = 'invalid') AS invalid_activities,
+                   COUNT(activity.id) FILTER (WHERE activity.status = 'pending') AS pending_activities,
+                   COUNT(activity.id) FILTER (WHERE activity.status = 'in_review') AS in_review_activities,
+                   COUNT(activity.id) FILTER (
+                       WHERE activity.id IS NOT NULL
+                         AND (
+                             activity.status IS NULL
+                             OR activity.status NOT IN ('valid', 'invalid', 'pending', 'in_review')
+                         )
+                   ) AS other_activities
+            FROM monev_bos_periods period
+            CROSS JOIN monev_bos_teams team
+            LEFT JOIN dashboard_users leader ON leader.id = team.leader_id
+            LEFT JOIN monev_bos_assignments assignment
+                   ON assignment.team_id = team.id AND assignment.period_id = period.id
+            LEFT JOIN monev_bos_reports report
+                   ON report.school_id = assignment.school_id AND report.period_id = period.id
+            LEFT JOIN monev_bos_activities activity ON activity.report_id = report.id
+            WHERE team.id = %s
+              {period_filter}
+            GROUP BY period.id, team.id, leader.full_name
+            {data_filter}
+            ORDER BY period.year DESC, period.tw DESC
+            """,
+            params,
+        )
+        return [dict(row) for row in cur.fetchall()]
+
+
 def list_admin_activity_photos(
     period_id: Optional[int],
     limit: int = 24,
@@ -2315,35 +2370,6 @@ def list_staff_performance(
                 JOIN monev_bos_reports r ON r.id = l.report_id
                 WHERE 1=1 {audit_date_sql}
                 GROUP BY l.user_id
-            ), validated_activity_details AS (
-                SELECT DISTINCT ON (l.user_id, l.activity_id)
-                       l.user_id AS staff_id,
-                       l.activity_id,
-                       COALESCE(a.activity_name, 'Kegiatan #' || l.activity_id::text) AS activity_name,
-                       COALESCE(ps.name, school.full_name, 'Sekolah tidak tersedia') AS school_name,
-                       l.created_at
-                FROM monev_bos_audit_logs l
-                JOIN dashboard_users u ON u.id = l.user_id AND u.role = 'staff'
-                JOIN monev_bos_reports r ON r.id = l.report_id
-                LEFT JOIN monev_bos_activities a ON a.id = l.activity_id
-                LEFT JOIN dashboard_users school ON school.id = r.school_id
-                LEFT JOIN portal_schools ps ON ps.id = school.school_id
-                WHERE l.action = 'VALIDATE'
-                  AND l.activity_id IS NOT NULL
-                  {audit_date_sql}
-                ORDER BY l.user_id, l.activity_id, l.created_at DESC, l.id DESC
-            ), validated_activity_lists AS (
-                SELECT staff_id,
-                       JSONB_AGG(
-                           JSONB_BUILD_OBJECT(
-                               'id', activity_id,
-                               'name', activity_name,
-                               'school', school_name,
-                               'created_at', created_at
-                           ) ORDER BY created_at DESC, activity_id DESC
-                       ) AS items
-                FROM validated_activity_details
-                GROUP BY staff_id
             ), vendor_stats AS (
                 -- The latest decision owns the contribution point, whether the
                 -- reviewer approved valid data or rejected incorrect data.
@@ -2357,27 +2383,8 @@ def list_staff_performance(
                            WHERE event.action = 'VERIFY_APPROVE'
                              AND event.metadata->>'is_revision' = 'true'
                        )::int AS revised_vendors,
-                       COUNT(*) FILTER (WHERE event.action = 'VERIFY_REJECT')::int AS rejected_vendors,
-                       JSONB_AGG(
-                           JSONB_BUILD_OBJECT(
-                               'id', event.target_id,
-                               'name', COALESCE(
-                                   event.target_name,
-                                   CASE WHEN vendor.vendor_type = 'narsum'
-                                        THEN COALESCE(vendor.owner_name, vendor.name)
-                                        ELSE vendor.name END,
-                                   'Vendor #' || event.target_id::text
-                               ),
-                               'school', COALESCE(ps.name, school.full_name, 'Sekolah tidak tersedia'),
-                               'decision', event.action,
-                               'is_revision', COALESCE(event.metadata->>'is_revision', 'false') = 'true',
-                               'created_at', event.created_at
-                           ) ORDER BY event.created_at DESC, event.target_id DESC
-                       ) AS items
+                       COUNT(*) FILTER (WHERE event.action = 'VERIFY_REJECT')::int AS rejected_vendors
                 FROM vendor_events_in_period event
-                LEFT JOIN monev_bos_vendors vendor ON vendor.id = event.target_id
-                LEFT JOIN dashboard_users school ON school.id = vendor.school_id
-                LEFT JOIN portal_schools ps ON ps.id = school.school_id
                 GROUP BY event.staff_id
             ), active_timeline AS (
                 SELECT l.user_id AS staff_id, l.created_at
@@ -2403,7 +2410,6 @@ def list_staff_performance(
                    u.email AS staff_email,
                    (COALESCE(audit_stats.audit_actions, 0) + COALESCE(vendor_stats.vendor_decisions, 0))::int AS total_actions,
                    COALESCE(audit_stats.validated_activities, 0)::int AS validated_activities,
-                   COALESCE(validated_activity_lists.items, '[]'::jsonb) AS validated_activity_items,
                    COALESCE(audit_stats.completed_reports, 0)::int AS completed_reports,
                    COALESCE(photo_stats.uploaded_photos, 0)::int AS uploaded_photos,
                    COALESCE(audit_stats.supporting_actions, 0)::int AS supporting_actions,
@@ -2411,7 +2417,6 @@ def list_staff_performance(
                    COALESCE(vendor_stats.verified_vendors, 0)::int AS verified_vendors,
                    COALESCE(vendor_stats.revised_vendors, 0)::int AS revised_vendors,
                    COALESCE(vendor_stats.rejected_vendors, 0)::int AS rejected_vendors,
-                   COALESCE(vendor_stats.items, '[]'::jsonb) AS vendor_decision_items,
                    COALESCE(timeline_stats.active_days, 0)::int AS active_days,
                    COALESCE(audit_stats.handled_schools, 0)::int AS handled_schools,
                    timeline_stats.first_action_at,
@@ -2419,7 +2424,6 @@ def list_staff_performance(
             FROM staff_ids
             JOIN dashboard_users u ON u.id = staff_ids.staff_id AND u.role = 'staff'
             LEFT JOIN audit_stats ON audit_stats.staff_id = u.id
-            LEFT JOIN validated_activity_lists ON validated_activity_lists.staff_id = u.id
             LEFT JOIN vendor_stats ON vendor_stats.staff_id = u.id
             LEFT JOIN photo_stats ON photo_stats.staff_id = u.id
             LEFT JOIN timeline_stats ON timeline_stats.staff_id = u.id
@@ -2446,6 +2450,142 @@ def list_staff_performance(
     for rank, row in enumerate(rows, start=1):
         row["rank"] = rank
     return rows
+
+
+def get_staff_performance_point_items(
+    staff_id: int,
+    kind: str,
+    *,
+    start: Optional[datetime] = None,
+    end: Optional[datetime] = None,
+    page: int = 1,
+    page_size: int = 10,
+) -> Dict[str, Any]:
+    """Load one page of score evidence only when the user requests it."""
+    safe_page = max(1, int(page or 1))
+    safe_size = max(1, min(int(page_size or 10), 50))
+    offset = (safe_page - 1) * safe_size
+    params: Dict[str, Any] = {
+        "staff_id": int(staff_id),
+        "limit": safe_size,
+        "offset": offset,
+    }
+
+    if kind == "activity":
+        date_conditions: List[str] = []
+        if start:
+            date_conditions.append("l.created_at >= %(start)s")
+            params["start"] = start
+        if end:
+            date_conditions.append("l.created_at < %(end)s")
+            params["end"] = end
+        date_sql = "".join(f" AND {condition}" for condition in date_conditions)
+        query = f"""
+            WITH latest_activity AS (
+                SELECT DISTINCT ON (l.activity_id)
+                       l.activity_id AS id,
+                       COALESCE(a.activity_name, 'Kegiatan #' || l.activity_id::text) AS name,
+                       COALESCE(ps.name, school.full_name, 'Sekolah tidak tersedia') AS school,
+                       l.created_at
+                FROM monev_bos_audit_logs l
+                JOIN monev_bos_reports r ON r.id = l.report_id
+                LEFT JOIN monev_bos_activities a ON a.id = l.activity_id
+                LEFT JOIN dashboard_users school ON school.id = r.school_id
+                LEFT JOIN portal_schools ps ON ps.id = school.school_id
+                WHERE l.user_id = %(staff_id)s
+                  AND l.action = 'VALIDATE'
+                  AND l.activity_id IS NOT NULL
+                  {date_sql}
+                ORDER BY l.activity_id, l.created_at DESC, l.id DESC
+            )
+            SELECT latest_activity.*, COUNT(*) OVER ()::int AS total
+            FROM latest_activity
+            ORDER BY created_at DESC, id DESC
+            LIMIT %(limit)s OFFSET %(offset)s
+        """
+    elif kind == "vendor":
+        event_conditions: List[str] = []
+        if start:
+            event_conditions.append("event.created_at >= %(start)s")
+            params["start"] = start
+        if end:
+            event_conditions.append("event.created_at < %(end)s")
+            params["end"] = end
+        event_sql = "".join(f" AND {condition}" for condition in event_conditions)
+        query = f"""
+            WITH vendor_events_raw AS (
+                SELECT vlog.id, vlog.user_id AS staff_id, vlog.action, vlog.target_id,
+                       vlog.target_name, vlog.created_at, vlog.metadata
+                FROM dashboard_admin_action_logs vlog
+                WHERE vlog.feature_key = 'monev_bos'
+                  AND vlog.target_type = 'MONEV_VENDOR'
+                  AND vlog.action IN ('VERIFY_APPROVE', 'VERIFY_REJECT')
+                UNION ALL
+                SELECT -vlegacy.id AS id, vlegacy.verified_by AS staff_id,
+                       CASE WHEN vlegacy.status = 'verified'
+                            THEN 'VERIFY_APPROVE' ELSE 'VERIFY_REJECT' END AS action,
+                       vlegacy.id AS target_id,
+                       CASE WHEN vlegacy.vendor_type = 'narsum'
+                            THEN COALESCE(vlegacy.owner_name, vlegacy.name)
+                            ELSE vlegacy.name END AS target_name,
+                       vlegacy.verified_at AS created_at,
+                       NULL::jsonb AS metadata
+                FROM monev_bos_vendors vlegacy
+                WHERE vlegacy.verified_by IS NOT NULL
+                  AND vlegacy.status IN ('verified', 'rejected')
+                  AND vlegacy.verified_at IS NOT NULL
+                  AND NOT EXISTS (
+                      SELECT 1 FROM dashboard_admin_action_logs recorded
+                      WHERE recorded.feature_key = 'monev_bos'
+                        AND recorded.target_type = 'MONEV_VENDOR'
+                        AND recorded.target_id = vlegacy.id
+                        AND recorded.action IN ('VERIFY_APPROVE', 'VERIFY_REJECT')
+                  )
+            ), vendor_events AS (
+                SELECT DISTINCT ON (target_id)
+                       id, staff_id, action, target_id, target_name, created_at, metadata
+                FROM vendor_events_raw
+                ORDER BY target_id, created_at DESC, id DESC
+            ), selected_events AS (
+                SELECT event.* FROM vendor_events event
+                WHERE event.staff_id = %(staff_id)s {event_sql}
+            )
+            SELECT event.target_id AS id,
+                   COALESCE(
+                       event.target_name,
+                       CASE WHEN vendor.vendor_type = 'narsum'
+                            THEN COALESCE(vendor.owner_name, vendor.name)
+                            ELSE vendor.name END,
+                       'Vendor #' || event.target_id::text
+                   ) AS name,
+                   COALESCE(ps.name, school.full_name, 'Sekolah tidak tersedia') AS school,
+                   event.action AS decision,
+                   (COALESCE(event.metadata->>'is_revision', 'false') = 'true') AS is_revision,
+                   event.created_at,
+                   COUNT(*) OVER ()::int AS total
+            FROM selected_events event
+            LEFT JOIN monev_bos_vendors vendor ON vendor.id = event.target_id
+            LEFT JOIN dashboard_users school ON school.id = vendor.school_id
+            LEFT JOIN portal_schools ps ON ps.id = school.school_id
+            ORDER BY event.created_at DESC, event.target_id DESC
+            LIMIT %(limit)s OFFSET %(offset)s
+        """
+    else:
+        raise ValueError("Jenis rincian performa tidak valid.")
+
+    with get_cursor() as cur:
+        cur.execute(query, params)
+        rows = [dict(row) for row in cur.fetchall()]
+    total = int(rows[0].get("total") if rows else 0)
+    for row in rows:
+        row.pop("total", None)
+    return {
+        "items": rows,
+        "total": total,
+        "page": safe_page,
+        "page_size": safe_size,
+        "has_more": offset + len(rows) < total,
+    }
 
 
 def list_staff_performance_years() -> List[int]:
@@ -2490,11 +2630,16 @@ def get_staff_performance_detail(
     start: Optional[datetime] = None,
     end: Optional[datetime] = None,
     detail_limit: int = 50,
+    leaderboard: Optional[List[Dict[str, Any]]] = None,
 ) -> Dict[str, Any]:
     """Return one staff member's score, action distribution, and recent audit log."""
-    leaderboard = list_staff_performance(start=start, end=end)
+    performance_rows = (
+        leaderboard
+        if leaderboard is not None
+        else list_staff_performance(start=start, end=end)
+    )
     summary = next(
-        (row for row in leaderboard if int(row.get("staff_id") or 0) == int(staff_id)),
+        (row for row in performance_rows if int(row.get("staff_id") or 0) == int(staff_id)),
         {
             "staff_id": staff_id,
             "total_actions": 0,

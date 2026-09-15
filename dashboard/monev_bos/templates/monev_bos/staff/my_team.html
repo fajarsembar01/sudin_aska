@@ -14,11 +14,50 @@
     .member-item-card {
         transition: background-color 0.15s ease-in-out;
     }
-    @media (max-width: 576px) {
+    .team-progress-card { border-radius: 16px; }
+    .team-progress-track {
+        display: flex;
+        height: 10px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: var(--bs-tertiary-bg);
+    }
+    .team-progress-segment { min-width: 0; height: 100%; }
+    .team-progress-segment + .team-progress-segment { box-shadow: -1px 0 0 rgba(255, 255, 255, 0.7); }
+    .team-progress-legend { display: flex; flex-wrap: wrap; gap: .35rem .8rem; margin-top: .6rem; }
+    .team-progress-legend-item { display: inline-flex; align-items: center; gap: .35rem; font-size: .7rem; color: var(--bs-secondary-color); }
+    .team-progress-dot { width: 8px; height: 8px; flex: 0 0 auto; border-radius: 50%; }
+    .team-report-track { height: 8px; overflow: hidden; border-radius: 999px; background: var(--bs-tertiary-bg); }
+    .team-report-bar { height: 100%; border-radius: inherit; }
+    .team-back-mobile, .team-activity-count-mobile, .team-legend-mobile { display: none; }
+    @media (max-width: 767.98px) {
         .my-team-container { padding-left: 10px !important; padding-right: 10px !important; }
+        .team-hero-card { margin-bottom: .75rem !important; border-radius: 14px; }
+        .team-hero-card .card-body { padding: .75rem !important; }
+        .team-hero-card .card-body > .d-flex { gap: .55rem !important; }
+        .team-type-badge, .team-hero-description, .team-title-desktop, .team-back-desktop { display: none; }
+        .team-back-mobile, .team-activity-count-mobile, .team-legend-mobile { display: inline; }
+        .team-activity-count-desktop, .team-legend-desktop { display: none; }
+        .team-role-badge { padding: .25rem .55rem !important; font-size: .62rem !important; }
+        .team-hero-title { margin: .35rem 0 0 !important; font-size: 1.05rem !important; line-height: 1.2; }
+        .team-hero-actions .btn { padding: .38rem .7rem !important; font-size: .7rem !important; }
         .member-flex-wrapper { flex-direction: column; align-items: flex-start !important; gap: 10px; }
         .member-remove-action { width: 100%; text-align: right; }
         .member-remove-action .btn { width: 100%; }
+        .team-progress-card .card-header,
+        .team-progress-card .card-body { padding: .75rem !important; }
+        .team-progress-card .card-header p { display: none; }
+        .team-progress-card .card-header .gap-3 { gap: .5rem !important; }
+        .team-progress-card form { width: 100%; }
+        .team-progress-card form select { min-width: 0 !important; flex: 1; }
+        .team-period-block.border-top { margin-top: .8rem !important; padding-top: .8rem !important; }
+        .team-period-heading { margin-bottom: .55rem !important; }
+        .team-activity-progress { --bs-gutter-y: .5rem; }
+        .team-progress-track { height: 8px; }
+        .team-progress-legend { gap: .25rem .6rem; margin-top: .45rem; }
+        .team-progress-legend-item { font-size: .65rem; }
+        .team-assigned-schools { display: none; }
+        .team-reporting-panel { display: none; }
     }
 </style>
 
@@ -29,30 +68,117 @@
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <div>
                     <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
-                        <span class="badge border rounded-pill px-2.5 py-1" style="background: rgba(255, 255, 255, 0.2); color: #ffffff !important; border-color: rgba(255, 255, 255, 0.35) !important; font-size: 0.75rem;">
+                        <span class="badge border rounded-pill px-2.5 py-1 team-type-badge" style="background: rgba(255, 255, 255, 0.2); color: #ffffff !important; border-color: rgba(255, 255, 255, 0.35) !important; font-size: 0.75rem;">
                             <i class="bi bi-people-fill me-1"></i> Tim Monev
                         </span>
                         {% if team.is_leader %}
-                        <span class="badge bg-warning text-dark px-2.5 py-1 rounded-pill fw-bold" style="font-size: 0.75rem;">
+                        <span class="badge bg-warning text-dark px-2.5 py-1 rounded-pill fw-bold team-role-badge" style="font-size: 0.75rem;">
                             <i class="bi bi-star-fill me-1"></i> Ketua Tim
                         </span>
                         {% else %}
-                        <span class="badge border rounded-pill px-2.5 py-1" style="background: rgba(255, 255, 255, 0.2); color: #ffffff !important; border-color: rgba(255, 255, 255, 0.35) !important; font-size: 0.75rem;">
+                        <span class="badge border rounded-pill px-2.5 py-1 team-role-badge" style="background: rgba(255, 255, 255, 0.2); color: #ffffff !important; border-color: rgba(255, 255, 255, 0.35) !important; font-size: 0.75rem;">
                             Anggota Tim
                         </span>
                         {% endif %}
                     </div>
-                    <h2 class="h4 h3-md fw-bold mb-1 text-white">Manajemen Tim: {{ team.name }}</h2>
-                    <p class="text-white-50 small mb-0">Kelola daftar anggota tim Anda untuk pelaksanaan kegiatan verifikasi silang sekolah.</p>
+                    <h2 class="h4 h3-md fw-bold mb-1 text-white team-hero-title"><span class="team-title-desktop">Manajemen Tim: </span>{{ team.name }}</h2>
+                    <p class="text-white-50 small mb-0 team-hero-description">Kelola daftar anggota tim Anda untuk pelaksanaan kegiatan verifikasi silang sekolah.</p>
                 </div>
-                <div>
+                <div class="team-hero-actions">
                     <a href="{{ url_for('monev_bos.staff_dashboard') }}" class="btn btn-light text-primary fw-bold rounded-pill px-3 py-1.5 text-xs shadow-sm">
-                        <i class="bi bi-arrow-left me-1"></i> Kembali ke Dashboard
+                        <i class="bi bi-arrow-left me-1"></i><span class="team-back-desktop">Kembali ke Dashboard</span><span class="team-back-mobile">Dashboard</span>
                     </a>
                 </div>
             </div>
         </div>
     </div>
+
+    <section class="card bg-body border shadow-xs team-progress-card mb-3 mb-md-4 overflow-hidden">
+        <div class="card-header bg-body-tertiary border-bottom p-3 px-md-4">
+            <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+                <div>
+                    <h6 class="fw-bold mb-1"><i class="bi bi-graph-up-arrow text-primary me-2"></i>Progres Tim per TW</h6>
+                    <p class="text-body-secondary text-xs mb-0">Capaian laporan sekolah dan verifikasi kegiatan tim {{ team.name }}.</p>
+                </div>
+                {% if periods %}
+                <form method="GET" action="{{ url_for('monev_bos.staff_my_team') }}" class="d-flex align-items-center gap-2">
+                    <label for="teamPeriodSelect" class="text-xs fw-bold text-nowrap">Periode</label>
+                    <select id="teamPeriodSelect" name="period_id" class="form-select form-select-sm" onchange="this.form.submit()" style="min-width: 175px;">
+                        <option value="all" {% if show_all_periods %}selected{% endif %}>Semua Periode</option>
+                        {% for period in periods %}
+                        <option value="{{ period.id }}" {% if selected_period and period.id == selected_period.id %}selected{% endif %}>
+                            {{ period.year }} · TW {{ period.tw }}{% if period.is_active %} — Aktif{% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+        <div class="card-body p-3 p-md-4">
+            {% if team_progress_rows %}
+            {% for progress in team_progress_rows %}
+            <div class="team-period-block{% if not loop.first %} border-top pt-4 mt-4{% endif %}">
+            <div class="d-flex flex-wrap align-items-center gap-2 mb-3 team-period-heading">
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle">{{ progress.period_year }} · TW {{ progress.period_tw }}</span>
+                {% if progress.period_is_active %}<span class="badge bg-success-subtle text-success border border-success-subtle">Aktif</span>{% endif %}
+                <span class="text-body-secondary text-xs team-assigned-schools">{{ progress.assigned_schools }} sekolah ditugaskan</span>
+            </div>
+            <div class="row g-4 team-activity-progress">
+                <div class="col-12 col-lg-7">
+                    <div class="d-flex justify-content-between align-items-end gap-3 mb-2">
+                        <div>
+                            <div class="small fw-semibold">Status kegiatan</div>
+                            <div class="text-body-secondary text-xs">
+                                <span class="team-activity-count-desktop">{{ progress.audited_activities }} dari {{ progress.total_activities }} kegiatan sudah diperiksa</span>
+                                <span class="team-activity-count-mobile">{{ progress.audited_activities }}/{{ progress.total_activities }} sudah diperiksa</span>
+                            </div>
+                        </div>
+                        <strong class="text-success">{{ progress.verification_rate }}%</strong>
+                    </div>
+                    {% if progress.total_activities %}
+                    <div class="team-progress-track" role="img" aria-label="{{ progress.valid_rate }}% terverifikasi, {{ progress.invalid_rate }}% revisi, {{ progress.pending_rate }}% pending">
+                        {% if progress.valid_activities %}<span class="team-progress-segment bg-success" style="flex: {{ progress.valid_activities }} 0 0" title="Terverifikasi: {{ progress.valid_activities }} ({{ progress.valid_rate }}%)"></span>{% endif %}
+                        {% if progress.invalid_activities %}<span class="team-progress-segment bg-danger" style="flex: {{ progress.invalid_activities }} 0 0" title="Revisi: {{ progress.invalid_activities }} ({{ progress.invalid_rate }}%)"></span>{% endif %}
+                        {% if progress.pending_activities %}<span class="team-progress-segment bg-warning" style="flex: {{ progress.pending_activities }} 0 0" title="Pending: {{ progress.pending_activities }} ({{ progress.pending_rate }}%)"></span>{% endif %}
+                        {% if progress.other_activities %}<span class="team-progress-segment bg-secondary" style="flex: {{ progress.other_activities }} 0 0" title="Lainnya: {{ progress.other_activities }} ({{ progress.other_rate }}%)"></span>{% endif %}
+                    </div>
+                    <div class="team-progress-legend">
+                        <span class="team-progress-legend-item"><span class="team-progress-dot bg-success"></span><span class="team-legend-desktop">Verif {{ progress.valid_activities }} · {{ progress.valid_rate }}%</span><span class="team-legend-mobile">Verif {{ progress.valid_activities }}/{{ progress.valid_rate }}%</span></span>
+                        <span class="team-progress-legend-item"><span class="team-progress-dot bg-danger"></span><span class="team-legend-desktop">Revisi {{ progress.invalid_activities }} · {{ progress.invalid_rate }}%</span><span class="team-legend-mobile">Revisi {{ progress.invalid_activities }}/{{ progress.invalid_rate }}%</span></span>
+                        <span class="team-progress-legend-item"><span class="team-progress-dot bg-warning"></span><span class="team-legend-desktop">Pending {{ progress.pending_activities }} · {{ progress.pending_rate }}%</span><span class="team-legend-mobile">Pending {{ progress.pending_activities }}/{{ progress.pending_rate }}%</span></span>
+                        {% if progress.other_activities %}<span class="team-progress-legend-item"><span class="team-progress-dot bg-secondary"></span><span class="team-legend-desktop">Lainnya {{ progress.other_activities }} · {{ progress.other_rate }}%</span><span class="team-legend-mobile">Lainnya {{ progress.other_activities }}/{{ progress.other_rate }}%</span></span>{% endif %}
+                    </div>
+                    {% else %}
+                    <div class="team-progress-track"></div>
+                    <div class="text-body-secondary text-xs mt-2">Belum ada kegiatan pada periode ini.</div>
+                    {% endif %}
+                </div>
+                <div class="col-12 col-lg-5 team-reporting-panel">
+                    <div class="d-flex justify-content-between align-items-end gap-3 mb-2">
+                        <div>
+                            <div class="small fw-semibold">Sekolah melapor</div>
+                            <div class="text-body-secondary text-xs">{{ progress.total_reports }} dari {{ progress.assigned_schools }} sekolah</div>
+                        </div>
+                        <strong class="text-primary">{{ progress.reporting_rate }}%</strong>
+                    </div>
+                    <div class="team-report-track">
+                        <div class="team-report-bar bg-primary" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ progress.reporting_rate }}" style="width: {{ progress.reporting_rate }}%;"></div>
+                    </div>
+                    <div class="d-flex flex-wrap gap-2 mt-3">
+                        <span class="badge bg-info-subtle text-info border border-info-subtle">Antrean {{ progress.review_queue }}</span>
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Perlu revisi {{ progress.revision_reports }}</span>
+                        <span class="badge bg-success-subtle text-success border border-success-subtle">Selesai {{ progress.completed_reports }}</span>
+                    </div>
+                </div>
+            </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="text-center py-3 text-body-secondary small">Belum ada periode MONEV yang dapat ditampilkan.</div>
+            {% endif %}
+        </div>
+    </section>
 
     <div class="row g-3 g-md-4">
         <!-- Kolom Kiri: Daftar Anggota Tim -->
@@ -92,7 +218,7 @@
 
                                 {% if team.is_leader and member.id != team.leader_id %}
                                 <div class="member-remove-action">
-                                    <form action="{{ url_for('monev_bos.staff_my_team') }}" method="POST" onsubmit="return confirm('Keluarkan anggota ini dari tim?');">
+                                    <form action="{{ url_for('monev_bos.staff_my_team', period_id=period_selection) }}" method="POST" onsubmit="return confirm('Keluarkan anggota ini dari tim?');">
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                         <input type="hidden" name="action" value="remove_member">
                                         <input type="hidden" name="staff_id" value="{{ member.id }}">
@@ -125,7 +251,7 @@
                     </h6>
                 </div>
                 <div class="card-body p-3 p-md-4">
-                    <form action="{{ url_for('monev_bos.staff_my_team') }}" method="POST">
+                    <form action="{{ url_for('monev_bos.staff_my_team', period_id=period_selection) }}" method="POST">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <input type="hidden" name="action" value="add_member">
                         <div class="mb-3">

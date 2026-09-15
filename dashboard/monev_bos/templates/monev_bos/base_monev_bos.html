@@ -90,13 +90,32 @@
                 {% endif %}
 
                 {% if current_user and current_user.role == 'staff' %}
-                <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint == 'monev_bos.staff_dashboard' %}active{% endif %}" href="{{ url_for('monev_bos.staff_dashboard') }}">
-                        <i class="bi bi-check2-square nav-icon"></i>Verifikasi Sekolah
+                {% set is_staff_verification_active = request.endpoint in ['monev_bos.staff_dashboard', 'monev_bos.admin_vendors'] %}
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle {% if is_staff_verification_active %}active{% endif %}"
+                        href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-check2-square nav-icon"></i>Verifikasi
                         {% if submitted_reports_count and submitted_reports_count > 0 %}
                         <span class="badge bg-warning text-dark rounded-pill ms-1">{{ submitted_reports_count }}</span>
                         {% endif %}
                     </a>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <a class="dropdown-item {% if request.endpoint == 'monev_bos.staff_dashboard' %}active{% endif %}"
+                                href="{{ url_for('monev_bos.staff_dashboard') }}">
+                                <i class="bi bi-building-check me-2"></i>Verifikasi Sekolah
+                                {% if submitted_reports_count and submitted_reports_count > 0 %}
+                                <span class="badge bg-warning text-dark rounded-pill ms-1">{{ submitted_reports_count }}</span>
+                                {% endif %}
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item {% if request.endpoint == 'monev_bos.admin_vendors' %}active{% endif %}"
+                                href="{{ url_for('monev_bos.admin_vendors') }}">
+                                <i class="bi bi-shop me-2"></i>Verifikasi Vendor
+                            </a>
+                        </li>
+                    </ul>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link {% if request.endpoint in ['monev_bos.staff_performance', 'monev_bos.staff_performance_pdf'] %}active{% endif %}" href="{{ url_for('monev_bos.staff_performance') }}">
@@ -104,12 +123,8 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint == 'monev_bos.admin_vendors' %}active{% endif %}" href="{{ url_for('monev_bos.admin_vendors') }}">
-                        <i class="bi bi-shop nav-icon"></i>Verifikasi Vendor
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint == 'monev_bos.staff_my_team' %}active{% endif %}" href="{{ url_for('monev_bos.staff_my_team') }}">
+                    <a class="nav-link {% if request.endpoint == 'monev_bos.staff_my_team' %}active{% endif %}"
+                        href="{{ url_for('monev_bos.staff_my_team') }}">
                         <i class="bi bi-people nav-icon"></i>Tim Saya
                     </a>
                 </li>
