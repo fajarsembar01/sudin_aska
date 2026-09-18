@@ -193,32 +193,18 @@ async function resolveRecipientJid(rawRecipient) {
     const cached = recipientJidCache.get(number);
     if (cached) return cached;
 
-    // Legacy conversations stored only the numeric part of an inbound @lid.
-    // Match it against existing direct chats before treating it as a phone number.
-    const chats = await client.getChats();
-    for (const chat of chats) {
+    // Prefer the targeted legacy LID chat lookup. Avoid client.getChats(): current
+    // WhatsApp Web builds can throw a minified `r: r` while enumerating all chats.
+    const legacyLid = `${number}@lid`;
+    try {
+        const chat = await client.getChatById(legacyLid);
         const chatJid = String((chat && chat.id && chat.id._serialized) || "");
-        if (!isDirectUserJid(chatJid)) continue;
-        if (normalizeNumber(chatJid) === number) {
+        if (chatJid === legacyLid) {
             rememberRecipientJid(number, chatJid);
             return chatJid;
         }
-    }
-
-    // The stored value may be a real phone number while its chat is LID-addressed.
-    for (const chat of chats) {
-        const chatJid = String((chat && chat.id && chat.id._serialized) || "");
-        if (!isDirectUserJid(chatJid)) continue;
-        try {
-            const contact = await chat.getContact();
-            const contactNumber = normalizeNumber(contact && contact.number);
-            if (contactNumber && contactNumber === number) {
-                rememberRecipientJid(number, chatJid);
-                return chatJid;
-            }
-        } catch (_) {
-            // Continue with WhatsApp's explicit number lookup below.
-        }
+    } catch (_) {
+        // It may be a real phone number rather than a legacy numeric LID.
     }
 
     try {
@@ -987,19 +973,22 @@ app.post("/send", authCheck, async (req, res) => {
 
             const messageMedia = new MessageMedia(mimetype, data, filename);
             const isImage = mimetype.toLowerCase().startsWith("image/");
-            const options = {};
+            const options = { sendSeen: false };
             if (hasMessage) options.caption = String(message).trim();
             if (!isImage) options.sendMediaAsDocument = true;
             sent = await client.sendMessage(jid, messageMedia, options);
         } else {
-            sent = await client.sendMessage(jid, String(message));
+            sent = await client.sendMessage(jid, String(message), { sendSeen: false });
         }
         const sentId = (sent && sent.id && sent.id._serialized) || "";
         if (sentId) ignoredIds.add(sentId);
         console.log(`[CC] sent to=${jid} len=${String(message || "").length} media=${hasMedia ? media.mimetype : "-"}`);
         res.json({ ok: true, messageId: sentId });
     } catch (err) {
-        console.error("[CC] sendMessage error:", (err && err.message) || err);
+        console.error(
+            `[CC] sendMessage error to=${String(to)}:`,
+            (err && err.stack) || (err && err.message) || err
+        );
         res.status(500).json({ error: (err && err.message) || "Send failed" });
     }
 });

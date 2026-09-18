@@ -508,6 +508,11 @@ def split_cc_conversation_user_key(wa_user_id: Optional[str]) -> dict:
 def enrich_cc_conversation_row(row: Optional[dict]) -> Optional[dict]:
     if not row:
         return row
+    if not row.get("wa_jid"):
+        message_id = str(row.get("last_wa_message_id") or "")
+        jid_match = re.search(r"(\d+@(lid|c\.us|s\.whatsapp\.net))", message_id)
+        if jid_match:
+            row["wa_jid"] = _normalize_wa_jid(jid_match.group(1))
     parsed = split_cc_conversation_user_key(row.get("wa_user_id"))
     row["conversation_user_key"] = parsed["conversation_user_key"]
     row["bridge_key"] = parsed["bridge_key"]
@@ -1078,7 +1083,15 @@ def fetch_cc_conversation(conv_id: int) -> Optional[dict]:
         cur.execute(
             """
             SELECT id, wa_user_id, wa_jid, display_name, status,
-                   last_message_at, unread_count, created_at, updated_at
+                   last_message_at, unread_count, created_at, updated_at,
+                   (
+                       SELECT m.wa_message_id
+                       FROM cc_messages m
+                       WHERE m.conversation_id = cc_conversations.id
+                         AND m.wa_message_id IS NOT NULL
+                       ORDER BY m.created_at DESC, m.id DESC
+                       LIMIT 1
+                   ) AS last_wa_message_id
             FROM cc_conversations WHERE id = %(id)s
             """,
             {"id": conv_id},
