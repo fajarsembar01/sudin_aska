@@ -13,6 +13,7 @@ from ..db_access import get_cursor
 
 _CC_DRAFTS_SCHEMA_READY = False
 _CC_MESSAGES_MEDIA_SCHEMA_READY = False
+_CC_CONVERSATIONS_JID_SCHEMA_READY = False
 _CC_WA_ROUTING_SCHEMA_READY = False
 _CC_WA_ROUTE_MODES = {"manual", "ai"}
 _CC_BRIDGE_ACCOUNTS_SCHEMA_READY = False
@@ -57,6 +58,34 @@ def _ensure_cc_messages_media_schema() -> None:
 
 def _normalize_wa_user_id(raw_user_id: Optional[str]) -> str:
     return "".join(ch for ch in str(raw_user_id or "") if ch.isdigit())
+
+
+def _normalize_wa_jid(raw_jid: Optional[str]) -> Optional[str]:
+    """Return a safe direct-user WhatsApp JID, if supplied."""
+    clean = str(raw_jid or "").strip().lower()
+    match = re.fullmatch(r"(\d+)@(lid|c\.us|s\.whatsapp\.net)", clean)
+    if not match:
+        return None
+    server = "c.us" if match.group(2) == "s.whatsapp.net" else match.group(2)
+    return f"{match.group(1)}@{server}"
+
+
+def _ensure_cc_conversations_jid_schema() -> None:
+    """Keep the original WhatsApp JID so LID-addressed chats remain replyable."""
+    global _CC_CONVERSATIONS_JID_SCHEMA_READY
+    if _CC_CONVERSATIONS_JID_SCHEMA_READY:
+        return
+    with get_cursor(commit=True) as cur:
+        cur.execute("""
+            ALTER TABLE cc_conversations
+            ADD COLUMN IF NOT EXISTS wa_jid TEXT
+            """)
+        cur.execute("""
+            CREATE INDEX IF NOT EXISTS idx_cc_conversations_wa_jid
+            ON cc_conversations (wa_jid)
+            WHERE wa_jid IS NOT NULL
+            """)
+    _CC_CONVERSATIONS_JID_SCHEMA_READY = True
 
 
 def _normalize_route_mode(raw_mode: Optional[str]) -> str:
@@ -921,28 +950,38 @@ def upsert_cc_conversation(
     wa_user_id: str,
     display_name: Optional[str] = None,
     last_message_at: Optional[str] = None,
+    wa_jid: Optional[str] = None,
 ) -> dict:
     """Create or update a conversation for the given WA user.
 
     Returns the conversation row as a dict.
     """
+    _ensure_cc_conversations_jid_schema()
+    clean_jid = _normalize_wa_jid(wa_jid)
     with get_cursor(commit=True) as cur:
         cur.execute(
             """
-            INSERT INTO cc_conversations (wa_user_id, display_name, last_message_at, updated_at)
-            VALUES (%(wa)s, %(name)s, COALESCE(%(last_message_at)s::timestamptz, NOW()), NOW())
+            INSERT INTO cc_conversations (
+                wa_user_id, wa_jid, display_name, last_message_at, updated_at
+            )
+            VALUES (
+                %(wa)s, %(wa_jid)s, %(name)s,
+                COALESCE(%(last_message_at)s::timestamptz, NOW()), NOW()
+            )
             ON CONFLICT (wa_user_id) DO UPDATE SET
+                wa_jid = COALESCE(EXCLUDED.wa_jid, cc_conversations.wa_jid),
                 display_name = COALESCE(EXCLUDED.display_name, cc_conversations.display_name),
                 last_message_at = GREATEST(
                     COALESCE(cc_conversations.last_message_at, EXCLUDED.last_message_at),
                     EXCLUDED.last_message_at
                 ),
                 updated_at = NOW()
-            RETURNING id, wa_user_id, display_name, status, last_message_at,
+            RETURNING id, wa_user_id, wa_jid, display_name, status, last_message_at,
                       unread_count, created_at, updated_at
             """,
             {
                 "wa": wa_user_id,
+                "wa_jid": clean_jid,
                 "name": display_name,
                 "last_message_at": last_message_at,
             },
@@ -997,6 +1036,7 @@ def fetch_cc_conversations(
 
     where = ("WHERE " + " AND ".join(conditions)) if conditions else ""
 
+    _ensure_cc_conversations_jid_schema()
     with get_cursor() as cur:
         cur.execute(f"SELECT COUNT(*) AS cnt FROM cc_conversations c {where}", params)
         total = (cur.fetchone() or {}).get("cnt", 0)
@@ -1014,7 +1054,7 @@ def fetch_cc_conversations(
 
         cur.execute(
             f"""
-            SELECT c.id, c.wa_user_id, c.display_name, c.status,
+            SELECT c.id, c.wa_user_id, c.wa_jid, c.display_name, c.status,
                    c.last_message_at, c.unread_count, c.created_at, c.updated_at,
                    (SELECT m.message_text FROM cc_messages m
                     WHERE m.conversation_id = c.id
@@ -1033,10 +1073,11 @@ def fetch_cc_conversations(
 
 def fetch_cc_conversation(conv_id: int) -> Optional[dict]:
     """Fetch a single conversation by ID."""
+    _ensure_cc_conversations_jid_schema()
     with get_cursor() as cur:
         cur.execute(
             """
-            SELECT id, wa_user_id, display_name, status,
+            SELECT id, wa_user_id, wa_jid, display_name, status,
                    last_message_at, unread_count, created_at, updated_at
             FROM cc_conversations WHERE id = %(id)s
             """,

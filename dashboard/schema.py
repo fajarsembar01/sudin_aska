@@ -1403,6 +1403,7 @@ _CC_CONVERSATIONS_SQL = """
 CREATE TABLE IF NOT EXISTS cc_conversations (
     id SERIAL PRIMARY KEY,
     wa_user_id TEXT UNIQUE NOT NULL,
+    wa_jid TEXT,
     display_name TEXT,
     status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open','closed')),
     last_message_at TIMESTAMPTZ,
@@ -1413,8 +1414,10 @@ CREATE TABLE IF NOT EXISTS cc_conversations (
 """
 
 _CC_CONVERSATIONS_INDEX_SQL = """
+ALTER TABLE cc_conversations ADD COLUMN IF NOT EXISTS wa_jid TEXT;
 CREATE INDEX IF NOT EXISTS idx_cc_conversations_status ON cc_conversations (status);
 CREATE INDEX IF NOT EXISTS idx_cc_conversations_last_msg ON cc_conversations (last_message_at DESC NULLS LAST);
+CREATE INDEX IF NOT EXISTS idx_cc_conversations_wa_jid ON cc_conversations (wa_jid) WHERE wa_jid IS NOT NULL;
 """
 
 _CC_WA_ROUTING_SQL = """
