@@ -29,6 +29,7 @@ from dashboard.queries import (
     delete_telegram_admin_account,
     list_telegram_notification_groups,
     delete_telegram_notification_group,
+    record_admin_action,
 )
 from dashboard.telegram_notifications import send_test_notification
 from utils import current_jakarta_time
@@ -58,6 +59,14 @@ from .queries import (
     delete_public_api_key,
     verify_public_api_key,
     fetch_public_schools_api_data,
+    create_admin_meeting,
+    update_admin_meeting,
+    list_admin_meetings,
+    get_admin_meeting,
+    list_admin_meeting_attendance,
+    save_admin_meeting_attendance,
+    update_admin_meeting_status,
+    delete_admin_meeting,
 )
 
 pengaturan_bp = Blueprint(
@@ -82,6 +91,54 @@ def _parse_date(value: Optional[str]) -> Optional[datetime]:
         except ValueError:
             continue
     return None
+
+
+def _meeting_attendance_deadline(meeting: Dict[str, Any]) -> Optional[datetime]:
+    """Return the local attendance cutoff: one hour after the meeting ends."""
+    meeting_date = meeting.get("meeting_date")
+    end_time = meeting.get("end_time")
+    if not meeting_date or not end_time:
+        return None
+    return datetime.combine(meeting_date, end_time) + timedelta(hours=1)
+
+
+def _meeting_attendance_is_closed(meeting: Dict[str, Any]) -> bool:
+    deadline = _meeting_attendance_deadline(meeting)
+    if deadline is None:
+        return False
+    now = current_jakarta_time().replace(tzinfo=None)
+    return now > deadline
+
+
+def _validate_meeting_details(
+    *, title: str, meeting_date: str, start_time: str, end_time: str
+) -> list[str]:
+    errors: list[str] = []
+    if not title:
+        errors.append("Nama meeting wajib diisi.")
+
+    meeting_day = None
+    parsed_start_time = None
+    parsed_end_time = None
+    try:
+        meeting_day = datetime.strptime(meeting_date, "%Y-%m-%d").date()
+    except ValueError:
+        errors.append("Tanggal meeting tidak valid.")
+    try:
+        parsed_start_time = datetime.strptime(start_time, "%H:%M").time()
+        parsed_end_time = datetime.strptime(end_time, "%H:%M").time()
+    except ValueError:
+        errors.append("Jam meeting tidak valid.")
+
+    if parsed_start_time and parsed_end_time and parsed_end_time <= parsed_start_time:
+        errors.append("Jam selesai harus setelah jam mulai.")
+    if meeting_day and parsed_end_time:
+        deadline = datetime.combine(meeting_day, parsed_end_time) + timedelta(hours=1)
+        if current_jakarta_time().replace(tzinfo=None) > deadline:
+            errors.append(
+                "Meeting tidak dapat disimpan karena sudah melewati batas 1 jam setelah selesai."
+            )
+    return errors
 
 
 def _resolve_admin_performance_period() -> Dict[str, Any]:
@@ -721,6 +778,212 @@ def admin_settings() -> Response | str:
         system_info=system_info,
         active_tab=active_tab,
         page_title="Pengaturan Aplikasi Dashboard",
+    )
+
+
+@pengaturan_bp.route("/absensi-meeting", methods=["GET", "POST"])
+@role_required("admin")
+def meeting_attendance() -> Response | str:
+    """Create admin meetings and record attendance in one workspace."""
+    user = current_user() or {}
+    user_id = int(user.get("id") or 0) or None
+
+    if request.method == "POST":
+        action = (request.form.get("action") or "").strip()
+
+        if action == "create_meeting":
+            title = (request.form.get("title") or "").strip()
+            meeting_date = (request.form.get("meeting_date") or "").strip()
+            start_time = (request.form.get("start_time") or "08:00").strip()
+            end_time = (request.form.get("end_time") or "15:00").strip()
+            location = (request.form.get("location") or "").strip()
+            agenda = (request.form.get("agenda") or "").strip()
+
+            errors = _validate_meeting_details(
+                title=title,
+                meeting_date=meeting_date,
+                start_time=start_time,
+                end_time=end_time,
+            )
+
+            if errors:
+                for message in errors:
+                    flash(message, "warning")
+                return redirect(url_for("pengaturan.meeting_attendance"))
+
+            meeting_id = create_admin_meeting(
+                title=title,
+                meeting_date=meeting_date,
+                start_time=start_time,
+                end_time=end_time,
+                location=location,
+                agenda=agenda,
+                created_by=user_id,
+            )
+            record_admin_action(
+                user_id=user_id,
+                feature_key="meeting_attendance",
+                action="CREATE",
+                target_type="MEETING",
+                target_id=meeting_id,
+                target_name=title,
+            )
+            flash("Agenda meeting berhasil dibuat. Silakan isi kehadiran admin.", "success")
+            return redirect(url_for("pengaturan.meeting_attendance", meeting_id=meeting_id))
+
+        meeting_id = request.form.get("meeting_id", type=int)
+        meeting = get_admin_meeting(meeting_id) if meeting_id else None
+        if not meeting:
+            flash("Data meeting tidak ditemukan.", "danger")
+            return redirect(url_for("pengaturan.meeting_attendance"))
+
+        if action == "save_attendance":
+            deadline = _meeting_attendance_deadline(meeting)
+            if _meeting_attendance_is_closed(meeting):
+                deadline_label = deadline.strftime("%d/%m/%Y pukul %H:%M")
+                flash(
+                    f"Batas penyimpanan absensi telah berakhir pada {deadline_label} WIB.",
+                    "danger",
+                )
+                return redirect(
+                    url_for("pengaturan.meeting_attendance", meeting_id=meeting_id)
+                )
+            allowed_statuses = {"present", "late", "permission", "sick", "absent", "unrecorded"}
+            entries = []
+            for admin in list_admin_users():
+                admin_id = int(admin["id"])
+                status = (request.form.get(f"status_{admin_id}") or "unrecorded").strip()
+                if status not in allowed_statuses:
+                    status = "unrecorded"
+                entries.append({
+                    "admin_user_id": admin_id,
+                    "attendance_status": status,
+                    "notes": (request.form.get(f"notes_{admin_id}") or "").strip(),
+                })
+            saved = save_admin_meeting_attendance(
+                meeting_id=meeting_id, entries=entries, recorded_by=user_id
+            )
+            record_admin_action(
+                user_id=user_id,
+                feature_key="meeting_attendance",
+                action="UPDATE",
+                target_type="MEETING_ATTENDANCE",
+                target_id=meeting_id,
+                target_name=meeting["title"],
+                metadata={"admin_count": len(entries)},
+            )
+            flash(f"Absensi {saved} admin berhasil disimpan.", "success")
+
+        elif action == "edit_meeting":
+            title = (request.form.get("title") or "").strip()
+            meeting_date = (request.form.get("meeting_date") or "").strip()
+            start_time = (request.form.get("start_time") or "").strip()
+            end_time = (request.form.get("end_time") or "").strip()
+            location = (request.form.get("location") or "").strip()
+            agenda = (request.form.get("agenda") or "").strip()
+            errors = _validate_meeting_details(
+                title=title,
+                meeting_date=meeting_date,
+                start_time=start_time,
+                end_time=end_time,
+            )
+            if errors:
+                for message in errors:
+                    flash(message, "warning")
+            elif update_admin_meeting(
+                meeting_id=meeting_id,
+                title=title,
+                meeting_date=meeting_date,
+                start_time=start_time,
+                end_time=end_time,
+                location=location,
+                agenda=agenda,
+            ):
+                record_admin_action(
+                    user_id=user_id,
+                    feature_key="meeting_attendance",
+                    action="UPDATE",
+                    target_type="MEETING",
+                    target_id=meeting_id,
+                    target_name=title,
+                    metadata={"changes": "meeting_details"},
+                )
+                flash("Detail meeting berhasil diperbarui.", "success")
+
+        elif action == "update_status":
+            status = (request.form.get("meeting_status") or "").strip()
+            status_labels = {
+                "scheduled": "Dijadwalkan",
+                "completed": "Selesai",
+                "cancelled": "Dibatalkan",
+            }
+            if status not in status_labels:
+                flash("Status meeting tidak valid.", "danger")
+            elif update_admin_meeting_status(meeting_id, status):
+                record_admin_action(
+                    user_id=user_id,
+                    feature_key="meeting_attendance",
+                    action="UPDATE",
+                    target_type="MEETING",
+                    target_id=meeting_id,
+                    target_name=meeting["title"],
+                    metadata={"status": status},
+                )
+                flash(f"Status meeting diubah menjadi {status_labels[status]}.", "success")
+
+        elif action == "delete_meeting":
+            if delete_admin_meeting(meeting_id):
+                record_admin_action(
+                    user_id=user_id,
+                    feature_key="meeting_attendance",
+                    action="DELETE",
+                    target_type="MEETING",
+                    target_id=meeting_id,
+                    target_name=meeting["title"],
+                )
+                flash("Agenda meeting dan data absensinya telah dihapus.", "success")
+            return redirect(url_for("pengaturan.meeting_attendance"))
+
+        return redirect(url_for("pengaturan.meeting_attendance", meeting_id=meeting_id))
+
+    meetings = list_admin_meetings()
+    query = (request.args.get("q") or "").strip().lower()
+    if query:
+        meetings = [
+            item for item in meetings
+            if query in (item.get("title") or "").lower()
+            or query in (item.get("location") or "").lower()
+        ]
+
+    selected_id = request.args.get("meeting_id", type=int)
+    selected_meeting = get_admin_meeting(selected_id) if selected_id else None
+    if not selected_meeting and meetings:
+        selected_meeting = get_admin_meeting(int(meetings[0]["id"]))
+    attendance_rows = (
+        list_admin_meeting_attendance(int(selected_meeting["id"]))
+        if selected_meeting else []
+    )
+    attendance_summary = {
+        status: sum(1 for row in attendance_rows if row["attendance_status"] == status)
+        for status in ("present", "late", "permission", "sick", "absent", "unrecorded")
+    }
+    attendance_deadline = (
+        _meeting_attendance_deadline(selected_meeting) if selected_meeting else None
+    )
+    attendance_closed = (
+        _meeting_attendance_is_closed(selected_meeting) if selected_meeting else False
+    )
+    return render_template(
+        "pengaturan/meeting_attendance.html",
+        meetings=meetings,
+        selected_meeting=selected_meeting,
+        attendance_rows=attendance_rows,
+        attendance_summary=attendance_summary,
+        attendance_deadline=attendance_deadline,
+        attendance_closed=attendance_closed,
+        today=current_jakarta_time().strftime("%Y-%m-%d"),
+        search_query=request.args.get("q", ""),
+        page_title="Absensi Meeting Admin",
     )
 
 

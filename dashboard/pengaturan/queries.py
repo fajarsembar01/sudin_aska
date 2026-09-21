@@ -4,7 +4,7 @@ import logging
 import platform
 import sys
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from dashboard.db_access import get_cursor
 
@@ -498,3 +498,192 @@ def fetch_public_schools_api_data() -> List[Dict[str, Any]]:
     except Exception as exc:
         logging.error("Error fetching public schools API data: %s", exc)
     return results
+
+
+def create_admin_meeting(
+    *,
+    title: str,
+    meeting_date: str,
+    start_time: Optional[str],
+    end_time: Optional[str],
+    location: str,
+    agenda: str,
+    created_by: Optional[int],
+) -> int:
+    """Create a meeting and return its identifier."""
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            INSERT INTO admin_meetings
+                (title, meeting_date, start_time, end_time, location, agenda, created_by)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            RETURNING id
+            """,
+            (
+                title,
+                meeting_date,
+                start_time or None,
+                end_time or None,
+                location or None,
+                agenda or None,
+                created_by,
+            ),
+        )
+        return int(cur.fetchone()[0])
+
+
+def list_admin_meetings(*, limit: int = 100) -> List[Dict[str, Any]]:
+    """Return recent meetings with attendance totals."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT
+                m.*,
+                creator.full_name AS created_by_name,
+                COUNT(a.id)::integer AS recorded_count,
+                COUNT(a.id) FILTER (WHERE a.attendance_status = 'present')::integer AS present_count,
+                COUNT(a.id) FILTER (WHERE a.attendance_status = 'late')::integer AS late_count,
+                COUNT(a.id) FILTER (WHERE a.attendance_status IN ('permission', 'sick'))::integer AS excused_count,
+                COUNT(a.id) FILTER (WHERE a.attendance_status = 'absent')::integer AS absent_count
+            FROM admin_meetings m
+            LEFT JOIN dashboard_users creator ON creator.id = m.created_by
+            LEFT JOIN admin_meeting_attendance a ON a.meeting_id = m.id
+            GROUP BY m.id, creator.full_name
+            ORDER BY m.meeting_date DESC, m.start_time DESC NULLS LAST, m.id DESC
+            LIMIT %s
+            """,
+            (max(1, min(limit, 250)),),
+        )
+        return [dict(row) for row in cur.fetchall()]
+
+
+def get_admin_meeting(meeting_id: int) -> Optional[Dict[str, Any]]:
+    """Return one meeting."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT m.*, creator.full_name AS created_by_name
+            FROM admin_meetings m
+            LEFT JOIN dashboard_users creator ON creator.id = m.created_by
+            WHERE m.id = %s
+            """,
+            (meeting_id,),
+        )
+        row = cur.fetchone()
+    return dict(row) if row else None
+
+
+def update_admin_meeting(
+    *,
+    meeting_id: int,
+    title: str,
+    meeting_date: str,
+    start_time: str,
+    end_time: str,
+    location: str,
+    agenda: str,
+) -> bool:
+    """Update the editable details of a meeting."""
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE admin_meetings
+            SET title = %s,
+                meeting_date = %s,
+                start_time = %s,
+                end_time = %s,
+                location = %s,
+                agenda = %s,
+                updated_at = NOW()
+            WHERE id = %s
+            """,
+            (
+                title,
+                meeting_date,
+                start_time,
+                end_time,
+                location or None,
+                agenda or None,
+                meeting_id,
+            ),
+        )
+        return cur.rowcount > 0
+
+
+def list_admin_meeting_attendance(meeting_id: int) -> List[Dict[str, Any]]:
+    """Return every active admin and their saved status for a meeting."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT
+                u.id AS admin_user_id,
+                u.full_name,
+                u.email,
+                COALESCE(a.attendance_status, 'unrecorded') AS attendance_status,
+                COALESCE(a.notes, '') AS notes,
+                a.recorded_at,
+                recorder.full_name AS recorded_by_name
+            FROM dashboard_users u
+            LEFT JOIN admin_meeting_attendance a
+                ON a.admin_user_id = u.id AND a.meeting_id = %s
+            LEFT JOIN dashboard_users recorder ON recorder.id = a.recorded_by
+            WHERE u.role = 'admin'
+              AND COALESCE(u.account_status, 'approved') = 'approved'
+            ORDER BY u.full_name ASC, u.id ASC
+            """,
+            (meeting_id,),
+        )
+        return [dict(row) for row in cur.fetchall()]
+
+
+def save_admin_meeting_attendance(
+    *, meeting_id: int, entries: List[Dict[str, Any]], recorded_by: Optional[int]
+) -> int:
+    """Upsert attendance statuses in one transaction."""
+    saved = 0
+    with get_cursor(commit=True) as cur:
+        for entry in entries:
+            cur.execute(
+                """
+                INSERT INTO admin_meeting_attendance
+                    (meeting_id, admin_user_id, attendance_status, notes, recorded_by, recorded_at)
+                SELECT %s, u.id, %s, %s, %s, NOW()
+                FROM dashboard_users u
+                WHERE u.id = %s AND u.role = 'admin'
+                ON CONFLICT (meeting_id, admin_user_id) DO UPDATE SET
+                    attendance_status = EXCLUDED.attendance_status,
+                    notes = EXCLUDED.notes,
+                    recorded_by = EXCLUDED.recorded_by,
+                    recorded_at = NOW()
+                """,
+                (
+                    meeting_id,
+                    entry["attendance_status"],
+                    entry.get("notes") or None,
+                    recorded_by,
+                    entry["admin_user_id"],
+                ),
+            )
+            saved += cur.rowcount
+        cur.execute(
+            "UPDATE admin_meetings SET updated_at = NOW() WHERE id = %s",
+            (meeting_id,),
+        )
+    return saved
+
+
+def update_admin_meeting_status(meeting_id: int, status: str) -> bool:
+    """Update the meeting lifecycle state."""
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            "UPDATE admin_meetings SET status = %s, updated_at = NOW() WHERE id = %s",
+            (status, meeting_id),
+        )
+        return cur.rowcount > 0
+
+
+def delete_admin_meeting(meeting_id: int) -> bool:
+    """Delete a meeting and its attendance rows."""
+    with get_cursor(commit=True) as cur:
+        cur.execute("DELETE FROM admin_meetings WHERE id = %s", (meeting_id,))
+        return cur.rowcount > 0

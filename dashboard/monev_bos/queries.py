@@ -2857,6 +2857,8 @@ def list_all_vendors_for_admin(
     search_query: Optional[str] = None,
     vendor_type_filter: Optional[str] = None,
     school_id_filter: Optional[int] = None,
+    limit: Optional[int] = None,
+    offset: int = 0,
 ) -> List[Dict[str, Any]]:
     """List all vendor registration requests for admin/staff verification."""
     query = """
@@ -2885,10 +2887,48 @@ def list_all_vendors_for_admin(
         pattern = f"%{search_query.strip()}%"
         params.extend([pattern] * 5)
     query += " ORDER BY v.created_at DESC"
+    if limit is not None:
+        query += " LIMIT %s OFFSET %s"
+        params.extend([max(1, int(limit)), max(0, int(offset))])
 
     with get_cursor() as cur:
         cur.execute(query, tuple(params))
         return [dict(row) for row in cur.fetchall()]
+
+
+def count_all_vendors_for_admin(
+    search_query: Optional[str] = None,
+    vendor_type_filter: Optional[str] = None,
+    school_id_filter: Optional[int] = None,
+) -> Dict[str, int]:
+    """Count admin/staff vendor results by status without loading the rows."""
+    query = """
+        SELECT
+            COUNT(*)::integer AS total,
+            COUNT(*) FILTER (WHERE v.status = 'pending')::integer AS pending,
+            COUNT(*) FILTER (WHERE v.status = 'verified')::integer AS verified,
+            COUNT(*) FILTER (WHERE v.status = 'rejected')::integer AS rejected
+        FROM monev_bos_vendors v
+        JOIN dashboard_users u_school ON u_school.id = v.school_id
+        LEFT JOIN portal_schools ps ON ps.id = u_school.school_id
+        WHERE 1=1
+    """
+    params = []
+    if vendor_type_filter:
+        query += " AND v.vendor_type = %s"
+        params.append(vendor_type_filter)
+    if school_id_filter:
+        query += " AND v.school_id = %s"
+        params.append(school_id_filter)
+    if search_query:
+        query += " AND (v.name ILIKE %s OR v.npwp ILIKE %s OR v.phone ILIKE %s OR v.owner_name ILIKE %s OR COALESCE(ps.name, u_school.full_name) ILIKE %s)"
+        pattern = f"%{search_query.strip()}%"
+        params.extend([pattern] * 5)
+
+    with get_cursor() as cur:
+        cur.execute(query, tuple(params))
+        row = cur.fetchone()
+    return dict(row) if row else {"total": 0, "pending": 0, "verified": 0, "rejected": 0}
 
 
 def attach_vendor_action_history(vendors: List[Dict[str, Any]]) -> List[Dict[str, Any]]:

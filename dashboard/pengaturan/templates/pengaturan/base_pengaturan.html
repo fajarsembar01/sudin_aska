@@ -110,7 +110,7 @@
           </ul>
         </li>
         <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle {% if request.endpoint == 'pengaturan.admin_performance' or request.args.get('tab') == 'system' %}active{% endif %}"
+          <a class="nav-link dropdown-toggle {% if request.endpoint in ['pengaturan.admin_performance', 'pengaturan.meeting_attendance'] or request.args.get('tab') == 'system' %}active{% endif %}"
              href="#" id="monitoringSettingsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
             <i class="bi bi-activity nav-icon"></i>Monitoring
           </a>
@@ -119,6 +119,12 @@
               <a class="dropdown-item py-2 {% if request.endpoint == 'pengaturan.admin_performance' %}active{% endif %}"
                  href="{{ url_for('pengaturan.admin_performance') }}">
                 <i class="bi bi-person-lines-fill me-2 text-primary"></i>Performa Admin
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item py-2 {% if request.endpoint == 'pengaturan.meeting_attendance' %}active{% endif %}"
+                 href="{{ url_for('pengaturan.meeting_attendance') }}">
+                <i class="bi bi-calendar2-check me-2 text-primary"></i>Absensi Meeting
               </a>
             </li>
             <li>

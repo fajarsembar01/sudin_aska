@@ -178,9 +178,9 @@
 
     <!-- Stats Summary Cards -->
     <div class="row g-3 mb-4 vendor-stat-row">
-        {% set total_pending = vendors|selectattr('status', 'equalto', 'pending')|list|length %}
-        {% set total_verified = vendors|selectattr('status', 'equalto', 'verified')|list|length %}
-        {% set total_rejected = vendors|selectattr('status', 'equalto', 'rejected')|list|length %}
+        {% set total_pending = vendor_counts.pending %}
+        {% set total_verified = vendor_counts.verified %}
+        {% set total_rejected = vendor_counts.rejected %}
         
         <div class="col-4 col-md-4">
             <div class="card border-0 shadow-sm border-start border-4 border-warning h-100 vendor-stat-card">
@@ -267,7 +267,7 @@
             <div class="d-flex flex-wrap align-items-center gap-2 vendor-status-filters">
                 <span class="fw-semibold me-2 small text-muted vendor-filter-label">Filter Status:</span>
                 <a href="{{ url_for('monev_bos.admin_vendors', vendor_type=vendor_type_filter, school_id=school_id_filter, q=search_query) }}" class="btn btn-sm {% if not status_filter %}btn-primary{% else %}btn-outline-secondary{% endif %} rounded-pill px-3">
-                    Semua ({{ vendors|length }})
+                    Semua ({{ vendor_counts.total }})
                 </a>
                 <a href="{{ url_for('monev_bos.admin_vendors', vendor_type=vendor_type_filter, school_id=school_id_filter, status='pending', q=search_query) }}" class="btn btn-sm {% if status_filter == 'pending' %}btn-warning text-dark{% else %}btn-outline-warning text-dark{% endif %} rounded-pill px-3">
                     <i class="bi bi-clock-history me-1"></i>Menunggu
@@ -284,7 +284,7 @@
                 {% if duplicate_scan %}
                 <div class="alert alert-danger d-flex flex-wrap align-items-center justify-content-between gap-2 mb-0 py-2 px-3">
                     <div class="small">
-                        <strong><i class="bi bi-upc-scan me-1"></i>Hasil scan: {{ vendors|length }} data ganda terverifikasi</strong>
+                        <strong><i class="bi bi-upc-scan me-1"></i>Hasil scan: {{ pagination.total }} data ganda terverifikasi</strong>
                         <span class="d-block text-body-secondary">Setiap data di bawah memiliki minimal satu pasangan terverifikasi dengan nama atau identitas yang sama.</span>
                     </div>
                     <a href="{{ url_for('monev_bos.admin_vendors', vendor_type=vendor_type_filter, status='verified', school_id=school_id_filter, q=search_query) }}" class="btn btn-sm btn-outline-secondary fw-bold">
@@ -294,7 +294,7 @@
                 {% elif incomplete_scan %}
                 <div class="alert alert-warning d-flex flex-wrap align-items-center justify-content-between gap-2 mb-0 py-2 px-3">
                     <div class="small">
-                        <strong><i class="bi bi-clipboard2-pulse me-1"></i>Hasil scan: {{ vendors|length }} data terverifikasi belum lengkap</strong>
+                        <strong><i class="bi bi-clipboard2-pulse me-1"></i>Hasil scan: {{ pagination.total }} data terverifikasi belum lengkap</strong>
                         <span class="d-block text-body-secondary">Kolom yang masih kosong ditandai pada setiap vendor/narasumber di bawah.</span>
                     </div>
                     <a href="{{ url_for('monev_bos.admin_vendors', vendor_type=vendor_type_filter, status='verified', school_id=school_id_filter, q=search_query) }}" class="btn btn-sm btn-outline-secondary fw-bold">
@@ -337,7 +337,7 @@
                         {% if vendors %}
                             {% for v in vendors %}
                             <tr>
-                                <td class="ps-4 fw-semibold text-muted">{{ loop.index }}</td>
+                                <td class="ps-4 fw-semibold text-muted">{{ (pagination.page - 1) * pagination.per_page + loop.index }}</td>
                                 <td>
                                     <div class="fw-bold text-dark">{{ v.school_name }}</div>
                                     <div class="small text-muted">NPSN: {{ v.npsn or '-' }}</div>
@@ -487,7 +487,7 @@
                                     <div class="modal fade text-start" id="rejectVendorModal{{ v.id }}" tabindex="-1" aria-hidden="true">
                                         <div class="modal-dialog modal-dialog-centered">
                                             <div class="modal-content">
-                                                <form method="POST" action="{{ url_for('monev_bos.admin_vendors', vendor_type=vendor_type_filter, school_id=school_id_filter, status=status_filter, q=search_query) }}">
+                                                <form method="POST" action="{{ url_for('monev_bos.admin_vendors', vendor_type=vendor_type_filter, school_id=school_id_filter, status=status_filter, q=search_query, page=pagination.page) }}">
                                                     <input type="hidden" name="action" value="reject_vendor">
                                                     <input type="hidden" name="vendor_id" value="{{ v.id }}">
                                                     <div class="modal-header">
@@ -637,7 +637,7 @@
         <div class="modal fade" id="rejectVendorMobileModal{{ v.id }}" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered mx-3">
                 <div class="modal-content">
-                    <form method="POST" action="{{ url_for('monev_bos.admin_vendors', vendor_type=vendor_type_filter, school_id=school_id_filter, status=status_filter, q=search_query) }}">
+                    <form method="POST" action="{{ url_for('monev_bos.admin_vendors', vendor_type=vendor_type_filter, school_id=school_id_filter, status=status_filter, q=search_query, page=pagination.page) }}">
                         <input type="hidden" name="action" value="reject_vendor">
                         <input type="hidden" name="vendor_id" value="{{ v.id }}">
                         <div class="modal-header py-2 px-3">
@@ -661,13 +661,51 @@
         <div class="text-center text-body-secondary py-4 small">Tidak ada pendaftaran {{ 'narasumber' if vendor_type_filter == 'narsum' else 'vendor' }} dengan filter ini.</div>
         {% endfor %}
     </div>
+
+    {% if pagination.total %}
+    <div class="d-flex flex-column flex-md-row align-items-center justify-content-between gap-3 mt-4 px-1">
+        <div class="small text-body-secondary">
+            Menampilkan <strong>{{ pagination.start }}–{{ pagination.end }}</strong>
+            dari <strong>{{ pagination.total }}</strong> data · 20 data per halaman
+        </div>
+        {% if pagination.pages > 1 %}
+        <nav aria-label="Navigasi halaman vendor">
+            <ul class="pagination pagination-sm mb-0 flex-wrap justify-content-center">
+                <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('monev_bos.admin_vendors', vendor_type=vendor_type_filter, status=status_filter, school_id=school_id_filter, q=search_query, scan=scan_mode, page=pagination.prev_num) if pagination.has_prev else '#' }}" aria-label="Halaman sebelumnya">
+                        <i class="bi bi-chevron-left"></i><span class="d-none d-sm-inline ms-1">Sebelumnya</span>
+                    </a>
+                </li>
+                {% if pagination.page_numbers.start > 1 %}
+                <li class="page-item"><a class="page-link" href="{{ url_for('monev_bos.admin_vendors', vendor_type=vendor_type_filter, status=status_filter, school_id=school_id_filter, q=search_query, scan=scan_mode, page=1) }}">1</a></li>
+                {% if pagination.page_numbers.start > 2 %}<li class="page-item disabled"><span class="page-link">…</span></li>{% endif %}
+                {% endif %}
+                {% for page_number in pagination.page_numbers %}
+                <li class="page-item {% if page_number == pagination.page %}active{% endif %}">
+                    <a class="page-link" href="{{ url_for('monev_bos.admin_vendors', vendor_type=vendor_type_filter, status=status_filter, school_id=school_id_filter, q=search_query, scan=scan_mode, page=page_number) }}" {% if page_number == pagination.page %}aria-current="page"{% endif %}>{{ page_number }}</a>
+                </li>
+                {% endfor %}
+                {% if pagination.page_numbers.stop - 1 < pagination.pages %}
+                {% if pagination.page_numbers.stop - 1 < pagination.pages - 1 %}<li class="page-item disabled"><span class="page-link">…</span></li>{% endif %}
+                <li class="page-item"><a class="page-link" href="{{ url_for('monev_bos.admin_vendors', vendor_type=vendor_type_filter, status=status_filter, school_id=school_id_filter, q=search_query, scan=scan_mode, page=pagination.pages) }}">{{ pagination.pages }}</a></li>
+                {% endif %}
+                <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('monev_bos.admin_vendors', vendor_type=vendor_type_filter, status=status_filter, school_id=school_id_filter, q=search_query, scan=scan_mode, page=pagination.next_num) if pagination.has_next else '#' }}" aria-label="Halaman berikutnya">
+                        <span class="d-none d-sm-inline me-1">Berikutnya</span><i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+    {% endif %}
 </div>
 
 {% for v in vendors %}
 {% set review_checks = v.verification_checklist or {} %}
 <div class="modal fade vendor-review-modal" id="reviewVendorModal{{ v.id }}" tabindex="-1" aria-labelledby="reviewVendorModalLabel{{ v.id }}" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable vendor-review-dialog">
-        <form method="POST" action="{{ url_for('monev_bos.admin_vendors', vendor_type=vendor_type_filter, school_id=school_id_filter, status=status_filter, q=search_query, scan=scan_mode) }}" class="modal-content" id="vendorReviewForm{{ v.id }}">
+        <form method="POST" action="{{ url_for('monev_bos.admin_vendors', vendor_type=vendor_type_filter, school_id=school_id_filter, status=status_filter, q=search_query, scan=scan_mode, page=pagination.page) }}" class="modal-content" id="vendorReviewForm{{ v.id }}">
             <input type="hidden" name="action" value="{{ 'revise_vendor' if v.status == 'verified' else 'verify_vendor' }}">
             <input type="hidden" name="vendor_id" value="{{ v.id }}">
             <div class="modal-header {{ 'bg-danger-subtle' if v.verified_duplicate_matches and v.status != 'verified' else 'bg-primary-subtle' }}">
@@ -879,7 +917,7 @@
 <div class="modal fade" id="manageBanksModal" tabindex="-1" aria-labelledby="manageBanksModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <form method="POST" action="{{ url_for('monev_bos.admin_vendors', vendor_type=vendor_type_filter, school_id=school_id_filter, status=status_filter, q=search_query) }}">
+            <form method="POST" action="{{ url_for('monev_bos.admin_vendors', vendor_type=vendor_type_filter, school_id=school_id_filter, status=status_filter, q=search_query, page=pagination.page) }}">
                 <input type="hidden" name="action" value="update_master_banks">
                 <div class="modal-header">
                     <h5 class="modal-title fw-bold" id="manageBanksModalLabel">

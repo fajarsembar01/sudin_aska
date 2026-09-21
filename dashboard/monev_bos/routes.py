@@ -3974,6 +3974,7 @@ def admin_vendors():
             vendor_type=request.args.get("vendor_type", "vendor"),
             school_id=request.args.get("school_id", ""),
             scan=request.args.get("scan", ""),
+            page=request.args.get("page", 1, type=int) or 1,
         ))
 
     if request.method == "POST":
@@ -4204,20 +4205,73 @@ def admin_vendors():
     if vendor_type_filter not in ["vendor", "narsum"]:
         vendor_type_filter = "vendor"
     school_id_filter = request.args.get("school_id", type=int)
-    vendors = queries.list_all_vendors_for_admin(
-        status_filter if status_filter in ["pending", "verified", "rejected"] else None,
+    page = max(1, request.args.get("page", type=int) or 1)
+    per_page = 20
+    vendor_counts = queries.count_all_vendors_for_admin(
         search_query=search_query,
         vendor_type_filter=vendor_type_filter,
         school_id_filter=school_id_filter,
     )
-    queries.attach_vendor_duplicate_matches(vendors)
-    queries.attach_vendor_action_history(vendors)
-    if duplicate_scan:
-        vendors = queries.filter_verified_duplicate_vendors(vendors)
-    elif incomplete_scan:
-        vendors = queries.filter_verified_incomplete_vendors(vendors)
+
+    if scan_mode:
+        # Scan modes need the complete filtered set to compare rows, but only the
+        # current page receives history/modal payloads and is rendered.
+        all_scan_vendors = queries.list_all_vendors_for_admin(
+            "verified",
+            search_query=search_query,
+            vendor_type_filter=vendor_type_filter,
+            school_id_filter=school_id_filter,
+        )
+        if duplicate_scan:
+            queries.attach_vendor_duplicate_matches(all_scan_vendors)
+            filtered_vendors = queries.filter_verified_duplicate_vendors(all_scan_vendors)
+        else:
+            filtered_vendors = queries.filter_verified_incomplete_vendors(all_scan_vendors)
+        total_items = len(filtered_vendors)
+        total_pages = max(1, (total_items + per_page - 1) // per_page)
+        page = min(page, total_pages)
+        offset = (page - 1) * per_page
+        vendors = filtered_vendors[offset:offset + per_page]
+        if incomplete_scan:
+            queries.attach_vendor_duplicate_matches(vendors)
     else:
+        normalized_status = (
+            status_filter
+            if status_filter in ["pending", "verified", "rejected"]
+            else None
+        )
+        total_items = int(
+            vendor_counts.get(normalized_status, 0)
+            if normalized_status else vendor_counts.get("total", 0)
+        )
+        total_pages = max(1, (total_items + per_page - 1) // per_page)
+        page = min(page, total_pages)
+        offset = (page - 1) * per_page
+        vendors = queries.list_all_vendors_for_admin(
+            normalized_status,
+            search_query=search_query,
+            vendor_type_filter=vendor_type_filter,
+            school_id_filter=school_id_filter,
+            limit=per_page,
+            offset=offset,
+        )
+        queries.attach_vendor_duplicate_matches(vendors)
         queries.attach_vendor_missing_fields(vendors)
+
+    queries.attach_vendor_action_history(vendors)
+    pagination = {
+        "page": page,
+        "per_page": per_page,
+        "total": total_items,
+        "pages": total_pages,
+        "has_prev": page > 1,
+        "has_next": page < total_pages,
+        "prev_num": page - 1,
+        "next_num": page + 1,
+        "start": ((page - 1) * per_page + 1) if total_items else 0,
+        "end": min(page * per_page, total_items),
+        "page_numbers": range(max(1, page - 2), min(total_pages, page + 2) + 1),
+    }
     vendor_schools = queries.list_vendor_schools_for_admin()
     master_banks = queries.get_master_banks()
     return render_template(
@@ -4232,4 +4286,6 @@ def admin_vendors():
         scan_mode=scan_mode,
         duplicate_scan=duplicate_scan,
         incomplete_scan=incomplete_scan,
+        vendor_counts=vendor_counts,
+        pagination=pagination,
     )

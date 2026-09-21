@@ -1,0 +1,394 @@
+{% extends "pengaturan/base_pengaturan.html" %}
+
+{% block title %}Absensi Meeting Admin - SUDIN ASKA{% endblock %}
+
+{% block head_extra %}
+<style>
+  .meeting-hero {
+    border: 1px solid var(--border-soft);
+    border-radius: 18px;
+    background:
+      radial-gradient(circle at 90% 15%, rgba(13, 110, 253, .13), transparent 30%),
+      var(--bg-surface);
+    box-shadow: var(--shadow-soft);
+  }
+  .meeting-panel {
+    border: 1px solid var(--border-soft);
+    border-radius: 16px;
+    background: var(--bg-surface);
+    box-shadow: var(--shadow-soft);
+  }
+  .meeting-list { max-height: 610px; overflow-y: auto; }
+  .meeting-item {
+    position: relative;
+    color: inherit;
+    border: 1px solid var(--border-soft);
+    border-radius: 13px;
+    transition: border-color .15s ease, background-color .15s ease, transform .15s ease;
+  }
+  .meeting-item:hover { color: inherit; border-color: rgba(13, 110, 253, .45); transform: translateY(-1px); }
+  .meeting-item.active { border-color: var(--bs-primary); background: rgba(13, 110, 253, .08); }
+  .meeting-item-link { display: block; color: inherit; padding: .9rem 2.8rem .9rem .9rem; text-decoration: none; }
+  .meeting-item-link:hover { color: inherit; }
+  .meeting-edit-btn {
+    position: absolute;
+    z-index: 2;
+    top: .65rem;
+    right: .65rem;
+    width: 32px;
+    height: 32px;
+    display: grid;
+    place-content: center;
+    border-radius: 9px;
+  }
+  .meeting-date {
+    width: 50px;
+    min-width: 50px;
+    height: 54px;
+    display: grid;
+    place-content: center;
+    border-radius: 12px;
+    background: rgba(13, 110, 253, .1);
+    color: var(--bs-primary);
+    text-align: center;
+    line-height: 1;
+  }
+  .meeting-date strong { font-size: 1.2rem; }
+  .meeting-date small { font-size: .68rem; letter-spacing: .04em; margin-top: .25rem; }
+  .summary-tile { border: 1px solid var(--border-soft); border-radius: 13px; padding: .8rem .9rem; background: var(--bg-subtle); }
+  .summary-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+  .attendance-table th { color: var(--text-muted); font-size: .76rem; letter-spacing: .04em; text-transform: uppercase; }
+  .attendance-table td { vertical-align: middle; }
+  .admin-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+    display: grid;
+    place-content: center;
+    background: rgba(13, 110, 253, .1);
+    color: var(--bs-primary);
+    font-weight: 700;
+  }
+  .status-select { min-width: 145px; font-weight: 600; }
+  .empty-state { min-height: 360px; display: grid; place-content: center; text-align: center; }
+  @media (max-width: 767.98px) {
+    .attendance-table thead { display: none; }
+    .attendance-table, .attendance-table tbody, .attendance-table tr, .attendance-table td { display: block; width: 100%; }
+    .attendance-table tr { padding: 1rem; border-bottom: 1px solid var(--border-soft); }
+    .attendance-table td { border: 0; padding: .3rem 0; }
+    .status-select { width: 100%; }
+    .meeting-list { max-height: 390px; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 px-lg-4">
+  <section class="meeting-hero p-4 mb-4">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+      <div>
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb small mb-2">
+            <li class="breadcrumb-item"><a href="{{ url_for('pengaturan.admin_settings') }}" class="text-decoration-none">Pengaturan</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Absensi Meeting</li>
+          </ol>
+        </nav>
+        <h2 class="fw-bold mb-1"><i class="bi bi-calendar2-check text-primary me-2"></i>Absensi Meeting Admin</h2>
+        <p class="text-muted mb-0">Catat agenda dan kehadiran seluruh admin dalam satu tempat.</p>
+      </div>
+      <button class="btn btn-primary px-3" data-bs-toggle="modal" data-bs-target="#newMeetingModal">
+        <i class="bi bi-plus-lg me-1"></i>Buat Meeting
+      </button>
+    </div>
+  </section>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Tutup"></button>
+      </div>
+    {% endfor %}
+  {% endwith %}
+
+  <div class="row g-4">
+    <aside class="col-xl-4 col-xxl-3">
+      <div class="meeting-panel p-3">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <h5 class="fw-bold mb-0">Daftar Meeting</h5>
+          <span class="badge text-bg-primary rounded-pill">{{ meetings|length }}</span>
+        </div>
+        <form method="GET" class="mb-3">
+          <div class="input-group">
+            <span class="input-group-text bg-transparent"><i class="bi bi-search"></i></span>
+            <input type="search" name="q" class="form-control" value="{{ search_query }}" placeholder="Cari agenda atau lokasi">
+          </div>
+        </form>
+        <div class="meeting-list d-grid gap-2 pe-1">
+          {% for meeting in meetings %}
+            <div class="meeting-item {% if selected_meeting and selected_meeting.id == meeting.id %}active{% endif %}">
+              <a class="meeting-item-link"
+                 href="{{ url_for('pengaturan.meeting_attendance', meeting_id=meeting.id, q=search_query or None) }}">
+                <div class="d-flex gap-3">
+                  <div class="meeting-date">
+                    <strong>{{ meeting.meeting_date.strftime('%d') }}</strong>
+                    <small>{{ meeting.meeting_date.strftime('%b')|upper }}</small>
+                  </div>
+                  <div class="min-w-0 flex-grow-1">
+                    <div class="fw-semibold text-truncate">{{ meeting.title }}</div>
+                    <div class="small text-muted mt-1">
+                      <i class="bi bi-clock me-1"></i>{{ meeting.start_time.strftime('%H:%M') if meeting.start_time else 'Waktu fleksibel' }}
+                      {% if meeting.location %}<span class="mx-1">•</span>{{ meeting.location }}{% endif %}
+                    </div>
+                    <div class="d-flex align-items-center gap-2 mt-2">
+                      {% if meeting.status == 'completed' %}
+                        <span class="badge text-bg-success">Selesai</span>
+                      {% elif meeting.status == 'cancelled' %}
+                        <span class="badge text-bg-secondary">Dibatalkan</span>
+                      {% else %}
+                        <span class="badge text-bg-primary">Dijadwalkan</span>
+                      {% endif %}
+                      <span class="small text-muted">{{ meeting.present_count + meeting.late_count }} hadir</span>
+                    </div>
+                  </div>
+                </div>
+              </a>
+              <button type="button" class="btn btn-sm btn-light border meeting-edit-btn"
+                      data-bs-toggle="modal" data-bs-target="#editMeetingModal"
+                      data-meeting-id="{{ meeting.id }}"
+                      data-title="{{ meeting.title }}"
+                      data-date="{{ meeting.meeting_date.strftime('%Y-%m-%d') }}"
+                      data-start-time="{{ meeting.start_time.strftime('%H:%M') if meeting.start_time else '08:00' }}"
+                      data-end-time="{{ meeting.end_time.strftime('%H:%M') if meeting.end_time else '15:00' }}"
+                      data-location="{{ meeting.location or '' }}"
+                      data-agenda="{{ meeting.agenda or '' }}"
+                      aria-label="Edit {{ meeting.title }}" title="Edit meeting">
+                <i class="bi bi-pencil"></i>
+              </button>
+            </div>
+          {% else %}
+            <div class="text-center text-muted py-5">
+              <i class="bi bi-calendar2-x fs-2 d-block mb-2"></i>
+              {% if search_query %}Meeting tidak ditemukan.{% else %}Belum ada agenda meeting.{% endif %}
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </aside>
+
+    <main class="col-xl-8 col-xxl-9">
+      {% if selected_meeting %}
+        <div class="meeting-panel overflow-hidden">
+          <div class="p-4 border-bottom">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+              <div>
+                <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                  <span class="badge rounded-pill text-bg-light border text-body">
+                    <i class="bi bi-calendar3 me-1"></i>{{ selected_meeting.meeting_date.strftime('%d/%m/%Y') }}
+                  </span>
+                  <span class="badge rounded-pill text-bg-light border text-body">
+                    <i class="bi bi-clock me-1"></i>
+                    {{ selected_meeting.start_time.strftime('%H:%M') if selected_meeting.start_time else 'Fleksibel' }}{% if selected_meeting.end_time %}–{{ selected_meeting.end_time.strftime('%H:%M') }}{% endif %}
+                  </span>
+                  {% if selected_meeting.location %}<span class="badge rounded-pill text-bg-light border text-body"><i class="bi bi-geo-alt me-1"></i>{{ selected_meeting.location }}</span>{% endif %}
+                </div>
+                <h3 class="fw-bold mb-1">{{ selected_meeting.title }}</h3>
+                {% if selected_meeting.agenda %}<p class="text-muted mb-0">{{ selected_meeting.agenda }}</p>{% endif %}
+              </div>
+              <div class="dropdown">
+                <button class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown"><i class="bi bi-three-dots me-1"></i>Aksi</button>
+                <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                  {% for value, label, icon in [('scheduled', 'Tandai dijadwalkan', 'calendar-event'), ('completed', 'Tandai selesai', 'check-circle'), ('cancelled', 'Tandai dibatalkan', 'x-circle')] %}
+                    <li>
+                      <form method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="action" value="update_status">
+                        <input type="hidden" name="meeting_id" value="{{ selected_meeting.id }}">
+                        <input type="hidden" name="meeting_status" value="{{ value }}">
+                        <button class="dropdown-item" {% if selected_meeting.status == value %}disabled{% endif %}><i class="bi bi-{{ icon }} me-2"></i>{{ label }}</button>
+                      </form>
+                    </li>
+                  {% endfor %}
+                  <li><hr class="dropdown-divider"></li>
+                  <li><button class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#deleteMeetingModal"><i class="bi bi-trash3 me-2"></i>Hapus meeting</button></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-4 border-bottom">
+            <div class="row g-2">
+              {% set tiles = [
+                ('present', 'Hadir', 'success'), ('late', 'Terlambat', 'warning'),
+                ('permission', 'Izin', 'info'), ('sick', 'Sakit', 'primary'),
+                ('absent', 'Alpa', 'danger'), ('unrecorded', 'Belum diisi', 'secondary')
+              ] %}
+              {% for key, label, color in tiles %}
+                <div class="col-6 col-md-4 col-xxl-2">
+                  <div class="summary-tile h-100">
+                    <div class="small text-muted"><span class="summary-dot bg-{{ color }} me-1"></span>{{ label }}</div>
+                    <div class="fs-4 fw-bold">{{ attendance_summary[key] }}</div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+
+          {% if attendance_closed %}
+            <div class="alert alert-warning rounded-0 border-start-0 border-end-0 mb-0" role="alert">
+              <i class="bi bi-lock-fill me-2"></i>
+              <strong>Absensi telah ditutup.</strong>
+              Batas penyimpanan berakhir pada {{ attendance_deadline.strftime('%d/%m/%Y pukul %H:%M') }} WIB,
+              satu jam setelah meeting selesai.
+            </div>
+          {% endif %}
+          <form method="POST" id="attendanceForm">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="action" value="save_attendance">
+            <input type="hidden" name="meeting_id" value="{{ selected_meeting.id }}">
+            <div class="table-responsive">
+              <table class="table attendance-table align-middle mb-0">
+                <thead>
+                  <tr><th class="ps-4">Admin</th><th>Status kehadiran</th><th>Catatan</th></tr>
+                </thead>
+                <tbody>
+                  {% for row in attendance_rows %}
+                    <tr>
+                      <td class="ps-md-4">
+                        <div class="d-flex align-items-center gap-2">
+                          <span class="admin-avatar">{{ (row.full_name or row.email)[:1]|upper }}</span>
+                          <div><div class="fw-semibold">{{ row.full_name }}</div><div class="small text-muted">{{ row.email }}</div></div>
+                        </div>
+                      </td>
+                      <td>
+                        <select name="status_{{ row.admin_user_id }}" class="form-select status-select" aria-label="Status {{ row.full_name }}" {% if attendance_closed %}disabled{% endif %}>
+                          {% for value, label in [('unrecorded', 'Belum diisi'), ('present', 'Hadir'), ('late', 'Terlambat'), ('permission', 'Izin'), ('sick', 'Sakit'), ('absent', 'Alpa')] %}
+                            <option value="{{ value }}" {% if row.attendance_status == value %}selected{% endif %}>{{ label }}</option>
+                          {% endfor %}
+                        </select>
+                      </td>
+                      <td><input type="text" name="notes_{{ row.admin_user_id }}" class="form-control" maxlength="250" value="{{ row.notes }}" placeholder="Opsional" {% if attendance_closed %}disabled{% endif %}></td>
+                    </tr>
+                  {% else %}
+                    <tr><td colspan="3" class="text-center text-muted py-5">Belum ada akun admin aktif.</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            <div class="p-3 p-md-4 border-top d-flex flex-wrap align-items-center justify-content-between gap-2">
+              <small class="text-muted">
+                {% if attendance_deadline %}
+                  <i class="bi bi-clock-history me-1"></i>Batas simpan: {{ attendance_deadline.strftime('%d/%m/%Y %H:%M') }} WIB.
+                {% else %}
+                  <i class="bi bi-shield-check me-1"></i>Perubahan tercatat atas nama admin yang sedang login.
+                {% endif %}
+              </small>
+              <button class="btn btn-primary px-4" {% if not attendance_rows or attendance_closed %}disabled{% endif %}><i class="bi bi-floppy me-1"></i>Simpan Absensi</button>
+            </div>
+          </form>
+        </div>
+      {% else %}
+        <div class="meeting-panel empty-state p-5">
+          <div>
+            <span class="icon-badge text-primary mb-3"><i class="bi bi-calendar2-plus fs-3"></i></span>
+            <h4 class="fw-bold">Mulai dari agenda meeting</h4>
+            <p class="text-muted">Buat meeting baru untuk mulai mencatat kehadiran admin.</p>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newMeetingModal">Buat Meeting Pertama</button>
+          </div>
+        </div>
+      {% endif %}
+    </main>
+  </div>
+</div>
+
+<div class="modal fade" id="newMeetingModal" tabindex="-1" aria-labelledby="newMeetingLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <form method="POST" class="modal-content border-0 shadow">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="create_meeting">
+      <div class="modal-header"><div><h5 class="modal-title fw-bold" id="newMeetingLabel">Buat Agenda Meeting</h5><p class="small text-muted mb-0">Detail ini akan tampil di daftar absensi.</p></div><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button></div>
+      <div class="modal-body p-4">
+        <div class="row g-3">
+          <div class="col-12"><label class="form-label fw-semibold" for="meetingTitle">Nama meeting <span class="text-danger">*</span></label><input class="form-control" id="meetingTitle" name="title" maxlength="180" required placeholder="Contoh: Rapat Evaluasi Mingguan"></div>
+          <div class="col-md-4"><label class="form-label fw-semibold" for="meetingDate">Tanggal <span class="text-danger">*</span></label><input class="form-control" id="meetingDate" type="date" name="meeting_date" value="{{ today }}" required></div>
+          <div class="col-6 col-md-4"><label class="form-label fw-semibold" for="startTime">Mulai <span class="text-danger">*</span></label><input class="form-control" id="startTime" type="time" name="start_time" value="08:00" required></div>
+          <div class="col-6 col-md-4"><label class="form-label fw-semibold" for="endTime">Selesai <span class="text-danger">*</span></label><input class="form-control" id="endTime" type="time" name="end_time" value="15:00" required></div>
+          <div class="col-12"><label class="form-label fw-semibold" for="meetingLocation">Lokasi / tautan</label><input class="form-control" id="meetingLocation" name="location" maxlength="180" value="Ruang Rapat 2 SUDIN" placeholder="Ruang rapat atau tautan Google Meet"></div>
+          <div class="col-12"><label class="form-label fw-semibold" for="meetingAgenda">Agenda singkat</label><textarea class="form-control" id="meetingAgenda" name="agenda" rows="3" maxlength="1000" placeholder="Pokok pembahasan meeting"></textarea></div>
+        </div>
+      </div>
+      <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button><button class="btn btn-primary px-4"><i class="bi bi-plus-lg me-1"></i>Buat Meeting</button></div>
+    </form>
+  </div>
+</div>
+
+<div class="modal fade" id="editMeetingModal" tabindex="-1" aria-labelledby="editMeetingLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <form method="POST" class="modal-content border-0 shadow">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="edit_meeting">
+      <input type="hidden" name="meeting_id" id="editMeetingId">
+      <div class="modal-header">
+        <div>
+          <h5 class="modal-title fw-bold" id="editMeetingLabel"><i class="bi bi-pencil-square text-primary me-2"></i>Edit Meeting</h5>
+          <p class="small text-muted mb-0">Perbarui detail agenda meeting.</p>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+      </div>
+      <div class="modal-body p-4">
+        <div class="row g-3">
+          <div class="col-12"><label class="form-label fw-semibold" for="editMeetingTitle">Nama meeting <span class="text-danger">*</span></label><input class="form-control" id="editMeetingTitle" name="title" maxlength="180" required></div>
+          <div class="col-md-4"><label class="form-label fw-semibold" for="editMeetingDate">Tanggal <span class="text-danger">*</span></label><input class="form-control" id="editMeetingDate" type="date" name="meeting_date" required></div>
+          <div class="col-6 col-md-4"><label class="form-label fw-semibold" for="editStartTime">Mulai <span class="text-danger">*</span></label><input class="form-control" id="editStartTime" type="time" name="start_time" required></div>
+          <div class="col-6 col-md-4"><label class="form-label fw-semibold" for="editEndTime">Selesai <span class="text-danger">*</span></label><input class="form-control" id="editEndTime" type="time" name="end_time" required></div>
+          <div class="col-12"><label class="form-label fw-semibold" for="editMeetingLocation">Lokasi / tautan</label><input class="form-control" id="editMeetingLocation" name="location" maxlength="180"></div>
+          <div class="col-12"><label class="form-label fw-semibold" for="editMeetingAgenda">Agenda singkat</label><textarea class="form-control" id="editMeetingAgenda" name="agenda" rows="3" maxlength="1000"></textarea></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
+        <button class="btn btn-primary px-4"><i class="bi bi-floppy me-1"></i>Simpan Perubahan</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% if selected_meeting %}
+<div class="modal fade" id="deleteMeetingModal" tabindex="-1" aria-labelledby="deleteMeetingLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <form method="POST" class="modal-content border-0 shadow">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="delete_meeting">
+      <input type="hidden" name="meeting_id" value="{{ selected_meeting.id }}">
+      <div class="modal-body p-4 text-center">
+        <div class="text-danger mb-3"><i class="bi bi-exclamation-triangle-fill display-5"></i></div>
+        <h5 class="fw-bold" id="deleteMeetingLabel">Hapus meeting ini?</h5>
+        <p class="text-muted mb-0">Agenda <strong>{{ selected_meeting.title }}</strong> dan seluruh data absensinya akan dihapus permanen.</p>
+      </div>
+      <div class="modal-footer justify-content-center border-0 pt-0 pb-4"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button><button class="btn btn-danger">Ya, hapus</button></div>
+    </form>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const editModal = document.getElementById('editMeetingModal');
+    if (!editModal) return;
+
+    editModal.addEventListener('show.bs.modal', function (event) {
+      const button = event.relatedTarget;
+      if (!button) return;
+      document.getElementById('editMeetingId').value = button.dataset.meetingId || '';
+      document.getElementById('editMeetingTitle').value = button.dataset.title || '';
+      document.getElementById('editMeetingDate').value = button.dataset.date || '';
+      document.getElementById('editStartTime').value = button.dataset.startTime || '08:00';
+      document.getElementById('editEndTime').value = button.dataset.endTime || '15:00';
+      document.getElementById('editMeetingLocation').value = button.dataset.location || '';
+      document.getElementById('editMeetingAgenda').value = button.dataset.agenda || '';
+    });
+  });
+</script>
+{% endblock %}
