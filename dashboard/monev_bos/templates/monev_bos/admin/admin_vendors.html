@@ -160,6 +160,7 @@
     }
 </style>
 
+<div id="vendorAdminAjaxRoot">
 <div class="container-fluid py-4 vendor-admin-container">
     <!-- Header -->
     <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3 vendor-page-header">
@@ -938,36 +939,149 @@
     </div>
 </div>
 {% endif %}
+</div>
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css">
 <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const schoolSelect = document.getElementById('vendorSchoolFilter');
-    if (!schoolSelect) return;
+    const ajaxVendorActions = new Set([
+        'verify_vendor',
+        'reject_vendor',
+        'revise_vendor',
+        'update_master_banks'
+    ]);
 
-    function submitSchoolFilter() {
-        if (schoolSelect.form) schoolSelect.form.submit();
+    function initializeVendorSchoolSelect() {
+        const schoolSelect = document.getElementById('vendorSchoolFilter');
+        if (!schoolSelect || schoolSelect.tomselect) return;
+
+        function submitSchoolFilter() {
+            if (schoolSelect.form) schoolSelect.form.submit();
+        }
+
+        if (!window.TomSelect) {
+            schoolSelect.addEventListener('change', submitSchoolFilter);
+            return;
+        }
+
+        new TomSelect(schoolSelect, {
+            create: false,
+            allowEmptyOption: true,
+            placeholder: schoolSelect.dataset.placeholder,
+            searchField: ['text'],
+            plugins: ['clear_button'],
+            onChange: submitSchoolFilter,
+            render: {
+                no_results: function () {
+                    return '<div class="no-results p-2 text-body-secondary text-center small">Sekolah atau NPSN tidak ditemukan</div>';
+                }
+            }
+        });
     }
 
-    if (!window.TomSelect) {
-        schoolSelect.addEventListener('change', submitSchoolFilter);
-        return;
+    function showVendorActionMessage(message, type) {
+        let notice = document.getElementById('vendorAjaxNotice');
+        if (!notice) {
+            notice = document.createElement('div');
+            notice.id = 'vendorAjaxNotice';
+            notice.className = 'alert position-fixed start-50 translate-middle-x shadow fw-semibold';
+            notice.style.cssText = 'top: 80px; z-index: 1090; width: min(92vw, 560px);';
+            notice.setAttribute('role', 'status');
+            document.body.appendChild(notice);
+        }
+        notice.className = 'alert alert-' + (type || 'success') + ' position-fixed start-50 translate-middle-x shadow fw-semibold';
+        notice.textContent = message;
+        notice.classList.remove('d-none');
+        window.clearTimeout(notice._hideTimer);
+        notice._hideTimer = window.setTimeout(function () {
+            notice.classList.add('d-none');
+        }, 3500);
     }
 
-    new TomSelect(schoolSelect, {
-        create: false,
-        allowEmptyOption: true,
-        placeholder: schoolSelect.dataset.placeholder,
-        searchField: ['text'],
-        plugins: ['clear_button'],
-        onChange: submitSchoolFilter,
-        render: {
-            no_results: function () {
-                return '<div class="no-results p-2 text-body-secondary text-center small">Sekolah atau NPSN tidak ditemukan</div>';
+    function vendorSuccessMessage(action) {
+        const messages = {
+            verify_vendor: 'Vendor/narasumber berhasil diverifikasi.',
+            reject_vendor: 'Vendor/narasumber berhasil ditolak.',
+            revise_vendor: 'Data vendor/narasumber berhasil direvisi.',
+            update_master_banks: 'Daftar pilihan bank berhasil diperbarui.'
+        };
+        return messages[action] || 'Perubahan berhasil disimpan.';
+    }
+
+    function clearOpenModalState() {
+        document.querySelectorAll('.modal-backdrop').forEach(function (backdrop) {
+            backdrop.remove();
+        });
+        document.body.classList.remove('modal-open');
+        document.body.style.removeProperty('overflow');
+        document.body.style.removeProperty('padding-right');
+    }
+
+    document.addEventListener('submit', async function (event) {
+        const form = event.target;
+        if (!(form instanceof HTMLFormElement)) return;
+        const actionInput = form.querySelector('input[name="action"]');
+        const action = actionInput ? actionInput.value : '';
+        if (!ajaxVendorActions.has(action)) return;
+
+        event.preventDefault();
+        const submitButton = event.submitter || form.querySelector('button[type="submit"]');
+        const originalButtonHtml = submitButton ? submitButton.innerHTML : '';
+        const scrollX = window.scrollX;
+        const scrollY = window.scrollY;
+
+        if (submitButton) {
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>Menyimpan...';
+        }
+
+        try {
+            const response = await fetch(form.action || window.location.href, {
+                method: 'POST',
+                body: new FormData(form),
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'text/html'
+                },
+                credentials: 'same-origin'
+            });
+            if (!response.ok) throw new Error('Server mengembalikan status ' + response.status + '.');
+
+            const html = await response.text();
+            const parsed = new DOMParser().parseFromString(html, 'text/html');
+            const errorItem = parsed.querySelector('#flash-messages-data .flash-item');
+            if (errorItem) {
+                throw new Error(errorItem.dataset.message || 'Perubahan tidak dapat disimpan.');
+            }
+
+            const currentRoot = document.getElementById('vendorAdminAjaxRoot');
+            const nextRoot = parsed.getElementById('vendorAdminAjaxRoot');
+            if (!currentRoot || !nextRoot) {
+                throw new Error('Tampilan vendor terbaru tidak ditemukan.');
+            }
+
+            const activeModal = form.closest('.modal');
+            if (activeModal && window.bootstrap && bootstrap.Modal) {
+                const modalInstance = bootstrap.Modal.getInstance(activeModal);
+                if (modalInstance) modalInstance.hide();
+            }
+            currentRoot.replaceWith(nextRoot);
+            clearOpenModalState();
+            initializeVendorSchoolSelect();
+            window.scrollTo(scrollX, scrollY);
+            showVendorActionMessage(vendorSuccessMessage(action), 'success');
+        } catch (error) {
+            showVendorActionMessage(error.message || 'Perubahan gagal disimpan.', 'danger');
+        } finally {
+            if (submitButton && submitButton.isConnected) {
+                submitButton.disabled = false;
+                submitButton.innerHTML = originalButtonHtml;
             }
         }
     });
+
+    initializeVendorSchoolSelect();
 });
 </script>
 {% endblock %}

@@ -159,6 +159,7 @@ def _personal_page(personal, downloader, period_label, generated_at, number):
         "VALIDATE": "Validasi kegiatan", "UPDATE_STATUS": "Penyelesaian laporan",
         "UPLOAD_PHOTO": "Upload foto lapangan", "ANNUL_SCHOOL_PHOTO": "Anulir foto sekolah",
         "RESTORE_SCHOOL_PHOTO": "Pulihkan foto sekolah", "DELETE_PHOTO": "Hapus foto staff",
+        "REPLACE_VENDOR": "Ganti vendor kegiatan",
         "VERIFY_APPROVE": "Verifikasi vendor/narasumber", "VERIFY_REJECT": "Tolak vendor/narasumber",
     }
     action_counts = personal.get("action_counts") or []
@@ -223,6 +224,7 @@ def _recent_activity_page(personal, period_label, generated_at, number):
         "ANNUL_SCHOOL_PHOTO": "Anulir foto sekolah",
         "RESTORE_SCHOOL_PHOTO": "Pulihkan foto sekolah",
         "DELETE_PHOTO": "Hapus foto staff",
+        "REPLACE_VENDOR": "Ganti vendor kegiatan",
         "VERIFY_APPROVE": "Verifikasi vendor/narasumber",
         "VERIFY_REJECT": "Tolak vendor/narasumber",
     }

@@ -882,7 +882,8 @@
                 <div class="row">
                     <div class="col-md-4 mb-3">
                         <label class="form-label fw-bold">No. BKU <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control font-monospace" name="bku_number" required inputmode="numeric" pattern="[0-9]{3}" maxlength="3" value="{{ act.bku_number or '' }}" placeholder="Contoh: 001" title="Masukkan tepat 3 angka, misalnya 001">
+                        <input type="text" class="form-control font-monospace bku-number-input" name="bku_number" required inputmode="numeric" pattern="[0-9]{1,4}" maxlength="4" value="{{ act.form_bku_number }}" placeholder="Contoh: 0001" title="Masukkan angka 1–9999; sistem otomatis membuatnya menjadi 4 digit">
+                        <div class="form-text text-xs bku-format-hint">Format 4 digit, contoh: 1 menjadi 0001.</div>
                     </div>
                     <div class="col-md-4 mb-3">
                         <label class="form-label fw-bold">Kode Rekening</label>
@@ -1132,7 +1133,8 @@
                 <div class="row">
                     <div class="col-md-4 mb-3">
                         <label class="form-label fw-bold">No. BKU <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control font-monospace" name="bku_number" required inputmode="numeric" pattern="[0-9]{3}" maxlength="3" placeholder="Contoh: 001" title="Masukkan tepat 3 angka, misalnya 001">
+                        <input type="text" class="form-control font-monospace bku-number-input" name="bku_number" required inputmode="numeric" pattern="[0-9]{1,4}" maxlength="4" placeholder="Contoh: 0001" title="Masukkan angka 1–9999; sistem otomatis membuatnya menjadi 4 digit">
+                        <div class="form-text text-xs bku-format-hint">Ketik angka, misalnya 1; otomatis menjadi 0001.</div>
                     </div>
                     <div class="col-md-4 mb-3">
                         <label class="form-label fw-bold">Kode Rekening</label>
@@ -1498,6 +1500,48 @@ let capturedSchoolPhoto = '';
 const activitiesPrintTitle = {{ ('Laporan Monev ' ~ fund_source_label ~ ' - ' ~ school_display_name ~ ' - TW' ~ active_period.tw ~ ' ' ~ active_period.year)|tojson }};
 const auditRequirementsByExpenseType = {{ checklist_requirements_by_expense_type|default({})|tojson }};
 
+function fourDigitBku(value) {
+    const digits = String(value || '').replace(/\D/g, '').slice(0, 4);
+    return digits ? digits.padStart(4, '0') : '';
+}
+
+function initBkuNumberInputs(container) {
+    (container || document).querySelectorAll('.bku-number-input').forEach(function (input) {
+        if (input.dataset.bkuInitialized === 'true') return;
+        input.dataset.bkuInitialized = 'true';
+        let formatTimer = null;
+        const hint = input.parentElement.querySelector('.bku-format-hint');
+
+        function updateHint() {
+            const formatted = fourDigitBku(input.value);
+            if (hint) {
+                hint.textContent = formatted
+                    ? 'Format tersimpan: ' + formatted
+                    : 'Format 4 digit, contoh: 1 menjadi 0001.';
+            }
+        }
+
+        function applyFormat() {
+            window.clearTimeout(formatTimer);
+            input.value = fourDigitBku(input.value);
+            updateHint();
+        }
+
+        input.addEventListener('input', function () {
+            input.value = input.value.replace(/\D/g, '').slice(0, 4);
+            updateHint();
+            window.clearTimeout(formatTimer);
+            if (input.value && input.value.length < 4) {
+                formatTimer = window.setTimeout(applyFormat, 600);
+            }
+        });
+        input.addEventListener('blur', applyFormat);
+        input.addEventListener('change', applyFormat);
+        input.form.addEventListener('submit', applyFormat);
+        updateHint();
+    });
+}
+
 function openActivitiesPrintDialog(saveAsPdf) {
     const originalTitle = document.title;
     const printActions = document.querySelector('.activities-print-actions');
@@ -1601,10 +1645,12 @@ function initActivitySearchableSelects(container) {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
+    initBkuNumberInputs(document);
     initActivitySearchableSelects(document);
     initAuditRequirements(document);
     document.querySelectorAll('.modal').forEach(function (modal) {
         modal.addEventListener('shown.bs.modal', function () {
+            initBkuNumberInputs(modal);
             initActivitySearchableSelects(modal);
             initAuditRequirements(modal);
         });
@@ -2093,7 +2139,10 @@ function autofillDemoData(fundSource) {
     const randNum = Math.floor(1 + Math.random() * 999);
     
     const bkuInput = form.querySelector('[name="bku_number"]');
-    if (bkuInput) bkuInput.value = String(randNum).padStart(3, '0');
+    if (bkuInput) {
+        bkuInput.value = String(randNum).padStart(4, '0');
+        bkuInput.dispatchEvent(new Event('change'));
+    }
 
     const accountCodeSelect = form.querySelector('[name="account_code"]');
     if (accountCodeSelect && accountCodeSelect.options.length > 1) {

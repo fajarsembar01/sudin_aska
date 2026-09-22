@@ -2418,6 +2418,9 @@ CREATE TABLE IF NOT EXISTS monev_bos_activities (
     item_quantity INTEGER,
     status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'in_review', 'valid', 'invalid')),
     audit_notes TEXT,
+    needs_item_check BOOLEAN NOT NULL DEFAULT FALSE,
+    item_check_marked_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    item_check_marked_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -2749,6 +2752,9 @@ def ensure_monev_bos_schema() -> None:
         "ALTER TABLE monev_bos_activities ADD COLUMN IF NOT EXISTS expense_type_id INTEGER REFERENCES monev_bos_expense_types(id) ON DELETE SET NULL;",
         "ALTER TABLE monev_bos_activities ADD COLUMN IF NOT EXISTS account_code TEXT;",
         "ALTER TABLE monev_bos_activities ADD COLUMN IF NOT EXISTS account_code_id INTEGER REFERENCES monev_bos_account_codes(id) ON DELETE SET NULL;",
+        "ALTER TABLE monev_bos_activities ADD COLUMN IF NOT EXISTS needs_item_check BOOLEAN NOT NULL DEFAULT FALSE;",
+        "ALTER TABLE monev_bos_activities ADD COLUMN IF NOT EXISTS item_check_marked_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL;",
+        "ALTER TABLE monev_bos_activities ADD COLUMN IF NOT EXISTS item_check_marked_at TIMESTAMPTZ;",
         "UPDATE monev_bos_activities a SET account_code_id = ac.id FROM monev_bos_account_codes ac WHERE a.account_code_id IS NULL AND a.account_code = ac.code;",
         "ALTER TABLE monev_bos_activities DROP CONSTRAINT IF EXISTS monev_bos_activities_status_check;",
         "ALTER TABLE monev_bos_activities ADD CONSTRAINT monev_bos_activities_status_check CHECK (status IN ('pending', 'in_review', 'valid', 'invalid'));",
