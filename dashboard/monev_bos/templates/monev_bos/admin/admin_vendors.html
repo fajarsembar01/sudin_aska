@@ -1037,7 +1037,11 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         try {
-            const response = await fetch(form.action || window.location.href, {
+            // The form contains an input named "action". Browser named-property
+            // access can therefore make form.action resolve to that input instead
+            // of the form URL, producing a request to "[object HTMLInputElement]".
+            const submitUrl = form.getAttribute('action') || window.location.href;
+            const response = await fetch(submitUrl, {
                 method: 'POST',
                 body: new FormData(form),
                 headers: {
