@@ -672,6 +672,24 @@ def save_admin_meeting_attendance(
     return saved
 
 
+def update_admin_meeting_documentation(
+    *, meeting_id: int, notulen: str, photo_path: Optional[str]
+) -> bool:
+    """Save meeting minutes and its documentation photo."""
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE admin_meetings
+            SET notulen = %s,
+                photo_path = %s,
+                updated_at = NOW()
+            WHERE id = %s
+            """,
+            (notulen or None, photo_path or None, meeting_id),
+        )
+        return cur.rowcount > 0
+
+
 def update_admin_meeting_status(meeting_id: int, status: str) -> bool:
     """Update the meeting lifecycle state."""
     with get_cursor(commit=True) as cur:

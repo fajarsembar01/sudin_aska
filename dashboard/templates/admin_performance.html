@@ -182,6 +182,11 @@
         min-height: 36px;
         font-size: 0.86rem;
     }
+    .quarter-period-controls {
+        display: grid;
+        grid-template-columns: minmax(82px, 1fr) minmax(76px, .8fr);
+        gap: .4rem;
+    }
     .coding-strip {
         display: grid;
         grid-template-columns: minmax(0, 1fr) auto auto;
@@ -370,6 +375,7 @@
                     <label class="form-label">Update</label>
                     <select class="form-select" name="period_scope" id="performancePeriodScope">
                         <option value="month" {% if performance.period_scope == 'month' %}selected{% endif %}>Per Bulan</option>
+                        <option value="quarter" {% if performance.period_scope == 'quarter' %}selected{% endif %}>Per TW</option>
                         <option value="year" {% if performance.period_scope == 'year' %}selected{% endif %}>1 Tahun</option>
                         <option value="all" {% if performance.period_scope == 'all' %}selected{% endif %}>Seluruhnya</option>
                     </select>
@@ -378,6 +384,21 @@
                     <label class="form-label">Bulan</label>
                     <input type="month" class="form-control" name="month"
                         value="{{ performance.selected_month }}">
+                </div>
+                <div id="performanceQuarterField">
+                    <label class="form-label">Triwulan / Tahun</label>
+                    <div class="quarter-period-controls">
+                        <select class="form-select" name="quarter" aria-label="Triwulan">
+                            {% for quarter in range(1, 5) %}
+                            <option value="{{ quarter }}" {% if performance.selected_quarter == quarter %}selected{% endif %}>TW {{ quarter }}</option>
+                            {% endfor %}
+                        </select>
+                        <select class="form-select" name="year" aria-label="Tahun triwulan">
+                            {% for year in performance.year_options %}
+                            <option value="{{ year }}" {% if performance.selected_year == year %}selected{% endif %}>{{ year }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
                 </div>
                 <div id="performanceYearField">
                     <label class="form-label">Tahun</label>
@@ -415,6 +436,7 @@
                     <input type="hidden" name="search" value="{{ performance.search }}">
                     <input type="hidden" name="period_scope" value="{{ performance.period_scope }}">
                     <input type="hidden" name="month" value="{{ performance.selected_month }}">
+                    <input type="hidden" name="quarter" value="{{ performance.selected_quarter }}">
                     <input type="hidden" name="year" value="{{ performance.selected_year }}">
                     <button class="btn btn-dark btn-sm" type="submit"><i class="bi bi-arrow-repeat me-1"></i>Sinkronkan</button>
                 </form>
@@ -432,6 +454,7 @@
                     <input type="hidden" name="search" value="{{ performance.search }}">
                     <input type="hidden" name="period_scope" value="{{ performance.period_scope }}">
                     <input type="hidden" name="month" value="{{ performance.selected_month }}">
+                    <input type="hidden" name="quarter" value="{{ performance.selected_quarter }}">
                     <input type="hidden" name="year" value="{{ performance.selected_year }}">
                     <div class="row g-2">
                         <div class="col-lg-4">
@@ -746,15 +769,21 @@
     (function () {
         var scope = document.getElementById('performancePeriodScope');
         var monthField = document.getElementById('performanceMonthField');
+        var quarterField = document.getElementById('performanceQuarterField');
         var yearField = document.getElementById('performanceYearField');
-        if (!scope || !monthField || !yearField) return;
+        if (!scope || !monthField || !quarterField || !yearField) return;
 
         function updatePeriodFields() {
             var showMonth = scope.value === 'month';
+            var showQuarter = scope.value === 'quarter';
             var showYear = scope.value === 'year';
             monthField.classList.toggle('d-none', !showMonth);
+            quarterField.classList.toggle('d-none', !showQuarter);
             yearField.classList.toggle('d-none', !showYear);
             monthField.querySelector('input').disabled = !showMonth;
+            quarterField.querySelectorAll('select').forEach(function (select) {
+                select.disabled = !showQuarter;
+            });
             yearField.querySelector('select').disabled = !showYear;
         }
 

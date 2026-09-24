@@ -1603,6 +1603,8 @@ CREATE TABLE IF NOT EXISTS admin_meetings (
     end_time TIME,
     location TEXT,
     agenda TEXT,
+    notulen TEXT,
+    photo_path TEXT,
     status TEXT NOT NULL DEFAULT 'scheduled'
         CHECK (status IN ('scheduled', 'completed', 'cancelled')),
     created_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
@@ -1637,6 +1639,8 @@ def ensure_dashboard_schema() -> None:
         _PUBLIC_API_KEYS_SQL,
         _PUBLIC_API_KEYS_INDEX_SQL,
         _ADMIN_MEETINGS_SQL,
+        "ALTER TABLE admin_meetings ADD COLUMN IF NOT EXISTS notulen TEXT",
+        "ALTER TABLE admin_meetings ADD COLUMN IF NOT EXISTS photo_path TEXT",
         _ADMIN_MEETING_ATTENDANCE_SQL,
         _SCHOOL_CLASSES_SQL,
         _STUDENTS_SQL,

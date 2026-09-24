@@ -70,6 +70,20 @@
     font-weight: 700;
   }
   .status-select { min-width: 145px; font-weight: 600; }
+  .meeting-photo-preview {
+    width: 96px;
+    height: 72px;
+    object-fit: cover;
+    border: 1px solid var(--border-soft);
+    border-radius: 10px;
+  }
+  .meeting-camera-video {
+    width: 100%;
+    max-height: 320px;
+    border-radius: 12px;
+    background: #111;
+    object-fit: cover;
+  }
   .empty-state { min-height: 360px; display: grid; place-content: center; text-align: center; }
   @media (max-width: 767.98px) {
     .attendance-table thead { display: none; }
@@ -78,6 +92,27 @@
     .attendance-table td { border: 0; padding: .3rem 0; }
     .status-select { width: 100%; }
     .meeting-list { max-height: 390px; }
+    #openMeetingCamera {
+      position: fixed;
+      right: 1rem;
+      bottom: calc(1rem + env(safe-area-inset-bottom));
+      z-index: 1035;
+      width: 58px !important;
+      height: 58px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 0;
+      border-radius: 50%;
+      color: #fff;
+      background: var(--bs-primary);
+      box-shadow: 0 8px 24px rgba(13, 110, 253, .38);
+    }
+    #openMeetingCamera:hover,
+    #openMeetingCamera:focus { color: #fff; background: var(--bs-primary); }
+    #openMeetingCamera .camera-button-label { display: none; }
+    #openMeetingCamera i { margin: 0 !important; font-size: 1.35rem; }
   }
 </style>
 {% endblock %}
@@ -161,7 +196,6 @@
                       data-start-time="{{ meeting.start_time.strftime('%H:%M') if meeting.start_time else '08:00' }}"
                       data-end-time="{{ meeting.end_time.strftime('%H:%M') if meeting.end_time else '15:00' }}"
                       data-location="{{ meeting.location or '' }}"
-                      data-agenda="{{ meeting.agenda or '' }}"
                       aria-label="Edit {{ meeting.title }}" title="Edit meeting">
                 <i class="bi bi-pencil"></i>
               </button>
@@ -275,6 +309,51 @@
                 </tbody>
               </table>
             </div>
+            <div class="p-3 p-md-4 border-top bg-body-tertiary">
+              <div class="row g-3">
+                <div class="col-lg-8">
+                  <label class="form-label fw-semibold" for="meetingNotulen">
+                    <i class="bi bi-journal-text me-1"></i>Notulen
+                  </label>
+                  <textarea class="form-control" id="meetingNotulen" name="notulen" rows="4" maxlength="5000" placeholder="Tuliskan hasil dan poin penting meeting" {% if attendance_closed %}disabled{% endif %}>{{ selected_meeting.notulen or '' }}</textarea>
+                  {% if not attendance_closed %}
+                    <div class="form-text" id="notulenSaveStatus" role="status" aria-live="polite">
+                      <i class="bi bi-cloud-check me-1"></i>Tersimpan otomatis saat diketik.
+                    </div>
+                  {% endif %}
+                </div>
+                <div class="col-lg-4">
+                  <div class="form-label fw-semibold"><i class="bi bi-camera me-1"></i>Ambil foto</div>
+                  {% if selected_meeting.photo_path %}
+                    <div class="d-flex align-items-center gap-3 mb-2">
+                      <a href="{{ url_for('pengaturan.meeting_attendance_photo', filename=selected_meeting.photo_path) }}" target="_blank" rel="noopener">
+                        <img class="meeting-photo-preview" src="{{ url_for('pengaturan.meeting_attendance_photo', filename=selected_meeting.photo_path) }}" alt="Foto dokumentasi meeting">
+                      </a>
+                      <small class="text-muted">Ambil foto baru untuk mengganti foto saat ini.</small>
+                    </div>
+                  {% endif %}
+                  <div id="capturedPhotoWrap" class="d-none mb-2">
+                    <img id="capturedPhotoPreview" class="meeting-photo-preview" alt="Foto baru hasil kamera">
+                    <small class="text-success ms-2"><i class="bi bi-check-circle me-1"></i>Foto kamera tersimpan.</small>
+                  </div>
+                  <button class="btn btn-outline-primary w-100" id="openMeetingCamera" type="button" {% if attendance_closed %}disabled{% endif %}>
+                    <i class="bi bi-camera-fill me-1"></i><span class="camera-button-label">Buka Kamera</span>
+                  </button>
+                  <div class="form-text">Foto hanya dapat diambil langsung dari kamera.</div>
+                  <div id="meetingCameraPanel" class="d-none mt-3">
+                    <video id="meetingCameraVideo" class="meeting-camera-video" autoplay playsinline muted></video>
+                    <canvas id="meetingCameraCanvas" class="d-none"></canvas>
+                    <div class="d-flex gap-2 mt-2">
+                      <button class="btn btn-primary flex-grow-1" id="captureMeetingPhoto" type="button">
+                        <i class="bi bi-camera me-1"></i>Ambil Foto
+                      </button>
+                      <button class="btn btn-outline-secondary" id="closeMeetingCamera" type="button">Batal</button>
+                    </div>
+                  </div>
+                  <div id="meetingCameraStatus" class="form-text" role="status" aria-live="polite"></div>
+                </div>
+              </div>
+            </div>
             <div class="p-3 p-md-4 border-top d-flex flex-wrap align-items-center justify-content-between gap-2">
               <small class="text-muted">
                 {% if attendance_deadline %}
@@ -309,12 +388,11 @@
       <div class="modal-header"><div><h5 class="modal-title fw-bold" id="newMeetingLabel">Buat Agenda Meeting</h5><p class="small text-muted mb-0">Detail ini akan tampil di daftar absensi.</p></div><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button></div>
       <div class="modal-body p-4">
         <div class="row g-3">
-          <div class="col-12"><label class="form-label fw-semibold" for="meetingTitle">Nama meeting <span class="text-danger">*</span></label><input class="form-control" id="meetingTitle" name="title" maxlength="180" required placeholder="Contoh: Rapat Evaluasi Mingguan"></div>
+          <div class="col-12"><label class="form-label fw-semibold" for="meetingTitle">Nama meeting <span class="text-danger">*</span></label><input class="form-control" id="meetingTitle" name="title" maxlength="180" value="Rapat Koordinasi" required></div>
           <div class="col-md-4"><label class="form-label fw-semibold" for="meetingDate">Tanggal <span class="text-danger">*</span></label><input class="form-control" id="meetingDate" type="date" name="meeting_date" value="{{ today }}" required></div>
           <div class="col-6 col-md-4"><label class="form-label fw-semibold" for="startTime">Mulai <span class="text-danger">*</span></label><input class="form-control" id="startTime" type="time" name="start_time" value="08:00" required></div>
           <div class="col-6 col-md-4"><label class="form-label fw-semibold" for="endTime">Selesai <span class="text-danger">*</span></label><input class="form-control" id="endTime" type="time" name="end_time" value="15:00" required></div>
           <div class="col-12"><label class="form-label fw-semibold" for="meetingLocation">Lokasi / tautan</label><input class="form-control" id="meetingLocation" name="location" maxlength="180" value="Ruang Rapat 2 SUDIN" placeholder="Ruang rapat atau tautan Google Meet"></div>
-          <div class="col-12"><label class="form-label fw-semibold" for="meetingAgenda">Agenda singkat</label><textarea class="form-control" id="meetingAgenda" name="agenda" rows="3" maxlength="1000" placeholder="Pokok pembahasan meeting"></textarea></div>
         </div>
       </div>
       <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button><button class="btn btn-primary px-4"><i class="bi bi-plus-lg me-1"></i>Buat Meeting</button></div>
@@ -342,7 +420,6 @@
           <div class="col-6 col-md-4"><label class="form-label fw-semibold" for="editStartTime">Mulai <span class="text-danger">*</span></label><input class="form-control" id="editStartTime" type="time" name="start_time" required></div>
           <div class="col-6 col-md-4"><label class="form-label fw-semibold" for="editEndTime">Selesai <span class="text-danger">*</span></label><input class="form-control" id="editEndTime" type="time" name="end_time" required></div>
           <div class="col-12"><label class="form-label fw-semibold" for="editMeetingLocation">Lokasi / tautan</label><input class="form-control" id="editMeetingLocation" name="location" maxlength="180"></div>
-          <div class="col-12"><label class="form-label fw-semibold" for="editMeetingAgenda">Agenda singkat</label><textarea class="form-control" id="editMeetingAgenda" name="agenda" rows="3" maxlength="1000"></textarea></div>
         </div>
       </div>
       <div class="modal-footer">
@@ -375,6 +452,182 @@
 {% block scripts %}
 <script>
   document.addEventListener('DOMContentLoaded', function () {
+    const attendanceForm = document.getElementById('attendanceForm');
+    const notulenInput = document.getElementById('meetingNotulen');
+    const notulenStatus = document.getElementById('notulenSaveStatus');
+    const notulenAutosaveUrl = {{ url_for('pengaturan.autosave_meeting_notulen')|tojson }};
+    const meetingPhotoCaptureUrl = {{ url_for('pengaturan.capture_meeting_photo')|tojson }};
+    let notulenTimer;
+    let saveSequence = 0;
+    let editVersion = 0;
+    let notulenDirty = false;
+
+    function setNotulenStatus(message, icon, className) {
+      if (!notulenStatus) return;
+      notulenStatus.className = `form-text ${className || ''}`.trim();
+      notulenStatus.innerHTML = `<i class="bi bi-${icon} me-1"></i>${message}`;
+    }
+
+    async function saveNotulen(attempt = 0) {
+      if (!attendanceForm || !notulenInput || notulenInput.disabled || !notulenDirty) return;
+      const sequence = ++saveSequence;
+      const savedVersion = editVersion;
+      const payload = new FormData();
+      payload.append('csrf_token', attendanceForm.querySelector('[name="csrf_token"]').value);
+      payload.append('meeting_id', attendanceForm.querySelector('[name="meeting_id"]').value);
+      payload.append('notulen', notulenInput.value);
+      setNotulenStatus('Menyimpan…', 'cloud-arrow-up', 'text-primary');
+
+      try {
+        const response = await fetch(notulenAutosaveUrl, {
+          method: 'POST',
+          body: payload,
+          redirect: 'follow',
+          headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+        });
+        if (response.redirected) {
+          throw new Error('Sesi berubah. Muat ulang halaman lalu coba lagi.');
+        }
+        const result = await response.json().catch(() => ({}));
+        if (sequence !== saveSequence || savedVersion !== editVersion) return;
+        if (!response.ok || !result.success) {
+          const saveError = new Error(result.message || `Gagal menyimpan notulen (${response.status}).`);
+          saveError.retryable = response.status >= 500;
+          throw saveError;
+        }
+        notulenDirty = false;
+        setNotulenStatus('Notulen tersimpan.', 'cloud-check', 'text-success');
+      } catch (error) {
+        if (sequence !== saveSequence || savedVersion !== editVersion) return;
+        if (attempt < 2 && (error.retryable || error instanceof TypeError)) {
+          setNotulenStatus('Koneksi terputus, mencoba kembali…', 'arrow-repeat', 'text-warning');
+          notulenTimer = window.setTimeout(function () { saveNotulen(attempt + 1); }, 1500);
+          return;
+        }
+        setNotulenStatus(error.message || 'Gagal menyimpan notulen.', 'exclamation-circle', 'text-danger');
+      }
+    }
+
+    if (notulenInput && !notulenInput.disabled) {
+      notulenInput.addEventListener('input', function () {
+        window.clearTimeout(notulenTimer);
+        editVersion += 1;
+        notulenDirty = true;
+        setNotulenStatus('Menunggu untuk disimpan…', 'clock', 'text-muted');
+        notulenTimer = window.setTimeout(saveNotulen, 600);
+      });
+      notulenInput.addEventListener('blur', function () {
+        window.clearTimeout(notulenTimer);
+        saveNotulen();
+      });
+    }
+
+    const openCameraButton = document.getElementById('openMeetingCamera');
+    const closeCameraButton = document.getElementById('closeMeetingCamera');
+    const capturePhotoButton = document.getElementById('captureMeetingPhoto');
+    const cameraPanel = document.getElementById('meetingCameraPanel');
+    const cameraVideo = document.getElementById('meetingCameraVideo');
+    const cameraCanvas = document.getElementById('meetingCameraCanvas');
+    const cameraStatus = document.getElementById('meetingCameraStatus');
+    const capturedPhotoWrap = document.getElementById('capturedPhotoWrap');
+    const capturedPhotoPreview = document.getElementById('capturedPhotoPreview');
+    let cameraStream = null;
+
+    function stopMeetingCamera() {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(function (track) { track.stop(); });
+        cameraStream = null;
+      }
+      if (cameraVideo) cameraVideo.srcObject = null;
+      if (cameraPanel) cameraPanel.classList.add('d-none');
+    }
+
+    async function openMeetingCamera() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        cameraStatus.textContent = 'Kamera tidak didukung oleh browser ini.';
+        cameraStatus.className = 'form-text text-danger';
+        return;
+      }
+      stopMeetingCamera();
+      cameraStatus.textContent = 'Membuka kamera…';
+      cameraStatus.className = 'form-text text-muted';
+      try {
+        cameraStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: 'environment' } },
+          audio: false
+        });
+        cameraVideo.srcObject = cameraStream;
+        cameraPanel.classList.remove('d-none');
+        cameraStatus.textContent = 'Arahkan kamera, lalu tekan Ambil Foto.';
+        cameraStatus.className = 'form-text text-muted';
+      } catch (error) {
+        cameraStatus.textContent = 'Kamera tidak dapat dibuka. Izinkan akses kamera pada browser.';
+        cameraStatus.className = 'form-text text-danger';
+      }
+    }
+
+    if (openCameraButton) openCameraButton.addEventListener('click', openMeetingCamera);
+    if (closeCameraButton) closeCameraButton.addEventListener('click', function () {
+      stopMeetingCamera();
+      cameraStatus.textContent = '';
+    });
+    if (capturePhotoButton) capturePhotoButton.addEventListener('click', function () {
+      const sourceWidth = cameraVideo.videoWidth;
+      const sourceHeight = cameraVideo.videoHeight;
+      if (!sourceWidth || !sourceHeight) {
+        cameraStatus.textContent = 'Kamera belum siap. Tunggu sebentar lalu coba lagi.';
+        cameraStatus.className = 'form-text text-warning';
+        return;
+      }
+      const maxDimension = 1920;
+      const scale = Math.min(1, maxDimension / Math.max(sourceWidth, sourceHeight));
+      cameraCanvas.width = Math.round(sourceWidth * scale);
+      cameraCanvas.height = Math.round(sourceHeight * scale);
+      cameraCanvas.getContext('2d').drawImage(
+        cameraVideo, 0, 0, cameraCanvas.width, cameraCanvas.height
+      );
+      stopMeetingCamera();
+      cameraStatus.textContent = 'Menyimpan foto…';
+      cameraStatus.className = 'form-text text-primary';
+      capturePhotoButton.disabled = true;
+
+      cameraCanvas.toBlob(async function (photoBlob) {
+        if (!photoBlob) {
+          cameraStatus.textContent = 'Foto gagal diproses. Silakan ambil ulang.';
+          cameraStatus.className = 'form-text text-danger';
+          capturePhotoButton.disabled = false;
+          return;
+        }
+        const payload = new FormData();
+        payload.append('csrf_token', attendanceForm.querySelector('[name="csrf_token"]').value);
+        payload.append('meeting_id', attendanceForm.querySelector('[name="meeting_id"]').value);
+        payload.append('photo', photoBlob, 'camera.jpg');
+        try {
+          const response = await fetch(meetingPhotoCaptureUrl, {
+            method: 'POST',
+            body: payload,
+            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+          });
+          const result = await response.json().catch(() => ({}));
+          if (!response.ok || !result.success) {
+            throw new Error(result.message || 'Foto gagal disimpan.');
+          }
+          capturedPhotoPreview.src = `${result.photo_url}?v=${Date.now()}`;
+          capturedPhotoWrap.classList.remove('d-none');
+          openCameraButton.innerHTML = '<i class="bi bi-camera-fill me-1"></i><span class="camera-button-label">Ambil Ulang Foto</span>';
+          cameraStatus.textContent = 'Foto kamera sudah tersimpan.';
+          cameraStatus.className = 'form-text text-success';
+        } catch (error) {
+          cameraStatus.textContent = error.message || 'Foto gagal disimpan.';
+          cameraStatus.className = 'form-text text-danger';
+        } finally {
+          capturePhotoButton.disabled = false;
+        }
+      }, 'image/jpeg', 0.85);
+    });
+    if (attendanceForm) attendanceForm.addEventListener('submit', stopMeetingCamera);
+    window.addEventListener('beforeunload', stopMeetingCamera);
+
     const editModal = document.getElementById('editMeetingModal');
     if (!editModal) return;
 
@@ -387,7 +640,6 @@
       document.getElementById('editStartTime').value = button.dataset.startTime || '08:00';
       document.getElementById('editEndTime').value = button.dataset.endTime || '15:00';
       document.getElementById('editMeetingLocation').value = button.dataset.location || '';
-      document.getElementById('editMeetingAgenda').value = button.dataset.agenda || '';
     });
   });
 </script>
