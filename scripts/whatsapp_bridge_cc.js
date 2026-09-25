@@ -165,6 +165,68 @@ function normalizeNumber(jid) {
     return (String(jid || "").split("@")[0] || "").replace(/\D/g, "") || "";
 }
 
+const recipientJidCache = new Map();
+
+function isDirectUserJid(value) {
+    return /^\d+@(lid|c\.us|s\.whatsapp\.net)$/.test(String(value || "").trim());
+}
+
+function rememberRecipientJid(numberOrJid, jid) {
+    const cleanJid = String(jid || "").trim();
+    if (!isDirectUserJid(cleanJid)) return;
+    const key = normalizeNumber(numberOrJid);
+    const jidKey = normalizeNumber(cleanJid);
+    if (key) recipientJidCache.set(key, cleanJid);
+    if (jidKey) recipientJidCache.set(jidKey, cleanJid);
+}
+
+async function resolveRecipientJid(rawRecipient) {
+    const raw = String(rawRecipient || "").trim();
+    if (isDirectUserJid(raw)) {
+        rememberRecipientJid(raw, raw);
+        return raw;
+    }
+
+    const number = normalizeNumber(raw);
+    if (!number) throw new Error("Nomor/JID tujuan WhatsApp tidak valid.");
+
+    const cached = recipientJidCache.get(number);
+    if (cached) return cached;
+
+    // Prefer the targeted legacy LID chat lookup. Avoid client.getChats(): current
+    // WhatsApp Web builds can throw a minified `r: r` while enumerating all chats.
+    const legacyLid = `${number}@lid`;
+    try {
+        const chat = await client.getChatById(legacyLid);
+        const chatJid = String((chat && chat.id && chat.id._serialized) || "");
+        if (chatJid === legacyLid) {
+            rememberRecipientJid(number, chatJid);
+            return chatJid;
+        }
+    } catch (_) {
+        // It may be a real phone number rather than a legacy numeric LID.
+    }
+
+    try {
+        const mappings = await client.getContactLidAndPhone([`${number}@c.us`]);
+        const lid = mappings && mappings[0] && mappings[0].lid;
+        if (isDirectUserJid(lid)) {
+            rememberRecipientJid(number, lid);
+            return lid;
+        }
+    } catch (_) {
+        // Older WhatsApp Web builds may not expose a LID mapping here.
+    }
+
+    const numberId = await client.getNumberId(number);
+    const resolved = String((numberId && numberId._serialized) || "");
+    if (!isDirectUserJid(resolved)) {
+        throw new Error(`Nomor WhatsApp ${number} tidak ditemukan atau belum memiliki pemetaan LID.`);
+    }
+    rememberRecipientJid(number, resolved);
+    return resolved;
+}
+
 function resolveBridgeSelfNumber() {
     try {
         const info = client && client.info ? client.info : {};
@@ -602,6 +664,7 @@ async function handleIncoming(msg) {
 
         // Use real phone number (e.g. 62812...) as user_id for DB
         const userId = realNumber || normalizeNumber(fromJid);
+        rememberRecipientJid(userId, fromJid);
 
         const messageText = text || mediaFallbackText((media && media.mimetype) || probableMime);
 
@@ -613,6 +676,7 @@ async function handleIncoming(msg) {
                 INTERNAL_URL,
                 {
                     user_id: userId,
+                    wa_jid: fromJid,
                     username: displayName,
                     message: messageText,
                     message_id: mid || null,
@@ -697,6 +761,7 @@ async function getChatIdentity(chat) {
         // Some historical chats may not expose a contact object.
     }
 
+    rememberRecipientJid(number, chatId);
     return { number, displayName, chatId };
 }
 
@@ -716,6 +781,7 @@ async function serializeHistoryMessage(msg, identity) {
 
     return {
         user_id: identity.number,
+        wa_jid: identity.chatId,
         username: identity.displayName,
         bridge_key: BRIDGE_KEY,
         direction: msg.fromMe ? "outbound" : "inbound",
@@ -889,15 +955,7 @@ app.post("/send", authCheck, async (req, res) => {
         return res.status(400).json({ error: "Missing 'to' or 'message/media'" });
     }
     try {
-        let jid;
-        const sanitized = String(to).replace(/\D/g, "");
-        if (String(to).includes("@")) {
-            // Already a JID
-            jid = String(to);
-        } else {
-            // Force @c.us for phone numbers
-            jid = `${sanitized}@c.us`;
-        }
+        const jid = await resolveRecipientJid(to);
 
         let sent;
         if (hasMedia) {
@@ -915,19 +973,22 @@ app.post("/send", authCheck, async (req, res) => {
 
             const messageMedia = new MessageMedia(mimetype, data, filename);
             const isImage = mimetype.toLowerCase().startsWith("image/");
-            const options = {};
+            const options = { sendSeen: false };
             if (hasMessage) options.caption = String(message).trim();
             if (!isImage) options.sendMediaAsDocument = true;
             sent = await client.sendMessage(jid, messageMedia, options);
         } else {
-            sent = await client.sendMessage(jid, String(message));
+            sent = await client.sendMessage(jid, String(message), { sendSeen: false });
         }
         const sentId = (sent && sent.id && sent.id._serialized) || "";
         if (sentId) ignoredIds.add(sentId);
         console.log(`[CC] sent to=${jid} len=${String(message || "").length} media=${hasMedia ? media.mimetype : "-"}`);
         res.json({ ok: true, messageId: sentId });
     } catch (err) {
-        console.error("[CC] sendMessage error:", (err && err.message) || err);
+        console.error(
+            `[CC] sendMessage error to=${String(to)}:`,
+            (err && err.stack) || (err && err.message) || err
+        );
         res.status(500).json({ error: (err && err.message) || "Send failed" });
     }
 });

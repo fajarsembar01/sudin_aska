@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import io
+import uuid
 from datetime import datetime, timedelta
+from pathlib import Path, PurePosixPath
 from typing import Any, Dict, Optional
 
 from flask import (
@@ -29,6 +32,7 @@ from dashboard.queries import (
     delete_telegram_admin_account,
     list_telegram_notification_groups,
     delete_telegram_notification_group,
+    record_admin_action,
 )
 from dashboard.telegram_notifications import send_test_notification
 from utils import current_jakarta_time
@@ -58,6 +62,15 @@ from .queries import (
     delete_public_api_key,
     verify_public_api_key,
     fetch_public_schools_api_data,
+    create_admin_meeting,
+    update_admin_meeting,
+    list_admin_meetings,
+    get_admin_meeting,
+    list_admin_meeting_attendance,
+    save_admin_meeting_attendance,
+    update_admin_meeting_documentation,
+    update_admin_meeting_status,
+    delete_admin_meeting,
 )
 
 pengaturan_bp = Blueprint(
@@ -72,6 +85,132 @@ pengaturan_legacy_bp = Blueprint(
     url_prefix="/pengaturan",
 )
 
+MEETING_PHOTO_ROOT = (
+    Path(__file__).resolve().parents[2] / "uploads" / "pengaturan" / "meeting"
+)
+
+
+def _save_meeting_photo(file_storage, meeting_id: int) -> Optional[str]:
+    """Validate and normalize a live camera capture to a JPEG."""
+    if not file_storage or not file_storage.filename:
+        return None
+
+    image_bytes = file_storage.read(10 * 1024 * 1024 + 1)
+    if len(image_bytes) > 10 * 1024 * 1024:
+        raise ValueError("Ukuran foto kamera terlalu besar. Silakan ambil ulang.")
+
+    try:
+        from PIL import Image, ImageOps
+
+        with Image.open(io.BytesIO(image_bytes)) as opened:
+            image = ImageOps.exif_transpose(opened).convert("RGB")
+        image.thumbnail((1920, 1920), Image.LANCZOS)
+    except Exception as exc:
+        raise ValueError("File foto tidak valid atau tidak dapat dibaca.") from exc
+
+    relative_dir = Path(str(meeting_id))
+    target_dir = MEETING_PHOTO_ROOT / relative_dir
+    target_dir.mkdir(parents=True, exist_ok=True)
+    filename = f"{uuid.uuid4().hex}.jpg"
+    image.save(target_dir / filename, format="JPEG", quality=85, optimize=True)
+    return (relative_dir / filename).as_posix()
+
+
+def _meeting_photo_path(relative_path: Optional[str]) -> Optional[Path]:
+    raw = str(relative_path or "").replace("\\", "/").strip()
+    if not raw:
+        return None
+    relative = PurePosixPath(raw)
+    if relative.is_absolute() or ".." in relative.parts:
+        return None
+    candidate = (MEETING_PHOTO_ROOT / relative.as_posix()).resolve()
+    try:
+        candidate.relative_to(MEETING_PHOTO_ROOT.resolve())
+    except ValueError:
+        return None
+    return candidate
+
+
+@pengaturan_bp.route("/absensi-meeting/foto/<path:filename>")
+@role_required("admin")
+def meeting_attendance_photo(filename: str) -> Response:
+    """Serve a meeting documentation photo to authenticated admins."""
+    candidate = _meeting_photo_path(filename)
+    if not candidate or not candidate.is_file():
+        return Response("Foto tidak ditemukan.", status=404)
+    return send_file(candidate, mimetype="image/jpeg", conditional=True)
+
+
+@pengaturan_bp.route("/absensi-meeting/foto", methods=["POST"])
+@role_required("admin")
+def capture_meeting_photo() -> Response:
+    """Store a photo captured by the live browser camera."""
+    meeting_id = request.form.get("meeting_id", type=int)
+    meeting = get_admin_meeting(meeting_id) if meeting_id else None
+    if not meeting:
+        return jsonify({"success": False, "message": "Data meeting tidak ditemukan."}), 404
+    if _meeting_attendance_is_closed(meeting):
+        return jsonify({
+            "success": False,
+            "message": "Foto tidak dapat diubah karena absensi telah ditutup.",
+        }), 403
+
+    try:
+        new_photo_path = _save_meeting_photo(request.files.get("photo"), meeting_id)
+    except ValueError as exc:
+        return jsonify({"success": False, "message": str(exc)}), 400
+    if not new_photo_path:
+        return jsonify({"success": False, "message": "Foto kamera tidak ditemukan."}), 400
+
+    old_photo_path = meeting.get("photo_path")
+    update_admin_meeting_documentation(
+        meeting_id=meeting_id,
+        notulen=meeting.get("notulen") or "",
+        photo_path=new_photo_path,
+    )
+    old_photo = _meeting_photo_path(old_photo_path)
+    if old_photo and old_photo.is_file():
+        old_photo.unlink()
+    return jsonify({
+        "success": True,
+        "message": "Foto kamera tersimpan.",
+        "photo_url": url_for(
+            "pengaturan.meeting_attendance_photo", filename=new_photo_path
+        ),
+    })
+
+
+@pengaturan_bp.route("/absensi-meeting/notulen", methods=["POST"])
+@role_required("admin")
+def autosave_meeting_notulen() -> Response:
+    """Persist meeting minutes independently from the attendance form."""
+    meeting_id = request.form.get("meeting_id", type=int)
+    meeting = get_admin_meeting(meeting_id) if meeting_id else None
+    if not meeting:
+        return jsonify({
+            "success": False,
+            "message": "Data meeting tidak ditemukan. Muat ulang halaman.",
+        }), 404
+    if _meeting_attendance_is_closed(meeting):
+        return jsonify({
+            "success": False,
+            "message": "Notulen tidak dapat diubah karena absensi telah ditutup.",
+        }), 403
+
+    notulen = request.form.get("notulen") or ""
+    if len(notulen) > 5000:
+        return jsonify({
+            "success": False,
+            "message": "Notulen maksimal 5.000 karakter.",
+        }), 400
+
+    update_admin_meeting_documentation(
+        meeting_id=meeting_id,
+        notulen=notulen,
+        photo_path=meeting.get("photo_path"),
+    )
+    return jsonify({"success": True, "message": "Notulen tersimpan."})
+
 
 def _parse_date(value: Optional[str]) -> Optional[datetime]:
     if not value:
@@ -84,12 +223,64 @@ def _parse_date(value: Optional[str]) -> Optional[datetime]:
     return None
 
 
+def _meeting_attendance_deadline(meeting: Dict[str, Any]) -> Optional[datetime]:
+    """Return the local attendance cutoff: one hour after the meeting ends."""
+    meeting_date = meeting.get("meeting_date")
+    end_time = meeting.get("end_time")
+    if not meeting_date or not end_time:
+        return None
+    return datetime.combine(meeting_date, end_time) + timedelta(hours=1)
+
+
+def _meeting_attendance_is_closed(meeting: Dict[str, Any]) -> bool:
+    deadline = _meeting_attendance_deadline(meeting)
+    if deadline is None:
+        return False
+    now = current_jakarta_time().replace(tzinfo=None)
+    return now > deadline
+
+
+def _validate_meeting_details(
+    *, title: str, meeting_date: str, start_time: str, end_time: str
+) -> list[str]:
+    errors: list[str] = []
+    if not title:
+        errors.append("Nama meeting wajib diisi.")
+
+    meeting_day = None
+    parsed_start_time = None
+    parsed_end_time = None
+    try:
+        meeting_day = datetime.strptime(meeting_date, "%Y-%m-%d").date()
+    except ValueError:
+        errors.append("Tanggal meeting tidak valid.")
+    try:
+        parsed_start_time = datetime.strptime(start_time, "%H:%M").time()
+        parsed_end_time = datetime.strptime(end_time, "%H:%M").time()
+    except ValueError:
+        errors.append("Jam meeting tidak valid.")
+
+    if parsed_start_time and parsed_end_time and parsed_end_time <= parsed_start_time:
+        errors.append("Jam selesai harus setelah jam mulai.")
+    if meeting_day and parsed_end_time:
+        deadline = datetime.combine(meeting_day, parsed_end_time) + timedelta(hours=1)
+        if current_jakarta_time().replace(tzinfo=None) > deadline:
+            errors.append(
+                "Meeting tidak dapat disimpan karena sudah melewati batas 1 jam setelah selesai."
+            )
+    return errors
+
+
 def _resolve_admin_performance_period() -> Dict[str, Any]:
     period_scope = (request.values.get("period_scope") or "month").strip().lower()
-    if period_scope not in {"month", "year", "all"}:
+    if period_scope not in {"month", "quarter", "year", "all"}:
         period_scope = "month"
 
     now = current_jakarta_time()
+    current_quarter = ((now.month - 1) // 3) + 1
+    selected_quarter = request.values.get("quarter", type=int) or current_quarter
+    if selected_quarter not in {1, 2, 3, 4}:
+        selected_quarter = current_quarter
     selected_month = (request.values.get("month") or now.strftime("%Y-%m")).strip()
     try:
         month_start = datetime.strptime(selected_month, "%Y-%m")
@@ -108,6 +299,14 @@ def _resolve_admin_performance_period() -> Dict[str, Any]:
         else:
             next_month = datetime(month_start.year, month_start.month + 1, 1)
         end = next_month - timedelta(days=1)
+    elif period_scope == "quarter":
+        quarter_start_month = ((selected_quarter - 1) * 3) + 1
+        start = datetime(selected_year, quarter_start_month, 1)
+        if selected_quarter == 4:
+            next_quarter = datetime(selected_year + 1, 1, 1)
+        else:
+            next_quarter = datetime(selected_year, quarter_start_month + 3, 1)
+        end = next_quarter - timedelta(days=1)
     elif period_scope == "year":
         start = datetime(selected_year, 1, 1)
         end = datetime(selected_year, 12, 31)
@@ -118,6 +317,7 @@ def _resolve_admin_performance_period() -> Dict[str, Any]:
     return {
         "period_scope": period_scope,
         "selected_month": selected_month,
+        "selected_quarter": selected_quarter,
         "selected_year": selected_year,
         "year_options": list(range(now.year, 1999, -1)),
         "start": start,
@@ -211,6 +411,8 @@ def _admin_performance_period_label(period: Dict[str, Any]) -> str:
     if period["period_scope"] == "month" and period.get("start"):
         start = period["start"]
         return f"{month_names[start.month - 1]} {start.year}"
+    if period["period_scope"] == "quarter":
+        return f"Triwulan {period['selected_quarter']} Tahun {period['selected_year']}"
     if period["period_scope"] == "year":
         return f"Tahun {period['selected_year']}"
     return "Seluruh riwayat"
@@ -252,7 +454,7 @@ def _github_performance_context(period: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _performance_redirect_from_form() -> Response:
-    allowed = ("feature", "admin_id", "action", "target_type", "search", "period_scope", "month", "year")
+    allowed = ("feature", "admin_id", "action", "target_type", "search", "period_scope", "month", "quarter", "year")
     values = {key: request.form.get(key) for key in allowed if request.form.get(key)}
     return redirect(url_for("pengaturan.admin_performance", **values))
 
@@ -319,6 +521,7 @@ def admin_performance() -> Response:
         {
             "period_scope": period["period_scope"],
             "selected_month": period["selected_month"],
+            "selected_quarter": period["selected_quarter"],
             "selected_year": period["selected_year"],
             "year_options": period["year_options"],
             "github": github,
@@ -509,6 +712,8 @@ def admin_performance_pdf() -> Response:
     )
     if period["period_scope"] == "month":
         suffix = period["selected_month"]
+    elif period["period_scope"] == "quarter":
+        suffix = f"triwulan-{period['selected_quarter']}-{period['selected_year']}"
     elif period["period_scope"] == "year":
         suffix = str(period["selected_year"])
     else:
@@ -721,6 +926,239 @@ def admin_settings() -> Response | str:
         system_info=system_info,
         active_tab=active_tab,
         page_title="Pengaturan Aplikasi Dashboard",
+    )
+
+
+@pengaturan_bp.route("/absensi-meeting", methods=["GET", "POST"])
+@role_required("admin")
+def meeting_attendance() -> Response | str:
+    """Create admin meetings and record attendance in one workspace."""
+    user = current_user() or {}
+    user_id = int(user.get("id") or 0) or None
+
+    if request.method == "POST":
+        action = (request.form.get("action") or "").strip()
+
+        if action == "create_meeting":
+            title = (request.form.get("title") or "").strip()
+            meeting_date = (request.form.get("meeting_date") or "").strip()
+            start_time = (request.form.get("start_time") or "08:00").strip()
+            end_time = (request.form.get("end_time") or "15:00").strip()
+            location = (request.form.get("location") or "").strip()
+
+            errors = _validate_meeting_details(
+                title=title,
+                meeting_date=meeting_date,
+                start_time=start_time,
+                end_time=end_time,
+            )
+
+            if errors:
+                for message in errors:
+                    flash(message, "warning")
+                return redirect(url_for("pengaturan.meeting_attendance"))
+
+            meeting_id = create_admin_meeting(
+                title=title,
+                meeting_date=meeting_date,
+                start_time=start_time,
+                end_time=end_time,
+                location=location,
+                agenda="",
+                created_by=user_id,
+            )
+            record_admin_action(
+                user_id=user_id,
+                feature_key="meeting_attendance",
+                action="CREATE",
+                target_type="MEETING",
+                target_id=meeting_id,
+                target_name=title,
+            )
+            flash("Agenda meeting berhasil dibuat. Silakan isi kehadiran admin.", "success")
+            return redirect(url_for("pengaturan.meeting_attendance", meeting_id=meeting_id))
+
+        meeting_id = request.form.get("meeting_id", type=int)
+        meeting = get_admin_meeting(meeting_id) if meeting_id else None
+        if not meeting:
+            if (
+                request.headers.get("X-Requested-With") == "XMLHttpRequest"
+                or request.accept_mimetypes.best == "application/json"
+            ):
+                return jsonify({
+                    "success": False,
+                    "message": "Data meeting tidak ditemukan. Muat ulang halaman.",
+                }), 404
+            flash("Data meeting tidak ditemukan.", "danger")
+            return redirect(url_for("pengaturan.meeting_attendance"))
+
+        if action == "save_attendance":
+            deadline = _meeting_attendance_deadline(meeting)
+            if _meeting_attendance_is_closed(meeting):
+                deadline_label = deadline.strftime("%d/%m/%Y pukul %H:%M")
+                flash(
+                    f"Batas penyimpanan absensi telah berakhir pada {deadline_label} WIB.",
+                    "danger",
+                )
+                return redirect(
+                    url_for("pengaturan.meeting_attendance", meeting_id=meeting_id)
+                )
+            allowed_statuses = {"present", "late", "permission", "sick", "absent", "unrecorded"}
+            entries = []
+            for admin in list_admin_users():
+                admin_id = int(admin["id"])
+                status = (request.form.get(f"status_{admin_id}") or "unrecorded").strip()
+                if status not in allowed_statuses:
+                    status = "unrecorded"
+                entries.append({
+                    "admin_user_id": admin_id,
+                    "attendance_status": status,
+                    "notes": (request.form.get(f"notes_{admin_id}") or "").strip(),
+                })
+
+            notulen = (request.form.get("notulen") or "").strip()
+            if len(notulen) > 5000:
+                flash("Notulen maksimal 5.000 karakter.", "danger")
+                return redirect(
+                    url_for("pengaturan.meeting_attendance", meeting_id=meeting_id)
+                )
+
+            saved_photo_path = meeting.get("photo_path")
+            saved = save_admin_meeting_attendance(
+                meeting_id=meeting_id, entries=entries, recorded_by=user_id
+            )
+            update_admin_meeting_documentation(
+                meeting_id=meeting_id,
+                notulen=notulen,
+                photo_path=saved_photo_path,
+            )
+            record_admin_action(
+                user_id=user_id,
+                feature_key="meeting_attendance",
+                action="UPDATE",
+                target_type="MEETING_ATTENDANCE",
+                target_id=meeting_id,
+                target_name=meeting["title"],
+                metadata={
+                    "admin_count": len(entries),
+                    "has_notulen": bool(notulen),
+                    "has_photo": bool(saved_photo_path),
+                },
+            )
+            flash(f"Absensi {saved} admin dan dokumentasi berhasil disimpan.", "success")
+
+        elif action == "edit_meeting":
+            title = (request.form.get("title") or "").strip()
+            meeting_date = (request.form.get("meeting_date") or "").strip()
+            start_time = (request.form.get("start_time") or "").strip()
+            end_time = (request.form.get("end_time") or "").strip()
+            location = (request.form.get("location") or "").strip()
+            errors = _validate_meeting_details(
+                title=title,
+                meeting_date=meeting_date,
+                start_time=start_time,
+                end_time=end_time,
+            )
+            if errors:
+                for message in errors:
+                    flash(message, "warning")
+            elif update_admin_meeting(
+                meeting_id=meeting_id,
+                title=title,
+                meeting_date=meeting_date,
+                start_time=start_time,
+                end_time=end_time,
+                location=location,
+                agenda=(meeting.get("agenda") or "").strip(),
+            ):
+                record_admin_action(
+                    user_id=user_id,
+                    feature_key="meeting_attendance",
+                    action="UPDATE",
+                    target_type="MEETING",
+                    target_id=meeting_id,
+                    target_name=title,
+                    metadata={"changes": "meeting_details"},
+                )
+                flash("Detail meeting berhasil diperbarui.", "success")
+
+        elif action == "update_status":
+            status = (request.form.get("meeting_status") or "").strip()
+            status_labels = {
+                "scheduled": "Dijadwalkan",
+                "completed": "Selesai",
+                "cancelled": "Dibatalkan",
+            }
+            if status not in status_labels:
+                flash("Status meeting tidak valid.", "danger")
+            elif update_admin_meeting_status(meeting_id, status):
+                record_admin_action(
+                    user_id=user_id,
+                    feature_key="meeting_attendance",
+                    action="UPDATE",
+                    target_type="MEETING",
+                    target_id=meeting_id,
+                    target_name=meeting["title"],
+                    metadata={"status": status},
+                )
+                flash(f"Status meeting diubah menjadi {status_labels[status]}.", "success")
+
+        elif action == "delete_meeting":
+            if delete_admin_meeting(meeting_id):
+                meeting_photo = _meeting_photo_path(meeting.get("photo_path"))
+                if meeting_photo and meeting_photo.is_file():
+                    meeting_photo.unlink()
+                record_admin_action(
+                    user_id=user_id,
+                    feature_key="meeting_attendance",
+                    action="DELETE",
+                    target_type="MEETING",
+                    target_id=meeting_id,
+                    target_name=meeting["title"],
+                )
+                flash("Agenda meeting dan data absensinya telah dihapus.", "success")
+            return redirect(url_for("pengaturan.meeting_attendance"))
+
+        return redirect(url_for("pengaturan.meeting_attendance", meeting_id=meeting_id))
+
+    meetings = list_admin_meetings()
+    query = (request.args.get("q") or "").strip().lower()
+    if query:
+        meetings = [
+            item for item in meetings
+            if query in (item.get("title") or "").lower()
+            or query in (item.get("location") or "").lower()
+        ]
+
+    selected_id = request.args.get("meeting_id", type=int)
+    selected_meeting = get_admin_meeting(selected_id) if selected_id else None
+    if not selected_meeting and meetings:
+        selected_meeting = get_admin_meeting(int(meetings[0]["id"]))
+    attendance_rows = (
+        list_admin_meeting_attendance(int(selected_meeting["id"]))
+        if selected_meeting else []
+    )
+    attendance_summary = {
+        status: sum(1 for row in attendance_rows if row["attendance_status"] == status)
+        for status in ("present", "late", "permission", "sick", "absent", "unrecorded")
+    }
+    attendance_deadline = (
+        _meeting_attendance_deadline(selected_meeting) if selected_meeting else None
+    )
+    attendance_closed = (
+        _meeting_attendance_is_closed(selected_meeting) if selected_meeting else False
+    )
+    return render_template(
+        "pengaturan/meeting_attendance.html",
+        meetings=meetings,
+        selected_meeting=selected_meeting,
+        attendance_rows=attendance_rows,
+        attendance_summary=attendance_summary,
+        attendance_deadline=attendance_deadline,
+        attendance_closed=attendance_closed,
+        today=current_jakarta_time().strftime("%Y-%m-%d"),
+        search_query=request.args.get("q", ""),
+        page_title="Absensi Meeting Admin",
     )
 
 

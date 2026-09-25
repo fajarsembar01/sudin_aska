@@ -389,9 +389,14 @@
         .activity-item { padding: 0 !important; }
         .activity-status-filter {
             display: grid !important;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
+            grid-template-columns: repeat(6, minmax(0, 1fr));
             gap: 5px !important;
         }
+        .activity-status-filter [data-activity-status-filter="all"],
+        .activity-status-filter [data-activity-status-filter="item_check"] { grid-column: span 3; }
+        .activity-status-filter [data-activity-status-filter="valid"],
+        .activity-status-filter [data-activity-status-filter="pending"],
+        .activity-status-filter [data-activity-status-filter="invalid"] { grid-column: span 2; }
         .activity-status-filter .btn {
             min-width: 0;
             min-height: 34px;
@@ -809,6 +814,9 @@
                             <button type="button" class="btn btn-sm btn-primary active" data-activity-status-filter="all" aria-pressed="true">
                                 <i class="bi bi-list-ul me-1"></i>Semua <span class="status-filter-count" data-status-count="all">{{ activities|length }}</span>
                             </button>
+                            <button type="button" class="btn btn-sm btn-outline-warning" data-activity-status-filter="item_check" aria-pressed="false">
+                                <i class="bi bi-box-seam-fill me-1"></i>Cek Barang <span class="status-filter-count" data-status-count="item_check">{{ activities|selectattr('needs_item_check')|list|length }}</span>
+                            </button>
                             <button type="button" class="btn btn-sm btn-outline-success" data-activity-status-filter="valid" aria-pressed="false">
                                 <i class="bi bi-check-circle me-1"></i>Sesuai <span class="status-filter-count" data-status-count="valid">{{ activities|selectattr('status', 'equalto', 'valid')|list|length }}</span>
                             </button>
@@ -831,13 +839,14 @@
                 <div class="card-body p-0">
                     <div class="list-group list-group-flush">
                         {% for act in activities %}
-                        <div class="list-group-item p-0 activity-item border-bottom" data-fund="{{ act.fund_source }}" id="activityItem{{ act.id }}" data-status="{{ act.status }}" data-activity-id="{{ act.id }}" data-bku="{{ act.bku_number or '' }}" data-original-order="{{ loop.index0 }}">
+                        <div class="list-group-item p-0 activity-item border-bottom" data-fund="{{ act.fund_source }}" id="activityItem{{ act.id }}" data-status="{{ act.status }}" data-needs-item-check="{{ 'true' if act.needs_item_check else 'false' }}" data-activity-id="{{ act.id }}" data-bku="{{ act.bku_number or '' }}" data-original-order="{{ loop.index0 }}">
                             <!-- Header Item (Click to Expand / Collapse) -->
                             <div class="p-2.5 p-sm-3 activity-header cursor-pointer bg-body" onclick="toggleActivity('{{ act.id }}')">
                                 <div class="d-flex justify-content-between align-items-center mb-1.5 gap-2 activity-header-top">
                                     <div class="d-flex align-items-center gap-1.5 flex-wrap activity-header-finance">
                                         <span class="badge bg-primary-subtle text-primary border border-primary-subtle" style="font-size: 0.68rem; padding: 3px 6px;">{{ act.bku_number or '-' }}</span>
                                         <span class="text-success fw-bold text-xs activity-header-amount">Rp {{ "{:,.0f}".format(act.realized_amount).replace(',', '.') }}</span>
+                                        <span class="badge bg-warning text-dark border border-warning fw-bold shadow-sm text-xs activity-item-check-badge{% if not act.needs_item_check %} d-none{% endif %}" id="itemCheckBadge{{ act.id }}"><i class="bi bi-box-seam-fill me-1"></i>Cek Barang</span>
                                     </div>
                                     <div class="d-flex align-items-center gap-1 flex-shrink-0 ms-auto activity-header-state">
                                         <div id="statusBadgeContainer{{ act.id }}">
@@ -859,9 +868,11 @@
                                 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 activity-header-content">
                                     <div class="text-body fw-semibold flex-grow-1 activity-header-title" style="font-size: 0.84rem; line-height: 1.3;">{{ act.activity_name }}</div>
                                     <div class="d-flex align-items-center gap-1 flex-wrap activity-indicators">
+                                        {% if not act.vendor_required_missing %}
                                         <span class="badge bg-body-tertiary text-body border text-xs activity-vendor-name" title="Vendor / Narasumber: {{ act.vendor_display_name or act.vendor_name or 'Tanpa vendor' }}">
-                                            <i class="bi {% if act.linked_vendor_type == 'narsum' %}bi-person-fill{% else %}bi-shop{% endif %} me-1"></i>{% if act.linked_vendor_type == 'narsum' %}Narasumber: {% endif %}{{ act.vendor_display_name or act.vendor_name or 'Tanpa vendor' }}
+                                            <i class="bi {% if act.linked_vendor_type == 'narsum' %}bi-person-fill{% else %}bi-shop{% endif %} me-1"></i>{% if act.linked_vendor_type == 'narsum' %}Narasumber: {% endif %}<span class="activity-vendor-name-value">{{ act.vendor_display_name or act.vendor_name or 'Tanpa vendor' }}</span>
                                         </span>
+                                        {% endif %}
                                         {% if act.has_school_live_photo %}
                                         <span class="badge bg-info-subtle text-info border text-xs"><i class="bi bi-camera-fill me-1"></i>Foto sah: {{ act.valid_school_photos|length }}</span>
                                         {% else %}
@@ -904,9 +915,9 @@
                                      </div>
                                      <div class="col-6 col-sm-3">
                                          <small class="text-body-secondary d-block" style="font-size: 0.72rem;">{{ 'Narasumber / Instruktur' if act.linked_vendor_type == 'narsum' else 'Vendor / Toko' }}:</small>
-                                         <span class="text-body">{{ act.vendor_display_name or act.vendor_name or '-' }}</span>
+                                         <span class="text-body activity-vendor-detail-name">{{ act.vendor_display_name or act.vendor_name or '-' }}</span>
                                          {% if act.vendor_verification_blocked %}
-                                             <span class="badge bg-warning text-dark text-xs ms-1">{{ 'Wajib Diisi' if act.vendor_required_missing else 'Belum Diverifikasi' }}</span>
+                                             <span class="badge bg-warning text-dark text-xs ms-1 activity-vendor-verification-badge">{{ 'Wajib Diisi' if act.vendor_required_missing else 'Belum Diverifikasi' }}</span>
                                          {% endif %}
                                      </div>
                                      <div class="col-6 col-sm-3">
@@ -1020,6 +1031,14 @@
                                         <input type="hidden" name="report_id" value="{{ report.id }}">
                                         <input type="hidden" name="status" class="activity-status-input" value="">
                                         <fieldset class="border-0 p-0 m-0" {% if not can_audit %}disabled{% endif %}>
+
+                                        <div class="form-check form-switch mb-3 p-2.5 ps-5 bg-warning-subtle border border-warning-subtle rounded">
+                                            <input class="form-check-input activity-item-check-input" type="checkbox" role="switch" name="needs_item_check" value="1" id="needsItemCheck{{ act.id }}" {% if act.needs_item_check %}checked{% endif %}>
+                                            <label class="form-check-label fw-bold text-warning-emphasis text-sm" for="needsItemCheck{{ act.id }}">
+                                                <i class="bi bi-box-seam me-1"></i>Tandai perlu cek barang
+                                            </label>
+                                            <small class="d-block text-body-secondary">Tampilkan label agar kegiatan ini menjadi perhatian saat pemeriksaan barang.</small>
+                                        </div>
                                         
                                         <!-- Checklist Kelengkapan Dokumen (2 Pilihan Jelas: Ada / Tidak Ada) -->
                                         {% set act_checklists = act.checklists if act.checklists else checklists %}
@@ -1087,7 +1106,8 @@
                                         {% endif %}
                                         
                                         {% if act.vendor_verification_blocked %}
-                                        <div class="alert alert-warning border-warning d-flex align-items-center justify-content-between p-2.5 mb-3 rounded-3 text-xs shadow-2xs vendor-verification-alert" id="vendorVerificationAlert{{ act.id }}">
+                                        <div class="alert alert-warning border-warning p-2.5 mb-3 rounded-3 text-xs shadow-2xs vendor-verification-alert" id="vendorVerificationAlert{{ act.id }}">
+                                            <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
                                             <div class="d-flex align-items-center gap-2 vendor-verification-message">
                                                 <i class="bi bi-exclamation-triangle-fill fs-6 text-warning flex-shrink-0"></i>
                                                 <div class="vendor-verification-copy">
@@ -1096,7 +1116,7 @@
                                                     <span class="text-secondary">Kegiatan ini tidak dapat disetujui (Sesuai) sebelum sekolah memilih vendor/narasumber dan datanya selesai diverifikasi oleh Staff/Admin.</span>
                                                     {% else %}
                                                     <strong class="d-block text-dark">Vendor / Narasumber Belum Terverifikasi</strong>
-                                                    <span class="text-secondary"><strong>{{ act.unverified_vendor_names or act.vendor_display_name or act.vendor_name or 'Entri terkait' }}</strong> belum diverifikasi oleh Staff/Admin. Kegiatan ini tidak dapat disetujui (Sesuai) sebelum seluruh vendor/narasumber selesai diverifikasi.</span>
+                                                    <span class="text-secondary"><strong data-unverified-vendor-names>{{ act.unverified_vendor_names or act.vendor_display_name or act.vendor_name or 'Entri terkait' }}</strong> belum diverifikasi oleh Staff/Admin. Kegiatan ini tidak dapat disetujui (Sesuai) sebelum seluruh vendor/narasumber selesai diverifikasi.</span>
                                                     {% endif %}
                                                 </div>
                                             </div>
@@ -1106,7 +1126,7 @@
                                                 </button>
                                                 {% if not act.vendor_required_missing %}
                                                 {% for pending_vendor in act.unverified_vendors %}
-                                                <a href="{{ url_for('monev_bos.admin_vendors', vendor_type=pending_vendor.vendor_type if pending_vendor.vendor_type in ['vendor', 'narsum'] else 'vendor', school_id=report.school_id, q=pending_vendor.name, status='pending') }}" target="_blank" rel="noopener" class="btn btn-sm btn-warning text-dark fw-bold text-nowrap shadow-2xs" title="Buka verifikasi {{ pending_vendor.name }} di tab baru">
+                                                <a href="{{ url_for('monev_bos.admin_vendors', vendor_type=pending_vendor.vendor_type if pending_vendor.vendor_type in ['vendor', 'narsum'] else 'vendor', school_id=report.school_id, q=pending_vendor.name, status='pending') }}" target="_blank" rel="noopener" class="btn btn-sm btn-warning text-dark fw-bold text-nowrap shadow-2xs" data-pending-vendor-id="{{ pending_vendor.id }}" title="Buka verifikasi {{ pending_vendor.name }} di tab baru">
                                                     <i class="bi bi-box-arrow-up-right me-1"></i>{{ pending_vendor.name }}
                                                 </a>
                                                 {% else %}
@@ -1116,6 +1136,24 @@
                                                 {% endfor %}
                                                 {% endif %}
                                             </div>
+                                            </div>
+                                            {% if act.vendor_replacement_recommendations %}
+                                            <div class="border-top border-warning-subtle mt-2 pt-2 d-flex align-items-center gap-2 flex-wrap vendor-replacement-recommendations">
+                                                <span class="fw-semibold text-dark"><i class="bi bi-lightbulb-fill text-success me-1"></i>Rekomendasi vendor terverifikasi:</span>
+                                                {% for recommendation in act.vendor_replacement_recommendations %}
+                                                <button type="button"
+                                                        class="btn btn-sm btn-success fw-bold text-nowrap shadow-2xs"
+                                                        data-old-vendor-name="{{ recommendation.old_vendor_name|e }}"
+                                                        data-new-vendor-name="{{ recommendation.new_vendor_name|e }}"
+                                                        data-old-vendor-id="{{ recommendation.old_vendor_id }}"
+                                                        onclick="openVendorComparison({{ act.id }}, {{ recommendation.old_vendor_id }}, {{ recommendation.new_vendor_id }}, this)"
+                                                        title="Ganti {{ recommendation.old_vendor_name }} dengan vendor terverifikasi {{ recommendation.new_vendor_name }}{% if recommendation.registered_school_name %} dari {{ recommendation.registered_school_name }}{% endif %}">
+                                                    <i class="bi bi-arrow-left-right me-1"></i>Ganti ke {{ recommendation.new_vendor_name }}
+                                                </button>
+                                                <script type="application/json" id="vendorComparisonData{{ act.id }}-{{ recommendation.old_vendor_id }}-{{ recommendation.new_vendor_id }}">{{ recommendation|tojson }}</script>
+                                                {% endfor %}
+                                            </div>
+                                            {% endif %}
                                         </div>
                                         {% endif %}
 
@@ -1253,6 +1291,41 @@
     </div>
 </div>
 
+<!-- Modal Perbandingan & Koreksi Vendor -->
+<div class="modal fade" id="vendorComparisonModal" tabindex="-1" aria-labelledby="vendorComparisonTitle" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-success-subtle">
+                <div>
+                    <h5 class="modal-title fw-bold" id="vendorComparisonTitle"><i class="bi bi-arrow-left-right text-success me-2"></i>Bandingkan Vendor</h5>
+                    <div class="small text-body-secondary" id="vendorComparisonSubtitle">Periksa data sebelum mengganti vendor kegiatan.</div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info py-2 small">
+                    <i class="bi bi-info-circle-fill me-1"></i>Gunakan tombol <i class="bi bi-pencil-square"></i> jika data vendor terverifikasi perlu dikoreksi. Koreksi berlaku pada master vendor di seluruh kegiatan dan dihitung sebagai <strong>revisi vendor</strong> staff.
+                </div>
+                <div class="row g-2 mb-2 fw-bold small">
+                    <div class="col-5 text-danger">Vendor Saat Ini</div>
+                    <div class="col-7 text-success">Vendor Terverifikasi Pengganti</div>
+                </div>
+                <div id="vendorComparisonRows" class="vstack gap-2"></div>
+                <div id="vendorRevisionNotesWrap" class="mt-3 d-none">
+                    <label for="vendorRevisionNotes" class="form-label small fw-bold">Catatan Revisi <span class="text-body-secondary fw-normal">(opsional)</span></label>
+                    <textarea id="vendorRevisionNotes" class="form-control form-control-sm" rows="2" placeholder="Jelaskan data vendor yang diperbaiki..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-success fw-bold" id="vendorComparisonConfirm">
+                    <i class="bi bi-arrow-left-right me-1"></i>Ganti Vendor
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% if activities and can_audit %}
 <button type="button" class="btn btn-primary fw-bold bulk-check-desktop-fab" data-bs-toggle="modal" data-bs-target="#bulkCheckDesktopInfoModal">
     <i class="bi bi-layers-fill me-2"></i>Mode Cek Barang
@@ -1281,12 +1354,38 @@
     <i class="bi bi-layers-fill me-2"></i>Mode Cek Barang
 </button>
 
+<div class="modal fade" id="bulkCheckScopeModal" tabindex="-1" aria-labelledby="bulkCheckScopeTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered mx-3">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title fw-bold" id="bulkCheckScopeTitle"><i class="bi bi-funnel-fill text-primary me-2"></i>Pilih Kegiatan</h5>
+                    <div class="small text-body-secondary mt-1">Tentukan kegiatan yang akan ditampilkan dalam Mode Cek Barang.</div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+            </div>
+            <div class="modal-body d-grid gap-2">
+                <button type="button" class="btn btn-outline-primary text-start p-3" data-bulk-check-scope="all">
+                    <span class="d-flex align-items-center justify-content-between gap-2"><strong><i class="bi bi-list-ul me-2"></i>Tampilkan Semua</strong><span class="badge text-bg-primary" id="bulkCheckAllCount">{{ activities|length }}</span></span>
+                    <small class="text-body-secondary d-block mt-1">Periksa seluruh kegiatan dalam laporan ini.</small>
+                </button>
+                {% set item_check_count = activities|selectattr('needs_item_check')|list|length %}
+                <button type="button" class="btn btn-warning text-dark text-start p-3" id="bulkCheckMarkedScope" data-bulk-check-scope="item_check" {% if not item_check_count %}disabled{% endif %}>
+                    <span class="d-flex align-items-center justify-content-between gap-2"><strong><i class="bi bi-box-seam-fill me-2"></i>Hanya Cek Barang</strong><span class="badge text-bg-dark" id="bulkCheckMarkedCount">{{ item_check_count }}</span></span>
+                    <small class="d-block mt-1">Hanya kegiatan yang sudah ditandai “Cek Barang”.</small>
+                </button>
+                <div class="small text-warning-emphasis{% if item_check_count %} d-none{% endif %}" id="bulkCheckMarkedEmpty"><i class="bi bi-info-circle me-1"></i>Belum ada kegiatan yang ditandai Cek Barang.</div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <section class="bulk-check-mode" id="bulkCheckMode" aria-hidden="true" aria-label="Mode cek barang">
     <header class="bulk-check-mode-header d-flex align-items-center justify-content-between gap-2">
         <button type="button" class="btn btn-sm btn-outline-secondary rounded-circle" id="bulkCheckClose" aria-label="Tutup mode cek barang"><i class="bi bi-x-lg"></i></button>
         <div class="text-center min-w-0">
             <div class="fw-bold text-body text-sm"><i class="bi bi-layers-fill text-primary me-1"></i>Mode Cek Barang</div>
-            <div class="text-body-secondary bulk-check-subtitle">Geser kanan: Sesuai · Geser kiri: Revisi</div>
+            <div class="text-body-secondary bulk-check-subtitle" id="bulkCheckScopeLabel">Geser kanan: Sesuai · Geser kiri: Revisi</div>
         </div>
         <span class="badge bg-primary-subtle text-primary border bulk-check-progress" id="bulkCheckProgress">1/{{ activities|length }}</span>
     </header>
@@ -1344,8 +1443,8 @@
         <div class="bulk-check-complete" id="bulkCheckComplete">
             <div>
                 <i class="bi bi-check2-circle display-4 text-success"></i>
-                <h5 class="fw-bold mt-3">Semua kegiatan sudah dicek</h5>
-                <p class="small text-body-secondary">Status setiap kegiatan telah disimpan. Anda dapat menutup mode ini atau mengulang dari awal.</p>
+                <h5 class="fw-bold mt-3">Semua kegiatan terpilih sudah dicek</h5>
+                <p class="small text-body-secondary">Status setiap kegiatan terpilih telah disimpan. Anda dapat menutup mode ini atau mengulang dari awal.</p>
                 <button type="button" class="btn btn-outline-primary" id="bulkCheckRestart"><i class="bi bi-arrow-counterclockwise me-1"></i>Ulang dari Awal</button>
             </div>
         </div>
@@ -1391,6 +1490,7 @@
          data-vendor="{{ act.vendor_display_name or act.vendor_name or '-' }}"
          data-item="{{ act.item_name or '-' }}"
          data-audit-notes="{{ act.audit_notes or '' }}"
+         data-needs-item-check="{{ 'true' if act.needs_item_check else 'false' }}"
          data-vendor-missing="{{ 'true' if act.vendor_required_missing else 'false' }}"
          data-can-valid="{{ 'false' if act.vendor_verification_blocked else 'true' }}"
          data-action-url="{{ url_for('monev_bos.staff_audit_activity', activity_id=act.id) }}">
@@ -1569,30 +1669,7 @@
             }
 
             if (data.vendor_verified) {
-                const alert = document.getElementById('vendorVerificationAlert' + activityId);
-                if (alert) alert.remove();
-
-                const item = document.getElementById('activityItem' + activityId);
-                if (item) {
-                    item.querySelectorAll('.activity-vendor-verification-badge').forEach(function (badge) {
-                        badge.remove();
-                    });
-                }
-
-                const validButton = document.getElementById('validActivityButton' + activityId);
-                if (validButton) {
-                    if (window.bootstrap && bootstrap.Tooltip) {
-                        const tooltip = bootstrap.Tooltip.getInstance(validButton);
-                        if (tooltip) tooltip.dispose();
-                    }
-                    validButton.disabled = false;
-                    validButton.removeAttribute('data-bs-toggle');
-                    validButton.removeAttribute('title');
-                    validButton.classList.remove('btn-secondary', 'opacity-75');
-                    validButton.classList.add('btn-success');
-                    validButton.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> Sesuai (Valid)';
-                }
-
+                markActivityVendorVerified(activityId);
                 showVendorStatusToast(data.message, 'success');
                 return;
             }
@@ -1607,6 +1684,226 @@
             showVendorStatusToast(error.message || 'Status vendor gagal diperiksa.', 'danger');
         }
     }
+
+    function updateActivityVendorNames(activityId, vendorNames) {
+        const item = document.getElementById('activityItem' + activityId);
+        if (item) {
+            const headerVendor = item.querySelector('.activity-vendor-name');
+            if (headerVendor) {
+                headerVendor.title = 'Vendor / Narasumber: ' + vendorNames;
+                const headerVendorValue = headerVendor.querySelector('.activity-vendor-name-value');
+                if (headerVendorValue) headerVendorValue.textContent = vendorNames;
+            }
+            const detailVendor = item.querySelector('.activity-vendor-detail-name');
+            if (detailVendor) detailVendor.textContent = vendorNames;
+        }
+        const bulkSource = document.querySelector('.bulk-activity-source[data-activity-id="' + activityId + '"]');
+        if (bulkSource) bulkSource.dataset.vendor = vendorNames;
+    }
+
+    function markActivityVendorVerified(activityId) {
+        const alert = document.getElementById('vendorVerificationAlert' + activityId);
+        if (alert) alert.remove();
+
+        const item = document.getElementById('activityItem' + activityId);
+        if (item) {
+            item.querySelectorAll('.activity-vendor-verification-badge').forEach(function (badge) {
+                badge.remove();
+            });
+        }
+
+        const validButton = document.getElementById('validActivityButton' + activityId);
+        if (validButton) {
+            if (window.bootstrap && bootstrap.Tooltip) {
+                const tooltip = bootstrap.Tooltip.getInstance(validButton);
+                if (tooltip) tooltip.dispose();
+            }
+            validButton.disabled = false;
+            validButton.removeAttribute('data-bs-toggle');
+            validButton.removeAttribute('title');
+            validButton.classList.remove('btn-secondary', 'opacity-75');
+            validButton.classList.add('btn-success');
+            validButton.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> Sesuai (Valid)';
+        }
+
+        const bulkSource = document.querySelector('.bulk-activity-source[data-activity-id="' + activityId + '"]');
+        if (bulkSource) {
+            bulkSource.dataset.vendorMissing = 'false';
+            bulkSource.dataset.canValid = 'true';
+        }
+    }
+
+    let vendorComparisonState = null;
+
+    function openVendorComparison(activityId, oldVendorId, newVendorId, button) {
+        const source = document.getElementById('vendorComparisonData' + activityId + '-' + oldVendorId + '-' + newVendorId);
+        if (!source) {
+            showVendorStatusToast('Data perbandingan vendor tidak tersedia.', 'danger');
+            return;
+        }
+        const comparison = JSON.parse(source.textContent);
+        vendorComparisonState = {activityId, oldVendorId, newVendorId, button, comparison};
+        const oldVendor = comparison.current_vendor || {};
+        const newVendor = comparison.verified_vendor || {};
+        document.getElementById('vendorComparisonSubtitle').textContent =
+            comparison.old_vendor_name + ' → ' + comparison.new_vendor_name +
+            (comparison.registered_school_name ? ' · Terdaftar oleh ' + comparison.registered_school_name : '');
+        const isSpeaker = newVendor.vendor_type === 'narsum';
+        const fields = [
+            {key: 'name', label: isSpeaker ? 'No. KTP' : 'Nama Vendor'},
+            {key: 'owner_name', label: isSpeaker ? 'Nama Narasumber' : 'Penanggung Jawab'},
+            {key: 'npwp', label: 'NPWP'},
+            {key: 'phone', label: 'Telepon / WhatsApp'},
+            {key: 'address', label: 'Alamat'},
+            {key: 'bank_name', label: 'Nama Bank'},
+            {key: 'bank_account_type', label: 'Jenis Pembayaran', type: 'account_type'},
+            {key: 'bank_account', label: 'No. Rekening'}
+        ];
+        const rows = document.getElementById('vendorComparisonRows');
+        rows.replaceChildren();
+        fields.forEach(function (field) {
+            const row = document.createElement('div');
+            row.className = 'row g-2 align-items-center border rounded p-2 mx-0';
+
+            const currentColumn = document.createElement('div');
+            currentColumn.className = 'col-5';
+            const currentLabel = document.createElement('div');
+            currentLabel.className = 'small text-body-secondary';
+            currentLabel.textContent = field.label;
+            const currentValue = document.createElement('div');
+            currentValue.className = 'fw-semibold text-break small';
+            currentValue.textContent = displayVendorField(field, oldVendor[field.key]);
+            currentColumn.append(currentLabel, currentValue);
+
+            const replacementColumn = document.createElement('div');
+            replacementColumn.className = 'col-7';
+            const replacementLabel = document.createElement('div');
+            replacementLabel.className = 'small text-body-secondary';
+            replacementLabel.textContent = field.label;
+            const inputGroup = document.createElement('div');
+            inputGroup.className = 'input-group input-group-sm';
+            let control;
+            if (field.type === 'account_type') {
+                control = document.createElement('select');
+                [['rekening', 'Rekening'], ['va', 'Virtual Account (VA)']].forEach(function (optionData) {
+                    const option = document.createElement('option');
+                    option.value = optionData[0];
+                    option.textContent = optionData[1];
+                    control.appendChild(option);
+                });
+                control.value = newVendor[field.key] || 'rekening';
+                control.disabled = true;
+            } else {
+                control = document.createElement('input');
+                control.type = 'text';
+                control.value = newVendor[field.key] || '';
+                control.readOnly = true;
+            }
+            control.className = 'form-control vendor-comparison-input';
+            control.dataset.vendorField = field.key;
+            const editButton = document.createElement('button');
+            editButton.type = 'button';
+            editButton.className = 'btn btn-outline-warning';
+            editButton.title = 'Perbaiki ' + field.label;
+            editButton.innerHTML = '<i class="bi bi-pencil-square"></i>';
+            editButton.addEventListener('click', function () {
+                if (control.tagName === 'SELECT') control.disabled = false;
+                else control.readOnly = false;
+                control.dataset.edited = 'true';
+                control.classList.add('border-warning');
+                row.classList.add('border-warning');
+                document.getElementById('vendorRevisionNotesWrap').classList.remove('d-none');
+                const confirmButton = document.getElementById('vendorComparisonConfirm');
+                confirmButton.innerHTML = '<i class="bi bi-pencil-square me-1"></i>Simpan Revisi & Ganti';
+                control.focus();
+            });
+            inputGroup.append(control, editButton);
+            replacementColumn.append(replacementLabel, inputGroup);
+            row.append(currentColumn, replacementColumn);
+            rows.appendChild(row);
+        });
+
+        document.getElementById('vendorRevisionNotes').value = '';
+        document.getElementById('vendorRevisionNotesWrap').classList.add('d-none');
+        document.getElementById('vendorComparisonConfirm').innerHTML = '<i class="bi bi-arrow-left-right me-1"></i>Ganti Vendor';
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('vendorComparisonModal')).show();
+    }
+
+    function displayVendorField(field, value) {
+        if (field.type === 'account_type') {
+            return value === 'va' ? 'Virtual Account (VA)' : 'Rekening';
+        }
+        return value || '-';
+    }
+
+    async function submitVendorReplacement() {
+        if (!vendorComparisonState) return;
+        const state = vendorComparisonState;
+        const confirmButton = document.getElementById('vendorComparisonConfirm');
+        const originalHtml = confirmButton.innerHTML;
+        confirmButton.disabled = true;
+        confirmButton.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Menyimpan...';
+        const formData = new FormData();
+        formData.append('csrf_token', '{{ csrf_token() }}');
+        formData.append('action', 'replace_unverified_vendor');
+        formData.append('old_vendor_id', String(state.oldVendorId));
+        formData.append('new_vendor_id', String(state.newVendorId));
+        formData.append('vendor_data_submitted', '1');
+        document.querySelectorAll('#vendorComparisonRows [data-vendor-field]').forEach(function (control) {
+            formData.append(control.dataset.vendorField, control.value);
+        });
+        formData.append('review_notes', document.getElementById('vendorRevisionNotes').value.trim());
+
+        try {
+            const response = await fetch('{{ url_for("monev_bos.staff_audit_activity", activity_id=0) }}'.replace('0', state.activityId), {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                },
+                body: formData
+            });
+            const data = await response.json();
+            if (!response.ok || !data.success) {
+                throw new Error(data.message || 'Vendor gagal diganti.');
+            }
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('vendorComparisonModal')).hide();
+            updateActivityVendorNames(state.activityId, data.vendor_names || state.comparison.new_vendor_name);
+            if (data.vendor_verified) {
+                markActivityVendorVerified(state.activityId);
+            } else {
+                const alert = document.getElementById('vendorVerificationAlert' + state.activityId);
+                if (alert) {
+                    const unverifiedNames = alert.querySelector('[data-unverified-vendor-names]');
+                    if (unverifiedNames) unverifiedNames.textContent = data.unverified_names || '';
+                    alert.querySelectorAll('[data-pending-vendor-id="' + state.oldVendorId + '"]').forEach(function (element) {
+                        element.remove();
+                    });
+                    alert.querySelectorAll('[data-old-vendor-id="' + state.oldVendorId + '"]').forEach(function (element) {
+                        element.remove();
+                    });
+                    const recommendations = alert.querySelector('.vendor-replacement-recommendations');
+                    if (recommendations && !recommendations.querySelector('[data-old-vendor-id]')) {
+                        recommendations.remove();
+                    }
+                }
+            }
+            showVendorStatusToast(data.message, 'success');
+            vendorComparisonState = null;
+        } catch (error) {
+            confirmButton.disabled = false;
+            confirmButton.innerHTML = originalHtml;
+            showVendorStatusToast(error.message || 'Vendor gagal diganti.', 'danger');
+        } finally {
+            if (vendorComparisonState === null) {
+                confirmButton.disabled = false;
+                confirmButton.innerHTML = originalHtml;
+            }
+        }
+    }
+
+    document.getElementById('vendorComparisonConfirm').addEventListener('click', submitVendorReplacement);
 
     function showVendorStatusToast(message, type) {
         let toast = document.getElementById('vendorStatusToast');
@@ -1914,7 +2211,7 @@
         if (!mode || !fab) return;
 
         const sourceElements = Array.from(document.querySelectorAll('.bulk-activity-source'));
-        const activities = sourceElements.map(function (source) {
+        const allActivities = sourceElements.map(function (source) {
             const media = Array.from(source.querySelectorAll('[data-bulk-media]')).map(function (item) {
                 return {
                     kind: item.dataset.kind,
@@ -1942,6 +2239,7 @@
                 media: media
             };
         });
+        let activities = allActivities.slice();
 
         const card = document.getElementById('bulkCheckCard');
         const backCard = document.getElementById('bulkCheckBackCard');
@@ -1976,6 +2274,11 @@
         const toast = document.getElementById('bulkCheckToast');
         const revisionStamp = document.getElementById('bulkRevisionStamp');
         const validStamp = document.getElementById('bulkValidStamp');
+        const scopeModalElement = document.getElementById('bulkCheckScopeModal');
+        const scopeLabel = document.getElementById('bulkCheckScopeLabel');
+        const markedScopeButton = document.getElementById('bulkCheckMarkedScope');
+        const markedScopeCount = document.getElementById('bulkCheckMarkedCount');
+        const markedScopeEmpty = document.getElementById('bulkCheckMarkedEmpty');
         let activityIndex = 0;
         let mediaIndex = 0;
         let saving = false;
@@ -2162,14 +2465,38 @@
             renderMedia();
         }
 
-        function openMode() {
+        function openMode(scope) {
+            activities = scope === 'item_check'
+                ? allActivities.filter(function (activity) {
+                    return activity.source.dataset.needsItemCheck === 'true';
+                })
+                : allActivities.slice();
+            if (!activities.length) {
+                showToast('Belum ada kegiatan yang ditandai Cek Barang.', 'warning');
+                return;
+            }
             previousBodyOverflow = document.body.style.overflow;
             document.body.style.overflow = 'hidden';
             mode.classList.add('is-open');
             mode.setAttribute('aria-hidden', 'false');
             fab.setAttribute('aria-expanded', 'true');
+            if (scopeLabel) {
+                scopeLabel.textContent = scope === 'item_check'
+                    ? 'Hanya Cek Barang · Geser kanan: Sesuai · kiri: Revisi'
+                    : 'Semua Kegiatan · Geser kanan: Sesuai · kiri: Revisi';
+            }
             activityIndex = 0;
             renderActivity();
+        }
+
+        function openScopePicker() {
+            const markedCount = allActivities.filter(function (activity) {
+                return activity.source.dataset.needsItemCheck === 'true';
+            }).length;
+            if (markedScopeCount) markedScopeCount.textContent = markedCount;
+            if (markedScopeButton) markedScopeButton.disabled = markedCount === 0;
+            if (markedScopeEmpty) markedScopeEmpty.classList.toggle('d-none', markedCount > 0);
+            bootstrap.Modal.getOrCreateInstance(scopeModalElement).show();
         }
 
         function closeMode() {
@@ -2225,6 +2552,9 @@
             payload.append('status', status);
             payload.append('audit_notes', notes || '');
             payload.append('bulk_check_mode', '1');
+            if (activity.source.dataset.needsItemCheck === 'true') {
+                payload.append('needs_item_check', '1');
+            }
 
             try {
                 const response = await fetch('{{ url_for("monev_bos.staff_audit_activity", activity_id=0) }}'.replace('0', activity.id), {
@@ -2296,7 +2626,17 @@
             saveDecision('valid', activity.auditNotes, direction || 'right');
         }
 
-        fab.addEventListener('click', openMode);
+        fab.addEventListener('click', openScopePicker);
+        document.querySelectorAll('[data-bulk-check-scope]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                const scope = button.dataset.bulkCheckScope || 'all';
+                const modal = bootstrap.Modal.getOrCreateInstance(scopeModalElement);
+                scopeModalElement.addEventListener('hidden.bs.modal', function () {
+                    openMode(scope);
+                }, { once: true });
+                modal.hide();
+            });
+        });
         document.getElementById('bulkCheckClose').addEventListener('click', closeMode);
         document.getElementById('bulkCheckRestart').addEventListener('click', function () { activityIndex = 0; renderActivity(); });
         prevButton.addEventListener('click', function () { changeMedia(-1); });
@@ -2456,7 +2796,7 @@
         });
 
         window.bulkCheckAddStaffPhoto = function (activityId, photoUrl) {
-            const activity = activities.find(function (item) { return String(item.id) === String(activityId); });
+            const activity = allActivities.find(function (item) { return String(item.id) === String(activityId); });
             if (!activity || !photoUrl) return;
             const insertAt = activity.media.findIndex(function (item) { return item.kind === 'document'; });
             const photo = { kind: 'image', url: photoUrl, label: 'Foto Staff', invalid: false };
@@ -2516,6 +2856,9 @@
 
         function matchesStatusFilter(item) {
             if (activeStatusFilter === 'all') return true;
+            if (activeStatusFilter === 'item_check') {
+                return item.getAttribute('data-needs-item-check') === 'true';
+            }
             return effectiveActivityStatus(item) === activeStatusFilter;
         }
 
@@ -2557,10 +2900,11 @@
         }
 
         function refreshStatusFilterCounts() {
-            var counts = { all: items.length, valid: 0, pending: 0, invalid: 0 };
+            var counts = { all: items.length, item_check: 0, valid: 0, pending: 0, invalid: 0 };
             items.forEach(function (item) {
                 var status = effectiveActivityStatus(item);
                 if (Object.prototype.hasOwnProperty.call(counts, status)) counts[status]++;
+                if (item.getAttribute('data-needs-item-check') === 'true') counts.item_check++;
             });
             document.querySelectorAll('[data-status-count]').forEach(function (counter) {
                 counter.textContent = counts[counter.getAttribute('data-status-count')] || 0;
@@ -2568,7 +2912,7 @@
         }
 
         function syncStatusButtons() {
-            var variants = { all: 'primary', valid: 'success', pending: 'warning', invalid: 'danger' };
+            var variants = { all: 'primary', item_check: 'warning', valid: 'success', pending: 'warning', invalid: 'danger' };
             statusButtons.forEach(function (button) {
                 var status = button.getAttribute('data-activity-status-filter') || 'all';
                 var variant = variants[status] || 'secondary';
@@ -2744,8 +3088,20 @@
             }
             return result;
         })
-        .then(function () {
+        .then(function (result) {
             if (!state.pending) {
+                const activityId = form.dataset.activityId;
+                const checkbox = form.querySelector('.activity-item-check-input');
+                const badge = document.getElementById('itemCheckBadge' + activityId);
+                const item = document.getElementById('activityItem' + activityId);
+                const bulkSource = document.querySelector('.bulk-activity-source[data-activity-id="' + activityId + '"]');
+                if (checkbox && typeof result.needs_item_check === 'boolean') {
+                    checkbox.checked = result.needs_item_check;
+                    if (badge) badge.classList.toggle('d-none', !result.needs_item_check);
+                    if (item) item.dataset.needsItemCheck = result.needs_item_check ? 'true' : 'false';
+                    if (bulkSource) bulkSource.dataset.needsItemCheck = result.needs_item_check ? 'true' : 'false';
+                    if (window.applyActivityFilters) window.applyActivityFilters();
+                }
                 dirtyAuditForms.delete(form);
                 setAuditSaveStatus(form, 'saved', 'Tersimpan otomatis');
             }
@@ -2785,6 +3141,20 @@
     window.addEventListener('resize', updateNavbarOffset);
 
     document.querySelectorAll('.validate-activity-form').forEach(function (form) {
+        form.querySelectorAll('.activity-item-check-input').forEach(function (checkbox) {
+            checkbox.addEventListener('change', function () {
+                const activityId = form.dataset.activityId;
+                const badge = document.getElementById('itemCheckBadge' + activityId);
+                const item = document.getElementById('activityItem' + activityId);
+                const bulkSource = document.querySelector('.bulk-activity-source[data-activity-id="' + activityId + '"]');
+                if (badge) badge.classList.toggle('d-none', !checkbox.checked);
+                if (item) item.dataset.needsItemCheck = checkbox.checked ? 'true' : 'false';
+                if (bulkSource) bulkSource.dataset.needsItemCheck = checkbox.checked ? 'true' : 'false';
+                if (window.applyActivityFilters) window.applyActivityFilters();
+                scheduleAuditAutosave(form, true);
+            });
+        });
+
         form.querySelectorAll('input[type="radio"][name^="checklist_"]').forEach(function (radio) {
             radio.addEventListener('change', function () {
                 refreshChecklistMetricsFromForms();

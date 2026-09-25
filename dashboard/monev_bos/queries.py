@@ -187,11 +187,16 @@ def get_active_periods() -> List[Dict[str, Any]]:
         return [dict(row) for row in cur.fetchall()]
 
 
-def get_admin_dashboard_overview(period_id: int) -> Dict[str, Any]:
-    """Return period-level reporting, verification, and follow-up metrics."""
+def get_admin_dashboard_overview(period_id: Optional[int]) -> Dict[str, Any]:
+    """Return reporting, verification, and follow-up metrics for one or all periods."""
+    report_filter = "WHERE period_id = %s" if period_id is not None else ""
+    activity_filter = "WHERE r.period_id = %s" if period_id is not None else ""
+    assignment_filter = "WHERE period_id = %s" if period_id is not None else ""
+    photo_filter = "AND photo_report.period_id = %s" if period_id is not None else ""
+    params = tuple([period_id] * 4) if period_id is not None else ()
     with get_cursor() as cur:
         cur.execute(
-            """
+            f"""
             WITH report_stats AS (
                 SELECT
                     COUNT(*) AS total_reports,
@@ -204,7 +209,7 @@ def get_admin_dashboard_overview(period_id: int) -> Dict[str, Any]:
                     COALESCE(SUM(bosp_receipt_amount), 0) AS bosp_receipts,
                     COALESCE(SUM(bop_receipt_amount), 0) AS bop_receipts
                 FROM monev_bos_reports
-                WHERE period_id = %s
+                {report_filter}
             ),
             activity_stats AS (
                 SELECT
@@ -217,12 +222,12 @@ def get_admin_dashboard_overview(period_id: int) -> Dict[str, Any]:
                     COALESCE(SUM(a.realized_amount) FILTER (WHERE a.fund_source = 'BOP'), 0) AS bop_realized
                 FROM monev_bos_activities a
                 JOIN monev_bos_reports r ON r.id = a.report_id
-                WHERE r.period_id = %s
+                {activity_filter}
             ),
             assignment_stats AS (
                 SELECT COUNT(*) AS assigned_schools, COUNT(DISTINCT team_id) AS assigned_teams
                 FROM monev_bos_assignments
-                WHERE period_id = %s
+                {assignment_filter}
             )
             SELECT report_stats.*, activity_stats.*, assignment_stats.*,
                    (SELECT COUNT(*) FROM monev_bos_vendors WHERE status = 'pending') AS pending_vendors,
@@ -231,24 +236,31 @@ def get_admin_dashboard_overview(period_id: int) -> Dict[str, Any]:
                     FROM monev_bos_activity_docs photo
                     JOIN monev_bos_activities photo_activity ON photo_activity.id = photo.activity_id
                     JOIN monev_bos_reports photo_report ON photo_report.id = photo_activity.report_id
-                    WHERE photo_report.period_id = %s
-                      AND photo.doc_type IN ('field_photo', 'live_photo')) AS total_activity_photos
+                    WHERE photo.doc_type IN ('field_photo', 'live_photo')
+                      {photo_filter}) AS total_activity_photos
             FROM report_stats, activity_stats, assignment_stats
             """,
-            (period_id, period_id, period_id, period_id),
+            params,
         )
         row = cur.fetchone()
         return dict(row) if row else {}
 
 
-def list_recent_period_reports(period_id: int, limit: int = 6) -> List[Dict[str, Any]]:
-    """Return the most recently updated school reports for an admin dashboard."""
+def list_recent_period_reports(period_id: Optional[int], limit: int = 6) -> List[Dict[str, Any]]:
+    """Return the most recently updated school reports for one or all periods."""
+    period_filter = "WHERE r.period_id = %s" if period_id is not None else ""
+    params: List[Any] = []
+    if period_id is not None:
+        params.append(period_id)
+    params.append(max(1, min(int(limit), 20)))
     with get_cursor() as cur:
         cur.execute(
-            """
+            f"""
             SELECT r.id AS report_id,
                    r.status,
                    r.updated_at,
+                   period.year AS period_year,
+                   period.tw AS period_tw,
                    r.bosp_receipt_amount,
                    r.bop_receipt_amount,
                    COALESCE(school.name, school_user.full_name) AS school_name,
@@ -258,6 +270,7 @@ def list_recent_period_reports(period_id: int, limit: int = 6) -> List[Dict[str,
                    COALESCE(SUM(activity.realized_amount) FILTER (WHERE activity.fund_source = 'BOS'), 0) AS bos_realized,
                    COALESCE(SUM(activity.realized_amount) FILTER (WHERE activity.fund_source = 'BOP'), 0) AS bop_realized
             FROM monev_bos_reports r
+            JOIN monev_bos_periods period ON period.id = r.period_id
             JOIN dashboard_users school_user ON school_user.id = r.school_id
             LEFT JOIN LATERAL (
                 SELECT portal_school.name
@@ -270,27 +283,35 @@ def list_recent_period_reports(period_id: int, limit: int = 6) -> List[Dict[str,
                    ON assignment.school_id = r.school_id AND assignment.period_id = r.period_id
             LEFT JOIN monev_bos_teams team ON team.id = assignment.team_id
             LEFT JOIN monev_bos_activities activity ON activity.report_id = r.id
-            WHERE r.period_id = %s
-            GROUP BY r.id, school.name, school_user.full_name, team.name
+            {period_filter}
+            GROUP BY r.id, period.year, period.tw, school.name, school_user.full_name, team.name
             ORDER BY r.updated_at DESC, r.id DESC
             LIMIT %s
             """,
-            (period_id, max(1, min(int(limit), 20))),
+            tuple(params),
         )
         return [dict(row) for row in cur.fetchall()]
 
 
-def list_admin_period_school_analytics(period_id: int) -> List[Dict[str, Any]]:
-    """Return one monitoring row per school assigned or reporting in a period."""
+def list_admin_period_school_analytics(period_id: Optional[int]) -> List[Dict[str, Any]]:
+    """Return one monitoring row per school/period assignment or report."""
+    assignment_filter = "WHERE period_id = %s" if period_id is not None else ""
+    report_filter = "WHERE period_id = %s" if period_id is not None else ""
+    params: List[Any] = []
+    if period_id is not None:
+        params.extend([period_id, period_id])
     with get_cursor() as cur:
         cur.execute(
-            """
+            f"""
             WITH school_scope AS (
-                SELECT school_id FROM monev_bos_assignments WHERE period_id = %s
+                SELECT school_id, period_id FROM monev_bos_assignments {assignment_filter}
                 UNION
-                SELECT school_id FROM monev_bos_reports WHERE period_id = %s
+                SELECT school_id, period_id FROM monev_bos_reports {report_filter}
             )
             SELECT scope.school_id,
+                   scope.period_id,
+                   period.year AS period_year,
+                   period.tw AS period_tw,
                    COALESCE(school.name, school_user.full_name) AS school_name,
                    school.npsn,
                    assignment.id IS NOT NULL AS is_assigned,
@@ -311,6 +332,7 @@ def list_admin_period_school_analytics(period_id: int) -> List[Dict[str, Any]]:
                    COALESCE(activity.bos_realized, 0) AS bos_realized,
                    COALESCE(activity.bop_realized, 0) AS bop_realized
             FROM school_scope scope
+            JOIN monev_bos_periods period ON period.id = scope.period_id
             JOIN dashboard_users school_user ON school_user.id = scope.school_id
             LEFT JOIN LATERAL (
                 SELECT portal_school.name, portal_school.npsn
@@ -320,10 +342,10 @@ def list_admin_period_school_analytics(period_id: int) -> List[Dict[str, Any]]:
                 LIMIT 1
             ) school ON TRUE
             LEFT JOIN monev_bos_assignments assignment
-                   ON assignment.school_id = scope.school_id AND assignment.period_id = %s
+                   ON assignment.school_id = scope.school_id AND assignment.period_id = scope.period_id
             LEFT JOIN monev_bos_teams team ON team.id = assignment.team_id
             LEFT JOIN monev_bos_reports report
-                   ON report.school_id = scope.school_id AND report.period_id = %s
+                   ON report.school_id = scope.school_id AND report.period_id = scope.period_id
             LEFT JOIN LATERAL (
                 SELECT COUNT(*) AS total_activities,
                        COUNT(*) FILTER (WHERE status = 'pending') AS pending_activities,
@@ -337,22 +359,24 @@ def list_admin_period_school_analytics(period_id: int) -> List[Dict[str, Any]]:
                 FROM monev_bos_activities
                 WHERE report_id = report.id
             ) activity ON TRUE
-            ORDER BY COALESCE(school.name, school_user.full_name) ASC
+            ORDER BY period.year DESC, period.tw DESC, COALESCE(school.name, school_user.full_name) ASC
             """,
-            (period_id, period_id, period_id, period_id),
+            tuple(params),
         )
         return [dict(row) for row in cur.fetchall()]
 
 
-def list_admin_team_performance(period_id: int) -> List[Dict[str, Any]]:
-    """Summarize reporting and activity verification performance by assigned team."""
+def list_admin_team_performance(period_id: Optional[int]) -> List[Dict[str, Any]]:
+    """Summarize team performance for one or all periods."""
+    assignment_period_filter = "AND assignment.period_id = %s" if period_id is not None else ""
+    params = (period_id,) if period_id is not None else ()
     with get_cursor() as cur:
         cur.execute(
-            """
+            f"""
             SELECT team.id AS team_id,
                    team.name AS team_name,
                    leader.full_name AS leader_name,
-                   COUNT(DISTINCT assignment.school_id) AS assigned_schools,
+                   COUNT(DISTINCT assignment.id) AS assigned_schools,
                    COUNT(DISTINCT report.id) AS total_reports,
                    COUNT(DISTINCT report.id) FILTER (WHERE report.status IN ('submitted', 'in_review')) AS review_queue,
                    COUNT(DISTINCT report.id) FILTER (WHERE report.status IN ('completed', 'completed_with_notes')) AS completed_reports,
@@ -373,15 +397,15 @@ def list_admin_team_performance(period_id: int) -> List[Dict[str, Any]]:
             FROM monev_bos_teams team
             LEFT JOIN dashboard_users leader ON leader.id = team.leader_id
             LEFT JOIN monev_bos_assignments assignment
-                   ON assignment.team_id = team.id AND assignment.period_id = %s
+                   ON assignment.team_id = team.id {assignment_period_filter}
             LEFT JOIN monev_bos_reports report
-                   ON report.school_id = assignment.school_id AND report.period_id = %s
+                   ON report.school_id = assignment.school_id AND report.period_id = assignment.period_id
             LEFT JOIN monev_bos_activities activity ON activity.report_id = report.id
             GROUP BY team.id, leader.full_name
             HAVING COUNT(DISTINCT assignment.school_id) > 0
             ORDER BY LOWER(team.name) ASC, team.id ASC
             """,
-            (period_id, period_id),
+            params,
         )
         return [dict(row) for row in cur.fetchall()]
 
@@ -1108,7 +1132,12 @@ def find_activity_duplicate_matches_for_data(
         return " ".join(cleaned.split())
 
     def normalized_identifier(value: Any) -> str:
-        return "".join(char for char in str(value or "").casefold() if char.isalnum())
+        normalized = "".join(
+            char for char in str(value or "").casefold() if char.isalnum()
+        )
+        if normalized.isdigit():
+            return normalized.lstrip("0") or "0"
+        return normalized
 
     incoming_name = normalized_text(data.get("activity_name"))
     incoming_bku = normalized_identifier(data.get("bku_number"))
@@ -1220,6 +1249,93 @@ def set_activity_vendors(activity_id: int, vendor_ids: List[int]) -> None:
                 """,
                 (activity_id, vendor_id, sort_order),
             )
+
+
+def replace_activity_vendor(
+    activity_id: int, old_vendor_id: int, new_vendor_id: int
+) -> Optional[Dict[str, Any]]:
+    """Replace one linked vendor while preserving every other activity vendor."""
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            "SELECT id, vendor_id FROM monev_bos_activities WHERE id = %s FOR UPDATE",
+            (activity_id,),
+        )
+        activity = cur.fetchone()
+        if not activity:
+            return None
+        activity = dict(activity)
+
+        cur.execute(
+            "SELECT * FROM monev_bos_vendors WHERE id = ANY(%s) FOR UPDATE",
+            ([old_vendor_id, new_vendor_id],),
+        )
+        vendors = {int(row["id"]): dict(row) for row in cur.fetchall()}
+        old_vendor = vendors.get(int(old_vendor_id))
+        new_vendor = vendors.get(int(new_vendor_id))
+        if not old_vendor or not new_vendor:
+            raise ValueError("Vendor asal atau vendor pengganti tidak ditemukan.")
+        if old_vendor.get("status") == "verified":
+            raise ValueError("Vendor yang sudah terverifikasi tidak perlu diganti.")
+        if new_vendor.get("status") != "verified":
+            raise ValueError("Vendor pengganti harus sudah terverifikasi.")
+
+        cur.execute(
+            """
+            SELECT vendor_id
+            FROM monev_bos_activity_vendors
+            WHERE activity_id = %s
+            ORDER BY sort_order, created_at, vendor_id
+            """,
+            (activity_id,),
+        )
+        linked_ids = [int(row["vendor_id"]) for row in cur.fetchall()]
+        if not linked_ids and activity.get("vendor_id") is not None:
+            linked_ids = [int(activity["vendor_id"])]
+        if int(old_vendor_id) not in linked_ids:
+            raise ValueError("Vendor asal tidak terhubung dengan kegiatan ini.")
+
+        replacement_ids = []
+        for vendor_id in linked_ids:
+            resolved_id = int(new_vendor_id) if vendor_id == int(old_vendor_id) else vendor_id
+            if resolved_id not in replacement_ids:
+                replacement_ids.append(resolved_id)
+
+        cur.execute(
+            "DELETE FROM monev_bos_activity_vendors WHERE activity_id = %s",
+            (activity_id,),
+        )
+        for sort_order, vendor_id in enumerate(replacement_ids):
+            cur.execute(
+                """
+                INSERT INTO monev_bos_activity_vendors (activity_id, vendor_id, sort_order)
+                VALUES (%s, %s, %s)
+                """,
+                (activity_id, vendor_id, sort_order),
+            )
+
+        cur.execute(
+            "SELECT * FROM monev_bos_vendors WHERE id = ANY(%s)",
+            (replacement_ids,),
+        )
+        replacement_vendors = {int(row["id"]): dict(row) for row in cur.fetchall()}
+        display_names = [
+            get_vendor_display_name(replacement_vendors[vendor_id])
+            for vendor_id in replacement_ids
+        ]
+        cur.execute(
+            """
+            UPDATE monev_bos_activities
+            SET vendor_id = %s, vendor_name = %s, updated_at = NOW()
+            WHERE id = %s
+            """,
+            (replacement_ids[0] if replacement_ids else None, ", ".join(display_names), activity_id),
+        )
+        return {
+            "old_vendor": old_vendor,
+            "new_vendor": new_vendor,
+            "vendor_ids": replacement_ids,
+            "vendor_names": display_names,
+        }
 
 def create_activity(report_id: int, fund_source: str, data: Dict[str, Any]) -> int:
     with get_cursor(commit=True) as cur:
@@ -2127,6 +2243,31 @@ def update_activity_audit_notes(activity_id: int, notes: str) -> None:
             (notes, activity_id)
         )
 
+def set_activity_item_check(activity_id: int, needs_item_check: bool, user_id: int) -> bool:
+    """Set the physical-item follow-up flag and report whether it changed."""
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            UPDATE monev_bos_activities
+            SET needs_item_check = %s,
+                item_check_marked_by = CASE WHEN %s THEN %s ELSE NULL END,
+                item_check_marked_at = CASE WHEN %s THEN NOW() ELSE NULL END,
+                updated_at = NOW()
+            WHERE id = %s
+              AND needs_item_check IS DISTINCT FROM %s
+            RETURNING id
+            """,
+            (
+                needs_item_check,
+                needs_item_check,
+                user_id,
+                needs_item_check,
+                activity_id,
+                needs_item_check,
+            )
+        )
+        return cur.fetchone() is not None
+
 def save_checklist_result(activity_id: int, checklist_id: int, status: str, notes: str, user_id: int) -> None:
     with get_cursor(commit=True) as cur:
         cur.execute(
@@ -2362,7 +2503,9 @@ def list_staff_performance(
                              AND COALESCE(l.details, '') ILIKE '%%completed%%'
                        )::int AS completed_reports,
                        COUNT(l.id) FILTER (
-                           WHERE l.action NOT IN ('VALIDATE', 'UPDATE_STATUS', 'UPLOAD_PHOTO')
+                           WHERE l.action NOT IN (
+                               'VALIDATE', 'UPDATE_STATUS', 'UPLOAD_PHOTO', 'REPLACE_VENDOR'
+                           )
                        )::int AS supporting_actions,
                        COUNT(DISTINCT r.school_id)::int AS handled_schools
                 FROM monev_bos_audit_logs l
@@ -2370,6 +2513,27 @@ def list_staff_performance(
                 JOIN monev_bos_reports r ON r.id = l.report_id
                 WHERE 1=1 {audit_date_sql}
                 GROUP BY l.user_id
+            ), activity_decisions AS (
+                SELECT DISTINCT ON (l.user_id, l.activity_id)
+                       l.user_id AS staff_id,
+                       l.activity_id,
+                       l.details
+                FROM monev_bos_audit_logs l
+                JOIN dashboard_users u ON u.id = l.user_id AND u.role = 'staff'
+                WHERE l.action = 'VALIDATE'
+                  AND l.activity_id IS NOT NULL
+                  {audit_date_sql}
+                ORDER BY l.user_id, l.activity_id, l.created_at DESC, l.id DESC
+            ), activity_decision_stats AS (
+                SELECT staff_id,
+                       COUNT(*) FILTER (
+                           WHERE details ILIKE '%%status ''Sesuai''%%'
+                       )::int AS approved_activities,
+                       COUNT(*) FILTER (
+                           WHERE details ILIKE '%%Tidak Sesuai (Revisi)%%'
+                       )::int AS revised_activities
+                FROM activity_decisions
+                GROUP BY staff_id
             ), vendor_stats AS (
                 -- The latest decision owns the contribution point, whether the
                 -- reviewer approved valid data or rejected incorrect data.
@@ -2410,6 +2574,8 @@ def list_staff_performance(
                    u.email AS staff_email,
                    (COALESCE(audit_stats.audit_actions, 0) + COALESCE(vendor_stats.vendor_decisions, 0))::int AS total_actions,
                    COALESCE(audit_stats.validated_activities, 0)::int AS validated_activities,
+                   COALESCE(activity_decision_stats.approved_activities, 0)::int AS approved_activities,
+                   COALESCE(activity_decision_stats.revised_activities, 0)::int AS revised_activities,
                    COALESCE(audit_stats.completed_reports, 0)::int AS completed_reports,
                    COALESCE(photo_stats.uploaded_photos, 0)::int AS uploaded_photos,
                    COALESCE(audit_stats.supporting_actions, 0)::int AS supporting_actions,
@@ -2424,6 +2590,7 @@ def list_staff_performance(
             FROM staff_ids
             JOIN dashboard_users u ON u.id = staff_ids.staff_id AND u.role = 'staff'
             LEFT JOIN audit_stats ON audit_stats.staff_id = u.id
+            LEFT JOIN activity_decision_stats ON activity_decision_stats.staff_id = u.id
             LEFT JOIN vendor_stats ON vendor_stats.staff_id = u.id
             LEFT JOIN photo_stats ON photo_stats.staff_id = u.id
             LEFT JOIN timeline_stats ON timeline_stats.staff_id = u.id
@@ -2486,6 +2653,7 @@ def get_staff_performance_point_items(
                        l.activity_id AS id,
                        COALESCE(a.activity_name, 'Kegiatan #' || l.activity_id::text) AS name,
                        COALESCE(ps.name, school.full_name, 'Sekolah tidak tersedia') AS school,
+                       l.details AS validation_details,
                        l.created_at
                 FROM monev_bos_audit_logs l
                 JOIN monev_bos_reports r ON r.id = l.report_id
@@ -2498,7 +2666,14 @@ def get_staff_performance_point_items(
                   {date_sql}
                 ORDER BY l.activity_id, l.created_at DESC, l.id DESC
             )
-            SELECT latest_activity.*, COUNT(*) OVER ()::int AS total
+            SELECT id, name, school, created_at,
+                   COUNT(*) OVER ()::int AS total,
+                   COUNT(*) FILTER (
+                       WHERE validation_details ILIKE '%%status ''Sesuai''%%'
+                   ) OVER ()::int AS approved_total,
+                   COUNT(*) FILTER (
+                       WHERE validation_details ILIKE '%%Tidak Sesuai (Revisi)%%'
+                   ) OVER ()::int AS revision_total
             FROM latest_activity
             ORDER BY created_at DESC, id DESC
             LIMIT %(limit)s OFFSET %(offset)s
@@ -2562,7 +2737,18 @@ def get_staff_performance_point_items(
                    event.action AS decision,
                    (COALESCE(event.metadata->>'is_revision', 'false') = 'true') AS is_revision,
                    event.created_at,
-                   COUNT(*) OVER ()::int AS total
+                   COUNT(*) OVER ()::int AS total,
+                   COUNT(*) FILTER (
+                       WHERE event.action = 'VERIFY_APPROVE'
+                         AND COALESCE(event.metadata->>'is_revision', 'false') <> 'true'
+                   ) OVER ()::int AS verified_total,
+                   COUNT(*) FILTER (
+                       WHERE event.action = 'VERIFY_REJECT'
+                   ) OVER ()::int AS rejected_total,
+                   COUNT(*) FILTER (
+                       WHERE event.action = 'VERIFY_APPROVE'
+                         AND event.metadata->>'is_revision' = 'true'
+                   ) OVER ()::int AS revised_total
             FROM selected_events event
             LEFT JOIN monev_bos_vendors vendor ON vendor.id = event.target_id
             LEFT JOIN dashboard_users school ON school.id = vendor.school_id
@@ -2577,15 +2763,33 @@ def get_staff_performance_point_items(
         cur.execute(query, params)
         rows = [dict(row) for row in cur.fetchall()]
     total = int(rows[0].get("total") if rows else 0)
+    if kind == "activity":
+        summary = {
+            "approved": int(rows[0].get("approved_total") if rows else 0),
+            "revision": int(rows[0].get("revision_total") if rows else 0),
+        }
+    else:
+        summary = {
+            "verified": int(rows[0].get("verified_total") if rows else 0),
+            "rejected": int(rows[0].get("rejected_total") if rows else 0),
+            "revised": int(rows[0].get("revised_total") if rows else 0),
+        }
     for row in rows:
         row.pop("total", None)
-    return {
+        row.pop("approved_total", None)
+        row.pop("revision_total", None)
+        row.pop("verified_total", None)
+        row.pop("rejected_total", None)
+        row.pop("revised_total", None)
+    result = {
         "items": rows,
         "total": total,
         "page": safe_page,
         "page_size": safe_size,
         "has_more": offset + len(rows) < total,
     }
+    result["summary"] = summary
+    return result
 
 
 def list_staff_performance_years() -> List[int]:
@@ -2857,6 +3061,8 @@ def list_all_vendors_for_admin(
     search_query: Optional[str] = None,
     vendor_type_filter: Optional[str] = None,
     school_id_filter: Optional[int] = None,
+    limit: Optional[int] = None,
+    offset: int = 0,
 ) -> List[Dict[str, Any]]:
     """List all vendor registration requests for admin/staff verification."""
     query = """
@@ -2885,10 +3091,48 @@ def list_all_vendors_for_admin(
         pattern = f"%{search_query.strip()}%"
         params.extend([pattern] * 5)
     query += " ORDER BY v.created_at DESC"
+    if limit is not None:
+        query += " LIMIT %s OFFSET %s"
+        params.extend([max(1, int(limit)), max(0, int(offset))])
 
     with get_cursor() as cur:
         cur.execute(query, tuple(params))
         return [dict(row) for row in cur.fetchall()]
+
+
+def count_all_vendors_for_admin(
+    search_query: Optional[str] = None,
+    vendor_type_filter: Optional[str] = None,
+    school_id_filter: Optional[int] = None,
+) -> Dict[str, int]:
+    """Count admin/staff vendor results by status without loading the rows."""
+    query = """
+        SELECT
+            COUNT(*)::integer AS total,
+            COUNT(*) FILTER (WHERE v.status = 'pending')::integer AS pending,
+            COUNT(*) FILTER (WHERE v.status = 'verified')::integer AS verified,
+            COUNT(*) FILTER (WHERE v.status = 'rejected')::integer AS rejected
+        FROM monev_bos_vendors v
+        JOIN dashboard_users u_school ON u_school.id = v.school_id
+        LEFT JOIN portal_schools ps ON ps.id = u_school.school_id
+        WHERE 1=1
+    """
+    params = []
+    if vendor_type_filter:
+        query += " AND v.vendor_type = %s"
+        params.append(vendor_type_filter)
+    if school_id_filter:
+        query += " AND v.school_id = %s"
+        params.append(school_id_filter)
+    if search_query:
+        query += " AND (v.name ILIKE %s OR v.npwp ILIKE %s OR v.phone ILIKE %s OR v.owner_name ILIKE %s OR COALESCE(ps.name, u_school.full_name) ILIKE %s)"
+        pattern = f"%{search_query.strip()}%"
+        params.extend([pattern] * 5)
+
+    with get_cursor() as cur:
+        cur.execute(query, tuple(params))
+        row = cur.fetchone()
+    return dict(row) if row else {"total": 0, "pending": 0, "verified": 0, "rejected": 0}
 
 
 def attach_vendor_action_history(vendors: List[Dict[str, Any]]) -> List[Dict[str, Any]]:

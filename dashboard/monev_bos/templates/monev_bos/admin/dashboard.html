@@ -44,6 +44,17 @@
     .admin-attention-item { display: flex; align-items: center; gap: .75rem; padding: .75rem; border: 1px solid var(--bs-border-color); border-radius: 13px; color: inherit; text-decoration: none; transition: background .15s ease, border-color .15s ease; }
     .admin-attention-item:hover { color: inherit; background: var(--bs-tertiary-bg); border-color: var(--bs-secondary-border-subtle); }
     .admin-attention-icon { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 11px; flex: 0 0 auto; }
+    .admin-staff-rank-tabs { display: grid; grid-template-columns: 1fr 1fr; padding: 3px; border-radius: 10px; background: var(--bs-tertiary-bg); }
+    .admin-staff-rank-tab { border: 0; border-radius: 8px; padding: .4rem .55rem; color: var(--bs-secondary-color); background: transparent; font-size: .72rem; font-weight: 700; }
+    .admin-staff-rank-tab.active { color: var(--bs-primary); background: var(--bs-body-bg); box-shadow: 0 1px 5px rgba(15, 23, 42, .1); }
+    .admin-staff-rank-row { display: flex; align-items: center; gap: .65rem; padding: .65rem 0; border-bottom: 1px solid var(--bs-border-color); }
+    .admin-staff-rank-row:first-child { padding-top: 0; }
+    .admin-staff-rank-position { display: inline-flex; align-items: center; justify-content: center; width: 31px; height: 31px; flex: 0 0 auto; border-radius: 50%; font-size: .7rem; font-weight: 800; }
+    .admin-staff-rank-score { min-width: 35px; color: var(--bs-primary); font-size: 1rem; font-weight: 800; text-align: right; }
+    .admin-staff-rank-name { max-width: 100%; color: var(--bs-body-color); font-size: .875rem; font-weight: 700; text-decoration: none; }
+    .admin-staff-rank-name:hover { color: var(--bs-primary); text-decoration: underline; }
+    .admin-staff-stat-card { padding: .75rem; border: 1px solid var(--bs-border-color); border-radius: 12px; background: var(--bs-tertiary-bg); }
+    .admin-staff-stat-value { font-size: 1.25rem; line-height: 1; font-weight: 800; }
     .admin-quick-link { display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; min-height: 105px; padding: .85rem; border: 1px solid var(--bs-border-color); border-radius: 14px; color: var(--bs-body-color); text-decoration: none; background: var(--bs-body-bg); transition: transform .15s ease, border-color .15s ease, background .15s ease; }
     .admin-quick-link:hover { color: var(--bs-primary); transform: translateY(-2px); border-color: var(--bs-primary-border-subtle); background: var(--bs-primary-bg-subtle); }
     .admin-report-table th { border-top: 0; color: var(--bs-secondary-color); font-size: .68rem; letter-spacing: .045em; text-transform: uppercase; }
@@ -77,24 +88,25 @@
                 <div>
                     <div class="d-flex flex-wrap gap-2 mb-2">
                         <span class="admin-hero-badge"><i class="bi bi-speedometer2"></i>Pusat Kendali Admin</span>
-                        {% if active_period %}<span class="admin-hero-badge"><i class="bi bi-broadcast-pin"></i>Periode Aktif</span>{% endif %}
+                        {% if active_period %}<span class="admin-hero-badge"><i class="bi {{ 'bi-calendar-range' if all_periods else 'bi-broadcast-pin' }}"></i>{{ 'Seluruh Periode' if all_periods else 'Periode Aktif' }}</span>{% endif %}
                     </div>
                     <h1 class="h3 fw-bold text-white mb-1 admin-hero-title">Monitoring MONEV BOS/BOP</h1>
                     <p class="mb-2 text-white-50 small admin-hero-copy">Pantau pelaporan sekolah, progres verifikasi, serta pekerjaan yang memerlukan tindak lanjut.</p>
-                    {% if active_period %}<a href="{{ url_for('monev_bos.admin_analytics', metric='all', period_id=active_period.id) }}" target="_blank" rel="noopener" class="text-white small fw-semibold text-decoration-none"><i class="bi bi-bar-chart-line me-1"></i>Buka analitik lengkap <i class="bi bi-box-arrow-up-right ms-1"></i></a>{% endif %}
+                    {% if active_period %}<a href="{{ url_for('monev_bos.admin_analytics', metric='all', period_id=period_selection) }}" target="_blank" rel="noopener" class="text-white small fw-semibold text-decoration-none"><i class="bi bi-bar-chart-line me-1"></i>Buka analitik lengkap <i class="bi bi-box-arrow-up-right ms-1"></i></a>{% endif %}
                 </div>
                 {% if active_period %}
                 <div class="admin-hero-period">
                     <form method="GET" action="{{ url_for('monev_bos.admin_dashboard') }}">
                         <label for="adminDashboardPeriod" class="text-white-50 text-xs text-uppercase fw-bold mb-1">Pilih periode analitik</label>
                         <select id="adminDashboardPeriod" name="period_id" class="form-select form-select-sm admin-period-select fw-semibold" onchange="this.form.submit()">
+                            <option value="all" {% if all_periods %}selected{% endif %}>Seluruh Periode</option>
                             {% for period in periods %}
-                            <option value="{{ period.id }}" {% if period.id == active_period.id %}selected{% endif %}>{{ period.year }} · TW {{ period.tw }}{% if period.is_active %} — Aktif{% endif %}</option>
+                            <option value="{{ period.id }}" {% if not all_periods and period.id == active_period.id %}selected{% endif %}>{{ period.year }} · TW {{ period.tw }}{% if period.is_active %} — Aktif{% endif %}</option>
                             {% endfor %}
                         </select>
                     </form>
                     <div class="d-flex justify-content-between align-items-center gap-3 mt-2">
-                        <div class="text-white-50 text-xs"><i class="bi bi-calendar3 me-1"></i>{{ active_period.start_date }} — {{ active_period.end_date }}</div>
+                        <div class="text-white-50 text-xs"><i class="bi bi-calendar3 me-1"></i>{% if all_periods %}Akumulasi seluruh periode MONEV{% else %}{{ active_period.start_date }} — {{ active_period.end_date }}{% endif %}</div>
                         {% if days_remaining is not none %}
                         <span class="badge rounded-pill {% if days_remaining < 0 %}bg-danger{% elif days_remaining <= 7 %}bg-warning text-dark{% else %}bg-light text-success{% endif %}">
                             {% if days_remaining < 0 %}Lewat {{ -days_remaining }} hari{% elif days_remaining == 0 %}Berakhir hari ini{% else %}{{ days_remaining }} hari lagi{% endif %}
@@ -132,7 +144,7 @@
                         <div class="admin-stat-icon bg-{{ color }}-subtle text-{{ color }}"><i class="bi {{ icon }}"></i></div>
                         <div class="d-flex align-items-center gap-1 align-self-start">
                             <span class="badge bg-{{ color }}-subtle text-{{ color }} border border-{{ color }}-subtle">{{ badge }}</span>
-                            <a href="{{ url_for('monev_bos.admin_analytics', metric=metric_name, period_id=active_period.id) }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-{{ color }} admin-metric-view" title="Lihat daftar {{ label }}" aria-label="Lihat daftar {{ label }}"><i class="bi bi-eye"></i></a>
+                            <a href="{{ url_for('monev_bos.admin_analytics', metric=metric_name, period_id=period_selection) }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-{{ color }} admin-metric-view" title="Lihat daftar {{ label }}" aria-label="Lihat daftar {{ label }}"><i class="bi bi-eye"></i></a>
                         </div>
                     </div>
                     <div class="admin-stat-value fw-bold">{{ value }}</div>
@@ -149,10 +161,10 @@
             <div><h2 class="h6 fw-bold mb-1"><i class="bi bi-images text-info me-2"></i>Foto Kegiatan Terbaru</h2><p class="text-body-secondary text-xs mb-0">Dokumentasi kegiatan lapangan yang diunggah sekolah dan tim verifikator.</p></div>
             <div class="d-flex align-items-center gap-2">
                 <div class="btn-group btn-group-sm d-none d-md-flex" role="group" aria-label="Urutan foto kegiatan">
-                    <a href="{{ url_for('monev_bos.admin_dashboard', period_id=active_period.id, photo_order='newest') }}#activityPhotoGallery" class="btn btn-outline-primary {% if photo_order == 'newest' %}active{% endif %}">Terbaru</a>
-                    <a href="{{ url_for('monev_bos.admin_dashboard', period_id=active_period.id, photo_order='random') }}#activityPhotoGallery" class="btn btn-outline-primary {% if photo_order == 'random' %}active{% endif %}">Acak</a>
+                    <a href="{{ url_for('monev_bos.admin_dashboard', period_id=period_selection, photo_order='newest') }}#activityPhotoGallery" class="btn btn-outline-primary {% if photo_order == 'newest' %}active{% endif %}">Terbaru</a>
+                    <a href="{{ url_for('monev_bos.admin_dashboard', period_id=period_selection, photo_order='random') }}#activityPhotoGallery" class="btn btn-outline-primary {% if photo_order == 'random' %}active{% endif %}">Acak</a>
                 </div>
-                <a href="{{ url_for('monev_bos.admin_activity_gallery', period_id='all', order=photo_order) }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary"><i class="bi bi-box-arrow-up-right me-1"></i>Lihat Semua <span class="badge bg-primary ms-1">{{ activity_photo_total }}</span></a>
+                <a href="{{ url_for('monev_bos.admin_activity_gallery', period_id=period_selection, order=photo_order) }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary"><i class="bi bi-box-arrow-up-right me-1"></i>Lihat Semua <span class="badge bg-primary ms-1">{{ activity_photo_total }}</span></a>
             </div>
         </div>
         <div class="admin-panel-body">
@@ -181,7 +193,7 @@
         <div class="col-xl-8">
             <section class="admin-panel mb-3 mb-xl-4">
                 <div class="admin-panel-header d-flex align-items-center justify-content-between gap-2">
-                    <div><h2 class="h6 fw-bold mb-1"><i class="bi bi-graph-up-arrow text-primary me-2"></i>Progres Periode</h2><p class="text-body-secondary text-xs mb-0">Capaian pelaporan sekolah dan pemeriksaan kegiatan.</p></div>
+                    <div><h2 class="h6 fw-bold mb-1"><i class="bi bi-graph-up-arrow text-primary me-2"></i>{{ 'Progres Seluruh Periode' if all_periods else 'Progres Periode' }}</h2><p class="text-body-secondary text-xs mb-0">Capaian pelaporan sekolah dan pemeriksaan kegiatan.</p></div>
                     <span class="badge bg-primary-subtle text-primary border border-primary-subtle">TW {{ active_period.tw }}</span>
                 </div>
                 <div class="admin-panel-body">
@@ -206,8 +218,8 @@
 
             <section class="admin-panel mb-3 mb-xl-4">
                 <div class="admin-panel-header d-flex align-items-center justify-content-between gap-2">
-                    <div><h2 class="h6 fw-bold mb-1"><i class="bi bi-people-fill text-primary me-2"></i>Progres per Tim</h2><p class="text-body-secondary text-xs mb-0">Aktivitas pelaporan dan verifikasi setiap tim pada periode ini.</p></div>
-                    <a href="{{ url_for('monev_bos.admin_analytics', metric='all', period_id=active_period.id) }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary"><i class="bi bi-bar-chart me-1"></i>Semua Tim</a>
+                    <div><h2 class="h6 fw-bold mb-1"><i class="bi bi-people-fill text-primary me-2"></i>Progres per Tim</h2><p class="text-body-secondary text-xs mb-0">Aktivitas pelaporan dan verifikasi setiap tim {{ 'di seluruh periode' if all_periods else 'pada periode ini' }}.</p></div>
+                    <a href="{{ url_for('monev_bos.admin_analytics', metric='all', period_id=period_selection) }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary"><i class="bi bi-bar-chart me-1"></i>Semua Tim</a>
                 </div>
                 <div class="admin-panel-body">
                     {% if team_performance %}
@@ -217,7 +229,7 @@
                             <div class="admin-team-card h-100">
                                 <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
                                     <div class="overflow-hidden"><strong class="small d-block text-truncate">{{ team.team_name }}</strong><span class="text-body-secondary text-xs text-truncate d-block">{{ team.leader_name or 'Ketua belum ditetapkan' }}</span></div>
-                                    <a href="{{ url_for('monev_bos.admin_analytics', metric='all', period_id=active_period.id, team_id=team.team_id) }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary admin-metric-view" title="Lihat aktivitas {{ team.team_name }}"><i class="bi bi-eye"></i></a>
+                                    <a href="{{ url_for('monev_bos.admin_analytics', metric='all', period_id=period_selection, team_id=team.team_id) }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary admin-metric-view" title="Lihat aktivitas {{ team.team_name }}"><i class="bi bi-eye"></i></a>
                                 </div>
                                 <div class="mb-2">
                                     <div class="d-flex justify-content-between text-xs mb-1"><span class="text-body-secondary">Status kegiatan</span><strong>{{ team.audited_activities }}/{{ team.total_activities }} · {{ team.verification_rate }}%</strong></div>
@@ -236,7 +248,7 @@
                                     </div>
                                     {% else %}
                                     <div class="admin-team-status-track" title="Belum ada kegiatan"></div>
-                                    <div class="text-body-secondary text-xs mt-1">Belum ada kegiatan pada periode ini.</div>
+                                    <div class="text-body-secondary text-xs mt-1">Belum ada kegiatan {{ 'di seluruh periode' if all_periods else 'pada periode ini' }}.</div>
                                     {% endif %}
                                 </div>
                                 <div class="mb-3">
@@ -248,15 +260,15 @@
                         {% endfor %}
                     </div>
                     {% else %}
-                    <div class="text-center py-4"><i class="bi bi-people fs-2 text-body-secondary opacity-50 d-block mb-2"></i><span class="text-body-secondary small">Belum ada penugasan tim pada periode ini.</span></div>
+                    <div class="text-center py-4"><i class="bi bi-people fs-2 text-body-secondary opacity-50 d-block mb-2"></i><span class="text-body-secondary small">Belum ada penugasan tim {{ 'di seluruh periode' if all_periods else 'pada periode ini' }}.</span></div>
                     {% endif %}
                 </div>
             </section>
 
             <section class="admin-panel">
                 <div class="admin-panel-header d-flex align-items-center justify-content-between gap-2">
-                    <div><h2 class="h6 fw-bold mb-1"><i class="bi bi-clock-history text-info me-2"></i>Laporan Terbaru</h2><p class="text-body-secondary text-xs mb-0">Laporan sekolah yang terakhir diperbarui pada periode ini.</p></div>
-                    <a href="{{ url_for('monev_bos.admin_analytics', metric='reports', period_id=active_period.id) }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye me-1"></i>Lihat Semua</a>
+                    <div><h2 class="h6 fw-bold mb-1"><i class="bi bi-clock-history text-info me-2"></i>Laporan Terbaru</h2><p class="text-body-secondary text-xs mb-0">Laporan sekolah yang terakhir diperbarui {{ 'dari seluruh periode' if all_periods else 'pada periode ini' }}.</p></div>
+                    <a href="{{ url_for('monev_bos.admin_analytics', metric='reports', period_id=period_selection) }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye me-1"></i>Lihat Semua</a>
                 </div>
                 {% set status_labels = {'draft':'Draft', 'submitted':'Sudah Submit', 'in_review':'Diverifikasi', 'needs_revision':'Perlu Revisi', 'completed':'Selesai', 'completed_with_notes':'Selesai + Catatan'} %}
                 {% set status_classes = {'draft':'secondary', 'submitted':'info', 'in_review':'primary', 'needs_revision':'danger', 'completed':'success', 'completed_with_notes':'warning'} %}
@@ -268,7 +280,7 @@
                             {% for report in recent_reports %}
                             {% set audit_percent = ((report.audited_activities / report.total_activities * 100)|round) if report.total_activities else 0 %}
                             <tr>
-                                <td class="ps-3 ps-md-4"><strong class="small d-block">{{ report.school_name }}</strong><span class="text-body-secondary text-xs">{{ report.team_name or 'Belum ada tim' }}</span></td>
+                                <td class="ps-3 ps-md-4"><strong class="small d-block">{{ report.school_name }}</strong><span class="text-body-secondary text-xs">{% if all_periods %}{{ report.period_year }} · TW {{ report.period_tw }} · {% endif %}{{ report.team_name or 'Belum ada tim' }}</span></td>
                                 <td><span class="badge bg-{{ status_classes.get(report.status, 'secondary') }}-subtle text-{{ status_classes.get(report.status, 'secondary') }} border border-{{ status_classes.get(report.status, 'secondary') }}-subtle">{{ status_labels.get(report.status, report.status) }}</span></td>
                                 <td style="min-width:145px"><div class="d-flex justify-content-between text-xs mb-1"><span>{{ report.audited_activities }}/{{ report.total_activities }}</span><span>{{ audit_percent }}%</span></div><div class="admin-progress-track" style="height:5px"><div class="admin-progress-bar bg-success" style="width:{{ audit_percent }}%"></div></div></td>
                                 <td><span class="small fw-semibold d-block">Rp {{ "{:,.0f}".format((report.bos_realized or 0) + (report.bop_realized or 0)).replace(',', '.') }}</span><span class="text-body-secondary text-xs">BOS + BOP</span></td>
@@ -280,23 +292,82 @@
                 </div>
                 <div class="admin-mobile-reports admin-panel-body">
                     {% for report in recent_reports %}
-                    <a href="{{ url_for('monev_bos.staff_audit_report', report_id=report.report_id) }}" class="admin-attention-item {% if not loop.last %}mb-2{% endif %}"><span class="admin-attention-icon bg-{{ status_classes.get(report.status, 'secondary') }}-subtle text-{{ status_classes.get(report.status, 'secondary') }}"><i class="bi bi-building"></i></span><span class="flex-grow-1 overflow-hidden"><strong class="small d-block text-truncate">{{ report.school_name }}</strong><span class="text-body-secondary text-xs">{{ status_labels.get(report.status, report.status) }} · {{ report.audited_activities }}/{{ report.total_activities }} kegiatan</span></span><i class="bi bi-chevron-right text-body-secondary"></i></a>
+                    <a href="{{ url_for('monev_bos.staff_audit_report', report_id=report.report_id) }}" class="admin-attention-item {% if not loop.last %}mb-2{% endif %}"><span class="admin-attention-icon bg-{{ status_classes.get(report.status, 'secondary') }}-subtle text-{{ status_classes.get(report.status, 'secondary') }}"><i class="bi bi-building"></i></span><span class="flex-grow-1 overflow-hidden"><strong class="small d-block text-truncate">{{ report.school_name }}</strong><span class="text-body-secondary text-xs">{% if all_periods %}{{ report.period_year }} · TW {{ report.period_tw }} · {% endif %}{{ status_labels.get(report.status, report.status) }} · {{ report.audited_activities }}/{{ report.total_activities }} kegiatan</span></span><i class="bi bi-chevron-right text-body-secondary"></i></a>
                     {% endfor %}
                 </div>
                 {% else %}
-                <div class="admin-panel-body text-center py-5"><i class="bi bi-journal-x fs-2 text-body-secondary opacity-50 d-block mb-2"></i><span class="text-body-secondary small">Belum ada laporan sekolah pada periode ini.</span></div>
+                <div class="admin-panel-body text-center py-5"><i class="bi bi-journal-x fs-2 text-body-secondary opacity-50 d-block mb-2"></i><span class="text-body-secondary small">Belum ada laporan sekolah {{ 'di seluruh periode' if all_periods else 'pada periode ini' }}.</span></div>
                 {% endif %}
             </section>
         </div>
 
         <div class="col-xl-4">
+            <section class="admin-panel mb-3" id="adminStaffPerformanceRanking">
+                <div class="admin-panel-header">
+                    <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                        <div><h2 class="h6 fw-bold mb-1"><i class="bi bi-trophy-fill text-warning me-2"></i>Performa Staff</h2><p class="text-body-secondary text-xs mb-0">Seluruh TW dan seluruh waktu · {{ staff_performance_highest|length }} staff aktif.</p></div>
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle">Semua TW</span>
+                    </div>
+                    <div class="admin-staff-rank-tabs" role="tablist" aria-label="Urutan performa staff">
+                        <button type="button" class="admin-staff-rank-tab active" data-staff-rank-tab="highest" role="tab" aria-selected="true"><i class="bi bi-graph-up-arrow me-1"></i>Tertinggi</button>
+                        <button type="button" class="admin-staff-rank-tab" data-staff-rank-tab="lowest" role="tab" aria-selected="false"><i class="bi bi-graph-down-arrow me-1"></i>Terendah</button>
+                    </div>
+                </div>
+                <div class="admin-panel-body">
+                    {% for order, rows, color in [('highest', staff_performance_highest, 'primary'), ('lowest', staff_performance_lowest, 'danger')] %}
+                    <div class="staff-rank-pane {% if order != 'highest' %}d-none{% endif %}" data-staff-rank-pane="{{ order }}">
+                        <div data-staff-rank-list>
+                            {% for staff in rows %}
+                            <div class="admin-staff-rank-row {% if loop.index > 10 %}d-none{% endif %}" data-staff-rank-row>
+                                <span class="admin-staff-rank-position bg-{{ color }}-subtle text-{{ color }}">#{{ staff.rank }}</span>
+                                <div class="flex-grow-1 min-w-0">
+                                    <button type="button"
+                                            class="btn btn-link p-0 d-block text-start text-truncate admin-staff-rank-name"
+                                            data-bs-toggle="modal" data-bs-target="#adminStaffStatsModal"
+                                            data-staff-name="{{ (staff.staff_name or staff.staff_email or 'Staff')|e }}"
+                                            data-staff-email="{{ (staff.staff_email or '-')|e }}"
+                                            data-staff-rank="{{ staff.rank }}"
+                                            data-staff-score="{{ staff.score }}"
+                                            data-staff-activities="{{ staff.validated_activities }}"
+                                            data-staff-approved-activities="{{ staff.approved_activities }}"
+                                            data-staff-revised-activities="{{ staff.revised_activities }}"
+                                            data-staff-vendors="{{ staff.vendor_decisions }}"
+                                            data-staff-verified-vendors="{{ staff.verified_vendors }}"
+                                            data-staff-revised-vendors="{{ staff.revised_vendors }}"
+                                            data-staff-rejected-vendors="{{ staff.rejected_vendors }}"
+                                            data-staff-reports="{{ staff.completed_reports }}"
+                                            data-staff-photos="{{ staff.uploaded_photos }}"
+                                            data-staff-supporting="{{ staff.supporting_actions }}"
+                                            data-staff-days="{{ staff.active_days }}"
+                                            data-staff-schools="{{ staff.handled_schools }}"
+                                            data-staff-first="{{ staff.first_action_at|jakarta('%d %b %Y %H:%M') if staff.first_action_at else '-' }}"
+                                            data-staff-last="{{ staff.last_action_at|jakarta('%d %b %Y %H:%M') if staff.last_action_at else '-' }}"
+                                            title="Lihat statistik {{ staff.staff_name or staff.staff_email or 'staff' }}">
+                                        {{ staff.staff_name or staff.staff_email or 'Staff' }}
+                                    </button>
+                                    <span class="text-body-secondary" style="font-size:.64rem">Kegiatan {{ staff.validated_activities }} · Vendor {{ staff.vendor_decisions }} · Laporan {{ staff.completed_reports }} · Foto {{ staff.uploaded_photos }}</span>
+                                </div>
+                                <span class="admin-staff-rank-score">{{ staff.score }}</span>
+                            </div>
+                            {% else %}
+                            <div class="text-center py-3 text-body-secondary small">Belum ada aktivitas staff.</div>
+                            {% endfor %}
+                        </div>
+                        {% if rows|length > 10 %}
+                        <button type="button" class="btn btn-sm btn-outline-{{ color }} w-100 mt-3" data-staff-rank-more>Muat lainnya</button>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </section>
+
             <section class="admin-panel mb-3">
                 <div class="admin-panel-header"><h2 class="h6 fw-bold mb-1"><i class="bi bi-exclamation-diamond text-warning me-2"></i>Perlu Tindak Lanjut</h2><p class="text-body-secondary text-xs mb-0">Item yang membutuhkan perhatian admin.</p></div>
                 <div class="admin-panel-body d-grid gap-2">
-                    <a href="{{ url_for('monev_bos.admin_analytics', metric='unreported', period_id=active_period.id) }}" target="_blank" rel="noopener" class="admin-attention-item"><span class="admin-attention-icon bg-secondary-subtle text-secondary"><i class="bi bi-building-exclamation"></i></span><span class="flex-grow-1"><strong class="small d-block">Belum Melapor</strong><span class="text-body-secondary text-xs">Sekolah tanpa laporan</span></span><strong>{{ dashboard_metrics.unreported_schools }}</strong><i class="bi bi-box-arrow-up-right text-body-secondary text-xs"></i></a>
+                    <a href="{{ url_for('monev_bos.admin_analytics', metric='unreported', period_id=period_selection) }}" target="_blank" rel="noopener" class="admin-attention-item"><span class="admin-attention-icon bg-secondary-subtle text-secondary"><i class="bi bi-building-exclamation"></i></span><span class="flex-grow-1"><strong class="small d-block">Belum Melapor</strong><span class="text-body-secondary text-xs">Sekolah tanpa laporan</span></span><strong>{{ dashboard_metrics.unreported_schools }}</strong><i class="bi bi-box-arrow-up-right text-body-secondary text-xs"></i></a>
                     <a href="{{ url_for('monev_bos.admin_edit_requests') }}" class="admin-attention-item"><span class="admin-attention-icon bg-warning-subtle text-warning"><i class="bi bi-pencil-square"></i></span><span class="flex-grow-1"><strong class="small d-block">Pengajuan Edit</strong><span class="text-body-secondary text-xs">Menunggu keputusan admin</span></span><strong>{{ overview.pending_edit_requests or 0 }}</strong></a>
                     <a href="{{ url_for('monev_bos.admin_vendors', status='pending') }}" class="admin-attention-item"><span class="admin-attention-icon bg-info-subtle text-info"><i class="bi bi-shop"></i></span><span class="flex-grow-1"><strong class="small d-block">Verifikasi Vendor</strong><span class="text-body-secondary text-xs">Vendor baru menunggu</span></span><strong>{{ overview.pending_vendors or 0 }}</strong></a>
-                    <a href="{{ url_for('monev_bos.admin_analytics', metric='revision', period_id=active_period.id) }}" target="_blank" rel="noopener" class="admin-attention-item"><span class="admin-attention-icon bg-danger-subtle text-danger"><i class="bi bi-arrow-counterclockwise"></i></span><span class="flex-grow-1"><strong class="small d-block">Laporan Revisi</strong><span class="text-body-secondary text-xs">Perlu diperbaiki sekolah</span></span><strong>{{ overview.revision_reports or 0 }}</strong><i class="bi bi-box-arrow-up-right text-body-secondary text-xs"></i></a>
+                    <a href="{{ url_for('monev_bos.admin_analytics', metric='revision', period_id=period_selection) }}" target="_blank" rel="noopener" class="admin-attention-item"><span class="admin-attention-icon bg-danger-subtle text-danger"><i class="bi bi-arrow-counterclockwise"></i></span><span class="flex-grow-1"><strong class="small d-block">Laporan Revisi</strong><span class="text-body-secondary text-xs">Perlu diperbaiki sekolah</span></span><strong>{{ overview.revision_reports or 0 }}</strong><i class="bi bi-box-arrow-up-right text-body-secondary text-xs"></i></a>
                 </div>
             </section>
 
@@ -338,6 +409,62 @@
         </div>
     </div>
 </div>
+<div class="modal fade" id="adminStaffStatsModal" tabindex="-1" aria-labelledby="adminStaffStatsTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary-subtle">
+                <div>
+                    <h5 class="modal-title fw-bold" id="adminStaffStatsTitle"><i class="bi bi-person-badge text-primary me-2"></i><span data-staff-stat="name">Statistik Staff</span></h5>
+                    <div class="small text-body-secondary" data-staff-stat="email">-</div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-2 mb-3">
+                    {% for key, label, color, icon in [
+                        ('rank', 'Rank Seluruh Waktu', 'warning', 'trophy-fill'),
+                        ('score', 'Total Skor', 'primary', 'speedometer2'),
+                        ('activities', 'Kegiatan', 'success', 'check2-square'),
+                        ('vendors', 'Vendor/Narasumber', 'info', 'person-vcard')
+                    ] %}
+                    <div class="col-6 col-md-3"><div class="admin-staff-stat-card h-100"><i class="bi bi-{{ icon }} text-{{ color }} d-block mb-2"></i><div class="admin-staff-stat-value" data-staff-stat="{{ key }}">0</div><div class="text-body-secondary text-xs mt-1">{{ label }}</div></div></div>
+                    {% endfor %}
+                </div>
+                <div class="border rounded-3 p-3 mb-2">
+                    <div class="small fw-bold mb-2">Rincian Kegiatan</div>
+                    <div class="d-flex flex-wrap gap-2">
+                        <span class="badge bg-success-subtle text-success border border-success-subtle">Sesuai <strong data-staff-stat="approvedActivities">0</strong></span>
+                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle">Revisi <strong data-staff-stat="revisedActivities">0</strong></span>
+                    </div>
+                </div>
+                <div class="border rounded-3 p-3 mb-3">
+                    <div class="small fw-bold mb-2">Rincian Vendor/Narasumber</div>
+                    <div class="d-flex flex-wrap gap-2">
+                        <span class="badge bg-success-subtle text-success border border-success-subtle">Memverifikasi <strong data-staff-stat="verifiedVendors">0</strong></span>
+                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle">Merevisi <strong data-staff-stat="revisedVendors">0</strong></span>
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Menolak <strong data-staff-stat="rejectedVendors">0</strong></span>
+                    </div>
+                </div>
+                <div class="row g-2 mb-3">
+                    {% for key, label, icon in [
+                        ('reports', 'Laporan Diselesaikan', 'file-earmark-check'),
+                        ('photos', 'Foto Diupload', 'camera'),
+                        ('supporting', 'Aksi Pendukung', 'tools'),
+                        ('days', 'Hari Aktif', 'calendar-check'),
+                        ('schools', 'Sekolah Ditangani', 'buildings')
+                    ] %}
+                    <div class="col-6 col-md"><div class="admin-staff-stat-card h-100"><i class="bi bi-{{ icon }} text-secondary d-block mb-1"></i><strong data-staff-stat="{{ key }}">0</strong><div class="text-body-secondary" style="font-size:.64rem">{{ label }}</div></div></div>
+                    {% endfor %}
+                </div>
+                <div class="d-flex justify-content-between gap-3 flex-wrap border-top pt-3 small">
+                    <div><span class="text-body-secondary d-block text-xs">Aktivitas Pertama</span><strong data-staff-stat="first">-</strong></div>
+                    <div class="text-md-end"><span class="text-body-secondary d-block text-xs">Aktivitas Terakhir</span><strong data-staff-stat="last">-</strong></div>
+                </div>
+            </div>
+            <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button></div>
+        </div>
+    </div>
+</div>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const modal = document.getElementById('adminActivityPhotoModal');
@@ -354,7 +481,66 @@ document.addEventListener('DOMContentLoaded', function () {
     modal.addEventListener('hidden.bs.modal', function () {
         document.getElementById('adminActivityPhotoImage').src = '';
     });
+
+    const staffStatsModal = document.getElementById('adminStaffStatsModal');
+    staffStatsModal.addEventListener('show.bs.modal', function (event) {
+        const button = event.relatedTarget;
+        if (!button) return;
+        const values = {
+            name: button.dataset.staffName || 'Staff',
+            email: button.dataset.staffEmail || '-',
+            rank: '#' + (button.dataset.staffRank || '-'),
+            score: button.dataset.staffScore || '0',
+            activities: button.dataset.staffActivities || '0',
+            approvedActivities: button.dataset.staffApprovedActivities || '0',
+            revisedActivities: button.dataset.staffRevisedActivities || '0',
+            vendors: button.dataset.staffVendors || '0',
+            verifiedVendors: button.dataset.staffVerifiedVendors || '0',
+            revisedVendors: button.dataset.staffRevisedVendors || '0',
+            rejectedVendors: button.dataset.staffRejectedVendors || '0',
+            reports: button.dataset.staffReports || '0',
+            photos: button.dataset.staffPhotos || '0',
+            supporting: button.dataset.staffSupporting || '0',
+            days: button.dataset.staffDays || '0',
+            schools: button.dataset.staffSchools || '0',
+            first: button.dataset.staffFirst || '-',
+            last: button.dataset.staffLast || '-'
+        };
+        Object.keys(values).forEach(function (key) {
+            const target = staffStatsModal.querySelector('[data-staff-stat="' + key + '"]');
+            if (target) target.textContent = values[key];
+        });
+    });
 });
 </script>
 {% endif %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const ranking = document.getElementById('adminStaffPerformanceRanking');
+    if (!ranking) return;
+
+    ranking.querySelectorAll('[data-staff-rank-tab]').forEach(function (tab) {
+        tab.addEventListener('click', function () {
+            const selected = tab.dataset.staffRankTab;
+            ranking.querySelectorAll('[data-staff-rank-tab]').forEach(function (item) {
+                const active = item === tab;
+                item.classList.toggle('active', active);
+                item.setAttribute('aria-selected', active ? 'true' : 'false');
+            });
+            ranking.querySelectorAll('[data-staff-rank-pane]').forEach(function (pane) {
+                pane.classList.toggle('d-none', pane.dataset.staffRankPane !== selected);
+            });
+        });
+    });
+
+    ranking.querySelectorAll('[data-staff-rank-more]').forEach(function (button) {
+        button.addEventListener('click', function () {
+            const pane = button.closest('[data-staff-rank-pane]');
+            const hiddenRows = Array.from(pane.querySelectorAll('[data-staff-rank-row].d-none'));
+            hiddenRows.slice(0, 10).forEach(function (row) { row.classList.remove('d-none'); });
+            if (hiddenRows.length <= 10) button.classList.add('d-none');
+        });
+    });
+});
+</script>
 {% endblock %}

@@ -79,6 +79,7 @@ ADMIN_PERFORMANCE_FEATURE_LABELS: Dict[str, str] = {
     "call_center": "Call Center",
     "monev_bos": "Monev BOS/BOP",
     "laporan": "Laporan",
+    "meeting_attendance": "Absensi Meeting",
 }
 
 

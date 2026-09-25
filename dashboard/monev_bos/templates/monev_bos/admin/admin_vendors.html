@@ -160,6 +160,7 @@
     }
 </style>
 
+<div id="vendorAdminAjaxRoot">
 <div class="container-fluid py-4 vendor-admin-container">
     <!-- Header -->
     <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3 vendor-page-header">
@@ -178,9 +179,9 @@
 
     <!-- Stats Summary Cards -->
     <div class="row g-3 mb-4 vendor-stat-row">
-        {% set total_pending = vendors|selectattr('status', 'equalto', 'pending')|list|length %}
-        {% set total_verified = vendors|selectattr('status', 'equalto', 'verified')|list|length %}
-        {% set total_rejected = vendors|selectattr('status', 'equalto', 'rejected')|list|length %}
+        {% set total_pending = vendor_counts.pending %}
+        {% set total_verified = vendor_counts.verified %}
+        {% set total_rejected = vendor_counts.rejected %}
         
         <div class="col-4 col-md-4">
             <div class="card border-0 shadow-sm border-start border-4 border-warning h-100 vendor-stat-card">
@@ -267,7 +268,7 @@
             <div class="d-flex flex-wrap align-items-center gap-2 vendor-status-filters">
                 <span class="fw-semibold me-2 small text-muted vendor-filter-label">Filter Status:</span>
                 <a href="{{ url_for('monev_bos.admin_vendors', vendor_type=vendor_type_filter, school_id=school_id_filter, q=search_query) }}" class="btn btn-sm {% if not status_filter %}btn-primary{% else %}btn-outline-secondary{% endif %} rounded-pill px-3">
-                    Semua ({{ vendors|length }})
+                    Semua ({{ vendor_counts.total }})
                 </a>
                 <a href="{{ url_for('monev_bos.admin_vendors', vendor_type=vendor_type_filter, school_id=school_id_filter, status='pending', q=search_query) }}" class="btn btn-sm {% if status_filter == 'pending' %}btn-warning text-dark{% else %}btn-outline-warning text-dark{% endif %} rounded-pill px-3">
                     <i class="bi bi-clock-history me-1"></i>Menunggu
@@ -284,7 +285,7 @@
                 {% if duplicate_scan %}
                 <div class="alert alert-danger d-flex flex-wrap align-items-center justify-content-between gap-2 mb-0 py-2 px-3">
                     <div class="small">
-                        <strong><i class="bi bi-upc-scan me-1"></i>Hasil scan: {{ vendors|length }} data ganda terverifikasi</strong>
+                        <strong><i class="bi bi-upc-scan me-1"></i>Hasil scan: {{ pagination.total }} data ganda terverifikasi</strong>
                         <span class="d-block text-body-secondary">Setiap data di bawah memiliki minimal satu pasangan terverifikasi dengan nama atau identitas yang sama.</span>
                     </div>
                     <a href="{{ url_for('monev_bos.admin_vendors', vendor_type=vendor_type_filter, status='verified', school_id=school_id_filter, q=search_query) }}" class="btn btn-sm btn-outline-secondary fw-bold">
@@ -294,7 +295,7 @@
                 {% elif incomplete_scan %}
                 <div class="alert alert-warning d-flex flex-wrap align-items-center justify-content-between gap-2 mb-0 py-2 px-3">
                     <div class="small">
-                        <strong><i class="bi bi-clipboard2-pulse me-1"></i>Hasil scan: {{ vendors|length }} data terverifikasi belum lengkap</strong>
+                        <strong><i class="bi bi-clipboard2-pulse me-1"></i>Hasil scan: {{ pagination.total }} data terverifikasi belum lengkap</strong>
                         <span class="d-block text-body-secondary">Kolom yang masih kosong ditandai pada setiap vendor/narasumber di bawah.</span>
                     </div>
                     <a href="{{ url_for('monev_bos.admin_vendors', vendor_type=vendor_type_filter, status='verified', school_id=school_id_filter, q=search_query) }}" class="btn btn-sm btn-outline-secondary fw-bold">
@@ -337,7 +338,7 @@
                         {% if vendors %}
                             {% for v in vendors %}
                             <tr>
-                                <td class="ps-4 fw-semibold text-muted">{{ loop.index }}</td>
+                                <td class="ps-4 fw-semibold text-muted">{{ (pagination.page - 1) * pagination.per_page + loop.index }}</td>
                                 <td>
                                     <div class="fw-bold text-dark">{{ v.school_name }}</div>
                                     <div class="small text-muted">NPSN: {{ v.npsn or '-' }}</div>
@@ -487,7 +488,7 @@
                                     <div class="modal fade text-start" id="rejectVendorModal{{ v.id }}" tabindex="-1" aria-hidden="true">
                                         <div class="modal-dialog modal-dialog-centered">
                                             <div class="modal-content">
-                                                <form method="POST" action="{{ url_for('monev_bos.admin_vendors', vendor_type=vendor_type_filter, school_id=school_id_filter, status=status_filter, q=search_query) }}">
+                                                <form method="POST" action="{{ url_for('monev_bos.admin_vendors', vendor_type=vendor_type_filter, school_id=school_id_filter, status=status_filter, q=search_query, page=pagination.page) }}">
                                                     <input type="hidden" name="action" value="reject_vendor">
                                                     <input type="hidden" name="vendor_id" value="{{ v.id }}">
                                                     <div class="modal-header">
@@ -637,7 +638,7 @@
         <div class="modal fade" id="rejectVendorMobileModal{{ v.id }}" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered mx-3">
                 <div class="modal-content">
-                    <form method="POST" action="{{ url_for('monev_bos.admin_vendors', vendor_type=vendor_type_filter, school_id=school_id_filter, status=status_filter, q=search_query) }}">
+                    <form method="POST" action="{{ url_for('monev_bos.admin_vendors', vendor_type=vendor_type_filter, school_id=school_id_filter, status=status_filter, q=search_query, page=pagination.page) }}">
                         <input type="hidden" name="action" value="reject_vendor">
                         <input type="hidden" name="vendor_id" value="{{ v.id }}">
                         <div class="modal-header py-2 px-3">
@@ -661,13 +662,51 @@
         <div class="text-center text-body-secondary py-4 small">Tidak ada pendaftaran {{ 'narasumber' if vendor_type_filter == 'narsum' else 'vendor' }} dengan filter ini.</div>
         {% endfor %}
     </div>
+
+    {% if pagination.total %}
+    <div class="d-flex flex-column flex-md-row align-items-center justify-content-between gap-3 mt-4 px-1">
+        <div class="small text-body-secondary">
+            Menampilkan <strong>{{ pagination.start }}–{{ pagination.end }}</strong>
+            dari <strong>{{ pagination.total }}</strong> data · 20 data per halaman
+        </div>
+        {% if pagination.pages > 1 %}
+        <nav aria-label="Navigasi halaman vendor">
+            <ul class="pagination pagination-sm mb-0 flex-wrap justify-content-center">
+                <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('monev_bos.admin_vendors', vendor_type=vendor_type_filter, status=status_filter, school_id=school_id_filter, q=search_query, scan=scan_mode, page=pagination.prev_num) if pagination.has_prev else '#' }}" aria-label="Halaman sebelumnya">
+                        <i class="bi bi-chevron-left"></i><span class="d-none d-sm-inline ms-1">Sebelumnya</span>
+                    </a>
+                </li>
+                {% if pagination.page_numbers.start > 1 %}
+                <li class="page-item"><a class="page-link" href="{{ url_for('monev_bos.admin_vendors', vendor_type=vendor_type_filter, status=status_filter, school_id=school_id_filter, q=search_query, scan=scan_mode, page=1) }}">1</a></li>
+                {% if pagination.page_numbers.start > 2 %}<li class="page-item disabled"><span class="page-link">…</span></li>{% endif %}
+                {% endif %}
+                {% for page_number in pagination.page_numbers %}
+                <li class="page-item {% if page_number == pagination.page %}active{% endif %}">
+                    <a class="page-link" href="{{ url_for('monev_bos.admin_vendors', vendor_type=vendor_type_filter, status=status_filter, school_id=school_id_filter, q=search_query, scan=scan_mode, page=page_number) }}" {% if page_number == pagination.page %}aria-current="page"{% endif %}>{{ page_number }}</a>
+                </li>
+                {% endfor %}
+                {% if pagination.page_numbers.stop - 1 < pagination.pages %}
+                {% if pagination.page_numbers.stop - 1 < pagination.pages - 1 %}<li class="page-item disabled"><span class="page-link">…</span></li>{% endif %}
+                <li class="page-item"><a class="page-link" href="{{ url_for('monev_bos.admin_vendors', vendor_type=vendor_type_filter, status=status_filter, school_id=school_id_filter, q=search_query, scan=scan_mode, page=pagination.pages) }}">{{ pagination.pages }}</a></li>
+                {% endif %}
+                <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('monev_bos.admin_vendors', vendor_type=vendor_type_filter, status=status_filter, school_id=school_id_filter, q=search_query, scan=scan_mode, page=pagination.next_num) if pagination.has_next else '#' }}" aria-label="Halaman berikutnya">
+                        <span class="d-none d-sm-inline me-1">Berikutnya</span><i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+    {% endif %}
 </div>
 
 {% for v in vendors %}
 {% set review_checks = v.verification_checklist or {} %}
 <div class="modal fade vendor-review-modal" id="reviewVendorModal{{ v.id }}" tabindex="-1" aria-labelledby="reviewVendorModalLabel{{ v.id }}" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable vendor-review-dialog">
-        <form method="POST" action="{{ url_for('monev_bos.admin_vendors', vendor_type=vendor_type_filter, school_id=school_id_filter, status=status_filter, q=search_query, scan=scan_mode) }}" class="modal-content" id="vendorReviewForm{{ v.id }}">
+        <form method="POST" action="{{ url_for('monev_bos.admin_vendors', vendor_type=vendor_type_filter, school_id=school_id_filter, status=status_filter, q=search_query, scan=scan_mode, page=pagination.page) }}" class="modal-content" id="vendorReviewForm{{ v.id }}">
             <input type="hidden" name="action" value="{{ 'revise_vendor' if v.status == 'verified' else 'verify_vendor' }}">
             <input type="hidden" name="vendor_id" value="{{ v.id }}">
             <div class="modal-header {{ 'bg-danger-subtle' if v.verified_duplicate_matches and v.status != 'verified' else 'bg-primary-subtle' }}">
@@ -879,7 +918,7 @@
 <div class="modal fade" id="manageBanksModal" tabindex="-1" aria-labelledby="manageBanksModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <form method="POST" action="{{ url_for('monev_bos.admin_vendors', vendor_type=vendor_type_filter, school_id=school_id_filter, status=status_filter, q=search_query) }}">
+            <form method="POST" action="{{ url_for('monev_bos.admin_vendors', vendor_type=vendor_type_filter, school_id=school_id_filter, status=status_filter, q=search_query, page=pagination.page) }}">
                 <input type="hidden" name="action" value="update_master_banks">
                 <div class="modal-header">
                     <h5 class="modal-title fw-bold" id="manageBanksModalLabel">
@@ -900,36 +939,153 @@
     </div>
 </div>
 {% endif %}
+</div>
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css">
 <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const schoolSelect = document.getElementById('vendorSchoolFilter');
-    if (!schoolSelect) return;
+    const ajaxVendorActions = new Set([
+        'verify_vendor',
+        'reject_vendor',
+        'revise_vendor',
+        'update_master_banks'
+    ]);
 
-    function submitSchoolFilter() {
-        if (schoolSelect.form) schoolSelect.form.submit();
+    function initializeVendorSchoolSelect() {
+        const schoolSelect = document.getElementById('vendorSchoolFilter');
+        if (!schoolSelect || schoolSelect.tomselect) return;
+
+        function submitSchoolFilter() {
+            if (schoolSelect.form) schoolSelect.form.submit();
+        }
+
+        if (!window.TomSelect) {
+            schoolSelect.addEventListener('change', submitSchoolFilter);
+            return;
+        }
+
+        new TomSelect(schoolSelect, {
+            create: false,
+            allowEmptyOption: true,
+            placeholder: schoolSelect.dataset.placeholder,
+            searchField: ['text'],
+            plugins: ['clear_button'],
+            onChange: submitSchoolFilter,
+            render: {
+                no_results: function () {
+                    return '<div class="no-results p-2 text-body-secondary text-center small">Sekolah atau NPSN tidak ditemukan</div>';
+                }
+            }
+        });
     }
 
-    if (!window.TomSelect) {
-        schoolSelect.addEventListener('change', submitSchoolFilter);
-        return;
+    function showVendorActionMessage(message, type) {
+        let notice = document.getElementById('vendorAjaxNotice');
+        if (!notice) {
+            notice = document.createElement('div');
+            notice.id = 'vendorAjaxNotice';
+            notice.className = 'alert position-fixed start-50 translate-middle-x shadow fw-semibold';
+            notice.style.cssText = 'top: 80px; z-index: 1090; width: min(92vw, 560px);';
+            notice.setAttribute('role', 'status');
+            document.body.appendChild(notice);
+        }
+        notice.className = 'alert alert-' + (type || 'success') + ' position-fixed start-50 translate-middle-x shadow fw-semibold';
+        notice.textContent = message;
+        notice.classList.remove('d-none');
+        window.clearTimeout(notice._hideTimer);
+        notice._hideTimer = window.setTimeout(function () {
+            notice.classList.add('d-none');
+        }, 3500);
     }
 
-    new TomSelect(schoolSelect, {
-        create: false,
-        allowEmptyOption: true,
-        placeholder: schoolSelect.dataset.placeholder,
-        searchField: ['text'],
-        plugins: ['clear_button'],
-        onChange: submitSchoolFilter,
-        render: {
-            no_results: function () {
-                return '<div class="no-results p-2 text-body-secondary text-center small">Sekolah atau NPSN tidak ditemukan</div>';
+    function vendorSuccessMessage(action) {
+        const messages = {
+            verify_vendor: 'Vendor/narasumber berhasil diverifikasi.',
+            reject_vendor: 'Vendor/narasumber berhasil ditolak.',
+            revise_vendor: 'Data vendor/narasumber berhasil direvisi.',
+            update_master_banks: 'Daftar pilihan bank berhasil diperbarui.'
+        };
+        return messages[action] || 'Perubahan berhasil disimpan.';
+    }
+
+    function clearOpenModalState() {
+        document.querySelectorAll('.modal-backdrop').forEach(function (backdrop) {
+            backdrop.remove();
+        });
+        document.body.classList.remove('modal-open');
+        document.body.style.removeProperty('overflow');
+        document.body.style.removeProperty('padding-right');
+    }
+
+    document.addEventListener('submit', async function (event) {
+        const form = event.target;
+        if (!(form instanceof HTMLFormElement)) return;
+        const actionInput = form.querySelector('input[name="action"]');
+        const action = actionInput ? actionInput.value : '';
+        if (!ajaxVendorActions.has(action)) return;
+
+        event.preventDefault();
+        const submitButton = event.submitter || form.querySelector('button[type="submit"]');
+        const originalButtonHtml = submitButton ? submitButton.innerHTML : '';
+        const scrollX = window.scrollX;
+        const scrollY = window.scrollY;
+
+        if (submitButton) {
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>Menyimpan...';
+        }
+
+        try {
+            // The form contains an input named "action". Browser named-property
+            // access can therefore make form.action resolve to that input instead
+            // of the form URL, producing a request to "[object HTMLInputElement]".
+            const submitUrl = form.getAttribute('action') || window.location.href;
+            const response = await fetch(submitUrl, {
+                method: 'POST',
+                body: new FormData(form),
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'text/html'
+                },
+                credentials: 'same-origin'
+            });
+            if (!response.ok) throw new Error('Server mengembalikan status ' + response.status + '.');
+
+            const html = await response.text();
+            const parsed = new DOMParser().parseFromString(html, 'text/html');
+            const errorItem = parsed.querySelector('#flash-messages-data .flash-item');
+            if (errorItem) {
+                throw new Error(errorItem.dataset.message || 'Perubahan tidak dapat disimpan.');
+            }
+
+            const currentRoot = document.getElementById('vendorAdminAjaxRoot');
+            const nextRoot = parsed.getElementById('vendorAdminAjaxRoot');
+            if (!currentRoot || !nextRoot) {
+                throw new Error('Tampilan vendor terbaru tidak ditemukan.');
+            }
+
+            const activeModal = form.closest('.modal');
+            if (activeModal && window.bootstrap && bootstrap.Modal) {
+                const modalInstance = bootstrap.Modal.getInstance(activeModal);
+                if (modalInstance) modalInstance.hide();
+            }
+            currentRoot.replaceWith(nextRoot);
+            clearOpenModalState();
+            initializeVendorSchoolSelect();
+            window.scrollTo(scrollX, scrollY);
+            showVendorActionMessage(vendorSuccessMessage(action), 'success');
+        } catch (error) {
+            showVendorActionMessage(error.message || 'Perubahan gagal disimpan.', 'danger');
+        } finally {
+            if (submitButton && submitButton.isConnected) {
+                submitButton.disabled = false;
+                submitButton.innerHTML = originalButtonHtml;
             }
         }
     });
+
+    initializeVendorSchoolSelect();
 });
 </script>
 {% endblock %}

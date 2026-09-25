@@ -1403,6 +1403,7 @@ _CC_CONVERSATIONS_SQL = """
 CREATE TABLE IF NOT EXISTS cc_conversations (
     id SERIAL PRIMARY KEY,
     wa_user_id TEXT UNIQUE NOT NULL,
+    wa_jid TEXT,
     display_name TEXT,
     status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open','closed')),
     last_message_at TIMESTAMPTZ,
@@ -1413,8 +1414,10 @@ CREATE TABLE IF NOT EXISTS cc_conversations (
 """
 
 _CC_CONVERSATIONS_INDEX_SQL = """
+ALTER TABLE cc_conversations ADD COLUMN IF NOT EXISTS wa_jid TEXT;
 CREATE INDEX IF NOT EXISTS idx_cc_conversations_status ON cc_conversations (status);
 CREATE INDEX IF NOT EXISTS idx_cc_conversations_last_msg ON cc_conversations (last_message_at DESC NULLS LAST);
+CREATE INDEX IF NOT EXISTS idx_cc_conversations_wa_jid ON cc_conversations (wa_jid) WHERE wa_jid IS NOT NULL;
 """
 
 _CC_WA_ROUTING_SQL = """
@@ -1591,6 +1594,43 @@ CREATE INDEX IF NOT EXISTS idx_public_api_keys_key ON public_api_keys (api_key);
 CREATE INDEX IF NOT EXISTS idx_public_api_keys_active ON public_api_keys (is_active);
 """
 
+_ADMIN_MEETINGS_SQL = """
+CREATE TABLE IF NOT EXISTS admin_meetings (
+    id SERIAL PRIMARY KEY,
+    title TEXT NOT NULL,
+    meeting_date DATE NOT NULL,
+    start_time TIME,
+    end_time TIME,
+    location TEXT,
+    agenda TEXT,
+    notulen TEXT,
+    photo_path TEXT,
+    status TEXT NOT NULL DEFAULT 'scheduled'
+        CHECK (status IN ('scheduled', 'completed', 'cancelled')),
+    created_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_admin_meetings_date
+    ON admin_meetings (meeting_date DESC, start_time DESC NULLS LAST);
+"""
+
+_ADMIN_MEETING_ATTENDANCE_SQL = """
+CREATE TABLE IF NOT EXISTS admin_meeting_attendance (
+    id SERIAL PRIMARY KEY,
+    meeting_id INTEGER NOT NULL REFERENCES admin_meetings(id) ON DELETE CASCADE,
+    admin_user_id INTEGER NOT NULL REFERENCES dashboard_users(id) ON DELETE CASCADE,
+    attendance_status TEXT NOT NULL DEFAULT 'unrecorded'
+        CHECK (attendance_status IN ('present', 'late', 'permission', 'sick', 'absent', 'unrecorded')),
+    notes TEXT,
+    recorded_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    recorded_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (meeting_id, admin_user_id)
+);
+CREATE INDEX IF NOT EXISTS idx_admin_meeting_attendance_meeting
+    ON admin_meeting_attendance (meeting_id, attendance_status);
+"""
+
 def ensure_dashboard_schema() -> None:
     """Create core dashboard tables when they do not yet exist."""
     statements: Iterable[str] = (
@@ -1598,6 +1638,10 @@ def ensure_dashboard_schema() -> None:
         _SYSTEM_SETTINGS_SQL,
         _PUBLIC_API_KEYS_SQL,
         _PUBLIC_API_KEYS_INDEX_SQL,
+        _ADMIN_MEETINGS_SQL,
+        "ALTER TABLE admin_meetings ADD COLUMN IF NOT EXISTS notulen TEXT",
+        "ALTER TABLE admin_meetings ADD COLUMN IF NOT EXISTS photo_path TEXT",
+        _ADMIN_MEETING_ATTENDANCE_SQL,
         _SCHOOL_CLASSES_SQL,
         _STUDENTS_SQL,
         _STUDENTS_CLASS_INDEX_SQL,
@@ -2378,6 +2422,9 @@ CREATE TABLE IF NOT EXISTS monev_bos_activities (
     item_quantity INTEGER,
     status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'in_review', 'valid', 'invalid')),
     audit_notes TEXT,
+    needs_item_check BOOLEAN NOT NULL DEFAULT FALSE,
+    item_check_marked_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    item_check_marked_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -2709,6 +2756,9 @@ def ensure_monev_bos_schema() -> None:
         "ALTER TABLE monev_bos_activities ADD COLUMN IF NOT EXISTS expense_type_id INTEGER REFERENCES monev_bos_expense_types(id) ON DELETE SET NULL;",
         "ALTER TABLE monev_bos_activities ADD COLUMN IF NOT EXISTS account_code TEXT;",
         "ALTER TABLE monev_bos_activities ADD COLUMN IF NOT EXISTS account_code_id INTEGER REFERENCES monev_bos_account_codes(id) ON DELETE SET NULL;",
+        "ALTER TABLE monev_bos_activities ADD COLUMN IF NOT EXISTS needs_item_check BOOLEAN NOT NULL DEFAULT FALSE;",
+        "ALTER TABLE monev_bos_activities ADD COLUMN IF NOT EXISTS item_check_marked_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL;",
+        "ALTER TABLE monev_bos_activities ADD COLUMN IF NOT EXISTS item_check_marked_at TIMESTAMPTZ;",
         "UPDATE monev_bos_activities a SET account_code_id = ac.id FROM monev_bos_account_codes ac WHERE a.account_code_id IS NULL AND a.account_code = ac.code;",
         "ALTER TABLE monev_bos_activities DROP CONSTRAINT IF EXISTS monev_bos_activities_status_check;",
         "ALTER TABLE monev_bos_activities ADD CONSTRAINT monev_bos_activities_status_check CHECK (status IN ('pending', 'in_review', 'valid', 'invalid'));",

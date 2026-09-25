@@ -478,6 +478,18 @@ def _normalize_wa_user_id(raw_user_id: str) -> str:
     return "".join(ch for ch in str(raw_user_id or "") if ch.isdigit())
 
 
+def _normalize_wa_jid(raw_jid: Optional[str]) -> Optional[str]:
+    clean = str(raw_jid or "").strip().lower()
+    if "@" not in clean:
+        return None
+    user, server = clean.rsplit("@", 1)
+    if not user.isdigit() or server not in {"lid", "c.us", "s.whatsapp.net"}:
+        return None
+    if server == "s.whatsapp.net":
+        server = "c.us"
+    return f"{user}@{server}"
+
+
 def _to_bool_flag(raw_value) -> bool:
     return str(raw_value or "").strip().lower() in {"1", "true", "yes", "on"}
 
@@ -896,6 +908,7 @@ def api_callcenter_inbound() -> Response:
 
     data = request.get_json(silent=True) or {}
     raw_user_id = _normalize_wa_user_id(str(data.get("user_id") or ""))
+    wa_jid = _normalize_wa_jid(data.get("wa_jid"))
     if not raw_user_id:
         return jsonify({"error": "user_id required"}), 400
     bridge_key = normalize_cc_bridge_key(data.get("bridge_key"))
@@ -962,7 +975,9 @@ def api_callcenter_inbound() -> Response:
         if route_mode == "ai":
             # Keep AI traffic visible in Call Center inbox as well.
             conv = upsert_cc_conversation(
-                wa_user_id=conversation_user_key, display_name=username
+                wa_user_id=conversation_user_key,
+                display_name=username,
+                wa_jid=wa_jid,
             )
             inbound_msg = save_cc_message(
                 conversation_id=conv["id"],
@@ -986,7 +1001,7 @@ def api_callcenter_inbound() -> Response:
                 )
 
             ai_result = _dispatch_to_ai_whatsapp(
-                raw_user_id=raw_user_id,
+                raw_user_id=wa_jid or raw_user_id,
                 username=username,
                 message=message,
                 bridge_key=bridge_key,
@@ -1011,7 +1026,9 @@ def api_callcenter_inbound() -> Response:
             return jsonify(ai_result), http_code
 
         conv = upsert_cc_conversation(
-            wa_user_id=conversation_user_key, display_name=username
+            wa_user_id=conversation_user_key,
+            display_name=username,
+            wa_jid=wa_jid,
         )
         msg = save_cc_message(
             conversation_id=conv["id"],
@@ -1070,6 +1087,7 @@ def api_callcenter_import_history() -> Response:
                 continue
 
             raw_user_id = _normalize_wa_user_id(str(item.get("user_id") or ""))
+            wa_jid = _normalize_wa_jid(item.get("wa_jid"))
             bridge_key = normalize_cc_bridge_key(
                 item.get("bridge_key") or request_bridge_key
             )
@@ -1118,6 +1136,7 @@ def api_callcenter_import_history() -> Response:
                 wa_user_id=conversation_user_key,
                 display_name=username,
                 last_message_at=created_at,
+                wa_jid=wa_jid,
             )
             ensure_cc_wa_routing_contact(
                 raw_user_id,
@@ -1459,7 +1478,7 @@ def api_send() -> Response:
 
     # Send via WA bridge HTTP API
     result = _send_via_bridge(
-        conv.get("wa_user_id_raw") or conv["wa_user_id"],
+        conv.get("wa_jid") or conv.get("wa_user_id_raw") or conv["wa_user_id"],
         outbound_text,
         media=bridge_media,
         bridge_key=conv.get("bridge_key"),

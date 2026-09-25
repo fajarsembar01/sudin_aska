@@ -9,6 +9,7 @@
     'ANNUL_SCHOOL_PHOTO': 'Anulir foto sekolah',
     'RESTORE_SCHOOL_PHOTO': 'Pulihkan foto sekolah',
     'DELETE_PHOTO': 'Hapus foto staff',
+    'REPLACE_VENDOR': 'Ganti vendor kegiatan',
     'VERIFY_APPROVE': 'Verifikasi vendor/narasumber',
     'VERIFY_REJECT': 'Tolak vendor/narasumber'
 } %}
@@ -26,6 +27,9 @@
     .performance-points-popover { --bs-popover-max-width: min(440px, calc(100vw - 24px)); }
     .performance-point-items { max-height: 340px; overflow-y: auto; min-width: min(360px, calc(100vw - 72px)); }
     .performance-point-item + .performance-point-item { border-top: 1px solid var(--bs-border-color); }
+    .performance-detail-summary { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid var(--bs-border-color); border-radius: 8px; background: var(--bs-tertiary-bg); font-size: .78rem; white-space: nowrap; }
+    .performance-detail-summary-item { display: inline-flex; align-items: center; gap: 4px; }
+    .performance-detail-summary-item:not(.d-none) + .performance-detail-summary-item:not(.d-none)::before { content: "·"; color: var(--bs-secondary-color); margin-right: 4px; }
     @media (max-width: 767.98px) {
         .staff-performance-page { padding-left: 10px !important; padding-right: 10px !important; }
         .staff-performance-hero { border-radius: 10px; }
@@ -195,6 +199,13 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
             </div>
             <div class="modal-body">
+                <div id="staffPerformanceDetailSummary" class="performance-detail-summary mb-3 d-none">
+                    <span class="performance-detail-summary-item text-body-secondary d-none" data-performance-summary-item="approved">Sesuai <strong class="text-success" data-performance-summary="approved">0</strong></span>
+                    <span class="performance-detail-summary-item text-body-secondary d-none" data-performance-summary-item="revision">Revisi <strong class="text-warning" data-performance-summary="revision">0</strong></span>
+                    <span class="performance-detail-summary-item text-body-secondary d-none" data-performance-summary-item="verified">Memverifikasi <strong class="text-success" data-performance-summary="verified">0</strong></span>
+                    <span class="performance-detail-summary-item text-body-secondary d-none" data-performance-summary-item="rejected">Menolak <strong class="text-danger" data-performance-summary="rejected">0</strong></span>
+                    <span class="performance-detail-summary-item text-body-secondary d-none" data-performance-summary-item="revised">Merevisi <strong class="text-warning" data-performance-summary="revised">0</strong></span>
+                </div>
                 <div id="staffPerformanceDetailList" class="performance-point-items"></div>
                 <div id="staffPerformanceDetailStatus" class="small text-body-secondary py-3 text-center"></div>
                 <button type="button" class="btn btn-outline-primary btn-sm w-100 d-none" id="staffPerformanceDetailMore">Muat lainnya</button>
@@ -212,6 +223,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const list = document.getElementById('staffPerformanceDetailList');
     const status = document.getElementById('staffPerformanceDetailStatus');
     const moreButton = document.getElementById('staffPerformanceDetailMore');
+    const detailSummary = document.getElementById('staffPerformanceDetailSummary');
     let baseUrl = '';
     let nextPage = 1;
     let loading = false;
@@ -251,7 +263,20 @@ document.addEventListener('DOMContentLoaded', function () {
             const response = await fetch(url.toString(), {headers: {'Accept': 'application/json'}});
             const payload = await response.json();
             if (!response.ok || !payload.success) throw new Error(payload.message || 'Rincian gagal dimuat.');
-            if (reset) list.replaceChildren();
+            if (reset) {
+                list.replaceChildren();
+                const summary = payload.summary;
+                detailSummary.classList.toggle('d-none', !summary);
+                if (summary) {
+                    detailSummary.querySelectorAll('[data-performance-summary-item]').forEach(function (item) {
+                        const key = item.dataset.performanceSummaryItem;
+                        item.classList.toggle('d-none', !Object.prototype.hasOwnProperty.call(summary, key));
+                    });
+                    detailSummary.querySelectorAll('[data-performance-summary]').forEach(function (element) {
+                        element.textContent = String(summary[element.dataset.performanceSummary] || 0);
+                    });
+                }
+            }
             const startNumber = (payload.page - 1) * payload.page_size;
             payload.items.forEach(function (item, index) { addItem(item, startNumber + index + 1); });
             nextPage = payload.page + 1;
@@ -271,6 +296,7 @@ document.addEventListener('DOMContentLoaded', function () {
             baseUrl = trigger.dataset.performanceDetailUrl || '';
             nextPage = 1;
             list.replaceChildren();
+            detailSummary.classList.add('d-none');
             moreButton.classList.add('d-none');
             title.textContent = trigger.dataset.performanceDetailTitle || 'Rincian poin';
             modal.show();

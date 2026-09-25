@@ -1414,6 +1414,7 @@ def create_app() -> Flask:
 
         data = request.get_json(silent=True) or {}
         raw_user_id = str(data.get("user_id") or "").strip()
+        wa_jid = str(data.get("wa_jid") or "").strip() or None
         if not raw_user_id:
             return jsonify({"error": "user_id required"}), 400
 
@@ -1458,7 +1459,11 @@ def create_app() -> Flask:
             if not message:
                 return jsonify({"error": "message required"}), 400
 
-            conv = upsert_cc_conversation(wa_user_id=raw_user_id, display_name=username)
+            conv = upsert_cc_conversation(
+                wa_user_id=raw_user_id,
+                display_name=username,
+                wa_jid=wa_jid,
+            )
             msg = save_cc_message(
                 conversation_id=conv["id"],
                 direction="inbound",
@@ -1532,6 +1537,7 @@ def create_app() -> Flask:
                     continue
 
                 raw_user_id = str(item.get("user_id") or "").strip()
+                wa_jid = str(item.get("wa_jid") or "").strip() or None
                 message = str(item.get("message") or "").strip()
                 direction = str(item.get("direction") or "inbound").strip().lower()
                 if not raw_user_id or direction not in {"inbound", "outbound"}:
@@ -1573,6 +1579,7 @@ def create_app() -> Flask:
                     wa_user_id=raw_user_id,
                     display_name=username,
                     last_message_at=created_at,
+                    wa_jid=wa_jid,
                 )
                 if not conv:
                     skipped += 1

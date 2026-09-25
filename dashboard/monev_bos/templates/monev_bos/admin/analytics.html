@@ -46,9 +46,9 @@
             <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
                 <div>
                     <div class="d-flex align-items-center gap-2 mb-2">
-                        <a href="{{ url_for('monev_bos.admin_dashboard', period_id=active_period.id) }}" class="btn btn-sm btn-light text-primary analytics-no-print" title="Kembali ke dashboard"><i class="bi bi-arrow-left"></i></a>
-                        <span class="badge border border-light border-opacity-25 bg-light bg-opacity-10 text-white">{{ active_period.year }} · TW {{ active_period.tw }}</span>
-                        {% if active_period.is_active %}<span class="badge bg-success">Aktif</span>{% endif %}
+                        <a href="{{ url_for('monev_bos.admin_dashboard', period_id=period_selection) }}" class="btn btn-sm btn-light text-primary analytics-no-print" title="Kembali ke dashboard"><i class="bi bi-arrow-left"></i></a>
+                        <span class="badge border border-light border-opacity-25 bg-light bg-opacity-10 text-white">{{ 'Seluruh Periode' if all_periods else (active_period.year ~ ' · TW ' ~ active_period.tw) }}</span>
+                        {% if not all_periods and active_period.is_active %}<span class="badge bg-success">Aktif</span>{% endif %}
                     </div>
                     <h1 class="h3 fw-bold text-white mb-1">Analitik {{ metric_config[0] }}{% if selected_team %} · {{ selected_team.team_name }}{% endif %}</h1>
                     <p class="text-white-50 small mb-0">{{ metric_config[1] }}{% if selected_team %} Data dibatasi untuk sekolah penugasan {{ selected_team.team_name }}.{% endif %}</p>
@@ -57,7 +57,8 @@
                     <form method="GET" action="{{ url_for('monev_bos.admin_analytics', metric=metric) }}">
                         <label for="analyticsPeriod" class="form-label text-white-50 text-xs fw-bold mb-1">Ganti Periode</label>
                         <select id="analyticsPeriod" name="period_id" class="form-select form-select-sm" onchange="this.form.submit()" style="min-width:180px">
-                            {% for period in periods %}<option value="{{ period.id }}" {% if period.id == active_period.id %}selected{% endif %}>{{ period.year }} · TW {{ period.tw }}{% if period.is_active %} — Aktif{% endif %}</option>{% endfor %}
+                            <option value="all" {% if all_periods %}selected{% endif %}>Seluruh Periode</option>
+                            {% for period in periods %}<option value="{{ period.id }}" {% if not all_periods and period.id == active_period.id %}selected{% endif %}>{{ period.year }} · TW {{ period.tw }}{% if period.is_active %} — Aktif{% endif %}</option>{% endfor %}
                         </select>
                     </form>
                     <button type="button" class="btn btn-sm btn-light text-primary" onclick="window.print()" title="Cetak analitik"><i class="bi bi-printer"></i></button>
@@ -70,11 +71,11 @@
         <div class="analytics-panel-body">
             <div class="d-flex gap-2 overflow-auto pb-2">
                 {% for metric_key, config in metric_configs.items() %}
-                <a href="{{ url_for('monev_bos.admin_analytics', metric=metric_key, period_id=active_period.id, team_id=selected_team_id or '') }}" class="analytics-filter {% if metric_key == metric %}active{% endif %}">{{ config[0] }} <span class="badge bg-body-tertiary text-body-secondary border">{{ metric_counts[metric_key] }}</span></a>
+                <a href="{{ url_for('monev_bos.admin_analytics', metric=metric_key, period_id=period_selection, team_id=selected_team_id or '') }}" class="analytics-filter {% if metric_key == metric %}active{% endif %}">{{ config[0] }} <span class="badge bg-body-tertiary text-body-secondary border">{{ metric_counts[metric_key] }}</span></a>
                 {% endfor %}
             </div>
             <form method="GET" action="{{ url_for('monev_bos.admin_analytics', metric=metric) }}" class="mt-2">
-                <input type="hidden" name="period_id" value="{{ active_period.id }}">
+                <input type="hidden" name="period_id" value="{{ period_selection }}">
                 <div class="row g-2">
                     <div class="col-12 col-md-4">
                         <select name="team_id" class="form-select form-select-sm bg-body-tertiary" onchange="this.form.submit()" aria-label="Filter tim verifikator">
@@ -86,7 +87,7 @@
                         <div class="input-group input-group-sm">
                             <span class="input-group-text bg-body-tertiary border-end-0"><i class="bi bi-search"></i></span>
                             <input type="search" name="q" class="form-control bg-body-tertiary border-start-0" value="{{ search_query }}" placeholder="Cari nama sekolah, NPSN, atau tim verifikator...">
-                            {% if search_query %}<a href="{{ url_for('monev_bos.admin_analytics', metric=metric, period_id=active_period.id, team_id=selected_team_id or '') }}" class="btn btn-outline-secondary"><i class="bi bi-x-lg"></i></a>{% endif %}
+                            {% if search_query %}<a href="{{ url_for('monev_bos.admin_analytics', metric=metric, period_id=period_selection, team_id=selected_team_id or '') }}" class="btn btn-outline-secondary"><i class="bi bi-x-lg"></i></a>{% endif %}
                             <button type="submit" class="btn btn-primary">Cari</button>
                         </div>
                     </div>
@@ -128,7 +129,7 @@
     </div>
 
     <section class="analytics-panel mb-3">
-        <div class="analytics-panel-head d-flex justify-content-between align-items-center gap-2"><div><h2 class="h6 fw-bold mb-1"><i class="bi bi-list-ul text-info me-2"></i>Daftar {{ metric_config[0] }}</h2><p class="text-body-secondary text-xs mb-0">{{ school_rows|length }} sekolah ditemukan{% if search_query %} untuk “{{ search_query }}”{% endif %}.</p></div><span class="badge bg-info-subtle text-info border border-info-subtle">{{ active_period.year }} · TW {{ active_period.tw }}</span></div>
+        <div class="analytics-panel-head d-flex justify-content-between align-items-center gap-2"><div><h2 class="h6 fw-bold mb-1"><i class="bi bi-list-ul text-info me-2"></i>Daftar {{ metric_config[0] }}</h2><p class="text-body-secondary text-xs mb-0">{{ school_rows|length }} data ditemukan{% if search_query %} untuk “{{ search_query }}”{% endif %}.</p></div><span class="badge bg-info-subtle text-info border border-info-subtle">{{ 'Seluruh Periode' if all_periods else (active_period.year ~ ' · TW ' ~ active_period.tw) }}</span></div>
         {% set status_labels = {'draft':'Draft', 'submitted':'Sudah Submit', 'in_review':'Diverifikasi', 'needs_revision':'Perlu Revisi', 'completed':'Selesai', 'completed_with_notes':'Selesai + Catatan'} %}
         {% set status_classes = {'draft':'secondary', 'submitted':'info', 'in_review':'primary', 'needs_revision':'danger', 'completed':'success', 'completed_with_notes':'warning'} %}
         {% if school_rows %}
@@ -139,7 +140,7 @@
                     {% for school in school_rows %}
                     <tr>
                         <td class="ps-3 text-body-secondary text-xs">{{ loop.index }}</td>
-                        <td><strong class="small d-block">{{ school.school_name }}</strong><span class="text-body-secondary text-xs">{% if school.npsn %}NPSN {{ school.npsn }} · {% endif %}{{ school.team_name or 'Belum ditugaskan ke tim' }}</span></td>
+                        <td><strong class="small d-block">{{ school.school_name }}</strong><span class="text-body-secondary text-xs">{% if all_periods %}{{ school.period_year }} · TW {{ school.period_tw }} · {% endif %}{% if school.npsn %}NPSN {{ school.npsn }} · {% endif %}{{ school.team_name or 'Belum ditugaskan ke tim' }}</span></td>
                         <td>{% if school.report_id %}<span class="badge bg-{{ status_classes.get(school.report_status, 'secondary') }}-subtle text-{{ status_classes.get(school.report_status, 'secondary') }} border border-{{ status_classes.get(school.report_status, 'secondary') }}-subtle">{{ status_labels.get(school.report_status, school.report_status) }}</span>{% else %}<span class="badge bg-body-tertiary text-body-secondary border">Belum Ada Laporan</span>{% endif %}</td>
                         <td style="min-width:150px"><div class="d-flex justify-content-between text-xs mb-1"><span>{{ school.audited_activities }}/{{ school.total_activities }}</span><span>{{ school.verification_rate }}%</span></div><div class="analytics-progress"><span class="{% if school.verification_rate == 100 %}bg-success{% else %}bg-primary{% endif %}" style="width:{{ school.verification_rate }}%"></span></div><span class="text-body-secondary text-xs">{{ school.valid_activities }} sesuai · {{ school.invalid_activities }} revisi</span></td>
                         <td><strong class="text-xs d-block">Rp {{ "{:,.0f}".format(school.bos_realized or 0).replace(',', '.') }}</strong><span class="text-body-secondary text-xs">{{ school.bos_activities }} kegiatan</span></td>
@@ -153,7 +154,7 @@
         <div class="analytics-mobile-list analytics-panel-body">
             {% for school in school_rows %}
             <div class="analytics-school-card {% if not loop.last %}mb-2{% endif %}">
-                <div class="d-flex justify-content-between gap-2 mb-2"><div class="overflow-hidden"><strong class="small d-block text-truncate">{{ school.school_name }}</strong><span class="text-body-secondary text-xs">{{ school.team_name or 'Belum ada tim' }}</span></div>{% if school.report_id %}<span class="badge bg-{{ status_classes.get(school.report_status, 'secondary') }}-subtle text-{{ status_classes.get(school.report_status, 'secondary') }} align-self-start">{{ status_labels.get(school.report_status, school.report_status) }}</span>{% else %}<span class="badge bg-body-tertiary text-body-secondary border align-self-start">Belum Lapor</span>{% endif %}</div>
+                <div class="d-flex justify-content-between gap-2 mb-2"><div class="overflow-hidden"><strong class="small d-block text-truncate">{{ school.school_name }}</strong><span class="text-body-secondary text-xs">{% if all_periods %}{{ school.period_year }} · TW {{ school.period_tw }} · {% endif %}{{ school.team_name or 'Belum ada tim' }}</span></div>{% if school.report_id %}<span class="badge bg-{{ status_classes.get(school.report_status, 'secondary') }}-subtle text-{{ status_classes.get(school.report_status, 'secondary') }} align-self-start">{{ status_labels.get(school.report_status, school.report_status) }}</span>{% else %}<span class="badge bg-body-tertiary text-body-secondary border align-self-start">Belum Lapor</span>{% endif %}</div>
                 <div class="d-flex justify-content-between text-xs mb-1"><span>Verifikasi kegiatan</span><strong>{{ school.audited_activities }}/{{ school.total_activities }} · {{ school.verification_rate }}%</strong></div><div class="analytics-progress mb-2"><span class="bg-primary" style="width:{{ school.verification_rate }}%"></span></div>
                 <div class="d-flex align-items-center justify-content-between"><span class="text-body-secondary text-xs">BOSP Rp {{ "{:,.0f}".format(school.bos_realized or 0).replace(',', '.') }} · BOP Rp {{ "{:,.0f}".format(school.bop_realized or 0).replace(',', '.') }}</span>{% if school.report_id %}<a href="{{ url_for('monev_bos.staff_audit_report', report_id=school.report_id) }}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i></a>{% endif %}</div>
             </div>
@@ -168,7 +169,7 @@
         <div class="analytics-panel-head"><h2 class="h6 fw-bold mb-1"><i class="bi bi-people text-primary me-2"></i>Performa Tim Verifikator</h2><p class="text-body-secondary text-xs mb-0">Perbandingan pelaporan sekolah dan penyelesaian verifikasi setiap tim.</p></div>
         {% if team_performance %}
         <div class="table-responsive"><table class="table align-middle mb-0 analytics-table"><thead><tr><th class="ps-3">Peringkat / Tim</th><th>Penugasan</th><th>Laporan Masuk</th><th>Antrean / Revisi</th><th>Verifikasi Kegiatan</th><th class="pe-3">Selesai</th></tr></thead><tbody>
-            {% for team in team_performance %}<tr><td class="ps-3"><div class="d-flex align-items-center gap-2"><span class="analytics-team-rank">{{ loop.index }}</span><div><a href="{{ url_for('monev_bos.admin_analytics', metric='all', period_id=active_period.id, team_id=team.team_id) }}" class="small fw-bold text-decoration-none">{{ team.team_name }} <i class="bi bi-arrow-up-right text-xs"></i></a><span class="text-body-secondary text-xs d-block">{{ team.leader_name or 'Ketua belum ditetapkan' }}</span></div></div></td><td><strong>{{ team.assigned_schools }}</strong><span class="text-body-secondary text-xs d-block">sekolah</span></td><td><strong>{{ team.total_reports }}</strong><span class="text-body-secondary text-xs d-block">{{ team.reporting_rate }}% melapor</span></td><td><span class="badge bg-warning-subtle text-warning border border-warning-subtle me-1">{{ team.review_queue }}</span><span class="badge bg-danger-subtle text-danger border border-danger-subtle">{{ team.revision_reports }}</span></td><td style="min-width:150px"><div class="d-flex justify-content-between text-xs mb-1"><span>{{ team.audited_activities }}/{{ team.total_activities }}</span><strong>{{ team.verification_rate }}%</strong></div><div class="analytics-progress"><span class="bg-success" style="width:{{ team.verification_rate }}%"></span></div></td><td class="pe-3"><strong class="text-success">{{ team.completed_reports }}</strong><span class="text-body-secondary text-xs d-block">laporan</span></td></tr>{% endfor %}
+            {% for team in team_performance %}<tr><td class="ps-3"><div class="d-flex align-items-center gap-2"><span class="analytics-team-rank">{{ loop.index }}</span><div><a href="{{ url_for('monev_bos.admin_analytics', metric='all', period_id=period_selection, team_id=team.team_id) }}" class="small fw-bold text-decoration-none">{{ team.team_name }} <i class="bi bi-arrow-up-right text-xs"></i></a><span class="text-body-secondary text-xs d-block">{{ team.leader_name or 'Ketua belum ditetapkan' }}</span></div></div></td><td><strong>{{ team.assigned_schools }}</strong><span class="text-body-secondary text-xs d-block">penugasan</span></td><td><strong>{{ team.total_reports }}</strong><span class="text-body-secondary text-xs d-block">{{ team.reporting_rate }}% melapor</span></td><td><span class="badge bg-warning-subtle text-warning border border-warning-subtle me-1">{{ team.review_queue }}</span><span class="badge bg-danger-subtle text-danger border border-danger-subtle">{{ team.revision_reports }}</span></td><td style="min-width:150px"><div class="d-flex justify-content-between text-xs mb-1"><span>{{ team.audited_activities }}/{{ team.total_activities }}</span><strong>{{ team.verification_rate }}%</strong></div><div class="analytics-progress"><span class="bg-success" style="width:{{ team.verification_rate }}%"></span></div></td><td class="pe-3"><strong class="text-success">{{ team.completed_reports }}</strong><span class="text-body-secondary text-xs d-block">laporan</span></td></tr>{% endfor %}
         </tbody></table></div>
         {% else %}<div class="analytics-panel-body text-center text-body-secondary small">Belum ada penugasan tim pada periode ini.</div>{% endif %}
     </section>
