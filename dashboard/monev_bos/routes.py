@@ -1716,9 +1716,14 @@ def _build_school_photo_report_pdf(posts: list, profile: dict) -> io.BytesIO:
 def school_posts_explore():
     user = current_user()
     search_query = request.args.get("q", "").strip()
+    school_user_id = None
+    if user.get("role") == "sekolah":
+        school_user_id = user["id"]
+        
     posts = queries.list_school_posts(
+        school_user_id=school_user_id,
         search_query=search_query,
-        shared_only=user.get("role") == "sekolah",
+        shared_only=False,
         limit=300,
     )
     audit_logs = queries.list_story_audit_logs(limit=100) if user.get("role") == "admin" else []
@@ -1735,6 +1740,11 @@ def school_posts_explore():
 def school_posts_profile(school_user_id: int):
     user = current_user()
     is_own_profile = user.get("role") == "sekolah" and int(school_user_id) == int(user["id"])
+    
+    if user.get("role") == "sekolah" and not is_own_profile:
+        flash("Anda tidak memiliki izin untuk melihat profil dan foto sekolah lain.", "danger")
+        return redirect(url_for("monev_bos.school_posts_explore"))
+        
     profile = queries.get_school_post_profile(school_user_id)
     if not profile:
         flash("Profil sekolah tidak ditemukan.", "warning")

@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 import base64
 import concurrent.futures
-import fcntl
 import json
 import mimetypes
 import os
@@ -13,6 +12,14 @@ import shutil
 import signal
 import socket
 import subprocess
+import sys
+try:
+    import fcntl
+except ImportError:
+    fcntl = None
+
+if sys.platform == "win32":
+    import msvcrt
 import time
 from contextlib import contextmanager
 from datetime import datetime
@@ -272,13 +279,19 @@ def _cc_bridge_control_lock(account: dict):
     lock_path.parent.mkdir(parents=True, exist_ok=True)
     with lock_path.open("a") as handle:
         try:
-            fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except BlockingIOError:
+            if sys.platform == "win32":
+                msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, 1)
+            else:
+                fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except (BlockingIOError, OSError):
             raise RuntimeError("Bridge sedang diproses. Tunggu sebelum mencoba lagi.") from None
         try:
             yield
         finally:
-            fcntl.flock(handle, fcntl.LOCK_UN)
+            if sys.platform == "win32":
+                msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
+            else:
+                fcntl.flock(handle, fcntl.LOCK_UN)
 
 
 def _wait_cc_port_free(account: dict) -> None:

@@ -10,6 +10,12 @@ from psycopg2.extras import DictCursor
 
 load_dotenv()
 
+# Paksa libpq (psycopg2) menerima pesan dari server dalam UTF-8.
+# PostgreSQL pada Windows dengan locale Indonesia mengirim pesan error
+# dalam encoding Windows-1252, yang menyebabkan UnicodeDecodeError.
+# Variabel ini dibaca oleh libpq sebelum koneksi dibuat.
+os.environ.setdefault("PGCLIENTENCODING", "UTF8")
+
 
 def _normalize_db_host(value: str | None) -> str | None:
     clean = (value or "").strip()
@@ -44,7 +50,8 @@ conn_kwargs = dict(
     password=_DB_CONFIG["DB_PASS"],
     host=_normalize_db_host(_DB_CONFIG["DB_HOST"]),
     port=_DB_CONFIG["DB_PORT"],
-    options="-c timezone=Asia/Jakarta",
+    options="-c timezone=Asia/Jakarta -c lc_messages=C",
+    client_encoding="utf8",
 )
 if optional_sslmode:
     conn_kwargs["sslmode"] = optional_sslmode
