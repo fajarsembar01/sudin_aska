@@ -38,6 +38,78 @@
     .school-activity-sort-control .input-group-text { padding-right: 9px; padding-left: 9px; font-weight: 700; }
     .school-activity-sort-control .form-select,
     .school-activity-search .form-control { min-width: 0; }
+    .live-photo-picker-trigger {
+        min-height: 38px;
+        border-style: dashed;
+    }
+    .live-photo-picker-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 1090;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        background: rgba(15, 23, 42, .68);
+        backdrop-filter: blur(3px);
+    }
+    .live-photo-picker-dialog {
+        display: flex;
+        flex-direction: column;
+        width: min(920px, 100%);
+        max-height: min(780px, calc(100vh - 32px));
+        overflow: hidden;
+        border: 1px solid var(--bs-border-color);
+        border-radius: 16px;
+        background: var(--bs-body-bg);
+        box-shadow: 0 24px 60px rgba(0, 0, 0, .28);
+    }
+    .live-photo-picker-header,
+    .live-photo-picker-toolbar,
+    .live-photo-picker-footer { flex: 0 0 auto; }
+    .live-photo-picker-grid-wrap { min-height: 180px; overflow-y: auto; }
+    .live-photo-picker-grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 10px;
+    }
+    .live-photo-picker-card {
+        position: relative;
+        min-width: 0;
+        padding: 0;
+        overflow: hidden;
+        border: 2px solid transparent;
+        border-radius: 10px;
+        background: var(--bs-tertiary-bg);
+        color: var(--bs-body-color);
+        text-align: left;
+        transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+    }
+    .live-photo-picker-card:hover { transform: translateY(-1px); box-shadow: 0 5px 15px rgba(0, 0, 0, .12); }
+    .live-photo-picker-card.is-selected { border-color: var(--bs-primary); box-shadow: 0 0 0 2px rgba(var(--bs-primary-rgb), .16); }
+    .live-photo-picker-card.is-locked { cursor: default; }
+    .live-photo-picker-card img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; background: var(--bs-secondary-bg); }
+    .live-photo-picker-card-copy { padding: 7px 8px 8px; }
+    .live-photo-picker-card-title { overflow: hidden; font-size: .72rem; font-weight: 700; line-height: 1.3; text-overflow: ellipsis; white-space: nowrap; }
+    .live-photo-picker-card-date { margin-top: 2px; color: var(--bs-secondary-color); font-size: .64rem; }
+    .live-photo-picker-check {
+        position: absolute;
+        top: 7px;
+        right: 7px;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        width: 26px;
+        height: 26px;
+        border: 2px solid #fff;
+        border-radius: 50%;
+        background: var(--bs-primary);
+        color: #fff;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, .25);
+    }
+    .live-photo-picker-card.is-selected .live-photo-picker-check { display: flex; }
+    .live-photo-picker-empty { min-height: 180px; }
+    body.live-photo-picker-open { overflow: hidden; }
     @media (max-width: 767.98px) {
         .school-activity-filter-toolbar { grid-template-columns: minmax(0, 1fr); gap: 6px; }
         .school-activity-status-filter {
@@ -53,6 +125,10 @@
         .school-activity-search .input-group-text,
         .school-activity-search .form-control { min-height: 36px; font-size: 0.72rem; }
         .school-status-filter-count { min-width: 18px; margin-left: 4px; padding: 2px 4px; font-size: 0.58rem; }
+        .live-photo-picker-overlay { padding: 0; }
+        .live-photo-picker-dialog { width: 100%; max-height: 100vh; height: 100%; border: 0; border-radius: 0; }
+        .live-photo-picker-toolbar { display: grid !important; grid-template-columns: minmax(0, 1fr) 125px; }
+        .live-photo-picker-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
     }
 </style>
 <div class="container-fluid py-3 py-md-4">
@@ -883,7 +959,6 @@
                     <div class="col-md-4 mb-3">
                         <label class="form-label fw-bold">No. BKU <span class="text-danger">*</span></label>
                         <input type="text" class="form-control font-monospace bku-number-input" name="bku_number" required inputmode="numeric" pattern="[0-9]{1,4}" maxlength="4" value="{{ act.form_bku_number }}" placeholder="Contoh: 0001" title="Masukkan angka 1–9999; sistem otomatis membuatnya menjadi 4 digit">
-                        <div class="form-text text-xs bku-format-hint">Format 4 digit, contoh: 1 menjadi 0001.</div>
                     </div>
                     <div class="col-md-4 mb-3">
                         <label class="form-label fw-bold">Kode Rekening</label>
@@ -896,7 +971,6 @@
                             <option value="{{ selected_code }}" selected>{{ selected_code }}</option>
                             {% endfor %}
                         </select>
-                        <div class="form-text text-xs">Dapat memilih lebih dari satu kode rekening.</div>
                         {% if not account_codes %}
                         <div class="form-text text-xs text-warning">Belum ada kode rekening aktif. Hubungi admin untuk mengisi Master Kode Rekening.</div>
                         {% endif %}
@@ -939,10 +1013,8 @@
                             </optgroup>
                             {% endif %}
                         </select>
-                        <div class="form-text text-xs">Dapat memilih lebih dari satu vendor atau narasumber.</div>
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label class="form-label fw-bold">Detail Kegiatan</label>
                         <input type="text" class="form-control" name="item_name" value="{{ act.item_name or '' }}" placeholder="Contoh: Pembelian Tinta Printer HP / Bahan Kebersihan">
                     </div>
                 </div>
@@ -1005,9 +1077,9 @@
                                 <button type="button" class="btn btn-sm btn-outline-primary w-100 camera-photo-btn text-nowrap" data-preview="editPhotoPreview{{ act.id }}">
                                     <i class="bi bi-camera-fill me-1"></i> Ambil Foto Kamera
                                 </button>
-                                <select name="story_post_ids" class="form-select form-select-sm searchable-story-post-select" data-placeholder="Pilih satu atau beberapa Foto Live sekolah..." multiple>
+                                <select name="story_post_ids" class="live-photo-picker-select d-none" aria-label="Foto Live sekolah" multiple>
                                     {% for post in school_story_posts %}
-                                    <option value="{{ post.id }}" data-photo-url="/{{ post.photo_path }}" {% if post.id in act.linked_story_post_ids %}selected{% endif %}>{{ post.title }} · {{ post.created_at|jakarta('%d/%m/%Y') }}</option>
+                                    <option value="{{ post.id }}" data-photo-url="/{{ post.photo_path }}" data-title="{{ post.title }}" data-date="{{ post.created_at|jakarta('%Y-%m-%d') }}" data-display-date="{{ post.created_at|jakarta('%d/%m/%Y') }}" {% if post.id in act.linked_story_post_ids %}selected{% endif %}>{{ post.title }} · {{ post.created_at|jakarta('%d/%m/%Y') }}</option>
                                     {% endfor %}
                                 </select>
                                 {% if act.field_photos %}
@@ -1098,14 +1170,13 @@
 {% endfor %}
 
 <!-- Modal Tambah Kegiatan -->
-<div class="modal fade" id="addActivityModal" tabindex="-1">
+<div class="modal fade" id="addActivityModal" tabindex="-1" aria-label="Form tambah kegiatan">
     <div class="modal-dialog modal-lg">
         <form action="{{ url_for('monev_bos.sekolah_activities', period_id=active_period.id, fund_source=fund_source) }}" method="POST" enctype="multipart/form-data" class="modal-content activity-photo-form" id="addActivityForm" data-valid-photo-count="0" data-linked-story-ids="">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="action" value="add_activity">
             <input type="hidden" name="fund_source" value="{{ fund_source }}">
-            <div class="modal-header">
-                <h5 class="modal-title fw-bold">Tambah Kegiatan Dana {{ fund_source }}</h5>
+            <div class="modal-header justify-content-end">
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
@@ -1134,7 +1205,6 @@
                     <div class="col-md-4 mb-3">
                         <label class="form-label fw-bold">No. BKU <span class="text-danger">*</span></label>
                         <input type="text" class="form-control font-monospace bku-number-input" name="bku_number" required inputmode="numeric" pattern="[0-9]{1,4}" maxlength="4" placeholder="Contoh: 0001" title="Masukkan angka 1–9999; sistem otomatis membuatnya menjadi 4 digit">
-                        <div class="form-text text-xs bku-format-hint">Ketik angka, misalnya 1; otomatis menjadi 0001.</div>
                     </div>
                     <div class="col-md-4 mb-3">
                         <label class="form-label fw-bold">Kode Rekening</label>
@@ -1143,7 +1213,6 @@
                             <option value="{{ ac.code }}">{{ ac.code }}{% if ac.name %} - {{ ac.name }}{% endif %}</option>
                             {% endfor %}
                         </select>
-                        <div class="form-text text-xs">Dapat memilih lebih dari satu kode rekening.</div>
                         {% if not account_codes %}
                         <div class="form-text text-xs text-warning">Belum ada kode rekening aktif. Hubungi admin untuk mengisi Master Kode Rekening.</div>
                         {% endif %}
@@ -1182,10 +1251,8 @@
                             </optgroup>
                             {% endif %}
                         </select>
-                        <div class="form-text text-xs">Dapat memilih lebih dari satu vendor atau narasumber.</div>
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label class="form-label fw-bold">Detail Kegiatan</label>
                         <input type="text" class="form-control" name="item_name" placeholder="Contoh: Pembelian Tinta Printer HP / Bahan Kebersihan">
                     </div>
                 </div>
@@ -1268,9 +1335,9 @@
                                 <button type="button" class="btn btn-sm btn-outline-primary w-100 camera-photo-btn text-nowrap" data-preview="addPhotoPreview">
                                     <i class="bi bi-camera-fill me-1"></i> Ambil Foto Kamera
                                 </button>
-                                <select name="story_post_ids" class="form-select form-select-sm searchable-story-post-select" data-placeholder="Pilih satu atau beberapa Foto Live sekolah..." multiple>
+                                <select name="story_post_ids" class="live-photo-picker-select d-none" aria-label="Foto Live sekolah" multiple>
                                     {% for post in school_story_posts %}
-                                    <option value="{{ post.id }}" data-photo-url="/{{ post.photo_path }}">{{ post.title }} · {{ post.created_at|jakarta('%d/%m/%Y') }}</option>
+                                    <option value="{{ post.id }}" data-photo-url="/{{ post.photo_path }}" data-title="{{ post.title }}" data-date="{{ post.created_at|jakarta('%Y-%m-%d') }}" data-display-date="{{ post.created_at|jakarta('%d/%m/%Y') }}">{{ post.title }} · {{ post.created_at|jakarta('%d/%m/%Y') }}</option>
                                     {% endfor %}
                                 </select>
                                 <div class="field-photo-preview-wrap position-relative d-none mt-1">
@@ -1286,10 +1353,7 @@
                     </div>
                 </div>
             </div>
-            <div class="modal-footer d-flex justify-content-between align-items-center">
-                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="autofillDemoData('{{ fund_source }}')">
-                    <i class="bi bi-magic me-1"></i> Isi Contoh Data (Demo)
-                </button>
+            <div class="modal-footer d-flex justify-content-end align-items-center">
                 <div class="d-flex gap-2">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
                     <button type="submit" class="btn btn-success fw-bold">Simpan Kegiatan</button>
@@ -1510,26 +1574,13 @@ function initBkuNumberInputs(container) {
         if (input.dataset.bkuInitialized === 'true') return;
         input.dataset.bkuInitialized = 'true';
         let formatTimer = null;
-        const hint = input.parentElement.querySelector('.bku-format-hint');
-
-        function updateHint() {
-            const formatted = fourDigitBku(input.value);
-            if (hint) {
-                hint.textContent = formatted
-                    ? 'Format tersimpan: ' + formatted
-                    : 'Format 4 digit, contoh: 1 menjadi 0001.';
-            }
-        }
-
         function applyFormat() {
             window.clearTimeout(formatTimer);
             input.value = fourDigitBku(input.value);
-            updateHint();
         }
 
         input.addEventListener('input', function () {
             input.value = input.value.replace(/\D/g, '').slice(0, 4);
-            updateHint();
             window.clearTimeout(formatTimer);
             if (input.value && input.value.length < 4) {
                 formatTimer = window.setTimeout(applyFormat, 600);
@@ -1538,7 +1589,6 @@ function initBkuNumberInputs(container) {
         input.addEventListener('blur', applyFormat);
         input.addEventListener('change', applyFormat);
         input.form.addEventListener('submit', applyFormat);
-        updateHint();
     });
 }
 
@@ -1617,7 +1667,7 @@ function initActivitySearchableSelects(container) {
     if (!window.TomSelect) return;
 
     const selects = (container || document).querySelectorAll(
-        'select.searchable-activity-select, select.searchable-account-select, select.searchable-story-post-select'
+        'select.searchable-activity-select, select.searchable-account-select'
     );
     selects.forEach(function (select) {
         if (select.tomselect) return;
@@ -1626,7 +1676,7 @@ function initActivitySearchableSelects(container) {
         const tom = new TomSelect(select, {
             create: false,
             allowEmptyOption: !select.required,
-            maxItems: isMultiAccount ? null : (select.classList.contains('searchable-story-post-select') ? 3 : 1),
+            maxItems: isMultiAccount ? null : 1,
             placeholder: select.getAttribute('data-placeholder') || 'Ketik untuk mencari...',
             searchField: ['text'],
             plugins: isMultiAccount ? ['remove_button'] : (select.required && !select.classList.contains('claim-account-select') ? [] : ['clear_button']),
@@ -1644,18 +1694,274 @@ function initActivitySearchableSelects(container) {
     });
 }
 
+let activeLivePhotoPicker = null;
+let livePhotoPickerVisibleLimit = 30;
+
+function livePhotoPickerOptions(select) {
+    return Array.from(select.options).filter(option => Boolean(option.value));
+}
+
+function livePhotoPickerLockedIds(select) {
+    const form = select.closest('form');
+    return new Set((form?.getAttribute('data-linked-story-ids') || '').split(',').filter(Boolean));
+}
+
+function createLivePhotoPickerOverlay() {
+    let overlay = document.getElementById('livePhotoPickerOverlay');
+    if (overlay) return overlay;
+
+    overlay = document.createElement('div');
+    overlay.id = 'livePhotoPickerOverlay';
+    overlay.className = 'live-photo-picker-overlay d-none';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-labelledby', 'livePhotoPickerTitle');
+    overlay.innerHTML = `
+        <div class="live-photo-picker-dialog">
+            <div class="live-photo-picker-header d-flex align-items-start justify-content-between gap-3 border-bottom p-3 p-md-4 pb-md-3">
+                <div>
+                    <h5 class="fw-bold mb-1" id="livePhotoPickerTitle"><i class="bi bi-images text-primary me-2"></i>Pilih Foto Live</h5>
+                    <p class="small text-body-secondary mb-0">Pilih thumbnail untuk melampirkan foto. Maksimal 3 foto kegiatan/barang.</p>
+                </div>
+                <button type="button" class="btn-close live-photo-picker-close" aria-label="Tutup"></button>
+            </div>
+            <div class="live-photo-picker-toolbar d-flex gap-2 border-bottom p-3">
+                <div class="input-group input-group-sm flex-grow-1">
+                    <span class="input-group-text bg-body"><i class="bi bi-search"></i></span>
+                    <input type="search" class="form-control live-photo-picker-search" placeholder="Cari judul atau tanggal foto..." autocomplete="off">
+                </div>
+                <select class="form-select form-select-sm live-photo-picker-sort" style="max-width: 155px" aria-label="Urutkan Foto Live">
+                    <option value="newest">Terbaru</option>
+                    <option value="oldest">Terlama</option>
+                    <option value="title">Judul A–Z</option>
+                </select>
+            </div>
+            <div class="live-photo-picker-grid-wrap p-3 p-md-4">
+                <div class="live-photo-picker-grid"></div>
+                <div class="live-photo-picker-empty d-none align-items-center justify-content-center text-center text-body-secondary">
+                    <div><i class="bi bi-images fs-2 d-block mb-2 opacity-50"></i><span class="live-photo-picker-empty-text">Foto Live tidak ditemukan.</span></div>
+                </div>
+                <div class="live-photo-picker-load-status text-center text-body-secondary text-xs mt-3 d-none" aria-live="polite"></div>
+            </div>
+            <div class="live-photo-picker-footer d-flex align-items-center justify-content-between gap-3 border-top p-3">
+                <div>
+                    <div class="small fw-bold live-photo-picker-count">0 foto dipilih</div>
+                    <div class="text-danger text-xs live-photo-picker-warning" aria-live="polite"></div>
+                </div>
+                <button type="button" class="btn btn-primary live-photo-picker-done"><i class="bi bi-check2 me-1"></i>Selesai</button>
+            </div>
+        </div>`;
+    document.body.appendChild(overlay);
+
+    const close = function () { closeLivePhotoPicker(); };
+    overlay.querySelector('.live-photo-picker-close').addEventListener('click', close);
+    overlay.querySelector('.live-photo-picker-done').addEventListener('click', close);
+    overlay.addEventListener('click', function (event) {
+        if (event.target === overlay) close();
+    });
+    overlay.querySelector('.live-photo-picker-search').addEventListener('input', function () {
+        livePhotoPickerVisibleLimit = 30;
+        overlay.querySelector('.live-photo-picker-grid-wrap').scrollTop = 0;
+        renderLivePhotoPicker();
+    });
+    overlay.querySelector('.live-photo-picker-sort').addEventListener('change', function () {
+        livePhotoPickerVisibleLimit = 30;
+        overlay.querySelector('.live-photo-picker-grid-wrap').scrollTop = 0;
+        renderLivePhotoPicker();
+    });
+    overlay.querySelector('.live-photo-picker-grid-wrap').addEventListener('scroll', function () {
+        const scrollArea = this;
+        const remainingDistance = scrollArea.scrollHeight - scrollArea.scrollTop - scrollArea.clientHeight;
+        const renderedCount = Number(overlay.dataset.renderedPhotoCount || 0);
+        const totalCount = Number(overlay.dataset.filteredPhotoCount || 0);
+        if (remainingDistance > 240 || renderedCount >= totalCount) return;
+        livePhotoPickerVisibleLimit = Math.min(livePhotoPickerVisibleLimit + 30, totalCount);
+        renderLivePhotoPicker(true);
+    });
+    overlay.querySelector('.live-photo-picker-grid').addEventListener('click', function (event) {
+        const card = event.target.closest('.live-photo-picker-card');
+        if (!card || !activeLivePhotoPicker) return;
+        const option = activeLivePhotoPicker.querySelector(`option[value="${CSS.escape(card.dataset.value)}"]`);
+        if (!option) return;
+
+        const lockedIds = livePhotoPickerLockedIds(activeLivePhotoPicker);
+        if (option.selected && lockedIds.has(option.value)) {
+            showLivePhotoPickerWarning('Foto ini sudah tersimpan pada kegiatan dan tidak perlu dipilih ulang.');
+            return;
+        }
+        if (!option.selected) {
+            const quota = getActivityPhotoQuota(activeLivePhotoPicker.closest('form'));
+            if (quota.remaining < 1) {
+                showLivePhotoPickerWarning('Kuota maksimal 3 foto sudah terpakai. Hapus pilihan baru atau foto kamera terlebih dahulu.');
+                return;
+            }
+        }
+        option.selected = !option.selected;
+        activeLivePhotoPicker.dispatchEvent(new Event('change', { bubbles: true }));
+        showLivePhotoPickerWarning('');
+        renderLivePhotoPicker();
+    });
+    return overlay;
+}
+
+function showLivePhotoPickerWarning(message) {
+    const warning = document.querySelector('#livePhotoPickerOverlay .live-photo-picker-warning');
+    if (warning) warning.textContent = message;
+}
+
+function renderLivePhotoPicker(appendOnly = false) {
+    if (!activeLivePhotoPicker) return;
+    const overlay = createLivePhotoPickerOverlay();
+    const query = overlay.querySelector('.live-photo-picker-search').value.trim().toLocaleLowerCase('id');
+    const sort = overlay.querySelector('.live-photo-picker-sort').value;
+    let options = livePhotoPickerOptions(activeLivePhotoPicker).filter(function (option) {
+        return !query || option.text.toLocaleLowerCase('id').includes(query);
+    });
+    options.sort(function (a, b) {
+        if (sort === 'title') return (a.dataset.title || '').localeCompare(b.dataset.title || '', 'id');
+        const direction = sort === 'oldest' ? 1 : -1;
+        return (a.dataset.date || '').localeCompare(b.dataset.date || '') * direction;
+    });
+
+    const grid = overlay.querySelector('.live-photo-picker-grid');
+    const previousScrollTop = overlay.querySelector('.live-photo-picker-grid-wrap').scrollTop;
+    const startIndex = appendOnly ? grid.children.length : 0;
+    if (!appendOnly) grid.replaceChildren();
+    const lockedIds = livePhotoPickerLockedIds(activeLivePhotoPicker);
+    options.slice(startIndex, livePhotoPickerVisibleLimit).forEach(function (option) {
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = 'live-photo-picker-card' + (option.selected ? ' is-selected' : '') + (lockedIds.has(option.value) ? ' is-locked' : '');
+        card.dataset.value = option.value;
+        card.setAttribute('aria-pressed', option.selected ? 'true' : 'false');
+        card.title = option.selected ? (lockedIds.has(option.value) ? 'Sudah tersimpan pada kegiatan' : 'Klik untuk batal memilih') : 'Klik untuk memilih foto';
+
+        const image = document.createElement('img');
+        image.src = option.dataset.photoUrl;
+        image.alt = option.dataset.title || 'Foto Live';
+        image.loading = 'lazy';
+        const check = document.createElement('span');
+        check.className = 'live-photo-picker-check';
+        check.innerHTML = '<i class="bi bi-check-lg"></i>';
+        const copy = document.createElement('span');
+        copy.className = 'live-photo-picker-card-copy d-block';
+        const title = document.createElement('span');
+        title.className = 'live-photo-picker-card-title d-block';
+        title.textContent = option.dataset.title || 'Foto Live';
+        const date = document.createElement('span');
+        date.className = 'live-photo-picker-card-date d-block';
+        date.textContent = (lockedIds.has(option.value) ? 'Sudah terlampir · ' : '') + (option.dataset.displayDate || '-');
+        copy.append(title, date);
+        card.append(image, check, copy);
+        grid.appendChild(card);
+    });
+    if (!appendOnly) overlay.querySelector('.live-photo-picker-grid-wrap').scrollTop = previousScrollTop;
+
+    const empty = overlay.querySelector('.live-photo-picker-empty');
+    empty.classList.toggle('d-none', options.length > 0);
+    empty.classList.toggle('d-flex', options.length === 0);
+    overlay.querySelector('.live-photo-picker-empty-text').textContent = query ? 'Tidak ada foto yang cocok dengan pencarian.' : 'Belum ada Foto Live sekolah.';
+    const renderedCount = Math.min(options.length, livePhotoPickerVisibleLimit);
+    const remainingCount = Math.max(0, options.length - renderedCount);
+    overlay.dataset.renderedPhotoCount = String(renderedCount);
+    overlay.dataset.filteredPhotoCount = String(options.length);
+    const loadStatus = overlay.querySelector('.live-photo-picker-load-status');
+    loadStatus.classList.toggle('d-none', options.length === 0);
+    loadStatus.innerHTML = remainingCount
+        ? `<i class="bi bi-arrow-down-circle me-1"></i>Gulir ke bawah untuk memuat ${remainingCount} foto lagi`
+        : `<i class="bi bi-check-circle me-1"></i>Semua ${options.length} foto ditampilkan`;
+
+    const selectedCount = livePhotoPickerOptions(activeLivePhotoPicker).filter(option => option.selected).length;
+    const quota = getActivityPhotoQuota(activeLivePhotoPicker.closest('form'));
+    overlay.querySelector('.live-photo-picker-count').textContent = `${selectedCount} Foto Live dipilih · ${quota.remaining} slot tersisa`;
+}
+
+function updateLivePhotoPickerSummary(select) {
+    const wrapper = select.closest('.live-photo-picker-control');
+    if (!wrapper) return;
+    const selected = livePhotoPickerOptions(select).filter(option => option.selected);
+    const trigger = wrapper.querySelector('.live-photo-picker-trigger');
+    const label = trigger.querySelector('.live-photo-picker-trigger-label');
+    const badge = trigger.querySelector('.live-photo-picker-trigger-count');
+    label.textContent = selected.length ? 'Ubah Pilihan Foto Live' : 'Pilih dari Foto Live';
+    badge.textContent = selected.length;
+    badge.classList.toggle('d-none', selected.length === 0);
+
+}
+
+function openLivePhotoPicker(select) {
+    activeLivePhotoPicker = select;
+    livePhotoPickerVisibleLimit = 30;
+    const overlay = createLivePhotoPickerOverlay();
+    overlay.querySelector('.live-photo-picker-search').value = '';
+    overlay.querySelector('.live-photo-picker-sort').value = 'newest';
+    overlay.querySelector('.live-photo-picker-grid-wrap').scrollTop = 0;
+    showLivePhotoPickerWarning('');
+    overlay.classList.remove('d-none');
+    document.body.classList.add('live-photo-picker-open');
+    renderLivePhotoPicker();
+    window.setTimeout(function () { overlay.querySelector('.live-photo-picker-search').focus(); }, 0);
+}
+
+function closeLivePhotoPicker() {
+    const overlay = document.getElementById('livePhotoPickerOverlay');
+    if (!overlay || overlay.classList.contains('d-none')) return;
+    overlay.classList.add('d-none');
+    document.body.classList.remove('live-photo-picker-open');
+    const trigger = activeLivePhotoPicker?.closest('.live-photo-picker-control')?.querySelector('.live-photo-picker-trigger');
+    activeLivePhotoPicker = null;
+    trigger?.focus();
+}
+
+function initLivePhotoPickers(container) {
+    (container || document).querySelectorAll('select.live-photo-picker-select').forEach(function (select) {
+        if (select.dataset.pickerReady === 'true') return;
+        select.dataset.pickerReady = 'true';
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'live-photo-picker-control d-grid gap-2';
+        select.parentNode.insertBefore(wrapper, select);
+        wrapper.appendChild(select);
+
+        const trigger = document.createElement('button');
+        trigger.type = 'button';
+        trigger.className = 'btn btn-sm btn-outline-primary live-photo-picker-trigger d-flex align-items-center justify-content-center gap-2';
+        trigger.innerHTML = '<i class="bi bi-images"></i><span class="live-photo-picker-trigger-label">Pilih dari Foto Live</span><span class="badge text-bg-primary rounded-pill live-photo-picker-trigger-count d-none">0</span>';
+        trigger.disabled = livePhotoPickerOptions(select).length === 0;
+        if (trigger.disabled) {
+            trigger.querySelector('.live-photo-picker-trigger-label').textContent = 'Belum ada Foto Live';
+            trigger.title = 'Buat Foto Live terlebih dahulu agar dapat dipilih.';
+        }
+        trigger.addEventListener('click', function () { openLivePhotoPicker(select); });
+
+        wrapper.appendChild(trigger);
+        select.addEventListener('change', function () { updateLivePhotoPickerSummary(select); });
+        updateLivePhotoPickerSummary(select);
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function () {
     initBkuNumberInputs(document);
     initActivitySearchableSelects(document);
+    initLivePhotoPickers(document);
     initAuditRequirements(document);
     document.querySelectorAll('.modal').forEach(function (modal) {
         modal.addEventListener('shown.bs.modal', function () {
             initBkuNumberInputs(modal);
             initActivitySearchableSelects(modal);
+            initLivePhotoPickers(modal);
             initAuditRequirements(modal);
         });
     });
 });
+
+document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape' && activeLivePhotoPicker) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        closeLivePhotoPicker();
+    }
+}, true);
 
 document.addEventListener('DOMContentLoaded', function () {
     const wizardForm = document.getElementById('claimBopWizardForm');
@@ -1767,8 +2073,8 @@ function updateFieldPhotoStatus(form, queuedCount) {
 
     const savedCount = parseInt(form.getAttribute('data-valid-photo-count') || '0', 10) || 0;
     if (queuedCount > 0) {
-        status.className = 'form-text text-xs text-success field-photo-status';
-        status.innerHTML = '<i class="bi bi-check-circle me-1"></i>' + queuedCount + ' foto baru siap disimpan. Gunakan &lt; &gt; untuk melihat dan × untuk membatalkan.';
+        status.className = 'form-text text-xs field-photo-status d-none';
+        status.textContent = '';
     } else if (savedCount > 0) {
         status.className = 'form-text text-xs text-success field-photo-status';
         status.innerHTML = '<i class="bi bi-check-circle me-1"></i>' + savedCount + '/3 foto sah tersimpan.';

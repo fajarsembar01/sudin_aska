@@ -2847,7 +2847,9 @@ def sekolah_activities():
             act["staff_wa_url"] = f"https://wa.me/{act_staff_wa['staff_phone']}?text={urllib.parse.quote(wa_msg_staff)}"
 
     master_activities = queries.list_master_activities(include_inactive=False, fund_source=fund_source)
-    school_story_posts = queries.list_school_posts(school_user_id=int(user["id"]), limit=300)
+    # Metadata Foto Live tetap ringan; thumbnail dimuat bertahap oleh picker di browser.
+    # Gunakan batas maksimum query agar koleksi lama masih dapat dicari saat jumlah foto bertambah.
+    school_story_posts = queries.list_school_posts(school_user_id=int(user["id"]), limit=500)
     expense_types = queries.list_expense_types(include_inactive=False)
     if bop_claim:
         for transaction in bop_claim.get("wizard_transactions", []):
