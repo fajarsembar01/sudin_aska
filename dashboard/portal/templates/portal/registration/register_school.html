@@ -1,3 +1,4 @@
+{% set coordinator_contacts = (coordinator_contacts|default([], true))|selectattr('is_active')|list %}
 <!DOCTYPE html>
 <html lang="id" data-theme="light" data-bs-theme="light">
 

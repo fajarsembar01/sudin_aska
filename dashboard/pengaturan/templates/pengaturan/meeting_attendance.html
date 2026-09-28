@@ -531,7 +531,34 @@
     const cameraStatus = document.getElementById('meetingCameraStatus');
     const capturedPhotoWrap = document.getElementById('capturedPhotoWrap');
     const capturedPhotoPreview = document.getElementById('capturedPhotoPreview');
+    const meetingPhotoMaxBytes = 200 * 1024;
     let cameraStream = null;
+
+    function canvasToJpegBlob(canvas, quality) {
+      return new Promise(function (resolve) {
+        canvas.toBlob(resolve, 'image/jpeg', quality);
+      });
+    }
+
+    async function compressMeetingPhoto(canvas) {
+      const qualities = [0.85, 0.75, 0.65, 0.55, 0.45, 0.35];
+      let lastBlob = null;
+      while (canvas.width > 1 || canvas.height > 1) {
+        for (const quality of qualities) {
+          lastBlob = await canvasToJpegBlob(canvas, quality);
+          if (!lastBlob || lastBlob.size <= meetingPhotoMaxBytes) return lastBlob;
+        }
+
+        const resized = document.createElement('canvas');
+        resized.width = Math.max(1, Math.round(canvas.width * 0.82));
+        resized.height = Math.max(1, Math.round(canvas.height * 0.82));
+        resized.getContext('2d').drawImage(canvas, 0, 0, resized.width, resized.height);
+        canvas.width = resized.width;
+        canvas.height = resized.height;
+        canvas.getContext('2d').drawImage(resized, 0, 0);
+      }
+      return lastBlob;
+    }
 
     function stopMeetingCamera() {
       if (cameraStream) {
@@ -587,11 +614,12 @@
         cameraVideo, 0, 0, cameraCanvas.width, cameraCanvas.height
       );
       stopMeetingCamera();
-      cameraStatus.textContent = 'Menyimpan foto…';
+      cameraStatus.textContent = 'Mengompres dan menyimpan foto…';
       cameraStatus.className = 'form-text text-primary';
       capturePhotoButton.disabled = true;
 
-      cameraCanvas.toBlob(async function (photoBlob) {
+      (async function () {
+        const photoBlob = await compressMeetingPhoto(cameraCanvas);
         if (!photoBlob) {
           cameraStatus.textContent = 'Foto gagal diproses. Silakan ambil ulang.';
           cameraStatus.className = 'form-text text-danger';
@@ -623,7 +651,7 @@
         } finally {
           capturePhotoButton.disabled = false;
         }
-      }, 'image/jpeg', 0.85);
+      })();
     });
     if (attendanceForm) attendanceForm.addEventListener('submit', stopMeetingCamera);
     window.addEventListener('beforeunload', stopMeetingCamera);

@@ -21,7 +21,7 @@
                 {% endif %}
 
                 <p class="mb-3">Butuh bantuan? Silakan hubungi admin wilayah berikut:</p>
-                {% set contact_list = area_contacts or [] %}
+                {% set contact_list = (area_contacts|default([], true))|selectattr('is_active')|list %}
                 <div id="areaContactList" data-empty="{{ 1 if not contact_list else 0 }}">
                     {% if contact_list %}
                     {% set ns = namespace(area_key=None, first=true) %}

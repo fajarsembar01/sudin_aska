@@ -1,0 +1,69 @@
+{% extends 'pengaturan/base_pengaturan.html' %}
+{% block content %}
+<div class="container-xl">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+        <div><h1 class="h3 fw-bold"><i class="bi bi-shield-check text-primary me-2"></i>Akses Layanan Staf</h1>
+        <p class="text-body-secondary mb-0">Tentukan petugas yang dapat membuka register ijazah, SKPI, legalisasi, dan mutasi siswa.</p></div>
+        <a class="btn btn-outline-primary" href="{{ url_for('layanan.index') }}">Buka Layanan <i class="bi bi-arrow-up-right"></i></a>
+    </div>
+    <div class="alert alert-info">Hanya akun yang diberi akses dan telah disetujui yang dapat menggunakan Layanan. Admin tetap memiliki akses. Pemberian atau pencabutan akses langsung berlaku pada permintaan berikutnya.</div>
+    <div class="card shadow-sm">
+        <div class="card-body border-bottom">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-7"><label class="form-label" for="staff-search">Cari staf</label><input id="staff-search" type="search" class="form-control" placeholder="Nama, email, NIP, atau jabatan"></div>
+                <div class="col-md-3"><label class="form-label" for="access-filter">Status akses</label><select id="access-filter" class="form-select"><option value="">Semua akun</option><option value="active">Memiliki akses</option><option value="inactive">Tanpa akses aktif</option></select></div>
+                <div class="col-md-2"><span class="badge text-bg-primary p-2">{{ access_count }} petugas aktif</span></div>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light"><tr><th class="ps-3">Staf</th><th>Jabatan / Peran</th><th>Status akses</th><th>Diberikan oleh</th><th class="text-end pe-3">Pengaturan</th></tr></thead>
+                <tbody>
+                {% for member in staff %}
+                    {% set eligible = member.account_status == 'approved' and member.role in allowed_roles %}
+                    {% set active = member.has_access and eligible %}
+                    <tr data-staff-row data-access="{{ 'active' if active else 'inactive' }}" data-search="{{ ((member.full_name or '') ~ ' ' ~ (member.email or '') ~ ' ' ~ (member.nip or '') ~ ' ' ~ (member.jabatan or '') ~ ' ' ~ member.role)|lower }}">
+                        <td class="ps-3"><div class="fw-semibold">{{ member.full_name or 'Tanpa nama' }}</div><div class="small text-body-secondary">{{ member.email }}</div>{% if member.nip %}<div class="small text-body-secondary">NIP {{ member.nip }}</div>{% endif %}</td>
+                        <td>{{ member.jabatan or '—' }}<div class="small text-body-secondary">{{ member.role|capitalize }}</div></td>
+                        <td><span class="badge {{ 'text-bg-success' if active else 'text-bg-secondary' }}">{{ 'Diizinkan' if active else 'Tanpa akses aktif' }}</span>{% if not eligible %}<div class="small text-body-secondary mt-1">{{ 'Akun belum disetujui' if member.account_status != 'approved' else 'Peran tidak memenuhi syarat' }}</div>{% endif %}</td>
+                        <td><div class="small">{{ member.granted_by_name or '—' }}</div>{% if member.granted_at %}<div class="small text-body-secondary">{{ member.granted_at.strftime('%d/%m/%Y %H:%M') }}</div>{% endif %}</td>
+                        <td class="text-end pe-3">
+                            {% if member.has_access or eligible %}
+                            <form method="post">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input type="hidden" name="user_id" value="{{ member.id }}">
+                                <input type="hidden" name="action" value="{{ 'revoke' if member.has_access else 'grant' }}">
+                                <button class="btn btn-sm {{ 'btn-outline-danger' if member.has_access else 'btn-outline-primary' }}" aria-label="{{ 'Cabut akses' if member.has_access else 'Beri akses' }} {{ member.full_name }}">{{ 'Cabut akses' if member.has_access else 'Beri akses' }}</button>
+                            </form>
+                            {% else %}<span class="small text-body-secondary">Belum dapat diberi akses</span>{% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+                    <tr id="no-staff-results" {% if staff %}hidden{% endif %}><td colspan="5" class="text-center text-body-secondary py-5">Tidak ada staf yang sesuai.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <p class="small text-body-secondary mt-3">Akses meliputi melihat, mencatat, mencetak, dan mengekspor register bersama. Hak edit catatan tetap terbatas pada pembuat catatan atau admin. Pencabutan akses tidak menghapus catatan layanan.</p>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+    const search = document.getElementById('staff-search');
+    const filter = document.getElementById('access-filter');
+    const rows = Array.from(document.querySelectorAll('[data-staff-row]'));
+    function refresh() {
+        const term = search.value.trim().toLowerCase();
+        let visible = 0;
+        rows.forEach(row => {
+            row.hidden = !row.dataset.search.includes(term) || (filter.value && row.dataset.access !== filter.value);
+            if (!row.hidden) visible++;
+        });
+        document.getElementById('no-staff-results').hidden = visible > 0;
+    }
+    search.addEventListener('input', refresh);
+    filter.addEventListener('change', refresh);
+})();
+</script>
+{% endblock %}

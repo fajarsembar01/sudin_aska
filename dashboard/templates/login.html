@@ -1,312 +1,114 @@
+{% set coordinator_contacts = (coordinator_contacts|default([], true))|selectattr('is_active')|list %}
 <!DOCTYPE html>
 <html lang="id" data-theme="light" data-bs-theme="light">
-
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Login - ASKA Portal</title>
-    <meta name="description" content="Portal resmi ASKA untuk admin, staff, dan sekolah">
-    <link rel="shortcut icon" href="{{ url_for('static', filename='logo/logo.png') }}" type="image/png">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
-        rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
-    <script>
-        (function () {
-            try {
-                var storageKey = 'theme';
-                var storedTheme = localStorage.getItem(storageKey);
-                var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-                var theme = storedTheme || (prefersDark ? 'dark' : 'light');
-                document.documentElement.setAttribute('data-theme', theme);
-                document.documentElement.setAttribute('data-bs-theme', theme);
-            } catch (error) {
-                document.documentElement.setAttribute('data-theme', 'light');
-                document.documentElement.setAttribute('data-bs-theme', 'light');
-            }
-        })();
-    </script>
-    <style>
-        body {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        .login-container {
-            width: 100%;
-            max-width: 420px;
-        }
-
-        .login-card {
-            border-radius: 16px;
-            overflow: hidden;
-        }
-
-        .login-header {
-            background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
-            padding: 16px 20px;
-            color: white;
-        }
-
-        html[data-theme="dark"] .login-header {
-            background: linear-gradient(135deg, #4f8bff 0%, #0d6efd 100%);
-        }
-
-        .login-header .header-content {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .login-header .icon-badge {
-            width: 44px;
-            height: 44px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            flex-shrink: 0;
-            box-shadow: none;
-        }
-
-        .login-header .header-text {
-            flex: 1;
-        }
-
-        .login-header .header-text h1 {
-            font-size: 1.25rem;
-            font-weight: 700;
-            margin: 0 0 2px 0;
-        }
-
-        .login-header .header-text p {
-            opacity: 0.9;
-            margin: 0;
-            font-size: 0.8rem;
-        }
-
-        .login-header .theme-toggle {
-            flex-shrink: 0;
-        }
-
-        .login-header .theme-toggle-btn {
-            width: 36px;
-            height: 36px;
-            border-radius: 8px;
-            background: rgba(255, 255, 255, 0.2);
-            border: none;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: background-color 0.2s ease, transform 0.3s ease;
-        }
-
-        .login-header .theme-toggle-btn:hover {
-            background: rgba(255, 255, 255, 0.3);
-        }
-
-        .login-header .theme-toggle-btn.rotating {
-            transform: rotate(360deg);
-        }
-
-        .login-header .theme-icon {
-            width: 18px;
-            height: 18px;
-            display: none;
-        }
-
-        html[data-theme="light"] .theme-icon-sun {
-            display: block;
-        }
-
-        html[data-theme="dark"] .theme-icon-moon {
-            display: block;
-        }
-
-        .login-body {
-            padding: 28px 24px;
-        }
-
-        .separator {
-            display: flex;
-            align-items: center;
-            text-align: center;
-            color: var(--text-muted);
-            font-size: 0.9rem;
-            margin: 20px 0;
-        }
-
-        .separator::before,
-        .separator::after {
-            content: '';
-            flex: 1;
-            border-bottom: 1px solid #d2d2d2;
-        }
-
-        .separator:not(:empty)::before {
-            margin-right: .75em;
-        }
-
-        .separator:not(:empty)::after {
-            margin-left: .75em;
-        }
-
-        .oauth-btn {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-
-        .input-group .btn {
-            border-width: 1px;
-            border-color: var(--border-soft);
-        }
-
-        .footer-text {
-            text-align: center;
-            margin-top: 20px;
-            color: var(--text-muted);
-            font-size: 0.85rem;
-        }
-    </style>
+ <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+ <title>Masuk · ASKA Portal</title>
+ <meta name="description" content="Masuk ke ASKA Portal untuk mengakses layanan, monitoring, dan administrasi sekolah.">
+ <link rel="shortcut icon" href="{{ url_for('static',filename='logo/logo.png') }}" type="image/png">
+ <script>
+ (function () {
+     let saved;
+     try { saved = localStorage.getItem('theme'); } catch (error) {}
+     const theme = saved === 'dark' || saved === 'light' ? saved : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+     document.documentElement.dataset.theme = theme;
+     document.documentElement.dataset.bsTheme = theme;
+ })();
+ </script>
+ <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+ <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+ <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+ <link rel="stylesheet" href="{{ url_for('static',filename='css/dashboard.css') }}">
+ <link rel="stylesheet" href="{{ url_for('static',filename='css/login.css') }}">
 </head>
-
-<body>
-    <div class="login-container">
-        <!-- Flash Messages -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-        <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1200;">
-            {% for category, message in messages %}
-            <div class="toast align-items-center text-bg-{{ 'primary' if category == 'message' else category }} border-0 show"
-                role="alert">
-                <div class="d-flex">
-                    <div class="toast-body">{{ message }}</div>
-                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
-                        aria-label="Close"></button>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-        {% endif %}
-        {% endwith %}
-
-        <div class="card login-card shadow-sm border-0">
-            <div class="login-header">
-                <div class="header-content">
-                    <div class="icon-badge">
-                        <i class="bi bi-columns-gap"></i>
-                    </div>
-                    <div class="header-text">
-                        <h1>ASKA Portal</h1>
-                        <p>Portal resmi untuk monitoring sekolah</p>
-                    </div>
-                    <div class="theme-toggle">
-                        <button type="button" class="theme-toggle-btn" id="themeToggleBtn" title="Mode Gelap"
-                            aria-label="Toggle dark mode">
-                            <svg class="theme-icon theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="12" cy="12" r="4"></circle>
-                                <line x1="12" y1="3" x2="12" y2="6"></line>
-                                <line x1="12" y1="18" x2="12" y2="21"></line>
-                                <line x1="4.22" y1="4.22" x2="6.34" y2="6.34"></line>
-                                <line x1="17.66" y1="17.66" x2="19.78" y2="19.78"></line>
-                                <line x1="3" y1="12" x2="6" y2="12"></line>
-                                <line x1="18" y1="12" x2="21" y2="12"></line>
-                                <line x1="4.22" y1="19.78" x2="6.34" y2="17.66"></line>
-                                <line x1="17.66" y1="6.34" x2="19.78" y2="4.22"></line>
-                            </svg>
-                            <svg class="theme-icon theme-icon-moon" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M21 12.79A9 9 0 0 1 11.21 3a7 7 0 1 0 9.79 9.79z"></path>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-            </div>
-            <div class="login-body">
-                <form method="post" class="needs-validation" novalidate>
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold" for="email">Email <span class="text-danger">*</span></label>
-                        <input type="email" class="form-control" id="email" name="email" value="{{ email or '' }}"
-                            required autofocus>
-                        <div class="invalid-feedback">Masukkan email yang valid.</div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold" for="password">Password <span class="text-danger">*</span></label>
-                        <div class="input-group">
-                            <input type="password" class="form-control" id="password" name="password" required>
-                            <button type="button" class="btn btn-outline-secondary" id="togglePasswordButton"
-                                aria-label="Tampilkan password">
-                                <i class="bi bi-eye"></i>
-                            </button>
-                        </div>
-                        <div class="invalid-feedback">Password wajib diisi.</div>
-                    </div>
-                    <div class="form-check mb-3">
-                        <input class="form-check-input" type="checkbox" value="on" id="remember" name="remember">
-                        <label class="form-check-label" for="remember">
-                            Ingat saya
-                        </label>
-                    </div>
-                    <button type="submit" class="btn btn-primary w-100">
-                        <i class="bi bi-box-arrow-in-right me-2"></i>Masuk
-                    </button>
-                    <a class="btn btn-outline-success w-100 mt-2 oauth-btn"
-                        href="{{ url_for('portal.register_school') }}">
-                        <i class="bi bi-building-add"></i>
-                        <span>Daftar Akun Sekolah</span>
-                    </a>
-                    <a class="btn btn-sm btn-link text-decoration-none w-100 mt-2"
-                        href="{{ url_for('auth.register') }}">
-                        <i class="bi bi-person-plus me-1"></i>Daftar Akun untuk Tim Monev
-                    </a>
-                    <div class="separator">atau</div>
-                    <div class="d-grid gap-2">
-                        <a class="btn btn-outline-primary oauth-btn"
-                            href="{{ url_for('auth.google_login', provider='belajar', next=request.args.get('next')) }}"
-                            role="button" data-bs-toggle="tooltip" data-bs-placement="top"
-                            title="Gunakan kredensial belajar.id yang sudah disinkronkan oleh admin.">
-                            <i class="bi bi-mortarboard-fill"></i>
-                            <span>Login via belajar.id</span>
-                        </a>
-                        <a class="btn btn-outline-danger oauth-btn"
-                            href="{{ url_for('auth.google_login', provider='gmail', next=request.args.get('next')) }}"
-                            role="button" data-bs-toggle="tooltip" data-bs-placement="top"
-                            title="Gunakan akun Gmail yang sudah diverifikasi admin.">
-                            <i class="bi bi-google"></i>
-                            <span>Login via Gmail</span>
-                        </a>
-                    </div>
-                    <p class="text-center text-muted small mt-3 mb-0">
-                        Akses hanya untuk akun yang sudah terverifikasi admin.
-                    </p>
-                </form>
-            </div>
-        </div>
-        <p class="text-center mt-3 mb-0">
-            <a href="{{ url_for('main.documentation') }}" class="text-decoration-none small text-muted">
-                <i class="bi bi-book me-1"></i>Lihat Panduan & Dokumentasi
-            </a>
-        </p>
-        <p class="footer-text">
-            <button type="button" class="btn btn-link btn-sm text-muted p-0" data-bs-toggle="modal"
-                data-bs-target="#helpModal">
-                <i class="bi bi-question-circle me-1"></i>Butuh bantuan? Hubungi admin
-            </button>
-        </p>
+<body class="auth-page">
+ <main class="auth-shell">
+  <aside class="auth-intro" aria-label="Tentang ASKA Portal">
+   <a class="auth-brand" href="{{ url_for('auth.login') }}"><img src="{{ url_for('static',filename='logo/logo.png') }}" width="44" height="44" alt=""><span>ASKA<span class="auth-brand-sub">PORTAL</span></span></a>
+   <div class="intro-copy"><span class="intro-eyebrow">TERHUBUNG UNTUK PENDIDIKAN</span><h1>Satu portal.<br>Layanan lebih mudah.</h1><p>Akses layanan, monitoring, dan administrasi sekolah dalam satu tempat.</p>
+   <div class="intro-features"><div><span class="intro-icon"><i class="bi bi-journal-check" aria-hidden="true"></i></span><span>Pencatatan layanan yang teratur</span></div><div><span class="intro-icon"><i class="bi bi-building-check" aria-hidden="true"></i></span><span>Monitoring dan evaluasi sekolah</span></div><div><span class="intro-icon"><i class="bi bi-people" aria-hidden="true"></i></span><span>Kolaborasi admin, staf, dan sekolah</span></div></div>
+   </div>
+   <p class="intro-footer">ASKA Portal · Ruang kerja bersama</p>
+  </aside>
+  <section class="auth-content" aria-labelledby="login-title">
+   <div class="auth-topbar"><span class="small text-body-secondary">ASKA Portal</span><button type="button" class="theme-toggle-btn" id="themeToggleBtn" aria-label="Ganti tema" title="Ganti tema"><i class="bi bi-sun theme-icon-sun" aria-hidden="true"></i><i class="bi bi-moon theme-icon-moon" aria-hidden="true"></i></button></div>
+   <div class="auth-form-wrap">
+    <h2 id="login-title">Masuk ke akun Anda</h2><p class="auth-subtitle text-body-secondary">Gunakan akun yang sudah terdaftar.</p>
+    {% with messages=get_flashed_messages(with_categories=true) %}
+    {% for category,message in messages %}
+    <div class="alert alert-{{ 'info' if category=='message' else category }}" role="alert">
+     <span>{{ message }}</span>
+     {% if forgot_password_cta %}
+     <button class="btn btn-sm btn-danger mt-2 w-100" type="button" data-bs-toggle="modal" data-bs-target="#forgotPasswordModal">
+      <i class="bi bi-key me-1" aria-hidden="true"></i>Buka Lupa password
+     </button>
+     {% endif %}
+     {% if registration_cta %}
+     <p class="registration-prompt">Pilih jenis akun sesuai peran Anda:</p>
+     <div class="registration-options">
+      <a class="btn btn-outline-primary" href="{{ url_for('portal.register_school') }}">
+       <i class="bi bi-building-add" aria-hidden="true"></i><span>Daftar sekolah</span>
+      </a>
+      <a class="btn btn-outline-primary" href="{{ url_for('auth.register') }}">
+       <i class="bi bi-person-plus" aria-hidden="true"></i><span>Daftar staff</span>
+      </a>
+     </div>
+     {% endif %}
     </div>
-
+    {% endfor %}
+    {% endwith %}
+    <form method="post" id="loginForm">
+     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+     <div class="auth-field"><label class="form-label" for="email">Email</label><input class="form-control" id="email" name="email" type="email" value="{{ email|default('') }}" placeholder="nama@contoh.com" autocomplete="username" autocapitalize="none" spellcheck="false" required></div>
+     <div class="auth-field"><div class="d-flex justify-content-between align-items-center gap-2"><label class="form-label" for="password">Password</label><button class="forgot-password" type="button" data-bs-toggle="modal" data-bs-target="#forgotPasswordModal">Lupa password?</button></div>
+      <div class="password-field"><input class="form-control" id="password" name="password" type="password" placeholder="Masukkan password" autocomplete="current-password" required><button type="button" id="togglePasswordButton" aria-label="Tampilkan password"><i class="bi bi-eye" aria-hidden="true"></i></button></div>
+     </div>
+     <div class="form-check auth-remember"><input class="form-check-input" type="checkbox" id="remember" name="remember" value="on"><label class="form-check-label" for="remember">Ingat saya</label></div>
+     <button class="btn btn-primary auth-submit w-100" type="submit">Masuk <i class="bi bi-arrow-right ms-2" aria-hidden="true"></i></button>
+    </form>
+    <div class="auth-divider"><span>atau masuk dengan</span></div>
+    <div class="auth-oauth"><a class="btn btn-outline-secondary" href="{{ url_for('auth.google_login',provider='gmail',next=request.args.get('next')) }}"><i class="bi bi-google" aria-hidden="true"></i> Gmail</a><a class="btn btn-outline-secondary" href="{{ url_for('auth.google_login',provider='belajar',next=request.args.get('next')) }}"><i class="bi bi-mortarboard" aria-hidden="true"></i> belajar.id</a></div>
+    {% if not registration_cta %}<div class="auth-register"><p>Belum punya akun?</p><div class="d-flex flex-wrap justify-content-center gap-3"><a href="{{ url_for('portal.register_school') }}">Daftar sekolah</a><a href="{{ url_for('auth.register') }}">Daftar Staff</a></div></div>{% endif %}
+   </div>
+   <footer class="auth-footer"><a href="{{ url_for('main.documentation') }}"><i class="bi bi-book me-1" aria-hidden="true"></i>Panduan</a><span aria-hidden="true">·</span><button type="button" data-bs-toggle="modal" data-bs-target="#helpModal">Hubungi admin</button></footer>
+  </section>
+ </main>
+    <div class="modal fade" id="forgotPasswordModal" tabindex="-1" aria-labelledby="forgotPasswordModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="forgotPasswordModalLabel"><i class="bi bi-key me-2 text-primary"></i>Lupa password?</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-body-secondary small">Cari akun dengan email atau NPSN. Sistem akan menyiapkan data akun untuk dikirim ke admin melalui WhatsApp.</p>
+                    <form id="forgotPasswordForm" action="{{ url_for('auth.forgot_password_contacts') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <fieldset class="mb-3">
+                            <legend class="form-label mb-2">Cari menggunakan</legend>
+                            <div class="btn-group w-100" role="group" aria-label="Pilihan pencarian akun">
+                                <input class="btn-check" type="radio" name="lookup_type" id="forgotLookupEmail" value="email" autocomplete="off" checked>
+                                <label class="btn btn-outline-primary" for="forgotLookupEmail"><i class="bi bi-envelope me-1" aria-hidden="true"></i>Email</label>
+                                <input class="btn-check" type="radio" name="lookup_type" id="forgotLookupNpsn" value="npsn" autocomplete="off">
+                                <label class="btn btn-outline-primary" for="forgotLookupNpsn"><i class="bi bi-building me-1" aria-hidden="true"></i>NPSN</label>
+                            </div>
+                        </fieldset>
+                        <label class="form-label" for="forgotPasswordIdentifier" id="forgotPasswordIdentifierLabel">Email akun</label>
+                        <div class="d-flex flex-column flex-sm-row gap-2">
+                            <input class="form-control" id="forgotPasswordIdentifier" name="identifier" type="email" autocomplete="username" placeholder="nama@contoh.com" required>
+                            <button class="btn btn-primary flex-shrink-0" type="submit" id="forgotPasswordSubmit">Cari akun</button>
+                        </div>
+                    </form>
+                    <div class="alert alert-danger mt-3 mb-0" id="forgotPasswordError" role="alert" hidden></div>
+                    <div id="forgotPasswordResult" class="mt-3" hidden>
+                        <div class="rounded border p-3 mb-3" id="forgotPasswordAccount"></div>
+                        <p class="small text-body-secondary mb-2">Pilih admin wilayah aktif untuk mengirim permintaan reset:</p>
+                        <div class="list-group" id="forgotPasswordContacts"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     <!-- Help Modal - Admin Wilayah -->
     <div class="modal fade" id="helpModal" tabindex="-1" aria-labelledby="helpModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -315,10 +117,10 @@
                     <h5 class="modal-title" id="helpModalLabel">
                         <i class="bi bi-telephone-outbound me-2 text-success"></i>Hubungi Admin Wilayah
                     </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
                 </div>
                 <div class="modal-body">
-                    <p class="mb-3">Butuh bantuan? Silakan hubungi admin wilayah berikut:</p>
+                    <p class="mb-3" id="helpModalDescription">Butuh bantuan? Silakan hubungi admin wilayah berikut:</p>
                     <div class="list-group">
                         {% if coordinator_contacts %}
                         {% for group in coordinator_contacts|groupby('area') %}
@@ -326,11 +128,11 @@
                             <div class="fw-semibold">{{ group.grouper }}</div>
                             <div class="mt-2 d-flex flex-column gap-2">
                                 {% for c in group.list %}
-                                <div class="d-flex justify-content-between align-items-start">
+                                <div class="d-flex flex-wrap gap-2 justify-content-between align-items-start">
                                     <div class="text-muted small">{{ c.name }} • {{ c.phone }}</div>
                                     {% if c.is_active %}
                                     <a class="btn btn-success btn-sm d-inline-flex align-items-center gap-2"
-                                        href="{{ c.wa_link }}" target="_blank" rel="noopener">
+                                        href="{{ c.wa_link }}" data-original-href="{{ c.wa_link }}" target="_blank" rel="noopener noreferrer">
                                         <i class="bi bi-whatsapp"></i><span>WhatsApp</span>
                                     </a>
                                     {% else %}
@@ -343,13 +145,13 @@
                         {% endfor %}
                         {% else %}
                         <div class="list-group-item text-center text-muted small">
-                            Kontak admin belum tersedia.
+                            Kontak admin belum tersedia. Hubungi pengelola akun di sekolah atau unit kerja Anda untuk meminta reset password.
                         </div>
                         {% endif %}
                     </div>
                     <div class="alert alert-info mt-3 mb-0 small">
                         <i class="bi bi-info-circle me-1"></i>
-                        Admin wilayah siap membantu reset password atau verifikasi akun Anda.
+                        Admin akan membantu memverifikasi akun sebelum mereset password. Jangan kirim password atau kode OTP Anda.
                     </div>
                 </div>
             </div>
@@ -388,15 +190,18 @@
 
                 if (toggleBtn) {
                     toggleBtn.setAttribute('title', nextTheme === 'dark' ? 'Mode Terang' : 'Mode Gelap');
+                    toggleBtn.setAttribute('aria-label', nextTheme === 'dark' ? 'Gunakan tema terang' : 'Gunakan tema gelap');
                 }
 
                 if (persist) {
+                    hasStoredPreference = true;
                     try {
                         localStorage.setItem(storageKey, nextTheme);
                     } catch (error) { /* no-op */ }
                 }
             }
 
+            applyTheme(getCurrentTheme(), false);
             if (toggleBtn) {
                 toggleBtn.addEventListener('click', function () {
                     var currentTheme = getCurrentTheme();
@@ -452,6 +257,105 @@
                 return new bootstrap.Tooltip(tooltipTriggerEl);
             });
         });
+    </script>
+    <script>
+    const forgotModal = document.getElementById('forgotPasswordModal');
+    const forgotForm = document.getElementById('forgotPasswordForm');
+    const forgotIdentifier = document.getElementById('forgotPasswordIdentifier');
+    const forgotIdentifierLabel = document.getElementById('forgotPasswordIdentifierLabel');
+    const forgotLookupOptions = document.querySelectorAll('input[name="lookup_type"]');
+    const forgotError = document.getElementById('forgotPasswordError');
+    const forgotResult = document.getElementById('forgotPasswordResult');
+    const forgotAccount = document.getElementById('forgotPasswordAccount');
+    const forgotContacts = document.getElementById('forgotPasswordContacts');
+    const forgotSubmit = document.getElementById('forgotPasswordSubmit');
+
+    function updateForgotLookupInput(prefillEmail) {
+        const lookupType = document.querySelector('input[name="lookup_type"]:checked').value;
+        if (lookupType === 'npsn') {
+            forgotIdentifierLabel.textContent = 'NPSN sekolah';
+            forgotIdentifier.type = 'text';
+            forgotIdentifier.inputMode = 'numeric';
+            forgotIdentifier.pattern = '[0-9]{8}';
+            forgotIdentifier.maxLength = 8;
+            forgotIdentifier.autocomplete = 'off';
+            forgotIdentifier.placeholder = '8 digit NPSN';
+            forgotIdentifier.value = '';
+        } else {
+            forgotIdentifierLabel.textContent = 'Email akun';
+            forgotIdentifier.type = 'email';
+            forgotIdentifier.removeAttribute('inputmode');
+            forgotIdentifier.removeAttribute('pattern');
+            forgotIdentifier.removeAttribute('maxlength');
+            forgotIdentifier.autocomplete = 'username';
+            forgotIdentifier.placeholder = 'nama@contoh.com';
+            forgotIdentifier.value = prefillEmail ? document.getElementById('email').value.trim() : '';
+        }
+    }
+
+    forgotLookupOptions.forEach(function (option) {
+        option.addEventListener('change', function () {
+            updateForgotLookupInput(option.value === 'email');
+            forgotError.hidden = true;
+            forgotResult.hidden = true;
+            forgotIdentifier.focus();
+        });
+    });
+    forgotModal.addEventListener('show.bs.modal', function () {
+        document.getElementById('forgotLookupEmail').checked = true;
+        updateForgotLookupInput(true);
+        forgotError.hidden = true;
+        forgotResult.hidden = true;
+    });
+    forgotModal.addEventListener('shown.bs.modal', function () { forgotIdentifier.focus(); });
+    forgotForm.addEventListener('submit', async function (event) {
+        event.preventDefault();
+        if (!forgotForm.reportValidity()) return;
+        forgotError.hidden = true;
+        forgotResult.hidden = true;
+        forgotSubmit.disabled = true;
+        forgotSubmit.textContent = 'Mencari…';
+        try {
+            const response = await fetch(forgotForm.action, {
+                method: 'POST', body: new FormData(forgotForm),
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            const data = await response.json();
+            if (!response.ok || !data.success) throw new Error(data.message || 'Data akun belum dapat dicari.');
+            const account = data.account;
+            const rows = [['Jenis akun', account.account_type]];
+            if (account.npsn) rows.push(['NPSN', account.npsn]);
+            if (account.name) rows.push([account.account_type === 'Sekolah' ? 'Nama sekolah' : 'Nama staff', account.name]);
+            if (account.email) rows.push(['Email', account.email]);
+            forgotAccount.replaceChildren(...rows.map(function (row) {
+                const line = document.createElement('div');
+                line.className = 'd-flex flex-column flex-sm-row gap-sm-2 small mb-1';
+                const label = document.createElement('strong'); label.textContent = row[0] + ':';
+                const value = document.createElement('span'); value.textContent = row[1];
+                line.append(label, value); return line;
+            }));
+            forgotContacts.replaceChildren();
+            data.contacts.forEach(function (contact) {
+                const link = document.createElement('a');
+                link.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center gap-2';
+                link.href = contact.wa_link; link.target = '_blank'; link.rel = 'noopener noreferrer';
+                const text = document.createElement('span'); text.textContent = contact.area + ' · ' + contact.name;
+                const badge = document.createElement('span'); badge.className = 'badge text-bg-success'; badge.textContent = 'WhatsApp';
+                link.append(text, badge); forgotContacts.append(link);
+            });
+            if (!data.contacts.length) {
+                const empty = document.createElement('div'); empty.className = 'list-group-item text-body-secondary small';
+                empty.textContent = 'Kontak admin wilayah aktif belum tersedia.'; forgotContacts.append(empty);
+            }
+            forgotResult.hidden = false;
+        } catch (error) {
+            forgotError.textContent = error.message;
+            forgotError.hidden = false;
+        } finally {
+            forgotSubmit.disabled = false;
+            forgotSubmit.textContent = 'Cari akun';
+        }
+    });
     </script>
 </body>
 

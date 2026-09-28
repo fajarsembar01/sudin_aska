@@ -1,13 +1,14 @@
 <!doctype html>
 <html lang="id">
 <head>
+    {% include 'monev_bos/social/_public_theme.html' %}
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>Foto Live Eksternal · {{ link.school_name }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <style>
-        body { background: #f4f7fb; min-height: 100dvh; }
+        body { background: var(--bs-tertiary-bg); min-height: 100dvh; }
         .capture-shell { max-width: 720px; }
         .school-logo { width: 58px; height: 58px; object-fit: cover; }
         .camera-box { aspect-ratio: 4 / 3; background: #111827; overflow: hidden; }
@@ -15,7 +16,7 @@
         .camera-box video { transform: scaleX(1); }
         .token-input { letter-spacing: .35em; font-size: 1.3rem; font-weight: 700; }
         .step-number { width: 34px; height: 34px; display: inline-grid; place-items: center; }
-        .step-line { height: 2px; background: #dbe3ef; flex: 1; }
+        .step-line { height: 2px; background: var(--bs-border-color); flex: 1; }
         .safe-bottom { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
     </style>
 </head>

@@ -1,0 +1,18 @@
+{% extends 'layanan/base.html' %}
+{% block portal_content %}
+<div class="layanan-shell">
+ <h1 class="h3 fw-bold mb-2">Pencatatan layanan</h1>
+ <p class="text-body-secondary mb-4">Pilih kegiatan yang ingin Anda lakukan.</p>
+ <div class="row g-3 mb-4">
+  <div class="col-md-6"><div class="card card-body p-4 h-100 border-primary"><i class="bi bi-pencil-square fs-2 text-primary mb-3"></i><h2 class="h4 fw-bold">Ada layanan baru?</h2><p>Isi nama pemohon, sekolah asal, dan jenis layanan.</p><a class="btn btn-primary btn-lg mt-auto" href="{{ url_for('layanan.edit') }}">Catat layanan baru <i class="bi bi-arrow-right"></i></a></div></div>
+  <div class="col-md-6"><div class="card card-body p-4 h-100"><i class="bi bi-search fs-2 text-primary mb-3"></i><h2 class="h4 fw-bold">Cari layanan yang sudah dicatat</h2><p>Lihat catatan, ubah status, atau catat penyerahan dokumen.</p><a class="btn btn-outline-primary btn-lg mt-auto" href="{{ url_for('layanan.register') }}">Buka daftar layanan <i class="bi bi-arrow-right"></i></a></div></div>
+ </div>
+ <p class="text-body-secondary mb-4">{{ totals.dicatat + totals.diproses }} layanan belum selesai diproses · {{ totals.selesai }} layanan selesai dan belum diserahkan</p>
+ <div class="card overflow-hidden"><div class="card-header bg-body py-3 d-flex justify-content-between align-items-center"><h2 class="h6 fw-bold mb-0">Catatan terbaru</h2><a href="{{ url_for('layanan.report') }}" class="small">Lihat laporan</a></div>
+ <div class="table-responsive"><table class="table table-hover mb-0"><thead class="table-light"><tr><th>No. / Tanggal</th><th>Nama / Sekolah asal</th><th>Layanan</th><th>Status</th><th></th></tr></thead><tbody>
+ {% for row in rows %}<tr><td>#{{ row.id }}<div class="small text-body-secondary">{{ row.service_date.strftime('%d/%m/%Y') }}</div></td><td>{{ row.student_name }}<div class="small text-body-secondary">{{ row.school_origin }}</div></td><td>{{ types[row.service_type] }}</td><td><span class="badge text-bg-secondary">{{ statuses[row.status] }}</span></td><td><a class="btn btn-sm btn-outline-primary" href="{{ url_for('layanan.detail',record_id=row.id) }}">Buka catatan</a></td></tr>
+ {% else %}<tr><td colspan="5" class="text-center py-5"><i class="bi bi-journal-plus fs-1 text-body-secondary"></i><p class="fw-bold mt-2 mb-1">Belum ada catatan layanan</p><p class="text-body-secondary mb-0">Tekan “Catat layanan baru” untuk mulai.</p></td></tr>{% endfor %}
+ </tbody></table></div></div>
+ <p class="small text-body-secondary mt-3">Butuh rekap untuk periode tertentu? Buka menu Laporan.</p>
+</div>
+{% endblock %}

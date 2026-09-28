@@ -1000,3 +1000,82 @@ html[data-theme="dark"] .theme-toggle-label .theme-icon-moon {
 .toast {
     opacity: 1;
 }
+
+/* Shared dark palette for dashboard modules, including third-party selects.
+   Screen-only: exported/printed documents retain their print styles. */
+@media screen {
+    html[data-theme="dark"][data-bs-theme="dark"] .bg-white {
+        background-color: var(--bg-surface) !important;
+    }
+    html[data-theme="dark"][data-bs-theme="dark"] :is(.bg-light, .text-bg-light) {
+        background-color: var(--bg-subtle) !important;
+    }
+    html[data-theme="dark"][data-bs-theme="dark"] :is(.text-dark, .text-black, .text-bg-light) {
+        color: var(--text-primary) !important;
+    }
+    html[data-theme="dark"][data-bs-theme="dark"] :is(.bg-warning, .bg-info, .text-bg-warning, .text-bg-info, .btn-warning, .btn-info).text-dark {
+        color: #111827 !important;
+    }
+    html[data-theme="dark"][data-bs-theme="dark"] .btn-outline-warning:not(:hover):not(:active):not(.active) {
+        color: var(--bs-warning-text-emphasis) !important;
+    }
+    html[data-theme="dark"][data-bs-theme="dark"] .btn-outline-warning:is(:hover, :active, .active) {
+        color: #111827 !important;
+    }
+    html[data-theme="dark"][data-bs-theme="dark"] .text-primary:not(.btn):not(.bg-primary) {
+        color: var(--bs-primary-text-emphasis) !important;
+    }
+    html[data-theme="dark"][data-bs-theme="dark"] .text-success:not(.btn):not(.bg-success) {
+        color: var(--bs-success-text-emphasis) !important;
+    }
+    html[data-theme="dark"][data-bs-theme="dark"] .text-danger:not(.btn):not(.bg-danger) {
+        color: var(--bs-danger-text-emphasis) !important;
+    }
+    html[data-theme="dark"][data-bs-theme="dark"] .text-muted {
+        color: var(--text-muted) !important;
+    }
+    html[data-theme="dark"][data-bs-theme="dark"] .table-light {
+        --bs-table-bg: var(--bg-subtle);
+        --bs-table-color: var(--text-primary);
+        --bs-table-border-color: var(--border-soft);
+        --bs-table-striped-bg: var(--bg-muted);
+        --bs-table-striped-color: var(--text-primary);
+        --bs-table-hover-bg: var(--bg-muted);
+        --bs-table-hover-color: var(--text-primary);
+    }
+    html[data-theme="dark"][data-bs-theme="dark"] :is(.ts-control, .ts-dropdown, .ts-wrapper) {
+        color: var(--text-primary);
+        background-color: var(--bg-surface);
+        border-color: var(--border-soft);
+    }
+    html[data-theme="dark"][data-bs-theme="dark"] .ts-control input {
+        color: var(--text-primary);
+    }
+    html[data-theme="dark"][data-bs-theme="dark"] .ts-control input::placeholder {
+        color: var(--text-muted);
+        opacity: 1;
+    }
+    html[data-theme="dark"][data-bs-theme="dark"] .ts-dropdown .optgroup-header {
+        background-color: var(--bg-subtle);
+        color: var(--text-secondary);
+    }
+    html[data-theme="dark"][data-bs-theme="dark"] .ts-dropdown :is(.active, .option:hover) {
+        background-color: var(--bs-primary-bg-subtle) !important;
+        color: var(--bs-primary-text-emphasis) !important;
+    }
+    html[data-theme="dark"][data-bs-theme="dark"] .ts-dropdown .selected {
+        background-color: var(--bs-primary) !important;
+        color: #fff !important;
+    }
+    html[data-theme="dark"][data-bs-theme="dark"] .ts-wrapper.multi .ts-control > .item {
+        background-color: var(--bg-muted);
+        color: var(--text-primary);
+    }
+    html[data-theme="dark"][data-bs-theme="dark"] :is(.ts-wrapper .clear-button, .ts-control .remove) {
+        color: var(--text-primary);
+    }
+    html[data-theme="dark"][data-bs-theme="dark"] .ts-wrapper.focus {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+    }
+}

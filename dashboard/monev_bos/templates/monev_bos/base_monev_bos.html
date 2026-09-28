@@ -2,8 +2,13 @@
 
 {% block title %}{{ page_title|default("MONEV BOS/BOP") }} - MONEV BOS/BOP{% endblock %}
 
+{% block head_extra %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/monev-dark.css') }}">
+{% endblock %}
+
 {% block portal_nav %}
-<nav class="navbar navbar-expand-lg sticky-top">
+<nav class="navbar navbar-expand-lg sticky-top monev-bos-nav">
     <div class="container-fluid px-lg-4">
         <a class="navbar-brand" href="{{ url_for('monev_bos.index') }}">
             <span class="icon-badge brand-icon text-success">

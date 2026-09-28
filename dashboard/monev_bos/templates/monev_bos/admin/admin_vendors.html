@@ -745,7 +745,7 @@
                         <select id="revisionBank{{ v.id }}" class="form-select" name="bank_name">
                             <option value="">Pilih bank</option>
                             {% if v.bank_name and v.bank_name not in master_banks %}<option value="{{ v.bank_name }}" selected>{{ v.bank_name }}</option>{% endif %}
-                            {% for bank in master_banks %}<option value="{{ bank }}" {% if bank == v.bank_name %}selected{% endif %}>{{ bank }}</option>{% endfor %}
+                            {% for bank in master_banks|sort(case_sensitive=false) %}<option value="{{ bank }}" {% if bank == v.bank_name %}selected{% endif %}>{{ bank }}</option>{% endfor %}
                         </select>
                     </div>
                     <div class="col-12 col-md-6">

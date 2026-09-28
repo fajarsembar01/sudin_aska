@@ -1819,6 +1819,61 @@ def get_user_by_email(email: str) -> Optional[DictRow]:
     return row
 
 
+def get_password_reset_identity(email: str) -> Optional[Dict[str, Any]]:
+    """Return the minimum account identity needed by an admin for password reset."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT u.id, u.email, u.full_name, u.role,
+                   COALESCE(s.npsn, owned_school.npsn) AS school_npsn,
+                   COALESCE(s.name, owned_school.name) AS school_name,
+                   COALESCE(sk.name, owned_k.name, requested_k.name) AS area_name
+            FROM dashboard_users u
+            LEFT JOIN portal_schools s ON s.id = u.school_id
+            LEFT JOIN portal_kelurahan sl ON sl.id = s.kelurahan_id
+            LEFT JOIN portal_kecamatan sk ON sk.id = sl.kecamatan_id
+            LEFT JOIN portal_schools owned_school ON owned_school.user_id = u.id
+            LEFT JOIN portal_kelurahan owned_l ON owned_l.id = owned_school.kelurahan_id
+            LEFT JOIN portal_kecamatan owned_k ON owned_k.id = owned_l.kecamatan_id
+            LEFT JOIN portal_kecamatan requested_k ON requested_k.id = u.requested_kecamatan
+            WHERE LOWER(u.email) = LOWER(%s)
+            ORDER BY owned_school.active DESC NULLS LAST, owned_school.id
+            LIMIT 1
+            """,
+            (email,),
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
+def get_password_reset_school_by_npsn(npsn: str) -> Optional[Dict[str, Any]]:
+    """Resolve a school account from NPSN for assisted password reset."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT account.id, account.email,
+                   COALESCE(account.full_name, s.name) AS full_name,
+                   'sekolah' AS role, s.npsn AS school_npsn, s.name AS school_name,
+                   k.name AS area_name
+            FROM portal_schools s
+            LEFT JOIN portal_kelurahan l ON l.id = s.kelurahan_id
+            LEFT JOIN portal_kecamatan k ON k.id = l.kecamatan_id
+            LEFT JOIN LATERAL (
+                SELECT u.id, u.email, u.full_name
+                FROM dashboard_users u
+                WHERE u.school_id = s.id OR u.id = s.user_id
+                ORDER BY CASE WHEN u.role = 'sekolah' THEN 0 ELSE 1 END, u.id
+                LIMIT 1
+            ) account ON TRUE
+            WHERE s.npsn = %s
+            LIMIT 1
+            """,
+            (npsn,),
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
 _DASHBOARD_USER_SELECT = """
             SELECT
                 u.id,
