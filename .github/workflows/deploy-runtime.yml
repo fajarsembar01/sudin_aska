@@ -2,6 +2,12 @@ name: 🚀 Deploy Runtime ASKA
 
 on:
   workflow_dispatch:
+    inputs:
+      sync_github_performance:
+        description: Sinkronkan ulang atribusi Coding Update setelah deploy
+        required: false
+        default: false
+        type: boolean
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -92,3 +98,41 @@ jobs:
             "cd ${{ secrets.SERVER_PROJECT_PATH }} && \
              sudo systemctl restart aska-dashboard.service && \
              sudo systemctl is-active aska-dashboard.service"
+
+      - name: 🔃 Sinkronkan atribusi Coding Update
+        if: ${{ inputs.sync_github_performance }}
+        run: |
+          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
+            "cd ${{ secrets.SERVER_PROJECT_PATH }} && ./venv/bin/python -" <<'PY'
+          from dashboard.pengaturan.github_performance import (
+              hydrate_commit_line_stats,
+              list_admin_github_accounts,
+              sync_admin_commits,
+          )
+
+          repository = "fajarsembar01/sudin_aska"
+          accounts = [
+              account for account in list_admin_github_accounts()
+              if account.get("github_username")
+          ]
+          actor_id = next(
+              (
+                  int(account["id"])
+                  for account in accounts
+                  if account["github_username"] == "fajarsembar01"
+              ),
+              int(accounts[0]["id"]),
+          )
+          for account in accounts:
+              username = account["github_username"]
+              result = sync_admin_commits(
+                  repository,
+                  username,
+                  synced_by=actor_id,
+                  author_email=account.get("github_author_email") or "",
+              )
+              hydrate_commit_line_stats(
+                  repository, username, start=None, end=None
+              )
+              print(f"{username}: {result['inserted']} perubahan atribusi")
+          PY
