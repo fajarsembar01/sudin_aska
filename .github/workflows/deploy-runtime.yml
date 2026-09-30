@@ -58,6 +58,9 @@ jobs:
             dashboard/queries.py \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_PROJECT_PATH }}/dashboard/queries.py
           rsync -avz --progress \
+            dashboard/pengaturan/github_performance.py \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_PROJECT_PATH }}/dashboard/pengaturan/github_performance.py
+          rsync -avz --progress \
             dashboard/templates/admin_performance.html \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_PROJECT_PATH }}/dashboard/templates/admin_performance.html
           rsync -avz --progress \
