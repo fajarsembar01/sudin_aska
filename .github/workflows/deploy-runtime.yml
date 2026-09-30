@@ -99,6 +99,12 @@ jobs:
              echo '✅ Kode runtime diperbarui!' && \
              (sudo systemctl restart aska 2>/dev/null || pm2 restart aska 2>/dev/null || echo '⚠️ Restart manual diperlukan')"
 
+      - name: 🗃️ Perbarui schema layanan
+        run: |
+          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
+            "cd ${{ secrets.SERVER_PROJECT_PATH }} && \
+             ./venv/bin/python -c 'from dashboard.layanan.queries import ensure_schema; ensure_schema()'"
+
       - name: 🔄 Restart dashboard
         run: |
           ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
