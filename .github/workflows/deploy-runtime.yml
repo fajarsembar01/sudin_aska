@@ -101,9 +101,11 @@ jobs:
 
       - name: 🔃 Sinkronkan atribusi Coding Update
         if: ${{ inputs.sync_github_performance }}
+        env:
+          SYNC_GITHUB_TOKEN: ${{ github.token }}
         run: |
           ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
-            "cd ${{ secrets.SERVER_PROJECT_PATH }} && ./venv/bin/python -" <<'PY'
+            "cd ${{ secrets.SERVER_PROJECT_PATH }} && GITHUB_TOKEN='$SYNC_GITHUB_TOKEN' ./venv/bin/python -" <<'PY'
           from dashboard.pengaturan.github_performance import (
               hydrate_commit_line_stats,
               list_admin_github_accounts,
