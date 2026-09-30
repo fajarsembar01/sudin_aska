@@ -11,7 +11,15 @@ from .access import layanan_access_required
 
 layanan_bp = Blueprint('layanan', __name__, url_prefix='/layanan', template_folder='templates')
 layanan_legacy_bp = Blueprint('layanan_legacy', __name__, url_prefix='/portal/layanan')
-TYPES = {'ijazah': 'Ijazah', 'skpi': 'SKPI', 'legalisasi': 'Legalisasi', 'mutasi': 'Mutasi siswa'}
+TYPES = {
+    'ijazah': 'Ijazah',
+    'skpi': 'SKPI',
+    'legalisasi': 'Legalisasi',
+    'mutasi': 'Mutasi siswa',
+    'kjp': 'KJP',
+    'pip': 'PIP',
+    'kjmu': 'KJMU',
+}
 STATUSES = {'dicatat': 'Baru dicatat', 'diproses': 'Sedang diproses', 'selesai': 'Selesai diproses', 'diserahkan': 'Sudah diserahkan'}
 access = layanan_access_required
 

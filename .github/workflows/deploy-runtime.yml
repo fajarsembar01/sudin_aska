@@ -61,6 +61,13 @@ jobs:
             dashboard/laporan/routes.py \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_PROJECT_PATH }}/dashboard/laporan/routes.py
           rsync -avz --progress \
+            dashboard/layanan/routes.py \
+            dashboard/layanan/schema.sql \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_PROJECT_PATH }}/dashboard/layanan/
+          rsync -avz --progress \
+            dashboard/migrations/057_add_kjp_pip_kjmu_service_types.sql \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_PROJECT_PATH }}/dashboard/migrations/057_add_kjp_pip_kjmu_service_types.sql
+          rsync -avz --progress \
             dashboard/queries.py \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_PROJECT_PATH }}/dashboard/queries.py
           rsync -avz --progress \

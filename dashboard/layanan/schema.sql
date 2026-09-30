@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS layanan_records (
     id BIGSERIAL PRIMARY KEY,
-    service_type TEXT NOT NULL CHECK (service_type IN ('ijazah', 'skpi', 'legalisasi', 'mutasi')),
+    service_type TEXT NOT NULL CHECK (service_type IN ('ijazah', 'skpi', 'legalisasi', 'mutasi', 'kjp', 'pip', 'kjmu')),
     service_date DATE NOT NULL,
     student_name VARCHAR(200) NOT NULL,
     school_origin VARCHAR(250) NOT NULL,
@@ -26,6 +26,25 @@ CREATE TABLE IF NOT EXISTS layanan_records (
 );
 CREATE INDEX IF NOT EXISTS layanan_records_date_idx ON layanan_records (service_date DESC, id DESC);
 CREATE INDEX IF NOT EXISTS layanan_records_type_status_idx ON layanan_records (service_type, status);
+DO $$
+DECLARE
+    service_type_constraint TEXT;
+BEGIN
+    SELECT pg_get_constraintdef(oid)
+    INTO service_type_constraint
+    FROM pg_constraint
+    WHERE conrelid = 'layanan_records'::regclass
+      AND conname = 'layanan_records_service_type_check';
+
+    IF service_type_constraint IS NOT NULL
+       AND service_type_constraint NOT ILIKE '%kjp%' THEN
+        ALTER TABLE layanan_records
+            DROP CONSTRAINT layanan_records_service_type_check;
+        ALTER TABLE layanan_records
+            ADD CONSTRAINT layanan_records_service_type_check
+            CHECK (service_type IN ('ijazah', 'skpi', 'legalisasi', 'mutasi', 'kjp', 'pip', 'kjmu'));
+    END IF;
+END $$;
 ALTER TABLE layanan_records ADD COLUMN IF NOT EXISTS school_origin_id INTEGER
     REFERENCES portal_schools(id) ON DELETE SET NULL;
 ALTER TABLE layanan_records ADD COLUMN IF NOT EXISTS school_destination_id INTEGER
