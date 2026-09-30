@@ -171,6 +171,107 @@ def _request_commit_page(
     return payload
 
 
+def _request_github_json(
+    url: str, *, params: Optional[Dict[str, Any]] = None, timeout: int = 12
+) -> Any:
+    if params:
+        url = f"{url}?{urlencode(params)}"
+    request = Request(
+        url,
+        headers={
+            "Accept": "application/vnd.github+json",
+            "User-Agent": "ASKA-Admin-Performance",
+            "X-GitHub-Api-Version": "2022-11-28",
+        },
+    )
+    token = (os.getenv("GITHUB_TOKEN") or "").strip()
+    if token:
+        request.add_header("Authorization", f"Bearer {token}")
+    try:
+        with urlopen(request, timeout=timeout) as response:
+            return json.loads(response.read().decode("utf-8"))
+    except HTTPError as exc:
+        if exc.code == 404:
+            raise RuntimeError("Data GitHub tidak ditemukan atau token tidak memiliki akses.") from exc
+        if exc.code in {401, 403}:
+            raise RuntimeError("Akses GitHub ditolak atau batas API tercapai. Periksa GITHUB_TOKEN.") from exc
+        raise RuntimeError(f"GitHub API gagal dengan status {exc.code}.") from exc
+    except (URLError, TimeoutError) as exc:
+        raise RuntimeError("GitHub tidak dapat dihubungi. Coba sinkronkan kembali.") from exc
+
+
+def fetch_merged_pull_requests(
+    repository: str, username: str, *, timeout: int = 12
+):
+    """Yield merged pull requests opened by ``username``.
+
+    Pull-request ownership is intentionally independent from commit author and
+    from the maintainer who presses the merge button.
+    """
+    repository = normalize_repository(repository)
+    username = normalize_username(username)
+    for page in range(1, 11):
+        payload = _request_github_json(
+            "https://api.github.com/search/issues",
+            params={
+                "q": f"repo:{repository} is:pr is:merged author:{username}",
+                "sort": "updated",
+                "order": "desc",
+                "per_page": 100,
+                "page": page,
+            },
+            timeout=timeout,
+        )
+        items = payload.get("items") if isinstance(payload, dict) else None
+        if not isinstance(items, list):
+            raise RuntimeError("Respons pencarian pull request GitHub tidak sesuai format.")
+        for item in items:
+            number = item.get("number")
+            if not number:
+                continue
+            detail = _request_github_json(
+                f"https://api.github.com/repos/{repository}/pulls/{number}",
+                timeout=timeout,
+            )
+            if not isinstance(detail, dict) or not detail.get("merged_at"):
+                continue
+            yield detail
+        if len(items) < 100:
+            return
+    raise RuntimeError("Riwayat pull request GitHub melebihi batas 1.000 hasil.")
+
+
+def fetch_pull_request_commits(
+    repository: str, pull_number: int, *, timeout: int = 12
+) -> list[Dict[str, Any]]:
+    repository = normalize_repository(repository)
+    rows: list[Dict[str, Any]] = []
+    for page in range(1, 101):
+        payload = _request_github_json(
+            f"https://api.github.com/repos/{repository}/pulls/{int(pull_number)}/commits",
+            params={"per_page": 100, "page": page},
+            timeout=timeout,
+        )
+        if not isinstance(payload, list):
+            raise RuntimeError("Respons commit pull request GitHub tidak sesuai format.")
+        for item in payload:
+            commit = item.get("commit") or {}
+            author = commit.get("author") or commit.get("committer") or {}
+            if not item.get("sha") or not author.get("date"):
+                continue
+            rows.append(
+                {
+                    "sha": item["sha"],
+                    "committed_at": author["date"],
+                    "commit_url": item.get("html_url"),
+                    "commit_message": commit.get("message"),
+                }
+            )
+        if len(payload) < 100:
+            return rows
+    raise RuntimeError("Commit dalam pull request GitHub terlalu banyak.")
+
+
 def fetch_commit_batches(
     repository: str,
     username: str,
@@ -191,6 +292,11 @@ def fetch_commit_batches(
             author = commit.get("author") or commit.get("committer") or {}
             if not item.get("sha") or not author.get("date"):
                 continue
+            # A GitHub-created merge commit represents the act of merging, not
+            # an additional coding update. The PR's own commits are credited to
+            # the account that opened the pull request below.
+            if re.match(r"^Merge pull request #\d+\b", commit.get("message") or ""):
+                continue
             rows.append(
                 {
                     "sha": item["sha"],
@@ -208,23 +314,69 @@ def fetch_commit_batches(
 
 def _save_commit_batch(repository: str, username: str, rows: list[Dict[str, Any]]) -> int:
     with get_cursor(commit=True) as cur:
-        cur.executemany(
-            """
-            INSERT INTO github_admin_commits
-                (repository, github_username, commit_sha, committed_at,
-                 commit_url, commit_message, synced_at)
-            VALUES (%s, %s, %s, %s, %s, %s, NOW())
-            ON CONFLICT (repository, github_username, commit_sha) DO NOTHING
-            """,
-            [
+        inserted = 0
+        for row in rows:
+            cur.execute(
+                """
+                INSERT INTO github_admin_commits
+                    (repository, github_username, commit_sha, committed_at,
+                     commit_url, commit_message, synced_at)
+                SELECT %s, %s, %s, %s, %s, %s, NOW()
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM github_admin_commits
+                    WHERE repository = %s AND commit_sha = %s
+                )
+                ON CONFLICT (repository, github_username, commit_sha) DO NOTHING
+                """,
                 (
                     repository, username, row["sha"], row["committed_at"],
                     row.get("commit_url"), row.get("commit_message"),
-                )
-                for row in rows
-            ],
-        )
-        return max(0, int(cur.rowcount or 0))
+                    repository, row["sha"],
+                ),
+            )
+            inserted += max(0, int(cur.rowcount or 0))
+        return inserted
+
+
+def _assign_pull_request_commits(
+    repository: str,
+    username: str,
+    rows: list[Dict[str, Any]],
+    *,
+    merge_commit_sha: Optional[str] = None,
+) -> int:
+    """Make the PR opener the sole owner of every commit in the PR."""
+    assigned = 0
+    with get_cursor(commit=True) as cur:
+        if merge_commit_sha:
+            cur.execute(
+                "DELETE FROM github_admin_commits WHERE repository = %s AND commit_sha = %s",
+                (repository, merge_commit_sha),
+            )
+        for row in rows:
+            cur.execute(
+                """
+                DELETE FROM github_admin_commits
+                WHERE repository = %s AND commit_sha = %s
+                  AND LOWER(github_username) <> LOWER(%s)
+                """,
+                (repository, row["sha"], username),
+            )
+            cur.execute(
+                """
+                INSERT INTO github_admin_commits
+                    (repository, github_username, commit_sha, committed_at,
+                     commit_url, commit_message, synced_at)
+                VALUES (%s, %s, %s, %s, %s, %s, NOW())
+                ON CONFLICT (repository, github_username, commit_sha) DO NOTHING
+                """,
+                (
+                    repository, username, row["sha"], row["committed_at"],
+                    row.get("commit_url"), row.get("commit_message"),
+                ),
+            )
+            assigned += max(0, int(cur.rowcount or 0))
+    return assigned
 
 
 def get_last_sync(
@@ -285,6 +437,19 @@ def sync_admin_commits(
                 author_identity=identity,
             ):
                 inserted += _save_commit_batch(repository, username, batch)
+        # PR attribution takes precedence over Git commit metadata. This also
+        # repairs historical rows that were previously credited to the commit
+        # author or to the maintainer who merged the PR.
+        for pull_request in fetch_merged_pull_requests(repository, username):
+            pull_commits = fetch_pull_request_commits(
+                repository, int(pull_request["number"])
+            )
+            inserted += _assign_pull_request_commits(
+                repository,
+                username,
+                pull_commits,
+                merge_commit_sha=pull_request.get("merge_commit_sha"),
+            )
     except (RuntimeError, ValueError) as exc:
         _save_sync_state(
             repository, username, synced_by=synced_by,
