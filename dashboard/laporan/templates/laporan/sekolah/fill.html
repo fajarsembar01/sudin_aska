@@ -449,6 +449,79 @@
         </script>
         {% endif %}
 
+        {# Rekap Kehadiran Siswa #}
+        {% elif field.field_type == 'rekap_kehadiran' %}
+        {% set jenjang = school.jenjang | upper if school and school.jenjang else 'SD' %}
+        {% set existing_json = existing.answer_json if existing and existing.answer_json else {} %}
+        {% set classes = [] %}
+        {% if 'SD' in jenjang %}
+            {% set classes = ['Kelas 1', 'Kelas 2', 'Kelas 3', 'Kelas 4', 'Kelas 5', 'Kelas 6'] %}
+        {% elif 'SMP' in jenjang %}
+            {% set classes = ['Kelas 7', 'Kelas 8', 'Kelas 9'] %}
+        {% elif 'SMA' in jenjang or 'SMK' in jenjang %}
+            {% set classes = ['Kelas 10', 'Kelas 11', 'Kelas 12'] %}
+        {% else %}
+            {% set classes = ['Kelas 1', 'Kelas 2', 'Kelas 3', 'Kelas 4', 'Kelas 5', 'Kelas 6'] %}
+        {% endif %}
+        
+        <div class="row g-3 mb-3">
+            <div class="col-md-6">
+                <label class="form-label small fw-semibold">Total Siswa Hadir</label>
+                <input type="number" class="form-control" name="field_{{ field.id }}_hadir" placeholder="0" min="0" value="{{ existing_json.get('Total Hadir', '') }}" {% if field.required %}required{% endif %}>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label small fw-semibold">Total Siswa Tidak Hadir</label>
+                <input type="number" class="form-control bg-body-secondary" name="field_{{ field.id }}_tidak_hadir" id="total_tdk_hadir_{{ field.id }}" placeholder="0" readonly value="{{ existing_json.get('Total Tidak Hadir', '') }}">
+            </div>
+        </div>
+
+        <label class="form-label small fw-semibold">Rincian Siswa Tidak Hadir (per Kelas)</label>
+        <div class="table-responsive">
+            <table class="table table-bordered table-sm align-middle text-center">
+                <thead class="table-light">
+                    <tr>
+                        <th rowspan="2" class="align-middle">Kelas</th>
+                        <th colspan="3">Keterangan Tidak Hadir</th>
+                    </tr>
+                    <tr>
+                        <th>Sakit</th>
+                        <th>Izin</th>
+                        <th>Alpha</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cls in classes %}
+                    <tr>
+                        <td class="fw-semibold">{{ cls }}
+                            <input type="hidden" name="field_{{ field.id }}_label_{{ loop.index }}" value="{{ cls }}">
+                        </td>
+                        <td>
+                            <input type="number" class="form-control form-control-sm text-center tdk-hadir-input-{{ field.id }}" name="field_{{ field.id }}_{{ loop.index }}_sakit" placeholder="0" min="0" value="{{ existing_json.get(cls ~ ' - Sakit', '') }}">
+                        </td>
+                        <td>
+                            <input type="number" class="form-control form-control-sm text-center tdk-hadir-input-{{ field.id }}" name="field_{{ field.id }}_{{ loop.index }}_izin" placeholder="0" min="0" value="{{ existing_json.get(cls ~ ' - Izin', '') }}">
+                        </td>
+                        <td>
+                            <input type="number" class="form-control form-control-sm text-center tdk-hadir-input-{{ field.id }}" name="field_{{ field.id }}_{{ loop.index }}_alpha" placeholder="0" min="0" value="{{ existing_json.get(cls ~ ' - Alpha', '') }}">
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <script>
+            function calcTdkHadir_{{ field.id }}() {
+                var total = 0;
+                document.querySelectorAll('.tdk-hadir-input-{{ field.id }}').forEach(function(inp) {
+                    total += parseInt(inp.value) || 0;
+                });
+                document.getElementById('total_tdk_hadir_{{ field.id }}').value = total;
+            }
+            document.querySelectorAll('.tdk-hadir-input-{{ field.id }}').forEach(function(inp) {
+                inp.addEventListener('input', calcTdkHadir_{{ field.id }});
+            });
+        </script>
+
         {# Date #}
         {% elif field.field_type == 'date' %}
         <input type="date" class="form-control" name="field_{{ field.id }}"
@@ -772,6 +845,30 @@ function loadPreviousAnswers(formId) {
                 if (!sel) return;
                 sel.value = textVal;
                 if (textVal) filledCount++;
+
+            } else if (fieldType === 'rekap_kehadiran') {
+                if (jsonVal && typeof jsonVal === 'object') {
+                    var hadirInp = document.querySelector('input[name="field_' + fieldId + '_hadir"]');
+                    if (hadirInp && jsonVal['Total Hadir'] !== undefined) {
+                        hadirInp.value = jsonVal['Total Hadir'];
+                    }
+                    var labels = document.querySelectorAll('input[name^="field_' + fieldId + '_label_"]');
+                    labels.forEach(function(lbl) {
+                        var clsName = lbl.value;
+                        var idx = lbl.name.split('_').pop();
+                        ['sakit', 'izin', 'alpha'].forEach(function(tipe) {
+                            var inp = document.querySelector('input[name="field_' + fieldId + '_' + idx + '_' + tipe + '"]');
+                            var valKey = clsName + ' - ' + (tipe.charAt(0).toUpperCase() + tipe.slice(1));
+                            if (inp && jsonVal[valKey] !== undefined) {
+                                inp.value = jsonVal[valKey];
+                            }
+                        });
+                    });
+                    if (typeof window['calcTdkHadir_' + fieldId] === 'function') {
+                        window['calcTdkHadir_' + fieldId]();
+                    }
+                    filledCount++;
+                }
 
             } else if (fieldType === 'rating') {
                 var ratingVal = parseInt(textVal || jsonVal || 0);

@@ -236,6 +236,7 @@ ALLOWED_FIELD_TYPES = {
     "info",
     "link",
     "formula",
+    "rekap_kehadiran",
 }
 
 
@@ -2559,6 +2560,36 @@ def sekolah_laporan_submit(form_id: int) -> Response:
                 if val == "clicked":
                     save_answer(submission_id, fid, "Dibuka")
 
+            elif ftype == "rekap_kehadiran":
+                vals = {}
+                hadir = request.form.get(f"field_{fid}_hadir", "").strip()
+                if hadir:
+                    vals["Total Hadir"] = hadir
+                
+                total_tdk = 0
+                for key in request.form.keys():
+                    if key.startswith(f"field_{fid}_label_"):
+                        idx = key.split("_")[-1]
+                        cls_label = request.form.get(key, "").strip()
+                        sakit = request.form.get(f"field_{fid}_{idx}_sakit", "").strip()
+                        izin = request.form.get(f"field_{fid}_{idx}_izin", "").strip()
+                        alpha = request.form.get(f"field_{fid}_{idx}_alpha", "").strip()
+                        
+                        if sakit:
+                            vals[f"{cls_label} - Sakit"] = sakit
+                            total_tdk += int(sakit)
+                        if izin:
+                            vals[f"{cls_label} - Izin"] = izin
+                            total_tdk += int(izin)
+                        if alpha:
+                            vals[f"{cls_label} - Alpha"] = alpha
+                            total_tdk += int(alpha)
+                            
+                vals["Total Tidak Hadir"] = str(total_tdk)
+                text_val = ", ".join(f"{k}: {v}" for k, v in vals.items() if v)
+                save_answer(submission_id, fid, text_val, answer_json=vals)
+
+
             else:
                 val = request.form.get(f"field_{fid}", "").strip()
                 save_answer(submission_id, fid, val)
@@ -2839,6 +2870,34 @@ def sekolah_laporan_edit_submission(submission_id: int) -> Response:
                 val = request.form.get(f"field_{fid}", "").strip()
                 if val == "clicked":
                     save_answer(submission_id, fid, "Dibuka")
+            elif ftype == "rekap_kehadiran":
+                vals = {}
+                hadir = request.form.get(f"field_{fid}_hadir", "").strip()
+                if hadir:
+                    vals["Total Hadir"] = hadir
+                
+                total_tdk = 0
+                for key in request.form.keys():
+                    if key.startswith(f"field_{fid}_label_"):
+                        idx = key.split("_")[-1]
+                        cls_label = request.form.get(key, "").strip()
+                        sakit = request.form.get(f"field_{fid}_{idx}_sakit", "").strip()
+                        izin = request.form.get(f"field_{fid}_{idx}_izin", "").strip()
+                        alpha = request.form.get(f"field_{fid}_{idx}_alpha", "").strip()
+                        
+                        if sakit:
+                            vals[f"{cls_label} - Sakit"] = sakit
+                            total_tdk += int(sakit)
+                        if izin:
+                            vals[f"{cls_label} - Izin"] = izin
+                            total_tdk += int(izin)
+                        if alpha:
+                            vals[f"{cls_label} - Alpha"] = alpha
+                            total_tdk += int(alpha)
+                            
+                vals["Total Tidak Hadir"] = str(total_tdk)
+                text_val = ", ".join(f"{k}: {v}" for k, v in vals.items() if v)
+                save_answer(submission_id, fid, text_val, answer_json=vals)
             else:
                 val = request.form.get(f"field_{fid}", "").strip()
                 save_answer(submission_id, fid, val)

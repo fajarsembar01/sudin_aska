@@ -1086,6 +1086,73 @@ def _answer_export_value(field: dict, answer: Optional[dict]) -> str:
     return answer.get("answer_text", "") or ""
 
 
+def _jenjang_group(jenjang: str) -> str:
+    """Classify a school's jenjang into sd / smp / sma group."""
+    j = (jenjang or "").upper()
+    if "SMA" in j or "SMK" in j or (" MA" in j and "SMP" not in j):
+        return "sma"
+    if "SMP" in j or "MTS" in j:
+        return "smp"
+    return "sd"
+
+
+_REKAP_CLASS_RANGES = {
+    "sd":  range(1, 7),
+    "smp": range(7, 10),
+    "sma": range(10, 13),
+}
+_REKAP_GROUPS_ORDER = ["sd", "smp", "sma"]
+
+
+def _rekap_kehadiran_sub_columns(label: str, groups: Optional[set] = None) -> list[str]:
+    """Return sub-column header names for a rekap_kehadiran field.
+
+    If *groups* is given, only include class columns for those jenjang groups.
+    Otherwise, include all groups (backward-compat).
+    """
+    active = groups if groups else {"sd", "smp", "sma"}
+    cols = [f"{label} - Total Hadir", f"{label} - Total Tidak Hadir"]
+    for g in _REKAP_GROUPS_ORDER:
+        if g not in active:
+            continue
+        for i in _REKAP_CLASS_RANGES[g]:
+            for cat in ["Sakit", "Izin", "Alpha"]:
+                cols.append(f"{label} - Kelas {i} - {cat}")
+    return cols
+
+
+def _rekap_kehadiran_row_values(
+    answer: Optional[dict],
+    school_jenjang: str = "",
+    groups: Optional[set] = None,
+) -> list[str]:
+    """Return ordered cell values for a rekap_kehadiran field.
+
+    Cells for jenjang groups that don't match *school_jenjang* are left blank.
+    If *groups* is None, all groups are included in the output.
+    """
+    active = groups if groups else {"sd", "smp", "sma"}
+    school_group = _jenjang_group(school_jenjang)
+    data: dict = {}
+    if answer:
+        raw = answer.get("answer_json") or {}
+        if isinstance(raw, dict):
+            data = raw
+
+    values = [
+        str(data.get("Total Hadir", "")),
+        str(data.get("Total Tidak Hadir", "")),
+    ]
+    for g in _REKAP_GROUPS_ORDER:
+        if g not in active:
+            continue
+        for i in _REKAP_CLASS_RANGES[g]:
+            for cat in ["Sakit", "Izin", "Alpha"]:
+                key = f"Kelas {i} - {cat}"
+                values.append(str(data.get(key, "")) if g == school_group else "")
+    return values
+
+
 def _matches_export_values(value: object, selected: object) -> bool:
     """Match one value against an optional single- or multi-value export filter."""
     if not selected:
@@ -1144,6 +1211,12 @@ def export_form_xlsx(
             for s in submissions
             if (s.get("school_status") or "").casefold() == school_status.casefold()
         ]
+
+    # Determine which jenjang groups are actually present in this export
+    present_groups: set = {
+        _jenjang_group(s.get("jenjang", "")) for s in submissions
+    }
+
     header = [
         "No",
         "Sekolah",
@@ -1156,7 +1229,10 @@ def export_form_xlsx(
         "Waktu Submit",
     ]
     for f in fields:
-        header.append(f["label"])
+        if f.get("field_type") == "rekap_kehadiran":
+            header.extend(_rekap_kehadiran_sub_columns(f["label"], present_groups))
+        else:
+            header.append(f["label"])
 
     wb = Workbook()
     ws = wb.active
@@ -1197,7 +1273,14 @@ def export_form_xlsx(
             ),
         ]
         for f in fields:
-            row.append(_answer_export_value(f, answers_map.get(f["id"])))
+            if f.get("field_type") == "rekap_kehadiran":
+                row.extend(_rekap_kehadiran_row_values(
+                    answers_map.get(f["id"]),
+                    school_jenjang=sub.get("jenjang", ""),
+                    groups=present_groups,
+                ))
+            else:
+                row.append(_answer_export_value(f, answers_map.get(f["id"])))
         ws.append(row)
 
     ws.freeze_panes = "A2"

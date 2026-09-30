@@ -129,6 +129,46 @@
         justify-content: center;
         flex-shrink: 0;
     }
+    .rekap-kehadiran-preview {
+        background: rgba(13, 110, 253, 0.04);
+        border: 1.5px dashed rgba(13, 110, 253, 0.3);
+        border-radius: 10px;
+        padding: 0.85rem 1rem;
+    }
+    .rekap-kehadiran-preview .sub-question-row {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.3rem 0;
+        border-bottom: 1px solid rgba(0,0,0,0.06);
+    }
+    .rekap-kehadiran-preview .sub-question-row:last-child {
+        border-bottom: none;
+    }
+    .rekap-kehadiran-preview .sub-badge {
+        font-size: 0.72rem;
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: 20px;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+    .rekap-kehadiran-preview .sub-inputs {
+        display: flex;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+    }
+    .rekap-kehadiran-preview .sub-input-mock {
+        font-size: 0.72rem;
+        padding: 2px 8px;
+        border: 1px solid var(--border-soft);
+        border-radius: 6px;
+        background: var(--bg-surface);
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
 </style>
 {% endblock %}
 
@@ -440,6 +480,7 @@
                         <option value="header" {% if field.field_type == 'header' %}selected{% endif %}>Judul Bagian</option>
                         <option value="info" {% if field.field_type == 'info' %}selected{% endif %}>Teks Informasi</option>
                         <option value="link" {% if field.field_type == 'link' %}selected{% endif %}>Link / Tombol</option>
+                        <option value="rekap_kehadiran" {% if field.field_type == 'rekap_kehadiran' %}selected{% endif %}>Pendataan Kehadiran Siswa</option>
                     </select>
                     <button type="button" class="remove-field-btn btn btn-sm btn-outline-danger icon-only"
                         onclick="removeField(this)"><i class="bi bi-x-lg"></i></button>
@@ -536,7 +577,35 @@
                         Ukuran maks: 1920×1920 px · Kualitas JPEG: 75%.
                     </div>
                 </div>
-                <div class="mt-2 req-group" id="req_group_{{ fid }}" {% if field.field_type in ('header', 'info', 'formula') %}style="display:none;"{% endif %}>
+                {# Rekap Kehadiran Preview #}
+                <div class="rekap-kehadiran-preview mt-2" id="rekap_preview_{{ fid }}"
+                    {% if field.field_type != 'rekap_kehadiran' %}style="display:none;"{% endif %}>
+                    <div class="text-muted small fw-semibold mb-2"><i class="bi bi-eye me-1"></i>Preview Sub-Form Kehadiran <span class="text-primary">(otomatis disesuaikan jenjang sekolah)</span></div>
+                    <div class="sub-question-row">
+                        <span class="sub-badge bg-success bg-opacity-10 text-success">Hadir</span>
+                        <div class="sub-inputs">
+                            <span class="sub-input-mock"><i class="bi bi-input-cursor-text"></i> Jumlah siswa hadir (angka)</span>
+                        </div>
+                    </div>
+                    <div class="sub-question-row align-items-start">
+                        <span class="sub-badge bg-danger bg-opacity-10 text-danger mt-1">Tidak Hadir</span>
+                        <div>
+                            <div class="text-muted small mb-1">Per kelas (SD: 1–6 / SMP: 7–9 / SMA: 10–12), masing-masing diisi:</div>
+                            <div class="sub-inputs">
+                                <span class="sub-input-mock"><i class="bi bi-thermometer"></i> Sakit</span>
+                                <span class="sub-input-mock"><i class="bi bi-journal-check"></i> Izin</span>
+                                <span class="sub-input-mock"><i class="bi bi-x-circle"></i> Alpha</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="sub-question-row">
+                        <span class="sub-badge bg-secondary bg-opacity-10 text-secondary">Total Tidak Hadir</span>
+                        <div class="sub-inputs">
+                            <span class="sub-input-mock text-muted"><i class="bi bi-calculator"></i> Dihitung otomatis</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-2 req-group" id="req_group_{{ fid }}" {% if field.field_type in ('header', 'info', 'formula', 'rekap_kehadiran') %}style="display:none;"{% endif %}>
                     <div class="form-check form-check-inline">
                         <input class="form-check-input" type="checkbox" name="field_required_{{ fid }}" id="req_{{ fid }}"
                             {% if field.required %}checked{% endif %}>
@@ -942,6 +1011,7 @@ function addField(fieldData) {
                 <option value="header">Judul Bagian</option>
                 <option value="info">Teks Informasi</option>
                 <option value="link">Link / Tombol</option>
+                <option value="rekap_kehadiran">Pendataan Kehadiran Siswa</option>
             </select>
             <button type="button" class="remove-field-btn btn btn-sm btn-outline-danger icon-only"
                 onclick="removeField(this)"><i class="bi bi-x-lg"></i></button>
@@ -1012,6 +1082,32 @@ function addField(fieldData) {
                 <strong>Upload Gambar:</strong> Format diizinkan: JPG, PNG, WEBP, GIF.
                 Gambar akan <strong>otomatis dikompres</strong> saat disimpan untuk menghemat storage.
                 Ukuran maks: 1920×1920 px · Kualitas JPEG: 75%.
+            </div>
+        </div>
+        <div class="rekap-kehadiran-preview mt-2" id="rekap_preview_${fid}" style="display:none;">
+            <div class="text-muted small fw-semibold mb-2"><i class="bi bi-eye me-1"></i>Preview Sub-Form Kehadiran <span class="text-primary">(otomatis disesuaikan jenjang sekolah)</span></div>
+            <div class="sub-question-row">
+                <span class="sub-badge bg-success bg-opacity-10 text-success">Hadir</span>
+                <div class="sub-inputs">
+                    <span class="sub-input-mock"><i class="bi bi-input-cursor-text"></i> Jumlah siswa hadir (angka)</span>
+                </div>
+            </div>
+            <div class="sub-question-row align-items-start">
+                <span class="sub-badge bg-danger bg-opacity-10 text-danger mt-1">Tidak Hadir</span>
+                <div>
+                    <div class="text-muted small mb-1">Per kelas (SD: 1–6 / SMP: 7–9 / SMA: 10–12), masing-masing diisi:</div>
+                    <div class="sub-inputs">
+                        <span class="sub-input-mock"><i class="bi bi-thermometer"></i> Sakit</span>
+                        <span class="sub-input-mock"><i class="bi bi-journal-check"></i> Izin</span>
+                        <span class="sub-input-mock"><i class="bi bi-x-circle"></i> Alpha</span>
+                    </div>
+                </div>
+            </div>
+            <div class="sub-question-row">
+                <span class="sub-badge bg-secondary bg-opacity-10 text-secondary">Total Tidak Hadir</span>
+                <div class="sub-inputs">
+                    <span class="sub-input-mock text-muted"><i class="bi bi-calculator"></i> Dihitung otomatis</span>
+                </div>
             </div>
         </div>
         <div class="mt-2 req-group" id="req_group_${fid}">
@@ -1190,9 +1286,12 @@ function toggleFieldOptions(select, fid) {
 
     var imgInfo = document.getElementById('img_info_' + fid);
     if (imgInfo) imgInfo.style.display = val === 'upload_gambar' ? '' : 'none';
+
+    var rekapPreview = document.getElementById('rekap_preview_' + fid);
+    if (rekapPreview) rekapPreview.style.display = val === 'rekap_kehadiran' ? '' : 'none';
     
     var reqGroup = document.getElementById('req_group_' + fid);
-    var showReq = (val !== 'header' && val !== 'info' && val !== 'formula');
+    var showReq = (val !== 'header' && val !== 'info' && val !== 'formula' && val !== 'rekap_kehadiran');
     if (reqGroup) reqGroup.style.display = showReq ? '' : 'none';
     var reqLabel = reqGroup ? reqGroup.querySelector('.required-label') : null;
     if (reqLabel) reqLabel.textContent = val === 'link' ? 'Wajib klik link' : 'Wajib diisi';
