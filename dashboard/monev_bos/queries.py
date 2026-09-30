@@ -2166,12 +2166,10 @@ def get_school_kecamatan_and_admin_wa(school_user_id: int) -> Dict[str, Any]:
             elif pk.get("kontak_2_active") and pk.get("kontak_2"):
                 admin_name = pk.get("nama_2") or "Admin Wilayah"
                 phone_raw = pk.get("kontak_2")
-            elif pk.get("kontak"):
-                admin_name = pk.get("nama") or "Admin Wilayah"
-                phone_raw = pk.get("kontak")
 
-        # 2. Fallback priority: Check user_kecamatan / dashboard_users table
-        if not phone_raw:
+        # Only fall back when no contact configuration exists for this area.
+        # Otherwise disabled contacts could reappear through their user account.
+        if not phone_raw and not pk:
             cur.execute(
                 """
                 SELECT u.id, u.full_name, u.role, COALESCE(u.whatsapp_number, u.phone) as phone
@@ -3563,18 +3561,126 @@ def delete_vendor(vendor_id: int, school_id: Optional[int] = None) -> bool:
 
 
 DEFAULT_MASTER_BANKS = [
+    "Allo Bank Indonesia",
+    "Bank Aceh Syariah",
+    "Bank Aladin Syariah",
+    "Bank Amar Indonesia",
+    "Bank ANZ Indonesia",
+    "Bank Artha Graha Internasional",
+    "Bank BCA",
+    "Bank BCA Syariah",
+    "Bank BJB",
+    "Bank BJB Syariah",
+    "Bank BNI",
+    "Bank BNP Paribas Indonesia",
+    "Bank BRI",
+    "Bank BTPN Syariah",
+    "Bank Bumi Arta",
+    "Bank Capital Indonesia",
+    "Bank China Construction Indonesia",
+    "Bank CIMB Niaga",
+    "Bank CTBC Indonesia",
+    "Bank Danamon",
+    "Bank DBS Indonesia",
     "Bank DKI",
     "Bank DKI Syariah",
+    "Bank Ganesha",
+    "Bank Hibank Indonesia",
+    "Bank HSBC Indonesia",
+    "Bank IBK Indonesia",
+    "Bank ICBC Indonesia",
+    "Bank Ina Perdana",
+    "Bank Index Selindo",
+    "Bank Jago",
+    "Bank Jasa Jakarta (Saqu)",
+    "Bank JTrust Indonesia",
+    "Bank KEB Hana Indonesia",
+    "Bank KB Bukopin",
+    "Bank KB Bukopin Syariah",
+    "Bank Krom Indonesia",
     "Bank Mandiri",
-    "Bank BCA",
-    "Bank BRI",
-    "Bank BNI",
+    "Bank Mandiri Taspen",
+    "Bank Maspion Indonesia",
+    "Bank Mayapada Internasional",
+    "Bank Maybank Indonesia",
+    "Bank Mega",
+    "Bank Mega Syariah",
+    "Bank Mestika Dharma",
+    "Bank Mizuho Indonesia",
+    "Bank MNC Internasional (MotionBank)",
+    "Bank Muamalat Indonesia",
+    "Bank Multiarta Sentosa",
+    "Bank Nano Syariah",
+    "Bank Nationalnobu (Nobu Bank)",
+    "Bank Neo Commerce",
+    "Bank OCBC Indonesia",
+    "Bank of America, N.A.",
+    "Bank of China (Hong Kong) Jakarta Branch",
+    "Bank of India Indonesia",
+    "Bank Oke Indonesia",
+    "Bank Pan Indonesia (PaninBank)",
+    "Bank Panin Dubai Syariah",
+    "Bank Permata",
+    "Bank Prima Master",
+    "Bank QNB Indonesia",
+    "Bank Raya Indonesia",
+    "Bank Resona Perdania",
+    "Bank Sahabat Sampoerna",
+    "Bank SBI Indonesia",
+    "Bank Shinhan Indonesia",
+    "Bank Sinarmas",
+    "Bank SMBC Indonesia (Jenius)",
     "Bank Syariah Indonesia (BSI)",
     "Bank Tabungan Negara (BTN)",
-    "Bank Permata",
-    "Bank Danamon",
-    "Bank CIMB Niaga"
+    "Bank UOB Indonesia",
+    "Bank Victoria International",
+    "Bank Victoria Syariah",
+    "Bank Woori Saudara Indonesia 1906",
+    "Bangkok Bank Indonesia",
+    "BCA Digital (blu)",
+    "BPD Bali",
+    "BPD Banten",
+    "BPD Bengkulu",
+    "BPD DIY",
+    "BPD Jambi",
+    "BPD Jawa Tengah (Bank Jateng)",
+    "BPD Jawa Timur (Bank Jatim)",
+    "BPD Kalimantan Barat (Bank Kalbar)",
+    "BPD Kalimantan Selatan (Bank Kalsel)",
+    "BPD Kalimantan Tengah (Bank Kalteng)",
+    "BPD Kalimantan Timur dan Kalimantan Utara (Bankaltimtara)",
+    "BPD Lampung",
+    "BPD Maluku dan Maluku Utara",
+    "BPD Nusa Tenggara Barat Syariah",
+    "BPD Nusa Tenggara Timur (Bank NTT)",
+    "BPD Papua",
+    "BPD Riau Kepri Syariah",
+    "BPD Sulawesi Selatan dan Sulawesi Barat (Bank Sulselbar)",
+    "BPD Sulawesi Tengah (Bank Sulteng)",
+    "BPD Sulawesi Tenggara (Bank Sultra)",
+    "BPD Sulawesi Utara dan Gorontalo (Bank SulutGo)",
+    "BPD Sumatera Barat (Bank Nagari)",
+    "BPD Sumatera Selatan dan Bangka Belitung (Bank Sumsel Babel)",
+    "BPD Sumatera Utara (Bank Sumut)",
+    "Citibank, N.A. Indonesia",
+    "Deutsche Bank AG Jakarta Branch",
+    "JPMorgan Chase Bank, N.A. Jakarta Branch",
+    "MUFG Bank Jakarta Branch",
+    "SeaBank Indonesia",
+    "Standard Chartered Bank Indonesia",
+    "Superbank Indonesia",
 ]
+
+
+def _include_default_master_banks(bank_list: List[str]) -> List[str]:
+    """Complete old customized settings with the maintained default bank list."""
+    banks = list(bank_list)
+    normalized = {bank.casefold() for bank in banks}
+    for bank in DEFAULT_MASTER_BANKS:
+        if bank.casefold() not in normalized:
+            banks.append(bank)
+            normalized.add(bank.casefold())
+    return banks
 
 
 def get_master_banks() -> List[str]:
@@ -3587,10 +3693,11 @@ def get_master_banks() -> List[str]:
                 import json
                 banks = json.loads(row["setting_value"])
                 if isinstance(banks, list) and len(banks) > 0:
-                    return [str(b).strip() for b in banks if str(b).strip()]
+                    configured_banks = [str(b).strip() for b in banks if str(b).strip()]
+                    return _include_default_master_banks(configured_banks)
             except Exception:
                 pass
-    return DEFAULT_MASTER_BANKS
+    return list(DEFAULT_MASTER_BANKS)
 
 
 def save_master_banks(bank_list: List[str], user_id: Optional[int] = None) -> bool:

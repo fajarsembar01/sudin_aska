@@ -3,7 +3,7 @@
 {% block monev_bos_content %}
 <style>
     .cursor-pointer { cursor: pointer; transition: background-color 0.15s ease-in-out; }
-    .cursor-pointer:hover { background-color: rgba(0, 0, 0, 0.03) !important; }
+    .cursor-pointer:hover { background-color: var(--bs-tertiary-bg) !important; }
     .transition-icon { transition: transform 0.2s ease; }
     @keyframes spin { 100% { transform: rotate(360deg); } }
     .spin-icon { display: inline-block; animation: spin 4s linear infinite; }
@@ -371,9 +371,20 @@
         min-width: 230px;
         flex: 0 0 230px;
     }
-    .activity-sort-control .input-group-text { padding-right: 9px; padding-left: 9px; font-weight: 700; }
     .activity-sort-control .form-select { min-width: 0; }
     .activity-control-search .form-control { min-width: 0; }
+    .activity-search-bku-only {
+        gap: 6px;
+        cursor: pointer;
+        font-size: 0.72rem;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+    .activity-search-bku-only .form-check-input {
+        float: none;
+        margin: 0;
+        cursor: pointer;
+    }
     .audit-activity-panel .activity-header { transition: background-color 0.15s ease, box-shadow 0.15s ease; }
     .audit-activity-panel .activity-header:hover { background: var(--bs-tertiary-bg) !important; box-shadow: inset 3px 0 0 var(--bs-primary); }
     .audit-activity-panel .activity-body { background: var(--bs-tertiary-bg) !important; }
@@ -410,10 +421,10 @@
         .activity-filter-toolbar { display: grid !important; grid-template-columns: minmax(0, 1fr); gap: 6px !important; }
         .activity-filter-toolbar .activity-status-filter { width: 100%; }
         .activity-sort-control { width: 100% !important; min-width: 0; margin-top: 0; }
-        .activity-sort-control .input-group-text,
         .activity-sort-control .form-select { min-height: 34px; font-size: 0.65rem; }
         .activity-control-search .input-group-text,
         .activity-control-search .form-control { min-height: 36px; font-size: 0.72rem; }
+        .activity-search-bku-only { padding-right: 8px; padding-left: 8px; font-size: 0.65rem !important; }
         .status-filter-count { min-width: 18px; margin-left: 4px; padding: 2px 4px; font-size: 0.58rem; }
         .stat-card-title { font-size: 0.65rem !important; }
         .stat-card-value { font-size: 0.9rem !important; }
@@ -808,6 +819,10 @@
                     <div class="input-group input-group-sm w-100 activity-control-search">
                         <span class="input-group-text bg-body border-end-0 text-body-secondary"><i class="bi bi-search"></i></span>
                         <input type="text" id="activitySearchInput" class="form-control border-start-0 bg-body" placeholder="Cari kegiatan, vendor, BKU, atau nominal harga...">
+                        <label class="input-group-text bg-body activity-search-bku-only" for="activitySearchBkuOnly">
+                            <input class="form-check-input" type="checkbox" id="activitySearchBkuOnly">
+                            <span>BKU saja</span>
+                        </label>
                     </div>
                     <div class="d-flex align-items-center justify-content-between gap-2 mt-2 activity-filter-toolbar">
                         <div class="d-flex flex-wrap gap-2 activity-status-filter flex-grow-1" role="group" aria-label="Filter status kegiatan">
@@ -827,11 +842,12 @@
                                 <i class="bi bi-x-circle me-1"></i>Revisi <span class="status-filter-count" data-status-count="invalid">{{ activities|selectattr('status', 'equalto', 'invalid')|list|length }}</span>
                             </button>
                         </div>
-                        <div class="input-group input-group-sm activity-sort-control">
-                            <label class="input-group-text bg-body" for="activitySortSelect"><i class="bi bi-sort-numeric-down me-1"></i>BKU</label>
-                            <select class="form-select" id="activitySortSelect" aria-label="Urutkan kegiatan berdasarkan nomor BKU">
-                                <option value="bku_asc" selected>Terkecil → terbesar</option>
-                                <option value="bku_desc">Terbesar → terkecil</option>
+                        <div class="activity-sort-control">
+                            <select class="form-select form-select-sm" id="activitySortSelect" aria-label="Urutkan kegiatan">
+                                <option value="bku_asc" selected>BKU: Terkecil → terbesar</option>
+                                <option value="bku_desc">BKU: Terbesar → terkecil</option>
+                                <option value="price_asc">Harga: Termurah → termahal</option>
+                                <option value="price_desc">Harga: Termahal → termurah</option>
                             </select>
                         </div>
                     </div>
@@ -839,7 +855,7 @@
                 <div class="card-body p-0">
                     <div class="list-group list-group-flush">
                         {% for act in activities %}
-                        <div class="list-group-item p-0 activity-item border-bottom" data-fund="{{ act.fund_source }}" id="activityItem{{ act.id }}" data-status="{{ act.status }}" data-needs-item-check="{{ 'true' if act.needs_item_check else 'false' }}" data-activity-id="{{ act.id }}" data-bku="{{ act.bku_number or '' }}" data-original-order="{{ loop.index0 }}">
+                        <div class="list-group-item p-0 activity-item border-bottom" data-fund="{{ act.fund_source }}" id="activityItem{{ act.id }}" data-status="{{ act.status }}" data-needs-item-check="{{ 'true' if act.needs_item_check else 'false' }}" data-activity-id="{{ act.id }}" data-bku="{{ act.bku_number or '' }}" data-price="{{ act.realized_amount or 0 }}" data-original-order="{{ loop.index0 }}">
                             <!-- Header Item (Click to Expand / Collapse) -->
                             <div class="p-2.5 p-sm-3 activity-header cursor-pointer bg-body" onclick="toggleActivity('{{ act.id }}')">
                                 <div class="d-flex justify-content-between align-items-center mb-1.5 gap-2 activity-header-top">
@@ -2813,6 +2829,7 @@
     // --- Search Bar Filter ---
     (function () {
         var searchInput = document.getElementById('activitySearchInput');
+        var bkuOnlyCheckbox = document.getElementById('activitySearchBkuOnly');
         var items = document.querySelectorAll('.activity-item');
         var noResults = document.getElementById('noFilterResults');
         var statusButtons = document.querySelectorAll('[data-activity-status-filter]');
@@ -2820,10 +2837,18 @@
         var activeStatusFilter = 'all';
         var bkuCollator = new Intl.Collator('id', { numeric: true, sensitivity: 'base' });
 
-        function sortActivitiesByBku() {
+        function sortActivities() {
             if (!items.length) return;
-            var direction = sortSelect && sortSelect.value === 'bku_desc' ? -1 : 1;
+            var sortMode = sortSelect ? sortSelect.value : 'bku_asc';
+            var direction = /_desc$/.test(sortMode) ? -1 : 1;
             var sortedItems = Array.from(items).sort(function (left, right) {
+                if (sortMode.indexOf('price_') === 0) {
+                    var leftPrice = Number(left.getAttribute('data-price')) || 0;
+                    var rightPrice = Number(right.getAttribute('data-price')) || 0;
+                    var priceDifference = (leftPrice - rightPrice) * direction;
+                    if (priceDifference !== 0) return priceDifference;
+                }
+
                 var leftBku = (left.getAttribute('data-bku') || '').trim();
                 var rightBku = (right.getAttribute('data-bku') || '').trim();
                 if (!leftBku && !rightBku) {
@@ -2866,6 +2891,11 @@
             var searchQuery = (rawQuery || '').toLowerCase().trim();
             if (!searchQuery) return true;
 
+            if (bkuOnlyCheckbox && bkuOnlyCheckbox.checked) {
+                var bkuNumber = (item.getAttribute('data-bku') || '').toLowerCase();
+                return bkuNumber.indexOf(searchQuery) !== -1;
+            }
+
             var textContent = (item.textContent || item.innerText || '').toLowerCase();
             if (textContent.indexOf(searchQuery) !== -1) return true;
 
@@ -2882,8 +2912,9 @@
 
         function syncSummaryButtons() {
             var activeName = searchInput ? searchInput.value.trim() : '';
+            var searchingBkuOnly = !!(bkuOnlyCheckbox && bkuOnlyCheckbox.checked);
             document.querySelectorAll('.activity-summary-open').forEach(function (btn) {
-                var isActive = activeName && btn.getAttribute('data-activity-name') === activeName;
+                var isActive = !searchingBkuOnly && activeName && btn.getAttribute('data-activity-name') === activeName;
                 btn.classList.toggle('active', !!isActive);
                 btn.classList.toggle('btn-primary', !!isActive);
                 btn.classList.toggle('btn-outline-primary', !isActive);
@@ -2897,6 +2928,13 @@
                     icon.classList.toggle('bi-eye-slash', !!isActive);
                 }
             });
+        }
+
+        function syncSearchMode() {
+            if (!searchInput) return;
+            searchInput.placeholder = bkuOnlyCheckbox && bkuOnlyCheckbox.checked
+                ? 'Cari nomor BKU...'
+                : 'Cari kegiatan, vendor, BKU, atau nominal harga...';
         }
 
         function refreshStatusFilterCounts() {
@@ -2955,6 +2993,8 @@
                 var currentSearch = searchInput ? searchInput.value.trim() : '';
                 var shouldClear = currentSearch === name;
                 if (searchInput) {
+                    if (bkuOnlyCheckbox) bkuOnlyCheckbox.checked = false;
+                    syncSearchMode();
                     searchInput.value = shouldClear ? '' : name;
                     applyFilters();
                 }
@@ -2977,14 +3017,20 @@
         if (searchInput) {
             searchInput.addEventListener('input', applyFilters);
         }
+        if (bkuOnlyCheckbox) {
+            bkuOnlyCheckbox.addEventListener('change', function () {
+                syncSearchMode();
+                applyFilters();
+            });
+        }
         if (sortSelect) {
             sortSelect.addEventListener('change', function () {
-                sortActivitiesByBku();
+                sortActivities();
                 applyFilters();
             });
         }
         window.applyActivityFilters = applyFilters;
-        sortActivitiesByBku();
+        sortActivities();
         applyFilters();
     })();
 

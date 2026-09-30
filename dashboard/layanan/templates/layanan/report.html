@@ -1,0 +1,18 @@
+{% extends 'layanan/base.html' %}
+{% block portal_content %}
+<div class="layanan-shell">
+ <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4"><div><h1 class="h3 fw-bold">Laporan layanan</h1><p class="text-body-secondary mb-0">Rekap jenis layanan dan status berdasarkan tanggal pencatatan layanan.</p></div><button class="btn btn-outline-secondary no-print" type="button" onclick="window.print()"><i class="bi bi-printer me-1"></i>Cetak rekap</button></div>
+ <form method="get" class="card card-body mb-4 no-print"><div class="row g-3 align-items-end">
+  <div class="col-md-3"><label class="form-label" for="start">Dari tanggal</label><input type="date" class="form-control" id="start" name="start" value="{{ filters.start }}"></div>
+  <div class="col-md-3"><label class="form-label" for="end">Sampai tanggal</label><input type="date" class="form-control" id="end" name="end" value="{{ filters.end }}"></div>
+  <div class="col-md-3"><label class="form-label" for="service_type">Jenis layanan</label><select class="form-select" id="service_type" name="service_type"><option value="">Semua layanan</option>{% for key,label in types.items() %}<option value="{{ key }}" {% if filters.service_type==key %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+  <div class="col-md-3 d-flex gap-2"><button class="btn btn-primary">Tampilkan laporan</button><a class="btn btn-outline-secondary" href="{{ url_for('layanan.report') }}">Semua tanggal</a></div>
+ </div></form>
+ <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3"><p class="mb-0">Periode: <strong>{{ filters.start or 'Awal pencatatan' }} — {{ filters.end or 'Tanggal terakhir' }}</strong> · {{ total }} catatan{% if filters.service_type %} · {{ types[filters.service_type] }}{% endif %}</p><a class="btn btn-outline-success no-print" href="{{ url_for('layanan.export',**filters) }}"><i class="bi bi-download me-1"></i>Unduh daftar (CSV)</a></div>
+ <div class="card overflow-hidden"><div class="table-responsive"><table class="table align-middle mb-0"><thead class="table-light"><tr><th>Jenis layanan</th>{% for label in statuses.values() %}<th class="text-end">{{ label }}</th>{% endfor %}<th class="text-end">Total</th></tr></thead><tbody>
+ {% for key,label in types.items() %}{% if not filters.service_type or filters.service_type==key %}<tr><th><a href="{{ url_for('layanan.register',category=key,start=filters.start,end=filters.end) }}">{{ label }}</a></th>{% for status in statuses %}<td class="text-end">{{ counts[key][status] }}</td>{% endfor %}<td class="text-end fw-bold">{{ counts[key].values()|sum }}</td></tr>{% endif %}{% endfor %}
+ </tbody><tfoot class="table-light"><tr><th>Total</th>{% for status in statuses %}<th class="text-end">{{ totals[status] }}</th>{% endfor %}<th class="text-end">{{ total }}</th></tr></tfoot></table></div></div>
+ {% if not total %}<p class="text-center text-body-secondary py-4">Belum ada catatan pada periode yang dipilih.</p>{% endif %}
+ <p class="small text-body-secondary mt-3">Rekap menunjukkan status terkini catatan. Ekspor CSV berisi rincian catatan sesuai filter laporan.</p>
+</div>
+{% endblock %}

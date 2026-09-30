@@ -43,6 +43,8 @@ from .queries import (
     fetch_telegram_notification_settings,
     fetch_whatsapp_link_settings,
     get_user_by_email,
+    get_password_reset_identity,
+    get_password_reset_school_by_npsn,
     list_admin_users,
     list_dashboard_users,
     list_telegram_admin_accounts,
@@ -658,6 +660,8 @@ def _build_login_contact_list(
             is_active = row.get(active_key)
             if is_active is None:
                 is_active = True
+            if not is_active:
+                continue
             contact_message = message_to_use
             if message_template:
                 try:
@@ -695,9 +699,11 @@ def login() -> Response:
 
         user = get_user_by_email(email)
         if not user:
-            flash("Email belum terdaftar. Hubungi admin untuk membuat akun.", "danger")
+            flash("Email belum terdaftar.", "info")
             return _render_login_page(
-                email=email, coordinator_contacts=coordinator_contacts
+                email=email,
+                coordinator_contacts=coordinator_contacts,
+                registration_cta=True,
             )
 
         login_block = _get_login_block_feedback(user)
@@ -709,9 +715,14 @@ def login() -> Response:
             )
 
         if not check_password_hash(user["password_hash"], password):
-            flash("Salah password, hubungi admin untuk reset akses.", "danger")
+            flash(
+                "Password salah. Gunakan fitur Lupa password agar data akun ikut dikirim ke admin.",
+                "danger",
+            )
             return _render_login_page(
-                email=email, coordinator_contacts=coordinator_contacts
+                email=email,
+                coordinator_contacts=coordinator_contacts,
+                forgot_password_cta=True,
             )
 
         _establish_session(user, remember=remember, email_override=email)
@@ -719,6 +730,107 @@ def login() -> Response:
         return redirect(_redirect_after_login(user, request.args.get("next")))
 
     return _render_login_page(coordinator_contacts=coordinator_contacts)
+
+
+@auth_bp.route("/forgot-password/contacts", methods=["POST"])
+def forgot_password_contacts() -> Response:
+    """Prepare verified account identity and active admin contacts for reset help."""
+    lookup_type = (request.form.get("lookup_type") or "email").strip().lower()
+    identifier = (request.form.get("identifier") or "").strip()
+    if lookup_type == "email":
+        identifier = identifier.lower()
+        if not identifier or len(identifier) > 254 or not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", identifier):
+            return jsonify(success=False, message="Masukkan alamat email akun yang valid."), 400
+        identity = get_password_reset_identity(identifier)
+    elif lookup_type == "npsn":
+        if not re.fullmatch(r"\d{8}", identifier):
+            return jsonify(success=False, message="NPSN harus terdiri dari 8 angka."), 400
+        identity = get_password_reset_school_by_npsn(identifier)
+    else:
+        return jsonify(success=False, message="Pilih pencarian menggunakan email atau NPSN."), 400
+
+    if not identity:
+        # Keep the public response neutral while still letting an admin search by email.
+        identifier_label = "Email akun" if lookup_type == "email" else "NPSN"
+        message = (
+            "Halo Admin, saya lupa password ASKA Portal dan ingin meminta bantuan reset.\n\n"
+            f"{identifier_label}: {identifier}\n"
+            "Data akun belum tampil pada halaman login. Mohon bantu periksa data tersebut."
+        )
+        contacts = _build_login_contact_list(message=message)
+        summary = {"account_type": "Akun ASKA", "email" if lookup_type == "email" else "npsn": identifier}
+    elif identity.get("role") == "sekolah":
+        school_name = (identity.get("school_name") or identity.get("full_name") or "-").strip()
+        npsn = (identity.get("school_npsn") or "-").strip()
+        reset_url = (
+            url_for(
+                "pengaturan.manage_users",
+                focus_user=identity["id"],
+                reset="password",
+                _external=True,
+            )
+            if identity.get("id")
+            else None
+        )
+        message = (
+            "Halo Admin, saya lupa password ASKA Portal dan ingin meminta bantuan reset.\n\n"
+            "Jenis akun: Sekolah\n"
+            f"NPSN: {npsn}\n"
+            f"Nama sekolah: {school_name}\n"
+            f"Email: {identity.get('email') or 'Belum terhubung'}\n"
+            + (f"Link reset akun: {reset_url}\n" if reset_url else "")
+            + "\n"
+            "Mohon bantu verifikasi dan reset password akun tersebut."
+        )
+        contacts = _build_login_contact_list(
+            message=message, area_name=identity.get("area_name")
+        )
+        summary = {
+            "account_type": "Sekolah",
+            "npsn": npsn,
+            "name": school_name,
+            "email": identity.get("email") or "Belum terhubung",
+        }
+    else:
+        staff_name = (identity.get("full_name") or "-").strip()
+        reset_url = url_for(
+            "pengaturan.manage_users",
+            focus_user=identity["id"],
+            reset="password",
+            _external=True,
+        )
+        message = (
+            "Halo Admin, saya lupa password ASKA Portal dan ingin meminta bantuan reset.\n\n"
+            "Jenis akun: Staff\n"
+            f"Nama staff: {staff_name}\n"
+            f"Email: {identity['email']}\n"
+            f"Link reset akun: {reset_url}\n\n"
+            "Mohon bantu verifikasi dan reset password akun tersebut."
+        )
+        contacts = _build_login_contact_list(
+            message=message, area_name=identity.get("area_name")
+        )
+        summary = {
+            "account_type": "Staff",
+            "name": staff_name,
+            "email": identity["email"],
+        }
+
+    if any(contact.get("is_user_area") for contact in contacts):
+        contacts = [contact for contact in contacts if contact.get("is_user_area")]
+
+    return jsonify(
+        success=True,
+        account=summary,
+        contacts=[
+            {
+                "area": contact["area"],
+                "name": contact["name"],
+                "wa_link": contact["wa_link"],
+            }
+            for contact in contacts
+        ],
+    )
 
 
 @auth_bp.route("/logout")

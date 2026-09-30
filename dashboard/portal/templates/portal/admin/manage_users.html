@@ -6,6 +6,74 @@
 
 {% macro render_body() %}
 
+<style>
+    @media (max-width: 767.98px) {
+        .manage-users-layout > .manage-user-list { order: 1; }
+        .manage-users-layout > .manage-user-editor { order: 2; }
+        .manage-users-layout { min-width: 0; margin-right: 0; margin-left: 0; }
+        .manage-users-layout > .manage-user-list,
+        .manage-users-layout > .manage-user-editor { min-width: 0; padding-right: 0; padding-left: 0; }
+        .manage-user-list > .card { min-width: 0; }
+        .manage-user-editor .card { position: static !important; }
+        .manage-user-editor .card-body { max-height: none !important; overflow: visible !important; }
+        .manage-user-list > .card > .card-body { padding: .85rem; }
+        .user-list-tabs-header { display: block !important; }
+        .user-list-tabs-header > .section-icon { display: none; }
+        .manage-user-list .nav-pills { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .25rem; width: 100%; min-width: 0; }
+        .manage-user-list .nav-item, .manage-user-list .nav-link { width: 100%; text-align: center; }
+        .manage-user-list .nav-link { padding: .55rem .25rem; font-size: .72rem; white-space: normal; }
+        .manage-users-table-responsive { overflow: visible; }
+        .manage-users-table thead { display: none; }
+        .manage-users-table, .manage-users-table tbody { display: block; width: 100%; }
+        .manage-users-table tr[data-user-row], .manage-users-table tr[data-user-id] {
+            display: block; margin-bottom: .75rem; padding: .75rem;
+            border: 1px solid var(--bs-border-color); border-radius: .85rem;
+            background: var(--bs-body-bg); box-shadow: 0 3px 12px rgba(20, 45, 90, .06);
+        }
+        .manage-users-table tr[data-user-row] > td,
+        .manage-users-table tr[data-user-id] > td {
+            display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); gap: .5rem;
+            width: 100%; padding: .35rem 0; border: 0; text-align: left !important;
+            overflow-wrap: anywhere;
+        }
+        .manage-users-table tr[data-user-row] > td::before,
+        .manage-users-table tr[data-user-id] > td::before {
+            content: attr(data-label); color: var(--bs-secondary-color);
+            font-size: .72rem; font-weight: 700; text-transform: uppercase;
+        }
+        .manage-users-table td[data-label="User"] { display: block !important; padding-bottom: .65rem !important; border-bottom: 1px solid var(--bs-border-color) !important; }
+        .manage-users-table td[data-label="User"]::before { display: none; }
+        .manage-users-table td[data-label="Role"] > .badge,
+        .manage-users-table td[data-label="Status"] > .badge { justify-self: start; }
+        .manage-users-table td[data-label="Aksi"] .btn-group { width: 100%; }
+        .manage-users-table td[data-label="Aksi"] .btn,
+        .manage-users-table td[data-label="Aksi"] form { flex: 1 1 0; }
+        .manage-users-table tbody > tr:not([data-user-row]):not([data-user-id]) td { display: block; width: 100%; }
+        .manage-users-pagination { flex-wrap: wrap; justify-content: center !important; text-align: center; }
+        .manage-users-pagination > span { width: 100%; }
+        .password-reset-modal .modal-dialog { margin: .4rem; }
+        .password-reset-modal .modal-content { max-height: calc(100dvh - .8rem); overflow-y: auto; }
+        .password-reset-modal .modal-header { padding: .7rem .85rem .35rem; align-items: flex-start; }
+        .password-reset-modal .modal-header > div { display: flex; align-items: center; gap: .6rem; min-width: 0; }
+        .password-reset-modal .modal-header > div > span { width: 34px !important; height: 34px !important; margin-bottom: 0 !important; flex: 0 0 auto; }
+        .password-reset-modal .modal-header > div > span i { font-size: 1rem !important; }
+        .password-reset-modal .modal-title { font-size: 1.05rem; line-height: 1.25; }
+        .password-reset-modal .modal-body { padding: .55rem .85rem; }
+        .password-reset-modal .reset-account-summary { padding: .65rem !important; margin-bottom: .65rem !important; }
+        .password-reset-modal .reset-message-label { margin-bottom: .25rem; font-size: .86rem; }
+        .password-reset-modal #passwordResetMessage { height: 132px; min-height: 132px; padding: .55rem .65rem; font-size: .82rem; line-height: 1.4; resize: none; }
+        .password-reset-modal .form-text { margin-top: .3rem; font-size: .7rem; line-height: 1.35; }
+        .password-reset-modal .modal-footer { padding: .45rem .85rem .7rem; gap: .45rem; }
+        .password-reset-modal .password-reset-success-footer { display: grid; grid-template-columns: 1fr 1fr; }
+        .password-reset-modal .password-reset-success-footer .btn { width: 100%; min-height: 40px; margin: 0; padding: .4rem .55rem; font-size: .8rem; }
+        .password-reset-modal .password-reset-success-footer .reset-finish-btn { grid-column: 1 / -1; }
+        .password-reset-modal .password-reset-success-footer.no-wa .reset-copy-btn { grid-column: 1 / -1; }
+        .password-reset-modal .password-reset-confirm-footer { display: grid; grid-template-columns: 1fr; }
+        .password-reset-modal .password-reset-confirm-footer .btn,
+        .password-reset-modal .password-reset-confirm-footer form { width: 100%; margin: 0; }
+    }
+</style>
+
 <section class="page-header">
     <div class="page-title-group">
         <span class="icon-badge feature-icon text-primary">
@@ -30,10 +98,10 @@
 </div>
 {% endif %}
 
-<div class="row g-4">
+<div class="row g-4 manage-users-layout">
     {% if not read_only %}
     <!-- Left Column: Form (Sticky) -->
-    <div class="col-lg-4">
+    <div class="col-lg-4 manage-user-editor" id="userEditorSection">
         <div class="card border-0 shadow-sm" style="position: sticky; top: 20px; z-index: 100;">
             <div class="card-body" style="max-height: calc(100vh - 140px); overflow-y: auto;">
                 <div class="d-flex align-items-center justify-content-between mb-3">
@@ -217,10 +285,10 @@
     {% endif %}
 
     <!-- Right Column: List -->
-    <div class="{{ 'col-lg-12' if read_only else 'col-lg-8' }}">
+    <div class="{{ 'col-lg-12' if read_only else 'col-lg-8' }} manage-user-list">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-body">
-                <div class="d-flex align-items-center mb-3">
+                <div class="d-flex align-items-center mb-3 user-list-tabs-header">
                     <span class="icon-badge section-icon text-secondary me-3">
                         <i class="bi bi-card-list"></i>
                     </span>
@@ -248,6 +316,11 @@
                         </li>
                     </ul>
                 </div>
+                {% if not read_only %}
+                <a class="btn btn-outline-primary w-100 d-lg-none mb-3" href="#userEditorSection">
+                    <i class="bi bi-person-plus me-1"></i>Tambah atau edit user
+                </a>
+                {% endif %}
 
                 {% if tab != 'history' %}
                 <form method="get" class="row g-2 mb-3" id="userFilterForm">
@@ -290,8 +363,8 @@
                     <!-- Tab Daftar User (Non-Pending) -->
                     <div class="tab-pane fade{{ ' show active' if tab == 'list' else '' }}" id="list-pane" role="tabpanel" aria-labelledby="list-tab"
                         tabindex="0">
-                        <div class="table-responsive">
-                            <table class="table align-middle table-hover">
+                        <div class="table-responsive manage-users-table-responsive">
+                            <table class="table align-middle table-hover manage-users-table">
                                 <thead class="table-light">
                                     <tr>
                                         <th>User</th>
@@ -308,13 +381,13 @@
                                     <tr {% if not read_only %}style="cursor: pointer;" onclick='loadUserAction({{ user.id }}, "edit")'{% endif %} data-user-row="true"
                                         data-role="{{ user.role or '' }}"
                                         data-status="{{ user.account_status or '' }}">
-                                        <td>
+                                        <td data-label="User">
                                             <div class="fw-bold">{{ user.full_name }}</div>
                                             <div class="small text-muted">{{ user.email }}</div>
                                         </td>
-                                        <td><span class="badge text-bg-secondary text-uppercase">{{ user.role }}</span>
+                                        <td data-label="Role"><span class="badge text-bg-secondary text-uppercase">{{ user.role }}</span>
                                         </td>
-                                        <td>
+                                        <td data-label="Status">
                                             {% if user.account_status == 'approved' %}
                                             <span class="badge bg-success"><i
                                                     class="bi bi-check-circle me-1"></i>Active</span>
@@ -329,7 +402,7 @@
                                                 }}</span>
                                         {% endif %}
                                         </td>
-                                        <td>
+                                        <td data-label="Info">
                                             <div class="small">
                                                 {% if user.kecamatan_name %}
                                                 <div><i class="bi bi-geo-alt me-1"></i>{{ user.kecamatan_name }}</div>
@@ -346,7 +419,7 @@
                                                 {% endif %}
                                             </div>
                                         </td>
-                                        <td class="text-end" {% if not read_only %}onclick="event.stopPropagation()"{% endif %}>
+                                        <td class="text-end" data-label="Aksi" {% if not read_only %}onclick="event.stopPropagation()"{% endif %}>
                                             {% if read_only %}
                                             <button type="button" class="btn btn-sm btn-outline-secondary"
                                                 onclick='loadUserAction({{ user.id }}, "preview")'>
@@ -365,17 +438,12 @@
                                                     title="Edit user">
                                                     <i class="bi bi-pencil-square"></i>
                                                 </button>
-                                                <button type="button" class="btn btn-outline-danger"
-                                                    onclick='confirmAndSubmitResetPassword("resetPasswordForm-{{ user.id }}", {{ (user.full_name or user.email or "user")|tojson }})'
+                                                <a class="btn btn-outline-danger"
+                                                    href="{{ url_for(request.endpoint, focus_user=user.id, reset='password') }}"
                                                     title="Reset password">
                                                     <i class="bi bi-key-fill"></i>
-                                                </button>
+                                                </a>
                                             </div>
-                                            <form method="post" id="resetPasswordForm-{{ user.id }}" class="d-none">
-                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                                                <input type="hidden" name="action" value="reset_password">
-                                                <input type="hidden" name="user_id" value="{{ user.id }}">
-                                            </form>
                                             {% endif %}
                                         </td>
                                     </tr>
@@ -420,8 +488,8 @@
                             Mode preview: verifikasi user dinonaktifkan.
                         </div>
                         {% endif %}
-                        <div class="table-responsive">
-                            <table class="table align-middle table-hover">
+                        <div class="table-responsive manage-users-table-responsive">
+                            <table class="table align-middle table-hover manage-users-table">
                                 <thead class="table-light">
                                     <tr>
                                         {% if not read_only %}
@@ -460,18 +528,18 @@
                                         data-user-school-kecamatan="{{ user.school_kecamatan_name or '' }}"
                                         {% if not read_only %}style="cursor: pointer;" onclick='loadUserAction({{ user.id }}, "edit")'{% endif %}>
                                         {% if not read_only %}
-                                        <td onclick="event.stopPropagation()">
+                                        <td data-label="Pilih" onclick="event.stopPropagation()">
                                             <input class="form-check-input pending-user-select" type="checkbox"
                                                 data-user-id="{{ user.id }}" aria-label="Pilih user">
                                         </td>
                                         {% endif %}
-                                        <td>
+                                        <td data-label="User">
                                             <div class="fw-bold">{{ user.full_name }}</div>
                                             <div class="small text-muted">{{ user.email }}</div>
                                         </td>
-                                        <td><span class="badge text-bg-warning text-uppercase">{{ user.role }}</span>
+                                        <td data-label="Role"><span class="badge text-bg-warning text-uppercase">{{ user.role }}</span>
                                         </td>
-                                        <td>
+                                        <td data-label="Area">
                                             {% if user.kecamatan_name %}
                                             <span class="badge bg-info text-dark"><i class="bi bi-geo-alt me-1"></i>{{
                                                 user.kecamatan_name }}</span>
@@ -479,7 +547,7 @@
                                             <span class="text-muted">-</span>
                                             {% endif %}
                                         </td>
-                                        <td>
+                                        <td data-label="Kontak">
                                             {% if user.whatsapp_number %}
                                             <a href="https://wa.me/{{ user.whatsapp_number.replace('+', '').replace(' ', '') }}"
                                                 target="_blank" class="text-decoration-none text-success"
@@ -490,13 +558,13 @@
                                             <span class="text-muted">-</span>
                                             {% endif %}
                                         </td>
-                                        <td>
+                                        <td data-label="Tanggal">
                                             <small class="text-muted">
                                                 {{ user.created_at.strftime('%d %b %Y, %H:%M') if user.created_at else
                                                 '-' }}
                                             </small>
                                         </td>
-                                        <td class="text-end" {% if not read_only %}onclick="event.stopPropagation()"{% endif %}>
+                                        <td class="text-end" data-label="Aksi" {% if not read_only %}onclick="event.stopPropagation()"{% endif %}>
                                             {% if read_only %}
                                             <button type="button" class="btn btn-sm btn-outline-secondary"
                                                 onclick='loadUserAction({{ user.id }}, "preview")'>
@@ -556,7 +624,7 @@
 
 
 {% if tab != 'history' %}
-<nav class="d-flex align-items-center justify-content-end gap-3 my-3" aria-label="Halaman akun">
+<nav class="d-flex align-items-center justify-content-end gap-3 my-3 manage-users-pagination" aria-label="Halaman akun">
 <span class="small text-muted">{{ pagination.total }} akun · Halaman {{ pagination.page }} dari {{ pagination.pages }}</span>
 {% if pagination.page > 1 %}<a class="btn btn-outline-secondary btn-sm" href="{{ page_url(page=pagination.page-1) }}">Sebelumnya</a>{% endif %}
 {% if pagination.page < pagination.pages %}<a class="btn btn-outline-secondary btn-sm" href="{{ page_url(page=pagination.page+1) }}">Berikutnya</a>{% endif %}
@@ -661,10 +729,142 @@
     </div>
 </div>
 
+{% if password_reset_notice or reset_target %}
+<div class="modal fade password-reset-modal" id="passwordResetFlowModal" tabindex="-1"
+    aria-labelledby="passwordResetFlowTitle" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            {% if password_reset_notice %}
+            <div class="modal-header border-0 pb-0">
+                <div>
+                    <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle text-success mb-2"
+                        style="width:44px;height:44px;"><i class="bi bi-check-lg fs-4"></i></span>
+                    <h5 class="modal-title" id="passwordResetFlowTitle">Password berhasil direset</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+            </div>
+            <div class="modal-body">
+                <div class="rounded-3 border p-3 mb-3 reset-account-summary">
+                    <div class="fw-bold">{{ password_reset_notice.name }}</div>
+                    <div class="small text-muted">{{ password_reset_notice.email }}</div>
+                    {% if password_reset_notice.school_name %}<div class="small mt-1">{{ password_reset_notice.school_name }}{% if password_reset_notice.npsn %} · NPSN {{ password_reset_notice.npsn }}{% endif %}</div>{% endif %}
+                </div>
+                <label class="form-label fw-semibold reset-message-label" for="passwordResetMessage">Pesan untuk pengguna</label>
+                <textarea class="form-control" id="passwordResetMessage" rows="7" readonly></textarea>
+                <div class="form-text">Salin pesan ini lalu kirim melalui WhatsApp kepada pemilik akun.</div>
+            </div>
+            <div class="modal-footer border-0 pt-0 password-reset-success-footer{% if not password_reset_notice.phone %} no-wa{% endif %}">
+                <button type="button" class="btn btn-primary reset-copy-btn" id="copyPasswordResetMessageBtn" onclick="copyPasswordResetMessage()">
+                    <i class="bi bi-copy me-1"></i><span>Salin pesan</span>
+                </button>
+                {% if password_reset_notice.phone %}
+                <button type="button" class="btn btn-success reset-wa-btn" onclick="openPasswordResetWhatsApp()">
+                    <i class="bi bi-whatsapp me-1"></i>Buka WhatsApp
+                </button>
+                {% endif %}
+                <button type="button" class="btn btn-outline-secondary reset-finish-btn" data-bs-dismiss="modal">Selesai</button>
+            </div>
+            {% else %}
+            <div class="modal-header">
+                <h5 class="modal-title" id="passwordResetFlowTitle"><i class="bi bi-key-fill text-danger me-2"></i>Reset password</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-3">Pastikan akun berikut sesuai dengan permintaan pengguna.</p>
+                <div class="rounded-3 border p-3 mb-3 reset-account-summary">
+                    <div class="fw-bold">{{ reset_target.full_name or reset_target.school_name or 'Tanpa nama' }}</div>
+                    <div class="small text-muted text-break">{{ reset_target.email or '-' }}</div>
+                    <div class="d-flex flex-wrap gap-2 mt-2">
+                        <span class="badge text-bg-secondary text-uppercase">{{ reset_target.role or '-' }}</span>
+                        {% if reset_target.school_npsn %}<span class="badge text-bg-light border">NPSN {{ reset_target.school_npsn }}</span>{% endif %}
+                    </div>
+                </div>
+                <div class="alert alert-warning mb-0 small">
+                    Password akan diubah menjadi password sementara <strong>{{ reset_default_password }}</strong>.
+                </div>
+            </div>
+            <div class="modal-footer password-reset-confirm-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
+                <form method="post" class="m-0">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="action" value="reset_password">
+                    <input type="hidden" name="user_id" value="{{ reset_target.id }}">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-key-fill me-1"></i>Reset password akun ini
+                    </button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
 {% endmacro %}
 
 {% macro render_scripts() %}
 <script>
+    const passwordResetNotice = {{ (password_reset_notice or none)|tojson }};
+    const passwordResetLoginUrl = {{ reset_login_url|tojson }};
+
+    function buildPasswordResetCompletionMessage() {
+        if (!passwordResetNotice) return '';
+        const lines = [
+            `Halo ${passwordResetNotice.name || 'Bapak/Ibu'},`,
+            '',
+            'Password akun ASKA Portal Anda sudah berhasil direset.',
+            `Email: ${passwordResetNotice.email || '-'}`,
+        ];
+        if (passwordResetNotice.school_name) lines.push(`Sekolah: ${passwordResetNotice.school_name}`);
+        if (passwordResetNotice.npsn) lines.push(`NPSN: ${passwordResetNotice.npsn}`);
+        lines.push(
+            `Password sementara: ${passwordResetNotice.password}`,
+            `Login: ${passwordResetLoginUrl}`,
+            '',
+            'Silakan login kembali dan segera ganti password untuk menjaga keamanan akun.'
+        );
+        return lines.join('\n');
+    }
+
+    async function copyPasswordResetMessage() {
+        const messageField = document.getElementById('passwordResetMessage');
+        const button = document.getElementById('copyPasswordResetMessageBtn');
+        if (!messageField || !button) return;
+        const message = messageField.value;
+        try {
+            if (navigator.clipboard && window.isSecureContext) {
+                await navigator.clipboard.writeText(message);
+            } else {
+                messageField.focus();
+                messageField.select();
+                document.execCommand('copy');
+            }
+            button.classList.remove('btn-primary');
+            button.classList.add('btn-success');
+            button.querySelector('span').textContent = 'Pesan tersalin';
+        } catch (error) {
+            messageField.focus();
+            messageField.select();
+            button.querySelector('span').textContent = 'Tekan lama lalu salin';
+        }
+    }
+
+    function openPasswordResetWhatsApp() {
+        if (!passwordResetNotice || !passwordResetNotice.phone) return;
+        openWhatsAppLink(passwordResetNotice.phone, buildPasswordResetCompletionMessage());
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const resetModalElement = document.getElementById('passwordResetFlowModal');
+        const messageField = document.getElementById('passwordResetMessage');
+        if (messageField && passwordResetNotice) {
+            messageField.value = buildPasswordResetCompletionMessage();
+        }
+        if (resetModalElement && window.bootstrap && window.bootstrap.Modal) {
+            window.bootstrap.Modal.getOrCreateInstance(resetModalElement).show();
+        }
+    });
+
     let schoolField;
     let schoolSearchInput;
     let schoolIdInput;
@@ -696,15 +896,10 @@
 
     function normalizeWhatsAppNumber(value) {
         if (!value) return '';
-        return String(value).replace(/[^0-9]/g, '');
-    }
-
-    function confirmAndSubmitResetPassword(formId, userName) {
-        const name = (userName || 'user').toString().trim() || 'user';
-        const form = document.getElementById(formId);
-        if (!form) return;
-        if (!window.confirm(`Lanjut reset password untuk ${name}?`)) return;
-        form.submit();
+        let digits = String(value).replace(/[^0-9]/g, '');
+        if (digits.startsWith('0')) digits = '62' + digits.slice(1);
+        if (digits.startsWith('8')) digits = '62' + digits;
+        return digits;
     }
 
     function buildWhatsAppMessage(user) {
@@ -971,8 +1166,13 @@
         document.getElementById('password').removeAttribute('required'); // Password optional for update
         syncUnregisteredToggle();
 
-        // Scroll to top mobile friendly
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        // Bring the editor into view, especially when the list is shown first on mobile.
+        const editorSection = document.getElementById('userEditorSection');
+        if (editorSection && window.matchMedia('(max-width: 991.98px)').matches) {
+            editorSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
     }
 
     function bindMergeSearch(inputEl, selectEl, status) {

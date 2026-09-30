@@ -1843,6 +1843,8 @@ def _build_coordinator_contacts(
             is_active = row.get(active_key)
             if is_active is None:
                 is_active = True
+            if not is_active:
+                continue
             contacts.append(
                 {
                     "area": area,
@@ -1895,6 +1897,9 @@ def home() -> Response:
         return redirect(url_for("portal.admin_stats"))
 
     if role in ("staff", "pengawas", "kasi", "operator"):
+        from dashboard.layanan.access import can_access_layanan
+
+        layanan_allowed = can_access_layanan(user)
         cards = [
             {
                 "title": "PANBERSS",
@@ -1940,10 +1945,10 @@ def home() -> Response:
             },
             {
                 "title": "Layanan",
-                "description": "Akses layanan tambahan ASKA Portal.",
+                "description": "Register ijazah, legalisasi, SKPI, dan mutasi siswa." if layanan_allowed else "Hubungi admin untuk mendapatkan akses Layanan.",
                 "icon": "bi-ui-checks-grid",
-                "href": "#",
-                "disabled": True,
+                "href": url_for("layanan.index") if layanan_allowed else "#",
+                "disabled": not layanan_allowed,
                 "col_class": "col-lg-4 col-md-6 col-12",
             },
         ]

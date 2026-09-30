@@ -419,9 +419,9 @@
 
                         <div class="col-12 col-md-6" id="fieldBankName">
                             <label class="form-label fw-semibold">Nama Bank</label>
-                            <select class="form-select" name="bank_name">
+                            <select class="form-select searchable-bank-select" name="bank_name" data-placeholder="Ketik untuk mencari bank...">
                                 <option value="">-- Pilih Nama Bank --</option>
-                                {% for b in master_banks %}
+                                {% for b in master_banks|sort(case_sensitive=false) %}
                                     <option value="{{ b }}" {% if b == 'Bank DKI' %}selected{% endif %}>{{ b }}</option>
                                 {% endfor %}
                             </select>
@@ -512,9 +512,9 @@
                         </div>
                         <div class="col-12 col-md-6">
                             <label class="form-label fw-semibold">Nama Bank</label>
-                            <select class="form-select" name="bank_name">
+                            <select class="form-select searchable-bank-select" name="bank_name" data-placeholder="Ketik untuk mencari bank...">
                                 <option value="">-- Pilih Nama Bank --</option>
-                                {% for b in master_banks %}<option value="{{ b }}">{{ b }}</option>{% endfor %}
+                                {% for b in master_banks|sort(case_sensitive=false) %}<option value="{{ b }}">{{ b }}</option>{% endfor %}
                             </select>
                         </div>
                         <div class="col-12 col-md-6">
@@ -547,6 +547,8 @@
     </div>
 </div>
 
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css">
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
 <script>
 function setVendorType(type) {
     document.getElementById('hiddenVendorType').value = type;
@@ -587,6 +589,23 @@ function setEditVendorType(type) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.searchable-bank-select').forEach(function(select) {
+        if (!window.TomSelect || select.tomselect) return;
+        new TomSelect(select, {
+            create: false,
+            allowEmptyOption: true,
+            maxItems: 1,
+            placeholder: select.dataset.placeholder || 'Ketik untuk mencari bank...',
+            searchField: ['text'],
+            plugins: ['clear_button'],
+            render: {
+                no_results: function() {
+                    return '<div class="no-results p-2 text-body-secondary text-center small">Bank tidak ditemukan</div>';
+                }
+            }
+        });
+    });
+
     function syncBankAccountField(form) {
         const selected = form.querySelector('input[name="bank_account_type"]:checked');
         const field = form.querySelector('[data-bank-account-field]');
@@ -625,7 +644,16 @@ document.addEventListener('DOMContentLoaded', function() {
             };
             Object.entries(values).forEach(function(entry) {
                 const input = form.elements.namedItem(entry[0]);
-                if (input) input.value = entry[1] || '';
+                if (!input) return;
+                const value = entry[1] || '';
+                if (input.tomselect) {
+                    if (value && !input.tomselect.options[value]) {
+                        input.tomselect.addOption({ value: value, text: value });
+                    }
+                    input.tomselect.setValue(value, true);
+                } else {
+                    input.value = value;
+                }
             });
             setEditVendorType(values.vendor_type);
             const accountType = button.dataset.bankAccountType === 'va' ? 'va' : 'rekening';

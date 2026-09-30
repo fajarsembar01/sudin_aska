@@ -1,0 +1,46 @@
+{% extends 'layanan/base.html' %}
+{% block portal_content %}
+<div class="layanan-shell" style="max-width:900px">
+ <a class="no-print text-decoration-none" href="{{ url_for('layanan.register', category=record.service_type) }}"><i class="bi bi-arrow-left"></i> Kembali ke daftar layanan</a>
+ <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 my-4"><div><h1 class="h3 fw-bold">Catatan layanan #{{ record.id }}</h1><span class="badge text-bg-primary">{{ types[record.service_type] }}</span> <span class="badge text-bg-secondary">{{ statuses[record.status] }}</span></div><div class="no-print d-flex gap-2"><button type="button" class="btn btn-outline-secondary" onclick="window.print()"><i class="bi bi-printer"></i> Cetak</button>{% if record.created_by==user.id or user.role=='admin' %}<a class="btn btn-primary" href="{{ url_for('layanan.edit',record_id=record.id) }}">Ubah data</a>{% endif %}</div></div>
+ {% if record.created_by==user.id or user.role=='admin' %}
+ <section class="card card-body p-md-4 mb-4 no-print" aria-labelledby="status-heading">
+  <h2 class="h5 fw-bold" id="status-heading">Perbarui status layanan</h2>
+  <p class="text-body-secondary">Pilih status terbaru, lalu tekan Simpan status.</p>
+  {% if status_errors %}<div class="alert alert-danger" role="alert"><ul class="mb-0">{% for error in status_errors %}<li>{{ error }}</li>{% endfor %}</ul>{% if status_version != record.version %}<a href="{{ url_for('layanan.detail',record_id=record.id) }}">Muat ulang catatan terbaru</a>{% endif %}</div>{% endif %}
+  <form method="post" action="{{ url_for('layanan.detail',record_id=record.id) }}">
+   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+   <input type="hidden" name="version" value="{{ status_version }}">
+   <label class="form-label" for="quick-status">Status layanan</label>
+   <select class="form-select" name="status" id="quick-status" required aria-describedby="quick-status-help">{% for key,label in statuses.items() %}<option value="{{ key }}" {% if status_data.status==key %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+   <p class="form-text" id="quick-status-help" aria-live="polite"></p>
+   <fieldset id="quick-receipt" class="mt-3"><legend class="h6">Penyerahan dokumen</legend><div class="row g-3">
+    <div class="col-md-6"><label class="form-label" for="quick-recipient">Nama penerima *</label><input class="form-control" name="recipient_name" id="quick-recipient" maxlength="200" value="{{ status_data.recipient_name }}" autocomplete="off"></div>
+    <div class="col-md-6"><label class="form-label" for="quick-date">Tanggal penyerahan *</label><input class="form-control" type="date" name="received_date" id="quick-date" min="{{ record.service_date }}" max="{{ today }}" value="{{ status_data.received_date }}"></div>
+   </div></fieldset>
+   {% if record.status=='diserahkan' %}<p class="form-text mt-3">Jika status dikembalikan ke tahap sebelumnya, data penyerahan akan dikosongkan.</p>{% endif %}
+   <button type="submit" class="btn btn-primary mt-3">Simpan status</button>
+  </form>
+ </section>
+ {% else %}<p class="text-body-secondary no-print">Hubungi petugas pembuat catatan atau admin jika data atau status perlu diubah.</p>{% endif %}
+ <div class="card card-body p-md-4"><dl class="row mb-0">{% for key,label in labels.items() %}{% if key not in ['school_destination','grade'] or record.service_type=='mutasi' %}<dt class="col-sm-4 text-body-secondary fw-normal">{{ label }}</dt><dd class="col-sm-8">{% if record[key] and key in ['service_date','received_date'] %}{{ record[key].strftime('%d/%m/%Y') }}{% else %}{{ record[key] or '—' }}{% endif %}</dd>{% endif %}{% endfor %}{% if record.service_type=='mutasi' %}<dt class="col-sm-4 text-body-secondary fw-normal">Arah mutasi</dt><dd class="col-sm-8">{{ record.transfer_direction|capitalize }}</dd>{% endif %}</dl></div>
+ <p class="small text-body-secondary mt-3">Dicatat: {{ record.created_at.strftime('%d/%m/%Y %H:%M') }} · Terakhir diperbarui: {{ record.updated_at.strftime('%d/%m/%Y %H:%M') }} · Versi {{ record.version }}</p>
+</div>
+{% endblock %}
+
+{% block portal_scripts %}
+<script>
+(function () {
+ const select=document.getElementById('quick-status');
+ if(!select)return;
+ const receipt=document.getElementById('quick-receipt');
+ function refresh(){
+  const delivered=select.value==='diserahkan';
+  receipt.hidden=!delivered;receipt.disabled=!delivered;
+  receipt.querySelectorAll('input').forEach(input=>input.required=delivered);
+  document.getElementById('quick-status-help').textContent=({dicatat:'Permohonan diterima dan belum diproses.',diproses:'Dokumen sedang diperiksa atau disiapkan.',selesai:'Dokumen selesai diproses dan belum diserahkan.',diserahkan:'Dokumen sudah diterima pemohon. Lengkapi data penerima di bawah.'})[select.value] || '';
+ }
+ select.addEventListener('change',refresh);refresh();
+})();
+</script>
+{% endblock %}

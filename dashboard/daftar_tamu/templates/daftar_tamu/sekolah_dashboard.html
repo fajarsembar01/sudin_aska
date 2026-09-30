@@ -1187,6 +1187,7 @@
     }
 
     function buildAreaContactsHtml(list) {
+        list = (list || []).filter(function (contact) { return contact.is_active === true; });
         if (!list || list.length === 0) {
             return '<div class="alert alert-warning mb-0">Kontak admin wilayah belum tersedia. Silakan hubungi admin secara langsung.</div>';
         }
@@ -1234,7 +1235,8 @@
         var containerId = targetContainerId || 'areaContactList';
         var container = document.getElementById(containerId);
         if (!container) return;
-        container.innerHTML = buildAreaContactsHtml(list || []);
+        list = (list || []).filter(function (contact) { return contact.is_active === true; });
+        container.innerHTML = buildAreaContactsHtml(list);
         container.dataset.empty = list && list.length ? '0' : '1';
     }
 

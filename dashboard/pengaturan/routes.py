@@ -7,6 +7,7 @@ from pathlib import Path, PurePosixPath
 from typing import Any, Dict, Optional
 
 from flask import (
+    abort,
     Blueprint,
     Response,
     flash,
@@ -19,6 +20,7 @@ from flask import (
 )
 
 from dashboard.auth import current_user, role_required
+from dashboard.layanan.queries import list_layanan_access_staff, set_layanan_access
 from dashboard.portal import routes as portal_routes
 from dashboard.queries import (
     fetch_admin_activity_events,
@@ -88,6 +90,41 @@ pengaturan_legacy_bp = Blueprint(
 MEETING_PHOTO_ROOT = (
     Path(__file__).resolve().parents[2] / "uploads" / "pengaturan" / "meeting"
 )
+MEETING_PHOTO_MAX_BYTES = 200 * 1024
+MEETING_PHOTO_MAX_DIMENSION = 1920
+
+
+def _compress_meeting_photo(image) -> bytes:
+    """Encode a camera image as JPEG without exceeding 200 KiB."""
+    from PIL import Image
+
+    image.thumbnail(
+        (MEETING_PHOTO_MAX_DIMENSION, MEETING_PHOTO_MAX_DIMENSION),
+        Image.LANCZOS,
+    )
+    qualities = (85, 78, 70, 62, 54, 46, 38, 30)
+
+    while True:
+        for quality in qualities:
+            output = io.BytesIO()
+            image.save(
+                output,
+                format="JPEG",
+                quality=quality,
+                optimize=True,
+                progressive=True,
+            )
+            encoded = output.getvalue()
+            if len(encoded) <= MEETING_PHOTO_MAX_BYTES:
+                return encoded
+
+        width, height = image.size
+        if width <= 1 and height <= 1:
+            raise ValueError("Foto tidak dapat dikompres hingga ukuran maksimal 200 KB.")
+        image = image.resize(
+            (max(1, round(width * 0.82)), max(1, round(height * 0.82))),
+            Image.LANCZOS,
+        )
 
 
 def _save_meeting_photo(file_storage, meeting_id: int) -> Optional[str]:
@@ -104,7 +141,7 @@ def _save_meeting_photo(file_storage, meeting_id: int) -> Optional[str]:
 
         with Image.open(io.BytesIO(image_bytes)) as opened:
             image = ImageOps.exif_transpose(opened).convert("RGB")
-        image.thumbnail((1920, 1920), Image.LANCZOS)
+        encoded_image = _compress_meeting_photo(image)
     except Exception as exc:
         raise ValueError("File foto tidak valid atau tidak dapat dibaca.") from exc
 
@@ -112,7 +149,7 @@ def _save_meeting_photo(file_storage, meeting_id: int) -> Optional[str]:
     target_dir = MEETING_PHOTO_ROOT / relative_dir
     target_dir.mkdir(parents=True, exist_ok=True)
     filename = f"{uuid.uuid4().hex}.jpg"
-    image.save(target_dir / filename, format="JPEG", quality=85, optimize=True)
+    (target_dir / filename).write_bytes(encoded_image)
     return (relative_dir / filename).as_posix()
 
 
@@ -1159,6 +1196,31 @@ def meeting_attendance() -> Response | str:
         today=current_jakarta_time().strftime("%Y-%m-%d"),
         search_query=request.args.get("q", ""),
         page_title="Absensi Meeting Admin",
+    )
+
+
+@pengaturan_bp.route("/akses-layanan", methods=["GET", "POST"])
+@role_required("admin")
+def layanan_access_settings():
+    if request.method == "POST":
+        user_id = request.form.get("user_id", type=int)
+        action = request.form.get("action")
+        if not user_id or action not in ("grant", "revoke"):
+            abort(400, "Permintaan perubahan akses tidak valid.")
+        try:
+            set_layanan_access(user_id, enabled=action == "grant", granted_by=current_user()["id"])
+        except ValueError as exc:
+            flash(str(exc), "danger")
+        else:
+            flash("Akses Layanan berhasil diberikan." if action == "grant" else "Akses Layanan berhasil dicabut.", "success")
+        return redirect(url_for("pengaturan.layanan_access_settings"))
+    staff = list_layanan_access_staff()
+    return render_template(
+        "pengaturan/layanan_access.html", staff=staff,
+        allowed_roles=("staff", "pengawas", "kasi", "operator"),
+        access_count=sum(row["has_access"] and row["account_status"] == "approved"
+                         and row["role"] in ("staff", "pengawas", "kasi", "operator") for row in staff),
+        page_title="Akses Layanan Staf",
     )
 
 

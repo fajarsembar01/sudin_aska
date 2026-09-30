@@ -1756,6 +1756,8 @@ def _build_area_contacts(
             is_active = row.get(active_key)
             if is_active is None:
                 is_active = True
+            if not is_active:
+                continue
             phone_for_link = _sanitize_phone(phone)
             if not phone_for_link:
                 continue

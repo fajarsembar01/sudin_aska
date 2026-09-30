@@ -14,6 +14,8 @@ from flask import (
     redirect,
     render_template,
     request,
+    session,
+    url_for,
 )
 from werkzeug.security import generate_password_hash
 
@@ -159,9 +161,27 @@ def handle_manage_users(
                                     "password_reset": True,
                                 },
                             )
-                            flash(
-                                f"Password user {profile.get('full_name') or profile.get('email') or user_id} berhasil direset ke default 12345678.",
-                                "success",
+                            detail = get_dashboard_user_detail(int(user_id)) or profile
+                            session["password_reset_notice"] = {
+                                "user_id": int(user_id),
+                                "name": detail.get("full_name") or detail.get("school_name") or detail.get("email") or f"User #{user_id}",
+                                "email": detail.get("email") or "-",
+                                "role": detail.get("role") or "-",
+                                "school_name": detail.get("school_name") or "",
+                                "npsn": detail.get("school_npsn") or "",
+                                "phone": detail.get("whatsapp_number") or detail.get("school_operator_phone") or detail.get("school_phone") or "",
+                                "password": DEFAULT_RESET_PASSWORD,
+                            }
+                            return redirect(
+                                request.path
+                                + "?"
+                                + urlencode(
+                                    {
+                                        "focus_user": int(user_id),
+                                        "reset": "password",
+                                        "reset_done": "1",
+                                    }
+                                )
                             )
                         else:
                             flash("Gagal mereset password user.", "danger")
@@ -416,6 +436,19 @@ def handle_manage_users(
         status=status_filter,
         pending=tab == "verify",
     )
+    focus_user_id = request.args.get("focus_user", type=int)
+    reset_target = None
+    if (
+        focus_user_id
+        and request.args.get("reset") == "password"
+        and not read_only
+    ):
+        reset_target = get_dashboard_user_detail(focus_user_id)
+    password_reset_notice = None
+    if request.args.get("reset_done") == "1":
+        candidate = session.pop("password_reset_notice", None)
+        if candidate and candidate.get("user_id") == focus_user_id:
+            password_reset_notice = candidate
 
     def page_url(**changes):
         args = dict(q=search, role=role_filter, status=status_filter, tab=tab, page=result["page"])
@@ -442,4 +475,8 @@ def handle_manage_users(
         role_filter=role_filter,
         status_filter=status_filter,
         page_url=page_url,
+        reset_target=reset_target,
+        password_reset_notice=password_reset_notice,
+        reset_login_url=url_for("auth.login", _external=True),
+        reset_default_password=DEFAULT_RESET_PASSWORD,
     )
