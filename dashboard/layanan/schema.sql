@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS layanan_records (
     id BIGSERIAL PRIMARY KEY,
-    service_type TEXT NOT NULL CHECK (service_type IN ('ijazah', 'skpi', 'legalisasi', 'mutasi', 'kjp', 'pip', 'kjmu')),
+    service_type TEXT NOT NULL CHECK (service_type IN ('ijazah', 'skpi', 'legalisasi', 'mutasi', 'kjp', 'pip', 'kjmu', 'bpms')),
     service_date DATE NOT NULL,
     student_name VARCHAR(200) NOT NULL,
     school_origin VARCHAR(250) NOT NULL,
@@ -37,12 +37,12 @@ BEGIN
       AND conname = 'layanan_records_service_type_check';
 
     IF service_type_constraint IS NOT NULL
-       AND service_type_constraint NOT ILIKE '%kjp%' THEN
+       AND service_type_constraint NOT ILIKE '%bpms%' THEN
         ALTER TABLE layanan_records
             DROP CONSTRAINT layanan_records_service_type_check;
         ALTER TABLE layanan_records
             ADD CONSTRAINT layanan_records_service_type_check
-            CHECK (service_type IN ('ijazah', 'skpi', 'legalisasi', 'mutasi', 'kjp', 'pip', 'kjmu'));
+            CHECK (service_type IN ('ijazah', 'skpi', 'legalisasi', 'mutasi', 'kjp', 'pip', 'kjmu', 'bpms'));
     END IF;
 END $$;
 ALTER TABLE layanan_records ADD COLUMN IF NOT EXISTS school_origin_id INTEGER

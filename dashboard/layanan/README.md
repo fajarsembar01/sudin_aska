@@ -1,7 +1,7 @@
 # Register layanan staf
 
 Akses melalui **Portal → Layanan** (`/layanan/`). Jenis register: ijazah,
-SKPI, legalisasi, mutasi siswa, KJP, PIP, dan KJMU. Nomor register dibuat otomatis; nomor surat
+SKPI, legalisasi, mutasi siswa, KJP, PIP, KJMU, dan BPMS. Nomor register dibuat otomatis; nomor surat
 resmi tetap diisi petugas. Nomor ijazah dan NISN disimpan sebagai teks agar
 nol awal tidak hilang. Data foto buku tidak diimpor otomatis.
 
@@ -23,7 +23,7 @@ Alamat halaman:
 
 - `/layanan/`: pilihan kegiatan, jumlah layanan belum selesai, dan catatan terbaru.
 - `/layanan/register`: seluruh register dengan pencarian dan filter.
-- `/layanan/register/<jenis>`: halaman ijazah, SKPI, legalisasi, mutasi, KJP, PIP, atau KJMU.
+- `/layanan/register/<jenis>`: halaman ijazah, SKPI, legalisasi, mutasi, KJP, PIP, KJMU, atau BPMS.
 - `/layanan/baru`: formulir pencatatan; tautan dari register memilih jenis otomatis.
 - `/layanan/laporan`: rekap status per jenis, filter periode, cetak, dan ekspor data.
 

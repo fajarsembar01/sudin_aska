@@ -19,6 +19,7 @@ TYPES = {
     'kjp': 'KJP',
     'pip': 'PIP',
     'kjmu': 'KJMU',
+    'bpms': 'BPMS',
 }
 STATUSES = {'dicatat': 'Baru dicatat', 'diproses': 'Sedang diproses', 'selesai': 'Selesai diproses', 'diserahkan': 'Sudah diserahkan'}
 access = layanan_access_required
