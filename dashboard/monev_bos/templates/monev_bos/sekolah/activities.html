@@ -998,7 +998,7 @@
                             <optgroup label="Vendor Sekolah Anda">
                             {% for v in own_vendor_options %}
                                 <option value="{{ v.id }}" data-priority="{% if v.status == 'verified' %}0{% else %}1{% endif %}" {% if v.id in act.vendor_ids %}selected{% endif %}>
-                                    {{ v.display_name or v.owner_name or v.name }}{% if v.address %} — {{ v.address }}{% endif %}
+                                    {{ v.display_name or v.owner_name or v.name }}{% if v.address %} — {{ v.address }}{% endif %}{% if v.status == 'verified' %} ✓ Verif{% else %} ⚠ Belum Verifikasi{% endif %}
                                 </option>
                             {% endfor %}
                             </optgroup>
@@ -1007,7 +1007,7 @@
                             <optgroup label="Vendor Lain">
                             {% for v in other_vendor_options %}
                                 <option value="{{ v.id }}" data-priority="{% if v.status == 'verified' %}2{% else %}3{% endif %}" {% if v.id in act.vendor_ids %}selected{% endif %}>
-                                    {{ v.display_name or v.owner_name or v.name }}{% if v.address %} — {{ v.address }}{% endif %}
+                                    {{ v.display_name or v.owner_name or v.name }}{% if v.address %} — {{ v.address }}{% endif %}{% if v.status == 'verified' %} ✓ Verif{% else %} ⚠ Belum Verifikasi{% endif %}
                                 </option>
                             {% endfor %}
                             </optgroup>
@@ -1239,14 +1239,14 @@
                             {% if own_vendor_options_add %}
                             <optgroup label="Vendor Sekolah Anda">
                             {% for v in own_vendor_options_add %}
-                                <option value="{{ v.id }}" data-priority="{% if v.status == 'verified' %}0{% else %}1{% endif %}">{{ v.display_name or v.owner_name or v.name }}{% if v.address %} — {{ v.address }}{% endif %}</option>
+                                <option value="{{ v.id }}" data-priority="{% if v.status == 'verified' %}0{% else %}1{% endif %}">{{ v.display_name or v.owner_name or v.name }}{% if v.address %} — {{ v.address }}{% endif %}{% if v.status == 'verified' %} ✓ Verif{% else %} ⚠ Belum Verifikasi{% endif %}</option>
                             {% endfor %}
                             </optgroup>
                             {% endif %}
                             {% if other_vendor_options_add %}
                             <optgroup label="Vendor Lain">
                             {% for v in other_vendor_options_add %}
-                                <option value="{{ v.id }}" data-priority="{% if v.status == 'verified' %}2{% else %}3{% endif %}">{{ v.display_name or v.owner_name or v.name }}{% if v.address %} — {{ v.address }}{% endif %}</option>
+                                <option value="{{ v.id }}" data-priority="{% if v.status == 'verified' %}2{% else %}3{% endif %}">{{ v.display_name or v.owner_name or v.name }}{% if v.address %} — {{ v.address }}{% endif %}{% if v.status == 'verified' %} ✓ Verif{% else %} ⚠ Belum Verifikasi{% endif %}</option>
                             {% endfor %}
                             </optgroup>
                             {% endif %}
