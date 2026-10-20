@@ -59,6 +59,8 @@ def create_app() -> Flask:
     # Batas ukuran upload — default 50 MB, bisa di-override via env DASHBOARD_MAX_UPLOAD_MB
     _max_upload_mb = int(os.getenv("DASHBOARD_MAX_UPLOAD_MB", "50"))
     app.config["MAX_CONTENT_LENGTH"] = _max_upload_mb * 1024 * 1024
+    # CSRF token time limit: None = tidak expire (cocok untuk dev/testing lokal)
+    app.config["WTF_CSRF_TIME_LIMIT"] = None
 
     csrf = CSRFProtect(app)
 
