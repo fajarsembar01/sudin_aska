@@ -31,6 +31,43 @@ _CODE_EXTENSIONS = {
 _CODE_FILENAMES = {"dockerfile", "makefile", "procfile", "requirements.txt"}
 
 
+class GitHubRateLimitError(RuntimeError):
+    """The shared API budget is exhausted; stop the remaining sync work."""
+
+
+class GitHubAuthenticationError(RuntimeError):
+    """The shared token is invalid; retrying another account cannot help."""
+
+
+def _github_http_error(exc: HTTPError) -> RuntimeError:
+    if exc.code == 401:
+        return GitHubAuthenticationError("Token GitHub tidak valid atau kedaluwarsa. Periksa GITHUB_TOKEN di server.")
+    if exc.code in {403, 429}:
+        try:
+            payload = json.loads(exc.read().decode("utf-8"))
+            message = str(payload.get("message") or "").lower() if isinstance(payload, dict) else ""
+        except (ValueError, OSError):
+            message = ""
+        headers = exc.headers or {}
+        if (exc.code == 429 or headers.get("X-RateLimit-Remaining") == "0"
+                or headers.get("Retry-After") is not None or "rate limit" in message):
+            wait_note = "Coba kembali beberapa saat lagi."
+            try:
+                retry_after = headers.get("Retry-After")
+                if retry_after is not None:
+                    wait_note = f"Coba kembali setelah {int(retry_after)} detik."
+                elif headers.get("X-RateLimit-Reset"):
+                    reset_at = datetime.fromtimestamp(int(headers["X-RateLimit-Reset"]), _JAKARTA_TZ)
+                    wait_note = f"Coba kembali setelah {reset_at:%d/%m/%Y %H:%M:%S} WIB."
+            except (ValueError, OverflowError, OSError):
+                pass
+            return GitHubRateLimitError(f"Batas API GitHub tercapai. {wait_note}")
+        return RuntimeError("Akses GitHub ditolak. Periksa izin GITHUB_TOKEN untuk repository ini.")
+    if exc.code == 404:
+        return RuntimeError("Data atau repository GitHub tidak ditemukan, atau token tidak memiliki akses.")
+    return RuntimeError(f"GitHub API gagal dengan status {exc.code}.")
+
+
 def normalize_repository(value: str) -> str:
     repository = (value or "").strip().strip("/")
     if repository.startswith("git@github.com:"):
@@ -159,11 +196,7 @@ def _request_commit_page(
     except HTTPError as exc:
         if exc.code == 409:
             return []
-        if exc.code == 404:
-            raise RuntimeError("Repository tidak ditemukan atau token tidak memiliki akses.") from exc
-        if exc.code in {401, 403}:
-            raise RuntimeError("Akses GitHub ditolak atau batas API tercapai. Periksa GITHUB_TOKEN.") from exc
-        raise RuntimeError(f"GitHub API gagal dengan status {exc.code}.") from exc
+        raise _github_http_error(exc) from exc
     except (URLError, TimeoutError) as exc:
         raise RuntimeError("GitHub tidak dapat dihubungi. Coba sinkronkan kembali.") from exc
     if not isinstance(payload, list):
@@ -191,11 +224,7 @@ def _request_github_json(
         with urlopen(request, timeout=timeout) as response:
             return json.loads(response.read().decode("utf-8"))
     except HTTPError as exc:
-        if exc.code == 404:
-            raise RuntimeError("Data GitHub tidak ditemukan atau token tidak memiliki akses.") from exc
-        if exc.code in {401, 403}:
-            raise RuntimeError("Akses GitHub ditolak atau batas API tercapai. Periksa GITHUB_TOKEN.") from exc
-        raise RuntimeError(f"GitHub API gagal dengan status {exc.code}.") from exc
+        raise _github_http_error(exc) from exc
     except (URLError, TimeoutError) as exc:
         raise RuntimeError("GitHub tidak dapat dihubungi. Coba sinkronkan kembali.") from exc
 

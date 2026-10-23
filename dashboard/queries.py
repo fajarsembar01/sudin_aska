@@ -80,6 +80,9 @@ ADMIN_PERFORMANCE_FEATURE_LABELS: Dict[str, str] = {
     "monev_bos": "Monev BOS/BOP",
     "laporan": "Laporan",
     "meeting_attendance": "Absensi Meeting",
+    "meeting_creation": "Pembuatan Meeting",
+    "meeting_photo": "Foto Meeting",
+    "backup_history": "History Back Up",
 }
 
 
@@ -4492,6 +4495,28 @@ def _build_admin_label(name: Optional[str], email: Optional[str]) -> str:
     return name or email or "Admin"
 
 
+def _admin_performance_event_points(event: Dict[str, Any]) -> int:
+    """Weight daily backup claims and attendance; keep ordinary admin actions at one."""
+    feature_key = (event.get("feature_key") or "").strip().lower()
+    target_type = (event.get("target_type") or "").strip().upper()
+    if (feature_key, target_type) in {
+        ("backup_history", "BACKUP_CLAIM"),
+        ("meeting_attendance", "MEETING_ATTENDANCE"),
+    }:
+        return 5
+    return 1
+
+
+def _is_unscored_admin_activity(event: Dict[str, Any]) -> bool:
+    """Exclude meeting management and audit copies of canonical scored activities."""
+    if event.get("feature_key") == "meeting_attendance" and event.get("target_type") == "MEETING":
+        return True
+    return (
+        event.get("source") == "dashboard_admin_action_logs"
+        and _admin_performance_event_points(event) == 5
+    )
+
+
 def _normalize_admin_performance_event(row: Dict[str, Any]) -> Dict[str, Any]:
     created_at = row.get("created_at")
     actor_name = row.get("actor_name")
@@ -4521,7 +4546,10 @@ def _normalize_admin_performance_event(row: Dict[str, Any]) -> Dict[str, Any]:
         "target_id": row.get("target_id"),
         "target_name": row.get("target_name") or "-",
         "detail_text": detail_text,
+        "meeting_photo_path": row.get("meeting_photo_path"),
+        "attendance_recorded_at": row.get("attendance_recorded_at"),
     }
+    event["points"] = _admin_performance_event_points(event)
     search_parts = [
         event["feature_label"],
         actor_label,
@@ -4924,6 +4952,89 @@ def fetch_admin_activity_events(
 
         _execute_admin_performance_event_query(cur, """
             SELECT
+                'admin_backup_claims' AS source,
+                'backup_history' AS feature_key,
+                c.claimed_at AS created_at,
+                c.admin_user_id AS actor_user_id,
+                u.full_name AS actor_name,
+                u.email AS actor_email,
+                COALESCE(u.full_name, u.email, 'Admin') AS actor_label,
+                'CLAIM' AS action,
+                'BACKUP_CLAIM' AS target_type,
+                c.id AS target_id,
+                'Back Up ' || TO_CHAR(c.backup_date, 'DD/MM/YYYY') AS target_name,
+                jsonb_build_object('backup_date', c.backup_date)::text AS detail_text
+            FROM admin_backup_claims c
+            JOIN dashboard_users u ON u.id = c.admin_user_id
+            WHERE u.role = 'admin'
+              /* admin_performance_date_filter */
+            """, timestamp_column="c.claimed_at", start=start, end=end)
+        events.extend(
+            _normalize_admin_performance_event(dict(row)) for row in cur.fetchall()
+        )
+
+        _execute_admin_performance_event_query(cur, """
+            SELECT
+                'admin_meetings' AS source,
+                'meeting_creation' AS feature_key,
+                m.created_at,
+                m.created_by AS actor_user_id,
+                u.full_name AS actor_name,
+                u.email AS actor_email,
+                COALESCE(u.full_name, u.email, 'Admin') AS actor_label,
+                'CREATE' AS action,
+                'MEETING' AS target_type,
+                m.id AS target_id,
+                m.title AS target_name,
+                jsonb_build_object('meeting_date', m.meeting_date)::text AS detail_text
+            FROM admin_meetings m
+            JOIN dashboard_users u ON u.id = m.created_by
+            WHERE u.role = 'admin'
+              /* admin_performance_date_filter */
+            """, timestamp_column="m.created_at", start=start, end=end)
+        events.extend(
+            _normalize_admin_performance_event(dict(row)) for row in cur.fetchall()
+        )
+
+        meeting_timestamp = (
+            "((m.meeting_date + COALESCE(m.start_time, TIME '00:00:00')) "
+            "AT TIME ZONE 'Asia/Jakarta')"
+        )
+        _execute_admin_performance_event_query(cur, f"""
+            SELECT
+                'admin_meeting_attendance' AS source,
+                'meeting_attendance' AS feature_key,
+                m.photo_path AS meeting_photo_path,
+                a.recorded_at AS attendance_recorded_at,
+                {meeting_timestamp} AS created_at,
+                a.admin_user_id AS actor_user_id,
+                u.full_name AS actor_name,
+                u.email AS actor_email,
+                COALESCE(u.full_name, u.email, 'Admin') AS actor_label,
+                'ATTEND' AS action,
+                'MEETING_ATTENDANCE' AS target_type,
+                a.id AS target_id,
+                m.title AS target_name,
+                jsonb_build_object(
+                    'meeting_id', m.id,
+                    'meeting_date', m.meeting_date,
+                    'attendance_status', a.attendance_status
+                )::text AS detail_text
+            FROM admin_meeting_attendance a
+            JOIN admin_meetings m ON m.id = a.meeting_id
+            JOIN dashboard_users u ON u.id = a.admin_user_id
+            WHERE u.role = 'admin'
+              AND a.attendance_status IN ('present', 'late')
+              AND m.status <> 'cancelled'
+              AND {meeting_timestamp} <= NOW()
+              /* admin_performance_date_filter */
+            """, timestamp_column=meeting_timestamp, start=start, end=end)
+        events.extend(
+            _normalize_admin_performance_event(dict(row)) for row in cur.fetchall()
+        )
+
+        _execute_admin_performance_event_query(cur, """
+            SELECT
                 'dashboard_admin_action_logs' AS source,
                 a.feature_key,
                 a.created_at,
@@ -4940,6 +5051,10 @@ def fetch_admin_activity_events(
             JOIN dashboard_users u ON u.id = a.user_id
             WHERE u.role = 'admin'
               /* admin_performance_date_filter */
+              AND NOT (
+                  (a.feature_key = 'backup_history' AND a.target_type = 'BACKUP_CLAIM')
+                  OR a.feature_key = 'meeting_attendance'
+              )
               AND NOT (
                   a.feature_key = 'laporan'
                   AND UPPER(TRIM(a.action)) = 'AUTOSAVE'
@@ -4979,6 +5094,7 @@ def fetch_admin_activity_events(
             event.get("feature_key") == "laporan"
             and event.get("action") == "AUTOSAVE"
         )
+        and not _is_unscored_admin_activity(event)
     ]
     events.sort(
         key=lambda item: (
@@ -5002,11 +5118,16 @@ def fetch_admin_performance_data(
     source_events: Optional[List[Dict[str, Any]]] = None,
 ) -> Dict[str, Any]:
     """Build aggregated admin performance data for the insight dashboard."""
-    raw_events = (
+    source_rows = (
         source_events
         if source_events is not None
         else fetch_admin_activity_events(start=start, end=end)
     )
+    raw_events = [
+        {**event, "points": _admin_performance_event_points(event)}
+        for event in source_rows
+        if not _is_unscored_admin_activity(event)
+    ]
     selected_feature = (feature_key or "all").strip().lower() or "all"
     search_text = (search or "").strip().lower()
     selected_action = (action or "").strip().upper()
@@ -5041,10 +5162,12 @@ def fetch_admin_performance_data(
     feature_counts = {
         key: 0 for key in ADMIN_PERFORMANCE_FEATURE_LABELS if key != "all"
     }
+    feature_points = dict.fromkeys(feature_counts, 0)
     for event in base_events:
         key = event.get("feature_key")
         if key in feature_counts:
             feature_counts[key] += 1
+            feature_points[key] += event["points"]
 
     admin_options: List[Dict[str, Any]] = []
     admin_lookup: Dict[int, Dict[str, Any]] = {}
@@ -5077,6 +5200,8 @@ def fetch_admin_performance_data(
     target_totals: Dict[str, int] = {}
     daily_totals: Dict[str, int] = {}
     feature_totals: Dict[str, int] = {}
+    feature_point_totals: Dict[str, int] = {}
+    action_points = 0
     for event in filtered_events:
         actor_key = str(
             event.get("actor_user_id") or event.get("actor_label") or "unknown"
@@ -5089,12 +5214,17 @@ def fetch_admin_performance_data(
                 "actor_name": event.get("actor_name"),
                 "actor_email": event.get("actor_email"),
                 "total_actions": 0,
+                "action_points": 0,
                 "last_action_at": event.get("created_at"),
                 "feature_counts": {},
+                "feature_points": {},
                 "action_counts": {},
             },
         )
         bucket["total_actions"] += 1
+        points = event["points"]
+        bucket["action_points"] += points
+        action_points += points
         if event.get("created_at") and (
             not bucket.get("last_action_at")
             or event["created_at"] > bucket["last_action_at"]
@@ -5103,6 +5233,10 @@ def fetch_admin_performance_data(
         feature_bucket = bucket["feature_counts"]
         feature_bucket[event["feature_key"]] = (
             feature_bucket.get(event["feature_key"], 0) + 1
+        )
+        feature_point_bucket = bucket["feature_points"]
+        feature_point_bucket[event["feature_key"]] = (
+            feature_point_bucket.get(event["feature_key"], 0) + points
         )
         action_bucket = bucket["action_counts"]
         action_bucket[event["action"]] = action_bucket.get(event["action"], 0) + 1
@@ -5114,6 +5248,9 @@ def fetch_admin_performance_data(
         feature_totals[event["feature_key"]] = (
             feature_totals.get(event["feature_key"], 0) + 1
         )
+        feature_point_totals[event["feature_key"]] = (
+            feature_point_totals.get(event["feature_key"], 0) + points
+        )
         created_at = event.get("created_at")
         if created_at:
             day_key = created_at.date().isoformat()
@@ -5121,7 +5258,9 @@ def fetch_admin_performance_data(
 
     leaderboard = sorted(
         leaderboard_map.values(),
-        key=lambda item: (-item["total_actions"], item["actor_label"] or ""),
+        key=lambda item: (
+            -item["action_points"], -item["total_actions"], item["actor_label"] or ""
+        ),
     )
     top_actions = sorted(
         [{"action": key, "count": value} for key, value in action_totals.items()],
@@ -5139,6 +5278,7 @@ def fetch_admin_performance_data(
                     key, key.replace("_", " ").title()
                 ),
                 "count": value,
+                "points": feature_point_totals[key],
             }
             for key, value in feature_totals.items()
         ],
@@ -5171,12 +5311,15 @@ def fetch_admin_performance_data(
         "start": start,
         "end": end,
         "feature_counts": feature_counts,
+        "feature_points": feature_points,
         "all_feature_total": sum(feature_counts.values()),
         "admin_options": admin_options,
         "action_options": action_options,
         "target_options": target_options,
         "summary": {
             "total_actions": len(filtered_events),
+            "action_points": action_points,
+            "feature_points": feature_point_totals,
             "unique_admins": len(
                 {
                     event.get("actor_user_id") or event.get("actor_label")
@@ -5199,6 +5342,10 @@ def fetch_admin_performance_data(
         "top_features": top_features,
         "daily_series": daily_series,
         "detail_rows": detail_rows,
+        "backup_attendance_rows": [
+            dict(event) for event in filtered_events
+            if event.get("feature_key") in {"backup_history", "meeting_attendance", "meeting_creation"}
+        ],
         "detail_total": len(filtered_events),
     }
 

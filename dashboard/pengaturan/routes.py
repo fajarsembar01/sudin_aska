@@ -41,6 +41,8 @@ from utils import current_jakarta_time
 from .admin_performance_pdf import build_admin_performance_pdf
 from .github_performance import (
     DEFAULT_REPOSITORY,
+    GitHubAuthenticationError,
+    GitHubRateLimitError,
     attach_github_metrics,
     get_commit_daily_series,
     get_commit_line_summary,
@@ -73,6 +75,9 @@ from .queries import (
     update_admin_meeting_documentation,
     update_admin_meeting_status,
     delete_admin_meeting,
+    claim_admin_backup,
+    get_admin_backup_status,
+    fetch_admin_backup_history,
 )
 
 pengaturan_bp = Blueprint(
@@ -90,6 +95,7 @@ pengaturan_legacy_bp = Blueprint(
 MEETING_PHOTO_ROOT = (
     Path(__file__).resolve().parents[2] / "uploads" / "pengaturan" / "meeting"
 )
+MEETING_DUMMY_PHOTO = Path(__file__).resolve().parents[1] / "static" / "img" / "dummy_meeting_photo.jpg"
 MEETING_PHOTO_MAX_BYTES = 200 * 1024
 MEETING_PHOTO_MAX_DIMENSION = 1920
 
@@ -168,6 +174,16 @@ def _meeting_photo_path(relative_path: Optional[str]) -> Optional[Path]:
     return candidate
 
 
+def _performance_meeting_photo(relative_path: Optional[str]) -> tuple[Optional[Path], bool]:
+    """Use a visibly labeled sample when the original photo is unavailable locally."""
+    photo = _meeting_photo_path(relative_path)
+    if photo and photo.is_file():
+        return photo, False
+    if MEETING_DUMMY_PHOTO.is_file():
+        return MEETING_DUMMY_PHOTO, True
+    return None, False
+
+
 @pengaturan_bp.route("/absensi-meeting/foto/<path:filename>")
 @role_required("admin")
 def meeting_attendance_photo(filename: str) -> Response:
@@ -200,10 +216,28 @@ def capture_meeting_photo() -> Response:
         return jsonify({"success": False, "message": "Foto kamera tidak ditemukan."}), 400
 
     old_photo_path = meeting.get("photo_path")
-    update_admin_meeting_documentation(
+    saved = update_admin_meeting_documentation(
         meeting_id=meeting_id,
         notulen=meeting.get("notulen") or "",
         photo_path=new_photo_path,
+    )
+    if not saved:
+        new_photo = _meeting_photo_path(new_photo_path)
+        if new_photo and new_photo.is_file():
+            new_photo.unlink()
+        return jsonify({"success": False, "message": "Data meeting tidak ditemukan. Muat ulang halaman."}), 404
+    record_admin_action(
+        user_id=int((current_user() or {}).get("id") or 0),
+        feature_key="meeting_photo",
+        action="CAPTURE",
+        target_type="MEETING_PHOTO",
+        target_id=meeting_id,
+        target_name=meeting["title"],
+        metadata={
+            "meeting_id": meeting_id,
+            "photo_path": new_photo_path,
+            "captured_at": current_jakarta_time().isoformat(),
+        },
     )
     old_photo = _meeting_photo_path(old_photo_path)
     if old_photo and old_photo.is_file():
@@ -386,8 +420,10 @@ def _complete_admin_leaderboard(
             {
                 "actor_user_id": admin_id,
                 "total_actions": 0,
+                "action_points": 0,
                 "last_action_at": None,
                 "feature_counts": {},
+                "feature_points": {},
                 "action_counts": {},
             },
         )
@@ -421,13 +457,16 @@ def _score_admin_leaderboard(
     for source in leaderboard:
         row = dict(source)
         actions = int(row.get("total_actions") or 0)
+        row["action_points"] = int(
+            row["action_points"] if row.get("action_points") is not None else actions
+        )
         scored_value = row.get("github_coding_days")
         coding_updates = int(
             scored_value if scored_value is not None else row.get("github_commits") or 0
         )
         row["coding_score_units"] = coding_updates
         row["coding_points"] = coding_updates * coding_multiplier
-        row["performance_total"] = actions + row["coding_points"]
+        row["performance_total"] = row["action_points"] + row["coding_points"]
         row["coding_multiplier"] = coding_multiplier
         scored.append(row)
     scored.sort(
@@ -620,11 +659,21 @@ def admin_performance_github_sync() -> Response:
         return _performance_redirect_from_form()
     actor_id = int((current_user() or {}).get("id") or 0)
     accounts = [item for item in list_admin_github_accounts() if item.get("github_username")]
+    try:
+        selected_ids = {int(value) for value in request.form.getlist("sync_admin_ids")}
+    except (TypeError, ValueError):
+        flash("Pilihan admin untuk sinkronisasi tidak valid.", "warning")
+        return _performance_redirect_from_form()
+    available_ids = {int(account["id"]) for account in accounts}
+    if not selected_ids or not selected_ids.issubset(available_ids):
+        flash("Pilih minimal satu admin yang sudah terhubung ke GitHub untuk disinkronkan.", "warning")
+        return _performance_redirect_from_form()
+    accounts = [account for account in accounts if int(account["id"]) in selected_ids]
     success_count = 0
     inserted_count = 0
     initial_count = 0
     errors = []
-    for account in accounts:
+    for index, account in enumerate(accounts):
         try:
             result = sync_admin_commits(
                 repository, account["github_username"], synced_by=actor_id,
@@ -639,6 +688,11 @@ def admin_performance_github_sync() -> Response:
         except (RuntimeError, ValueError) as exc:
             error = str(exc)
             errors.append(f"{account.get('full_name') or account['github_username']}: {error}")
+            if isinstance(exc, (GitHubRateLimitError, GitHubAuthenticationError)):
+                remaining = len(accounts) - index - 1
+                if remaining:
+                    errors.append(f"Sinkronisasi dihentikan; {remaining} admin terpilih belum diproses. Pilih admin tersebut saat mencoba kembali.")
+                break
     if not accounts:
         flash("Belum ada username GitHub yang dipetakan.", "warning")
     elif success_count:
@@ -700,9 +754,14 @@ def admin_performance_pdf() -> Response:
         personal_snapshot.get("coding_day_count") or 0
     )
     personal["coding_points"] = personal["github_coding_days"] * 10
+    personal_summary = personal.get("summary") or {}
+    personal["action_points"] = int(
+        personal_summary["action_points"]
+        if personal_summary.get("action_points") is not None
+        else personal_summary.get("total_actions") or 0
+    )
     personal["performance_total"] = (
-        int((personal.get("summary") or {}).get("total_actions") or 0)
-        + personal["coding_points"]
+        personal["action_points"] + personal["coding_points"]
     )
     personal["organization_rank"] = next(
         (
@@ -738,6 +797,11 @@ def admin_performance_pdf() -> Response:
     ]
     if search:
         filter_parts.append(f"Pencarian: {search}")
+    for entry in personal.get("backup_attendance_rows") or []:
+        if entry.get("feature_key") == "meeting_attendance":
+            photo, is_dummy = _performance_meeting_photo(entry.get("meeting_photo_path"))
+            entry["photo_path"] = str(photo) if photo else None
+            entry["photo_is_dummy"] = is_dummy
     pdf = build_admin_performance_pdf(
         leaderboard=leaderboard,
         personal=personal,
@@ -963,6 +1027,66 @@ def admin_settings() -> Response | str:
         system_info=system_info,
         active_tab=active_tab,
         page_title="Pengaturan Aplikasi Dashboard",
+    )
+
+
+@pengaturan_bp.route("/history-back-up", methods=["GET", "POST"])
+@role_required("admin")
+def backup_history() -> Response | str:
+    """Record the signed-in admin's daily backup claim and show its history."""
+    user_id = int((current_user() or {}).get("id") or 0)
+    if not user_id:
+        abort(403)
+    now = current_jakarta_time()
+    today = now.date()
+
+    if request.method == "POST":
+        if request.form.get("action") != "claim_backup":
+            flash("Aksi klaim back up tidak valid.", "warning")
+            return redirect(url_for("pengaturan.backup_history"))
+
+        claim = claim_admin_backup(
+            admin_user_id=user_id,
+            backup_date=today,
+            claimed_at=now,
+        )
+        if claim:
+            record_admin_action(
+                user_id=user_id,
+                feature_key="backup_history",
+                action="CREATE",
+                target_type="BACKUP_CLAIM",
+                target_id=claim["id"],
+                target_name=today.strftime("%d/%m/%Y"),
+                metadata={"backup_date": today.isoformat()},
+            )
+            flash("Klaim sudah back up data hari ini berhasil dicatat.", "success")
+        else:
+            flash("Anda sudah mengklaim back up data hari ini.", "info")
+        return redirect(url_for("pengaturan.backup_history"))
+
+    selected_month = (request.args.get("month") or today.strftime("%Y-%m")).strip()
+    try:
+        month_start = datetime.strptime(selected_month, "%Y-%m").date()
+        month_end = (month_start.replace(day=28) + timedelta(days=4)).replace(day=1)
+    except (ValueError, OverflowError):
+        flash("Bulan tidak valid. Menampilkan riwayat bulan ini.", "warning")
+        month_start = today.replace(day=1)
+        month_end = (month_start.replace(day=28) + timedelta(days=4)).replace(day=1)
+    selected_month = month_start.strftime("%Y-%m")
+
+    return render_template(
+        "pengaturan/backup_history.html",
+        page_title="History Back Up",
+        today=today,
+        today_status=get_admin_backup_status(admin_user_id=user_id, backup_date=today),
+        history=fetch_admin_backup_history(
+            start=month_start,
+            end=month_end,
+            page=max(1, request.args.get("page", default=1, type=int)),
+            page_size=20,
+        ),
+        selected_month=selected_month,
     )
 
 

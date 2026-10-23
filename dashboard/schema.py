@@ -1631,6 +1631,19 @@ CREATE INDEX IF NOT EXISTS idx_admin_meeting_attendance_meeting
     ON admin_meeting_attendance (meeting_id, attendance_status);
 """
 
+_ADMIN_BACKUP_CLAIMS_SQL = """
+CREATE TABLE IF NOT EXISTS admin_backup_claims (
+    id SERIAL PRIMARY KEY,
+    admin_user_id INTEGER NOT NULL REFERENCES dashboard_users(id) ON DELETE CASCADE,
+    backup_date DATE NOT NULL,
+    claimed_at TIMESTAMPTZ NOT NULL,
+    UNIQUE (admin_user_id, backup_date)
+);
+CREATE INDEX IF NOT EXISTS idx_admin_backup_claims_date
+    ON admin_backup_claims (backup_date DESC, claimed_at DESC, id DESC);
+"""
+
+
 def ensure_dashboard_schema() -> None:
     """Create core dashboard tables when they do not yet exist."""
     statements: Iterable[str] = (
@@ -1642,6 +1655,7 @@ def ensure_dashboard_schema() -> None:
         "ALTER TABLE admin_meetings ADD COLUMN IF NOT EXISTS notulen TEXT",
         "ALTER TABLE admin_meetings ADD COLUMN IF NOT EXISTS photo_path TEXT",
         _ADMIN_MEETING_ATTENDANCE_SQL,
+        _ADMIN_BACKUP_CLAIMS_SQL,
         _SCHOOL_CLASSES_SQL,
         _STUDENTS_SQL,
         _STUDENTS_CLASS_INDEX_SQL,

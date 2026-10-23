@@ -28,6 +28,11 @@ Thumbs.db
 
 .kiro
 tests
+!dashboard/tests/
+dashboard/tests/*
+!dashboard/tests/test_admin_performance_github_sync.py
+!dashboard/tests/test_backup_history.py
+!dashboard/tests/test_admin_performance_points.py
 # Log & PID files
 *.log
 *.pid

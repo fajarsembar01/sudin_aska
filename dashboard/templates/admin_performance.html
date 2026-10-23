@@ -427,7 +427,15 @@
                     </span>
                     <span class="badge text-bg-dark">{{ performance.github.accounts|selectattr('github_username')|list|length }} akun terhubung</span>
                 </div>
-                <form method="post" action="{{ url_for('pengaturan.admin_performance_github_sync') }}">
+                <button class="btn btn-dark btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#codingSync" aria-expanded="false" aria-controls="codingSync">
+                    <i class="bi bi-arrow-repeat me-1"></i>Pilih Admin &amp; Sinkronkan
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#codingSettings" aria-expanded="false">
+                    <i class="bi bi-gear me-1"></i>Pengaturan
+                </button>
+            </div>
+            <div class="collapse" id="codingSync">
+                <form method="post" action="{{ url_for('pengaturan.admin_performance_github_sync') }}" class="mt-3" id="codingSyncForm">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="feature" value="{{ performance.selected_feature }}">
                     <input type="hidden" name="admin_id" value="{{ performance.selected_admin_id or '' }}">
@@ -438,12 +446,53 @@
                     <input type="hidden" name="month" value="{{ performance.selected_month }}">
                     <input type="hidden" name="quarter" value="{{ performance.selected_quarter }}">
                     <input type="hidden" name="year" value="{{ performance.selected_year }}">
-                    <button class="btn btn-dark btn-sm" type="submit"><i class="bi bi-arrow-repeat me-1"></i>Sinkronkan</button>
+                    <fieldset>
+                        <legend class="fs-6 fw-semibold mb-1">Pilih admin yang ingin disinkronkan</legend>
+                        <p class="small text-muted mb-2">Hanya admin terpilih yang diproses. Sinkronisasi mencakup riwayat GitHub, terlepas dari filter periode laporan.</p>
+                        <div class="row g-2 mb-3">
+                            {% for admin in performance.github.accounts if admin.github_username %}
+                            <div class="col-md-6 col-lg-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="sync_admin_ids" value="{{ admin.id }}" id="syncAdmin{{ admin.id }}" {% if performance.selected_admin_id == admin.id %}checked{% endif %}>
+                                    <label class="form-check-label" for="syncAdmin{{ admin.id }}">{{ admin.full_name }} <span class="small text-muted">@{{ admin.github_username }}</span></label>
+                                    <div class="small text-muted">{% if admin.synced_at %}Sinkron terakhir: {{ admin.synced_at|jakarta }}{% else %}Belum pernah disinkronkan{% endif %}</div>
+                                    {% if admin.sync_error %}<div class="small text-danger">{{ admin.sync_error }}</div>{% endif %}
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="col-12 small text-muted">Belum ada akun GitHub terhubung. Isi pemetaan melalui Pengaturan.</div>
+                            {% endfor %}
+                        </div>
+                    </fieldset>
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                        <button class="btn btn-dark btn-sm" type="submit" id="codingSyncSubmit" disabled><i class="bi bi-arrow-repeat me-1"></i>Sinkronkan Admin Terpilih</button>
+                        <span class="small text-muted" id="codingSyncSelection" aria-live="polite">Pilih minimal satu admin.</span>
+                    </div>
                 </form>
-                <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#codingSettings" aria-expanded="false">
-                    <i class="bi bi-gear me-1"></i>Pengaturan
-                </button>
             </div>
+            <script>
+                (function () {
+                    var form = document.getElementById('codingSyncForm');
+                    var button = document.getElementById('codingSyncSubmit');
+                    var selection = document.getElementById('codingSyncSelection');
+                    function updateSelection() {
+                        var count = form.querySelectorAll('input[name="sync_admin_ids"]:checked').length;
+                        button.disabled = count === 0;
+                        selection.textContent = count ? count + ' admin dipilih.' : 'Pilih minimal satu admin.';
+                    }
+                    form.addEventListener('change', updateSelection);
+                    form.addEventListener('submit', function (event) {
+                        if (!form.querySelector('input[name="sync_admin_ids"]:checked')) {
+                            event.preventDefault();
+                            updateSelection();
+                            return;
+                        }
+                        button.disabled = true;
+                        button.textContent = 'Menyinkronkan…';
+                    });
+                    updateSelection();
+                })();
+            </script>
             <div class="collapse" id="codingSettings">
                 <form method="post" action="{{ url_for('pengaturan.admin_performance_github_settings') }}" class="mt-3">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -496,13 +545,13 @@
         <article class="card metric-card border-0">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-start"><div><div class="metric-label">Total Skor</div><div class="metric-value">{{ performance.total_performance_score }}</div></div><span class="metric-icon"><i class="bi bi-trophy"></i></span></div>
-                <div class="text-muted small mt-1">Aksi Admin + Coding ×10</div>
+                <div class="text-muted small mt-1">Poin aktivitas + hari Coding ×10</div>
             </div>
         </article>
         <article class="card metric-card border-0">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-start"><div><div class="metric-label">Aksi Admin</div><div class="metric-value">{{ performance.summary.total_actions }}</div></div><span class="metric-icon"><i class="bi bi-activity"></i></span></div>
-                <div class="text-muted small mt-1">Sesuai filter aktif</div>
+                <div class="text-muted small mt-1">{{ performance.summary.action_points }} poin aktivitas sesuai filter</div>
             </div>
         </article>
         <article class="card metric-card border-0">
@@ -584,7 +633,8 @@
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <div>
                             <h2 class="h5 mb-1">Leaderboard Admin</h2>
-                            <div class="text-muted small">Total skor = Aksi Admin + (Hari aktif Coding ×10). Semua commit tetap ditampilkan.</div>
+                            <div class="text-muted small">Total skor = poin aktivitas + (hari aktif Coding ×10).</div>
+                            <div class="text-muted small">Klaim back up dan kehadiran rapat (Hadir/Terlambat) masing-masing 5 poin. Aksi lainnya 1 poin.</div>
                         </div>
                         <span class="badge text-bg-light">{{ performance.leaderboard|length }} admin</span>
                     </div>
@@ -595,7 +645,7 @@
                                     <th class="text-center">#</th>
                                     <th>Admin</th>
                                     <th>Total Skor</th>
-                                    <th>Admin</th>
+                                    <th>Poin Aktivitas</th>
                                     <th>Coding Update</th>
                                     <th>Poin Coding</th>
                                     <th>Aksi Dominan</th>
@@ -624,11 +674,11 @@
                                     <td>
                                         <div class="score-breakdown"><span class="badge text-bg-primary rounded-pill"
                                             data-bs-toggle="tooltip"
-                                            title="Aksi Admin {{ item.total_actions }} + {{ item.coding_score_units }} hari aktif Coding × {{ item.coding_multiplier }} = {{ item.performance_total }} ({{ item.github_commits or 0 }} commit)">
+                                            title="Poin aktivitas {{ item.action_points }} + {{ item.coding_score_units }} hari aktif Coding × {{ item.coding_multiplier }} = {{ item.performance_total }} ({{ item.github_commits or 0 }} commit)">
                                             {{ item.performance_total }}
-                                        </span><div class="text-muted small mt-1">{{ item.total_actions }} + {{ item.coding_points }}</div></div>
+                                        </span><div class="text-muted small mt-1">{{ item.action_points }} + {{ item.coding_points }}</div></div>
                                     </td>
-                                    <td><strong>{{ item.total_actions }}</strong></td>
+                                    <td><strong>{{ item.action_points }}</strong><div class="text-muted small">{{ item.total_actions }} aktivitas</div></td>
                                     <td>
                                         {% if item.github_username %}
                                         <div class="text-nowrap"><strong>{{ item.github_commits if item.github_commits is not none else '-' }} update</strong><span class="text-muted"> / {{ item.coding_score_units }} day</span></div>
@@ -685,6 +735,7 @@
                             <th>Fitur</th>
                             <th>Admin</th>
                             <th>Aksi</th>
+                            <th>Poin</th>
                             <th>Target</th>
                             <th>Nama Target</th>
                             <th>Detail</th>
@@ -697,13 +748,14 @@
                             <td><span class="badge text-bg-light">{{ row.feature_label }}</span></td>
                             <td>{{ row.actor_label }}</td>
                             <td><span class="badge text-bg-primary">{{ row.action }}</span></td>
+                            <td class="fw-semibold">{{ row.points }}</td>
                             <td class="text-muted">{{ row.target_type }}</td>
                             <td class="fw-semibold">{{ row.target_name }}</td>
                             <td class="small text-muted">{{ row.detail_text[:180] ~ ('...' if row.detail_text|length > 180 else '') }}</td>
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="7" class="text-center text-muted py-4">Belum ada event yang cocok dengan filter ini.</td>
+                            <td colspan="8" class="text-center text-muted py-4">Belum ada event yang cocok dengan filter ini.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -897,7 +949,7 @@
                 item.innerHTML = ''
                     + '<div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-2">'
                     + '  <div>'
-                    + '    <div class="fw-semibold">' + escapeHtml(row.action || '-') + '</div>'
+                    + '    <div class="fw-semibold">' + escapeHtml(row.action || '-') + ' <span class="badge text-bg-light ms-1">' + escapeHtml(row.points) + ' poin</span></div>'
                     + '    <div class="text-muted small">' + escapeHtml(row.feature_label || '-') + ' • ' + escapeHtml(row.target_type || '-') + '</div>'
                     + '  </div>'
                     + '  <div class="text-muted small">' + escapeHtml(row.created_at_label || '-') + '</div>'

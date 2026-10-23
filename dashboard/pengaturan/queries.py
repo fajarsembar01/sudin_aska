@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import platform
 import sys
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any, Dict, List, Optional
 
 from dashboard.db_access import get_cursor
@@ -705,3 +705,79 @@ def delete_admin_meeting(meeting_id: int) -> bool:
     with get_cursor(commit=True) as cur:
         cur.execute("DELETE FROM admin_meetings WHERE id = %s", (meeting_id,))
         return cur.rowcount > 0
+
+
+def claim_admin_backup(
+    *, admin_user_id: int, backup_date: date, claimed_at: datetime
+) -> Optional[Dict[str, Any]]:
+    """Record an admin's daily backup declaration once, including concurrent requests."""
+    with get_cursor(commit=True) as cur:
+        cur.execute(
+            """
+            INSERT INTO admin_backup_claims (admin_user_id, backup_date, claimed_at)
+            SELECT u.id, %s, %s
+            FROM dashboard_users u
+            WHERE u.id = %s AND u.role = 'admin'
+            ON CONFLICT (admin_user_id, backup_date) DO NOTHING
+            RETURNING id, admin_user_id, backup_date, claimed_at
+            """,
+            (backup_date, claimed_at, admin_user_id),
+        )
+        row = cur.fetchone()
+    return dict(row) if row else None
+
+
+def get_admin_backup_status(
+    *, admin_user_id: int, backup_date: date
+) -> Dict[str, Any]:
+    """Return the current admin's declaration and total declarations for one day."""
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT id, admin_user_id, backup_date, claimed_at
+            FROM admin_backup_claims
+            WHERE admin_user_id = %s AND backup_date = %s
+            """,
+            (admin_user_id, backup_date),
+        )
+        row = cur.fetchone()
+        own_claim = dict(row) if row else None
+        cur.execute(
+            "SELECT COUNT(*) AS total FROM admin_backup_claims WHERE backup_date = %s",
+            (backup_date,),
+        )
+        total_today = int(cur.fetchone()["total"])
+    return {"own_claim": own_claim, "total_today": total_today}
+
+
+def fetch_admin_backup_history(
+    *, start: date, end: date, page: int = 1, page_size: int = 20
+) -> Dict[str, Any]:
+    """Return one bounded page of backup declarations in the date interval [start, end)."""
+    page_size = max(1, min(int(page_size), 100))
+    with get_cursor() as cur:
+        cur.execute(
+            """
+            SELECT COUNT(*) AS total
+            FROM admin_backup_claims
+            WHERE backup_date >= %s AND backup_date < %s
+            """,
+            (start, end),
+        )
+        total = int(cur.fetchone()["total"])
+        pages = max(1, (total + page_size - 1) // page_size)
+        page = max(1, min(int(page), pages))
+        cur.execute(
+            """
+            SELECT c.id, c.admin_user_id, c.backup_date, c.claimed_at,
+                   u.full_name, u.email
+            FROM admin_backup_claims c
+            JOIN dashboard_users u ON u.id = c.admin_user_id
+            WHERE c.backup_date >= %s AND c.backup_date < %s
+            ORDER BY c.backup_date DESC, c.claimed_at DESC, c.id DESC
+            LIMIT %s OFFSET %s
+            """,
+            (start, end, page_size, (page - 1) * page_size),
+        )
+        entries = [dict(row) for row in cur.fetchall()]
+    return {"entries": entries, "total": total, "page": page, "pages": pages}
