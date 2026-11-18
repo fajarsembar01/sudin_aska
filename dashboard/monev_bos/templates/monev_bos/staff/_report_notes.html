@@ -1,0 +1,49 @@
+<div class="modal fade" id="reportNotesModal" tabindex="-1" aria-labelledby="reportNotesTitle" aria-hidden="true"
+     data-notes-url="{{ url_for('monev_bos.staff_report_notes', report_id=report.id) }}"
+     data-history-url="{{ url_for('monev_bos.staff_report_notes_history', report_id=report.id) }}"
+     data-csrf="{{ csrf_token() }}" data-can-edit="{{ 'true' if can_audit else 'false' }}">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable modal-fullscreen-sm-down">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h2 class="modal-title fs-5" id="reportNotesTitle">Catatan Keseluruhan</h2>
+                    <p class="small text-body-secondary mb-0">{{ report.school_name }} · Catatan bersama tim untuk laporan ini (BOS dan BOP).</p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                    <span id="reportNotesStatus" class="small text-body-secondary" role="status" aria-live="polite">Memuat catatan…</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="reportNotesHistoryToggle" aria-expanded="false" aria-controls="reportNotesHistory">
+                        <i class="bi bi-clock-history me-1"></i> Lihat history
+                    </button>
+                </div>
+                <label for="reportNotesEditor" class="form-label fw-semibold">Catatan tim</label>
+                <textarea id="reportNotesEditor" class="form-control" rows="12" maxlength="20000" disabled
+                          placeholder="Tuliskan temuan umum, kesimpulan, atau tindak lanjut laporan…" style="line-height: 1.7;"></textarea>
+                <div class="small text-body-secondary mt-2">{% if can_audit %}Perubahan dikumpulkan dan disimpan otomatis setiap 1 menit. Klik “Sinkronkan sekarang” untuk menyimpan lebih cepat. Perubahan tim diperiksa setiap 2 detik. Maksimal 20.000 karakter.{% else %}Mode baca. Catatan diperbarui otomatis setiap 2 detik.{% endif %}</div>
+                <div id="reportNotesConflict" class="alert alert-warning mt-3" hidden>
+                    <p class="fw-semibold mb-1">Ada perubahan pada bagian yang sama.</p>
+                    <p class="small">Tulisan Anda tetap di kolom catatan. Bandingkan dengan versi tim di bawah, lalu gabungkan perubahan pada kolom catatan sebelum menyimpan.</p>
+                    <label for="reportNotesTeamVersion" class="form-label small">Versi terbaru tim</label>
+                    <textarea id="reportNotesTeamVersion" class="form-control mb-2" rows="6" readonly></textarea>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <button type="button" class="btn btn-warning btn-sm" id="reportNotesMerge">Simpan hasil gabungan</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="reportNotesUseTeam">Gunakan versi tim</button>
+                    </div>
+                </div>
+                <section id="reportNotesHistory" class="border-top mt-4 pt-3" aria-label="Riwayat perubahan catatan" hidden>
+                    <h3 class="fs-6">Riwayat perubahan</h3>
+                    <p class="small text-body-secondary">Nama penulis, waktu, dan bagian yang berubah pada setiap penyimpanan otomatis.</p>
+                    <div id="reportNotesHistoryList"></div>
+                    <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="reportNotesHistoryMore" hidden>Muat riwayat sebelumnya</button>
+                </section>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-primary btn-sm" id="reportNotesRetry">Sinkronkan sekarang</button>
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="{{ url_for('static', filename='js/monev-report-notes.js') }}" defer></script>

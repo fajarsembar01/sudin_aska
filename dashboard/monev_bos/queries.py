@@ -4,6 +4,71 @@ from datetime import date, datetime
 import json
 import secrets
 from .external_photos import generate_access_token
+from .collaborative_notes import merge_notes, text_changes, NotesConflict
+
+
+def get_report_notes(report_id):
+    with get_cursor() as cur:
+        cur.execute("""
+            SELECT n.content, n.version, n.updated_at,
+                   COALESCE(u.full_name, u.email, 'Pengguna dihapus') AS author_name
+            FROM monev_bos_report_notes n
+            LEFT JOIN dashboard_users u ON u.id = n.updated_by
+            WHERE n.report_id = %s
+        """, (report_id,))
+        row = cur.fetchone()
+        return dict(row) if row else {"content": "", "version": 0, "updated_at": None, "author_name": None}
+
+
+def save_report_notes(report_id, base_version, content, user):
+    # The row lock serializes writers across tabs, workers and application instances.
+    with get_cursor(commit=True) as cur:
+        cur.execute("""INSERT INTO monev_bos_report_notes (report_id) VALUES (%s)
+                       ON CONFLICT (report_id) DO NOTHING""", (report_id,))
+        cur.execute("SELECT * FROM monev_bos_report_notes WHERE report_id = %s FOR UPDATE", (report_id,))
+        current = dict(cur.fetchone())
+        if base_version > current["version"]:
+            raise NotesConflict("Versi catatan tidak valid. Muat catatan terbaru.")
+        if base_version == current["version"]:
+            base = current["content"]
+        elif base_version == 0:
+            base = ""
+        else:
+            cur.execute("""SELECT content FROM monev_bos_report_note_revisions
+                           WHERE report_id = %s AND version = %s""", (report_id, base_version))
+            revision = cur.fetchone()
+            if not revision:
+                raise NotesConflict("Versi catatan tidak ditemukan.")
+            base = revision["content"]
+        merged = merge_notes(base, current["content"], content)
+        if len(merged) > 20000:
+            raise NotesConflict("Hasil gabungan melebihi batas 20.000 karakter.")
+        if merged == current["content"]:
+            return {"content": merged, "version": current["version"]}
+        version = current["version"] + 1
+        author_name = user.get("full_name") or user.get("email") or "Anggota tim"
+        cur.execute("""
+            INSERT INTO monev_bos_report_note_revisions
+                (report_id, version, content, changes, author_id, author_name)
+            VALUES (%s, %s, %s, %s::jsonb, %s, %s)
+        """, (report_id, version, merged, json.dumps(text_changes(current["content"], merged)),
+              user["id"], author_name))
+        cur.execute("""
+            UPDATE monev_bos_report_notes SET content = %s, version = %s,
+                updated_by = %s, updated_at = NOW() WHERE report_id = %s
+        """, (merged, version, user["id"], report_id))
+        return {"content": merged, "version": version, "author_name": author_name}
+
+
+def get_report_notes_history(report_id, before=None):
+    with get_cursor() as cur:
+        cur.execute("""
+            SELECT version, changes, author_id, author_name, created_at
+            FROM monev_bos_report_note_revisions
+            WHERE report_id = %s AND (%s IS NULL OR version < %s)
+            ORDER BY version DESC LIMIT 30
+        """, (report_id, before, before))
+        return [dict(row) for row in cur.fetchall()]
 
 
 SUPPORTED_BOP_CLAIM_PERIODS = {(2025, 4), (2026, 1), (2026, 2)}

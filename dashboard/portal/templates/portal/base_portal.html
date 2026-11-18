@@ -920,6 +920,10 @@
                     </li>
                     {% endif %}
 
+                    {% if current_user and current_user.role in ['admin', 'staff', 'coordinator'] %}
+                    <li class="nav-item"><a class="nav-link {% if request.endpoint in ['portal.team_workspace', 'portal.team_assignment_settings'] %}active{% endif %}" href="{{ url_for('portal.team_workspace') }}"><i class="bi bi-people nav-icon"></i>Penilaian Tim</a></li>
+                    {% endif %}
+
                     {% if current_user and current_user.role == 'coordinator' %}
                     {% set coordinator_menu_endpoints = [
                     'portal.coordinator_dashboard',
@@ -957,6 +961,7 @@
                             </li>
                         </ul>
                     </li>
+
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint in ['portal.coordinator_assessments', 'portal.assess', 'portal.view_assessment'] %}active{% endif %}"
                             href="{{ url_for('portal.coordinator_assessments') }}">

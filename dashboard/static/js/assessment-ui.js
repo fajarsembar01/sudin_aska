@@ -35,6 +35,17 @@
       pendingRequests: {},
     };
 
+    function sendJSON(endpoint, payload) {
+      if (config.saveTransport) return config.saveTransport(endpoint, payload);
+      return fetch(endpoint, {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+      }).then(response => response.json()).then(data => {
+        if (!data.success) throw new Error(data.message || 'Gagal menyimpan perubahan');
+        return data;
+      });
+    }
+
     function saveScoreRequest(ownerId, aspectId, score, extra) {
       const key = `${ownerId}:${aspectId}`;
       const prev = state.pendingRequests[key] || Promise.resolve();
@@ -43,14 +54,7 @@
         score,
         aspect_id: aspectId,
       }, extra || {});
-      const promise = prev.catch(() => null).then(() => fetch(state.scoreEndpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      }).then(res => res.json()).then(data => {
-        if (!data.success) throw new Error(data.message || 'Gagal menyimpan skor');
-        return data;
-      }));
+      const promise = prev.catch(() => null).then(() => sendJSON(state.scoreEndpoint, payload));
       state.pendingRequests[key] = promise;
       return promise.finally(() => {
         if (state.pendingRequests[key] === promise) delete state.pendingRequests[key];
@@ -118,17 +122,10 @@
 
     function saveNote(textarea, ownerId) {
       if (!state.noteEndpoint) return;
-      fetch(state.noteEndpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          assessment_id: state.assessmentId,
-          school_room_id: ownerId,
-          component_id: ownerId,
-          note: textarea.value,
-          notes: textarea.value
-        })
-      }).catch(() => null);
+      sendJSON(state.noteEndpoint, {
+        assessment_id: state.assessmentId, school_room_id: ownerId,
+        component_id: ownerId, note: textarea.value, notes: textarea.value
+      }).catch(error => { if (config.onError) config.onError(error); });
     }
 
     function updateAllGroups() {

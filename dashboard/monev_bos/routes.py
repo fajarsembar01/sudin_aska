@@ -3635,6 +3635,51 @@ def staff_audit_report(report_id):
         can_audit=can_audit,
     )
 
+
+@monev_bos_bp.route("/staff/verifikasi/<int:report_id>/catatan", methods=["GET", "POST"])
+@role_required("staff", "admin")
+def staff_report_notes(report_id):
+    user = current_user()
+    if not queries.get_report_by_id(report_id):
+        return jsonify(success=False, message="Laporan tidak ditemukan."), 404
+    allowed = _staff_audit_access_allowed(user, report_id)
+    if user.get("role") == "staff" and not allowed:
+        return jsonify(success=False, message="Laporan ini bukan penugasan tim Anda."), 403
+    if request.method == "GET":
+        response = jsonify(success=True, document=queries.get_report_notes(report_id), can_edit=allowed)
+        response.headers["Cache-Control"] = "no-store"
+        return response
+    if not allowed:
+        return _deny_staff_audit_action()
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify(success=False, message="Data catatan tidak valid."), 400
+    content, version = data.get("content"), data.get("base_version")
+    if (not isinstance(content, str) or len(content) > 20000
+            or type(version) is not int or version < 0):
+        return jsonify(success=False, message="Catatan maksimal 20.000 karakter dan harus memiliki versi yang valid."), 400
+    try:
+        document = queries.save_report_notes(report_id, version, content, user)
+    except queries.NotesConflict as exc:
+        return jsonify(success=False, message=str(exc), document=queries.get_report_notes(report_id)), 409
+    return jsonify(success=True, document=document)
+
+
+@monev_bos_bp.route("/staff/verifikasi/<int:report_id>/catatan/history")
+@role_required("staff", "admin")
+def staff_report_notes_history(report_id):
+    user = current_user()
+    if not queries.get_report_by_id(report_id):
+        return jsonify(success=False, message="Laporan tidak ditemukan."), 404
+    if user.get("role") == "staff" and not _staff_audit_access_allowed(user, report_id):
+        return jsonify(success=False, message="Laporan ini bukan penugasan tim Anda."), 403
+    before = request.args.get("before", type=int)
+    revisions = queries.get_report_notes_history(report_id, before)
+    response = jsonify(success=True, revisions=revisions,
+                       next_before=revisions[-1]["version"] if len(revisions) == 30 else None)
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
 @monev_bos_bp.route("/staff/audit/activity/<int:activity_id>", methods=["POST"])
 @monev_bos_bp.route("/staff/verifikasi/kegiatan/<int:activity_id>", methods=["POST"])
 @role_required("staff", "admin")

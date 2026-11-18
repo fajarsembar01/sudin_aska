@@ -33,6 +33,11 @@ dashboard/tests/*
 !dashboard/tests/test_admin_performance_github_sync.py
 !dashboard/tests/test_backup_history.py
 !dashboard/tests/test_admin_performance_points.py
+!dashboard/tests/test_meeting_location.py
+!dashboard/tests/test_panbers_team.py
+!dashboard/tests/test_panbers_team.js
+!dashboard/tests/test_monev_shared_notes.py
+!dashboard/tests/test_monev_report_notes.js
 # Log & PID files
 *.log
 *.pid

@@ -58,6 +58,7 @@ Saya - Portal PANBERSS{% endblock %} {% block portal_content %}
   }
 </style>
 <div class="container-fluid py-4">
+  <div class="d-flex justify-content-end mb-3"><a class="btn btn-outline-primary" href="{{ url_for('portal.team_workspace') }}"><i class="bi bi-people me-1"></i>Penilaian Tim</a></div>
   <div class="row">
     <div class="col-12">
       <div class="card shadow-sm">
@@ -73,16 +74,13 @@ Saya - Portal PANBERSS{% endblock %} {% block portal_content %}
                 <div class="d-flex align-items-start gap-3">
                   <i class="bi bi-calendar-event fs-4 text-primary"></i>
                   <div>
-                    <div class="fw-semibold">Pilih periode</div>
+                    <div class="fw-semibold">Filter periode riwayat</div>
                     <div class="small text-muted d-none d-sm-block">
-                      {% if active_period_id %} Periode ini akan dipakai saat
-                      membuat draft baru. Draft yang sudah ada tetap menggunakan
-                      periode awalnya. {% else %} Tidak ada periode aktif, pilih
-                      periode sebelum mulai penilaian. {% endif %}
+                      {% if active_period_id %} Filter periode untuk riwayat. Periode penilaian ditetapkan saat kirim final. {% else %} Belum ada periode aktif. Draft dapat diisi; kirim final menunggu periode aktif. {% endif %}
                     </div>
                     <div class="small text-muted d-block d-sm-none mb-0">
-                      {% if active_period_id %} Untuk draft baru. {% else %}
-                      Wajib pilih dulu. {% endif %}
+                      {% if active_period_id %} Periode ditetapkan saat kirim final. {% else %}
+                      Draft tetap dapat diisi. {% endif %}
                     </div>
                   </div>
                 </div>
@@ -108,8 +106,7 @@ Saya - Portal PANBERSS{% endblock %} {% block portal_content %}
                     endif
                     %}
                   >
-                    {% if active_period_id %}Periode aktif (default){% else %}--
-                    Pilih periode (boleh periode mendatang) --{% endif %}
+                    {% if active_period_id %}Periode aktif (default){% else %}Semua periode riwayat{% endif %}
                   </option>
                   {% for p in periods_sorted %}
                   <option
@@ -244,7 +241,7 @@ Saya - Portal PANBERSS{% endblock %} {% block portal_content %}
                     {% if not (school.draft_period_name or
                     school.last_period_name) %}
                     <div class="small text-muted mt-1">
-                      Mengikuti periode aktif saat dibuat
+                      Periode aktif saat kirim final
                     </div>
                     {% endif %}
                     <div class="assignment-actions d-grid gap-2 mt-3">
@@ -271,6 +268,7 @@ Saya - Portal PANBERSS{% endblock %} {% block portal_content %}
                       >
                         <i class="bi bi-box-arrow-up-right"></i> Lihat
                       </a>
+                      <a href="{{ url_for('portal.assess', school_id=school.school_id) }}" class="btn btn-primary">Buat penilaian lagi</a>
                       {% if school.last_assessment_status == 'submitted' %}
                       <form
                         method="POST"
@@ -363,7 +361,7 @@ Saya - Portal PANBERSS{% endblock %} {% block portal_content %}
                     {% if not (school.draft_period_name or
                     school.last_period_name) %}
                     <div class="small text-muted">
-                      Mengikuti periode aktif saat dibuat
+                      Periode aktif saat kirim final
                     </div>
                     {% endif %}
                   </td>

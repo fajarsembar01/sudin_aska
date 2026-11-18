@@ -509,14 +509,17 @@ def create_admin_meeting(
     location: str,
     agenda: str,
     created_by: Optional[int],
+    latitude: float,
+    longitude: float,
+    radius_m: int = 200,
 ) -> int:
     """Create a meeting and return its identifier."""
     with get_cursor(commit=True) as cur:
         cur.execute(
             """
             INSERT INTO admin_meetings
-                (title, meeting_date, start_time, end_time, location, agenda, created_by)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
+                (title, meeting_date, start_time, end_time, location, agenda, created_by, latitude, longitude, radius_m)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
             """,
             (
@@ -526,7 +529,7 @@ def create_admin_meeting(
                 end_time or None,
                 location or None,
                 agenda or None,
-                created_by,
+                created_by, latitude, longitude, radius_m,
             ),
         )
         return int(cur.fetchone()[0])
@@ -582,6 +585,9 @@ def update_admin_meeting(
     end_time: str,
     location: str,
     agenda: str,
+    latitude: float,
+    longitude: float,
+    radius_m: int = 200,
 ) -> bool:
     """Update the editable details of a meeting."""
     with get_cursor(commit=True) as cur:
@@ -594,6 +600,7 @@ def update_admin_meeting(
                 end_time = %s,
                 location = %s,
                 agenda = %s,
+                latitude = %s, longitude = %s, radius_m = %s,
                 updated_at = NOW()
             WHERE id = %s
             """,
@@ -604,6 +611,7 @@ def update_admin_meeting(
                 end_time,
                 location or None,
                 agenda or None,
+                latitude, longitude, radius_m,
                 meeting_id,
             ),
         )
@@ -621,6 +629,7 @@ def list_admin_meeting_attendance(meeting_id: int) -> List[Dict[str, Any]]:
                 u.email,
                 COALESCE(a.attendance_status, 'unrecorded') AS attendance_status,
                 COALESCE(a.notes, '') AS notes,
+                a.latitude, a.longitude,
                 a.recorded_at,
                 recorder.full_name AS recorded_by_name
             FROM dashboard_users u
@@ -646,21 +655,29 @@ def save_admin_meeting_attendance(
             cur.execute(
                 """
                 INSERT INTO admin_meeting_attendance
-                    (meeting_id, admin_user_id, attendance_status, notes, recorded_by, recorded_at)
-                SELECT %s, u.id, %s, %s, %s, NOW()
+                    (meeting_id, admin_user_id, attendance_status, notes, recorded_by, recorded_at, latitude, longitude)
+                SELECT %s, u.id, %s, %s, %s, NOW(), %s, %s
                 FROM dashboard_users u
                 WHERE u.id = %s AND u.role = 'admin'
                 ON CONFLICT (meeting_id, admin_user_id) DO UPDATE SET
                     attendance_status = EXCLUDED.attendance_status,
                     notes = EXCLUDED.notes,
+                    latitude = EXCLUDED.latitude,
+                    longitude = EXCLUDED.longitude,
                     recorded_by = EXCLUDED.recorded_by,
-                    recorded_at = NOW()
+                    recorded_at = CASE
+                        WHEN admin_meeting_attendance.attendance_status IN ('present', 'late')
+                         AND admin_meeting_attendance.attendance_status = EXCLUDED.attendance_status
+                        THEN admin_meeting_attendance.recorded_at
+                        ELSE NOW()
+                    END
                 """,
                 (
                     meeting_id,
                     entry["attendance_status"],
                     entry.get("notes") or None,
                     recorded_by,
+                    entry.get("latitude"), entry.get("longitude"),
                     entry["admin_user_id"],
                 ),
             )
@@ -781,3 +798,19 @@ def fetch_admin_backup_history(
         )
         entries = [dict(row) for row in cur.fetchall()]
     return {"entries": entries, "total": total, "page": page, "pages": pages}
+
+
+def list_meeting_location_favorites(user_id):
+    with get_cursor() as cur:
+        cur.execute("SELECT id, name, latitude, longitude, radius_m FROM admin_meeting_location_favorites WHERE user_id = %s ORDER BY name", (user_id,))
+        return [dict(row) for row in cur.fetchall()]
+
+
+def save_meeting_location_favorite(*, user_id, name, latitude, longitude, radius_m):
+    with get_cursor(commit=True) as cur:
+        cur.execute("""
+            INSERT INTO admin_meeting_location_favorites (user_id, name, latitude, longitude, radius_m)
+            VALUES (%s, %s, %s, %s, %s)
+            ON CONFLICT (user_id, name) DO UPDATE SET latitude = EXCLUDED.latitude,
+                longitude = EXCLUDED.longitude, radius_m = EXCLUDED.radius_m
+        """, (user_id, name, latitude, longitude, radius_m))

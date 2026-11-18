@@ -4,6 +4,12 @@
 {% from "shared/_reopen_request_card.html" import reopen_request_card %}
 
 {% block portal_content %}
+{% if assessment.assessment_mode == 'team' %}
+<div class="alert alert-light border small"><strong>Tim · {{ assessment.team_name_snapshot }}</strong><div>Anggota saat hasil dikirim: {% for member in assessment.team_members_snapshot %}{{ member.name }}{{ ', ' if not loop.last else '' }}{% endfor %}</div>
+{% for contributor in team_contributors %}<span class="badge text-bg-light border me-1 mt-1">{{ contributor.name or 'Pengguna dihapus' }} · {{ contributor.rooms }} ruangan · {{ contributor.edits }} perubahan</span>{% endfor %}
+</div>
+{% endif %}
+
 <section class="mb-4">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
         <div class="d-flex align-items-center gap-3">
@@ -60,13 +66,13 @@
                         </span>
                         <div>
                             <h2 class="h6 fw-bold mb-0">Penilai</h2>
-                            <p class="text-muted small mb-0">Data individu</p>
+                            <p class="text-muted small mb-0">{{ 'Hasil bersama tim' if assessment.assessment_mode == 'team' else 'Data individu' }}</p>
                         </div>
                     </div>
                     <div class="small text-muted">Nama</div>
                     <div class="fw-semibold mb-2">{{ assessment.assessor_name or 'Tidak diketahui' }}</div>
-                    <div class="small text-muted">Email</div>
-                    <div class="fw-semibold mb-2">{{ assessment.assessor_email or '-' }}</div>
+                    {% if assessment.assessment_mode != 'team' %}<div class="small text-muted">Email</div>
+                    <div class="fw-semibold mb-2">{{ assessment.assessor_email or '-' }}</div>{% endif %}
                     <div class="small text-muted">Tanggal Penilaian</div>
                     <div class="fw-semibold">{{ assessment.submitted_at or assessment.assessment_date }}</div>
                 </div>

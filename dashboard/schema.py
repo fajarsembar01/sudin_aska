@@ -1631,6 +1631,70 @@ CREATE INDEX IF NOT EXISTS idx_admin_meeting_attendance_meeting
     ON admin_meeting_attendance (meeting_id, attendance_status);
 """
 
+_ADMIN_MEETING_LOCATIONS_SQL = """
+ALTER TABLE admin_meetings ADD COLUMN IF NOT EXISTS latitude DOUBLE PRECISION CHECK (latitude BETWEEN -90 AND 90);
+ALTER TABLE admin_meetings ADD COLUMN IF NOT EXISTS longitude DOUBLE PRECISION CHECK (longitude BETWEEN -180 AND 180);
+ALTER TABLE admin_meetings ADD COLUMN IF NOT EXISTS radius_m INTEGER NOT NULL DEFAULT 200 CHECK (radius_m BETWEEN 1 AND 100000);
+CREATE TABLE IF NOT EXISTS admin_meeting_location_favorites (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES dashboard_users(id) ON DELETE CASCADE,
+    name VARCHAR(180) NOT NULL,
+    latitude DOUBLE PRECISION NOT NULL CHECK (latitude BETWEEN -90 AND 90),
+    longitude DOUBLE PRECISION NOT NULL CHECK (longitude BETWEEN -180 AND 180),
+    radius_m INTEGER NOT NULL DEFAULT 200 CHECK (radius_m BETWEEN 1 AND 100000),
+    UNIQUE (user_id, name)
+);
+ALTER TABLE admin_meetings ALTER COLUMN radius_m SET DEFAULT 200;
+ALTER TABLE admin_meeting_location_favorites ALTER COLUMN radius_m SET DEFAULT 200;
+ALTER TABLE admin_meeting_attendance ADD COLUMN IF NOT EXISTS latitude DOUBLE PRECISION;
+ALTER TABLE admin_meeting_attendance ADD COLUMN IF NOT EXISTS longitude DOUBLE PRECISION;
+"""
+
+_PORTAL_TEAM_ASSESSMENTS_SQL = """
+ALTER TABLE portal_assessments ADD COLUMN IF NOT EXISTS assessment_mode TEXT NOT NULL DEFAULT 'individual' CHECK (assessment_mode IN ('individual', 'team'));
+ALTER TABLE portal_assessments ADD COLUMN IF NOT EXISTS monev_team_id INTEGER;
+ALTER TABLE portal_assessments ADD COLUMN IF NOT EXISTS team_name_snapshot TEXT;
+ALTER TABLE portal_assessments ADD COLUMN IF NOT EXISTS team_members_snapshot JSONB NOT NULL DEFAULT '[]'::jsonb;
+ALTER TABLE portal_assessments ADD COLUMN IF NOT EXISTS submitted_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS idx_portal_assessments_mode ON portal_assessments (assessment_mode, status, period_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_portal_team_one_draft ON portal_assessments (school_id) WHERE assessment_mode = 'team' AND status = 'draft';
+CREATE TABLE IF NOT EXISTS portal_team_assessment_settings (
+    school_id INTEGER PRIMARY KEY REFERENCES portal_schools(id) ON DELETE CASCADE,
+    enabled BOOLEAN NOT NULL DEFAULT FALSE,
+    updated_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS portal_assessment_field_versions (
+    assessment_id INTEGER NOT NULL REFERENCES portal_assessments(id) ON DELETE CASCADE,
+    school_room_id INTEGER NOT NULL REFERENCES portal_school_rooms(id) ON DELETE CASCADE,
+    field_key TEXT NOT NULL,
+    version INTEGER NOT NULL DEFAULT 1,
+    edited_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (assessment_id, school_room_id, field_key)
+);
+CREATE TABLE IF NOT EXISTS portal_assessment_presence (
+    assessment_id INTEGER NOT NULL REFERENCES portal_assessments(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES dashboard_users(id) ON DELETE CASCADE,
+    client_id VARCHAR(64) NOT NULL,
+    school_room_id INTEGER REFERENCES portal_school_rooms(id) ON DELETE CASCADE,
+    seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (assessment_id, user_id, client_id)
+);
+ALTER TABLE portal_assessment_photos ADD COLUMN IF NOT EXISTS uploaded_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL;
+ALTER TABLE portal_assessments ADD COLUMN IF NOT EXISTS period_locked BOOLEAN NOT NULL DEFAULT FALSE;
+UPDATE portal_assessments SET period_locked = TRUE WHERE period_locked = FALSE AND (status IN ('submitted', 'verified') OR submitted_at IS NOT NULL);
+CREATE TABLE IF NOT EXISTS portal_assessment_team_events (
+    id BIGSERIAL PRIMARY KEY,
+    assessment_id INTEGER NOT NULL REFERENCES portal_assessments(id) ON DELETE CASCADE,
+    school_room_id INTEGER REFERENCES portal_school_rooms(id) ON DELETE SET NULL,
+    field_key TEXT NOT NULL,
+    user_id INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_portal_team_events_assessment ON portal_assessment_team_events (assessment_id, user_id);
+"""
+
 _ADMIN_BACKUP_CLAIMS_SQL = """
 CREATE TABLE IF NOT EXISTS admin_backup_claims (
     id SERIAL PRIMARY KEY,
@@ -1655,6 +1719,7 @@ def ensure_dashboard_schema() -> None:
         "ALTER TABLE admin_meetings ADD COLUMN IF NOT EXISTS notulen TEXT",
         "ALTER TABLE admin_meetings ADD COLUMN IF NOT EXISTS photo_path TEXT",
         _ADMIN_MEETING_ATTENDANCE_SQL,
+        _ADMIN_MEETING_LOCATIONS_SQL,
         _ADMIN_BACKUP_CLAIMS_SQL,
         _SCHOOL_CLASSES_SQL,
         _STUDENTS_SQL,
@@ -1747,6 +1812,7 @@ def ensure_dashboard_schema() -> None:
         _PORTAL_ASSESSMENT_PHOTOS_SQL,
         _PORTAL_ASSESSMENT_PHOTOS_INDEX_SQL,
         _PORTAL_ASSESSMENT_ROOM_DETAILS_SQL,
+        _PORTAL_TEAM_ASSESSMENTS_SQL,
         _PORTAL_ASSESSMENT_ROOM_DETAILS_INDEX_SQL,
         _PORTAL_ACTIVITY_LOGS_SQL,
         _PORTAL_ACTIVITY_LOGS_INDEX_CREATED,
@@ -2512,6 +2578,26 @@ _MONEV_BOS_AUDIT_LOGS_INDEX_SQL = """
 CREATE INDEX IF NOT EXISTS idx_monev_bos_audit_logs_report ON monev_bos_audit_logs (report_id);
 """
 
+_MONEV_BOS_REPORT_NOTES_SQL = """
+CREATE TABLE IF NOT EXISTS monev_bos_report_notes (
+    report_id INTEGER PRIMARY KEY REFERENCES monev_bos_reports(id) ON DELETE CASCADE,
+    content TEXT NOT NULL DEFAULT '',
+    version INTEGER NOT NULL DEFAULT 0,
+    updated_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS monev_bos_report_note_revisions (
+    report_id INTEGER NOT NULL REFERENCES monev_bos_reports(id) ON DELETE CASCADE,
+    version INTEGER NOT NULL,
+    content TEXT NOT NULL,
+    changes JSONB NOT NULL,
+    author_id INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
+    author_name TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (report_id, version)
+);
+"""
+
 _MONEV_BOS_EDIT_REQUESTS_SQL = """
 CREATE TABLE IF NOT EXISTS monev_bos_edit_requests (
     id SERIAL PRIMARY KEY,
@@ -2792,6 +2878,7 @@ def ensure_monev_bos_schema() -> None:
         _MONEV_BOS_CHECKLIST_RESULTS_SQL,
         _MONEV_BOS_AUDIT_LOGS_SQL,
         _MONEV_BOS_AUDIT_LOGS_INDEX_SQL,
+        _MONEV_BOS_REPORT_NOTES_SQL,
         _MONEV_BOS_EDIT_REQUESTS_SQL,
         _MONEV_BOS_EDIT_REQUESTS_INDEX_SQL,
         _MONEV_BOS_ACTIVITY_HISTORY_SQL,

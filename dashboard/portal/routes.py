@@ -87,6 +87,7 @@ from .permissions import (
     can_reopen_assessment,
     is_superadmin,
 )
+from . import team_assessments
 from .queries import (  # Staff school assignments; Assignment requests; Classroom configuration
     PORTAL_FOLLOW_UP_STATUS_DONE,
     PORTAL_FOLLOW_UP_STATUS_IN_PROGRESS,
@@ -859,7 +860,7 @@ def _portal_access_required(view):
         user = current_user()
         if not user:
             flash("Silakan login terlebih dahulu.", "warning")
-            return redirect(url_for("auth.login", next=request.path))
+            return redirect(url_for("auth.login", next=request.full_path.rstrip("?")))
         role = user.get("role")
         if role not in ("admin", "coordinator", "staff", "sekolah"):
             flash("Anda tidak memiliki akses ke portal.", "danger")
@@ -920,6 +921,8 @@ def _can_edit_assessment(user: dict | None, assessment: dict | None) -> bool:
     """Check whether an assessor may change an existing draft assessment."""
     if not user or not assessment:
         return False
+    if assessment.get("assessment_mode") == "team":
+        return team_assessments.can_access(user, assessment, edit=True)
     if user.get("role") == "admin":
         return True
     return assessment.get("staff_id") == user.get("id") and _can_assess_school(
@@ -931,6 +934,8 @@ def _can_view_assessment(user: dict | None, assessment: dict | None) -> bool:
     """Check whether a user may view an assessment detail page."""
     if not user or not assessment:
         return False
+    if assessment.get("assessment_mode") == "team":
+        return team_assessments.can_access(user, assessment)
     if user.get("role") == "admin" or assessment.get("staff_id") == user.get("id"):
         return True
     if user.get("role") != "coordinator":
@@ -2093,9 +2098,7 @@ def schools() -> Response:
     page = request.args.get("page", 1, type=int)
     per_page = 20
     periods = list_periods()
-    active_period_id = next((p["id"] for p in periods if p.get("is_active")), None) or (
-        periods[0]["id"] if periods else None
-    )
+    active_period_id = next((p["id"] for p in periods if p.get("is_active")), None)
     selected_period_id = request.args.get("period_id", type=int)
     if selected_period_id is None:
         selected_period_id = active_period_id
@@ -3025,7 +3028,15 @@ def assess(school_id: int) -> Response:
         )
         return redirect(url_for("portal.home"))
 
-    if not _can_assess_school(user, school_id):
+    requested_assessment = get_assessment_by_id(assessment_id_arg) if assessment_id_arg else None
+    team_mode = request.args.get("mode") == "team" or bool(
+        requested_assessment and requested_assessment.get("assessment_mode") == "team")
+    if team_mode:
+        allowed = (_can_view_assessment(user, requested_assessment) if requested_assessment
+                   else team_assessments.assignment_for(school_id, user) is not None)
+    else:
+        allowed = _can_assess_school(user, school_id)
+    if not allowed:
         flash(
             "Anda tidak memiliki akses ke sekolah ini. Hubungi admin untuk penugasan.",
             "danger",
@@ -3055,46 +3066,16 @@ def assess(school_id: int) -> Response:
             flash("Anda tidak memiliki akses ke penilaian ini.", "danger")
             return redirect(_assessment_list_url(user))
 
-    # Get active draft for THIS user
     if assessment is None:
-        assessment = get_active_assessment(
-            school_id, staff_id=user["id"], period_id=period_id_arg
-        )
-    if not assessment:
-        # Prevent new draft if sudah ada penilaian selesai untuk periode yang sama
-        target_period_id = period_id_arg
-        if target_period_id is None:
-            active_period = get_active_period()
-            target_period_id = active_period["id"] if active_period else None
-
-        existing_final = get_latest_final_assessment_for_period(
-            school_id, user["id"], target_period_id
-        )
-        if existing_final:
-            flash(
-                "Sekolah ini sudah disubmit untuk periode tersebut. Silakan buka penilaian yang ada.",
-                "info",
-            )
-            return redirect(
-                url_for("portal.view_assessment", assessment_id=existing_final["id"])
-            )
-
-        # Create new assessment
         try:
-            assessment = create_assessment(
-                school_id,
-                staff_id=user["id"],
-                period_id=period_id_arg,
-                creator_email=user["email"],
-            )
-            if assessment.get("_is_new"):
-                try:
-                    delete_assessment_scores(assessment["id"])
-                except Exception:
-                    current_app.logger.exception("Failed to clear auto-filled scores")
-        except Exception as e:
-            current_app.logger.exception("Error creating assessment")
-            flash("Gagal membuat penilaian baru.", "danger")
+            if team_mode:
+                assessment = team_assessments.get_or_create_draft(school_id, user)
+            else:
+                assessment = get_active_assessment(school_id, staff_id=user["id"])
+                if not assessment:
+                    assessment = create_assessment(school_id, staff_id=user["id"], creator_email=user.get("email"))
+        except (ValueError, PermissionError) as exc:
+            flash(str(exc), "warning")
             return redirect(_assessment_list_url(user))
 
     assessment_id = assessment["id"]
@@ -3113,7 +3094,7 @@ def assess(school_id: int) -> Response:
     # Periode penilaian untuk badge UI
     assessment_period = (
         get_period_by_id(assessment.get("period_id"))
-        if assessment.get("period_id")
+        if assessment.get("period_locked") and assessment.get("period_id")
         else get_active_period()
     )
 
@@ -3180,6 +3161,7 @@ def assess(school_id: int) -> Response:
         assessment_period=assessment_period,
         optional_rooms_data=optional_rooms_data,
         photo_required_threshold=PHOTO_REQUIRED_PCT,
+        team_initial_state=team_assessments.state(assessment_id, user) if assessment.get("assessment_mode") == "team" else None,
     )
 
 
@@ -3287,6 +3269,16 @@ def save_score(school_id: int) -> Response:
                 400,
             )
 
+        if assessment.get("assessment_mode") == "team":
+            try:
+                version = team_assessments.save_field(assessment_id, school_room_id,
+                    f"score:{aspect_id}", score, data.get("base_version"), user)
+                return jsonify({"success": True, "version": version})
+            except team_assessments.TeamConflict as exc:
+                return jsonify({"success": False, "message": str(exc)}), 409
+            except PermissionError as exc:
+                return jsonify({"success": False, "message": str(exc)}), 403
+
         success = save_assessment_score(
             assessment_id,
             school_room_id,
@@ -3342,12 +3334,23 @@ def save_note(school_id: int) -> Response:
 
     try:
 
+        if assessment.get("assessment_mode") == "team":
+            try:
+                version = team_assessments.save_field(assessment_id, school_room_id,
+                    "note", notes, data.get("base_version"), user)
+                return jsonify({"success": True, "version": version})
+            except team_assessments.TeamConflict as exc:
+                return jsonify({"success": False, "message": str(exc)}), 409
+            except PermissionError as exc:
+                return jsonify({"success": False, "message": str(exc)}), 403
         result = save_room_details(
             assessment_id=assessment_id,
             school_room_id=school_room_id,
             notes=notes,
         )
         return jsonify({"success": True, "details": result})
+    except ValueError as exc:
+        return jsonify(success=False, message=str(exc)), 400
     except Exception as e:
         current_app.logger.exception("Error saving note")
         return jsonify({"success": False, "message": str(e)}), 500
@@ -3487,11 +3490,16 @@ def upload_photo(school_id: int) -> Response:
             photo_path=f"uploads/portal/{filename}",
             latitude=lat_val,
             longitude=lon_val,
+            actor=user, base_version=request.form.get("base_version", type=int), photo_limit=max_photos,
         )
         saved_filename = Path(saved.get("photo_path") or filename).name
         saved["url"] = url_for("portal.uploaded_file", filename=saved_filename)
 
         return jsonify({"success": True, "photo": saved})
+    except (team_assessments.TeamConflict, PermissionError, ValueError) as exc:
+        if filepath.exists():
+            filepath.unlink()
+        return jsonify(success=False, message=str(exc)), 403 if isinstance(exc, PermissionError) else 409
     except Exception as e:
         current_app.logger.exception("Error saving photo")
         return jsonify({"success": False, "message": str(e)}), 500
@@ -3509,18 +3517,18 @@ def submit(school_id: int) -> Response:
     assessment_id = request.form.get("assessment_id")
     if not assessment_id:
         flash("Assessment ID tidak valid.", "danger")
-        return redirect(url_for("portal.assess", school_id=school_id))
+        return redirect(url_for("portal.assess", school_id=school_id, assessment_id=assessment_id))
 
     try:
         assessment_id_int = int(assessment_id)
     except (TypeError, ValueError):
         flash("Data assessment tidak valid.", "danger")
-        return redirect(url_for("portal.assess", school_id=school_id))
+        return redirect(url_for("portal.assess", school_id=school_id, assessment_id=assessment_id))
 
     assessment = get_assessment_by_id(assessment_id_int)
     if not assessment:
         flash("Penilaian tidak ditemukan.", "danger")
-        return redirect(url_for("portal.assess", school_id=school_id))
+        return redirect(url_for("portal.assess", school_id=school_id, assessment_id=assessment_id))
 
     # Hanya draft yang boleh disimpan ulang, cegah status submitted/verified berubah jadi draft
     if assessment.get("status") != "draft":
@@ -3534,11 +3542,11 @@ def submit(school_id: int) -> Response:
 
     if assessment["school_id"] != school_id:
         flash("Penilaian tidak sesuai sekolah.", "danger")
-        return redirect(url_for("portal.assess", school_id=school_id))
+        return redirect(url_for("portal.assess", school_id=school_id, assessment_id=assessment_id))
 
     if not _can_edit_assessment(user, assessment):
         flash("Anda tidak memiliki akses untuk submit penilaian ini.", "danger")
-        return redirect(url_for("portal.assess", school_id=school_id))
+        return redirect(url_for("portal.assess", school_id=school_id, assessment_id=assessment_id))
 
     try:
         all_rooms = list_school_rooms(school_id)
@@ -3579,17 +3587,20 @@ def submit(school_id: int) -> Response:
 
         if missing_messages:
             flash(" ".join(missing_messages), "warning")
-            return redirect(url_for("portal.assess", school_id=school_id))
+            return redirect(url_for("portal.assess", school_id=school_id, assessment_id=assessment_id))
     except Exception:
         current_app.logger.exception("Error validating submission requirements")
         flash("Gagal memvalidasi persyaratan submit. Coba lagi.", "danger")
-        return redirect(url_for("portal.assess", school_id=school_id))
+        return redirect(url_for("portal.assess", school_id=school_id, assessment_id=assessment_id))
 
     try:
 
         success = submit_assessment(
             assessment_id_int,
             expected_staff_id=assessment.get("staff_id"),
+            actor=user,
+            expected_period_id=request.form.get("expected_period_id", type=int),
+            minimum_photo_rooms=min_photos,
         )
         if success:
             try:
@@ -3620,7 +3631,10 @@ def submit(school_id: int) -> Response:
         current_app.logger.exception("Error submitting assessment")
         flash(f"Error: {e}", "danger")
 
-    period_id = assessment.get("period_id") if assessment else None
+    if assessment.get("assessment_mode") == "team":
+        return redirect(url_for("portal.team_workspace"))
+    refreshed = get_assessment_by_id(assessment_id_int)
+    period_id = refreshed.get("period_id") if refreshed else None
     if user.get("role") == "staff":
         if period_id:
             return redirect(url_for("portal.staff_assignments", period_id=period_id))
@@ -3648,18 +3662,18 @@ def save_draft(school_id: int) -> Response:
     assessment_id = request.form.get("assessment_id")
     if not assessment_id:
         flash("Assessment ID tidak valid.", "danger")
-        return redirect(url_for("portal.assess", school_id=school_id))
+        return redirect(url_for("portal.assess", school_id=school_id, assessment_id=assessment_id))
 
     try:
         assessment_id_int = int(assessment_id)
     except (TypeError, ValueError):
         flash("Data assessment tidak valid.", "danger")
-        return redirect(url_for("portal.assess", school_id=school_id))
+        return redirect(url_for("portal.assess", school_id=school_id, assessment_id=assessment_id))
 
     assessment = get_assessment_by_id(assessment_id_int)
     if not assessment:
         flash("Penilaian tidak ditemukan.", "danger")
-        return redirect(url_for("portal.assess", school_id=school_id))
+        return redirect(url_for("portal.assess", school_id=school_id, assessment_id=assessment_id))
 
     if assessment.get("status") != "draft":
         flash(
@@ -3672,11 +3686,11 @@ def save_draft(school_id: int) -> Response:
 
     if assessment["school_id"] != school_id:
         flash("Penilaian tidak sesuai sekolah.", "danger")
-        return redirect(url_for("portal.assess", school_id=school_id))
+        return redirect(url_for("portal.assess", school_id=school_id, assessment_id=assessment_id))
 
     if not _can_edit_assessment(user, assessment):
         flash("Anda tidak memiliki akses untuk menyimpan draft ini.", "danger")
-        return redirect(url_for("portal.assess", school_id=school_id))
+        return redirect(url_for("portal.assess", school_id=school_id, assessment_id=assessment_id))
 
     try:
 
@@ -3684,17 +3698,21 @@ def save_draft(school_id: int) -> Response:
             cur.execute(
                 """
                 UPDATE portal_assessments
-                SET status = 'draft', updated_at = NOW()
-                WHERE id = %s
+                SET updated_at = NOW()
+                WHERE id = %s AND status = 'draft'
                 """,
                 (assessment_id_int,),
             )
-        flash("Draft berhasil disimpan.", "success")
+            saved = cur.rowcount
+        if saved:
+            flash("Draft berhasil disimpan.", "success")
+        else:
+            flash("Penilaian sudah dikirim anggota tim. Buka hasil untuk melihatnya.", "info")
     except Exception as e:
         current_app.logger.exception("Error saving draft")
         flash(f"Gagal menyimpan draft: {e}", "danger")
 
-    return redirect(url_for("portal.assess", school_id=school_id))
+    return redirect(url_for("portal.assess", school_id=school_id, assessment_id=assessment_id))
 
 
 @portal_bp.route("/assessment/<int:assessment_id>/request-reopen", methods=["POST"])
@@ -3719,7 +3737,13 @@ def request_reopen(assessment_id: int) -> Response:
         )
         return redirect(url_for("portal.view_assessment", assessment_id=assessment_id))
 
-    if not _can_edit_assessment(user, assessment):
+    can_request = _can_edit_assessment(user, assessment)
+    if assessment.get("assessment_mode") == "team":
+        assignment = team_assessments.assignment_for(assessment['school_id'], user)
+        can_request = bool(user.get('role') == 'admin' or (assignment
+                           and assignment['team_id'] == assessment.get('monev_team_id')
+                           and _can_view_assessment(user, assessment)))
+    if not can_request:
         flash(
             "Anda tidak memiliki akses untuk mengajukan reopen penilaian ini.", "danger"
         )
@@ -3804,14 +3828,15 @@ def approve_reopen(assessment_id: int) -> Response:
         return redirect(url_for("portal.view_assessment", assessment_id=assessment_id))
 
     try:
-        ok = update_reopen_request_status(
-            request_id=request_id,
-            status="approved",
-            reviewer_id=current_user()["id"],
-            reviewer_note=note,
-        )
+        result = get_assessment_by_id(assessment_id)
+        if result and result.get("assessment_mode") == "team":
+            reopened = team_assessments.approve_reopen(assessment_id, request_id, current_user()["id"], note)
+        else:
+            ok = update_reopen_request_status(request_id=request_id, status="approved",
+                reviewer_id=current_user()["id"], reviewer_note=note)
+            reopened = ok and reopen_assessment(assessment_id)
         success = False
-        if ok and reopen_assessment(assessment_id):
+        if reopened:
             assessment = get_assessment_by_id(assessment_id)
             req = _fetch_reopen_request(request_id)
             details = {
@@ -3877,7 +3902,7 @@ def approve_reopen(assessment_id: int) -> Response:
             flash("Reopen disetujui dan penilaian dibuka kembali.", "success")
             success = True
         else:
-            flash("Gagal menyetujui reopen.", "danger")
+            flash("Gagal menyetujui reopen. Untuk hasil tim, selesaikan draft tim lain di sekolah ini terlebih dahulu.", "danger")
         if wants_json:
             status_code = 200 if success else 400
             return (
@@ -4106,6 +4131,7 @@ def view_assessment(assessment_id: int) -> Response:
         rooms_data=rooms_data,
         related_photos=related_photos,
         latest_reopen_request=latest_reopen_request,
+        team_contributors=team_assessments.contributors(assessment_id) if assessment.get("assessment_mode") == "team" else [],
     )
 
 
@@ -4145,10 +4171,12 @@ def delete_photo_route(school_id: int, photo_id: int) -> Response:
         return jsonify({"success": False, "message": "Unauthorized"}), 403
 
     try:
-        success = delete_photo(photo_id, assessment_id, school_room_id)
+        success = delete_photo(photo_id, assessment_id, school_room_id, actor=user, base_version=request.form.get("base_version", type=int))
         if success:
             return jsonify({"success": True})
         return jsonify({"success": False, "message": "Gagal menghapus foto"}), 400
+    except (team_assessments.TeamConflict, PermissionError) as exc:
+        return jsonify(success=False, message=str(exc)), 403 if isinstance(exc, PermissionError) else 409
     except Exception as e:
         current_app.logger.exception("Error deleting photo")
         return jsonify({"success": False, "message": str(e)}), 500
@@ -4172,7 +4200,7 @@ def add_room_to_school(school_id: int) -> Response:
     user = current_user()
     if user.get("role") not in _PANBERS_ASSESSOR_ROLES:
         return jsonify({"success": False, "message": "Unauthorized"}), 403
-    if not _can_assess_school(user, school_id):
+    if not (_can_assess_school(user, school_id) or team_assessments.assignment_for(school_id, user)):
         return (
             jsonify(
                 {
@@ -4269,6 +4297,9 @@ def delete_draft_route(assessment_id: int) -> Response:
     if not assessment:
         flash("Penilaian tidak ditemukan.", "warning")
         return redirect(url_for("portal.home"))
+
+    if assessment.get("assessment_mode") == "team" and user.get("role") != "admin":
+        abort(403, "Penghapusan draft bersama hanya dapat dilakukan admin.")
 
     # Only drafts can be deleted by staff
     if assessment.get("status") != "draft":
@@ -6028,7 +6059,7 @@ def export_excel() -> Response:
     output = io.BytesIO()
     workbook = Workbook()
     worksheet = workbook.active
-    worksheet.title = "Per Staff" if group_by == "staff" else "Per Sekolah"
+    worksheet.title = "Per Penilai dan Tim" if group_by == "staff" else "Per Sekolah"
     headers = list(data[0].keys())
     worksheet.append(headers)
     for row in data:
@@ -10987,3 +11018,6 @@ def coordinator_assessments() -> Response:
         selected_period_id=selected_period_id,
         user=user,
     )
+
+
+from . import team_routes  # noqa: E402,F401

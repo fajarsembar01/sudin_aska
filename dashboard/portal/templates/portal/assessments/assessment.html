@@ -17,6 +17,7 @@
 
 {% block portal_content %}
 <script src="{{ url_for('static', filename='js/assessment-ui.js') }}"></script>
+{% if assessment.assessment_mode == 'team' %}<script src="{{ url_for('static', filename='js/panbers-team.js') }}"></script>{% endif %}
 <section class="mb-4 assessment-page">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
         <div class="d-flex align-items-center gap-3">
@@ -41,22 +42,26 @@
         <div class="d-flex gap-2">
             <span class="badge text-bg-light border d-inline-flex align-items-center gap-1">
                 <i class="bi bi-file-earmark-text"></i>
-                Assessment #{{ assessment.id }}
+                {{ 'Tim · ' ~ assessment.team_name_snapshot if assessment.assessment_mode == 'team' else 'Individu' }} · #{{ assessment.id }}
             </span>
             {% if assessment_period %}
             <span class="badge bg-primary-subtle text-primary border">
                 <i class="bi bi-calendar-event"></i>
-                {{ assessment_period.name }}
+                {{ assessment_period.name }}{{ '' if assessment.period_locked else ' · saat kirim final' }}
             </span>
             {% else %}
             <span class="badge bg-secondary-subtle text-secondary border">
                 <i class="bi bi-calendar-event"></i>
-                Periode aktif saat dibuat
+                Periode ditetapkan saat kirim final
             </span>
             {% endif %}
         </div>
     </div>
 
+    {% if assessment.assessment_mode == 'team' %}
+    <div class="border rounded p-2 mb-3 small"><span id="teamSyncStatus" role="status" aria-live="polite">Menghubungkan tim…</span> <a id="teamResultLink" href="{{ url_for('portal.view_assessment', assessment_id=assessment.id) }}" hidden>Buka hasil</a></div>
+    <div id="teamSyncConflicts" role="alert"></div>
+    {% endif %}
     <input type="hidden" id="assessmentId" value="{{ assessment.id }}">
     <input type="hidden" id="schoolId" value="{{ school.id }}">
 
@@ -131,7 +136,7 @@
                         <div class="d-flex align-items-center gap-2">
                             <span class="room-score-badge {{ score_badge_class(room_pct) }}"
                                 id="roomScore{{ room.school_room_id }}">{{ '%.1f'|format(room_pct) }}</span>
-                            <h5 class="mb-0">{{ room.room_name }}</h5>
+                            <div><h5 class="mb-0">{{ room.room_name }}</h5>{% if assessment.assessment_mode == 'team' %}<span class="team-room-presence small text-primary" data-room-id="{{ room.school_room_id }}"></span>{% endif %}</div>
                         </div>
                         <span class="badge rounded-pill bg-secondary text-white"
                             id="roomBadge{{ room.school_room_id }}">
@@ -259,6 +264,8 @@
                 </form>
                 <form action="{{ url_for('portal.submit', school_id=school.id) }}" method="POST" id="submitAssessmentForm">
                     <input type="hidden" name="assessment_id" value="{{ assessment.id }}">
+                    <input type="hidden" name="expected_period_id" value="{{ assessment_period.id if assessment_period else '' }}">
+                    <div class="small text-muted mb-2">Disimpan ke: <strong>{{ assessment_period.name if assessment_period else 'Belum ada periode aktif' }}</strong></div>
                     <button type="submit" id="submitAssessmentBtn"
                         class="btn btn-success w-100 d-inline-flex align-items-center justify-content-center gap-2">
                         <i class="bi bi-check-circle"></i>
@@ -821,6 +828,7 @@
     var totalRoomCount = {{ rooms|length }};
     var scoreScaleMin = {{ score_scale.min }};
     var scoreScaleMax = {{ score_scale.max }};
+    var photoEditVersions = new Map();
     var photoRoomSet = new Set({{ photo_room_ids|tojson }});
     var pendingUploadBlob = null;
     var uploadInProgress = false;
@@ -1231,6 +1239,7 @@
         formData.append('photo', blob, 'photo.jpg');
         formData.append('assessment_id', assessmentId);
         formData.append('school_room_id', roomIdForUpload);
+        if (typeof teamClient !== 'undefined') formData.append('base_version', photoEditVersions.get(Number(roomIdForUpload)) ?? teamClient.photoVersion(Number(roomIdForUpload)));
         formData.append('latitude', latitude === null || latitude === undefined ? '' : latitude);
         formData.append('longitude', longitude === null || longitude === undefined ? '' : longitude);
 
@@ -1334,6 +1343,7 @@
     }
 
     function rotateRoomPhoto(roomId, delta) {
+        if (typeof teamClient !== 'undefined' && !pendingRotationRoomSet.has(Number(roomId))) photoEditVersions.set(Number(roomId), teamClient.photoVersion(Number(roomId)));
         var roomKey = Number(roomId);
         if (Number.isNaN(roomKey) || roomKey <= 0) return;
         var img = document.getElementById('roomPhotoImg' + roomKey);
@@ -1717,7 +1727,33 @@
         }
     });
 
+    {% if assessment.assessment_mode == 'team' %}
+    var teamClient = window.createPanbersTeamClient({
+        initial: {{ team_initial_state|tojson }}, userId: {{ current_user.id|tojson }}, csrf: {{ csrf_token()|tojson }},
+        stateUrl: {{ url_for('portal.team_state', assessment_id=assessment.id)|tojson }},
+        viewUrl: {{ url_for('portal.view_assessment', assessment_id=assessment.id)|tojson }},
+        onPhotos: function (photos) {
+            var latestRooms = new Set();
+            photos.forEach(function (photo) {
+                if (latestRooms.has(photo.school_room_id)) return;
+                latestRooms.add(photo.school_room_id);
+                if (!photo.url) return;
+                var img = document.querySelector('#photoPreview' + photo.school_room_id + ' img');
+                if (!pendingRotationRoomSet.has(photo.school_room_id) && (!img || Number(img.dataset.photoId) !== photo.id || img.getAttribute('src') !== photo.url)) renderRoomPhotoPreview(photo.school_room_id, photo);
+            });
+            photoRoomSet.forEach(function (roomId) {
+                if (!latestRooms.has(roomId)) {
+                    var preview = document.getElementById('photoPreview' + roomId);
+                    if (preview) preview.replaceChildren();
+                }
+            });
+            photoRoomSet = latestRooms;
+            updatePhotoRequirementUI();
+        }
+    });
+    {% endif %}
     window.initAssessmentUI({
+        {% if assessment.assessment_mode == 'team' %}saveTransport: teamClient.request,{% endif %}
         assessmentId: assessmentId,
         schoolId: schoolId,
         scaleMax: scoreScaleMax,
@@ -1761,6 +1797,7 @@
         var formData = new FormData();
         formData.append('assessment_id', assessmentId);
         formData.append('school_room_id', roomId);
+        if (typeof teamClient !== 'undefined') formData.append('base_version', teamClient.photoVersion(Number(roomId)));
         fetch(`/portal/assess/${schoolId}/photo/${photoId}/delete`, {
             method: 'POST',
             body: formData
@@ -1986,6 +2023,7 @@
     }
 
     function capturePhoto(roomId) {
+        if (typeof teamClient !== 'undefined') photoEditVersions.set(Number(roomId), teamClient.photoVersion(Number(roomId)));
         currentRoomId = roomId;
         var roomKey = Number(roomId);
         var maxReached = maxPhotoCount > 0 && photoRoomSet.size >= maxPhotoCount && !photoRoomSet.has(roomKey);
@@ -2160,6 +2198,7 @@
         formData.append('photo', blob, 'photo.jpg');
         formData.append('assessment_id', assessmentId);
         formData.append('school_room_id', roomIdForUpload);
+        if (typeof teamClient !== 'undefined') formData.append('base_version', photoEditVersions.get(Number(roomIdForUpload)) ?? teamClient.photoVersion(Number(roomIdForUpload)));
         formData.append('latitude', latVal === null ? '' : latVal);
         formData.append('longitude', lonVal === null ? '' : lonVal);
 

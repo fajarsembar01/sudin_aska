@@ -1,0 +1,21 @@
+<div class="col-12">
+  <label class="form-label fw-semibold" for="{{ location_prefix }}Favorite">Lokasi favorit</label>
+  <select class="form-select location-favorite" id="{{ location_prefix }}Favorite">
+    <option value="">Pilih favorit atau atur titik baru</option>
+    {% for favorite in location_favorites %}
+    <option value="{{ favorite.id }}" data-name="{{ favorite.name }}" data-latitude="{{ favorite.latitude }}" data-longitude="{{ favorite.longitude }}" data-radius="{{ favorite.radius_m }}">{{ favorite.name }} ({{ favorite.radius_m }} m)</option>
+    {% endfor %}
+  </select>
+</div>
+<div class="col-12">
+  <button type="button" class="btn btn-outline-primary use-current-location"><i class="bi bi-geo-alt me-1"></i>Gunakan lokasi saya sebagai titik meeting</button>
+  <div class="form-text location-setup-status" role="status" aria-live="polite">Klik peta untuk memilih titik meeting, atau gunakan lokasi perangkat.</div>
+</div>
+<div class="col-12">
+  <div id="{{ location_prefix }}MeetingMap" class="meeting-location-map" tabindex="0" role="region" aria-label="Pilih titik lokasi meeting di peta"></div>
+  <div class="form-text">Klik peta atau geser pin. Lingkaran biru menunjukkan radius absensi yang diizinkan.</div>
+</div>
+<div class="col-md-4"><label class="form-label" for="{{ location_prefix }}Latitude">Latitude <span class="text-danger">*</span></label><input class="form-control" id="{{ location_prefix }}Latitude" name="latitude" type="number" step="any" min="-90" max="90" placeholder="Pilih titik di peta" readonly required></div>
+<div class="col-md-4"><label class="form-label" for="{{ location_prefix }}Longitude">Longitude <span class="text-danger">*</span></label><input class="form-control" id="{{ location_prefix }}Longitude" name="longitude" type="number" step="any" min="-180" max="180" placeholder="Pilih titik di peta" readonly required></div>
+<div class="col-md-4"><label class="form-label" for="{{ location_prefix }}Radius">Radius (meter) <span class="text-danger">*</span></label><input class="form-control" id="{{ location_prefix }}Radius" name="radius_m" type="number" min="1" max="100000" step="1" value="200" required></div>
+<div class="col-12"><div class="form-check"><input class="form-check-input" type="checkbox" id="{{ location_prefix }}SaveFavorite" name="save_favorite" value="1"><label class="form-check-label" for="{{ location_prefix }}SaveFavorite">Simpan lokasi dan radius sebagai favorit saya</label></div><div class="form-text">Nama lokasi digunakan sebagai nama favorit. Pilih nama yang sama untuk memperbarui favorit.</div></div>

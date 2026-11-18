@@ -573,6 +573,9 @@
             <p class="text-body-secondary small mb-0 d-none d-sm-block">Monitoring dan verifikasi kegiatan laporan pertanggungjawaban sekolah</p>
         </div>
         <div class="d-flex align-items-center gap-2 flex-wrap audit-header-actions">
+            <button type="button" class="btn btn-primary btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#reportNotesModal">
+                <i class="bi bi-journal-text me-1"></i> Catatan Keseluruhan
+            </button>
             <div class="d-flex align-items-center gap-1.5 bg-body border rounded-pill px-3 py-1 shadow-2xs audit-status-control">
                 <span class="text-body-secondary fw-bold text-xs text-nowrap"><i class="bi bi-clipboard-check me-1"></i>Status Verifikasi:</span>
                 {% if can_audit %}
@@ -3370,4 +3373,5 @@
         }
     }
 </script>
+{% include 'monev_bos/staff/_report_notes.html' %}
 {% endblock %}

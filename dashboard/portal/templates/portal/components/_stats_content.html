@@ -14,9 +14,16 @@
 {% set selected_year = current_period_year|default(None) %}
 {% set selected_month = current_period_month|default(None) %}
 {% set selected_school_status = school_status_filter|default('') %}
+{% set assessment_mode_filter = request.args.get('assessment_mode', 'all') %}
 {% set periods_sorted = periods|default([]) | sort(attribute='start_date') %}
 {% from "portal/components/_color_macros.html" import get_score_bootstrap_class %}
 
+<nav class="d-flex flex-wrap gap-2 mb-3" aria-label="Mode rekap penilaian">
+  {% for mode, label in [('all', 'Gabungan'), ('individual', 'Individu'), ('team', 'Tim')] %}
+  {% set mode_args = request.args.to_dict() %}{% set _ = mode_args.update({'assessment_mode': mode}) %}
+  <a class="btn btn-sm {{ 'btn-primary' if assessment_mode_filter == mode else 'btn-outline-primary' }}" href="{{ url_for(stats_endpoint, **mode_args) }}" {% if assessment_mode_filter == mode %}aria-current="page"{% endif %}>{{ label }}</a>
+  {% endfor %}
+</nav>
 <section class="mb-4">
   <div class="card portal-hero border-0 shadow-sm">
     <div class="card-body">
@@ -34,6 +41,7 @@
         </div>
         <div class="d-flex flex-wrap gap-2">
           {% if is_admin %}
+          <a class="btn btn-outline-primary" href="{{ url_for('portal.team_assignment_settings') }}"><i class="bi bi-people me-1"></i>Penugasan Tim</a>
           <a
             href="{{ url_for('portal.sidak_planner') }}{% if current_period_id %}?period_id={{ current_period_id }}{% endif %}"
             class="btn btn-outline-danger d-inline-flex align-items-center gap-2"
@@ -51,7 +59,7 @@
             <span>Export Excel</span>
           </button>
           {% endif %}
-          <form method="get" class="d-inline-flex align-items-center gap-2">
+          <form method="get" class="d-inline-flex align-items-center gap-2"><input type="hidden" name="assessment_mode" value="{{ assessment_mode_filter }}">
             {% if is_admin %}
             <select
               name="year"
@@ -113,7 +121,7 @@
               <option value="swasta" {% if selected_school_status=='swasta' %}selected{% endif %}>Swasta</option>
             </select>
             {% else %}
-            <form method="get" class="d-inline-flex align-items-center gap-2">
+            <form method="get" class="d-inline-flex align-items-center gap-2"><input type="hidden" name="assessment_mode" value="{{ assessment_mode_filter }}">
               <select
                 class="form-select border-primary text-primary fw-medium "
                 name="period_id"
@@ -140,7 +148,7 @@
 {% if is_admin %}
 <div class="modal fade" id="exportExcelModal" tabindex="-1" aria-labelledby="exportExcelModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
-    <form method="get" action="{{ url_for('portal.export_excel') }}" class="modal-content">
+    <form method="get" action="{{ url_for('portal.export_excel') }}" class="modal-content"><input type="hidden" name="assessment_mode" value="{{ assessment_mode_filter }}">
       <input type="hidden" name="period_id" value="{{ current_period_id or '' }}" />
       <input type="hidden" name="year" value="{{ selected_year or '' }}" />
       <input type="hidden" name="month" value="{{ selected_month or '' }}" />
@@ -616,7 +624,7 @@
   <div class="col-lg-8" id="recent-assessments">
     {% from 'shared/_recent_assessments_panel.html' import recent_assessments_panel %}
     {% call recent_assessments_panel('Daftar Penilaian Terbaru', 'Klik nama sekolah untuk melihat detail skor') %}
-        <form method="get" class="row g-2 mb-3" id="recentFilterForm">
+        <form method="get" class="row g-2 mb-3" id="recentFilterForm"><input type="hidden" name="assessment_mode" value="{{ assessment_mode_filter }}">
           <input
             type="hidden"
             name="period_id"
@@ -739,7 +747,7 @@
                     {{ a['school_name'] }}
                   </a>
                   <div class="small text-muted">
-                    {{ a['npsn'] }} • {{ a['jenjang'] }}
+                    {{ a['npsn'] }} • {{ a['jenjang'] }} <span class="badge text-bg-light border ms-1">{{ 'Tim' if a['assessment_mode'] == 'team' else 'Individu' }}</span>
                   </div>
                 </td>
                 {% set staff_total = a['total_staff'] or 0 %} {% set avg_raw =
@@ -978,6 +986,7 @@
       const CURRENT_PERIOD_YEAR = "{{ selected_year or '' }}";
       const CURRENT_PERIOD_MONTH = "{{ selected_month or '' }}";
       const CURRENT_TEAM_ID = "{{ current_team_id if current_team_id is not none else (team.id if team else '') }}";
+      const CURRENT_ASSESSMENT_MODE = {{ assessment_mode_filter|tojson }};
       const CURRENT_SCHOOL_STATUS = "{{ selected_school_status }}";
       // Legend text is now static in the HTML, no dynamic update needed
 
@@ -999,6 +1008,7 @@
           if (periodYear) mapParams.set('year', periodYear);
           if (periodMonth) mapParams.set('month', periodMonth);
           if (teamId) mapParams.set('team_id', teamId);
+          mapParams.set('assessment_mode', CURRENT_ASSESSMENT_MODE);
           if (CURRENT_SCHOOL_STATUS) mapParams.set('school_status', CURRENT_SCHOOL_STATUS);
           fetch(`{{ url_for(map_data_endpoint) }}?${mapParams.toString()}`)
               .then(response => response.json())
@@ -1221,6 +1231,7 @@
               if (CURRENT_PERIOD_YEAR) params.set('year', CURRENT_PERIOD_YEAR);
               if (CURRENT_PERIOD_MONTH) params.set('month', CURRENT_PERIOD_MONTH);
               if (CURRENT_TEAM_ID) params.set('team_id', CURRENT_TEAM_ID);
+              params.set('assessment_mode', CURRENT_ASSESSMENT_MODE);
               if (CURRENT_SCHOOL_STATUS) params.set('school_status', CURRENT_SCHOOL_STATUS);
               if (Number.isFinite(count)) params.set('count', String(count));
               const targetUrl = `${negeriDetailBaseUrl}?${params.toString()}`;
@@ -1298,7 +1309,8 @@
           if (periodYear) params.set('year', periodYear);
           if (periodMonth) params.set('month', periodMonth);
           if (teamId) params.set('team_id', teamId);
-          if (CURRENT_SCHOOL_STATUS) params.set('school_status', CURRENT_SCHOOL_STATUS);
+          params.set('assessment_mode', CURRENT_ASSESSMENT_MODE);
+              if (CURRENT_SCHOOL_STATUS) params.set('school_status', CURRENT_SCHOOL_STATUS);
 
           fetch(`${rankingsEndpoint}?${params.toString()}`)
               .then(response => response.json())

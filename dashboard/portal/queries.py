@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import calendar
+import json
 from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Sequence
 
@@ -125,7 +126,18 @@ def _apply_period_filter(
     period_ids: Optional[List[int]] = None,
     column: str = "period_id",
 ) -> None:
-    """Append period filter to SQL clause list with matching bind parameters."""
+    """Append assessment mode and period filters, preserving parameter order.
+
+    Qualified columns here belong to portal_assessments. Standalone callers
+    outside HTTP requests retain the previous combined behavior.
+    """
+    from flask import has_request_context, request
+    if has_request_context() and column in {"a.period_id", "portal_assessments.period_id"}:
+        mode = request.args.get("assessment_mode", "all")
+        if mode in {"individual", "team"}:
+            alias = column.rsplit(".", 1)[0]
+            clauses.append(f"{alias}.assessment_mode = %s")
+            params.append(mode)
     if period_ids is not None:
         if not period_ids:
             clauses.append("1 = 0")
@@ -491,29 +503,14 @@ def create_assessment(
     period_id: Optional[int] = None,
     creator_email: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """Create a new draft assessment for the given period (defaults to active)."""
-    if period_id is None:
-        period = get_active_period()
-        period_id = period["id"] if period else None
-
+    """Create/resume an individual draft; its period is assigned at final submission."""
     with get_cursor(commit=True) as cur:
-        # Avoid duplicate drafts for the same staff/school/period
+        cur.execute("SELECT pg_advisory_xact_lock(%s, %s)", (school_id, staff_id))
         cur.execute(
-            """
-            SELECT id, school_id, staff_id, status, created_at, period_id, score_scale_max
-            FROM portal_assessments
-            WHERE school_id = %s
-              AND staff_id = %s
-              AND status = 'draft'
-              AND (
-                    (period_id IS NULL AND %s IS NULL)
-                    OR period_id = %s
-                  )
-            ORDER BY created_at DESC
-            LIMIT 1
-            """,
-            (school_id, staff_id, period_id, period_id),
-        )
+            """SELECT * FROM portal_assessments
+               WHERE school_id = %s AND staff_id = %s
+                 AND assessment_mode = 'individual' AND status = 'draft'
+               ORDER BY created_at DESC LIMIT 1""", (school_id, staff_id))
         existing = cur.fetchone()
         if existing:
             data = dict(existing)
@@ -526,7 +523,7 @@ def create_assessment(
             VALUES (%s, %s, %s, 'draft', %s)
             RETURNING id, school_id, staff_id, status, created_at, period_id, score_scale_max
             """,
-            (school_id, staff_id, period_id, PORTAL_NEW_SCORE_SCALE_MAX),
+            (school_id, staff_id, None, PORTAL_NEW_SCORE_SCALE_MAX),
         )
         # creator_email retained for backward compatibility (not stored yet)
         data = dict(cur.fetchone())
@@ -574,6 +571,8 @@ def get_assessment_by_id(assessment_id: int) -> Optional[Dict[str, Any]]:
     query = """
         SELECT 
             a.id, a.school_id, a.staff_id, a.assessment_date,
+            a.assessment_mode, a.monev_team_id, a.team_name_snapshot,
+            a.team_members_snapshot, a.submitted_by, a.period_locked,
             a.status, a.total_score, a.notes, a.submitted_at,
             a.created_at, a.updated_at,
             a.period_id, a.score_scale_max,
@@ -585,7 +584,7 @@ def get_assessment_by_id(assessment_id: int) -> Optional[Dict[str, Any]]:
             p.start_date AS period_start_date,
             p.end_date AS period_end_date,
             s.name as school_name, s.npsn, s.jenjang,
-            u.full_name as assessor_name, u.email as assessor_email
+            CASE WHEN a.assessment_mode = 'team' THEN a.team_name_snapshot ELSE u.full_name END as assessor_name, u.email as assessor_email
         FROM portal_assessments a
         JOIN portal_schools s ON s.id = a.school_id
         LEFT JOIN portal_assessment_periods p ON p.id = a.period_id
@@ -923,7 +922,7 @@ def get_or_create_draft_assessment(school_id: int, staff_id: int) -> Dict[str, A
             """
             SELECT id, school_id, staff_id, assessment_date, status, total_score, notes, score_scale_max
             FROM portal_assessments
-            WHERE school_id = %s AND staff_id = %s AND status = 'draft'
+            WHERE school_id = %s AND staff_id = %s AND status = 'draft' AND assessment_mode = 'individual'
             ORDER BY created_at DESC
             LIMIT 1
             """,
@@ -1211,13 +1210,10 @@ def assign_assessment(
 
 
 def reopen_assessment(assessment_id: int) -> bool:
-    """Reopen a submitted assessment (set to draft)."""
+    """Reopen a result without colliding with another shared draft."""
+    from .team_assessments import reopen_with_cursor
     with get_cursor(commit=True) as cur:
-        cur.execute(
-            "UPDATE portal_assessments SET status = 'draft', submitted_at = NULL WHERE id = %s RETURNING id",
-            (assessment_id,),
-        )
-        return cur.fetchone() is not None
+        return reopen_with_cursor(cur, assessment_id)
 
 
 def fetch_random_photos(
@@ -1419,23 +1415,33 @@ def save_assessment_photo(
     latitude: Optional[float] = None,
     longitude: Optional[float] = None,
     captured_at: Optional[datetime] = None,
+    actor: Optional[dict] = None, base_version: Optional[int] = None,
+    photo_limit: Optional[int] = None,
 ) -> Dict[str, Any]:
     """Save a photo for an assessment room (upsert per room).
 
     Uses atomic INSERT ... ON CONFLICT to handle upserts safely.
     """
+    from . import team_assessments as team
     with get_cursor(commit=True) as cur:
+        version = team.check_photo_write(cur, assessment_id, school_room_id, actor, base_version)
+        if version is not None and photo_limit:
+            cur.execute('SELECT school_room_id FROM portal_assessment_photos WHERE assessment_id = %s', (assessment_id,))
+            existing_rooms = {r['school_room_id'] for r in cur.fetchall()}
+            if school_room_id not in existing_rooms and len(existing_rooms) >= photo_limit:
+                raise ValueError('Jumlah foto sudah mencapai batas maksimal.')
         cur.execute(
             """
             INSERT INTO portal_assessment_photos 
-                (assessment_id, school_room_id, photo_path, latitude, longitude, captured_at, created_at)
-            VALUES (%s, %s, %s, %s, %s, COALESCE(%s, NOW()), NOW())
+                (assessment_id, school_room_id, photo_path, latitude, longitude, captured_at, created_at, uploaded_by)
+            VALUES (%s, %s, %s, %s, %s, COALESCE(%s, NOW()), NOW(), %s)
             ON CONFLICT (assessment_id, school_room_id)
             DO UPDATE SET 
                 photo_path = EXCLUDED.photo_path,
                 latitude = EXCLUDED.latitude,
                 longitude = EXCLUDED.longitude,
                 captured_at = EXCLUDED.captured_at,
+                uploaded_by = EXCLUDED.uploaded_by,
                 created_at = NOW()
             RETURNING id, assessment_id, school_room_id, photo_path, latitude, longitude, captured_at
             """,
@@ -1446,9 +1452,12 @@ def save_assessment_photo(
                 latitude,
                 longitude,
                 captured_at,
+                (actor or {}).get('id'),
             ),
         )
-        return dict(cur.fetchone())
+        result = dict(cur.fetchone())
+        team.record_photo_write(cur, assessment_id, school_room_id, version, actor)
+        return result
 
 
 def get_assessment_photos(assessment_id: int) -> List[Dict[str, Any]]:
@@ -1466,7 +1475,7 @@ def get_assessment_photos(assessment_id: int) -> List[Dict[str, Any]]:
             du.email AS uploader_email
         FROM portal_assessment_photos p
         LEFT JOIN portal_assessments a ON a.id = p.assessment_id
-        LEFT JOIN dashboard_users du ON du.id = a.staff_id
+        LEFT JOIN dashboard_users du ON du.id = COALESCE(p.uploaded_by, a.staff_id)
         WHERE p.assessment_id = %s
         ORDER BY p.captured_at DESC NULLS LAST
     """
@@ -1552,7 +1561,9 @@ def get_assessment_room_score_pct(assessment_id: int, school_room_id: int) -> fl
 
 
 def submit_assessment(
-    assessment_id: int, expected_staff_id: Optional[int] = None
+    assessment_id: int, expected_staff_id: Optional[int] = None,
+    actor: Optional[dict] = None, expected_period_id: Optional[int] = None,
+    minimum_photo_rooms: int = 0,
 ) -> bool:
     """Submit an assessment without changing the original staff owner."""
     with get_cursor(commit=True) as cur:
@@ -1560,13 +1571,44 @@ def submit_assessment(
             """
             SELECT
                 COALESCE(score_scale_max, %s) AS score_scale_max,
-                staff_id
+                staff_id, status, school_id, assessment_mode, period_id, period_locked, monev_team_id,
+                team_members_snapshot
             FROM portal_assessments
-            WHERE id = %s
+            WHERE id = %s FOR UPDATE
             """,
             (PORTAL_LEGACY_SCORE_SCALE_MAX, assessment_id),
         )
         assessment = cur.fetchone() or {}
+        if not assessment or assessment.get("status") != "draft":
+            return False
+        if minimum_photo_rooms:
+            cur.execute('SELECT COUNT(DISTINCT school_room_id) AS count FROM portal_assessment_photos WHERE assessment_id = %s', (assessment_id,))
+            if cur.fetchone()['count'] < minimum_photo_rooms:
+                raise ValueError('Jumlah foto berubah. Periksa kembali persyaratan foto sebelum mengirim.')
+        final_period_id = assessment.get("period_id")
+        if not assessment.get("period_locked"):
+            cur.execute("SELECT id FROM portal_assessment_periods WHERE is_active = TRUE FOR SHARE")
+            period = cur.fetchone()
+            if not period:
+                raise ValueError("Belum ada periode Panberss aktif. Draft tetap tersimpan.")
+            final_period_id = period["id"]
+            if expected_period_id is not None and expected_period_id != final_period_id:
+                raise ValueError("Periode aktif berubah. Muat ulang draft dan periksa periode sebelum mengirim.")
+        if assessment.get("assessment_mode") == "team":
+            from . import team_assessments as team
+            if assessment.get("period_locked"):
+                if not team.can_access(actor, dict(assessment), edit=True, cur=cur):
+                    raise PermissionError("Anda tidak dapat mengirim ulang hasil tim ini.")
+            else:
+                assignment = team.assignment_for(assessment["school_id"], actor or {}, cur=cur)
+                if not actor or not assignment:
+                    raise PermissionError("Penugasan tim sudah berubah. Anda tidak dapat mengirim penilaian ini.")
+                members = team.member_snapshot(cur, assignment["team_id"])
+                cur.execute("""UPDATE portal_assessments SET monev_team_id = %s,
+                    team_name_snapshot = %s, team_members_snapshot = %s::jsonb WHERE id = %s""",
+                    (assignment["team_id"], assignment["team_name"], json.dumps(members), assessment_id))
+        elif actor and actor.get("role") != "admin" and actor.get("id") != assessment.get("staff_id"):
+            raise PermissionError("Penilaian ini bukan milik Anda.")
         if expected_staff_id is not None:
             try:
                 if int(assessment.get("staff_id") or 0) != int(expected_staff_id):
@@ -1658,15 +1700,23 @@ def submit_assessment(
             SET status = 'submitted',
                 total_score = %s,
                 submitted_at = NOW(),
+                period_id = %s,
+                assessment_date = CASE WHEN period_locked THEN assessment_date ELSE CURRENT_DATE END,
+                period_locked = TRUE,
+                submitted_by = %s,
                 updated_at = NOW()
             WHERE id = %s
               AND status = 'draft'
               AND (%s IS NULL OR staff_id = %s)
             RETURNING id
             """,
-            (avg_score, assessment_id, expected_staff_id, expected_staff_id),
+            (avg_score, final_period_id, (actor or {}).get("id"), assessment_id, expected_staff_id, expected_staff_id),
         )
-        return cur.fetchone() is not None
+        submitted = cur.fetchone() is not None
+        if submitted and assessment.get("assessment_mode") == "team":
+            from . import team_assessments as team
+            team.record_event(cur, assessment_id, None, 'submit', actor['id'])
+        return submitted
 
 
 def _build_follow_up_ticket_code(ticket_id: int) -> str:
@@ -2661,7 +2711,7 @@ def list_staff_assessments(
     limit: int = 50,
 ) -> List[Dict[str, Any]]:
     """List assessments by a staff member."""
-    conditions = ["a.staff_id = %s"]
+    conditions = ["a.staff_id = %s", "a.assessment_mode = 'individual'"]
     params = [staff_id]
 
     if status:
@@ -2703,7 +2753,7 @@ def get_active_assessment(
     query = """
         SELECT *
         FROM portal_assessments
-        WHERE school_id = %s AND status = 'draft'
+        WHERE school_id = %s AND status = 'draft' AND assessment_mode = 'individual'
     """
     params = [school_id]
 
@@ -3344,9 +3394,14 @@ def list_recent_assessments(
         order_clause = "submitted_at DESC NULLS LAST"
 
     query = f"""
-        WITH latest AS (
+        WITH scoped AS (
+            SELECT a.* FROM portal_assessments a
+            JOIN portal_schools s ON s.id = a.school_id
+            {where}
+        ), latest AS (
             SELECT DISTINCT ON (a.school_id)
                 a.id,
+                a.assessment_mode,
                 a.school_id,
                 s.name as school_name,
                 s.npsn,
@@ -3360,17 +3415,16 @@ def list_recent_assessments(
                 END AS score_pct,
                 COALESCE(staff_counts.total_staff, 0) AS total_staff,
                 a.submitted_at,
-                u.full_name as assessor_name
-            FROM portal_assessments a
+                CASE WHEN a.assessment_mode = 'team' THEN a.team_name_snapshot ELSE u.full_name END as assessor_name
+            FROM scoped a
             JOIN portal_schools s ON a.school_id = s.id
             LEFT JOIN dashboard_users u ON a.staff_id = u.id
             LEFT JOIN (
-                SELECT school_id, COUNT(DISTINCT staff_id) AS total_staff
-                FROM portal_assessments
-                WHERE status IN ('submitted', 'verified')
+                SELECT school_id, COUNT(DISTINCT CASE WHEN assessment_mode = 'team'
+                    THEN 'team:' || monev_team_id::text ELSE 'individual:' || staff_id::text END) AS total_staff
+                FROM scoped
                 GROUP BY school_id
             ) staff_counts ON staff_counts.school_id = s.id
-            {where}
             ORDER BY a.school_id, a.submitted_at DESC NULLS LAST
         )
         SELECT * FROM latest
@@ -3394,7 +3448,9 @@ def list_staff_latest_assessments(
     if staff_ids is not None and len(staff_ids) == 0:
         return []
 
-    latest_filters = ["a.staff_id = u.id", "a.status IN ('submitted', 'verified')"]
+    latest_filters = ["""((a.assessment_mode = 'individual' AND a.staff_id = u.id)
+        OR (a.assessment_mode = 'team' AND EXISTS (SELECT 1 FROM portal_assessment_team_events e
+            WHERE e.assessment_id = a.id AND e.user_id = u.id)))""", "a.status IN ('submitted', 'verified')"]
     latest_params: List[Any] = []
     _apply_period_filter(
         latest_filters,
@@ -3776,9 +3832,11 @@ def delete_assessment(assessment_id: int) -> bool:
         return cur.fetchone() is not None
 
 
-def delete_photo(photo_id: int, assessment_id: int, school_room_id: int) -> bool:
+def delete_photo(photo_id: int, assessment_id: int, school_room_id: int, actor=None, base_version=None) -> bool:
     """Delete a photo by id with safety checks."""
+    from . import team_assessments as team
     with get_cursor(commit=True) as cur:
+        version = team.check_photo_write(cur, assessment_id, school_room_id, actor, base_version)
         cur.execute(
             """
             DELETE FROM portal_assessment_photos 
@@ -3787,7 +3845,10 @@ def delete_photo(photo_id: int, assessment_id: int, school_room_id: int) -> bool
             """,
             (photo_id, assessment_id, school_room_id),
         )
-        return cur.fetchone() is not None
+        removed = cur.fetchone() is not None
+        if removed:
+            team.record_photo_write(cur, assessment_id, school_room_id, version, actor)
+        return removed
 
 
 def fetch_related_photos(
@@ -3812,6 +3873,7 @@ def fetch_related_photos(
         conditions.append(f"a.staff_id IN ({placeholders})")
         params.extend(staff_ids)
 
+    _apply_period_filter(conditions, params, column="a.period_id")
     where_clause = " AND ".join(conditions)
     room_score_pct_expr = _score_pct_sql("sc.score", "a.score_scale_max")
 
@@ -4560,8 +4622,9 @@ def fetch_export_data(
     if group_by == "staff":
         query = f"""
             SELECT
-                COALESCE(NULLIF(TRIM(u.full_name), ''), u.email, 'Staff Tidak Diketahui') AS "Staff",
-                u.email AS "Email",
+                CASE WHEN a.assessment_mode = 'team' THEN 'Tim' ELSE 'Individu' END AS "Mode",
+                CASE WHEN a.assessment_mode = 'team' THEN COALESCE(a.team_name_snapshot, 'Tim') ELSE COALESCE(NULLIF(TRIM(u.full_name), ''), u.email, 'Staff Tidak Diketahui') END AS "Penilai / Tim",
+                CASE WHEN a.assessment_mode = 'individual' THEN u.email ELSE NULL END AS "Email",
                 COUNT(DISTINCT a.school_id)::INT AS "Jumlah Sekolah",
                 COUNT(*)::INT AS "Jumlah Penilaian",
                 ROUND(AVG({score_pct_expr})::NUMERIC, 2) AS "Nilai Final Rata-rata (Persen)",
@@ -4570,8 +4633,9 @@ def fetch_export_data(
             JOIN portal_schools s ON a.school_id = s.id
             LEFT JOIN dashboard_users u ON a.staff_id = u.id
             {where_clause}
-            GROUP BY a.staff_id, u.full_name, u.email
-            ORDER BY "Staff"
+            GROUP BY "Mode", "Penilai / Tim", "Email",
+                     CASE WHEN a.assessment_mode = 'team' THEN a.monev_team_id ELSE a.staff_id END
+            ORDER BY "Mode", "Penilai / Tim"
         """
     else:
         query = f"""
@@ -4581,12 +4645,13 @@ def fetch_export_data(
                 s.jenjang AS "Jenjang",
                 k.name AS "Kecamatan",
                 l.name AS "Kelurahan",
-                COUNT(DISTINCT a.staff_id)::INT AS "Jumlah Staff",
+                COUNT(DISTINCT CASE WHEN a.assessment_mode = 'team' THEN 'team:' || a.monev_team_id::text
+                    ELSE 'individual:' || a.staff_id::text END)::INT AS "Jumlah Penilai / Tim",
                 STRING_AGG(
-                    DISTINCT COALESCE(NULLIF(TRIM(u.full_name), ''), u.email, 'Staff Tidak Diketahui'),
+                    DISTINCT CASE WHEN a.assessment_mode = 'team' THEN COALESCE(a.team_name_snapshot, 'Tim') ELSE COALESCE(NULLIF(TRIM(u.full_name), ''), u.email, 'Staff Tidak Diketahui') END,
                     ', '
-                    ORDER BY COALESCE(NULLIF(TRIM(u.full_name), ''), u.email, 'Staff Tidak Diketahui')
-                ) AS "Nama Staff",
+                    ORDER BY CASE WHEN a.assessment_mode = 'team' THEN COALESCE(a.team_name_snapshot, 'Tim') ELSE COALESCE(NULLIF(TRIM(u.full_name), ''), u.email, 'Staff Tidak Diketahui') END
+                ) AS "Nama Penilai / Tim",
                 COUNT(*)::INT AS "Jumlah Penilaian",
                 ROUND(AVG({score_pct_expr})::NUMERIC, 2) AS "Nilai Final Rata-rata (Persen)",
                 MAX(a.submitted_at)::DATE AS "Penilaian Terakhir"
@@ -5046,7 +5111,7 @@ def get_staff_assigned_schools(
                     a.status,
                     a.period_id
                 FROM portal_assessments a
-                WHERE a.staff_id = %s
+                WHERE a.assessment_mode = 'individual' AND a.staff_id = %s
                 ORDER BY a.school_id, a.created_at DESC, a.id DESC
             ) history
             WHERE NOT EXISTS (
@@ -5083,7 +5148,7 @@ def get_staff_assigned_schools(
                 (
                     SELECT a.status
                     FROM portal_assessments a
-                    WHERE a.school_id = s.id
+                    WHERE a.assessment_mode = 'individual' AND a.school_id = s.id
                       AND a.staff_id = %s
                       AND (%s IS NULL OR a.period_id = %s)
                     ORDER BY a.created_at DESC
@@ -5092,7 +5157,7 @@ def get_staff_assigned_schools(
                 (
                     SELECT a.id
                     FROM portal_assessments a
-                    WHERE a.school_id = s.id
+                    WHERE a.assessment_mode = 'individual' AND a.school_id = s.id
                       AND a.staff_id = %s
                       AND (%s IS NULL OR a.period_id = %s)
                     ORDER BY a.created_at DESC
@@ -5102,20 +5167,20 @@ def get_staff_assigned_schools(
                 (
                     SELECT a.id
                     FROM portal_assessments a
-                    WHERE a.school_id = s.id 
+                    WHERE a.assessment_mode = 'individual' AND a.school_id = s.id
                       AND a.staff_id = %s 
                       AND a.status = 'draft'
-                      AND (%s IS NULL OR a.period_id = %s)
+                      AND (%s IS NULL OR a.period_id = %s OR a.period_id IS NULL)
                     ORDER BY a.created_at DESC
                     LIMIT 1
                 ) as draft_assessment_id,
                 (
                     SELECT a.period_id
                     FROM portal_assessments a
-                    WHERE a.school_id = s.id 
+                    WHERE a.assessment_mode = 'individual' AND a.school_id = s.id
                       AND a.staff_id = %s 
                       AND a.status = 'draft'
-                      AND (%s IS NULL OR a.period_id = %s)
+                      AND (%s IS NULL OR a.period_id = %s OR a.period_id IS NULL)
                     ORDER BY a.created_at DESC
                     LIMIT 1
                 ) as draft_period_id,
@@ -5125,10 +5190,10 @@ def get_staff_assigned_schools(
                     WHERE p.id = (
                         SELECT a.period_id
                         FROM portal_assessments a
-                        WHERE a.school_id = s.id 
+                        WHERE a.assessment_mode = 'individual' AND a.school_id = s.id
                           AND a.staff_id = %s 
                           AND a.status = 'draft'
-                          AND (%s IS NULL OR a.period_id = %s)
+                          AND (%s IS NULL OR a.period_id = %s OR a.period_id IS NULL)
                         ORDER BY a.created_at DESC
                         LIMIT 1
                     )
@@ -5137,7 +5202,7 @@ def get_staff_assigned_schools(
                 (
                     SELECT a.id
                     FROM portal_assessments a
-                    WHERE a.school_id = s.id
+                    WHERE a.assessment_mode = 'individual' AND a.school_id = s.id
                       AND a.staff_id = %s
                       AND a.status = 'draft'
                       AND (%s IS NULL OR a.period_id <> %s)
@@ -5150,7 +5215,7 @@ def get_staff_assigned_schools(
                     WHERE p.id = (
                         SELECT a.period_id
                         FROM portal_assessments a
-                        WHERE a.school_id = s.id
+                        WHERE a.assessment_mode = 'individual' AND a.school_id = s.id
                           AND a.staff_id = %s
                           AND a.status = 'draft'
                           AND (%s IS NULL OR a.period_id <> %s)
@@ -5161,7 +5226,7 @@ def get_staff_assigned_schools(
                 (
                     SELECT a.period_id
                     FROM portal_assessments a
-                    WHERE a.school_id = s.id
+                    WHERE a.assessment_mode = 'individual' AND a.school_id = s.id
                       AND a.staff_id = %s
                       AND (%s IS NULL OR a.period_id = %s)
                     ORDER BY a.created_at DESC
@@ -5170,7 +5235,7 @@ def get_staff_assigned_schools(
                 (
                     SELECT COUNT(*)
                     FROM portal_assessments a
-                    WHERE a.school_id = s.id
+                    WHERE a.assessment_mode = 'individual' AND a.school_id = s.id
                       AND a.staff_id = %s
                       AND a.status IN ('submitted', 'verified')
                 ) as total_assessment_count,
@@ -5180,7 +5245,7 @@ def get_staff_assigned_schools(
                     WHERE p.id = (
                         SELECT a.period_id
                         FROM portal_assessments a
-                        WHERE a.school_id = s.id
+                        WHERE a.assessment_mode = 'individual' AND a.school_id = s.id
                           AND a.staff_id = %s
                           AND (%s IS NULL OR a.period_id = %s)
                         ORDER BY a.created_at DESC
@@ -6615,10 +6680,9 @@ def list_team_assessments(
     with get_cursor() as cur:
         placeholders = ",".join(["%s"] * len(staff_ids))
         params = list(staff_ids)
-        period_filter = ""
-        if period_id:
-            period_filter = " AND a.period_id = %s"
-            params.append(period_id)
+        clauses = []
+        _apply_period_filter(clauses, params, period_id=period_id, column="a.period_id")
+        period_filter = " AND " + " AND ".join(clauses) if clauses else ""
         params.append(limit)
 
         cur.execute(
@@ -6637,7 +6701,7 @@ def list_team_assessments(
                     ELSE {_score_pct_sql("a.total_score", "a.score_scale_max")}
                 END AS score_pct,
                 a.submitted_at,
-                u.full_name as assessor_name,
+                CASE WHEN a.assessment_mode = 'team' THEN a.team_name_snapshot ELSE u.full_name END as assessor_name,
                 u.id as assessor_id
             FROM portal_assessments a
             JOIN portal_schools s ON a.school_id = s.id
@@ -6697,7 +6761,7 @@ def fetch_team_top_schools(
                     a.score_scale_max,
                     {_score_pct_sql("a.total_score", "a.score_scale_max")} AS score_pct,
                     a.submitted_at,
-                    u.full_name AS assessor_name
+                    CASE WHEN a.assessment_mode = 'team' THEN a.team_name_snapshot ELSE u.full_name END AS assessor_name
                 FROM portal_assessments a
                 JOIN portal_schools s ON a.school_id = s.id
                 LEFT JOIN dashboard_users u ON a.staff_id = u.id
@@ -6761,7 +6825,7 @@ def fetch_team_bottom_schools(
                     a.score_scale_max,
                     {_score_pct_sql("a.total_score", "a.score_scale_max")} AS score_pct,
                     a.submitted_at,
-                    u.full_name AS assessor_name
+                    CASE WHEN a.assessment_mode = 'team' THEN a.team_name_snapshot ELSE u.full_name END AS assessor_name
                 FROM portal_assessments a
                 JOIN portal_schools s ON a.school_id = s.id
                 LEFT JOIN dashboard_users u ON a.staff_id = u.id

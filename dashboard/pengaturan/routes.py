@@ -55,7 +55,10 @@ from .github_performance import (
     save_admin_github_accounts,
     sync_admin_commits,
 )
+from .meeting_location import meeting_location, validate_attendance_location
 from .queries import (
+    list_meeting_location_favorites,
+    save_meeting_location_favorite,
     get_all_system_settings,
     get_system_setting,
     update_system_settings,
@@ -1114,6 +1117,14 @@ def meeting_attendance() -> Response | str:
                 end_time=end_time,
             )
 
+            try:
+                latitude, longitude, radius_m = meeting_location(request.form)
+            except ValueError as exc:
+                errors.append(str(exc))
+            if len(location) > 180:
+                errors.append("Nama lokasi maksimal 180 karakter.")
+            if request.form.get("save_favorite") and not location:
+                errors.append("Isi nama lokasi untuk menyimpan favorit.")
             if errors:
                 for message in errors:
                     flash(message, "warning")
@@ -1127,7 +1138,11 @@ def meeting_attendance() -> Response | str:
                 location=location,
                 agenda="",
                 created_by=user_id,
+                latitude=latitude, longitude=longitude, radius_m=radius_m,
             )
+            if request.form.get("save_favorite"):
+                save_meeting_location_favorite(user_id=user_id, name=location,
+                    latitude=latitude, longitude=longitude, radius_m=radius_m)
             record_admin_action(
                 user_id=user_id,
                 feature_key="meeting_attendance",
@@ -1165,16 +1180,49 @@ def meeting_attendance() -> Response | str:
                     url_for("pengaturan.meeting_attendance", meeting_id=meeting_id)
                 )
             allowed_statuses = {"present", "late", "permission", "sick", "absent", "unrecorded"}
+            previous_rows = {int(row["admin_user_id"]): row
+                             for row in list_admin_meeting_attendance(meeting_id)}
             entries = []
+            attendance_now = current_jakarta_time().replace(tzinfo=None)
+            meeting_start = (
+                datetime.combine(meeting["meeting_date"], meeting["start_time"])
+                if meeting.get("meeting_date") and meeting.get("start_time") else None
+            )
             for admin in list_admin_users():
                 admin_id = int(admin["id"])
-                status = (request.form.get(f"status_{admin_id}") or "unrecorded").strip()
+                previous = previous_rows.get(admin_id, {})
+                status = (request.form.get(f"status_{admin_id}") or previous.get("attendance_status") or "unrecorded").strip()
                 if status not in allowed_statuses:
                     status = "unrecorded"
+                notes = (request.form.get(f"notes_{admin_id}", previous.get("notes") or "") or "").strip()
+                if admin_id != user_id and status in {"present", "late"}:
+                    if (status != previous.get("attendance_status")
+                            or request.form.get(f"latitude_{admin_id}")
+                            or request.form.get(f"longitude_{admin_id}")):
+                        abort(403, "Status Hadir hanya dapat diisi untuk akun sendiri.")
+                    # Keep an unchanged colleague's check-in and its recorder intact.
+                    if notes == (previous.get("notes") or ""):
+                        continue
+                lat, lng = previous.get("latitude"), previous.get("longitude")
+                if status in {"present", "late"}:
+                    # Existing saved attendance can be retained without reading GPS again.
+                    if status != previous.get("attendance_status") or request.form.get(f"latitude_{admin_id}"):
+                        try:
+                            lat, lng = validate_attendance_location(meeting,
+                                request.form.get(f"latitude_{admin_id}"),
+                                request.form.get(f"longitude_{admin_id}"))
+                            if status == "present" and meeting_start and attendance_now > meeting_start:
+                                status = "late"
+                        except ValueError as exc:
+                            flash(str(exc), "danger")
+                            return redirect(url_for("pengaturan.meeting_attendance", meeting_id=meeting_id))
+                else:
+                    lat, lng = None, None
                 entries.append({
+                    "latitude": lat, "longitude": lng,
                     "admin_user_id": admin_id,
                     "attendance_status": status,
-                    "notes": (request.form.get(f"notes_{admin_id}") or "").strip(),
+                    "notes": notes,
                 })
 
             notulen = (request.form.get("notulen") or "").strip()
@@ -1220,6 +1268,14 @@ def meeting_attendance() -> Response | str:
                 start_time=start_time,
                 end_time=end_time,
             )
+            try:
+                latitude, longitude, radius_m = meeting_location(request.form)
+            except ValueError as exc:
+                errors.append(str(exc))
+            if len(location) > 180:
+                errors.append("Nama lokasi maksimal 180 karakter.")
+            if request.form.get("save_favorite") and not location:
+                errors.append("Isi nama lokasi untuk menyimpan favorit.")
             if errors:
                 for message in errors:
                     flash(message, "warning")
@@ -1231,6 +1287,7 @@ def meeting_attendance() -> Response | str:
                 end_time=end_time,
                 location=location,
                 agenda=(meeting.get("agenda") or "").strip(),
+                latitude=latitude, longitude=longitude, radius_m=radius_m,
             ):
                 record_admin_action(
                     user_id=user_id,
@@ -1241,6 +1298,9 @@ def meeting_attendance() -> Response | str:
                     target_name=title,
                     metadata={"changes": "meeting_details"},
                 )
+                if request.form.get("save_favorite"):
+                    save_meeting_location_favorite(user_id=user_id, name=location,
+                        latitude=latitude, longitude=longitude, radius_m=radius_m)
                 flash("Detail meeting berhasil diperbarui.", "success")
 
         elif action == "update_status":
@@ -1299,10 +1359,18 @@ def meeting_attendance() -> Response | str:
         list_admin_meeting_attendance(int(selected_meeting["id"]))
         if selected_meeting else []
     )
+    # Keep the signed-in admin first, preserving the order of everyone else.
+    attendance_rows.sort(key=lambda row: int(row["admin_user_id"]) != user_id)
     attendance_summary = {
         status: sum(1 for row in attendance_rows if row["attendance_status"] == status)
         for status in ("present", "late", "permission", "sick", "absent", "unrecorded")
     }
+    # Late arrivals remain part of the total who attended.
+    attendance_summary["present"] += attendance_summary["late"]
+    meeting_start_at = (
+        datetime.combine(selected_meeting["meeting_date"], selected_meeting["start_time"]).isoformat() + "+07:00"
+        if selected_meeting and selected_meeting.get("meeting_date") and selected_meeting.get("start_time") else None
+    )
     attendance_deadline = (
         _meeting_attendance_deadline(selected_meeting) if selected_meeting else None
     )
@@ -1312,9 +1380,13 @@ def meeting_attendance() -> Response | str:
     return render_template(
         "pengaturan/meeting_attendance.html",
         meetings=meetings,
+        location_favorites=list_meeting_location_favorites(user_id),
         selected_meeting=selected_meeting,
         attendance_rows=attendance_rows,
+        attendance_user_id=user_id,
         attendance_summary=attendance_summary,
+        meeting_start_at=meeting_start_at,
+        attendance_server_time=current_jakarta_time().timestamp() * 1000,
         attendance_deadline=attendance_deadline,
         attendance_closed=attendance_closed,
         today=current_jakarta_time().strftime("%Y-%m-%d"),

@@ -3,7 +3,11 @@
 {% block title %}Absensi Meeting Admin - SUDIN ASKA{% endblock %}
 
 {% block head_extra %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <style>
+  .meeting-location-map { height: 320px; width: 100%; border: 1px solid var(--border-soft); border-radius: 12px; isolation: isolate; }
+  @media (max-width: 575.98px) { .meeting-location-map { height: 260px; } }
   .meeting-hero {
     border: 1px solid var(--border-soft);
     border-radius: 18px;
@@ -59,6 +63,9 @@
   .summary-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
   .attendance-table th { color: var(--text-muted); font-size: .76rem; letter-spacing: .04em; text-transform: uppercase; }
   .attendance-table td { vertical-align: middle; }
+  .attendance-self > td { --bs-table-bg: rgba(13, 110, 253, .045); }
+  .attendance-self > td:first-child { box-shadow: inset 3px 0 0 var(--bs-primary); }
+  .attendance-self-badge { font-size: .65rem; font-weight: 600; color: var(--bs-primary); background: rgba(13, 110, 253, .1); border: 1px solid rgba(13, 110, 253, .2); border-radius: 999px; padding: .15rem .45rem; vertical-align: middle; white-space: nowrap; }
   .admin-avatar {
     width: 38px;
     height: 38px;
@@ -69,7 +76,7 @@
     color: var(--bs-primary);
     font-weight: 700;
   }
-  .status-select { min-width: 145px; font-weight: 600; }
+  .attendance-choice { min-width: 220px; }
   .meeting-photo-preview {
     width: 96px;
     height: 72px;
@@ -88,10 +95,40 @@
   @media (max-width: 767.98px) {
     .attendance-table thead { display: none; }
     .attendance-table, .attendance-table tbody, .attendance-table tr, .attendance-table td { display: block; width: 100%; }
-    .attendance-table tr { padding: 1rem; border-bottom: 1px solid var(--border-soft); }
-    .attendance-table td { border: 0; padding: .3rem 0; }
-    .status-select { width: 100%; }
-    .meeting-list { max-height: 390px; }
+    .meeting-workspace { padding: .75rem !important; }
+    .meeting-hero { padding: 1rem !important; margin-bottom: 1rem !important; border-radius: 12px; }
+    .meeting-hero h2 { font-size: 1.15rem; }
+    .meeting-hero p { display: none; }
+    .meeting-hero .btn { font-size: .85rem; padding: .45rem .75rem; }
+    .meeting-panel { border-radius: 12px; }
+    .meeting-panel > .p-4 { padding: .85rem !important; }
+    .meeting-panel h3 { font-size: 1.1rem; }
+    .summary-tile { padding: .45rem .55rem; border-radius: 9px; }
+    .summary-tile .small { font-size: .68rem; line-height: 1.2; }
+    .summary-tile .fs-4 { font-size: 1.15rem !important; }
+    .attendance-table tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: .4rem .5rem; padding: .65rem .75rem; border-bottom: 1px solid var(--border-soft); }
+    .attendance-table td { border: 0; padding: 0; min-width: 0; }
+    .attendance-table td:first-child { grid-column: 1 / -1; }
+    .attendance-self { background: rgba(13, 110, 253, .045); box-shadow: inset 3px 0 0 var(--bs-primary); }
+    .attendance-self > td { --bs-table-bg: transparent; }
+    .attendance-self > td:first-child { box-shadow: none; }
+    .attendance-identity { min-width: 0; }
+    .attendance-identity .fw-semibold { font-size: .85rem; line-height: 1.3; overflow-wrap: anywhere; }
+    .attendance-identity .small { font-size: .7rem; overflow-wrap: anywhere; }
+    .admin-avatar { width: 30px; min-width: 30px; height: 30px; font-size: .85rem; border-radius: 8px; }
+    .attendance-choice { min-width: 0; }
+    .attendance-choice .btn, .attendance-note-toggle { font-size: .78rem; padding: .35rem .5rem; min-height: 34px; }
+    .attendance-choice > .d-flex { gap: .35rem !important; }
+    .attendance-status-label { font-size: .7rem; }
+    .attendance-location-status:empty { display: none; }
+    .attendance-notes-cell:not(.is-expanded) .attendance-note-field { display: none; }
+    .attendance-notes-cell.is-expanded { grid-column: 1 / -1; }
+    .attendance-notes-cell.is-expanded .attendance-note-toggle { margin-bottom: .3rem; }
+    .attendance-note-field .form-control { min-height: 34px; font-size: 16px; padding: .3rem .5rem; }
+    .meeting-list { max-height: 240px; }
+    .meeting-item-link { padding: .65rem 2.5rem .65rem .65rem; }
+    .meeting-date { width: 40px; min-width: 40px; height: 44px; }
+    .meeting-date strong { font-size: 1rem; }
     #openMeetingCamera {
       position: fixed;
       right: 1rem;
@@ -118,7 +155,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4 px-lg-4">
+<div class="container-fluid py-4 px-lg-4 meeting-workspace">
   <section class="meeting-hero p-4 mb-4">
     <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
       <div>
@@ -197,6 +234,9 @@
                       data-start-time="{{ meeting.start_time.strftime('%H:%M') if meeting.start_time else '08:00' }}"
                       data-end-time="{{ meeting.end_time.strftime('%H:%M') if meeting.end_time else '15:00' }}"
                       data-location="{{ meeting.location or '' }}"
+                      data-latitude="{{ meeting.latitude if meeting.latitude is not none else '' }}"
+                      data-longitude="{{ meeting.longitude if meeting.longitude is not none else '' }}"
+                      data-radius="{{ meeting.radius_m or 200 }}"
                       aria-label="Edit {{ meeting.title }}" title="Edit meeting">
                 <i class="bi bi-pencil"></i>
               </button>
@@ -254,12 +294,12 @@
           <div class="p-4 border-bottom">
             <div class="row g-2">
               {% set tiles = [
-                ('present', 'Hadir', 'success'), ('late', 'Terlambat', 'warning'),
+                ('present', 'Hadir', 'success'), ('late', 'Di antaranya terlambat', 'warning'),
                 ('permission', 'Izin', 'info'), ('sick', 'Sakit', 'primary'),
                 ('absent', 'Alpa', 'danger'), ('unrecorded', 'Belum diisi', 'secondary')
               ] %}
               {% for key, label, color in tiles %}
-                <div class="col-6 col-md-4 col-xxl-2">
+                <div class="col-4 col-md-4 col-xxl-2">
                   <div class="summary-tile h-100">
                     <div class="small text-muted"><span class="summary-dot bg-{{ color }} me-1"></span>{{ label }}</div>
                     <div class="fs-4 fw-bold">{{ attendance_summary[key] }}</div>
@@ -287,22 +327,44 @@
                   <tr><th class="ps-4">Admin</th><th>Status kehadiran</th><th>Catatan</th></tr>
                 </thead>
                 <tbody>
+                  {% set show_saved_status = attendance_closed or selected_meeting.status == 'completed' %}
+                  {% set attendance_labels = {'unrecorded':'Belum diisi', 'present':'Hadir', 'late':'Hadir (Terlambat)', 'permission':'Izin', 'sick':'Sakit', 'absent':'Alpa'} %}
                   {% for row in attendance_rows %}
-                    <tr>
+                    {% set can_mark_present = row.admin_user_id == attendance_user_id %}
+                    <tr{% if can_mark_present %} class="attendance-self"{% endif %}>
                       <td class="ps-md-4">
                         <div class="d-flex align-items-center gap-2">
                           <span class="admin-avatar">{{ (row.full_name or row.email)[:1]|upper }}</span>
-                          <div><div class="fw-semibold">{{ row.full_name }}</div><div class="small text-muted">{{ row.email }}</div></div>
+                          <div class="attendance-identity"><div class="fw-semibold">{{ row.full_name }}{% if can_mark_present %} <span class="attendance-self-badge ms-1">Anda</span>{% endif %}</div><div class="small text-muted">{{ row.email }}</div></div>
                         </div>
                       </td>
                       <td>
-                        <select name="status_{{ row.admin_user_id }}" class="form-select status-select" aria-label="Status {{ row.full_name }}" {% if attendance_closed %}disabled{% endif %}>
-                          {% for value, label in [('unrecorded', 'Belum diisi'), ('present', 'Hadir'), ('late', 'Terlambat'), ('permission', 'Izin'), ('sick', 'Sakit'), ('absent', 'Alpa')] %}
-                            <option value="{{ value }}" {% if row.attendance_status == value %}selected{% endif %}>{{ label }}</option>
-                          {% endfor %}
-                        </select>
+                        <div class="attendance-choice" data-admin-id="{{ row.admin_user_id }}" data-can-mark-present="{{ 'true' if can_mark_present else 'false' }}" data-show-saved-status="{{ 'true' if show_saved_status else 'false' }}">
+                          <input type="hidden" name="status_{{ row.admin_user_id }}" value="{{ row.attendance_status }}">
+                          <input type="hidden" name="latitude_{{ row.admin_user_id }}">
+                          <input type="hidden" name="longitude_{{ row.admin_user_id }}">
+                          <div class="d-flex flex-wrap gap-2">
+                            <button type="button" class="btn {{ 'btn-success' if row.attendance_status in ['present', 'late'] else 'btn-outline-success' }} mark-present" data-recorded-time="{{ row.recorded_at|jakarta('%H:%M') if row.attendance_status in ['present', 'late'] and row.recorded_at else '' }}" aria-label="{{ ('Waktu hadir ' ~ (row.recorded_at|jakarta('%H:%M')) ~ ' WIB') if row.attendance_status in ['present', 'late'] and row.recorded_at else 'Hadir' }}" {% if attendance_closed or not can_mark_present %}disabled{% endif %} {% if not can_mark_present %}title="Hadir hanya dapat diisi untuk akun sendiri"{% endif %}><i class="bi bi-clock me-1"></i><span class="attendance-time-label">{{ row.recorded_at|jakarta('%H:%M') if row.attendance_status in ['present', 'late'] and row.recorded_at else 'Hadir' }}</span></button>
+                            <div class="dropdown">
+                              <button type="button" class="btn btn-outline-secondary dropdown-toggle attendance-other" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Status lainnya {{ row.full_name }}" {% if attendance_closed %}disabled{% endif %}>{{ attendance_labels[row.attendance_status] if show_saved_status else 'Lainnya' }}</button>
+                              <ul class="dropdown-menu">
+                                {% if show_saved_status %}
+                                <li><button type="button" class="dropdown-item choose-other {{ 'active' if row.attendance_status == 'present' else '' }}" data-status="present" {% if row.attendance_status == 'present' %}aria-current="true"{% endif %} {% if attendance_closed or not can_mark_present %}disabled{% endif %}>Hadir</button></li>
+                                {% endif %}
+                                {% for value, label in [('unrecorded', 'Belum diisi'), ('late', 'Terlambat'), ('permission', 'Izin'), ('sick', 'Sakit'), ('absent', 'Alpa')] %}
+                                <li><button type="button" class="dropdown-item choose-other {{ 'active' if show_saved_status and row.attendance_status == value else '' }}" data-status="{{ value }}" {% if show_saved_status and row.attendance_status == value %}aria-current="true"{% endif %} {% if attendance_closed or (value == 'late' and not can_mark_present) %}disabled{% endif %}>{{ label }}</button></li>
+                                {% endfor %}
+                              </ul>
+                            </div>
+                            <span class="align-self-center small text-muted attendance-status-label">{{ '' if show_saved_status else attendance_labels[row.attendance_status] }}</span>
+                          </div>
+                          <div class="form-text attendance-location-status" role="status" aria-live="polite"></div>
+                        </div>
                       </td>
-                      <td><input type="text" name="notes_{{ row.admin_user_id }}" class="form-control" maxlength="250" value="{{ row.notes }}" placeholder="Opsional" {% if attendance_closed %}disabled{% endif %}></td>
+                      <td class="attendance-notes-cell{% if row.notes %} is-expanded{% endif %}">
+                        <button type="button" class="btn btn-outline-secondary attendance-note-toggle d-md-none" aria-expanded="{{ 'true' if row.notes else 'false' }}" aria-controls="attendanceNote{{ row.admin_user_id }}" aria-label="Catatan {{ row.full_name }}"><i class="bi bi-chat-left-text me-1"></i>Catatan</button>
+                        <div class="attendance-note-field" id="attendanceNote{{ row.admin_user_id }}"><input type="text" name="notes_{{ row.admin_user_id }}" class="form-control" maxlength="250" value="{{ row.notes }}" placeholder="Catatan opsional" aria-label="Catatan {{ row.full_name }}" {% if attendance_closed %}disabled{% endif %}></div>
+                      </td>
                     </tr>
                   {% else %}
                     <tr><td colspan="3" class="text-center text-muted py-5">Belum ada akun admin aktif.</td></tr>
@@ -393,7 +455,8 @@
           <div class="col-md-4"><label class="form-label fw-semibold" for="meetingDate">Tanggal <span class="text-danger">*</span></label><input class="form-control" id="meetingDate" type="date" name="meeting_date" value="{{ today }}" required></div>
           <div class="col-6 col-md-4"><label class="form-label fw-semibold" for="startTime">Mulai <span class="text-danger">*</span></label><input class="form-control" id="startTime" type="time" name="start_time" value="08:00" required></div>
           <div class="col-6 col-md-4"><label class="form-label fw-semibold" for="endTime">Selesai <span class="text-danger">*</span></label><input class="form-control" id="endTime" type="time" name="end_time" value="15:00" required></div>
-          <div class="col-12"><label class="form-label fw-semibold" for="meetingLocation">Lokasi / tautan</label><input class="form-control" id="meetingLocation" name="location" maxlength="180" value="Ruang Rapat 2 SUDIN" placeholder="Ruang rapat atau tautan Google Meet"></div>
+          <div class="col-12"><label class="form-label fw-semibold" for="meetingLocation">Nama lokasi</label><input class="form-control" id="meetingLocation" name="location" maxlength="180" value="Ruang Rapat 2 SUDIN" placeholder="Nama gedung atau ruang rapat"></div>
+          {% set location_prefix = "new" %}{% include "pengaturan/_meeting_location_fields.html" %}
         </div>
       </div>
       <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button><button class="btn btn-primary px-4"><i class="bi bi-plus-lg me-1"></i>Buat Meeting</button></div>
@@ -420,7 +483,8 @@
           <div class="col-md-4"><label class="form-label fw-semibold" for="editMeetingDate">Tanggal <span class="text-danger">*</span></label><input class="form-control" id="editMeetingDate" type="date" name="meeting_date" required></div>
           <div class="col-6 col-md-4"><label class="form-label fw-semibold" for="editStartTime">Mulai <span class="text-danger">*</span></label><input class="form-control" id="editStartTime" type="time" name="start_time" required></div>
           <div class="col-6 col-md-4"><label class="form-label fw-semibold" for="editEndTime">Selesai <span class="text-danger">*</span></label><input class="form-control" id="editEndTime" type="time" name="end_time" required></div>
-          <div class="col-12"><label class="form-label fw-semibold" for="editMeetingLocation">Lokasi / tautan</label><input class="form-control" id="editMeetingLocation" name="location" maxlength="180"></div>
+          <div class="col-12"><label class="form-label fw-semibold" for="editMeetingLocation">Nama lokasi</label><input class="form-control" id="editMeetingLocation" name="location" maxlength="180"></div>
+          {% set location_prefix = "edit" %}{% include "pengaturan/_meeting_location_fields.html" %}
         </div>
       </div>
       <div class="modal-footer">
@@ -451,9 +515,142 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="{{ url_for('static', filename='js/meeting-location-map.js') }}"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function () {
     const attendanceForm = document.getElementById('attendanceForm');
+    document.querySelectorAll('.attendance-note-toggle').forEach(function (button) {
+      button.addEventListener('click', function () {
+        const cell = button.closest('.attendance-notes-cell');
+        const expanded = cell.classList.toggle('is-expanded');
+        button.setAttribute('aria-expanded', String(expanded));
+      });
+    });
+    let locationReadsPending = 0;
+    const meetingStartAt = Date.parse({{ meeting_start_at|tojson }});
+    const attendanceServerTime = {{ attendance_server_time|tojson }};
+    const attendanceClockStarted = performance.now();
+    const meetingPoint = {{ ({'latitude': selected_meeting.latitude, 'longitude': selected_meeting.longitude, 'radius': selected_meeting.radius_m or 200} if selected_meeting else none)|tojson }};
+    function readPosition() {
+      return new Promise(function (resolve, reject) {
+        if (!navigator.geolocation) return reject(new Error('Lokasi tidak didukung browser ini.'));
+        navigator.geolocation.getCurrentPosition(resolve, function (error) {
+          reject(new Error(error.code === 1 ? 'Izinkan akses lokasi untuk mengisi Hadir.' : 'Lokasi belum terbaca. Aktifkan GPS lalu coba lagi.'));
+        }, { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
+      });
+    }
+    function distanceFromMeeting(coords) {
+      const rad = value => value * Math.PI / 180;
+      const a = Math.sin(rad(coords.latitude - meetingPoint.latitude) / 2) ** 2 +
+        Math.cos(rad(coords.latitude)) * Math.cos(rad(meetingPoint.latitude)) *
+        Math.sin(rad(coords.longitude - meetingPoint.longitude) / 2) ** 2;
+      return 6371000 * 2 * Math.asin(Math.sqrt(Math.min(1, Math.max(0, a))));
+    }
+    document.querySelectorAll('.use-current-location').forEach(function (button) {
+      button.addEventListener('click', async function () {
+        const form = button.closest('form');
+        const message = form.querySelector('.location-setup-status');
+        button.disabled = true;
+        message.textContent = 'Membaca lokasi…';
+        try {
+          const position = await readPosition();
+          form.querySelector('[name="latitude"]').value = position.coords.latitude;
+          form.querySelector('[name="longitude"]').value = position.coords.longitude;
+          form.querySelector('.location-favorite').value = '';
+          form.dispatchEvent(new Event('meeting-location-change'));
+          message.textContent = 'Titik meeting berhasil diisi dari lokasi perangkat.';
+        } catch (error) { message.textContent = error.message; }
+        finally { button.disabled = false; }
+      });
+    });
+    document.querySelectorAll('.location-favorite').forEach(function (select) {
+      select.addEventListener('change', function () {
+        if (!select.value) return;
+        const option = select.selectedOptions[0];
+        const form = select.closest('form');
+        form.querySelector('[name="location"]').value = option.dataset.name;
+        form.querySelector('[name="latitude"]').value = option.dataset.latitude;
+        form.querySelector('[name="longitude"]').value = option.dataset.longitude;
+        form.querySelector('[name="radius_m"]').value = option.dataset.radius;
+        form.dispatchEvent(new Event('meeting-location-change'));
+        form.querySelector('.location-setup-status').textContent = 'Titik dan radius diisi dari favorit.';
+      });
+    });
+    document.querySelectorAll('.attendance-choice').forEach(function (choice) {
+      const id = choice.dataset.adminId;
+      const status = choice.querySelector(`[name="status_${id}"]`);
+      const present = choice.querySelector('.mark-present');
+      const other = choice.querySelector('.attendance-other');
+      const message = choice.querySelector('.attendance-location-status');
+      const labels = {unrecorded: 'Belum diisi', present: 'Hadir', late: 'Hadir (Terlambat)', permission: 'Izin', sick: 'Sakit', absent: 'Alpa'};
+      async function chooseStatus(value) {
+        if (value === 'present' || value === 'late') {
+          if (choice.dataset.canMarkPresent !== 'true') return;
+          locationReadsPending += 1;
+          present.disabled = other.disabled = true;
+          message.className = 'form-text attendance-location-status';
+          message.textContent = 'Membaca lokasi…';
+          try {
+            if (!meetingPoint || meetingPoint.latitude === null || meetingPoint.longitude === null)
+              throw new Error('Titik lokasi belum diatur. Edit meeting terlebih dahulu.');
+            const position = await readPosition();
+            const distance = distanceFromMeeting(position.coords);
+            if (distance > meetingPoint.radius)
+              throw new Error(`Di luar radius: jarak ${Math.round(distance)} m, batas ${meetingPoint.radius} m.`);
+            if (value === 'present' && Number.isFinite(meetingStartAt) &&
+                attendanceServerTime + performance.now() - attendanceClockStarted > meetingStartAt) {
+              value = 'late';
+            }
+            choice.querySelector(`[name="latitude_${id}"]`).value = position.coords.latitude;
+            choice.querySelector(`[name="longitude_${id}"]`).value = position.coords.longitude;
+            message.textContent = `Lokasi sesuai (${Math.round(distance)} m). ${value === 'late' ? 'Tetap dihitung hadir, ditandai terlambat. ' : ''}Klik Simpan Absensi untuk menyimpan.`;
+            message.classList.add('text-success');
+          } catch (error) {
+            message.textContent = error.message;
+            message.classList.add('text-danger');
+            return;
+          } finally {
+            locationReadsPending -= 1;
+            present.disabled = other.disabled = false;
+          }
+        } else {
+          choice.querySelector(`[name="latitude_${id}"]`).value = '';
+          choice.querySelector(`[name="longitude_${id}"]`).value = '';
+          message.textContent = '';
+        }
+        status.value = value;
+        const showSavedStatus = choice.dataset.showSavedStatus === 'true';
+        choice.querySelector('.attendance-status-label').textContent = showSavedStatus ? '' : labels[value];
+        if (showSavedStatus) {
+          other.textContent = labels[value];
+          choice.querySelectorAll('.choose-other').forEach(button => {
+            const selected = button.dataset.status === value;
+            button.classList.toggle('active', selected);
+            if (selected) button.setAttribute('aria-current', 'true');
+            else button.removeAttribute('aria-current');
+          });
+        }
+        const timeLabel = (value === 'present' || value === 'late') && present.dataset.recordedTime
+          ? present.dataset.recordedTime : 'Hadir';
+        present.querySelector('.attendance-time-label').textContent = timeLabel;
+        present.setAttribute('aria-label', timeLabel === 'Hadir' ? 'Hadir' : `Waktu hadir ${timeLabel} WIB`);
+        present.classList.toggle('btn-success', value === 'present' || value === 'late');
+        present.classList.toggle('btn-outline-success', value !== 'present' && value !== 'late');
+      }
+      present.addEventListener('click', () => chooseStatus('present'));
+      choice.querySelectorAll('.choose-other').forEach(button => {
+        button.addEventListener('click', () => { if (!other.disabled) chooseStatus(button.dataset.status); });
+      });
+    });
+    if (attendanceForm) attendanceForm.addEventListener('submit', function (event) {
+      if (locationReadsPending > 0) {
+        event.preventDefault();
+        const message = attendanceForm.querySelector('.attendance-location-status');
+        if (message) message.textContent = 'Tunggu hingga pembacaan lokasi selesai sebelum menyimpan.';
+      }
+    });
     const notulenInput = document.getElementById('meetingNotulen');
     const notulenStatus = document.getElementById('notulenSaveStatus');
     const notulenAutosaveUrl = {{ url_for('pengaturan.autosave_meeting_notulen')|tojson }};
@@ -669,6 +866,12 @@
       document.getElementById('editStartTime').value = button.dataset.startTime || '08:00';
       document.getElementById('editEndTime').value = button.dataset.endTime || '15:00';
       document.getElementById('editMeetingLocation').value = button.dataset.location || '';
+      editModal.querySelector('[name="latitude"]').value = button.dataset.latitude || '';
+      editModal.querySelector('[name="longitude"]').value = button.dataset.longitude || '';
+      editModal.querySelector('[name="radius_m"]').value = button.dataset.radius || '200';
+      editModal.querySelector('.location-favorite').value = '';
+      editModal.querySelector('[name="save_favorite"]').checked = false;
+      editModal.querySelector('.location-setup-status').textContent = 'Klik peta untuk memilih titik meeting, atau gunakan lokasi perangkat.';
     });
   });
 </script>
