@@ -13,9 +13,10 @@ function fixture() {
       remove(){if(this.id) ids.delete(this.id);this.removed=true},scrollIntoView(){},setAttribute(){},
       addEventListener(name,callback){this[name]=callback}};
   }
-  const status=element(),issues=element(),resultLink=element(),note=element(),presence=element();
+  const status=element(),notice=element(),issues=element(),resultLink=element(),note=element(),presence=element();
   presence.dataset.roomId='7';
   ids.set('teamSyncStatus',status);ids.set('teamSyncConflicts',issues);ids.set('teamResultLink',resultLink);
+  ids.set('teamSyncNotice',notice);
   const buttons=[1,2,3,4,5].map(score=>Object.assign(element(),{dataset:{score:String(score)}}));
   const group={querySelectorAll(){return buttons}};
   const form=element(),submitButton=element();
@@ -42,7 +43,7 @@ function fixture() {
   vm.runInNewContext(fs.readFileSync('dashboard/static/js/panbers-team.js','utf8'),context);
   const client=context.window.createPanbersTeamClient({initial:structuredClone(snapshot),stateUrl:'/state',csrf:'csrf',userId:1,viewUrl:'/result'});
   const flush=()=>new Promise(resolve=>setImmediate(resolve));
-  return {client,snapshot,requests,status,issues,buttons,note,presence,resultLink,form,submitButton,flush,setOffline:v=>{fail=v}};
+  return {client,snapshot,requests,status,notice,issues,buttons,note,presence,resultLink,form,submitButton,flush,setOffline:v=>{fail=v}};
 }
 
 test('remote scores, notes, presence and photo versions update without writing them back',async()=>{
@@ -54,9 +55,11 @@ test('remote scores, notes, presence and photo versions update without writing t
   await f.client.sync();
   assert(f.buttons[3].classList.contains('selected'));
   assert.equal(f.note.value,'From teammate');
-  assert.match(f.presence.textContent,/Budi sedang mengisi/);
+  assert.equal(f.presence.textContent,'Budi');
   assert.equal(f.client.photoVersion(7),3);
   assert(f.requests.every(r=>r.endpoint==='/state'));
+  assert.equal(f.notice.hidden,true);
+  assert.equal(f.status.textContent,'');
 });
 
 test('stale field is not overwritten and requires an explicit conflict choice',async()=>{
@@ -65,6 +68,7 @@ test('stale field is not overwritten and requires an explicit conflict choice',a
   f.snapshot.versions=[{school_room_id:7,field_key:'score:3',version:1}];
   await assert.rejects(f.client.request('/score',{school_room_id:7,aspect_id:3,score:2}),/Conflict/);
   assert(f.client.hasUnsaved());
+  assert.equal(f.notice.hidden,false);
   const panel=f.issues.children.at(-1);
   assert.match(panel.children[1].textContent,/2/);
   assert.match(panel.children[2].textContent,/5/);
@@ -91,6 +95,7 @@ test('team finalization locks edit controls and provides result link',async()=>{
   f.snapshot.status='submitted';await f.client.sync();
   assert.equal(f.submitButton.disabled,true);
   assert.equal(f.resultLink.hidden,false);
+  assert.equal(f.notice.hidden,false);
   await assert.rejects(f.client.request('/note',{school_room_id:7,notes:'Too late'}),/sudah dikirim/);
 });
 
@@ -105,4 +110,40 @@ test('a conflict in queued edits keeps the most recent local value available', a
   const panel=f.issues.children.at(-1);
   assert.match(panel.children[1].textContent,/3/);
   assert(f.client.hasUnsaved());
+});
+
+test('Panberss averages count unfilled aspects as zero in room and overall summaries', () => {
+  const selections = [];
+  const group = {dataset:{schoolRoomId:'7',aspectId:'3'}};
+  const groups = Array.from({length:29}, () => group);
+  const allItems = Array.from({length:475}, () => ({}));
+  const ids = new Map(['floatingScoreValue','floatingScoreCount','scoreProgressBar','roomScore7','roomBadge7'].map(id => [id, {
+    textContent:'', style:{}, classList:{remove(){},add(){}}
+  }]));
+  const room = {querySelectorAll(selector){return selector === '.score-group' ? groups : selections}};
+  ids.set('room7', room);
+  const window = {};
+  vm.runInNewContext(fs.readFileSync('dashboard/static/js/assessment-ui.js','utf8'), {
+    window, document:{getElementById:id=>ids.get(id), querySelectorAll(selector){
+      if(selector === '.aspect-item') return allItems;
+      if(selector === '.score-group') return groups;
+      if(selector === '.score-btn.selected') return selections;
+      return [];
+    }}
+  });
+  window.initAssessmentUI({scaleMax:5,countMissingAsZero:true});
+  assert.equal(ids.get('floatingScoreValue').textContent, '0,0');
+  assert.equal(ids.get('roomScore7').textContent, '0.0');
+  selections.push({dataset:{score:'5'}});
+  window.updateAssessmentAllGroups();
+  assert.equal(ids.get('roomScore7').textContent, '3.4');
+  assert.equal(ids.get('roomBadge7').textContent, '1/29');
+  assert.equal(ids.get('floatingScoreValue').textContent, '0,2');
+  assert.equal(ids.get('floatingScoreCount').textContent, '1/475');
+  selections[0].dataset.score='1';
+  window.updateAssessmentAllGroups();
+  assert.equal(ids.get('roomScore7').textContent, '0.7');
+  // Existing users of the shared widget retain their configured averaging policy.
+  window.initAssessmentUI({scaleMax:5});
+  assert.equal(ids.get('roomScore7').textContent, '20.0');
 });

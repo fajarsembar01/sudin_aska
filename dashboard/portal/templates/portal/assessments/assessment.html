@@ -6,14 +6,14 @@
 {% for room in rooms %}
     {% for aspect in room.aspects %}
         {% set current_score = scores_map.get((room.school_room_id, aspect.id)) %}
-        {% if current_score is not none %}
+        {% if current_score is not none and current_score >= score_scale.min %}
             {% set total_scored.count = total_scored.count + 1 %}
             {% set total_score_sum.val = total_score_sum.val + current_score %}
         {% endif %}
     {% endfor %}
 {% endfor %}
-{% set current_avg = (total_score_sum.val / total_scored.count) if total_scored.count else 0 %}
-{% set current_pct = (current_avg / score_scale.max * 100) if total_scored.count else 0 %}
+{% set current_avg = (total_score_sum.val / total_aspects) if total_aspects else 0 %}
+{% set current_pct = (current_avg / score_scale.max * 100) if total_aspects else 0 %}
 
 {% block portal_content %}
 <script src="{{ url_for('static', filename='js/assessment-ui.js') }}"></script>
@@ -21,7 +21,7 @@
 <section class="mb-4 assessment-page">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
         <div class="d-flex align-items-center gap-3">
-            {% set back_url = (
+            {% set back_url = url_for('portal.team_workspace') if assessment.assessment_mode == 'team' else (
                 url_for('portal.staff_assignments') if current_user and current_user.role == 'staff'
                 else (
                     url_for('portal.coordinator_assessments') if current_user and current_user.role == 'coordinator'
@@ -39,27 +39,28 @@
                 <p class="text-muted mb-0 small">{{ school.npsn }} • {{ school.jenjang }}</p>
             </div>
         </div>
-        <div class="d-flex gap-2">
-            <span class="badge text-bg-light border d-inline-flex align-items-center gap-1">
+        <div class="d-flex gap-2 assessment-meta">
+            <span class="badge text-bg-light border d-inline-flex align-items-center gap-1 assessment-meta-identity" title="{{ 'Tim · ' ~ assessment.team_name_snapshot if assessment.assessment_mode == 'team' else 'Individu' }} · #{{ assessment.id }}">
                 <i class="bi bi-file-earmark-text"></i>
-                {{ 'Tim · ' ~ assessment.team_name_snapshot if assessment.assessment_mode == 'team' else 'Individu' }} · #{{ assessment.id }}
+                <span class="d-none d-md-inline">{{ 'Tim · ' ~ assessment.team_name_snapshot if assessment.assessment_mode == 'team' else 'Individu' }} · #{{ assessment.id }}</span>
+                <span class="d-md-none text-truncate">{{ assessment.team_name_snapshot if assessment.assessment_mode == 'team' else 'Individu' }}</span>
             </span>
             {% if assessment_period %}
-            <span class="badge bg-primary-subtle text-primary border">
+            <span class="badge bg-primary-subtle text-primary border assessment-meta-period" title="{{ assessment_period.name }}{{ '' if assessment.period_locked else ' · saat kirim final' }}">
                 <i class="bi bi-calendar-event"></i>
-                {{ assessment_period.name }}{{ '' if assessment.period_locked else ' · saat kirim final' }}
+                {{ assessment_period.name }}<span class="d-none d-md-inline">{{ '' if assessment.period_locked else ' · saat kirim final' }}</span>
             </span>
             {% else %}
-            <span class="badge bg-secondary-subtle text-secondary border">
+            <span class="badge bg-secondary-subtle text-secondary border assessment-meta-period">
                 <i class="bi bi-calendar-event"></i>
-                Periode ditetapkan saat kirim final
+                <span class="d-none d-md-inline">Periode ditetapkan saat kirim final</span><span class="d-md-none">Saat kirim final</span>
             </span>
             {% endif %}
         </div>
     </div>
 
     {% if assessment.assessment_mode == 'team' %}
-    <div class="border rounded p-2 mb-3 small"><span id="teamSyncStatus" role="status" aria-live="polite">Menghubungkan tim…</span> <a id="teamResultLink" href="{{ url_for('portal.view_assessment', assessment_id=assessment.id) }}" hidden>Buka hasil</a></div>
+    <div id="teamSyncNotice" class="border rounded p-2 mb-3 small" hidden><span id="teamSyncStatus" role="status" aria-live="polite"></span> <a id="teamResultLink" href="{{ url_for('portal.view_assessment', assessment_id=assessment.id) }}" hidden>Buka hasil</a></div>
     <div id="teamSyncConflicts" role="alert"></div>
     {% endif %}
     <input type="hidden" id="assessmentId" value="{{ assessment.id }}">
@@ -85,18 +86,20 @@
     </div>
     <div class="row g-4">
         <div class="col-lg-8">
-            <div class="alert alert-info mb-3 d-flex flex-wrap align-items-center gap-3">
+            <div class="alert alert-info mb-3 d-flex flex-wrap align-items-center gap-3 assessment-score-guide">
+                <span class="score-guide-title d-md-none">Cara penilaian aspek</span>
                 <button class="btn btn-sm btn-outline-secondary" type="button" id="scoreLegendToggle"
                     data-bs-toggle="collapse" data-bs-target="#scoreLegendDetails" aria-expanded="false"
                     aria-controls="scoreLegendDetails">
                     Show
                 </button>
-                <span>
+                <span class="d-none d-md-inline">
                     Tap skor {{ score_scale.min }}-{{ score_scale.max }} untuk setiap aspek.
                     Status awal kosong sampai aspek dinilai.
                     Perubahan tersimpan otomatis.
                 </span>
                 <div class="collapse mt-2" id="scoreLegendDetails">
+                    <p class="d-md-none small mb-2">Tap skor {{ score_scale.min }}–{{ score_scale.max }} untuk setiap aspek. Status awal kosong sampai aspek dinilai. Perubahan tersimpan otomatis.</p>
                     <div class="small text-muted">
                         {% for item in score_scale.legend %}
                         <div><strong>{{ item.value }}</strong> {{ item.label }}</div>
@@ -106,7 +109,7 @@
             </div>
 
             <!-- Room Search -->
-            <div class="mb-3">
+            <div class="mb-3" id="assessmentSearchAnchor">
                 <div class="position-relative">
                     <input type="text" id="roomSearchAssessment" class="form-control" placeholder="Cari nama ruangan..."
                         autocomplete="off">
@@ -115,6 +118,9 @@
                 </div>
             </div>
 
+            <div id="assessmentSearchEmpty" class="alert alert-light border small" role="status" hidden>
+                Ruangan tidak ditemukan. <button type="button" class="btn btn-link btn-sm p-0 ms-1" id="assessmentSearchReset">Hapus pencarian</button>
+            </div>
             <div id="roomAccordion" class="d-flex flex-column gap-2">
                 {% for room in rooms %}
                 {% set total_aspects_room = room.aspects|length %}
@@ -122,13 +128,13 @@
                 {% set sum_scores = namespace(val=0) %}
                 {% for aspect in room.aspects %}
                 {% set current = scores_map.get((room.school_room_id, aspect.id)) %}
-                {% if current is not none %}
+                {% if current is not none and current >= score_scale.min %}
                 {% set scored_count_room.count = scored_count_room.count + 1 %}
                 {% set sum_scores.val = sum_scores.val + current %}
                 {% endif %}
                 {% endfor %}
-                {% set room_avg = (sum_scores.val / scored_count_room.count) if scored_count_room.count else 0 %}
-                {% set room_pct = (room_avg / score_scale.max * 100) if scored_count_room.count else 0 %}
+                {% set room_avg = (sum_scores.val / total_aspects_room) if total_aspects_room else 0 %}
+                {% set room_pct = (room_avg / score_scale.max * 100) if total_aspects_room else 0 %}
                 <div class="room-item shadow-sm" data-room-name="{{ room.room_name|lower }}"
                     data-school-room-id="{{ room.school_room_id }}">
                     <div class="room-header collapsed" data-bs-toggle="collapse"
@@ -138,10 +144,20 @@
                                 id="roomScore{{ room.school_room_id }}">{{ '%.1f'|format(room_pct) }}</span>
                             <div><h5 class="mb-0">{{ room.room_name }}</h5>{% if assessment.assessment_mode == 'team' %}<span class="team-room-presence small text-primary" data-room-id="{{ room.school_room_id }}"></span>{% endif %}</div>
                         </div>
+                        <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                        {% set has_room_photo = photos_map.get(room.school_room_id) %}
+                        <span class="room-photo-indicator {{ 'has-photo' if has_room_photo else '' }}"
+                            data-photo-room-id="{{ room.school_room_id }}" role="img"
+                            title="{{ 'Sudah ada foto' if has_room_photo else 'Belum ada foto' }}"
+                            aria-label="{{ 'Sudah ada foto' if has_room_photo else 'Belum ada foto' }}">
+                            <i class="bi {{ 'bi-camera-fill' if has_room_photo else 'bi-camera' }}" aria-hidden="true"></i>
+                            <i class="bi bi-check-lg room-photo-check" aria-hidden="true" {% if not has_room_photo %}hidden{% endif %}></i>
+                        </span>
                         <span class="badge rounded-pill bg-secondary text-white"
                             id="roomBadge{{ room.school_room_id }}">
                             {{ scored_count_room.count }}/{{ room.aspects|length }}
                         </span>
+                        </div>
                     </div>
                     <div class="collapse" id="room{{ room.school_room_id }}" data-bs-parent="#roomAccordion">
                         <div class="room-body">
@@ -467,6 +483,21 @@
     </div>
 </div>
 
+<!-- Mobile search shares the original room filter. -->
+<button type="button" id="assessmentSearchFloating" class="btn btn-primary d-md-none" aria-label="Cari ruangan" aria-controls="assessmentSearchPanel" aria-expanded="false" hidden><i class="bi bi-search" aria-hidden="true"></i></button>
+<form id="assessmentSearchPanel" class="d-md-none" role="search" aria-label="Pencarian ruangan" hidden>
+    <div class="d-flex align-items-center justify-content-between mb-2">
+        <label for="assessmentSearchMobileInput" class="fw-semibold small">Cari ruangan</label>
+        <button type="button" id="assessmentSearchClose" class="btn-close" aria-label="Tutup pencarian"></button>
+    </div>
+    <div class="input-group">
+        <input type="search" id="assessmentSearchMobileInput" class="form-control" placeholder="Nama ruangan…" autocomplete="off" enterkeyhint="search">
+        <button type="button" id="assessmentSearchClear" class="btn btn-outline-secondary" aria-label="Hapus pencarian"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+        <button type="submit" class="btn btn-primary" aria-label="Lihat hasil pencarian"><i class="bi bi-arrow-right" aria-hidden="true"></i></button>
+    </div>
+    <div id="assessmentSearchCount" class="small text-muted mt-2" role="status" aria-live="polite"></div>
+</form>
+
 <!-- Floating Score Summary -->
 {{ floating_score_card(value="%.1f"|format(current_pct), count=total_scored.count ~ "/" ~ total_aspects) }}
 
@@ -494,6 +525,50 @@
 </div>
 
 <style>
+    .room-photo-indicator { display: inline-flex; align-items: center; gap: .2rem; padding: .25rem .4rem; border-radius: .5rem; color: var(--bs-secondary-color); background: var(--bs-secondary-bg); font-size: .85rem; line-height: 1; }
+    .room-photo-indicator.has-photo { color: var(--bs-success-text-emphasis); background: var(--bs-success-bg-subtle); }
+    .room-photo-check { font-size: .7rem; }
+    .room-photo-check[hidden] { display: none; }
+    .team-room-presence { display: inline-flex; align-items: center; gap: .3rem; font-size: .75rem; line-height: 1.3; }
+    .team-room-presence:empty { display: none; }
+    .team-room-presence:not(:empty)::before {
+        content: '\270E'; display: inline-block; font-size: 1rem; flex-shrink: 0;
+        transform-origin: bottom left; animation: team-writing 1.2s ease-in-out infinite;
+    }
+    @keyframes team-writing {
+        0%, 100% { transform: rotate(-8deg) translate(0, 0); }
+        35% { transform: rotate(6deg) translate(2px, -1px); }
+        70% { transform: rotate(-4deg) translate(1px, 1px); }
+    }
+    @media (prefers-reduced-motion: reduce) { .team-room-presence::before { animation: none !important; } }
+    @media (max-width: 767.98px) {
+        .assessment-meta { width: 100%; min-width: 0; gap: .4rem !important; }
+        .assessment-meta .badge { min-width: 0; padding: .4rem .5rem; font-size: .7rem; line-height: 1.2; }
+        .assessment-meta-identity { max-width: 52%; }
+        .assessment-meta-period { max-width: 48%; overflow: hidden; text-overflow: ellipsis; align-content: center; }
+        .assessment-score-guide { padding: .65rem .85rem; gap: .5rem !important; }
+        .assessment-score-guide .score-guide-title { flex: 1; min-width: 0; font-size: .875rem; font-weight: 600; }
+        .assessment-score-guide #scoreLegendToggle { margin-left: auto; flex-shrink: 0; }
+        .assessment-score-guide #scoreLegendDetails { flex-basis: 100%; width: 100%; margin-top: 0 !important; }
+    }
+    #assessmentSearchFloating[hidden], #assessmentSearchPanel[hidden], #assessmentSearchEmpty[hidden] { display: none !important; }
+    #roomAccordion, #assessmentSearchEmpty { scroll-margin-top: 125px; }
+    @media (max-width: 767.98px) {
+        #assessmentSearchFloating {
+            position: fixed; right: 16px; bottom: calc(80px + env(safe-area-inset-bottom));
+            width: 52px; height: 52px; padding: 0; border-radius: 50%;
+            display: grid; place-items: center; z-index: 1040;
+            box-shadow: 0 5px 18px rgba(13, 110, 253, .3); font-size: 1.2rem;
+        }
+        #assessmentSearchFloating.has-query::after { content: ''; position: absolute; top: 5px; right: 5px; width: 9px; height: 9px; border-radius: 50%; background: var(--bs-warning); border: 2px solid var(--bs-primary); }
+        #assessmentSearchPanel {
+            position: fixed; right: 16px; bottom: calc(144px + env(safe-area-inset-bottom));
+            width: calc(100vw - 32px); max-width: 360px; padding: .85rem;
+            background: var(--bg-surface); color: var(--text-primary); border: 1px solid var(--border-soft);
+            border-radius: 14px; box-shadow: var(--shadow-soft); z-index: 1041;
+        }
+        #assessmentSearchPanel input { font-size: 16px; }
+    }
     .floating-score {
         position: fixed;
         left: 20px;
@@ -812,6 +887,7 @@
 {% endblock %}
 
 {% block portal_scripts %}
+<script src="{{ url_for('static', filename='js/assessment-mobile-search.js') }}"></script>
 <script>
     var assessmentId = document.getElementById('assessmentId').value;
     var schoolId = document.getElementById('schoolId').value;
@@ -907,6 +983,20 @@
     }
 
     function updatePhotoRequirementUI() {
+        document.querySelectorAll('[data-photo-room-id]').forEach(function (indicator) {
+            var hasPhoto = photoRoomSet.has(Number(indicator.dataset.photoRoomId));
+            var label = hasPhoto ? 'Sudah ada foto' : 'Belum ada foto';
+            indicator.classList.toggle('has-photo', hasPhoto);
+            indicator.setAttribute('title', label);
+            indicator.setAttribute('aria-label', label);
+            var cameraIcon = indicator.querySelector('.bi-camera, .bi-camera-fill');
+            if (cameraIcon) {
+                cameraIcon.classList.toggle('bi-camera-fill', hasPhoto);
+                cameraIcon.classList.toggle('bi-camera', !hasPhoto);
+            }
+            var checkIcon = indicator.querySelector('.room-photo-check');
+            if (checkIcon) checkIcon.hidden = !hasPhoto;
+        });
         var uploaded = photoRoomSet.size;
         var required = requiredPhotoCount;
         var maxAllowed = maxPhotoCount;
@@ -1757,6 +1847,7 @@
         assessmentId: assessmentId,
         schoolId: schoolId,
         scaleMax: scoreScaleMax,
+        countMissingAsZero: true,
         scoreEndpoint: '/portal/assess/' + schoolId + '/score',
         noteEndpoint: '/portal/assess/' + schoolId + '/note',
         scoreProgressBarId: 'scoreProgressBar',
@@ -2294,7 +2385,7 @@
         } else {
             html = '<div class="list-group list-group-flush">';
             aspects.forEach(function (asp) {
-                var checked = asp.is_required ? 'checked disabled' : '';
+                var checked = asp.is_required ? 'checked disabled' : 'checked';
                 var badge = asp.is_required ? '<span class="badge bg-warning text-dark ms-2">Wajib</span>' : '';
                 var desc = asp.description ? '<br><small class="text-muted">' + asp.description + '</small>' : '';
                 html += '<label class="list-group-item">';

@@ -1908,9 +1908,9 @@ def home() -> Response:
         cards = [
             {
                 "title": "PANBERSS",
-                "description": "Akses tugas Monev dan proses penilaian PANBERSS.",
+                "description": "Pilih penilaian Tim atau Individu.",
                 "icon": "bi-building",
-                "href": url_for("portal.staff_assignments"),
+                "href": url_for("portal.assessment_modes"),
                 "col_class": "col-lg-4 col-md-6 col-12",
             },
             {
@@ -1948,15 +1948,15 @@ def home() -> Response:
                 "href": url_for("monev_bos.index"),
                 "col_class": "col-lg-4 col-md-6 col-12",
             },
-            {
-                "title": "Layanan",
-                "description": "Register ijazah, legalisasi, SKPI, dan mutasi siswa." if layanan_allowed else "Hubungi admin untuk mendapatkan akses Layanan.",
-                "icon": "bi-ui-checks-grid",
-                "href": url_for("layanan.index") if layanan_allowed else "#",
-                "disabled": not layanan_allowed,
-                "col_class": "col-lg-4 col-md-6 col-12",
-            },
         ]
+        if layanan_allowed:
+            cards.append({
+                "title": "Layanan",
+                "description": "Register ijazah, legalisasi, SKPI, dan mutasi siswa.",
+                "icon": "bi-ui-checks-grid",
+                "href": url_for("layanan.index"),
+                "col_class": "col-lg-4 col-md-6 col-12",
+            })
         if _staff_can_view_laporan_answers(user):
             cards.insert(
                 -1,
@@ -1998,9 +1998,9 @@ def home() -> Response:
         cards = [
             {
                 "title": "PANBERSS",
-                "description": "Akses statistik dan monitoring PANBERSS tim Anda.",
+                "description": "Pilih penilaian Tim atau Individu.",
                 "icon": "bi-building",
-                "href": url_for("portal.coordinator_stats"),
+                "href": url_for("portal.assessment_modes"),
                 "col_class": "col-md-6 col-12",
             },
             {
@@ -3284,6 +3284,7 @@ def save_score(school_id: int) -> Response:
             school_room_id,
             aspect_id,
             score,
+            actor=user,
         )
 
         if success:
@@ -3347,6 +3348,7 @@ def save_note(school_id: int) -> Response:
             assessment_id=assessment_id,
             school_room_id=school_room_id,
             notes=notes,
+            actor=user,
         )
         return jsonify({"success": True, "details": result})
     except ValueError as exc:
@@ -3704,6 +3706,8 @@ def save_draft(school_id: int) -> Response:
                 (assessment_id_int,),
             )
             saved = cur.rowcount
+            if saved:
+                team_assessments.record_event(cur, assessment_id_int, None, 'save_draft', user['id'])
         if saved:
             flash("Draft berhasil disimpan.", "success")
         else:
@@ -11021,3 +11025,4 @@ def coordinator_assessments() -> Response:
 
 
 from . import team_routes  # noqa: E402,F401
+from . import performance  # noqa: E402,F401

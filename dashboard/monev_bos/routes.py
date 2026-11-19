@@ -3239,6 +3239,7 @@ def staff_dashboard():
                            available_years=available_years,
                            selected_year_periods=selected_year_periods,
                            teams=teams, 
+                           report_history=queries.list_staff_report_history(user["id"]),
                            assigned_schools=assigned_schools)
 
 
@@ -3464,8 +3465,8 @@ def staff_audit_report(report_id):
         return redirect(url_for("monev_bos.staff_dashboard"))
 
     can_audit = _staff_audit_access_allowed(user, report_id)
-    if user.get("role") == "staff" and not can_audit:
-        abort(403, description="Laporan ini bukan penugasan tim Anda.")
+    if user.get("role") == "staff" and not can_audit and not queries.staff_can_view_report(user["id"], report_id):
+        abort(403, description="Anda tidak memiliki penugasan atau riwayat pada laporan ini.")
     if request.method == "POST" and not can_audit:
         return _deny_staff_audit_action()
         
@@ -3643,7 +3644,7 @@ def staff_report_notes(report_id):
     if not queries.get_report_by_id(report_id):
         return jsonify(success=False, message="Laporan tidak ditemukan."), 404
     allowed = _staff_audit_access_allowed(user, report_id)
-    if user.get("role") == "staff" and not allowed:
+    if user.get("role") == "staff" and not allowed and not queries.staff_can_view_report(user["id"], report_id):
         return jsonify(success=False, message="Laporan ini bukan penugasan tim Anda."), 403
     if request.method == "GET":
         response = jsonify(success=True, document=queries.get_report_notes(report_id), can_edit=allowed)
@@ -3671,7 +3672,7 @@ def staff_report_notes_history(report_id):
     user = current_user()
     if not queries.get_report_by_id(report_id):
         return jsonify(success=False, message="Laporan tidak ditemukan."), 404
-    if user.get("role") == "staff" and not _staff_audit_access_allowed(user, report_id):
+    if user.get("role") == "staff" and not queries.staff_can_view_report(user["id"], report_id):
         return jsonify(success=False, message="Laporan ini bukan penugasan tim Anda."), 403
     before = request.args.get("before", type=int)
     revisions = queries.get_report_notes_history(report_id, before)

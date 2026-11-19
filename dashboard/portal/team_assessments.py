@@ -8,7 +8,7 @@ EFFECTIVE_ASSIGNMENTS = """
     SELECT DISTINCT ON (school.id) school.id AS school_id, school.name AS school_name,
            school.npsn, school.jenjang, a.team_id, t.name AS team_name, t.leader_id,
            p.id AS monev_period_id, p.year, p.tw,
-           COALESCE(setting.enabled, FALSE) AS enabled
+           COALESCE(setting.enabled, TRUE) AS enabled
     FROM monev_bos_assignments a
     JOIN monev_bos_periods p ON p.id = a.period_id AND p.is_active = TRUE
     JOIN monev_bos_teams t ON t.id = a.team_id
@@ -138,6 +138,8 @@ def save_field(assessment_id, room_id, field_key, value, base_version, user):
         if version != base_version:
             raise TeamConflict('Isian ini sudah diubah anggota lain. Pilihan Anda belum disimpan; periksa versi terbaru lalu pilih kembali.')
         if field_key == 'note':
+            cur.execute('SELECT notes AS value FROM portal_assessment_room_details WHERE assessment_id = %s AND school_room_id = %s', (assessment_id, room_id))
+            previous = cur.fetchone()
             if not isinstance(value, str) or len(value) > 10000:
                 raise ValueError('Catatan maksimal 10.000 karakter.')
             cur.execute("""INSERT INTO portal_assessment_room_details (assessment_id, school_room_id, notes)
@@ -145,6 +147,8 @@ def save_field(assessment_id, room_id, field_key, value, base_version, user):
                 DO UPDATE SET notes = EXCLUDED.notes, updated_at = NOW()""", (assessment_id, room_id, value))
         else:
             aspect_id = int(field_key.split(':')[1])
+            cur.execute('SELECT score AS value FROM portal_assessment_scores WHERE assessment_id = %s AND school_room_id = %s AND aspect_id = %s', (assessment_id, room_id, aspect_id))
+            previous = cur.fetchone()
             if type(value) is not int or not 1 <= value <= (assessment.get('score_scale_max') or 5):
                 raise ValueError('Nilai di luar rentang penilaian.')
             cur.execute("""SELECT 1 FROM portal_school_rooms sr JOIN portal_aspects a ON a.room_id = sr.room_id
@@ -160,7 +164,8 @@ def save_field(assessment_id, room_id, field_key, value, base_version, user):
             VALUES (%s, %s, %s, %s, %s) ON CONFLICT (assessment_id, school_room_id, field_key)
             DO UPDATE SET version = EXCLUDED.version, edited_by = EXCLUDED.edited_by, updated_at = NOW()""",
             (assessment_id, room_id, field_key, version + 1, user['id']))
-        record_event(cur, assessment_id, room_id, field_key, user['id'])
+        if not previous or previous['value'] != value:
+            record_event(cur, assessment_id, room_id, field_key, user['id'])
         cur.execute('UPDATE portal_assessments SET updated_at = NOW() WHERE id = %s', (assessment_id,))
         return version + 1
 
@@ -224,13 +229,13 @@ def check_photo_write(cur, assessment_id, room_id, user, base_version):
     return version + 1
 
 
-def record_photo_write(cur, assessment_id, room_id, version, user):
+def record_photo_write(cur, assessment_id, room_id, version, user, field="photo"):
     if version is None:
         return
     cur.execute("""INSERT INTO portal_assessment_field_versions (assessment_id, school_room_id, field_key, version, edited_by)
         VALUES (%s, %s, 'photo', %s, %s) ON CONFLICT (assessment_id, school_room_id, field_key)
         DO UPDATE SET version = EXCLUDED.version, edited_by = EXCLUDED.edited_by, updated_at = NOW()""", (assessment_id, room_id, version, user['id']))
-    record_event(cur, assessment_id, room_id, 'photo', user['id'])
+    record_event(cur, assessment_id, room_id, field, user['id'])
 
 
 def contributors(assessment_id):

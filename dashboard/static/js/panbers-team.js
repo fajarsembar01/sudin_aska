@@ -16,6 +16,8 @@
     function setStatus(text, error) {
       status.textContent = text;
       status.classList.toggle('text-danger', !!error);
+      const notice = document.getElementById('teamSyncNotice');
+      if (notice) notice.hidden = !error && !stopped;
     }
     function valueIn(snapshot, payload) {
       if (payload.aspect_id) {
@@ -60,7 +62,9 @@
       });
       document.querySelectorAll('.team-room-presence').forEach(label => {
         const names = [...new Set(snapshot.presence.filter(p => p.school_room_id === Number(label.dataset.roomId) && p.user_id !== config.userId).map(p => p.name))];
-        label.textContent = names.length ? `${names.join(', ')} sedang mengisi` : '';
+        label.textContent = names.join(', ');
+        label.setAttribute('aria-label', names.length ? `${names.join(', ')} sedang mengisi` : '');
+        label.setAttribute('title', names.length ? `${names.join(', ')} sedang mengisi` : '');
       });
       if (config.onPhotos) config.onPhotos(snapshot.photos);
       if (window.updateAssessmentAllGroups) window.updateAssessmentAllGroups();
@@ -87,7 +91,7 @@
           throw new Error(data.message || 'Gagal sinkronisasi tim.');
         }
         apply(data);
-        if (!stopped && !pending.size && !conflicts.size && !failed.size) setStatus('Tersinkron · perubahan tim diperbarui setiap 2 detik');
+        if (!stopped && !pending.size && !conflicts.size && !failed.size) setStatus('');
       } catch (error) { setStatus(error.message || 'Koneksi terputus. Isian yang belum tersimpan tetap di halaman ini.', true); }
       finally { polling = false; }
     }
@@ -136,7 +140,7 @@
           showIssue(field, endpoint, payload, 'Periksa perbedaan isian sebelum menyimpan kembali.', conflicts.has(field));
           throw new Error('Selesaikan perbedaan isian terlebih dahulu.');
         }
-        setStatus('Menyimpan perubahan Anda…');
+        setStatus('');
         const baseVersion = versions.get(field) || 0;
         try {
           const response = await fetch(endpoint, {

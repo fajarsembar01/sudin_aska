@@ -303,8 +303,8 @@
                     {% endif %}
                     {% if current_role in ['coordinator', 'staff'] %}
                     <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint in ['portal.coordinator_assessments', 'portal.staff_assignments', 'portal.assess', 'portal.view_assessment'] %}active{% endif %}"
-                            href="{{ url_for('portal.coordinator_assessments') if current_role == 'coordinator' else url_for('portal.staff_assignments') }}">
+                        <a class="nav-link {% if request.endpoint in ['portal.assessment_modes', 'portal.team_workspace', 'portal.coordinator_assessments', 'portal.staff_assignments', 'portal.assess', 'portal.view_assessment'] %}active{% endif %}"
+                            href="{{ url_for('portal.assessment_modes') }}">
                             <i class="bi bi-list-check nav-icon"></i>Penilaian PANBERSS
                         </a>
                     </li>

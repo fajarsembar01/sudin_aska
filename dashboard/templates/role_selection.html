@@ -538,7 +538,7 @@
             <div class="login-header">
                 {% if back_href %}
                 <a href="{{ back_href }}" style="display:inline-flex; align-items:center; gap:6px; font-size:0.8rem; font-weight:600; color:rgba(255,255,255,0.75); text-decoration:none; margin-bottom:10px; background:rgba(255,255,255,0.15); padding:4px 12px; border-radius:20px; transition: background .15s;" onmouseover="this.style.background='rgba(255,255,255,0.25)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">
-                    <i class="bi bi-arrow-left"></i> Kembali
+                    <i class="bi bi-arrow-left"></i> {{ back_label|default('Kembali', true) }}
                 </a>
                 {% endif %}
                 <h1>{{ header_title or 'Selamat Datang' }}</h1>

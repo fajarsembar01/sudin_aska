@@ -67,7 +67,8 @@
       selected.forEach(btn => total += parseInt(btn.dataset.score, 10) || 0);
       const count = selected.length;
       const totalItems = document.querySelectorAll(state.itemSelector).length;
-      const pct = count ? ((total / count) / state.scaleMax) * 100 : 0;
+      const denominator = config.countMissingAsZero ? totalItems : count;
+      const pct = denominator ? ((total / denominator) / state.scaleMax) * 100 : 0;
       const valueEl = document.getElementById(state.floatingScoreValueId);
       const countEl = document.getElementById(state.floatingScoreCountId);
       const bar = document.getElementById(state.scoreProgressBarId);
@@ -98,7 +99,8 @@
         updateBadgeClasses(scoreDisplay, 0);
         return;
       }
-      const pct = ((totalScore / selectedCount) / state.scaleMax) * 100;
+      const denominator = config.countMissingAsZero ? totalAspects : selectedCount;
+      const pct = denominator ? ((totalScore / denominator) / state.scaleMax) * 100 : 0;
       scoreDisplay.textContent = pct.toFixed(1);
       updateBadgeClasses(scoreDisplay, pct);
     }

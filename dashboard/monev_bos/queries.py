@@ -2030,6 +2030,32 @@ def staff_can_audit_report(staff_id: int, report_id: int) -> bool:
         return False
     return bool(row["allowed"] if isinstance(row, dict) else row[0])
 
+def staff_can_view_report(staff_id: int, report_id: int) -> bool:
+    """Former participants retain read access without regaining verification rights."""
+    if staff_can_audit_report(staff_id, report_id):
+        return True
+    with get_cursor() as cur:
+        cur.execute("""SELECT 1 FROM monev_bos_report_readers
+                       WHERE report_id = %s AND user_id = %s""", (report_id, staff_id))
+        return cur.fetchone() is not None
+
+
+def list_staff_report_history(staff_id: int) -> List[Dict[str, Any]]:
+    with get_cursor() as cur:
+        cur.execute("""
+            SELECT r.id, r.status, p.year, p.tw,
+                   COALESCE(s.name, u.full_name) AS school_name
+            FROM monev_bos_report_readers h
+            JOIN monev_bos_reports r ON r.id = h.report_id
+            JOIN monev_bos_periods p ON p.id = r.period_id
+            JOIN dashboard_users u ON u.id = r.school_id
+            LEFT JOIN portal_schools s ON s.id = u.school_id
+            WHERE h.user_id = %s
+            ORDER BY p.year DESC, p.tw DESC, r.id DESC
+        """, (staff_id,))
+        return [dict(row) for row in cur.fetchall()]
+
+
 def get_team_members(team_id: int) -> List[Dict[str, Any]]:
     with get_cursor() as cur:
         cur.execute(

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import Iterable
+from pathlib import Path
 
 from .db_access import get_cursor
 
@@ -1660,7 +1661,7 @@ CREATE INDEX IF NOT EXISTS idx_portal_assessments_mode ON portal_assessments (as
 CREATE UNIQUE INDEX IF NOT EXISTS idx_portal_team_one_draft ON portal_assessments (school_id) WHERE assessment_mode = 'team' AND status = 'draft';
 CREATE TABLE IF NOT EXISTS portal_team_assessment_settings (
     school_id INTEGER PRIMARY KEY REFERENCES portal_schools(id) ON DELETE CASCADE,
-    enabled BOOLEAN NOT NULL DEFAULT FALSE,
+    enabled BOOLEAN NOT NULL DEFAULT TRUE,
     updated_by INTEGER REFERENCES dashboard_users(id) ON DELETE SET NULL,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -1693,6 +1694,7 @@ CREATE TABLE IF NOT EXISTS portal_assessment_team_events (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_portal_team_events_assessment ON portal_assessment_team_events (assessment_id, user_id);
+ALTER TABLE portal_team_assessment_settings ALTER COLUMN enabled SET DEFAULT TRUE;
 """
 
 _ADMIN_BACKUP_CLAIMS_SQL = """
@@ -2898,6 +2900,7 @@ def ensure_monev_bos_schema() -> None:
         "ALTER TABLE monev_bos_activity_post_links DROP CONSTRAINT IF EXISTS monev_bos_activity_post_links_activity_id_key;",
         "CREATE UNIQUE INDEX IF NOT EXISTS idx_monev_bos_activity_post_links_activity_post ON monev_bos_activity_post_links (activity_id, post_id);",
         _MONEV_BOS_STORY_AUDIT_LOGS_SQL,
+        (Path(__file__).parent / 'migrations' / '063_monev_historical_report_access.sql').read_text(),
     )
     for i, statement in enumerate(statements):
         try:

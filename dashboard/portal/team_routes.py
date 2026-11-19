@@ -8,6 +8,31 @@ from .queries import get_active_period
 from .routes import portal_bp, _portal_access_required
 
 
+@portal_bp.route('/pilih-penilaian')
+@_portal_access_required
+def assessment_modes():
+    user = current_user() or {}
+    role = user.get('role')
+    if role == 'sekolah':
+        return redirect(url_for('portal.sekolah_home'))
+    if role not in {'staff', 'admin', 'coordinator'}:
+        abort(403)
+    individual_endpoint = ('portal.staff_assignments' if role == 'staff' else
+                           'portal.coordinator_assessments' if role == 'coordinator' else 'portal.schools')
+    cards = [
+        {'title': 'Penilaian Tim', 'description': 'Isi satu penilaian bersama anggota tim Monev.',
+         'icon': 'bi-people', 'href': url_for('portal.team_workspace'), 'col_class': 'col-md-6 col-12'},
+        {'title': 'Penilaian Individu', 'description': 'Isi penilaian pribadi sesuai penugasan akun Anda.',
+         'icon': 'bi-person-check', 'href': url_for(individual_endpoint), 'col_class': 'col-md-6 col-12'},
+    ]
+    return render_template('portal/assessments/modes.html', page_title='Pilih Penilaian - PANBERSS',
+        header_title='Penilaian Panberss', header_subtitle='Pilih penilaian Tim atau Individu',
+        cards=cards, default_col_class='col-md-6 col-12', enable_odd_center=False,
+        mobile_compact=True, show_logout=False,
+        back_href=url_for('main.admin_select_role') if role == 'admin' else url_for('portal.home'),
+        back_label='Kembali ke OSS')
+
+
 @portal_bp.route('/penilaian-tim')
 @_portal_access_required
 def team_workspace():
@@ -33,11 +58,15 @@ def team_assignment_settings():
             abort(400, 'Sekolah tidak sesuai penugasan Monev aktif.')
         with get_cursor(commit=True) as cur:
             for school_id in allowed:
-                cur.execute("""INSERT INTO portal_team_assessment_settings (school_id, enabled, updated_by)
-                    VALUES (%s, %s, %s) ON CONFLICT (school_id) DO UPDATE
-                    SET enabled = EXCLUDED.enabled, updated_by = EXCLUDED.updated_by, updated_at = NOW()""",
-                    (school_id, school_id in selected, current_user()['id']))
-        flash('Penugasan Tim Panberss diperbarui. Penugasan Individu tetap tersedia.', 'success')
+                if school_id in selected:
+                    # Enabled is the automatic default; only exclusions need storage.
+                    cur.execute('DELETE FROM portal_team_assessment_settings WHERE school_id = %s', (school_id,))
+                else:
+                    cur.execute("""INSERT INTO portal_team_assessment_settings (school_id, enabled, updated_by)
+                        VALUES (%s, FALSE, %s) ON CONFLICT (school_id) DO UPDATE
+                        SET enabled = FALSE, updated_by = EXCLUDED.updated_by, updated_at = NOW()""",
+                        (school_id, current_user()['id']))
+        flash('Pengecualian Panberss disimpan. Penugasan Monev lainnya tersedia otomatis.', 'success')
         return redirect(url_for('portal.team_assignment_settings'))
     return render_template('portal/teams/settings.html', assignments=assignments, active_period=get_active_period())
 

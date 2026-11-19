@@ -6,7 +6,7 @@ import uuid
 from contextlib import contextmanager
 from unittest.mock import patch
 from flask import Flask
-from dashboard.portal import queries, routes, team_assessments as team, team_routes
+from dashboard.portal import queries, routes, team_assessments as team, team_routes, performance
 from dashboard.db_access import get_cursor
 
 
@@ -34,6 +34,29 @@ class ModeFilterTests(unittest.TestCase):
         self.assertEqual(parse_qs(urlparse(response.location).query)['next'],
                          ['/portal/assess/7?mode=team&assessment_id=9'])
 
+    def test_mode_picker_routes_each_assessor_role_to_the_right_list(self):
+        app = Flask(__name__); app.secret_key = 'test'; app.register_blueprint(routes.portal_bp)
+        app.add_url_rule('/admin/select-role', 'main.admin_select_role', lambda: 'OSS')
+        for role, individual_url in [('staff', '/portal/staff/assignments'),
+                                     ('coordinator', '/portal/coordinator/assessments'),
+                                     ('admin', '/portal/schools')]:
+            with self.subTest(role=role), patch.object(routes, 'current_user', return_value={'id': 1, 'role': role}), \
+                    patch.object(team_routes, 'current_user', return_value={'id': 1, 'role': role}), \
+                    patch.object(team_routes, 'render_template', return_value='mode picker') as render:
+                response = app.test_client().get('/portal/pilih-penilaian')
+                self.assertEqual(response.status_code, 200)
+                cards = render.call_args.kwargs['cards']
+                self.assertEqual(cards[0]['href'], '/portal/penilaian-tim')
+                self.assertEqual(cards[1]['href'], individual_url)
+
+    def test_school_account_does_not_enter_assessor_mode_picker(self):
+        app = Flask(__name__); app.secret_key = 'test'; app.register_blueprint(routes.portal_bp)
+        user = {'id': 1, 'role': 'sekolah'}
+        with patch.object(routes, 'current_user', return_value=user), patch.object(team_routes, 'current_user', return_value=user):
+            response = app.test_client().get('/portal/pilih-penilaian')
+            self.assertEqual(response.status_code, 302)
+            self.assertEqual(response.location, '/portal/sekolah')
+
 
 @unittest.skipUnless(os.getenv('PANBERS_TEAM_DB_TEST') == '1', 'Opt-in PostgreSQL tests; all writes rolled back')
 class TeamDatabaseTests(unittest.TestCase):
@@ -44,7 +67,7 @@ class TeamDatabaseTests(unittest.TestCase):
         @contextmanager
         def transaction_cursor(commit=False):
             yield self.cur
-        for module in [team, queries, routes, team_routes]:
+        for module in [team, queries, routes, team_routes, performance]:
             p = patch.object(module, 'get_cursor', transaction_cursor)
             p.start(); self.addCleanup(p.stop)
         token = uuid.uuid4().hex
@@ -66,7 +89,6 @@ class TeamDatabaseTests(unittest.TestCase):
             self.cur.execute("INSERT INTO monev_bos_periods (year, tw, start_date, end_date, is_active) VALUES (9998, %s, '2026-01-01', '2026-12-31', TRUE) RETURNING id", (tw,))
             pid = self.cur.fetchone()['id']
             self.cur.execute('INSERT INTO monev_bos_assignments (team_id, school_id, period_id) VALUES (%s, %s, %s)', (tid, self.outsider['id'], pid))
-        self.cur.execute('INSERT INTO portal_team_assessment_settings (school_id, enabled) VALUES (%s, TRUE)', (self.school,))
         self.cur.execute('UPDATE portal_assessment_periods SET is_active = FALSE WHERE is_active = TRUE')
         self.cur.execute("INSERT INTO portal_assessment_periods (name, start_date, end_date, is_active) VALUES ('Final period test', '2026-11-01', '2026-11-30', TRUE) RETURNING id")
         self.period_id = self.cur.fetchone()['id']
@@ -81,6 +103,106 @@ class TeamDatabaseTests(unittest.TestCase):
     def close_transaction(self):
         self.cur.connection.rollback()
         self.context.__exit__(None, None, None)
+
+    def test_monev_assignment_is_automatic_without_panbers_settings(self):
+        self.cur.execute('SELECT COUNT(*) AS count FROM portal_team_assessment_settings WHERE school_id = %s', (self.school,))
+        self.assertEqual(self.cur.fetchone()['count'], 0)
+        assignment = team.assignment_for(self.school, self.member)
+        self.assertEqual(assignment['team_id'], self.team_id)
+        self.assertTrue(assignment['enabled'])
+        self.assertEqual(team.get_or_create_draft(self.school, self.member)['id'], self.draft['id'])
+
+    def test_unfilled_aspects_contribute_zero_to_room_and_final_scores(self):
+        self.cur.execute('SELECT room_id FROM portal_aspects WHERE id = %s', (self.aspect,))
+        room_type = self.cur.fetchone()['room_id']
+        self.cur.execute("INSERT INTO portal_aspects (room_id, name, is_required) VALUES (%s, 'Second required', TRUE) RETURNING id", (room_type,))
+        missing = self.cur.fetchone()['id']
+        self.cur.execute("INSERT INTO portal_aspects (room_id, name, is_required) VALUES (%s, 'Unselected optional', FALSE) RETURNING id", (room_type,))
+        optional = self.cur.fetchone()['id']
+        for mode, max_score in [('team', 5), ('individual', 5), ('individual', 3)]:
+            with self.subTest(mode=mode, scale=max_score):
+                draft = self.draft if mode == 'team' else queries.create_assessment(self.school, self.owner['id'])
+                self.cur.execute('UPDATE portal_assessments SET score_scale_max = %s WHERE id = %s', (max_score, draft['id']))
+                if mode == 'team':
+                    team.save_field(draft['id'], self.room, f'score:{self.aspect}', max_score, 0, self.member)
+                else:
+                    queries.save_assessment_score(draft['id'], self.room, self.aspect, max_score, actor=self.owner)
+                self.assertEqual(queries.get_assessment_room_score_pct(draft['id'], self.room), 50.0)
+                self.assertTrue(queries.submit_assessment(draft['id'], actor=self.owner))
+                result = queries.get_assessment_by_id(draft['id'])
+                self.assertEqual(float(result['total_score']), max_score / 2)
+                self.cur.execute('SELECT aspect_id, score FROM portal_assessment_scores WHERE assessment_id = %s', (draft['id'],))
+                scores = {row['aspect_id']: row['score'] for row in self.cur.fetchall()}
+                self.assertEqual(scores[missing], 0)
+                self.assertNotIn(optional, scores)
+
+    def test_performance_tracks_actual_actor_separates_modes_and_deduplicates(self):
+        draft_id = self.draft['id']
+        field = f'score:{self.aspect}'
+        team.save_field(draft_id, self.room, field, 4, 0, self.member)
+        team.save_field(draft_id, self.room, field, 4, 1, self.member)
+        team.save_field(draft_id, self.room, field, 5, 2, self.member)
+        individual = queries.create_assessment(self.school, self.owner['id'])
+        for score in [4, 4, 5]:
+            queries.save_assessment_score(individual['id'], self.room, self.aspect, score, actor=self.owner)
+        queries.save_room_details(individual['id'], self.room, 'Catatan', actor=self.owner)
+        queries.save_room_details(individual['id'], self.room, 'Catatan', actor=self.owner)
+        queries.save_assessment_photo(individual['id'], self.room, 'test.jpg', actor=self.owner)
+        self.cur.execute("SELECT id FROM portal_assessment_photos WHERE assessment_id = %s", (individual['id'],))
+        queries.delete_photo(self.cur.fetchone()['id'], individual['id'], self.room, actor=self.owner)
+        rows, events = performance.performance_data('all', None, None, None, self.owner['id'])
+        owner = next(row for row in rows if row['staff_id'] == self.owner['id'])
+        member = next(row for row in rows if row['staff_id'] == self.member['id'])
+        self.assertEqual((owner['scores'], owner['notes'], owner['photos']), (1, 1, 1))
+        self.assertEqual((owner['team_assessments'], owner['individual_assessments']), (0, 1))
+        self.assertEqual((member['scores'], member['actions']), (1, 2))
+        self.assertEqual(len(events), 5)
+        self.assertIn('photo_delete', [event['field_key'] for event in events])
+        rows, _ = performance.performance_data('team', None, None, None, self.owner['id'])
+        self.assertNotIn(self.owner['id'], [row['staff_id'] for row in rows])
+        rows, _ = performance.performance_data('individual', None, None, None, self.member['id'])
+        self.assertNotIn(self.member['id'], [row['staff_id'] for row in rows])
+        rows, _ = performance.performance_data('all', None, None, self.period_id, self.member['id'])
+        self.assertNotIn(self.member['id'], [row['staff_id'] for row in rows])
+
+    def test_performance_date_filter_and_staff_detail_access(self):
+        from datetime import date
+        team.save_field(self.draft['id'], self.room, 'note', 'First contribution', 0, self.member)
+        self.cur.execute("UPDATE portal_assessment_team_events SET created_at = '2026-11-17 17:00:00+00' WHERE assessment_id = %s", (self.draft['id'],))
+        _, events = performance.performance_data('all', date(2026, 11, 18), date(2026, 11, 18), None, self.member['id'])
+        self.assertEqual(len(events), 1)
+        _, events = performance.performance_data('all', date(2026, 11, 17), date(2026, 11, 17), None, self.member['id'])
+        self.assertEqual(len(events), 0)
+        app = Flask(__name__); app.secret_key = 'test'; app.register_blueprint(routes.portal_bp)
+        with patch.object(routes, 'current_user', return_value=self.member), patch.object(performance, 'current_user', return_value=self.member):
+            client = app.test_client()
+            self.assertEqual(client.get(f"/portal/staff/performance?staff_id={self.owner['id']}").status_code, 403)
+            self.assertEqual(client.get('/portal/staff/performance?from=2026-12-01&to=2026-11-01').status_code, 400)
+            self.assertEqual(client.get('/portal/staff/performance?assessment_mode=invalid').status_code, 400)
+
+    def test_settings_database_default_is_enabled(self):
+        self.cur.execute('INSERT INTO portal_team_assessment_settings (school_id) VALUES (%s) RETURNING enabled', (self.school,))
+        self.assertTrue(self.cur.fetchone()['enabled'])
+
+    def test_admin_only_stores_exclusions_and_can_restore_automatic_access(self):
+        app = Flask(__name__); app.secret_key = 'test'; app.register_blueprint(routes.portal_bp)
+        client = app.test_client()
+        admin = {**self.owner, 'role': 'admin'}
+        url = '/portal/admin/penugasan-tim'
+        with patch('dashboard.auth.current_user', return_value=admin), \
+                patch.object(team_routes, 'current_user', return_value=admin), \
+                patch.object(team, 'list_assignments', return_value=[{'school_id': self.school}]):
+            self.assertEqual(client.post(url, data={}).status_code, 302)
+        self.assertIsNone(team.assignment_for(self.school, self.member))
+        with self.assertRaises(PermissionError):
+            team.save_field(self.draft['id'], self.room, 'note', 'No access', 0, self.member)
+        with patch('dashboard.auth.current_user', return_value=admin), \
+                patch.object(team_routes, 'current_user', return_value=admin), \
+                patch.object(team, 'list_assignments', return_value=[{'school_id': self.school}]):
+            self.assertEqual(client.post(url, data={'school_ids': str(self.school)}).status_code, 302)
+        self.assertIsNotNone(team.assignment_for(self.school, self.member))
+        self.cur.execute('SELECT COUNT(*) AS count FROM portal_team_assessment_settings WHERE school_id = %s', (self.school,))
+        self.assertEqual(self.cur.fetchone()['count'], 0)
 
     def test_newest_assignment_wins_before_membership_check(self):
         self.assertEqual(team.assignment_for(self.school, self.member)['team_id'], self.team_id)
@@ -158,6 +280,26 @@ class TeamDatabaseTests(unittest.TestCase):
         resubmitted = queries.get_assessment_by_id(final['id'])
         self.assertEqual(resubmitted['period_id'], final['period_id'])
         self.assertEqual(resubmitted['team_members_snapshot'], final['team_members_snapshot'])
+
+    def test_final_history_survives_team_deletion(self):
+        self.assertTrue(queries.submit_assessment(self.draft['id'], actor=self.member))
+        final = queries.get_assessment_by_id(self.draft['id'])
+        self.cur.execute('DELETE FROM monev_bos_teams WHERE id = %s', (self.team_id,))
+        for user in [self.member, self.owner]:
+            self.assertTrue(team.can_access(user, final))
+            self.assertFalse(team.can_access(user, final, edit=True))
+            self.assertIn(final['id'], [row['id'] for row in team.list_history(user)])
+        self.assertFalse(team.can_access(self.outsider, final))
+
+    def test_final_history_survives_leader_and_membership_change(self):
+        self.assertTrue(queries.submit_assessment(self.draft['id'], actor=self.owner))
+        final = queries.get_assessment_by_id(self.draft['id'])
+        self.cur.execute('UPDATE monev_bos_teams SET leader_id = %s WHERE id = %s', (self.outsider['id'], self.team_id))
+        self.cur.execute('DELETE FROM monev_bos_team_members WHERE team_id = %s', (self.team_id,))
+        for user in [self.owner, self.member]:
+            self.assertTrue(team.can_access(user, final))
+            self.assertIn(final['id'], [row['id'] for row in team.list_history(user)])
+        self.assertFalse(team.can_access(self.outsider, final))
 
     def test_live_state_post_requires_csrf_and_rejects_invalid_payload(self):
         from flask_wtf import CSRFProtect

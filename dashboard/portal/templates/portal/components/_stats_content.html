@@ -41,7 +41,7 @@
         </div>
         <div class="d-flex flex-wrap gap-2">
           {% if is_admin %}
-          <a class="btn btn-outline-primary" href="{{ url_for('portal.team_assignment_settings') }}"><i class="bi bi-people me-1"></i>Penugasan Tim</a>
+          <a class="btn btn-outline-primary" href="{{ url_for('portal.team_assignment_settings') }}"><i class="bi bi-people me-1"></i>Pengecualian Tim</a>
           <a
             href="{{ url_for('portal.sidak_planner') }}{% if current_period_id %}?period_id={{ current_period_id }}{% endif %}"
             class="btn btn-outline-danger d-inline-flex align-items-center gap-2"

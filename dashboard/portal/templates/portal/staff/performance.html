@@ -1,0 +1,52 @@
+{% extends 'portal/base_portal.html' %}
+{% block title %}Performa Staff - Panberss{% endblock %}
+{% block portal_content %}
+<div class="d-flex justify-content-between align-items-start gap-2 mb-3">
+  <div><h1 class="h4 mb-1">Performa Staff Panberss</h1><p class="text-muted small mb-0">Kontribusi individu berdasarkan perubahan yang berhasil disimpan.</p></div>
+</div>
+<form method="get" class="card card-body mb-3">
+  {% if selected_staff != current_user.id %}<input type="hidden" name="staff_id" value="{{ selected_staff }}">{% endif %}
+  <div class="row g-2 align-items-end">
+    <div class="col-6 col-lg-2"><label for="performanceMode" class="form-label small">Mode</label><select id="performanceMode" name="assessment_mode" class="form-select">
+      {% for value, label in [('all','Gabungan'),('team','Tim'),('individual','Individu')] %}<option value="{{ value }}" {{ 'selected' if mode == value }}>{{ label }}</option>{% endfor %}
+    </select></div>
+    <div class="col-6 col-lg-3"><label for="performancePeriod" class="form-label small">Periode penilaian</label><select id="performancePeriod" name="period_id" class="form-select"><option value="">Semua, termasuk draft</option>{% for period in periods %}<option value="{{ period.id }}" {{ 'selected' if period_id == period.id }}>{{ period.name }}</option>{% endfor %}</select></div>
+    <div class="col-6 col-lg-2"><label class="form-label small" for="performanceFrom">Aktivitas dari</label><input id="performanceFrom" class="form-control" type="date" name="from" value="{{ start }}"></div>
+    <div class="col-6 col-lg-2"><label class="form-label small" for="performanceTo">Sampai</label><input id="performanceTo" class="form-control" type="date" name="to" value="{{ end }}"></div>
+    <div class="col-12 col-lg-3 d-flex gap-2"><button class="btn btn-primary flex-fill">Terapkan</button><a class="btn btn-outline-secondary" href="{{ url_for('portal.staff_performance', assessment_mode=mode, **{'from':'', 'to':''}) }}">Semua waktu</a></div>
+  </div>
+</form>
+<p class="small text-muted">Tanggal aktivitas menggunakan WIB. Draft belum memiliki periode hingga dikirim. Riwayat lama yang belum mencatat pelaku perubahan tidak dimasukkan; kontribusi tim hanya dihitung untuk anggota yang benar-benar mengisi.</p>
+<h2 class="h6 mb-3">{{ personal.full_name if personal else 'Kontribusi Anda' }}{% if selected_staff == current_user.id %} <span class="badge text-bg-primary">Anda</span>{% endif %}</h2>
+<div class="row g-2 mb-4">
+  {% for key, label in [('assessments','Penilaian dikerjakan'),('scores','Aspek diisi'),('notes','Catatan ruangan'),('photos','Foto ruangan'),('submissions','Dikirim sendiri'),('rooms','Ruangan disentuh')] %}
+  <div class="col-6 col-md-4 col-xl-2"><div class="card h-100"><div class="card-body p-3"><div class="h4 mb-1">{{ personal[key] if personal else 0 }}</div><div class="small text-muted">{{ label }}</div></div></div></div>
+  {% endfor %}
+</div>
+<h2 class="h6">Kontribusi staff</h2>
+<p class="small text-muted">Urutan berdasarkan jumlah aspek, catatan, dan foto ruangan yang diisi. Mengubah isian yang sama berulang kali tidak menambah jumlah kontribusi unik.</p>
+<div class="card mb-4"><div class="table-responsive">
+  <table class="table table-hover align-middle mb-0"><thead><tr><th>Staff</th><th>Tim / Individu</th><th>Aspek</th><th>Catatan</th><th>Foto</th><th>Kirim final</th><th>Aktivitas terakhir</th></tr></thead><tbody>
+  {% for row in leaderboard %}
+    <tr class="{{ 'table-primary' if row.staff_id == current_user.id }}">
+      <td class="text-nowrap">{% if current_user.role == 'admin' %}<a href="{{ url_for('portal.staff_performance', staff_id=row.staff_id, assessment_mode=mode, period_id=period_id, **{'from':start,'to':end}) }}">{{ row.full_name }}</a>{% else %}{{ row.full_name }}{% endif %}{% if row.staff_id == current_user.id %} <span class="badge text-bg-primary">Anda</span>{% endif %}</td>
+      <td>{{ row.team_assessments }} / {{ row.individual_assessments }}</td><td>{{ row.scores }}</td><td>{{ row.notes }}</td><td>{{ row.photos }}</td><td>{{ row.submissions }}</td><td class="small text-nowrap">{{ row.last_activity|jakarta if row.last_activity else 'Belum ada' }}</td>
+    </tr>
+  {% else %}<tr><td colspan="7" class="text-muted">Belum ada kontribusi tercatat.</td></tr>{% endfor %}
+  </tbody></table>
+</div></div>
+<h2 class="h6">Riwayat aktivitas {{ personal.full_name if personal else '' }}</h2>
+<p class="small text-muted">Maksimal 100 aktivitas terbaru pada filter ini. Jumlah di atas mencakup seluruh aktivitas yang cocok.</p>
+<div class="list-group">
+  {% for event in events %}
+  <div class="list-group-item py-3">
+    <div class="d-flex flex-wrap justify-content-between gap-1"><strong>{{ event.school_name }}</strong><span class="small text-muted">{{ event.created_at|jakarta }}</span></div>
+    <div class="small mt-1"><span class="badge {{ 'text-bg-primary' if event.assessment_mode == 'team' else 'text-bg-secondary' }}">{{ 'Tim' if event.assessment_mode == 'team' else 'Individu' }}</span>
+      {% if event.field_key.startswith('score:') %}Mengisi skor · {{ event.aspect_name or 'Aspek' }}{% elif event.field_key == 'note' %}Mengubah catatan{% elif event.field_key == 'photo' %}Mengunggah foto{% elif event.field_key == 'photo_delete' %}Menghapus foto{% elif event.field_key == 'submit' %}Mengirim final{% elif event.field_key == 'save_draft' %}Menyimpan draft{% else %}{{ event.field_key }}{% endif %}
+      {% if event.room_name %} · {{ event.room_name }}{% endif %}
+    </div>
+    <div class="small text-muted mt-1">#{{ event.assessment_id }} · {{ event.period_name or 'Draft, belum ditetapkan periode' }}</div>
+  </div>
+  {% else %}<div class="list-group-item text-muted small">Belum ada aktivitas pada filter ini.</div>{% endfor %}
+</div>
+{% endblock %}

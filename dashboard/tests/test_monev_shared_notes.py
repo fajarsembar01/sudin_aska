@@ -1,5 +1,6 @@
 import os
 import unittest
+import uuid
 from contextlib import contextmanager
 from unittest.mock import patch
 
@@ -46,6 +47,9 @@ class NotesEndpointTests(unittest.TestCase):
         self.access_patch = patch.object(queries, "staff_can_audit_report", return_value=True)
         self.report_patch.start()
         self.access = self.access_patch.start()
+        self.view_patch = patch.object(queries, "staff_can_view_report", return_value=False)
+        self.view = self.view_patch.start()
+        self.addCleanup(self.view_patch.stop)
         self.addCleanup(self.report_patch.stop)
         self.addCleanup(self.access_patch.stop)
 
@@ -67,6 +71,19 @@ class NotesEndpointTests(unittest.TestCase):
             self.assertFalse(result.json["can_edit"])
         self.assertEqual(self.client.post(self.url, json={"content": "x", "base_version": 1}).status_code, 403)
 
+    def test_former_member_can_read_notes_history_but_cannot_write(self):
+        self.login()
+        self.access.return_value = False
+        self.view.return_value = True
+        with patch.object(queries, "get_report_notes", return_value={"content": "Riwayat tim", "version": 2}), \
+                patch.object(queries, "get_report_notes_history", return_value=[]):
+            response = self.client.get(self.url)
+            self.assertEqual(response.status_code, 200)
+            self.assertFalse(response.json["can_edit"])
+            self.assertEqual(self.client.get(self.url + "/history").status_code, 200)
+        self.assertEqual(self.client.post(self.url, json={"content": "ubah", "base_version": 2}).status_code, 403)
+        self.assertEqual(self.client.post('/monev-bos/staff/verifikasi/353', data={"action": "update_report_status", "status": "completed"}).status_code, 403)
+
     def test_payload_validation_and_conflict(self):
         self.login()
         for payload in [{}, {"content": "x", "base_version": True},
@@ -87,6 +104,64 @@ class NotesEndpointTests(unittest.TestCase):
 
 @unittest.skipUnless(os.getenv("MONEV_NOTES_DB_TEST") == "1", "Opt-in database test; all writes rolled back")
 class NotesDatabaseTests(unittest.TestCase):
+    def test_historical_access_survives_team_changes_without_granting_write_access(self):
+        from dashboard.db_access import get_cursor
+        with get_cursor() as cursor:
+            @contextmanager
+            def transaction_cursor(commit=False):
+                yield cursor
+            try:
+                token = uuid.uuid4().hex
+                users = []
+                for index in range(6):
+                    cursor.execute("""INSERT INTO dashboard_users(email, full_name, password_hash, role)
+                        VALUES (%s, 'History test', 'unused-test', %s) RETURNING id""",
+                        (f'{token}-{index}@monev.test', 'sekolah' if index == 5 else 'staff'))
+                    users.append(cursor.fetchone()['id'])
+                owner, member, replacement, new_member, outsider, school = users
+                periods = []
+                for tw in [1, 2]:
+                    cursor.execute("""INSERT INTO monev_bos_periods(year, tw, start_date, end_date)
+                        VALUES (9995, %s, '2026-01-01', '2026-12-31')
+                        ON CONFLICT (year, tw) DO UPDATE SET year = EXCLUDED.year RETURNING id""", (tw,))
+                    periods.append(cursor.fetchone()['id'])
+                cursor.execute("INSERT INTO monev_bos_teams(name, leader_id) VALUES ('History test', %s) RETURNING id", (owner,))
+                team_id = cursor.fetchone()['id']
+                cursor.execute('INSERT INTO monev_bos_team_members(team_id, staff_id) VALUES (%s, %s)', (team_id, member))
+                cursor.execute('INSERT INTO monev_bos_assignments(team_id, school_id, period_id) VALUES (%s, %s, %s)', (team_id, school, periods[0]))
+                cursor.execute('INSERT INTO monev_bos_reports(school_id, period_id) VALUES (%s, %s) RETURNING id', (school, periods[0]))
+                report = cursor.fetchone()['id']
+                with patch.object(queries, 'get_cursor', transaction_cursor):
+                    self.assertTrue(queries.staff_can_audit_report(member, report))
+                    cursor.execute('UPDATE monev_bos_teams SET leader_id = %s WHERE id = %s', (replacement, team_id))
+                    self.assertTrue(queries.staff_can_view_report(owner, report))
+                    self.assertFalse(queries.staff_can_audit_report(owner, report))
+                    cursor.execute('DELETE FROM monev_bos_team_members WHERE team_id = %s AND staff_id = %s', (team_id, member))
+                    self.assertTrue(queries.staff_can_view_report(member, report))
+                    self.assertFalse(queries.staff_can_audit_report(member, report))
+                    cursor.execute('INSERT INTO monev_bos_team_members(team_id, staff_id) VALUES (%s, %s)', (team_id, new_member))
+                    cursor.execute("INSERT INTO monev_bos_teams(name, leader_id) VALUES ('New history team', %s) RETURNING id", (new_member,))
+                    next_team = cursor.fetchone()['id']
+                    cursor.execute('UPDATE monev_bos_assignments SET team_id = %s WHERE school_id = %s AND period_id = %s', (next_team, school, periods[0]))
+                    self.assertTrue(queries.staff_can_view_report(replacement, report))
+                    self.assertFalse(queries.staff_can_audit_report(replacement, report))
+                    cursor.execute('DELETE FROM monev_bos_teams WHERE id IN (%s, %s)', (team_id, next_team))
+                    for user in [owner, member, replacement, new_member]:
+                        self.assertTrue(queries.staff_can_view_report(user, report))
+                        self.assertFalse(queries.staff_can_audit_report(user, report))
+                        self.assertIn(report, [row['id'] for row in queries.list_staff_report_history(user)])
+                    self.assertFalse(queries.staff_can_view_report(outsider, report))
+                    # No historical access leaks into future periods/reports.
+                    cursor.execute("INSERT INTO monev_bos_teams(name, leader_id) VALUES ('Future team', %s) RETURNING id", (new_member,))
+                    future_team = cursor.fetchone()['id']
+                    cursor.execute('INSERT INTO monev_bos_reports(school_id, period_id) VALUES (%s, %s) RETURNING id', (school, periods[1]))
+                    future_report = cursor.fetchone()['id']
+                    cursor.execute('INSERT INTO monev_bos_assignments(team_id, school_id, period_id) VALUES (%s, %s, %s)', (future_team, school, periods[1]))
+                    self.assertTrue(queries.staff_can_view_report(new_member, future_report))
+                    self.assertFalse(queries.staff_can_view_report(member, future_report))
+            finally:
+                cursor.connection.rollback()
+
     def test_revision_merge_history_and_rollback(self):
         from dashboard.db_access import get_cursor
         with get_cursor() as cursor:

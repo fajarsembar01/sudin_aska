@@ -895,8 +895,7 @@
         <div class="container-fluid px-lg-4">
             <a class="navbar-brand"
                 href="{% if current_user and current_user.role == 'admin' %}{{ url_for('portal.admin_stats')}}
-                {% elif current_user and current_user.role == 'staff' %}{{ url_for('portal.staff_assignments')}}
-                {% elif current_user and current_user.role == 'coordinator' %}{{ url_for('portal.coordinator_stats')}}
+                {% elif current_user and current_user.role in ['staff', 'coordinator'] %}{{ url_for('portal.assessment_modes')}}
                 {% elif current_user and current_user.role == 'sekolah' %}{{ url_for('portal.sekolah_rooms')}}
                 {% endif %}">
                 <span class="icon-badge brand-icon text-primary">
@@ -921,7 +920,20 @@
                     {% endif %}
 
                     {% if current_user and current_user.role in ['admin', 'staff', 'coordinator'] %}
-                    <li class="nav-item"><a class="nav-link {% if request.endpoint in ['portal.team_workspace', 'portal.team_assignment_settings'] %}active{% endif %}" href="{{ url_for('portal.team_workspace') }}"><i class="bi bi-people nav-icon"></i>Penilaian Tim</a></li>
+                    {% set individual_endpoint = 'portal.staff_assignments' if current_user.role == 'staff' else 'portal.coordinator_assessments' if current_user.role == 'coordinator' else 'portal.schools' %}
+                    {% set assessment_endpoints = ['portal.assessment_modes', 'portal.staff_assignments', 'portal.coordinator_assessments', 'portal.schools', 'portal.assess', 'portal.view_assessment', 'portal.team_workspace', 'portal.team_assignment_settings'] %}
+                    {% set viewing_team = request.endpoint in ['portal.team_workspace', 'portal.team_assignment_settings'] or request.args.get('mode') == 'team' or (assessment is defined and assessment and assessment.assessment_mode == 'team') %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle {% if request.endpoint in assessment_endpoints %}active{% endif %}"
+                            href="#" id="assessmentMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-list-check nav-icon"></i>Penilaian
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="assessmentMenu">
+                            <li><a class="dropdown-item {% if request.endpoint in assessment_endpoints and request.endpoint != 'portal.assessment_modes' and not viewing_team %}active{% endif %}" href="{{ url_for(individual_endpoint) }}"><i class="bi bi-person-check me-2"></i>Individu</a></li>
+                            <li><a class="dropdown-item {% if viewing_team %}active{% endif %}" href="{{ url_for('portal.team_workspace') }}"><i class="bi bi-people me-2"></i>Tim</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item"><a class="nav-link {% if request.endpoint == 'portal.staff_performance' %}active{% endif %}" href="{{ url_for('portal.staff_performance') }}"><i class="bi bi-activity nav-icon"></i>Performa Staff</a></li>
                     {% endif %}
 
                     {% if current_user and current_user.role == 'coordinator' %}
@@ -962,22 +974,12 @@
                         </ul>
                     </li>
 
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint in ['portal.coordinator_assessments', 'portal.assess', 'portal.view_assessment'] %}active{% endif %}"
-                            href="{{ url_for('portal.coordinator_assessments') }}">
-                            <i class="bi bi-list-check nav-icon"></i>Penilaian Saya
-                        </a>
-                    </li>
+
                     {% endif %}
 
                     {% if current_user and current_user.role == 'staff' %}
-                    <!-- Staff: Tugas Monev -->
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint in ['portal.staff_assignments', 'portal.assess', 'portal.view_assessment'] %}active{% endif %}"
-                            href="{{ url_for('portal.staff_assignments') }}">
-                            <i class="bi bi-list-check nav-icon"></i>Tugas Monev
-                        </a>
-                    </li>
+                    <!-- Staff: individual assessment assignments -->
+
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint in ['portal.staff_follow_ups', 'portal.follow_up_detail'] %}active{% endif %}"
                             href="{{ url_for('portal.staff_follow_ups') }}">
@@ -1009,12 +1011,7 @@
 
                     {% if current_user and current_user.role == 'admin' %}
                     <!-- Admin: PANBERSS assessment menu -->
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint in ['portal.schools', 'portal.assess', 'portal.view_assessment'] %}active{% endif %}"
-                            href="{{ url_for('portal.schools') }}">
-                            <i class="bi bi-list-check nav-icon"></i>Penilaian
-                        </a>
-                    </li>
+
                     <!-- Admin dropdown with new Kelola Staff -->
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle {% if ('admin' in request.endpoint and request.endpoint != 'portal.admin_stats') 

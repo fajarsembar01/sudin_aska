@@ -1,0 +1,71 @@
+{% extends 'portal/base_portal.html' %}
+{% block title %}Pilih Penilaian - Panberss{% endblock %}
+{% block head_extra %}
+<style>
+  body { min-height: 100dvh; height: 100dvh; display: flex; flex-direction: column; }
+  body > nav { flex-shrink: 0; }
+  main.container-fluid { padding-top: 0 !important; padding-bottom: 0 !important; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .mode-page { max-width: 1120px; width: 100%; margin: 0 auto; padding: 12px; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .mode-heading { margin: 16px 0 24px; }
+  .mode-heading .eyebrow { color: #43826d; font-size: .75rem; font-weight: 700; letter-spacing: .18em; }
+  .mode-heading h1 { font-size: clamp(1.8rem, 4vw, 2.6rem); font-weight: 700; margin: 10px 0; letter-spacing: -.04em; }
+  .mode-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; flex: 1; min-height: 0; max-height: 420px; }
+  .assessment-mode { position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: flex-start; min-height: 0; padding: 32px; border-radius: 24px; text-decoration: none; border: 1px solid #cce4d9; color: #153d32; background: linear-gradient(145deg, #effaf4, #dcefe5); transition: transform .18s, box-shadow .18s; }
+  .assessment-mode::after { content: ''; position: absolute; width: 200px; height: 200px; border: 32px solid currentColor; opacity: .04; border-radius: 50%; right: -65px; top: -65px; pointer-events: none; }
+  .assessment-mode.individual { color: #243e73; border-color: #d3def1; background: linear-gradient(145deg, #f0f5ff, #e1e9fa); }
+  .assessment-mode:hover { color: #153d32; transform: translateY(-3px); box-shadow: 0 12px 30px #163b3212; }
+  .assessment-mode.individual:hover { color: #243e73; }
+  .assessment-mode:focus-visible { outline: 3px solid #0d6efd; outline-offset: 4px; }
+  .mode-icon { display: grid; place-items: center; width: 64px; height: 64px; border-radius: 20px; background: #ffffffa6; font-size: 1.9rem; margin-bottom: 28px; }
+  .assessment-mode h2 { font-size: 1.55rem; font-weight: 700; letter-spacing: -.03em; }
+  .assessment-mode p { line-height: 1.7; max-width: 310px; opacity: .8; margin-bottom: 24px; }
+  .mode-action { display: flex; width: 100%; align-items: center; justify-content: space-between; margin-top: auto; padding-top: 18px; border-top: 1px solid #153d321c; font-size: .9rem; font-weight: 600; }
+  .mode-action i { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: #ffffffa6; }
+  html[data-theme="dark"] .assessment-mode { color: #d9f4e6; background: linear-gradient(145deg, #1c362f, #203e33); border-color: #36594a; }
+  html[data-theme="dark"] .assessment-mode.individual { color: #dce6ff; background: linear-gradient(145deg, #222f49, #293955); border-color: #3b4c6d; }
+  html[data-theme="dark"] .mode-icon, html[data-theme="dark"] .mode-action i { background: #ffffff12; }
+  html[data-theme="dark"] .mode-action { border-color: #ffffff20; }
+  @media (max-width: 767.98px) {
+    .mode-page { padding: 6px 0 max(12px, env(safe-area-inset-bottom)); }
+    .mode-heading { margin: 8px 0 16px; }
+    .mode-heading h1 { font-size: 1.65rem; margin: 6px 0; }
+    .mode-heading p { font-size: .82rem; }
+    .mode-grid { grid-template-columns: 1fr; grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 12px; max-height: none; }
+    .assessment-mode { min-height: 0; padding: clamp(12px, 2.5dvh, 22px); border-radius: 20px; }
+    .mode-icon { width: 40px; height: 40px; font-size: 1.3rem; margin-bottom: 10px; border-radius: 12px; flex-shrink: 0; }
+    .assessment-mode h2 { font-size: 1.35rem; }
+    .assessment-mode p { max-width: none; margin-bottom: 10px; font-size: .82rem; line-height: 1.45; }
+    .mode-action { padding-top: 10px; font-size: .8rem; }
+    .mode-action i { width: 26px; height: 26px; }
+  }
+  @media (max-height: 650px) {
+    .assessment-mode { min-height: 0; padding: 14px 20px; }
+    .mode-heading { margin: 4px 0 10px; }
+    .mode-heading h1 { font-size: 1.45rem; }
+    .mode-icon { position: absolute; right: 16px; top: 12px; width: 32px; height: 32px; font-size: 1.15rem; margin: 0; }
+    .assessment-mode h2 { font-size: 1.15rem; margin-bottom: 4px; padding-right: 40px; }
+    .assessment-mode p { font-size: .78rem; margin-bottom: 6px; }
+    .mode-action { padding-top: 6px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .assessment-mode { transition: none; } }
+</style>
+{% endblock %}
+{% block portal_content %}
+<div class="mode-page">
+  <header class="mode-heading">
+    <span class="eyebrow">PANBERSS</span>
+    <h1>Mulai penilaian Anda</h1>
+    <p class="text-muted mb-0">Bersama tim atau secara individu, pilih cara Anda menilai.</p>
+  </header>
+  <div class="mode-grid">
+    {% for card in cards %}
+    <a class="assessment-mode {{ 'individual' if loop.index == 2 else 'team' }}" href="{{ card.href }}">
+      <span class="mode-icon"><i class="bi {{ card.icon }}" aria-hidden="true"></i></span>
+      <h2>{{ card.title }}</h2>
+      <p>{{ card.description }}</p>
+      <span class="mode-action">{{ 'Buka penilaian tim' if loop.first else 'Buka penilaian individu' }}<i class="bi bi-arrow-right" aria-hidden="true"></i></span>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

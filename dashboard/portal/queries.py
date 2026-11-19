@@ -951,9 +951,13 @@ def save_assessment_score(
     aspect_id: int,
     score: int,
     notes: Optional[str] = None,
+    actor: Optional[dict] = None,
 ) -> bool:
     """Save or update a score for an aspect."""
     with get_cursor(commit=True) as cur:
+        cur.execute("SELECT id FROM portal_assessments WHERE id = %s FOR UPDATE", (assessment_id,))
+        cur.execute("SELECT score, notes FROM portal_assessment_scores WHERE assessment_id = %s AND school_room_id = %s AND aspect_id = %s", (assessment_id, school_room_id, aspect_id))
+        previous = cur.fetchone()
         cur.execute(
             """
             INSERT INTO portal_assessment_scores 
@@ -968,7 +972,11 @@ def save_assessment_score(
             """,
             (assessment_id, school_room_id, aspect_id, score, notes),
         )
-        return cur.fetchone() is not None
+        saved = cur.fetchone() is not None
+        if saved and actor and (not previous or previous["score"] != score or previous["notes"] != notes):
+            from .team_assessments import record_event
+            record_event(cur, assessment_id, school_room_id, f"score:{aspect_id}", actor["id"])
+        return saved
 
 
 def get_assessment_scores(assessment_id: int) -> List[Dict[str, Any]]:
@@ -1457,6 +1465,8 @@ def save_assessment_photo(
         )
         result = dict(cur.fetchone())
         team.record_photo_write(cur, assessment_id, school_room_id, version, actor)
+        if version is None and actor:
+            team.record_event(cur, assessment_id, school_room_id, "photo", actor["id"])
         return result
 
 
@@ -1488,9 +1498,13 @@ def save_room_details(
     assessment_id: int,
     school_room_id: int,
     notes: str,
+    actor: Optional[dict] = None,
 ) -> Dict[str, Any]:
     """Save or update room details (notes)."""
     with get_cursor(commit=True) as cur:
+        cur.execute("SELECT id FROM portal_assessments WHERE id = %s FOR UPDATE", (assessment_id,))
+        cur.execute("SELECT notes FROM portal_assessment_room_details WHERE assessment_id = %s AND school_room_id = %s", (assessment_id, school_room_id))
+        previous = cur.fetchone()
         cur.execute(
             """
             INSERT INTO portal_assessment_room_details 
@@ -1504,7 +1518,11 @@ def save_room_details(
             """,
             (assessment_id, school_room_id, notes),
         )
-        return dict(cur.fetchone())
+        result = dict(cur.fetchone())
+        if actor and (not previous or previous["notes"] != notes):
+            from .team_assessments import record_event
+            record_event(cur, assessment_id, school_room_id, "note", actor["id"])
+        return result
 
 
 def get_assessment_room_details(assessment_id: int) -> Dict[int, str]:
@@ -1615,12 +1633,7 @@ def submit_assessment(
                     return False
             except (TypeError, ValueError):
                 return False
-        score_scale_max = _normalize_score_scale_max(assessment.get("score_scale_max"))
-        default_score = (
-            PORTAL_NEW_SCORE_MIN
-            if score_scale_max == PORTAL_NEW_SCORE_SCALE_MAX
-            else PORTAL_LEGACY_SCORE_MIN
-        )
+        default_score = 0
 
         # 1. Drop scores for aspects that are no longer active/selected for this school room.
         cur.execute(
@@ -1651,7 +1664,7 @@ def submit_assessment(
             (assessment_id, assessment_id),
         )
 
-        # 2. Fill missing scores with scale-aware default for active/selected aspects only.
+        # 2. Unfilled active/selected aspects contribute zero to the final average.
         cur.execute(
             """
             INSERT INTO portal_assessment_scores (assessment_id, school_room_id, aspect_id, score, created_at, updated_at)
@@ -1713,7 +1726,7 @@ def submit_assessment(
             (avg_score, final_period_id, (actor or {}).get("id"), assessment_id, expected_staff_id, expected_staff_id),
         )
         submitted = cur.fetchone() is not None
-        if submitted and assessment.get("assessment_mode") == "team":
+        if submitted and actor:
             from . import team_assessments as team
             team.record_event(cur, assessment_id, None, 'submit', actor['id'])
         return submitted
@@ -3847,7 +3860,9 @@ def delete_photo(photo_id: int, assessment_id: int, school_room_id: int, actor=N
         )
         removed = cur.fetchone() is not None
         if removed:
-            team.record_photo_write(cur, assessment_id, school_room_id, version, actor)
+            team.record_photo_write(cur, assessment_id, school_room_id, version, actor, field="photo_delete")
+            if version is None and actor:
+                team.record_event(cur, assessment_id, school_room_id, "photo_delete", actor["id"])
         return removed
 
 
