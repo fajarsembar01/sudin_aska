@@ -199,8 +199,42 @@ def state(assessment_id, user, client_id=None, room_id=None):
         presence = [dict(r) for r in cur.fetchall()]
         cur.execute('SELECT id, school_room_id, photo_path, captured_at, latitude, longitude FROM portal_assessment_photos WHERE assessment_id = %s ORDER BY captured_at DESC NULLS LAST', (assessment_id,))
         photos = [dict(r) for r in cur.fetchall()]
+        # A room is complete when every required (or explicitly selected) active
+        # aspect has a score. The latest score editor is the attribution source;
+        # merely opening a room only updates presence.
+        cur.execute("""SELECT sr.id AS school_room_id, r.name AS room_name,
+                COALESCE(required.total, 0) AS required_count,
+                COALESCE(required.total, 0) - COALESCE(scored.total, 0) AS remaining,
+                editor.editor_name AS last_editor
+            FROM portal_school_rooms sr JOIN portal_rooms r ON r.id = sr.room_id
+            LEFT JOIN LATERAL (
+                SELECT COUNT(*) AS total FROM portal_aspects a
+                WHERE a.room_id = sr.room_id AND a.active = TRUE
+                  AND (a.is_required = TRUE OR EXISTS (
+                    SELECT 1 FROM portal_school_room_aspects selected
+                    WHERE selected.school_room_id = sr.id AND selected.aspect_id = a.id))
+            ) required ON TRUE
+            LEFT JOIN LATERAL (
+                SELECT COUNT(*) AS total FROM portal_assessment_scores s
+                JOIN portal_aspects a ON a.id = s.aspect_id AND a.active = TRUE
+                WHERE s.assessment_id = %s AND s.school_room_id = sr.id
+                  AND (a.is_required = TRUE OR EXISTS (
+                    SELECT 1 FROM portal_school_room_aspects selected
+                    WHERE selected.school_room_id = sr.id AND selected.aspect_id = a.id))
+            ) scored ON TRUE
+            LEFT JOIN LATERAL (
+                SELECT u.full_name AS editor_name FROM portal_assessment_team_events e
+                JOIN dashboard_users u ON u.id = e.user_id
+                WHERE e.assessment_id = %s AND e.school_room_id = sr.id
+                  AND e.field_key LIKE 'score:%%'
+                ORDER BY e.created_at DESC, e.id DESC LIMIT 1
+            ) editor ON TRUE
+            WHERE sr.school_id = %s AND r.active = TRUE""",
+            (assessment_id, assessment_id, assessment['school_id']))
+        room_status = [dict(r) for r in cur.fetchall()]
         return {'status': assessment['status'], 'scores': scores, 'notes': notes,
-                'versions': versions, 'presence': presence, 'photos': photos}
+                'versions': versions, 'presence': presence, 'photos': photos,
+                'room_status': room_status}
 
 
 def record_event(cur, assessment_id, room_id, field, user_id):
