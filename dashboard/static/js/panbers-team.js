@@ -62,9 +62,16 @@
       });
       document.querySelectorAll('.team-room-presence').forEach(label => {
         const names = [...new Set(snapshot.presence.filter(p => p.school_room_id === Number(label.dataset.roomId) && p.user_id !== config.userId).map(p => p.name))];
-        label.textContent = names.join(', ');
-        label.setAttribute('aria-label', names.length ? `${names.join(', ')} sedang mengisi` : '');
-        label.setAttribute('title', names.length ? `${names.join(', ')} sedang mengisi` : '');
+        label.textContent = names.length ? `${names.join(', ')} sedang menilai` : '';
+        label.setAttribute('aria-label', names.length ? `${names.join(', ')} sedang menilai` : '');
+        label.setAttribute('title', names.length ? `${names.join(', ')} sedang menilai` : '');
+      });
+      (snapshot.room_status || []).forEach(room => {
+        const label = document.querySelector(`.team-room-status[data-room-id="${room.school_room_id}"]`);
+        if (!label) return;
+        if (!room.last_editor) label.textContent = 'Belum pernah dinilai';
+        else if (Number(room.remaining) === 0) label.textContent = `Sudah dinilai oleh : ${room.last_editor}`;
+        else label.textContent = `Terakhir dinilai oleh : ${room.last_editor} (${room.remaining} aspek belum dinilai)`;
       });
       if (config.onPhotos) config.onPhotos(snapshot.photos);
       if (window.updateAssessmentAllGroups) window.updateAssessmentAllGroups();
