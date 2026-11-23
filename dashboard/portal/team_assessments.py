@@ -197,10 +197,18 @@ def state(assessment_id, user, client_id=None, room_id=None):
         cur.execute("""SELECT p.school_room_id, p.user_id, u.full_name AS name FROM portal_assessment_presence p
             JOIN dashboard_users u ON u.id = p.user_id WHERE p.assessment_id = %s""", (assessment_id,))
         presence = [dict(r) for r in cur.fetchall()]
+        cur.execute("""SELECT DISTINCT ON (e.school_room_id) e.school_room_id, e.user_id,
+                   u.full_name AS name
+            FROM portal_assessment_team_events e
+            LEFT JOIN dashboard_users u ON u.id = e.user_id
+            WHERE e.assessment_id = %s AND e.field_key <> 'photo'
+            ORDER BY e.school_room_id, e.created_at DESC, e.id DESC""", (assessment_id,))
+        room_verifiers = [dict(r) for r in cur.fetchall()]
         cur.execute('SELECT id, school_room_id, photo_path, captured_at, latitude, longitude FROM portal_assessment_photos WHERE assessment_id = %s ORDER BY captured_at DESC NULLS LAST', (assessment_id,))
         photos = [dict(r) for r in cur.fetchall()]
         return {'status': assessment['status'], 'scores': scores, 'notes': notes,
-                'versions': versions, 'presence': presence, 'photos': photos}
+                'versions': versions, 'presence': presence, 'room_verifiers': room_verifiers,
+                'photos': photos}
 
 
 def record_event(cur, assessment_id, room_id, field, user_id):
