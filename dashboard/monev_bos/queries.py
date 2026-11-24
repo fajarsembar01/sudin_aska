@@ -329,11 +329,11 @@ def list_recent_period_reports(period_id: Optional[int], limit: int = 6) -> List
                    r.bosp_receipt_amount,
                    r.bop_receipt_amount,
                    COALESCE(school.name, school_user.full_name) AS school_name,
-                   team.name AS team_name,
-                   COUNT(activity.id) AS total_activities,
-                   COUNT(activity.id) FILTER (WHERE activity.status IN ('valid', 'invalid')) AS audited_activities,
-                   COALESCE(SUM(activity.realized_amount) FILTER (WHERE activity.fund_source = 'BOS'), 0) AS bos_realized,
-                   COALESCE(SUM(activity.realized_amount) FILTER (WHERE activity.fund_source = 'BOP'), 0) AS bop_realized
+                   team.team_name,
+                   activity.total_activities,
+                   activity.audited_activities,
+                   activity.bos_realized,
+                   activity.bop_realized
             FROM monev_bos_reports r
             JOIN monev_bos_periods period ON period.id = r.period_id
             JOIN dashboard_users school_user ON school_user.id = r.school_id
@@ -344,12 +344,20 @@ def list_recent_period_reports(period_id: Optional[int], limit: int = 6) -> List
                 ORDER BY CASE WHEN portal_school.id = school_user.school_id THEN 0 ELSE 1 END
                 LIMIT 1
             ) school ON TRUE
-            LEFT JOIN monev_bos_assignments assignment
-                   ON assignment.school_id = r.school_id AND assignment.period_id = r.period_id
-            LEFT JOIN monev_bos_teams team ON team.id = assignment.team_id
-            LEFT JOIN monev_bos_activities activity ON activity.report_id = r.id
+            LEFT JOIN LATERAL (
+                SELECT STRING_AGG(DISTINCT assigned_team.name, ', ' ORDER BY assigned_team.name) AS team_name
+                FROM monev_bos_assignments assigned
+                JOIN monev_bos_teams assigned_team ON assigned_team.id = assigned.team_id
+                WHERE assigned.school_id = r.school_id AND assigned.period_id = r.period_id
+            ) team ON TRUE
+            LEFT JOIN LATERAL (
+                SELECT COUNT(activity.id) AS total_activities,
+                       COUNT(activity.id) FILTER (WHERE activity.status IN ('valid', 'invalid')) AS audited_activities,
+                       COALESCE(SUM(activity.realized_amount) FILTER (WHERE activity.fund_source = 'BOS'), 0) AS bos_realized,
+                       COALESCE(SUM(activity.realized_amount) FILTER (WHERE activity.fund_source = 'BOP'), 0) AS bop_realized
+                FROM monev_bos_activities activity WHERE activity.report_id = r.id
+            ) activity ON TRUE
             {period_filter}
-            GROUP BY r.id, period.year, period.tw, school.name, school_user.full_name, team.name
             ORDER BY r.updated_at DESC, r.id DESC
             LIMIT %s
             """,
@@ -379,9 +387,9 @@ def list_admin_period_school_analytics(period_id: Optional[int]) -> List[Dict[st
                    period.tw AS period_tw,
                    COALESCE(school.name, school_user.full_name) AS school_name,
                    school.npsn,
-                   assignment.id IS NOT NULL AS is_assigned,
-                   team.id AS team_id,
-                   team.name AS team_name,
+                   COALESCE(assignment.is_assigned, FALSE) AS is_assigned,
+                   assignment.team_ids,
+                   assignment.team_name,
                    report.id AS report_id,
                    report.status AS report_status,
                    report.bosp_receipt_amount,
@@ -406,9 +414,15 @@ def list_admin_period_school_analytics(period_id: Optional[int]) -> List[Dict[st
                 ORDER BY CASE WHEN portal_school.id = school_user.school_id THEN 0 ELSE 1 END
                 LIMIT 1
             ) school ON TRUE
-            LEFT JOIN monev_bos_assignments assignment
-                   ON assignment.school_id = scope.school_id AND assignment.period_id = scope.period_id
-            LEFT JOIN monev_bos_teams team ON team.id = assignment.team_id
+            LEFT JOIN LATERAL (
+                SELECT TRUE AS is_assigned,
+                       ARRAY_AGG(DISTINCT assigned_team.id) AS team_ids,
+                       STRING_AGG(DISTINCT assigned_team.name, ', ' ORDER BY assigned_team.name) AS team_name
+                FROM monev_bos_assignments assigned
+                JOIN monev_bos_teams assigned_team ON assigned_team.id = assigned.team_id
+                WHERE assigned.school_id = scope.school_id
+                  AND assigned.period_id = scope.period_id
+            ) assignment ON TRUE
             LEFT JOIN monev_bos_reports report
                    ON report.school_id = scope.school_id AND report.period_id = scope.period_id
             LEFT JOIN LATERAL (
@@ -446,26 +460,33 @@ def list_admin_team_performance(period_id: Optional[int]) -> List[Dict[str, Any]
                    COUNT(DISTINCT report.id) FILTER (WHERE report.status IN ('submitted', 'in_review')) AS review_queue,
                    COUNT(DISTINCT report.id) FILTER (WHERE report.status IN ('completed', 'completed_with_notes')) AS completed_reports,
                    COUNT(DISTINCT report.id) FILTER (WHERE report.status = 'needs_revision') AS revision_reports,
-                   COUNT(activity.id) AS total_activities,
-                   COUNT(activity.id) FILTER (WHERE activity.status IN ('valid', 'invalid')) AS audited_activities,
-                   COUNT(activity.id) FILTER (WHERE activity.status = 'valid') AS valid_activities,
-                   COUNT(activity.id) FILTER (WHERE activity.status = 'invalid') AS invalid_activities,
-                   COUNT(activity.id) FILTER (WHERE activity.status = 'pending') AS pending_activities,
-                   COUNT(activity.id) FILTER (WHERE activity.status = 'in_review') AS in_review_activities,
-                   COUNT(activity.id) FILTER (
-                       WHERE activity.id IS NOT NULL
-                         AND (
-                             activity.status IS NULL
-                             OR activity.status NOT IN ('valid', 'invalid', 'pending', 'in_review')
-                         )
-                   ) AS other_activities
+                   SUM(COALESCE(metrics.total_activities, 0)) AS total_activities,
+                   SUM(COALESCE(metrics.audited_activities, 0)) AS audited_activities,
+                   SUM(COALESCE(metrics.valid_activities, 0)) AS valid_activities,
+                   SUM(COALESCE(metrics.invalid_activities, 0)) AS invalid_activities,
+                   SUM(COALESCE(metrics.pending_activities, 0)) AS pending_activities,
+                   SUM(COALESCE(metrics.in_review_activities, 0)) AS in_review_activities,
+                   SUM(COALESCE(metrics.other_activities, 0)) AS other_activities
             FROM monev_bos_teams team
             LEFT JOIN dashboard_users leader ON leader.id = team.leader_id
             LEFT JOIN monev_bos_assignments assignment
                    ON assignment.team_id = team.id {assignment_period_filter}
             LEFT JOIN monev_bos_reports report
                    ON report.school_id = assignment.school_id AND report.period_id = assignment.period_id
-            LEFT JOIN monev_bos_activities activity ON activity.report_id = report.id
+            LEFT JOIN LATERAL (
+                SELECT COUNT(activity.id) AS total_activities,
+                       COUNT(activity.id) FILTER (WHERE activity.status IN ('valid', 'invalid')) AS audited_activities,
+                       COUNT(activity.id) FILTER (WHERE activity.status = 'valid') AS valid_activities,
+                       COUNT(activity.id) FILTER (WHERE activity.status = 'invalid') AS invalid_activities,
+                       COUNT(activity.id) FILTER (WHERE activity.status = 'pending') AS pending_activities,
+                       COUNT(activity.id) FILTER (WHERE activity.status = 'in_review') AS in_review_activities,
+                       COUNT(activity.id) FILTER (
+                           WHERE activity.id IS NOT NULL
+                             AND (activity.status IS NULL OR activity.status NOT IN ('valid', 'invalid', 'pending', 'in_review'))
+                       ) AS other_activities
+                FROM monev_bos_activities activity
+                WHERE activity.report_id = report.id
+            ) metrics ON TRUE
             GROUP BY team.id, leader.full_name
             HAVING COUNT(DISTINCT assignment.school_id) > 0
             ORDER BY LOWER(team.name) ASC, team.id ASC
@@ -499,18 +520,12 @@ def list_team_period_performance(
                    COUNT(DISTINCT report.id) FILTER (WHERE report.status IN ('submitted', 'in_review')) AS review_queue,
                    COUNT(DISTINCT report.id) FILTER (WHERE report.status IN ('completed', 'completed_with_notes')) AS completed_reports,
                    COUNT(DISTINCT report.id) FILTER (WHERE report.status = 'needs_revision') AS revision_reports,
-                   COUNT(activity.id) AS total_activities,
-                   COUNT(activity.id) FILTER (WHERE activity.status = 'valid') AS valid_activities,
-                   COUNT(activity.id) FILTER (WHERE activity.status = 'invalid') AS invalid_activities,
-                   COUNT(activity.id) FILTER (WHERE activity.status = 'pending') AS pending_activities,
-                   COUNT(activity.id) FILTER (WHERE activity.status = 'in_review') AS in_review_activities,
-                   COUNT(activity.id) FILTER (
-                       WHERE activity.id IS NOT NULL
-                         AND (
-                             activity.status IS NULL
-                             OR activity.status NOT IN ('valid', 'invalid', 'pending', 'in_review')
-                         )
-                   ) AS other_activities
+                    MAX(COALESCE(metrics.total_activities, 0)) AS total_activities,
+                    MAX(COALESCE(metrics.valid_activities, 0)) AS valid_activities,
+                    MAX(COALESCE(metrics.invalid_activities, 0)) AS invalid_activities,
+                    MAX(COALESCE(metrics.pending_activities, 0)) AS pending_activities,
+                    MAX(COALESCE(metrics.in_review_activities, 0)) AS in_review_activities,
+                    MAX(COALESCE(metrics.other_activities, 0)) AS other_activities
             FROM monev_bos_periods period
             CROSS JOIN monev_bos_teams team
             LEFT JOIN dashboard_users leader ON leader.id = team.leader_id
@@ -518,7 +533,18 @@ def list_team_period_performance(
                    ON assignment.team_id = team.id AND assignment.period_id = period.id
             LEFT JOIN monev_bos_reports report
                    ON report.school_id = assignment.school_id AND report.period_id = period.id
-            LEFT JOIN monev_bos_activities activity ON activity.report_id = report.id
+            LEFT JOIN LATERAL (
+                SELECT COUNT(activity.id) AS total_activities,
+                       COUNT(activity.id) FILTER (WHERE activity.status = 'valid') AS valid_activities,
+                       COUNT(activity.id) FILTER (WHERE activity.status = 'invalid') AS invalid_activities,
+                       COUNT(activity.id) FILTER (WHERE activity.status = 'pending') AS pending_activities,
+                       COUNT(activity.id) FILTER (WHERE activity.status = 'in_review') AS in_review_activities,
+                       COUNT(activity.id) FILTER (
+                           WHERE activity.id IS NOT NULL
+                             AND (activity.status IS NULL OR activity.status NOT IN ('valid', 'invalid', 'pending', 'in_review'))
+                       ) AS other_activities
+                FROM monev_bos_activities activity WHERE activity.report_id = report.id
+            ) metrics ON TRUE
             WHERE team.id = %s
               {period_filter}
             GROUP BY period.id, team.id, leader.full_name
@@ -565,8 +591,8 @@ def list_admin_activity_photos(
                period.tw AS period_tw,
                COALESCE(school.name, school_user.full_name) AS school_name,
                school.npsn,
-               team.id AS team_id,
-               team.name AS team_name,
+               team.team_ids,
+               team.team_name,
                uploader.full_name AS uploader_name,
                auditor.full_name AS photo_auditor_name
         FROM monev_bos_activity_docs photo
@@ -581,9 +607,14 @@ def list_admin_activity_photos(
             ORDER BY CASE WHEN portal_school.id = school_user.school_id THEN 0 ELSE 1 END
             LIMIT 1
         ) school ON TRUE
-        LEFT JOIN monev_bos_assignments assignment
-               ON assignment.school_id = report.school_id AND assignment.period_id = report.period_id
-        LEFT JOIN monev_bos_teams team ON team.id = assignment.team_id
+        LEFT JOIN LATERAL (
+            SELECT ARRAY_AGG(DISTINCT assigned.team_id) AS team_ids,
+                   STRING_AGG(DISTINCT assigned_team.name, ', ' ORDER BY assigned_team.name) AS team_name
+            FROM monev_bos_assignments assigned
+            JOIN monev_bos_teams assigned_team ON assigned_team.id = assigned.team_id
+            WHERE assigned.school_id = report.school_id
+              AND assigned.period_id = report.period_id
+        ) team ON TRUE
         LEFT JOIN dashboard_users uploader ON uploader.id = photo.uploaded_by
         LEFT JOIN dashboard_users auditor ON auditor.id = photo.photo_audited_by
         WHERE photo.doc_type IN ('field_photo', 'live_photo')
@@ -593,7 +624,7 @@ def list_admin_activity_photos(
         query += " AND report.period_id = %s"
         params.append(period_id)
     if team_id:
-        query += " AND team.id = %s"
+        query += " AND %s = ANY(team.team_ids)"
         params.append(team_id)
     if fund_source in ("BOS", "BOP"):
         query += " AND activity.fund_source = %s"
@@ -879,7 +910,7 @@ def assign_team_to_school(team_id: int, school_id: int, period_id: int) -> None:
             """
             INSERT INTO monev_bos_assignments (team_id, school_id, period_id)
             VALUES (%s, %s, %s)
-            ON CONFLICT (school_id, period_id) DO UPDATE SET team_id = EXCLUDED.team_id
+            ON CONFLICT (team_id, school_id, period_id) DO NOTHING
             """,
             (team_id, school_id, period_id)
         )
@@ -899,7 +930,7 @@ def copy_all_assignments_between_periods(source_period_id: int, target_period_id
             SELECT team_id, school_id, %s
             FROM monev_bos_assignments
             WHERE period_id = %s
-            ON CONFLICT (school_id, period_id) DO NOTHING
+            ON CONFLICT (team_id, school_id, period_id) DO NOTHING
             RETURNING id
             """,
             (target_period_id, source_period_id),
@@ -2007,19 +2038,20 @@ def staff_can_audit_report(staff_id: int, report_id: int) -> bool:
             SELECT EXISTS (
                 SELECT 1
                 FROM monev_bos_reports r
-                JOIN monev_bos_assignments a
-                  ON a.school_id = r.school_id
-                 AND a.period_id = r.period_id
-                JOIN monev_bos_teams t ON t.id = a.team_id
                 WHERE r.id = %s
-                  AND (
-                      t.leader_id = %s
-                      OR EXISTS (
-                          SELECT 1
-                          FROM monev_bos_team_members tm
-                          WHERE tm.team_id = a.team_id
-                            AND tm.staff_id = %s
-                      )
+                  AND EXISTS (
+                      SELECT 1
+                      FROM monev_bos_assignments a
+                      JOIN monev_bos_teams t ON t.id = a.team_id
+                      WHERE a.school_id = r.school_id
+                        AND a.period_id = r.period_id
+                        AND (
+                            t.leader_id = %s
+                            OR EXISTS (
+                                SELECT 1 FROM monev_bos_team_members tm
+                                WHERE tm.team_id = a.team_id AND tm.staff_id = %s
+                            )
+                        )
                   )
             ) AS allowed
             """,
@@ -2092,7 +2124,7 @@ def get_schools_for_team(team_id: int, period_id: int) -> List[Dict[str, Any]]:
     with get_cursor() as cur:
         cur.execute(
             """
-            SELECT s.id as school_id, s.full_name as school_name, s.email as school_email,
+            SELECT DISTINCT s.id as school_id, s.full_name as school_name, s.email as school_email,
                    COALESCE(
                        NULLIF(TRIM(s.whatsapp_number), ''),
                        NULLIF(TRIM(s.phone), ''),
@@ -2171,13 +2203,14 @@ def get_auditor_staff_wa_for_report(report_id: int, school_id: int, period_id: i
         if not staff_row:
             cur.execute(
                 """
-                SELECT u.id, u.full_name, COALESCE(u.whatsapp_number, u.phone) as phone
+                SELECT DISTINCT u.id, u.full_name, COALESCE(u.whatsapp_number, u.phone) as phone
                 FROM monev_bos_assignments ass
                 JOIN monev_bos_team_members tm ON ass.team_id = tm.team_id
                 JOIN dashboard_users u ON tm.staff_id = u.id
                 WHERE ass.school_id = %s AND ass.period_id = %s
                   AND COALESCE(u.whatsapp_number, u.phone) IS NOT NULL
                   AND COALESCE(u.whatsapp_number, u.phone) <> ''
+                ORDER BY u.full_name ASC
                 LIMIT 1
                 """,
                 (school_id, period_id)
@@ -3887,7 +3920,7 @@ def delete_account_code(account_code_id: int) -> None:
 
 
 def get_assigned_auditors_for_school(school_id: int, period_id: int) -> Dict[str, Any]:
-    """Return assigned team info and verifier members (including the team leader)."""
+    """Return all assigned teams and verifier members (including team leaders)."""
     with get_cursor() as cur:
         cur.execute(
             """
@@ -3930,8 +3963,9 @@ def get_assigned_auditors_for_school(school_id: int, period_id: int) -> Dict[str
                 }
             return {"team_name": None, "members": []}
 
+        team_names = list(dict.fromkeys(r["team_name"] for r in rows if r.get("team_name")))
         return {
-            "team_name": rows[0]["team_name"],
+            "team_name": ", ".join(team_names),
             "members": [dict(r) for r in rows]
         }
 
