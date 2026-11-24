@@ -2461,7 +2461,7 @@ CREATE TABLE IF NOT EXISTS monev_bos_assignments (
     school_id INTEGER NOT NULL REFERENCES dashboard_users(id) ON DELETE CASCADE,
     period_id INTEGER NOT NULL REFERENCES monev_bos_periods(id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    UNIQUE (school_id, period_id)
+    UNIQUE (team_id, school_id, period_id)
 );
 """
 
@@ -2843,6 +2843,10 @@ def ensure_monev_bos_schema() -> None:
         _MONEV_BOS_TEAMS_SQL,
         _MONEV_BOS_TEAM_MEMBERS_SQL,
         _MONEV_BOS_ASSIGNMENTS_SQL,
+        "ALTER TABLE monev_bos_assignments DROP CONSTRAINT IF EXISTS monev_bos_assignments_school_id_period_id_uniq;",
+        "ALTER TABLE monev_bos_assignments DROP INDEX IF EXISTS idx_monev_bos_assignments_school_period;",
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_monev_bos_assignments_team_school_period ON monev_bos_assignments (team_id, school_id, period_id);",
+        "CREATE INDEX IF NOT EXISTS idx_monev_bos_assignments_school_period ON monev_bos_assignments (school_id, period_id);",
         _MONEV_BOS_REPORTS_SQL,
         _MONEV_BOS_REPORTS_INDEX_SQL,
         "ALTER TABLE monev_bos_reports DROP CONSTRAINT IF EXISTS monev_bos_reports_status_check;",

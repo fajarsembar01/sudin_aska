@@ -465,7 +465,7 @@ def admin_analytics(metric):
 
     scoped_school_rows = [
         row for row in all_school_rows
-        if selected_team_id is None or row.get("team_id") == selected_team_id
+        if selected_team_id is None or selected_team_id in (row.get("team_ids") or [])
     ]
 
     def matches_metric(row):
@@ -500,6 +500,7 @@ def admin_analytics(metric):
         ]
 
     for row in all_school_rows:
+        row["team_id"] = (row.get("team_ids") or [None])[0]
         audited = int(row.get("valid_activities") or 0) + int(row.get("invalid_activities") or 0)
         total = int(row.get("total_activities") or 0)
         row["audited_activities"] = audited
@@ -566,7 +567,7 @@ def admin_activity_gallery():
 
     team_performance = queries.list_admin_team_performance(selected_period["id"])
     requested_team_id = request.args.get("team_id", type=int)
-    team_id = requested_team_id if any(
+    team_id = requested_team_id if requested_team_id and any(
         int(team["team_id"]) == requested_team_id for team in team_performance
     ) else None
     fund_source = (request.args.get("fund_source") or "").upper()
@@ -1041,7 +1042,7 @@ def admin_teams():
                         "success",
                     )
                 else:
-                    flash("Sekolah berhasil ditugaskan ke tim", "success")
+                    flash("Sekolah berhasil ditambahkan ke tim. Penugasan tim lain tetap tersimpan.", "success")
         elif action == "unassign":
             assignment_id = int(request.form.get("assignment_id"))
             queries.unassign_school(assignment_id)
