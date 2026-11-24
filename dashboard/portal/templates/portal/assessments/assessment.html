@@ -142,7 +142,7 @@
                         <div class="d-flex align-items-center gap-2">
                             <span class="room-score-badge {{ score_badge_class(room_pct) }}"
                                 id="roomScore{{ room.school_room_id }}">{{ '%.1f'|format(room_pct) }}</span>
-                            <div><h5 class="mb-0">{{ room.room_name }}</h5>{% if assessment.assessment_mode == 'team' %}<span class="team-room-presence small text-primary" data-room-id="{{ room.school_room_id }}"></span>{% endif %}</div>
+                            <div><h5 class="mb-0">{{ room.room_name }}</h5>{% if assessment.assessment_mode == 'team' %}<span class="team-room-presence small text-primary" data-room-id="{{ room.school_room_id }}"></span><span class="team-room-verifiers small text-primary" data-room-id="{{ room.school_room_id }}"></span>{% endif %}</div>
                         </div>
                         <div class="d-flex align-items-center gap-2 flex-shrink-0">
                         {% set has_room_photo = photos_map.get(room.school_room_id) %}
@@ -531,6 +531,8 @@
     .room-photo-check[hidden] { display: none; }
     .team-room-presence { display: inline-flex; align-items: center; gap: .3rem; font-size: .75rem; line-height: 1.3; }
     .team-room-presence:empty { display: none; }
+    .team-room-verifiers { display: inline-flex; align-items: center; gap: .3rem; font-size: .75rem; line-height: 1.3; }
+    .team-room-verifiers:empty { display: none; }
     .team-room-presence:not(:empty)::before {
         content: '\270E'; display: inline-block; font-size: 1rem; flex-shrink: 0;
         transform-origin: bottom left; animation: team-writing 1.2s ease-in-out infinite;

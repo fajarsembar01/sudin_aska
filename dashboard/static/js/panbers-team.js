@@ -66,6 +66,19 @@
         label.setAttribute('aria-label', names.length ? `${names.join(', ')} sedang mengisi` : '');
         label.setAttribute('title', names.length ? `${names.join(', ')} sedang mengisi` : '');
       });
+      document.querySelectorAll('.team-room-verifiers').forEach(label => {
+        const verifier = (snapshot.room_verifiers || [])
+          .find(person => person.school_room_id === Number(label.dataset.roomId));
+        label.replaceChildren();
+        if (!verifier) return;
+        const icon = document.createElement('i');
+        icon.className = 'bi bi-person-check me-1';
+        icon.setAttribute('aria-hidden', 'true');
+        const name = document.createElement('strong');
+        name.textContent = verifier.name || 'Pengguna dihapus';
+        label.append(icon, name);
+        label.setAttribute('aria-label', name.textContent);
+      });
       if (config.onPhotos) config.onPhotos(snapshot.photos);
       if (window.updateAssessmentAllGroups) window.updateAssessmentAllGroups();
       if (snapshot.status !== 'draft') {
