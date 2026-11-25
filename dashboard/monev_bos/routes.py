@@ -2910,9 +2910,17 @@ def sekolah_activities():
         or "Sekolah"
     )
 
+    report_notes = None
+    try:
+        report_notes = queries.get_report_notes(report["id"])
+    except Exception:
+        current_app.logger.exception("Failed to load Monev BOS report notes")
+        report_notes = {"content": "", "version": 0, "updated_at": None, "author_name": None}
+
     return render_template("monev_bos/sekolah/activities.html", 
                            active_period=active_period, 
                            report=report, 
+                           report_notes=report_notes,
                            activities=activities,
                            master_activities=master_activities,
                            school_story_posts=school_story_posts,

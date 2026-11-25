@@ -736,6 +736,18 @@
                 </div>
             </div>
 
+            {% if report_notes and report_notes.content and report_notes.content.strip() %}
+            <div class="print-overall-notes">
+                <div class="print-overall-notes-header">
+                    <strong>Catatan Keseluruhan Petugas Monev:</strong>
+                    {% if report_notes.author_name %}
+                    <span class="print-overall-notes-author">Oleh: {{ report_notes.author_name }}{% if report_notes.updated_at %} &middot; {% if report_notes.updated_at.strftime %}{{ report_notes.updated_at.strftime('%d/%m/%Y %H:%M') }}{% else %}{{ report_notes.updated_at }}{% endif %}{% endif %}</span>
+                    {% endif %}
+                </div>
+                <div class="print-overall-notes-content">{{ report_notes.content }}</div>
+            </div>
+            {% endif %}
+
             <!-- Tanda Tangan & Tim Verifikator Monev -->
             <div class="card border-0 shadow-sm mt-4 signature-section">
                 <div class="card-body p-4">
@@ -2840,6 +2852,31 @@ document.addEventListener('DOMContentLoaded', function () {
 .print-only {
     display: none !important;
 }
+.print-overall-notes {
+    margin-top: 1rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--bs-border-color, #dee2e6);
+    border-radius: 0.5rem;
+    background-color: var(--bs-tertiary-bg, #f8f9fa);
+    color: var(--bs-body-color, #212529);
+}
+.print-overall-notes-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 0.35rem;
+    font-size: 0.85rem;
+}
+.print-overall-notes-author {
+    font-size: 0.75rem;
+    color: var(--bs-secondary-color, #6c757d);
+}
+.print-overall-notes-content {
+    white-space: pre-wrap;
+    font-size: 0.825rem;
+    line-height: 1.45;
+}
 .activities-print-mode .activities-print-actions,
 .activities-print-mode .activities-print-actions * {
     display: none !important;
@@ -2973,6 +3010,38 @@ document.addEventListener('DOMContentLoaded', function () {
         margin-top: 2px;
         font-size: 7pt;
         color: #444 !important;
+    }
+    .print-overall-notes {
+        display: block !important;
+        margin: 4px 0 !important;
+        padding: 5px 8px !important;
+        border: 1px solid #777 !important;
+        border-radius: 4px;
+        color: #000 !important;
+        background: #f8fafc !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    }
+    .print-overall-notes-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 2px;
+        font-size: 8.5pt;
+    }
+    .print-overall-notes-author {
+        font-size: 7pt;
+        color: #444 !important;
+        font-weight: normal;
+    }
+    .print-overall-notes-content {
+        white-space: pre-wrap;
+        line-height: 1.35;
+        font-size: 8pt;
+        color: #111 !important;
     }
     .signature-section {
         margin-top: 6px !important;
