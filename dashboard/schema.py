@@ -1876,6 +1876,8 @@ def ensure_dashboard_schema() -> None:
         "ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS jabatan TEXT",
         "ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS degree_prefix TEXT",
         "ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS degree_suffix TEXT",
+        "ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS whatsapp_number TEXT",
+        "ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS phone TEXT",
         "ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS profile_photo_path TEXT",
         "ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS github_username TEXT",
         "ALTER TABLE dashboard_users ADD COLUMN IF NOT EXISTS github_author_email TEXT",
