@@ -52,16 +52,16 @@
         .staff-school-search .input-group-text,
         .staff-school-search .form-control { min-height: 30px; font-size: 0.68rem; }
         .staff-list-title { margin-bottom: 7px !important; font-size: 0.76rem; }
-        #schoolListContainer { --bs-gutter-y: 0.5rem; }
+        #schoolListContainer { --bs-gutter-y: 0.375rem; }
         .school-card-item {
-            min-height: 94px;
-            padding: 9px 10px !important;
+            min-height: 0;
+            padding: 7px 9px !important;
             border-radius: 7px;
             box-shadow: none !important;
         }
         .school-card-item[data-audit-href] { cursor: pointer; }
         .school-card-item[data-audit-href]:active { background: var(--bs-tertiary-bg) !important; }
-        .school-card-header { min-width: 0; margin-bottom: 7px !important; }
+        .school-card-header { min-width: 0; margin-bottom: 4px !important; }
         .school-card-identity { min-width: 0; }
         .school-name-text {
             overflow: hidden;
@@ -74,7 +74,7 @@
         .school-email { display: none !important; }
         .school-status-badge {
             max-width: 112px;
-            padding: 4px 6px !important;
+            padding: 3px 5px !important;
             overflow: hidden;
             font-size: 0.6rem !important;
             line-height: 1.1;
@@ -83,13 +83,17 @@
         }
         .school-card-bottom { display: flex; align-items: center; gap: 7px; }
         .school-progress {
+            display: flex;
+            align-items: center;
+            gap: 7px;
             flex: 1;
             min-width: 0;
             margin: 0 !important;
-            padding: 6px 7px !important;
+            padding: 4px 6px !important;
             border-radius: 5px !important;
         }
-        .school-progress-copy { margin-bottom: 4px !important; }
+        .school-progress-copy { flex: 0 0 auto; margin-bottom: 0 !important; }
+        .school-progress > .progress { flex: 1; min-width: 0; }
         .school-progress-label, .school-progress-suffix { display: none; }
         .school-progress-count { font-size: 0.65rem; }
         .school-actions {
@@ -105,8 +109,8 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 34px;
-            height: 34px;
+            width: 28px;
+            height: 28px;
             padding: 0 !important;
             border-radius: 6px;
         }
@@ -225,11 +229,21 @@
     </div>
 
     <!-- Lista Sekolah Penugasan (Cards Layout) -->
-    <h6 class="fw-bold mb-3 text-body staff-list-title">Daftar Sekolah & Status Verifikasi</h6>
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+        <h6 class="fw-bold mb-0 text-body staff-list-title">Daftar Sekolah & Status Verifikasi</h6>
+        <div class="d-flex align-items-center gap-2">
+            <label for="staffSchoolSort" class="text-body-secondary small">Urutan</label>
+            <select id="staffSchoolSort" class="form-select form-select-sm w-auto">
+                <option value="default" selected>Default</option>
+                <option value="activities_asc">Kegiatan: terkecil ke terbanyak</option>
+                <option value="activities_desc">Kegiatan: terbanyak ke terkecil</option>
+            </select>
+        </div>
+    </div>
 
     <div class="row g-3" id="schoolListContainer">
         {% for school in assigned_schools %}
-        <div class="col-12 col-md-6 school-card-wrapper">
+        <div class="col-12 col-md-6 school-card-wrapper" data-total-activities="{{ school.total_activities or 0 }}">
             <div class="card school-card-item bg-body border shadow-xs h-100 p-3"{% if school.report_id %} data-audit-href="{{ url_for('monev_bos.staff_audit_report', report_id=school.report_id) }}" data-school-name="{{ school.school_name }}"{% endif %}>
                 <div class="d-flex justify-content-between align-items-start gap-2 mb-2 school-card-header">
                     <div class="school-card-identity">
@@ -373,6 +387,23 @@ document.addEventListener('DOMContentLoaded', function () {
 
     syncMobileAuditCards();
     mobileQuery.addEventListener('change', syncMobileAuditCards);
+
+    const sortSelect = document.getElementById('staffSchoolSort');
+    const schoolList = document.getElementById('schoolListContainer');
+    const schoolCards = Array.from(document.querySelectorAll('.school-card-wrapper'));
+    const originalOrder = new Map(schoolCards.map((card, index) => [card, index]));
+    if (sortSelect && schoolList) {
+        sortSelect.addEventListener('change', function () {
+            const mode = this.value;
+            const sorted = schoolCards.slice().sort((left, right) => {
+                const originalDifference = originalOrder.get(left) - originalOrder.get(right);
+                if (mode === 'default') return originalDifference;
+                const difference = Number(left.dataset.totalActivities) - Number(right.dataset.totalActivities);
+                return (mode === 'activities_desc' ? -difference : difference) || originalDifference;
+            });
+            sorted.forEach(card => schoolList.appendChild(card));
+        });
+    }
 
     const searchInput = document.getElementById('staffSchoolSearch');
     if (!searchInput) return;

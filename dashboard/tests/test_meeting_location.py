@@ -53,6 +53,68 @@ class AttendanceRouteTests(unittest.TestCase):
     def post_attendance(self, **extra):
         return self.client.post(self.url, data={'action': 'save_attendance', 'meeting_id': 1, 'status_3': 'present', **extra})
 
+    def post_checkin(self, **extra):
+        return self.client.post(self.url + '/hadir', data={
+            'meeting_id': 1, 'latitude': '0.004', 'longitude': '0', **extra,
+        })
+
+    def test_autosave_only_saves_current_admin_and_preserves_documentation(self):
+        response = self.post_checkin(admin_user_id='4', status='absent', notulen='overwrite')
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json['success'])
+        self.assertEqual(response.json['recorded_time'], '08:00')
+        entries = self.save_admin_meeting_attendance.call_args.kwargs['entries']
+        self.assertEqual(entries, [{'admin_user_id': 3, 'attendance_status': 'present',
+                                   'notes': '', 'latitude': 0.004, 'longitude': 0.0}])
+        self.update_admin_meeting_documentation.assert_not_called()
+
+    def test_autosave_validates_location_on_server(self):
+        for point in ['', 'nan', '0.005']:
+            response = self.post_checkin(latitude=point)
+            self.assertEqual(response.status_code, 400)
+            self.assertFalse(response.json['success'])
+        self.save_admin_meeting_attendance.assert_not_called()
+
+    def test_autosave_rejects_closed_or_missing_meeting(self):
+        self._meeting_attendance_is_closed.return_value = True
+        self.assertEqual(self.post_checkin().status_code, 403)
+        self.get_admin_meeting.return_value = None
+        self.assertEqual(self.post_checkin().status_code, 404)
+        self.save_admin_meeting_attendance.assert_not_called()
+
+    def test_autosave_marks_late_on_server(self):
+        self.current_jakarta_time.return_value = datetime(2026, 11, 18, 8, 1)
+        self.assertEqual(self.post_checkin().json['status'], 'late')
+        entry = self.save_admin_meeting_attendance.call_args.kwargs['entries'][0]
+        self.assertEqual(entry['attendance_status'], 'late')
+
+    def test_repeated_checkin_preserves_saved_status_time_and_notes(self):
+        self.current_jakarta_time.return_value = datetime(2026, 11, 18, 9)
+        self.list_admin_meeting_attendance.return_value = [{
+            'admin_user_id': 3, 'attendance_status': 'present', 'notes': 'Existing note',
+            'recorded_at': datetime(2026, 11, 18, 1, tzinfo=timezone.utc),
+        }]
+        response = self.post_checkin()
+        self.assertEqual(response.json['status'], 'present')
+        self.assertEqual(response.json['recorded_time'], '08:00')
+        entry = self.save_admin_meeting_attendance.call_args.kwargs['entries'][0]
+        self.assertEqual(entry['notes'], 'Existing note')
+
+    def test_autosave_reports_failed_write(self):
+        self.save_admin_meeting_attendance.return_value = 0
+        response = self.post_checkin()
+        self.assertEqual(response.status_code, 409)
+        self.assertFalse(response.json['success'])
+
+    def test_autosave_requires_admin(self):
+        self.app.add_url_rule('/login', endpoint='auth.login', view_func=lambda: 'Login')
+        with self.client.session_transaction() as session:
+            session.clear()
+        response = self.post_checkin()
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('/login', response.location)
+        self.save_admin_meeting_attendance.assert_not_called()
+
     def test_direct_post_without_location_or_outside_is_rejected(self):
         for data in [{}, {'latitude_3': '0.005', 'longitude_3': '0'}, {'latitude_3': 'nan', 'longitude_3': '0'}]:
             self.assertEqual(self.post_attendance(**data).status_code, 302)

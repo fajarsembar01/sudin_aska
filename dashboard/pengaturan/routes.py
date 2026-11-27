@@ -37,7 +37,7 @@ from dashboard.queries import (
     record_admin_action,
 )
 from dashboard.telegram_notifications import send_test_notification
-from utils import current_jakarta_time
+from utils import current_jakarta_time, to_jakarta
 from .admin_performance_pdf import build_admin_performance_pdf
 from .github_performance import (
     DEFAULT_REPOSITORY,
@@ -252,6 +252,54 @@ def capture_meeting_photo() -> Response:
             "pengaturan.meeting_attendance_photo", filename=new_photo_path
         ),
     })
+
+
+@pengaturan_bp.route("/absensi-meeting/hadir", methods=["POST"])
+@role_required("admin")
+def autosave_meeting_attendance() -> Response:
+    """Check in only the authenticated admin without saving the rest of the form."""
+    user_id = int((current_user() or {})["id"])
+    meeting_id = request.form.get("meeting_id", type=int)
+    meeting = get_admin_meeting(meeting_id) if meeting_id else None
+    if not meeting:
+        return jsonify(success=False, message="Data meeting tidak ditemukan."), 404
+    if _meeting_attendance_is_closed(meeting):
+        return jsonify(success=False, message="Absensi telah ditutup."), 403
+    try:
+        lat, lng = validate_attendance_location(
+            meeting, request.form.get("latitude"), request.form.get("longitude")
+        )
+    except ValueError as exc:
+        return jsonify(success=False, message=str(exc)), 400
+
+    previous = next((row for row in list_admin_meeting_attendance(meeting_id)
+                     if int(row["admin_user_id"]) == user_id), {})
+    now = current_jakarta_time()
+    status = "present"
+    if meeting.get("meeting_date") and meeting.get("start_time"):
+        start = datetime.combine(meeting["meeting_date"], meeting["start_time"])
+        if now.replace(tzinfo=None) > start:
+            status = "late"
+    if previous.get("attendance_status") in {"present", "late"}:
+        status = previous["attendance_status"]
+    saved = save_admin_meeting_attendance(
+        meeting_id=meeting_id, recorded_by=user_id,
+        entries=[{"admin_user_id": user_id, "attendance_status": status,
+                  "notes": previous.get("notes") or "", "latitude": lat, "longitude": lng}],
+    )
+    if not saved:
+        return jsonify(success=False, message="Absensi gagal disimpan. Silakan coba lagi."), 409
+    record_admin_action(
+        user_id=user_id, feature_key="meeting_attendance", action="UPDATE",
+        target_type="MEETING_ATTENDANCE", target_id=meeting_id,
+        target_name=meeting["title"], metadata={"admin_count": 1, "autosave": True},
+    )
+    row = next((row for row in list_admin_meeting_attendance(meeting_id)
+                if int(row["admin_user_id"]) == user_id), {})
+    recorded_at = row.get("recorded_at") or now
+    return jsonify(success=True, status=status,
+                   recorded_time=to_jakarta(recorded_at).strftime("%H:%M"),
+                   message="Kehadiran otomatis tersimpan.")
 
 
 @pengaturan_bp.route("/absensi-meeting/notulen", methods=["POST"])

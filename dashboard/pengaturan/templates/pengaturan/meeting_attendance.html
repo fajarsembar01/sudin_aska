@@ -603,12 +603,27 @@
                 attendanceServerTime + performance.now() - attendanceClockStarted > meetingStartAt) {
               value = 'late';
             }
-            choice.querySelector(`[name="latitude_${id}"]`).value = position.coords.latitude;
-            choice.querySelector(`[name="longitude_${id}"]`).value = position.coords.longitude;
-            message.textContent = `Lokasi sesuai (${Math.round(distance)} m). ${value === 'late' ? 'Tetap dihitung hadir, ditandai terlambat. ' : ''}Klik Simpan Absensi untuk menyimpan.`;
+            message.textContent = 'Menyimpan kehadiran…';
+            const payload = new FormData();
+            payload.append('csrf_token', attendanceForm.querySelector('[name="csrf_token"]').value);
+            payload.append('meeting_id', attendanceForm.querySelector('[name="meeting_id"]').value);
+            payload.append('latitude', position.coords.latitude);
+            payload.append('longitude', position.coords.longitude);
+            const response = await fetch({{ url_for('pengaturan.autosave_meeting_attendance')|tojson }}, {
+              method: 'POST', body: payload, headers: {'Accept': 'application/json'}
+            });
+            const result = await response.json().catch(() => null);
+            if (!response.ok || !result || !result.success)
+              throw new Error(result && result.message || 'Kehadiran gagal disimpan. Silakan coba lagi.');
+            value = result.status;
+            present.dataset.recordedTime = result.recorded_time;
+            // Already saved: a later manual save must retain the check-in time and status.
+            choice.querySelector(`[name="latitude_${id}"]`).value = '';
+            choice.querySelector(`[name="longitude_${id}"]`).value = '';
+            message.textContent = `Kehadiran otomatis tersimpan (${result.recorded_time} WIB).${value === 'late' ? ' Tetap dihitung hadir, ditandai terlambat.' : ''}`;
             message.classList.add('text-success');
           } catch (error) {
-            message.textContent = error.message;
+            message.textContent = `${error.message} Kehadiran belum dikonfirmasi. Klik Hadir untuk mencoba lagi.`;
             message.classList.add('text-danger');
             return;
           } finally {
