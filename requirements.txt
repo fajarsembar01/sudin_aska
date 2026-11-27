@@ -32,6 +32,7 @@ pillow-heif>=0.15.0
 pypdf>=5.0.0
 qrcode==7.4.2
 openpyxl==3.1.5
+tzdata; platform_system == "Windows"
 
 # Social integrations
 tweepy==4.14.0
