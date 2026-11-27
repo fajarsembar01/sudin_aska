@@ -260,10 +260,45 @@
         .bulk-check-detail {
             height: 100%;
             overflow-y: auto;
-            padding: 14px;
+            padding: 40px 14px 14px;
             background: var(--bs-body-bg);
             color: var(--bs-body-color);
             user-select: text;
+        }
+        .bulk-check-photo-gallery {
+            display: flex;
+            height: 100%;
+            overflow-y: auto;
+            flex-direction: column;
+            gap: 10px;
+            padding: 42px 10px 12px;
+            background: #101318;
+        }
+        .bulk-check-photo-card {
+            position: relative;
+            flex-shrink: 0;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 10px;
+            background: #181d26;
+        }
+        .bulk-check-photo-card img {
+            display: block;
+            width: 100%;
+            height: auto;
+            max-height: 280px;
+            object-fit: contain;
+            background: #101318;
+            cursor: pointer;
+        }
+        .bulk-check-photo-caption {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 6px 10px;
+            color: #e2e8f0;
+            font-size: 0.68rem;
         }
         .bulk-check-detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
         .bulk-check-detail-item { padding: 9px; border: 1px solid var(--bs-border-color); border-radius: 8px; background: var(--bs-tertiary-bg); }
@@ -1513,14 +1548,14 @@
          data-vendor-missing="{{ 'true' if act.vendor_required_missing else 'false' }}"
          data-can-valid="{{ 'false' if act.vendor_verification_blocked else 'true' }}"
          data-action-url="{{ url_for('monev_bos.staff_audit_activity', activity_id=act.id) }}">
+        <span data-bulk-media data-kind="document" data-doc-type="invoice" data-url="{% if act.docs.get('invoice') %}/{{ act.docs['invoice'].file_path }}{% endif %}" data-label="Faktur & Kwitansi"></span>
+        <span data-bulk-media data-kind="document" data-doc-type="transfer" data-url="{% if act.docs.get('transfer') %}/{{ act.docs['transfer'].file_path }}{% endif %}" data-label="Bukti Transfer"></span>
         {% for photo in act.school_photos %}
-        <span data-bulk-media data-kind="image" data-url="/{{ photo.file_path }}" data-label="Foto Sekolah{% if not photo.is_audit_valid %} · Tidak Sah{% endif %}" data-invalid="{{ 'true' if not photo.is_audit_valid else 'false' }}"></span>
+        <span data-bulk-school-photo data-url="/{{ photo.file_path }}" data-label="Foto Barang{% if not photo.is_audit_valid %} · Tidak Sah{% endif %}" data-invalid="{{ 'true' if not photo.is_audit_valid else 'false' }}"></span>
         {% endfor %}
         {% for photo in act.staff_photos %}
-        <span data-bulk-media data-kind="image" data-url="/{{ photo.file_path }}" data-label="Foto Staff" data-invalid="false"></span>
+        <span data-bulk-staff-photo data-url="/{{ photo.file_path }}" data-label="Foto Staff" data-invalid="false"></span>
         {% endfor %}
-        <span data-bulk-media data-kind="document" data-url="{% if act.docs.get('invoice') %}/{{ act.docs['invoice'].file_path }}{% endif %}" data-label="Faktur & Kwitansi"></span>
-        <span data-bulk-media data-kind="document" data-url="{% if act.docs.get('transfer') %}/{{ act.docs['transfer'].file_path }}{% endif %}" data-label="Bukti Transfer"></span>
     </div>
     {% endfor %}
 </div>
@@ -2231,15 +2266,46 @@
 
         const sourceElements = Array.from(document.querySelectorAll('.bulk-activity-source'));
         const allActivities = sourceElements.map(function (source) {
-            const media = Array.from(source.querySelectorAll('[data-bulk-media]')).map(function (item) {
+            const invoiceEl = source.querySelector('[data-bulk-media][data-doc-type="invoice"]');
+            const transferEl = source.querySelector('[data-bulk-media][data-doc-type="transfer"]');
+            const schoolPhotos = Array.from(source.querySelectorAll('[data-bulk-school-photo]')).map(function (item) {
                 return {
-                    kind: item.dataset.kind,
                     url: item.dataset.url || '',
-                    label: item.dataset.label || 'Media',
+                    label: item.dataset.label || 'Foto Barang',
                     invalid: item.dataset.invalid === 'true'
                 };
-            });
-            media.push({ kind: 'detail', label: 'Detail Kegiatan', url: '' });
+            }).filter(function (item) { return Boolean(item.url); });
+            const staffPhotos = Array.from(source.querySelectorAll('[data-bulk-staff-photo]')).map(function (item) {
+                return {
+                    kind: 'image',
+                    url: item.dataset.url || '',
+                    label: item.dataset.label || 'Foto Staff',
+                    invalid: item.dataset.invalid === 'true'
+                };
+            }).filter(function (item) { return Boolean(item.url); });
+
+            const media = [
+                { kind: 'detail', label: 'Detail Kegiatan', url: '' },
+                {
+                    kind: 'document',
+                    url: invoiceEl ? (invoiceEl.dataset.url || '') : '',
+                    label: invoiceEl ? (invoiceEl.dataset.label || 'Faktur & Kwitansi') : 'Faktur & Kwitansi',
+                    invalid: false
+                },
+                {
+                    kind: 'document',
+                    url: transferEl ? (transferEl.dataset.url || '') : '',
+                    label: transferEl ? (transferEl.dataset.label || 'Bukti Transfer') : 'Bukti Transfer',
+                    invalid: false
+                },
+                {
+                    kind: 'school_photos',
+                    label: schoolPhotos.length > 1 ? ('Foto Barang (' + schoolPhotos.length + ')') : 'Foto Barang',
+                    url: schoolPhotos.length === 1 ? schoolPhotos[0].url : '',
+                    invalid: schoolPhotos.length === 1 ? schoolPhotos[0].invalid : false,
+                    photos: schoolPhotos
+                }
+            ].concat(staffPhotos);
             return {
                 source: source,
                 id: source.dataset.activityId,
@@ -2359,24 +2425,83 @@
             return wrapper;
         }
 
+        function buildSchoolPhotos(activity, photos) {
+            if (!photos || !photos.length) {
+                const empty = document.createElement('div');
+                empty.className = 'bulk-check-media-empty';
+                empty.innerHTML = '<i class="bi bi-image display-5 mb-2"></i><strong>Foto Barang belum diinput sekolah</strong><small class="opacity-75 mt-1">Sekolah belum mengunggah foto barang untuk kegiatan ini.</small>';
+                return empty;
+            }
+
+            if (photos.length === 1) {
+                const photo = photos[0];
+                const image = document.createElement('img');
+                image.src = photo.url;
+                image.alt = photo.label || 'Foto Barang';
+                image.draggable = false;
+                if (photo.invalid) image.style.opacity = '0.48';
+                return image;
+            }
+
+            const gallery = document.createElement('div');
+            gallery.className = 'bulk-check-photo-gallery';
+            photos.forEach(function (photo, index) {
+                const cardEl = document.createElement('div');
+                cardEl.className = 'bulk-check-photo-card';
+
+                const image = document.createElement('img');
+                image.src = photo.url;
+                image.alt = 'Foto Barang ' + (index + 1);
+                image.draggable = false;
+                if (photo.invalid) image.style.opacity = '0.48';
+                image.addEventListener('click', function (event) {
+                    event.stopPropagation();
+                    if (typeof previewDoc === 'function') {
+                        previewDoc(photo.url, 'Foto Barang ' + (index + 1) + '/' + photos.length + ' - ' + activity.title);
+                    }
+                });
+
+                const caption = document.createElement('div');
+                caption.className = 'bulk-check-photo-caption';
+                caption.innerHTML =
+                    '<span><i class="bi bi-image me-1"></i>Foto Barang ' + (index + 1) + '/' + photos.length + '</span>' +
+                    (photo.invalid
+                        ? '<span class="badge text-bg-danger">Tidak Sah</span>'
+                        : '<span class="badge text-bg-success">Sekolah · Sah</span>');
+
+                cardEl.appendChild(image);
+                cardEl.appendChild(caption);
+                gallery.appendChild(cardEl);
+            });
+            return gallery;
+        }
+
         function renderMedia() {
             const activity = currentActivity();
             if (!activity) return;
             const media = activity.media[mediaIndex];
             mediaContent.replaceChildren();
-            mediaLabel.textContent = media.label;
+            const singleSchoolPhoto = media.kind === 'school_photos' && media.photos && media.photos.length === 1
+                ? media.photos[0]
+                : null;
+            mediaLabel.textContent = singleSchoolPhoto ? singleSchoolPhoto.label : media.label;
             mediaCounter.textContent = (mediaIndex + 1) + '/' + activity.media.length;
             prevButton.disabled = mediaIndex === 0;
             nextButton.disabled = mediaIndex >= activity.media.length - 1;
 
             const extension = (media.url || '').split('.').pop().toLowerCase().split('?')[0];
-            const isImageMedia = media.kind === 'image' || ['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp'].includes(extension);
+            const isImageMedia = media.kind === 'image' || Boolean(singleSchoolPhoto) || ['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp'].includes(extension);
             const allowTapNavigation = Boolean(media.url) && isImageMedia;
             tapPrev.style.display = allowTapNavigation ? 'block' : 'none';
             tapNext.style.display = allowTapNavigation ? 'block' : 'none';
 
             if (media.kind === 'detail') {
                 mediaContent.appendChild(buildDetail(activity));
+                return;
+            }
+
+            if (media.kind === 'school_photos') {
+                mediaContent.appendChild(buildSchoolPhotos(activity, media.photos || []));
                 return;
             }
 
@@ -2422,6 +2547,10 @@
 
             const media = nextActivity.media[0];
             backMediaLabel.textContent = media ? media.label : 'Detail Kegiatan';
+            if (media && media.kind === 'detail') {
+                backMediaContent.appendChild(buildDetail(nextActivity));
+                return;
+            }
             const extension = media && media.url ? media.url.split('.').pop().toLowerCase().split('?')[0] : '';
             const isImage = media && (media.kind === 'image' || ['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp'].includes(extension));
             if (media && media.url && isImage) {
@@ -2752,14 +2881,18 @@
         revisionNotes.addEventListener('input', function () { revisionNotes.classList.remove('is-invalid'); });
 
         card.addEventListener('pointerdown', function (event) {
-            const interactive = event.target.closest('button, a, textarea, input, iframe');
+            const interactive = event.target.closest('button, a, textarea, input, iframe, .bulk-check-photo-card img');
             if (interactive && !event.target.closest('.bulk-check-tap-zone')) return;
             const activity = currentActivity();
             const media = activity && activity.media[mediaIndex];
             const mediaRect = mediaStage.getBoundingClientRect();
             const isInsideMedia = event.clientX >= mediaRect.left && event.clientX <= mediaRect.right &&
                 event.clientY >= mediaRect.top && event.clientY <= mediaRect.bottom;
-            const tapDirection = media && media.kind === 'image' && isInsideMedia
+            const isSinglePhotoSlide = media && (
+                media.kind === 'image' ||
+                (media.kind === 'school_photos' && media.photos && media.photos.length === 1)
+            );
+            const tapDirection = isSinglePhotoSlide && isInsideMedia
                 ? (event.clientX < mediaRect.left + (mediaRect.width / 2) ? -1 : 1)
                 : 0;
             pointerStart = {
@@ -2817,10 +2950,9 @@
         window.bulkCheckAddStaffPhoto = function (activityId, photoUrl) {
             const activity = allActivities.find(function (item) { return String(item.id) === String(activityId); });
             if (!activity || !photoUrl) return;
-            const insertAt = activity.media.findIndex(function (item) { return item.kind === 'document'; });
             const photo = { kind: 'image', url: photoUrl, label: 'Foto Staff', invalid: false };
-            const targetIndex = insertAt < 0 ? activity.media.length - 1 : insertAt;
-            activity.media.splice(targetIndex, 0, photo);
+            activity.media.push(photo);
+            const targetIndex = activity.media.length - 1;
             if (activity === currentActivity()) {
                 mediaIndex = targetIndex;
                 renderMedia();
